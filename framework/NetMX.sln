@@ -13,6 +13,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NetMX.Ddd.Application", "Ne
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NetMX.Data", "NetMX.Data\NetMX.Data.csproj", "{379DC27D-C911-4D58-A1AE-DC9F7DC10401}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NetMX.EntityFrameworkCore", "NetMX.EntityFrameworkCore\NetMX.EntityFrameworkCore.csproj", "{BB51F95B-C5CA-4923-99CA-2D16FB54AA71}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -83,6 +85,18 @@ Global
 		{379DC27D-C911-4D58-A1AE-DC9F7DC10401}.Release|x64.Build.0 = Release|Any CPU
 		{379DC27D-C911-4D58-A1AE-DC9F7DC10401}.Release|x86.ActiveCfg = Release|Any CPU
 		{379DC27D-C911-4D58-A1AE-DC9F7DC10401}.Release|x86.Build.0 = Release|Any CPU
+		{BB51F95B-C5CA-4923-99CA-2D16FB54AA71}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BB51F95B-C5CA-4923-99CA-2D16FB54AA71}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BB51F95B-C5CA-4923-99CA-2D16FB54AA71}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{BB51F95B-C5CA-4923-99CA-2D16FB54AA71}.Debug|x64.Build.0 = Debug|Any CPU
+		{BB51F95B-C5CA-4923-99CA-2D16FB54AA71}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{BB51F95B-C5CA-4923-99CA-2D16FB54AA71}.Debug|x86.Build.0 = Debug|Any CPU
+		{BB51F95B-C5CA-4923-99CA-2D16FB54AA71}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BB51F95B-C5CA-4923-99CA-2D16FB54AA71}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BB51F95B-C5CA-4923-99CA-2D16FB54AA71}.Release|x64.ActiveCfg = Release|Any CPU
+		{BB51F95B-C5CA-4923-99CA-2D16FB54AA71}.Release|x64.Build.0 = Release|Any CPU
+		{BB51F95B-C5CA-4923-99CA-2D16FB54AA71}.Release|x86.ActiveCfg = Release|Any CPU
+		{BB51F95B-C5CA-4923-99CA-2D16FB54AA71}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
