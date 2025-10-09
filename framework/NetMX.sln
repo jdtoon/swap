@@ -11,6 +11,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NetMX.Ddd.Application.Contr
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NetMX.Ddd.Application", "NetMX.Ddd.Application\NetMX.Ddd.Application.csproj", "{79EE52EB-82FB-4FA9-8E8E-B791D5FB9023}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NetMX.Data", "NetMX.Data\NetMX.Data.csproj", "{379DC27D-C911-4D58-A1AE-DC9F7DC10401}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -69,6 +71,18 @@ Global
 		{79EE52EB-82FB-4FA9-8E8E-B791D5FB9023}.Release|x64.Build.0 = Release|Any CPU
 		{79EE52EB-82FB-4FA9-8E8E-B791D5FB9023}.Release|x86.ActiveCfg = Release|Any CPU
 		{79EE52EB-82FB-4FA9-8E8E-B791D5FB9023}.Release|x86.Build.0 = Release|Any CPU
+		{379DC27D-C911-4D58-A1AE-DC9F7DC10401}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{379DC27D-C911-4D58-A1AE-DC9F7DC10401}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{379DC27D-C911-4D58-A1AE-DC9F7DC10401}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{379DC27D-C911-4D58-A1AE-DC9F7DC10401}.Debug|x64.Build.0 = Debug|Any CPU
+		{379DC27D-C911-4D58-A1AE-DC9F7DC10401}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{379DC27D-C911-4D58-A1AE-DC9F7DC10401}.Debug|x86.Build.0 = Debug|Any CPU
+		{379DC27D-C911-4D58-A1AE-DC9F7DC10401}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{379DC27D-C911-4D58-A1AE-DC9F7DC10401}.Release|Any CPU.Build.0 = Release|Any CPU
+		{379DC27D-C911-4D58-A1AE-DC9F7DC10401}.Release|x64.ActiveCfg = Release|Any CPU
+		{379DC27D-C911-4D58-A1AE-DC9F7DC10401}.Release|x64.Build.0 = Release|Any CPU
+		{379DC27D-C911-4D58-A1AE-DC9F7DC10401}.Release|x86.ActiveCfg = Release|Any CPU
+		{379DC27D-C911-4D58-A1AE-DC9F7DC10401}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
