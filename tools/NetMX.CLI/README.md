@@ -8,8 +8,11 @@ The NetMX CLI is the primary tool for developers to create new NetMX solutions a
 
 ## Local Development
 
-To test changes to the CLI locally:
+The `dotnet tool update` command only works when the version number of the package has changed. Since we are not changing the version number for every local build, you must **uninstall and then reinstall** the tool to see your changes.
 
-1.  Navigate to this directory.
-2.  Pack the tool: `dotnet pack`
-3.  Update the globally installed tool: `dotnet tool update --global --add-source ./nupkg NetMX.CLI`
+This is the standard workflow for local tool development:
+
+1.  Navigate to this directory: `cd tools/NetMX.CLI`
+2.  Pack the tool to create the local NuGet package: `dotnet pack`
+3.  Uninstall the old version: `dotnet tool uninstall --global NetMX.CLI`
+4.  Install the new version from the local package: `dotnet tool install --global --add-source ./nupkg NetMX.CLI`
