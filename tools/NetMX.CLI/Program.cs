@@ -1,5 +1,6 @@
 ﻿using System.CommandLine;
 using System.CommandLine.Parsing;
+using LibGit2Sharp;
 
 class Program
 {
@@ -43,10 +44,34 @@ class Program
 
     // --- Logic Methods ---
     internal static void CreateNewSolution(string outputDirectory, string templateName)
+{
+    Console.WriteLine($"🚀 Creating new NetMX solution '{outputDirectory}' using the '{templateName}' template...");
+
+    // In the future, this can come from a config file.
+    // We will create this repository in the next Epic.
+    var templateRepoUrl = $"https://github.com/netmx-framework/template-{templateName}.git";
+
+    try
     {
-        Console.WriteLine("-- NetMX CLI 'new' Command --");
-        Console.WriteLine($"Solution Name: {outputDirectory}");
-        Console.WriteLine($"Template: {templateName}");
-        Console.WriteLine("✅ Command parsing successful. Git logic will be added next.");
+        // The actual cloning operation.
+        Repository.Clone(templateRepoUrl, outputDirectory);
+
+        Console.WriteLine($"✅ Successfully cloned template into '{outputDirectory}'.");
+        Console.WriteLine("Next steps: ");
+        Console.WriteLine($"   cd {outputDirectory}");
+        Console.WriteLine("   (Restore dependencies, etc.)");
+
+        // TODO:
+        // - Delete the .git folder from the cloned repo.
+        // - Run 'git init' to create a new, clean repository for the user.
     }
+    catch (Exception ex)
+    {
+        Console.ForegroundColor = ConsoleColor.Red;
+        Console.WriteLine($"❌ ERROR: Could not create the project.");
+        Console.WriteLine($"   Please ensure you are online and that the template repository exists.");
+        Console.WriteLine($"   Details: {ex.Message}");
+        Console.ResetColor();
+    }
+}
 }
