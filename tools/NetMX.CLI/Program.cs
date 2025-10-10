@@ -1,0 +1,1 @@
+﻿Console.WriteLine("Welcome to the NetMX CLI!");
