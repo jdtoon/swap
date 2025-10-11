@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\..\framework\NetMX.Core\NetMX.Core.csproj" />
+    <ProjectReference Include="..\..\..\..\framework\NetMX.Ddd.Domain\NetMX.Ddd.Domain.csproj" />
+    <ProjectReference Include="..\..\..\..\framework\NetMX.Ddd.Application.Contracts\NetMX.Ddd.Application.Contracts.csproj" />
+    <ProjectReference Include="..\..\..\..\framework\NetMX.Ddd.Application\NetMX.Ddd.Application.csproj" />
+    <ProjectReference Include="..\..\..\..\framework\NetMX.Data\NetMX.Data.csproj" />
+    <ProjectReference Include="..\..\..\..\framework\NetMX.EntityFrameworkCore\NetMX.EntityFrameworkCore.csproj" />
+    <ProjectReference Include="..\..\..\..\framework\NetMX.AspNetCore.Core\NetMX.AspNetCore.Core.csproj" />
+    <ProjectReference Include="..\..\..\..\framework\NetMX.AspNetCore.Mvc\NetMX.AspNetCore.Mvc.csproj" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+</Project>
