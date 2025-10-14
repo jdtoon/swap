@@ -1,0 +1,31 @@
+services:
+  # The Web Application Service
+  web:
+    build:
+      context: ../..  # The build context is the root of our entire repository
+      dockerfile: templates/modular/src/NetMXApp.Web/Dockerfile
+    ports:
+      - "8080:8080" # Expose container port 8080 to the host machine
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:8080
+      # This connection string will be used by our app to connect to the db service
+      - ConnectionStrings__DefaultConnection=Host=db;Port=5432;Database=netmx_db;Username=postgres;Password=postgres
+    depends_on:
+      - db
+
+  # The PostgreSQL Database Service
+  db:
+    image: postgres:15
+    environment:
+      - POSTGRES_DB=netmx_db
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    ports:
+      - "5432:5432" # Expose the database port for local tools if needed
+    volumes:
+      - netmx-db-data:/var/lib/postgresql/data
+
+volumes:
+  netmx-db-data:
+    driver: local
