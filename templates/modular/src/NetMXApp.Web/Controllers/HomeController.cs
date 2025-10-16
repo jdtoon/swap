@@ -16,6 +16,15 @@ public class HomeController : Controller
         return View();
     }
 
+    /// <summary>
+    /// HTMX demo endpoint - returns HTML fragment
+    /// </summary>
+    [HttpGet]
+    public IActionResult GetMessage()
+    {
+        return Content("✅ HTMX is working! This message was loaded from the server without a full page refresh.");
+    }
+
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
     public IActionResult Error()
     {

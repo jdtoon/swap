@@ -1,10 +1,21 @@
 {
   "version": "1.0",
-  "defaultProvider": "cdnjs",
+  "defaultProvider": "unpkg",
   "libraries": [
     {
-      "library": "semantic-ui@2.5.0",
-      "destination": "wwwroot/lib/semantic-ui/"
+      "library": "htmx.org@2.0.4",
+      "destination": "wwwroot/lib/htmx/",
+      "files": [
+        "dist/htmx.min.js"
+      ]
+    },
+    {
+      "provider": "cdnjs",
+      "library": "bulma@1.0.4",
+      "destination": "wwwroot/lib/bulma/",
+      "files": [
+        "css/bulma.min.css"
+      ]
     }
   ]
 }
