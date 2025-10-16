@@ -9,6 +9,8 @@
     <ProjectReference Include="..\..\..\..\framework\NetMX.EntityFrameworkCore\NetMX.EntityFrameworkCore.csproj" />
     <ProjectReference Include="..\..\..\..\framework\NetMX.AspNetCore.Core\NetMX.AspNetCore.Core.csproj" />
     <ProjectReference Include="..\..\..\..\framework\NetMX.AspNetCore.Mvc\NetMX.AspNetCore.Mvc.csproj" />
+    <ProjectReference Include="..\Identity\Identity.Application\Identity.Application.csproj" />
+    <ProjectReference Include="..\Identity\Identity.Web\Identity.Web.csproj" />
   </ItemGroup>
 
   <ItemGroup>

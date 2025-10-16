@@ -4,7 +4,7 @@ using NetMX.Ddd.Domain.Repositories;
 
 namespace NetMX.EntityFrameworkCore.Repositories;
 
-public class EfCoreRepository<TDbContext, TEntity, TKey> : IRepository<TEntity, TKey>
+public class EfCoreRepository<TDbContext, TEntity, TKey> : IQueryableRepository<TEntity, TKey>
     where TDbContext : DbContext
     where TEntity : Entity<TKey>
 {
@@ -16,6 +16,11 @@ public class EfCoreRepository<TDbContext, TEntity, TKey> : IRepository<TEntity, 
     }
 
     protected virtual DbSet<TEntity> DbSet => _dbContext.Set<TEntity>();
+
+    public virtual async Task<IQueryable<TEntity>> GetQueryableAsync()
+    {
+        return await Task.FromResult(DbSet.AsQueryable());
+    }
 
     public virtual async Task<TEntity> GetAsync(TKey id)
     {
