@@ -3,6 +3,7 @@
   <ItemGroup>
     <ProjectReference Include="..\NetMX.Ddd.Application.Contracts\NetMX.Ddd.Application.Contracts.csproj" />
     <ProjectReference Include="..\NetMX.Ddd.Domain\NetMX.Ddd.Domain.csproj" />
+    <ProjectReference Include="..\NetMX.Core\NetMX.Core.csproj" />
   </ItemGroup>
 
   <PropertyGroup>
