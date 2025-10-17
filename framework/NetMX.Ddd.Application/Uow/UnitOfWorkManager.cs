@@ -1,3 +1,4 @@
+using NetMX.Ddd.Domain.Events;
 using NetMX.DependencyInjection;
 
 namespace NetMX.Ddd.Application.Uow;
@@ -9,6 +10,12 @@ namespace NetMX.Ddd.Application.Uow;
 public class UnitOfWorkManager : IUnitOfWorkManager, IScopedDependency
 {
     private static readonly AsyncLocal<IUnitOfWork?> _current = new();
+    private readonly IDomainEventDispatcher? _eventDispatcher;
+
+    public UnitOfWorkManager(IDomainEventDispatcher? eventDispatcher = null)
+    {
+        _eventDispatcher = eventDispatcher;
+    }
 
     /// <inheritdoc />
     public IUnitOfWork? Current => _current.Value;
@@ -22,7 +29,7 @@ public class UnitOfWorkManager : IUnitOfWorkManager, IScopedDependency
             return _current.Value;
         }
 
-        var uow = new UnitOfWork();
+        var uow = new UnitOfWork(_eventDispatcher);
         
         // Save previous UoW
         var previousUow = _current.Value;

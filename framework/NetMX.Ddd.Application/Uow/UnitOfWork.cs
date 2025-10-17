@@ -1,15 +1,25 @@
+using NetMX.Ddd.Domain.Events;
+
 namespace NetMX.Ddd.Application.Uow;
 
 /// <summary>
 /// Default implementation of IUnitOfWork.
 /// Manages transaction lifecycle and completion callbacks.
+/// Dispatches domain events on successful completion.
 /// </summary>
 public class UnitOfWork : IUnitOfWork
 {
     private readonly List<Func<Task>> _completedCallbacks = new();
     private readonly List<Action> _disposedCallbacks = new();
+    private readonly List<DomainEvent> _domainEvents = new();
+    private readonly IDomainEventDispatcher? _eventDispatcher;
     private bool _isCompleted;
     private bool _isDisposed;
+
+    public UnitOfWork(IDomainEventDispatcher? eventDispatcher = null)
+    {
+        _eventDispatcher = eventDispatcher;
+    }
 
     /// <inheritdoc />
     public Guid Id { get; } = Guid.NewGuid();
@@ -21,6 +31,22 @@ public class UnitOfWork : IUnitOfWork
     /// For testing: Hook to execute custom save logic.
     /// </summary>
     public Func<Task>? OnSaveChanges { get; set; }
+
+    /// <summary>
+    /// Adds domain events to be dispatched when the UoW completes.
+    /// </summary>
+    public void AddDomainEvent(DomainEvent domainEvent)
+    {
+        _domainEvents.Add(domainEvent);
+    }
+
+    /// <summary>
+    /// Adds domain events to be dispatched when the UoW completes.
+    /// </summary>
+    public void AddDomainEvents(IEnumerable<DomainEvent> domainEvents)
+    {
+        _domainEvents.AddRange(domainEvents);
+    }
 
     /// <inheritdoc />
     public async Task SaveChangesAsync(CancellationToken cancellationToken = default)
@@ -54,6 +80,12 @@ public class UnitOfWork : IUnitOfWork
         await SaveChangesAsync(cancellationToken);
 
         _isCompleted = true;
+
+        // Dispatch domain events AFTER successful save
+        if (_eventDispatcher != null && _domainEvents.Any())
+        {
+            await _eventDispatcher.DispatchAsync(_domainEvents, cancellationToken);
+        }
 
         // Execute completion callbacks
         foreach (var callback in _completedCallbacks)
@@ -107,6 +139,6 @@ public class UnitOfWork : IUnitOfWork
         }
 
         // If not completed, this is a rollback scenario
-        // No need to execute completion callbacks
+        // No need to execute completion callbacks or dispatch events
     }
 }
