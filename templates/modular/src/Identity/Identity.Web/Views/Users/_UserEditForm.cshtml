@@ -1,0 +1,66 @@
+@model Identity.Application.Contracts.Users.UpdateUserDto
+
+<h2 class="subtitle">Edit User</h2>
+
+<div class="notification is-info is-light">
+    <p><strong>Email:</strong> @ViewBag.Email</p>
+    <p class="help">Email cannot be changed after user creation</p>
+</div>
+
+<form hx-post="/Users/Update/@ViewBag.UserId" hx-swap="none">
+    <div asp-validation-summary="All" class="notification is-danger is-light"></div>
+
+    <div class="field">
+        <label class="label" asp-for="FullName"></label>
+        <div class="control has-icons-left">
+            <input class="input" type="text" asp-for="FullName" placeholder="John Doe" />
+            <span class="icon is-small is-left">
+                <i class="fas fa-user"></i>
+            </span>
+        </div>
+        <span asp-validation-for="FullName" class="help is-danger"></span>
+    </div>
+
+    <div class="field">
+        <label class="label" asp-for="PhoneNumber"></label>
+        <div class="control has-icons-left">
+            <input class="input" type="tel" asp-for="PhoneNumber" placeholder="+1234567890" />
+            <span class="icon is-small is-left">
+                <i class="fas fa-phone"></i>
+            </span>
+        </div>
+        <span asp-validation-for="PhoneNumber" class="help is-danger"></span>
+    </div>
+
+    <div class="field">
+        <label class="checkbox">
+            <input type="checkbox" asp-for="EmailConfirmed" />
+            Email Confirmed
+        </label>
+    </div>
+
+    <div class="field">
+        <label class="checkbox">
+            <input type="checkbox" asp-for="PhoneNumberConfirmed" />
+            Phone Number Confirmed
+        </label>
+    </div>
+
+    <div class="field is-grouped">
+        <div class="control">
+            <button type="submit" class="button is-primary">
+                <span class="icon">
+                    <i class="fas fa-save"></i>
+                </span>
+                <span>Update User</span>
+            </button>
+        </div>
+        <div class="control">
+            <button type="button" 
+                    class="button is-light"
+                    onclick="document.getElementById('user-form-container').innerHTML = '<p class=\'has-text-grey has-text-centered\'>Select \'Add User\' or click \'Edit\' on a user to begin</p>'">
+                Cancel
+            </button>
+        </div>
+    </div>
+</form>

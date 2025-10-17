@@ -1,0 +1,85 @@
+@model Identity.Application.Contracts.Users.UserDto
+
+<tr id="user-row-@Model.Id">
+    <td>
+        <strong>@Model.Email</strong>
+        @if (Model.EmailConfirmed)
+        {
+            <span class="tag is-success is-light is-small ml-2">
+                <span class="icon is-small">
+                    <i class="fas fa-check"></i>
+                </span>
+                <span>Verified</span>
+            </span>
+        }
+    </td>
+    <td>@(Model.FullName ?? "-")</td>
+    <td>
+        @if (Model.RoleNames.Any())
+        {
+            @foreach (var role in Model.RoleNames)
+            {
+                <span class="tag is-info is-light">@role</span>
+            }
+        }
+        else
+        {
+            <span class="has-text-grey">No roles</span>
+        }
+    </td>
+    <td>
+        @if (Model.IsActive)
+        {
+            <span class="tag is-success">Active</span>
+        }
+        else
+        {
+            <span class="tag is-danger">Inactive</span>
+        }
+    </td>
+    <td class="has-text-right">
+        <div class="buttons is-right">
+            <button class="button is-small is-info"
+                    hx-get="/Users/Edit/@Model.Id"
+                    hx-target="#user-form-container"
+                    hx-swap="innerHTML">
+                <span class="icon is-small">
+                    <i class="fas fa-edit"></i>
+                </span>
+            </button>
+            
+            @if (Model.IsActive)
+            {
+                <button class="button is-small is-warning"
+                        hx-post="/Users/Deactivate/@Model.Id"
+                        hx-confirm="Deactivate this user?"
+                        title="Deactivate">
+                    <span class="icon is-small">
+                        <i class="fas fa-ban"></i>
+                    </span>
+                </button>
+            }
+            else
+            {
+                <button class="button is-small is-success"
+                        hx-post="/Users/Activate/@Model.Id"
+                        hx-confirm="Activate this user?"
+                        title="Activate">
+                    <span class="icon is-small">
+                        <i class="fas fa-check"></i>
+                    </span>
+                </button>
+            }
+            
+            <button class="button is-small is-danger"
+                    hx-delete="/Users/Delete/@Model.Id"
+                    hx-confirm="Delete this user? This action cannot be undone."
+                    hx-target="#user-row-@Model.Id"
+                    hx-swap="delete">
+                <span class="icon is-small">
+                    <i class="fas fa-trash"></i>
+                </span>
+            </button>
+        </div>
+    </td>
+</tr>

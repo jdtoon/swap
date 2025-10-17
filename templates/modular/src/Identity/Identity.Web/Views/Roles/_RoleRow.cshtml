@@ -1,0 +1,52 @@
+@model Identity.Application.Contracts.Roles.RoleDto
+
+<tr id="role-row-@Model.Id">
+    <td>
+        <strong>@Model.Name</strong>
+    </td>
+    <td>@(Model.Description ?? "-")</td>
+    <td>
+        @if (Model.IsSystemRole)
+        {
+            <span class="tag is-warning">
+                <span class="icon is-small">
+                    <i class="fas fa-lock"></i>
+                </span>
+                <span>System</span>
+            </span>
+        }
+        else
+        {
+            <span class="tag is-info is-light">Custom</span>
+        }
+    </td>
+    <td class="has-text-right">
+        <div class="buttons is-right">
+            @if (!Model.IsSystemRole)
+            {
+                <button class="button is-small is-info"
+                        hx-get="/Roles/Edit/@Model.Id"
+                        hx-target="#role-form-container"
+                        hx-swap="innerHTML">
+                    <span class="icon is-small">
+                        <i class="fas fa-edit"></i>
+                    </span>
+                </button>
+                
+                <button class="button is-small is-danger"
+                        hx-delete="/Roles/Delete/@Model.Id"
+                        hx-confirm="Delete this role? This action cannot be undone."
+                        hx-target="#role-row-@Model.Id"
+                        hx-swap="delete">
+                    <span class="icon is-small">
+                        <i class="fas fa-trash"></i>
+                    </span>
+                </button>
+            }
+            else
+            {
+                <span class="tag is-light">Protected</span>
+            }
+        </div>
+    </td>
+</tr>

@@ -1,0 +1,45 @@
+@model List<Identity.Application.Contracts.Roles.RoleDto>
+@{
+    ViewData["Title"] = "Role Management";
+}
+
+<div class="section">
+    <div class="container">
+        <div class="columns">
+            <div class="column is-8">
+                <h1 class="title">Roles</h1>
+                <p class="subtitle">Manage application roles and permissions</p>
+            </div>
+            <div class="column is-4 has-text-right">
+                <button class="button is-primary" 
+                        hx-get="/Roles/New" 
+                        hx-target="#role-form-container"
+                        hx-swap="innerHTML">
+                    <span class="icon">
+                        <i class="fas fa-plus"></i>
+                    </span>
+                    <span>Add Role</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="columns">
+            <div class="column is-8">
+                <div class="box">
+                    <div id="role-list-container">
+                        @await Html.PartialAsync("_RoleList", Model)
+                    </div>
+                </div>
+            </div>
+            <div class="column is-4">
+                <div class="box">
+                    <div id="role-form-container">
+                        <p class="has-text-grey has-text-centered">
+                            Select "Add Role" or click "Edit" on a role to begin
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
