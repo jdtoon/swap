@@ -395,7 +395,7 @@ NetMX is a **pure, modular, HTMX-first framework** for building web applications
 - **Documentation**: /docs/
 - **GitHub Actions**: https://github.com/toonjd/netmx/actions
 - **NuGet Packages**: https://www.nuget.org/packages?q=NetMX
-- **GitHub Packages**: https://github.com/jdtoon?tab=packages
+- **GitHub Packages**: https://github.com/toonjd?tab=packages
 
 ---
 

@@ -370,7 +370,7 @@ Wait for the `publish-dev` job to complete (~3-4 minutes):
 
 ### Step 6.1: Check GitHub Packages
 
-1. Go to: **https://github.com/jdtoon?tab=packages**
+1. Go to: **https://github.com/toonjd?tab=packages**
 2. You should see **9 packages** listed:
    - NetMX.AspNetCore.Core
    - NetMX.AspNetCore.Mvc
@@ -503,7 +503,7 @@ dotnet add package NetMX.Core --version 0.1.0-alpha
 | **Secrets** | https://github.com/toonjd/netmx/settings/secrets/actions |
 | **Actions** | https://github.com/toonjd/netmx/actions |
 | **Releases** | https://github.com/toonjd/netmx/releases |
-| **Packages** | https://github.com/jdtoon?tab=packages |
+| **Packages** | https://github.com/toonjd?tab=packages |
 | **NuGet.org API Keys** | https://www.nuget.org/account/apikeys |
 | **GitHub PAT** | https://github.com/settings/tokens/new |
 

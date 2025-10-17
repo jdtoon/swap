@@ -84,7 +84,7 @@ This will:
 - ✅ Trigger the publish workflow
 - ✅ Build all 9 packages
 - ✅ Publish to GitHub Packages
-- ✅ Make packages available at: https://github.com/jdtoon?tab=packages
+- ✅ Make packages available at: https://github.com/toonjd?tab=packages
 
 ### Step 4: Test Your Packages 🧪
 
@@ -155,7 +155,7 @@ When you're ready for v1.0.0:
 | **Repository** | https://github.com/toonjd/netmx |
 | **Actions/CI** | https://github.com/toonjd/netmx/actions |
 | **Releases** | https://github.com/toonjd/netmx/releases |
-| **Packages** | https://github.com/jdtoon?tab=packages |
+| **Packages** | https://github.com/toonjd?tab=packages |
 | **Environments** | https://github.com/toonjd/netmx/settings/environments |
 | **Secrets** | https://github.com/toonjd/netmx/settings/secrets/actions |
 | **NuGet Keys** | https://www.nuget.org/account/apikeys |

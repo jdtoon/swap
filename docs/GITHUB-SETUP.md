@@ -28,7 +28,7 @@
 ```bash
 dotnet nuget add source \
   --name github \
-  --username jdtoon \
+  --username toonjd \
   --password $GITHUB_TOKEN \
   https://nuget.pkg.github.com/toonjd/index.json
 

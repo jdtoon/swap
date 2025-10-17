@@ -103,7 +103,7 @@ gh release create v0.1.0-alpha --prerelease --title "NetMX v0.1.0-alpha - First 
 ### Step 5: Verify Packages Published (2 minutes)
 
 1. Wait for the publish workflow to complete
-2. Visit: https://github.com/jdtoon?tab=packages
+2. Visit: https://github.com/toonjd?tab=packages
 3. You should see all 9 NetMX packages listed!
 
 ## 📦 Testing Your Packages
@@ -123,7 +123,7 @@ $env:GITHUB_TOKEN = "your_github_pat_here"
 # Add GitHub Packages as a NuGet source
 dotnet nuget add source https://nuget.pkg.github.com/toonjd/index.json `
   --name github `
-  --username jdtoon `
+  --username toonjd `
   --password $env:GITHUB_TOKEN `
   --store-password-in-clear-text
 ```
@@ -187,7 +187,7 @@ dotnet add package NetMX.Core --version 0.1.0-alpha
 
 - **Repository**: https://github.com/toonjd/netmx
 - **Actions**: https://github.com/toonjd/netmx/actions
-- **Packages**: https://github.com/jdtoon?tab=packages
+- **Packages**: https://github.com/toonjd?tab=packages
 - **Documentation**: See `/docs` folder
 - **Roadmap**: `/docs/ROADMAP.md`
 - **GitHub Setup Guide**: `/docs/GITHUB-SETUP.md`
