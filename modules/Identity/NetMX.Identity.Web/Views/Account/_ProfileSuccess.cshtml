@@ -1,0 +1,8 @@
+@model NetMX.Identity.Contracts.Users.UpdateUserDto
+
+<div class="notification is-success">
+    <button class="delete"></button>
+    <p><strong>Profile Updated!</strong> Your changes have been saved successfully.</p>
+</div>
+
+@await Html.PartialAsync("_ProfileForm", Model)

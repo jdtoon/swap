@@ -1,0 +1,128 @@
+@model NetMX.Identity.Contracts.Users.UserDto
+
+@{
+    ViewData["Title"] = "My Profile";
+}
+
+<div class="section">
+    <div class="container">
+        <div class="columns">
+            <div class="column is-8">
+                <div class="box">
+                    <h1 class="title">My Profile</h1>
+                    
+                    <div id="profile-container" hx-target="this" hx-swap="outerHTML">
+                        @await Html.PartialAsync("_ProfileForm", new NetMX.Identity.Contracts.Users.UpdateUserDto 
+                        { 
+                            FirstName = Model.FirstName,
+                            LastName = Model.LastName,
+                            PhoneNumber = Model.PhoneNumber
+                        })
+                    </div>
+                </div>
+
+                <div class="box mt-5">
+                    <h2 class="title is-4">Change Password</h2>
+                    
+                    <div id="password-container" hx-target="this" hx-swap="outerHTML">
+                        @await Html.PartialAsync("_ChangePasswordForm", new NetMX.Identity.Contracts.Users.ChangePasswordDto())
+                    </div>
+                </div>
+            </div>
+
+            <div class="column is-4">
+                <div class="box has-background-light">
+                    <h2 class="title is-5">Account Information</h2>
+                    
+                    <div class="content">
+                        <p>
+                            <strong>Username:</strong><br>
+                            @Model.UserName
+                        </p>
+                        <p>
+                            <strong>Email:</strong><br>
+                            @Model.Email
+                            @if (Model.EmailConfirmed)
+                            {
+                                <span class="tag is-success is-light">
+                                    <span class="icon"><i class="fas fa-check"></i></span>
+                                    <span>Verified</span>
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="tag is-warning is-light">
+                                    <span class="icon"><i class="fas fa-exclamation"></i></span>
+                                    <span>Not Verified</span>
+                                </span>
+                            }
+                        </p>
+                        <p>
+                            <strong>Phone:</strong><br>
+                            @(string.IsNullOrEmpty(Model.PhoneNumber) ? "Not set" : Model.PhoneNumber)
+                            @if (!string.IsNullOrEmpty(Model.PhoneNumber) && Model.PhoneNumberConfirmed)
+                            {
+                                <span class="tag is-success is-light">
+                                    <span class="icon"><i class="fas fa-check"></i></span>
+                                    <span>Verified</span>
+                                </span>
+                            }
+                        </p>
+                        <p>
+                            <strong>Two-Factor:</strong><br>
+                            @if (Model.TwoFactorEnabled)
+                            {
+                                <span class="tag is-success">
+                                    <span class="icon"><i class="fas fa-shield-alt"></i></span>
+                                    <span>Enabled</span>
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="tag is-light">
+                                    <span>Disabled</span>
+                                </span>
+                            }
+                        </p>
+                    </div>
+
+                    @if (!Model.EmailConfirmed)
+                    {
+                        <button class="button is-warning is-light is-fullwidth mt-3"
+                                hx-post="/account/send-email-confirmation"
+                                hx-indicator="#email-spinner">
+                            <span id="email-spinner" class="htmx-indicator">
+                                <i class="fas fa-spinner fa-spin"></i>
+                            </span>
+                            <span>Send Verification Email</span>
+                        </button>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Listen for profile updates
+        document.body.addEventListener('profile:updated', function(evt) {
+            console.log('Profile updated');
+        });
+
+        // Listen for password changes
+        document.body.addEventListener('password:changed', function(evt) {
+            console.log('Password changed');
+        });
+        
+        // Auto-hide delete buttons on notifications
+        document.addEventListener('DOMContentLoaded', () => {
+            (document.querySelectorAll('.notification .delete') || []).forEach(($delete) => {
+                const $notification = $delete.parentNode;
+                $delete.addEventListener('click', () => {
+                    $notification.parentNode.removeChild($notification);
+                });
+            });
+        });
+    </script>
+}

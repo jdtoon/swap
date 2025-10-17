@@ -1,0 +1,38 @@
+@model NetMX.Identity.Contracts.Users.CreateUserDto
+
+@{
+    ViewData["Title"] = "Register";
+}
+
+<div class="section">
+    <div class="container">
+        <div class="columns is-centered">
+            <div class="column is-6-tablet is-5-desktop">
+                <div class="box">
+                    <h1 class="title has-text-centered">Create Account</h1>
+                    <p class="subtitle has-text-centered has-text-grey">Join us today</p>
+
+                    <div id="register-container" hx-target="this" hx-swap="outerHTML">
+                        @await Html.PartialAsync("_RegisterForm", Model ?? new CreateUserDto())
+                    </div>
+
+                    <div class="has-text-centered mt-5">
+                        <p>
+                            Already have an account? 
+                            <a href="/account/login" class="has-text-weight-bold">Sign in</a>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Listen for successful registration
+        document.body.addEventListener('register:success', function(evt) {
+            console.log('Registration successful', evt.detail);
+        });
+    </script>
+}

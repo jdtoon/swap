@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AddRazorSupportForMvc>true</AddRazorSupportForMvc>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\NetMX.Identity.Application\NetMX.Identity.Application.csproj" />
+    <ProjectReference Include="..\NetMX.Identity.Contracts\NetMX.Identity.Contracts.csproj" />
+    <ProjectReference Include="..\..\..\framework\NetMX.AspNetCore.Mvc\NetMX.AspNetCore.Mvc.csproj" />
+    <ProjectReference Include="..\..\..\framework\NetMX.Core\NetMX.Core.csproj" />
+  </ItemGroup>
+
+</Project>
