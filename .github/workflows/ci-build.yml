@@ -18,11 +18,14 @@ jobs:
       with:
         dotnet-version: '9.0.x'
     
-    - name: Restore dependencies
+    - name: Restore Framework dependencies
       run: dotnet restore framework/NetMX.sln
     
     - name: Build Framework
       run: dotnet build framework/NetMX.sln --configuration Release --no-restore
+    
+    - name: Restore Template dependencies
+      run: dotnet restore templates/modular/NetMXApp.sln
     
     - name: Build Template
       run: dotnet build templates/modular/NetMXApp.sln --configuration Release --no-restore
