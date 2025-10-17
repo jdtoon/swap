@@ -9,6 +9,25 @@
     <TargetFramework>net9.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    
+    <!-- NuGet Package Metadata -->
+    <PackageId>NetMX.Ddd.Application</PackageId>
+    <Version>0.1.0-alpha</Version>
+    <Authors>jdtoon</Authors>
+    <Company>NetMX</Company>
+    <Product>NetMX Framework</Product>
+    <Description>Application layer implementation for NetMX. Provides base application services, unit of work pattern, and orchestration for domain logic.</Description>
+    <PackageProjectUrl>https://github.com/jdtoon/netmx</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/jdtoon/netmx</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageTags>netmx;ddd;application-layer;use-cases;unit-of-work;cqrs</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
+  
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
 
 </Project>
