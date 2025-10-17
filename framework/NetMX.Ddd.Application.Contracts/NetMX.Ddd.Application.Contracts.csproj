@@ -16,8 +16,8 @@
     <Company>NetMX</Company>
     <Product>NetMX Framework</Product>
     <Description>Application service contracts for NetMX. Includes DTOs, service interfaces, and application-level abstractions for building use cases.</Description>
-    <PackageProjectUrl>https://github.com/jdtoon/netmx</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/jdtoon/netmx</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/toonjd/netmx</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/toonjd/netmx</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageTags>netmx;ddd;application-services;dto;contracts;interfaces</PackageTags>

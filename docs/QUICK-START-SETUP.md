@@ -16,7 +16,7 @@ This guide will walk you through the final manual steps to activate your CI/CD p
 
 Your push just triggered the CI build! Check its status:
 
-1. Visit: https://github.com/jdtoon/netmx/actions
+1. Visit: https://github.com/toonjd/netmx/actions
 2. Look for the "CI Build" workflow
 3. Click on it to see the build progress
 4. Verify all jobs pass (should see green checkmarks)
@@ -25,7 +25,7 @@ Your push just triggered the CI build! Check its status:
 
 ### Step 2: Configure GitHub Environments (3 minutes)
 
-1. Go to: https://github.com/jdtoon/netmx/settings/environments
+1. Go to: https://github.com/toonjd/netmx/settings/environments
 2. Click **"New environment"**
 3. Create **"nuget-dev"**:
    - Name: `nuget-dev`
@@ -47,7 +47,7 @@ Your push just triggered the CI build! Check its status:
    - Copy the key (you'll only see it once!)
 
 2. Add to GitHub Secrets:
-   - Go to: https://github.com/jdtoon/netmx/settings/secrets/actions
+   - Go to: https://github.com/toonjd/netmx/settings/secrets/actions
    - Click "New repository secret"
    - Name: `NUGET_API_KEY`
    - Value: [paste your API key]
@@ -58,7 +58,7 @@ Your push just triggered the CI build! Check its status:
 ### Step 4: Create First Alpha Release (3 minutes)
 
 **Option A: Via GitHub Web UI**
-1. Visit: https://github.com/jdtoon/netmx/releases/new
+1. Visit: https://github.com/toonjd/netmx/releases/new
 2. Tag: `v0.1.0-alpha`
 3. Title: "NetMX v0.1.0-alpha - First Alpha Release"
 4. Description:
@@ -85,7 +85,7 @@ Your push just triggered the CI build! Check its status:
    
    ## Installation
    ```bash
-   dotnet add package NetMX.Core --version 0.1.0-alpha --source https://nuget.pkg.github.com/jdtoon/index.json
+   dotnet add package NetMX.Core --version 0.1.0-alpha --source https://nuget.pkg.github.com/toonjd/index.json
    ```
    
    **Note**: This is an alpha release for testing. Not ready for production use.
@@ -121,7 +121,7 @@ First, authenticate with GitHub Packages:
 $env:GITHUB_TOKEN = "your_github_pat_here"
 
 # Add GitHub Packages as a NuGet source
-dotnet nuget add source https://nuget.pkg.github.com/jdtoon/index.json `
+dotnet nuget add source https://nuget.pkg.github.com/toonjd/index.json `
   --name github `
   --username jdtoon `
   --password $env:GITHUB_TOKEN `
@@ -185,8 +185,8 @@ dotnet add package NetMX.Core --version 0.1.0-alpha
 
 ## 📚 Reference Links
 
-- **Repository**: https://github.com/jdtoon/netmx
-- **Actions**: https://github.com/jdtoon/netmx/actions
+- **Repository**: https://github.com/toonjd/netmx
+- **Actions**: https://github.com/toonjd/netmx/actions
 - **Packages**: https://github.com/jdtoon?tab=packages
 - **Documentation**: See `/docs` folder
 - **Roadmap**: `/docs/ROADMAP.md`
@@ -196,4 +196,4 @@ dotnet add package NetMX.Core --version 0.1.0-alpha
 
 **Need Help?** Check the troubleshooting section in `docs/GITHUB-SETUP.md` or review the workflow YAML files in `.github/workflows/`.
 
-**Status Check**: Visit https://github.com/jdtoon/netmx/actions to see your CI pipeline running right now! 🚀
+**Status Check**: Visit https://github.com/toonjd/netmx/actions to see your CI pipeline running right now! 🚀

@@ -12,8 +12,8 @@
     <Company>NetMX</Company>
     <Product>NetMX Framework</Product>
     <Description>Core abstractions and dependency injection interfaces for the NetMX framework. Provides base module system and service registration patterns.</Description>
-    <PackageProjectUrl>https://github.com/jdtoon/netmx</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/jdtoon/netmx</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/toonjd/netmx</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/toonjd/netmx</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageTags>netmx;framework;ddd;dependency-injection;aspnetcore;modular</PackageTags>

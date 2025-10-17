@@ -16,8 +16,8 @@
     <Company>NetMX</Company>
     <Product>NetMX Framework</Product>
     <Description>ASP.NET Core MVC extensions for NetMX. Provides controller base classes, HTMX helpers, theming support, and MVC-specific integration.</Description>
-    <PackageProjectUrl>https://github.com/jdtoon/netmx</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/jdtoon/netmx</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/toonjd/netmx</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/toonjd/netmx</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageTags>netmx;aspnetcore;mvc;htmx;controllers;theming</PackageTags>

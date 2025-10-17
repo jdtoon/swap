@@ -12,8 +12,8 @@
     <Company>NetMX</Company>
     <Product>NetMX Framework</Product>
     <Description>Strongly-typed HTMX helpers for NetMX. Provides request detection, response header manipulation, swap strategies, and type-safe HTMX integration for ASP.NET Core.</Description>
-    <PackageProjectUrl>https://github.com/jdtoon/netmx</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/jdtoon/netmx</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/toonjd/netmx</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/toonjd/netmx</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageTags>netmx;htmx;hypermedia;ajax;spa;server-side-rendering</PackageTags>

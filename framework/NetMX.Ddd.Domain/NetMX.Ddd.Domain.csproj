@@ -16,8 +16,8 @@
     <Company>NetMX</Company>
     <Product>NetMX Framework</Product>
     <Description>Domain-Driven Design building blocks for NetMX. Includes base entities, aggregates, value objects, domain events, and repository abstractions.</Description>
-    <PackageProjectUrl>https://github.com/jdtoon/netmx</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/jdtoon/netmx</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/toonjd/netmx</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/toonjd/netmx</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageTags>netmx;ddd;domain-driven-design;entity;aggregate;repository;domain-events</PackageTags>

@@ -18,7 +18,10 @@ on:
 
 jobs:
   publish-dev:
-    if: github.event.inputs.environment == 'nuget-dev' || github.event.release.prerelease == true
+    # Only run for pre-releases OR manual workflow dispatch to nuget-dev
+    if: |
+      (github.event_name == 'release' && github.event.release.prerelease == true) ||
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'nuget-dev')
     runs-on: ubuntu-latest
     environment: nuget-dev
     
@@ -65,7 +68,10 @@ jobs:
         ls -la ./nupkg/*.nupkg >> $GITHUB_STEP_SUMMARY
 
   publish-production:
-    if: github.event.inputs.environment == 'nuget-production' || (github.event_name == 'release' && github.event.release.prerelease == false)
+    # Only run for full releases (not pre-releases) OR manual workflow dispatch to nuget-production
+    if: |
+      (github.event_name == 'release' && github.event.release.prerelease == false) ||
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'nuget-production')
     runs-on: ubuntu-latest
     environment: nuget-production
     

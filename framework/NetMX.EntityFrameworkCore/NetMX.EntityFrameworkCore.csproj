@@ -22,8 +22,8 @@
     <Company>NetMX</Company>
     <Product>NetMX Framework</Product>
     <Description>Entity Framework Core integration for NetMX. Provides DbContext base classes, repository implementations, and data access patterns with DDD support.</Description>
-    <PackageProjectUrl>https://github.com/jdtoon/netmx</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/jdtoon/netmx</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/toonjd/netmx</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/toonjd/netmx</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageTags>netmx;entityframework;efcore;repository;data-access;ddd;orm</PackageTags>

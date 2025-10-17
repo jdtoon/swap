@@ -38,7 +38,7 @@
 
 ## 🎯 Your CI Pipeline is LIVE!
 
-Check it out: **https://github.com/jdtoon/netmx/actions**
+Check it out: **https://github.com/toonjd/netmx/actions**
 
 You should see the "CI Build" workflow running right now from your recent push!
 
@@ -46,7 +46,7 @@ You should see the "CI Build" workflow running right now from your recent push!
 
 ### Step 1: Create GitHub Environments ⚙️
 
-Visit: **https://github.com/jdtoon/netmx/settings/environments**
+Visit: **https://github.com/toonjd/netmx/settings/environments**
 
 1. Create `nuget-dev` environment (no protection rules)
 2. Create `nuget-production` environment with:
@@ -62,7 +62,7 @@ Visit: **https://github.com/jdtoon/netmx/settings/environments**
    - Pattern: `netmx*`
    
 2. Add to GitHub:
-   - Visit: **https://github.com/jdtoon/netmx/settings/secrets/actions**
+   - Visit: **https://github.com/toonjd/netmx/settings/secrets/actions**
    - Name: `NUGET_API_KEY`
    - Value: [your API key]
 
@@ -72,7 +72,7 @@ Visit: **https://github.com/jdtoon/netmx/settings/environments**
 
 **Via GitHub Web UI** (Recommended):
 
-1. Go to: **https://github.com/jdtoon/netmx/releases/new**
+1. Go to: **https://github.com/toonjd/netmx/releases/new**
 2. Fill in:
    - Tag: `v0.1.0-alpha`
    - Title: `NetMX v0.1.0-alpha - First Alpha Release`
@@ -93,7 +93,7 @@ Install from GitHub Packages:
 ```powershell
 # Authenticate (one-time setup)
 # Create PAT at: https://github.com/settings/tokens/new (read:packages scope)
-dotnet nuget add source https://nuget.pkg.github.com/jdtoon/index.json `
+dotnet nuget add source https://nuget.pkg.github.com/toonjd/index.json `
   --name github `
   --username jdtoon `
   --password YOUR_GITHUB_PAT `
@@ -152,12 +152,12 @@ When you're ready for v1.0.0:
 
 | Resource | URL |
 |----------|-----|
-| **Repository** | https://github.com/jdtoon/netmx |
-| **Actions/CI** | https://github.com/jdtoon/netmx/actions |
-| **Releases** | https://github.com/jdtoon/netmx/releases |
+| **Repository** | https://github.com/toonjd/netmx |
+| **Actions/CI** | https://github.com/toonjd/netmx/actions |
+| **Releases** | https://github.com/toonjd/netmx/releases |
 | **Packages** | https://github.com/jdtoon?tab=packages |
-| **Environments** | https://github.com/jdtoon/netmx/settings/environments |
-| **Secrets** | https://github.com/jdtoon/netmx/settings/secrets/actions |
+| **Environments** | https://github.com/toonjd/netmx/settings/environments |
+| **Secrets** | https://github.com/toonjd/netmx/settings/secrets/actions |
 | **NuGet Keys** | https://www.nuget.org/account/apikeys |
 
 ## 💡 Pro Tips

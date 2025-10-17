@@ -5,7 +5,7 @@ This guide provides **exact click-by-click instructions** for configuring your G
 ## ✅ Prerequisites Checklist
 
 Before you begin, ensure you have:
-- [x] GitHub repository created: https://github.com/jdtoon/netmx
+- [x] GitHub repository created: https://github.com/toonjd/netmx
 - [x] All code pushed to master branch
 - [x] Workflows committed to `.github/workflows/`
 - [x] Admin access to the repository
@@ -16,7 +16,7 @@ Before you begin, ensure you have:
 
 ### Step 1.1: Access Environments Settings
 
-1. Navigate to: **https://github.com/jdtoon/netmx/settings/environments**
+1. Navigate to: **https://github.com/toonjd/netmx/settings/environments**
 2. You should see "Environments" in the left sidebar under "Code and automation"
 
 ### Step 1.2: Create Development Environment
@@ -110,7 +110,7 @@ You should now see both environments listed:
 
 ### Step 2.2: Add API Key to GitHub Secrets
 
-1. Navigate to: **https://github.com/jdtoon/netmx/settings/secrets/actions**
+1. Navigate to: **https://github.com/toonjd/netmx/settings/secrets/actions**
 2. Click **"New repository secret"** (green button, top right)
 
 **Enter the secret:**
@@ -153,7 +153,7 @@ git push
 
 ### Step 3.1: Verify CI Build Passes
 
-1. Go to: **https://github.com/jdtoon/netmx/actions**
+1. Go to: **https://github.com/toonjd/netmx/actions**
 2. Find the latest "CI Build & Test" workflow run
 3. Click on it to see details
 4. Wait for it to complete (should take ~2-3 minutes)
@@ -179,7 +179,7 @@ Once CI is green, you're ready to release!
 
 ### Step 4.1: Navigate to Releases
 
-1. Go to: **https://github.com/jdtoon/netmx/releases**
+1. Go to: **https://github.com/toonjd/netmx/releases**
 2. Click **"Create a new release"** or **"Draft a new release"**
 
 ### Step 4.2: Configure the Release
@@ -235,7 +235,7 @@ Packages are published to GitHub Packages. To install:
    # Create a PAT at: https://github.com/settings/tokens/new
    # Select scope: read:packages
    
-   dotnet nuget add source https://nuget.pkg.github.com/jdtoon/index.json \
+   dotnet nuget add source https://nuget.pkg.github.com/toonjd/index.json \
      --name github \
      --username jdtoon \
      --password YOUR_GITHUB_PAT \
@@ -268,13 +268,13 @@ This is an **alpha release** intended for:
 
 ## 📚 Documentation
 
-- **Getting Started**: [QUICK-START-SETUP.md](https://github.com/jdtoon/netmx/blob/master/docs/QUICK-START-SETUP.md)
-- **Roadmap**: [ROADMAP.md](https://github.com/jdtoon/netmx/blob/master/docs/ROADMAP.md)
-- **Architecture**: [copilot-instructions.md](https://github.com/jdtoon/netmx/blob/master/.github/copilot-instructions.md)
+- **Getting Started**: [QUICK-START-SETUP.md](https://github.com/toonjd/netmx/blob/master/docs/QUICK-START-SETUP.md)
+- **Roadmap**: [ROADMAP.md](https://github.com/toonjd/netmx/blob/master/docs/ROADMAP.md)
+- **Architecture**: [copilot-instructions.md](https://github.com/toonjd/netmx/blob/master/.github/copilot-instructions.md)
 
 ## 🤝 Contributing
 
-We welcome contributions! See [CONTRIBUTING.md](https://github.com/jdtoon/netmx/blob/master/CONTRIBUTING.md)
+We welcome contributions! See [CONTRIBUTING.md](https://github.com/toonjd/netmx/blob/master/CONTRIBUTING.md)
 
 ## 📝 Changelog
 
@@ -297,7 +297,7 @@ We welcome contributions! See [CONTRIBUTING.md](https://github.com/jdtoon/netmx/
 
 **Next Steps**: Beta release coming soon with enhanced testing, documentation, and CLI tool!
 
-**Feedback**: Please open [issues](https://github.com/jdtoon/netmx/issues) or [discussions](https://github.com/jdtoon/netmx/discussions) with your thoughts!
+**Feedback**: Please open [issues](https://github.com/toonjd/netmx/issues) or [discussions](https://github.com/toonjd/netmx/discussions) with your thoughts!
 ```
 
 #### ✅ Set as a pre-release
@@ -319,7 +319,7 @@ We welcome contributions! See [CONTRIBUTING.md](https://github.com/jdtoon/netmx/
 
 ### Step 5.1: Monitor the Workflow
 
-1. Go to: **https://github.com/jdtoon/netmx/actions**
+1. Go to: **https://github.com/toonjd/netmx/actions**
 2. You should see **"Publish to NuGet"** workflow starting
 3. Click on it to watch progress
 
@@ -331,7 +331,7 @@ The workflow has **two jobs**:
 - Runs immediately
 - Builds all 9 packages
 - Publishes to **GitHub Packages**
-- Target: `https://nuget.pkg.github.com/jdtoon/index.json`
+- Target: `https://nuget.pkg.github.com/toonjd/index.json`
 - Takes ~3-4 minutes
 
 **You'll see:**
@@ -412,7 +412,7 @@ dotnet add package NetMX.Core --version 0.1.0-alpha
 
 2. Add GitHub Packages source:
 ```powershell
-dotnet nuget add source https://nuget.pkg.github.com/jdtoon/index.json `
+dotnet nuget add source https://nuget.pkg.github.com/toonjd/index.json `
   --name github `
   --username jdtoon `
   --password ghp_YourTokenHere `
@@ -499,10 +499,10 @@ dotnet add package NetMX.Core --version 0.1.0-alpha
 
 | What | URL |
 |------|-----|
-| **Environments** | https://github.com/jdtoon/netmx/settings/environments |
-| **Secrets** | https://github.com/jdtoon/netmx/settings/secrets/actions |
-| **Actions** | https://github.com/jdtoon/netmx/actions |
-| **Releases** | https://github.com/jdtoon/netmx/releases |
+| **Environments** | https://github.com/toonjd/netmx/settings/environments |
+| **Secrets** | https://github.com/toonjd/netmx/settings/secrets/actions |
+| **Actions** | https://github.com/toonjd/netmx/actions |
+| **Releases** | https://github.com/toonjd/netmx/releases |
 | **Packages** | https://github.com/jdtoon?tab=packages |
 | **NuGet.org API Keys** | https://www.nuget.org/account/apikeys |
 | **GitHub PAT** | https://github.com/settings/tokens/new |

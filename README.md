@@ -1,6 +1,6 @@
 # NetMX Framework
 
-[![Build Status](https://github.com/jdtoon/netmx/actions/workflows/ci-build.yml/badge.svg)](https://github.com/jdtoon/netmx/actions)
+[![Build Status](https://github.com/toonjd/netmx/actions/workflows/ci-build.yml/badge.svg)](https://github.com/toonjd/netmx/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![.NET 9.0](https://img.shields.io/badge/.NET-9.0-purple.svg)](https://dotnet.microsoft.com/download)
 
@@ -38,7 +38,7 @@ dotnet run --project src/MyApp.Web
 
 ```bash
 # Clone the repository
-git clone https://github.com/jdtoon/netmx.git
+git clone https://github.com/toonjd/netmx.git
 cd netmx
 
 # Build the framework
@@ -162,7 +162,7 @@ modules/
 
 ```bash
 # Clone the repository
-git clone https://github.com/jdtoon/netmx.git
+git clone https://github.com/toonjd/netmx.git
 cd netmx
 
 # Build the framework
@@ -235,15 +235,15 @@ See the [roadmap](docs/ROADMAP.md) for detailed progress and timeline.
 - **Discord** - Coming soon
 - **Twitter** - Coming soon
 
-For now, open an [issue](https://github.com/jdtoon/netmx/issues) for questions or feedback!
+For now, open an [issue](https://github.com/toonjd/netmx/issues) for questions or feedback!
 
 ## 🔗 Links
 
 - **Website**: Coming soon
 - **Documentation**: [docs/](docs/)
 - **NuGet Packages**: https://www.nuget.org/packages?q=netmx
-- **GitHub**: https://github.com/jdtoon/netmx
-- **Issues**: https://github.com/jdtoon/netmx/issues
+- **GitHub**: https://github.com/toonjd/netmx
+- **Issues**: https://github.com/toonjd/netmx/issues
 
 ---
 

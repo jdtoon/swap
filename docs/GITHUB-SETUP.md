@@ -30,7 +30,7 @@ dotnet nuget add source \
   --name github \
   --username jdtoon \
   --password $GITHUB_TOKEN \
-  https://nuget.pkg.github.com/jdtoon/index.json
+  https://nuget.pkg.github.com/toonjd/index.json
 
 dotnet add package NetMX.Core --version 1.0.0-beta
 ```
@@ -116,8 +116,8 @@ Each `.csproj` file in `framework/` needs package metadata:
   <Company>NetMX</Company>
   <Product>NetMX Framework</Product>
   <Description>Core abstractions and utilities for NetMX framework</Description>
-  <PackageProjectUrl>https://github.com/jdtoon/netmx</PackageProjectUrl>
-  <RepositoryUrl>https://github.com/jdtoon/netmx</RepositoryUrl>
+  <PackageProjectUrl>https://github.com/toonjd/netmx</PackageProjectUrl>
+  <RepositoryUrl>https://github.com/toonjd/netmx</RepositoryUrl>
   <RepositoryType>git</RepositoryType>
   <PackageTags>netmx;framework;ddd;htmx;modular-monolith</PackageTags>
   <PackageLicenseExpression>MIT</PackageLicenseExpression>
@@ -163,7 +163,7 @@ Each `.csproj` file in `framework/` needs package metadata:
    - Enter version: `0.1.0-beta.1`
 
 3. **Packages published to GitHub Packages**:
-   - Available at: `https://github.com/jdtoon/netmx/packages`
+   - Available at: `https://github.com/toonjd/netmx/packages`
 
 ### For Stable Production Releases
 
@@ -240,7 +240,7 @@ dotnet nuget remove source local
 ## Monitoring & Maintenance
 
 ### GitHub Actions
-- Monitor workflow runs: `https://github.com/jdtoon/netmx/actions`
+- Monitor workflow runs: `https://github.com/toonjd/netmx/actions`
 - Review deployment history in Environments
 
 ### NuGet.org
@@ -248,7 +248,7 @@ dotnet nuget remove source local
 - Download counts, dependencies, versions
 
 ### GitHub Packages
-- Package registry: `https://github.com/jdtoon/netmx/packages`
+- Package registry: `https://github.com/toonjd/netmx/packages`
 - Usage by other projects
 
 ## Troubleshooting
@@ -265,7 +265,7 @@ dotnet nuget add source \
   --name github \
   --username YOUR_USERNAME \
   --password YOUR_PAT \
-  https://nuget.pkg.github.com/jdtoon/index.json
+  https://nuget.pkg.github.com/toonjd/index.json
 ```
 
 ### Version Conflicts
