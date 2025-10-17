@@ -1,28 +1,55 @@
 using Microsoft.AspNetCore.Http;
 using NetMX.Ddd.Application.Uow;
-using System.Threading.Tasks;
 
-namespace NetMX.AspNetCore.Uow;
+namespace NetMX.AspNetCore.Core.Uow;
 
-public class UnitOfWorkMiddleware : IMiddleware
+/// <summary>
+/// Middleware that automatically wraps HTTP requests in a Unit of Work.
+/// Commits the UoW if the request succeeds (status less than 400), rolls back on exceptions or errors.
+/// </summary>
+public class UnitOfWorkMiddleware
 {
-    private readonly IUnitOfWorkManager _unitOfWorkManager;
+    private readonly RequestDelegate _next;
 
-    public UnitOfWorkMiddleware(IUnitOfWorkManager unitOfWorkManager)
+    /// <summary>
+    /// Initializes a new instance of the <see cref="UnitOfWorkMiddleware"/> class.
+    /// </summary>
+    public UnitOfWorkMiddleware(RequestDelegate next)
     {
-        _unitOfWorkManager = unitOfWorkManager;
+        _next = next;
     }
 
-    public async Task InvokeAsync(HttpContext context, RequestDelegate next)
+    /// <summary>
+    /// Invokes the middleware, wrapping the request in a Unit of Work.
+    /// </summary>
+    public async Task InvokeAsync(HttpContext context, IUnitOfWorkManager uowManager)
     {
-        // We will add logic here to check the UnitOfWorkAttribute
-        // to see if the UoW should be transactional or disabled.
-        // For now, we start a default one for every request.
-
-        using (var uow = _unitOfWorkManager.Begin())
+        // Skip if UoW already active (nested request)
+        if (uowManager.Current != null)
         {
-            await next(context);
-            await uow.CompleteAsync();
+            await _next(context);
+            return;
+        }
+
+        // Begin UoW for this request
+        using var uow = uowManager.Begin();
+
+        try
+        {
+            // Execute the request
+            await _next(context);
+
+            // If successful (status code < 400), commit
+            if (context.Response.StatusCode < 400)
+            {
+                await uow.CompleteAsync();
+            }
+            // Otherwise UoW will rollback on dispose
+        }
+        catch
+        {
+            // Exception will rollback automatically on dispose
+            throw;
         }
     }
 }

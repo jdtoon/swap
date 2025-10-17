@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Builder;
-using NetMX.AspNetCore.Uow;
+using NetMX.AspNetCore.Core.Uow;
 
-namespace NetMX.AspNetCore;
+namespace NetMX.AspNetCore.Core;
 
 public static class NetMXApplicationBuilderExtensions
 {

@@ -27,6 +27,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NetMX.Ddd.Application.Tests
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NetMX.EntityFrameworkCore.Tests", "NetMX.EntityFrameworkCore.Tests\NetMX.EntityFrameworkCore.Tests.csproj", "{B7C065C0-C83C-4909-82C3-2126D126A95B}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NetMX.AspNetCore.Core.Tests", "NetMX.AspNetCore.Core.Tests\NetMX.AspNetCore.Core.Tests.csproj", "{421D9E79-7EC3-4C7D-9DBF-1400D75BEEF8}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -181,6 +183,18 @@ Global
 		{B7C065C0-C83C-4909-82C3-2126D126A95B}.Release|x64.Build.0 = Release|Any CPU
 		{B7C065C0-C83C-4909-82C3-2126D126A95B}.Release|x86.ActiveCfg = Release|Any CPU
 		{B7C065C0-C83C-4909-82C3-2126D126A95B}.Release|x86.Build.0 = Release|Any CPU
+		{421D9E79-7EC3-4C7D-9DBF-1400D75BEEF8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{421D9E79-7EC3-4C7D-9DBF-1400D75BEEF8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{421D9E79-7EC3-4C7D-9DBF-1400D75BEEF8}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{421D9E79-7EC3-4C7D-9DBF-1400D75BEEF8}.Debug|x64.Build.0 = Debug|Any CPU
+		{421D9E79-7EC3-4C7D-9DBF-1400D75BEEF8}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{421D9E79-7EC3-4C7D-9DBF-1400D75BEEF8}.Debug|x86.Build.0 = Debug|Any CPU
+		{421D9E79-7EC3-4C7D-9DBF-1400D75BEEF8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{421D9E79-7EC3-4C7D-9DBF-1400D75BEEF8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{421D9E79-7EC3-4C7D-9DBF-1400D75BEEF8}.Release|x64.ActiveCfg = Release|Any CPU
+		{421D9E79-7EC3-4C7D-9DBF-1400D75BEEF8}.Release|x64.Build.0 = Release|Any CPU
+		{421D9E79-7EC3-4C7D-9DBF-1400D75BEEF8}.Release|x86.ActiveCfg = Release|Any CPU
+		{421D9E79-7EC3-4C7D-9DBF-1400D75BEEF8}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
