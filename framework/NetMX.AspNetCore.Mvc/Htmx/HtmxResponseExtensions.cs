@@ -54,6 +54,14 @@ public static class HtmxResponseExtensions
     }
 
     /// <summary>
+    /// Tells HTMX to do a client-side redirect with additional context.
+    /// </summary>
+    public static void HxLocation(this Controller controller, HtmxLocation location)
+    {
+        controller.Response.Headers[HX_LOCATION] = location.ToJson();
+    }
+
+    /// <summary>
     /// Specifies how the response will be swapped. See HtmxSwap enum for options.
     /// </summary>
     public static void HxReswap(this Controller controller, string swapStyle)
