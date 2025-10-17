@@ -1,0 +1,20 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\NetMX.Identity.Core\NetMX.Identity.Core.csproj" />
+    <ProjectReference Include="..\..\..\framework\NetMX.Ddd.Application\NetMX.Ddd.Application.csproj" />
+    <ProjectReference Include="..\NetMX.Identity.Contracts\NetMX.Identity.Contracts.csproj" />
+    <ProjectReference Include="..\..\..\framework\NetMX.Core\NetMX.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.0" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+</Project>
