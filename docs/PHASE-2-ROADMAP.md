@@ -8,14 +8,19 @@
 
 ## 🎯 Vision
 
-Build the **essential infrastructure** needed for production applications:
+Build the **essential infrastructure** needed for production applications with **observability-first approach**:
 - Authorization (permissions, roles, policies)
 - Settings management (global, user, tenant-ready)
 - Complete audit logging (entity changes, actions)
-- Background jobs (scheduled tasks, queues)
-- Caching (in-memory, distributed)
+- **Observability & Monitoring** (metrics, tracing, health checks)
+- **Testing Infrastructure** (unit, integration, E2E)
 
-**Why Phase 2**: Phase 1 proved the architecture works. Phase 2 makes it production-ready.
+**Platform Strategy**: 
+- **Free Tier**: Core framework + essential modules (Identity, Auth, Settings, Basic Audit)
+- **Standard Tier**: Advanced modules (Multi-tenancy, Jobs, Cache, Email, BLOB, CMS)
+- **Enterprise Tier**: Observability dashboards, distributed tracing, analytics, premium support
+
+**Why Phase 2**: Phase 1 proved the architecture works. Phase 2 makes it production-ready with enterprise-grade observability.
 
 ---
 
@@ -260,11 +265,202 @@ RecurringJob.AddOrUpdate<CleanupJob>(
 
 ---
 
-### 5. Caching Module
+### 5. Observability & Monitoring Module (FREE - Core Feature)
+
+**Priority**: 🔥🔥🔥 **Must Have** (Built into every module)  
+**Effort**: 2 weeks  
+**Status**: Not started
+
+#### Why Observability Is Core
+- ✅ Production-ready requires visibility
+- ✅ Debug issues faster
+- ✅ Performance optimization
+- ✅ Enterprise users demand it
+- ✅ Competitive advantage over ABP
+
+#### Features
+- [ ] Health checks
+  - [ ] Liveness checks (is service alive?)
+  - [ ] Readiness checks (can handle traffic?)
+  - [ ] Database connectivity
+  - [ ] External dependency checks
+  - [ ] Health check UI (HTMX dashboard)
+- [ ] Metrics (Prometheus format)
+  - [ ] Request/response metrics
+  - [ ] Database query metrics
+  - [ ] Cache hit/miss rates
+  - [ ] Business metrics (e.g., users created, orders placed)
+  - [ ] Custom metric decorators
+- [ ] Distributed tracing (OpenTelemetry)
+  - [ ] Request tracing across services
+  - [ ] Database query tracing
+  - [ ] External API call tracing
+  - [ ] Trace correlation
+  - [ ] Jaeger/Zipkin integration
+- [ ] Structured logging (Serilog)
+  - [ ] Request/response logging
+  - [ ] Exception logging with context
+  - [ ] Audit action logging
+  - [ ] Log enrichment (user, tenant, correlation)
+  - [ ] Multiple sinks (Console, File, Seq, Elasticsearch)
+- [ ] Performance monitoring
+  - [ ] Slow query detection
+  - [ ] Memory usage tracking
+  - [ ] CPU usage tracking
+  - [ ] Request duration percentiles (p50, p95, p99)
+
+#### Technical Approach
+```csharp
+// Health Checks (Built-in)
+builder.Services.AddHealthChecks()
+    .AddCheck<DatabaseHealthCheck>("database")
+    .AddCheck<RedisHealthCheck>("redis")
+    .AddCheck<CustomHealthCheck>("custom");
+
+// Metrics (Prometheus)
+[Metrics("netmx.users")]
+public class UserService
+{
+    [CounterMetric("users.created")]
+    public async Task<User> CreateAsync(CreateUserDto dto)
+    {
+        // Automatically increments counter
+    }
+    
+    [DurationMetric("users.query.duration")]
+    public async Task<List<User>> GetAllAsync()
+    {
+        // Automatically records duration
+    }
+}
+
+// Distributed Tracing (OpenTelemetry)
+using var activity = ActivitySource.StartActivity("CreateUser");
+activity?.SetTag("user.email", dto.Email);
+activity?.SetTag("user.role", dto.RoleName);
+
+// Structured Logging (Serilog)
+_logger.LogInformation(
+    "User {UserId} created by {CreatorId} with role {Role}",
+    user.Id, _currentUser.Id, dto.RoleName);
+```
+
+#### Observability UI (FREE)
+- [ ] Health check dashboard (`/health-ui`)
+- [ ] Metrics endpoint (`/metrics` - Prometheus format)
+- [ ] Basic request logging view
+- [ ] Error log viewer
+
+#### Enterprise Observability (PAID - Enterprise Tier)
+- [ ] Real-time metrics dashboard
+- [ ] Custom dashboards (Grafana-like)
+- [ ] Alert configuration UI
+- [ ] Performance insights & recommendations
+- [ ] Automatic anomaly detection
+- [ ] Cost analysis (cloud resource usage)
+
+---
+
+### 6. Testing Infrastructure (FREE - Core Feature)
+
+**Priority**: 🔥🔥🔥 **Must Have**  
+**Effort**: 2 weeks  
+**Status**: Not started
+
+#### Features
+- [ ] Unit testing helpers
+  - [ ] Test base classes
+  - [ ] Mock repository builder
+  - [ ] Test data builders
+  - [ ] In-memory database setup
+- [ ] Integration testing
+  - [ ] WebApplicationFactory setup
+  - [ ] Database seeding
+  - [ ] Authentication helpers
+  - [ ] HTMX response assertions
+- [ ] E2E testing (Playwright)
+  - [ ] Page object models
+  - [ ] HTMX interaction helpers
+  - [ ] Screenshot on failure
+  - [ ] Test data cleanup
+- [ ] Performance testing
+  - [ ] Load testing templates (k6)
+  - [ ] Benchmark helpers
+  - [ ] Performance regression detection
+- [ ] CLI testing support
+  - [ ] `netmx generate test Feature -m Module`
+  - [ ] Generates unit + integration tests
+  - [ ] Includes test data builders
+
+#### Technical Approach
+```csharp
+// Unit Test with Helpers
+public class UserServiceTests : NetMXTestBase
+{
+    [Fact]
+    public async Task CreateUser_ShouldSucceed()
+    {
+        // Arrange
+        var service = GetRequiredService<IUserService>();
+        var dto = new CreateUserDtoBuilder()
+            .WithEmail("test@test.com")
+            .Build();
+        
+        // Act
+        var user = await service.CreateAsync(dto);
+        
+        // Assert
+        user.Should().NotBeNull();
+        user.Email.Should().Be("test@test.com");
+    }
+}
+
+// Integration Test
+public class UsersControllerTests : NetMXWebApplicationTest
+{
+    [Fact]
+    public async Task GetUsers_ShouldReturnHtmxPartial()
+    {
+        // Arrange
+        var client = CreateClient();
+        client.DefaultRequestHeaders.Add("HX-Request", "true");
+        
+        // Act
+        var response = await client.GetAsync("/Users");
+        
+        // Assert
+        response.Should().BeSuccessful();
+        response.Should().HaveHeader("HX-Trigger");
+    }
+}
+
+// E2E Test (Playwright)
+[Test]
+public async Task UserCanLogin()
+{
+    await Page.GotoAsync("/login");
+    await Page.FillAsync("#email", "admin@test.com");
+    await Page.FillAsync("#password", "Test123!");
+    await Page.ClickAsync("button[type=submit]");
+    
+    await Expect(Page).ToHaveURLAsync("/dashboard");
+}
+```
+
+---
+
+### 7. Background Jobs Module (STANDARD TIER - Paid)
 
 **Priority**: 🔥🔥 **High**  
 **Effort**: 1 week  
 **Status**: Not started
+**Tier**: 💰 **Standard** ($99/month or $999/year)
+
+#### Why Paid?
+- Advanced feature for production apps
+- Requires Hangfire Pro license (we absorb cost)
+- Ongoing maintenance & support
+- Enterprise job monitoring features
 
 #### Features
 - [ ] Cache providers
