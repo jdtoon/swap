@@ -6,11 +6,20 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
 
+    <!-- Global Tool Configuration -->
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>netmx</ToolCommandName>
     <PackageOutputPath>./nupkg</PackageOutputPath>
-    <Description>Command-Line Interface for the NetMX Framework.</Description>
     
+    <!-- Package Metadata -->
+    <PackageId>NetMX.CLI</PackageId>
+    <Description>Command-Line Interface for the NetMX Framework. Scaffold modules, generate CRUD features, and more.</Description>
+    <PackageTags>netmx;cli;scaffolding;code-generation;htmx</PackageTags>
+    
+    <!-- Assembly Information -->
+    <AssemblyVersion>0.1.0.0</AssemblyVersion>
+    <FileVersion>0.1.0.0</FileVersion>
+    <InformationalVersion>0.1.0</InformationalVersion>
   </PropertyGroup>
 
   <ItemGroup>

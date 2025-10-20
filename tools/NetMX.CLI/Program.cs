@@ -1,5 +1,6 @@
 ﻿using System.CommandLine;
 using System.CommandLine.Parsing;
+using System.Reflection;
 using NetMX.CLI.Commands;
 using NetMX.CLI.Infrastructure;
 
@@ -9,7 +10,13 @@ class Program
     {
         var rootCommand = new RootCommand("NetMX CLI - The best tooling for .NET + HTMX developers");
 
-        // Display banner
+        // Display banner or version
+        if (args.Contains("--version") || args.Contains("-v"))
+        {
+            DisplayVersion();
+            return 0;
+        }
+        
         if (args.Length == 0 || args.Contains("--help") || args.Contains("-h"))
         {
             DisplayBanner();
@@ -105,7 +112,33 @@ class Program
 ");
         Console.ResetColor();
         ConsoleHelper.WriteInfo("The best CLI for .NET + HTMX developers");
-        ConsoleHelper.WriteInfo("Version 0.1.0-alpha");
+        
+        var version = GetVersion();
+        ConsoleHelper.WriteInfo($"Version {version}");
         Console.WriteLine();
+    }
+
+    private static void DisplayVersion()
+    {
+        var version = GetVersion();
+        var informationalVersion = GetInformationalVersion();
+        
+        Console.WriteLine($"NetMX CLI version {informationalVersion}");
+        Console.WriteLine($"Assembly version: {version}");
+        Console.WriteLine($".NET Runtime: {Environment.Version}");
+    }
+
+    private static string GetVersion()
+    {
+        var assembly = Assembly.GetExecutingAssembly();
+        var version = assembly.GetName().Version;
+        return version?.ToString(3) ?? "0.1.0";
+    }
+
+    private static string GetInformationalVersion()
+    {
+        var assembly = Assembly.GetExecutingAssembly();
+        var attribute = assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>();
+        return attribute?.InformationalVersion ?? GetVersion();
     }
 }
