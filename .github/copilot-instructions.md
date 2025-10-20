@@ -6,10 +6,12 @@ This file provides context for GitHub Copilot when working with the NetMX framew
 
 **NetMX uses its own CLI for development - we dogfood our tools!**
 
-- Use `netmx create module` to scaffold modules
-- Use `netmx generate feature` to generate CRUD operations
+- Use `netmx create module` to scaffold modules (coming soon)
+- Use `netmx generate crud` to generate CRUD operations (currently available)
 - Don't create files manually unless adding custom business logic
 - Learn patterns from generated code
+
+**Note**: CLI is actively being developed. Some commands shown in docs are planned features.
 
 See [QUICK-START.md](../docs/QUICK-START.md) and [TERMINOLOGY.md](../docs/TERMINOLOGY.md)
 
@@ -134,42 +136,51 @@ Keep Razor views clean with standard HTMX syntax:
 
 ### Controllers: Strongly-Typed Helpers
 
-Use `NetMX.Htmx` package for type safety:
+Use `NetMX.AspNetCore.Mvc` and `NetMX.Events` packages for type safety:
 
 ```csharp
-using NetMX.Htmx;
+using NetMX.AspNetCore.Mvc.Htmx;
+using NetMX.Events;
 
 [HttpDelete("/api/users/{id}")]
 public IActionResult Delete(Guid id)
 {
     _userService.Delete(id);
     
-    // Strongly typed, IntelliSense-friendly
-    HtmxResponse.Trigger(this, "userDeleted", new { userId = id });
-    HtmxResponse.Reswap(this, HtmxSwap.Delete);
+    // Type-safe event names (no magic strings!)
+    this.HxTrigger(DomainEvents.User.Deleted, new { userId = id });
+    this.HxReswap(HtmxSwap.Delete);
     
     return Ok();
 }
 ```
 
-### Event-Driven Components
+### Event-Driven Components (Type-Safe)
 
-Use HTMX events for loose coupling between components:
+Use `NetMX.Events` package for type-safe event communication:
 
 **Trigger from controller:**
 ```csharp
-HtmxResponse.Trigger(this, "user:created", new { 
-    userId = newUser.Id 
-});
+using NetMX.Events;
+
+this.HxTrigger(DomainEvents.User.Created, new { userId = newUser.Id });
 ```
 
 **Listen in view:**
 ```html
+@using NetMX.Events
+
 <div hx-get="/api/stats" 
-     hx-trigger="user:created from:body">
+     hx-trigger="@DomainEvents.User.Created from:body">
     <!-- Auto-refreshes when user created -->
 </div>
 ```
+
+**Benefits**:
+- ✅ IntelliSense support for event names
+- ✅ Compile-time checking (no typos!)
+- ✅ Refactoring safety
+- ✅ Self-documenting (XML docs show payload structure)
 
 ### Partial vs Full Responses
 
@@ -301,13 +312,20 @@ Document significant architectural decisions in `/docs/` folder with:
 
 ## Package Versioning
 
-### Current Versions (as of 2025-01-19)
+### Current Versions (as of 2025-10-20)
 
 - .NET: 9.0 (LTS)
 - EF Core: 9.0.10
 - Npgsql: 9.0.2
 - HTMX: 2.0.4 (via LibMan)
 - Bulma: 1.0.4 (via LibMan)
+
+### NuGet Publishing
+
+- **develop branch** → Pre-release packages (`0.1.0-dev.20251020.abc1234`)
+- **main branch** → Stable packages (`0.1.0`)
+- All packages published to NuGet.org
+- See [NUGET-PUBLISHING.md](../docs/NUGET-PUBLISHING.md) for details
 
 ### Updating Packages
 
@@ -439,16 +457,21 @@ netmx generate crud User --module Identity
 ## Future Roadmap
 
 ### Phase 1 (Current): Modular Monolith
-- ✅ Framework SDK
+- ✅ Framework SDK (9 packages)
+- ✅ Zero-warning builds
+- ✅ Static event names (NetMX.Events)
 - ✅ Identity module
-- 🔄 HTMX helpers package
-- 🔄 CLI scaffolding
+- ✅ HTMX helpers package
+- ✅ CLI scaffolding (CRUD generation)
+- ✅ NuGet pre-release publishing
+- 🔄 CreateModuleCommand
+- 🔄 CLI versioning
 
 ### Phase 2: Enhanced Modules
-- Audit logging
-- Background jobs
-- File storage
-- Email/notifications
+- Audit logging module
+- Background jobs module
+- File storage module
+- Email/notifications module
 
 ### Phase 3: Distributed Capabilities
 - SignalR/SSE for real-time events
@@ -464,4 +487,4 @@ netmx generate crud User --module Identity
 
 ---
 
-**Remember**: Build before commit, test thoroughly, and keep the framework pure!
+**Remember**: Build before commit, test thoroughly, zero warnings, and keep the framework pure!

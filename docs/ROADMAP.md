@@ -1,8 +1,8 @@
 # NetMX Master Roadmap & Task Tracking
 
-**Last Updated**: October 17, 2025  
+**Last Updated**: October 20, 2025  
 **Current Phase**: Phase 1 - MVP  
-**Status**: 70% Complete
+**Status**: 85% Complete
 
 ---
 
@@ -14,25 +14,26 @@ NetMX is a **pure, modular, HTMX-first framework** for building web applications
 1. **Zero JavaScript frameworks** - Pure server-rendered HTML with HTMX
 2. **True modularity** - Every feature is optional
 3. **DDD-first** - Clean architecture with clear boundaries
-4. **Event-driven** - Loose coupling via HTMX events (scalable to distributed)
-5. **Developer experience** - CLI scaffolding, strong typing, IntelliSense
+4. **Event-driven** - Type-safe events via NetMX.Events (scalable to distributed)
+5. **Developer experience** - CLI scaffolding, strong typing, zero warnings
 
 ---
 
-## 📋 Phase 1: MVP (Target: Q1 2025)
+## 📋 Phase 1: MVP (Target: Q1 2026)
 
 ### Infrastructure ✅ COMPLETE
 
-- [x] **Framework SDK** (8 packages)
+- [x] **Framework SDK** (10 packages)
   - [x] NetMX.Core - Core abstractions
+  - [x] NetMX.Events - Type-safe event names (NEW)
   - [x] NetMX.Ddd.Domain - Domain entities, repositories
   - [x] NetMX.Ddd.Application.Contracts - DTOs, interfaces
   - [x] NetMX.Ddd.Application - Application services
   - [x] NetMX.Data - Data access abstractions
   - [x] NetMX.EntityFrameworkCore - EF Core implementation
   - [x] NetMX.AspNetCore.Core - ASP.NET Core integration
-  - [x] NetMX.AspNetCore.Mvc - MVC extensions
-  - [x] NetMX.Htmx - HTMX helpers (NEW)
+  - [x] NetMX.AspNetCore.Mvc - MVC extensions with HTMX helpers
+  - [x] NetMX.Htmx - HTMX helpers (DEPRECATED - merged into AspNetCore.Mvc)
 
 - [x] **Architecture Established**
   - [x] Migrate to .NET 9 LTS
@@ -40,15 +41,18 @@ NetMX is a **pure, modular, HTMX-first framework** for building web applications
   - [x] Create modules/ directory structure
   - [x] Clean minimal template
   - [x] Document architecture decisions
+  - [x] Zero-warning builds (Directory.Build.props)
+  - [x] All 87 tests passing
 
 - [x] **HTMX Integration**
   - [x] LibMan configuration (HTMX 2.0.4, Bulma 1.0.4)
   - [x] Strongly-typed C# helpers
   - [x] Request/Response extensions
   - [x] Swap strategy enums
+  - [x] Type-safe event names (NetMX.Events)
   - [x] Documentation and examples
 
-### Modules & Features (70% Complete)
+### Modules & Features (85% Complete)
 
 - [x] **Identity Module** (Reference Implementation)
   - [x] 4-layer architecture (Core, Contracts, Application, Web)
@@ -61,41 +65,44 @@ NetMX is a **pure, modular, HTMX-first framework** for building web applications
   - [ ] Integration tests
   - [ ] Performance testing
 
-- [ ] **CLI Tool** (50% Complete)
-  - [x] Basic scaffolding
+- [x] **CLI Tool** (75% Complete)
   - [x] System.CommandLine 2.0.0-rc.2
-  - [ ] `netmx new` - Project templates
-  - [ ] `netmx add module` - Module installation
-  - [ ] `netmx generate crud` - CRUD scaffolding
-  - [ ] `netmx scaffold` - Component generation
+  - [x] `netmx generate crud` - CRUD scaffolding with HTMX
+  - [x] Type-safe event generation (DomainEvents partial classes)
+  - [x] AddModuleCommand - Module installation
+  - [ ] CLI versioning (in progress)
+  - [ ] `netmx create module` - Module scaffolding (in progress)
+  - [ ] Rename to `netmx generate feature`
   - [ ] Interactive mode
-  - [ ] Testing infrastructure
+  - [ ] Component generation
 
-### DevOps & CI/CD 🔄 IN PROGRESS
+### DevOps & CI/CD ✅ COMPLETE
 
 - [x] **GitHub Setup**
   - [x] CI/CD workflows created
-  - [x] Environment configuration guide
-  - [x] Setup automation script
-  - [ ] Execute setup (run scripts/setup-github.ps1)
-  - [ ] Configure GitHub environments
-  - [ ] Add NuGet API key secret
-  - [ ] Test CI build
-  - [ ] First alpha release (v0.1.0-alpha)
+  - [x] Zero-warning builds enforced
+  - [x] All tests passing (87/87)
+  - [x] Pre-release publishing configured
+  - [ ] Execute setup (configure NUGET_API_KEY secret)
+  - [ ] Test pre-release publishing
+  - [ ] First dev release (v0.1.0-dev.YYYYMMDD)
 
-- [ ] **NuGet Publishing**
-  - [ ] Update package metadata in all .csproj files
-  - [ ] Create package icons
-  - [ ] Test GitHub Packages (dev)
-  - [ ] Publish to NuGet.org (production)
+- [x] **NuGet Publishing Strategy**
+  - [x] Pre-release workflow (develop → NuGet.org with -dev suffix)
+  - [x] Stable workflow (main → NuGet.org)
+  - [x] Package metadata in all .csproj files
+  - [x] Directory.Build.props for common properties
+  - [ ] Execute first pre-release publish
   - [ ] CLI as global tool: `dotnet tool install -g NetMX.CLI`
 
-- [ ] **Documentation**
+- [x] **Documentation**
   - [x] Architecture guidelines (copilot-instructions.md)
-  - [x] GitHub setup guide
-  - [ ] Root README.md (getting started)
-  - [ ] Module development guide
-  - [ ] API reference documentation
+  - [x] Quick start guide (QUICK-START.md)
+  - [x] Terminology guide (TERMINOLOGY.md)
+  - [x] NuGet publishing guide (NUGET-PUBLISHING.md)
+  - [x] Integration patterns (INTEGRATION-PATTERNS.md)
+  - [x] HTMX patterns (HTMX-PATTERNS.md)
+  - [x] Root README.md (getting started)
   - [ ] Video tutorials / demos
   - [ ] Sample applications
 

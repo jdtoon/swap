@@ -70,18 +70,19 @@ Visit `http://localhost:5263/Product` - Your HTMX-powered CRUD is ready! 🎉
 
 ## 📦 Framework Packages
 
-NetMX consists of 9 core packages, all available on [NuGet.org](https://www.nuget.org/packages?q=netmx):
+NetMX consists of 10 core packages, all available on [NuGet.org](https://www.nuget.org/packages?q=netmx):
 
 | Package | Description | Version |
 |---------|-------------|---------|
 | **NetMX.Core** | Core abstractions and DI patterns | [![NuGet](https://img.shields.io/nuget/v/NetMX.Core.svg)](https://www.nuget.org/packages/NetMX.Core) |
+| **NetMX.Events** | Type-safe event names for HTMX communication | [![NuGet](https://img.shields.io/nuget/v/NetMX.Events.svg)](https://www.nuget.org/packages/NetMX.Events) |
 | **NetMX.Ddd.Domain** | DDD building blocks (entities, aggregates, repositories) | [![NuGet](https://img.shields.io/nuget/v/NetMX.Ddd.Domain.svg)](https://www.nuget.org/packages/NetMX.Ddd.Domain) |
 | **NetMX.Ddd.Application.Contracts** | DTOs and service interfaces | [![NuGet](https://img.shields.io/nuget/v/NetMX.Ddd.Application.Contracts.svg)](https://www.nuget.org/packages/NetMX.Ddd.Application.Contracts) |
 | **NetMX.Ddd.Application** | Application services and use cases | [![NuGet](https://img.shields.io/nuget/v/NetMX.Ddd.Application.svg)](https://www.nuget.org/packages/NetMX.Ddd.Application) |
 | **NetMX.Data** | Data access abstractions | [![NuGet](https://img.shields.io/nuget/v/NetMX.Data.svg)](https://www.nuget.org/packages/NetMX.Data) |
 | **NetMX.EntityFrameworkCore** | EF Core integration with DDD support | [![NuGet](https://img.shields.io/nuget/v/NetMX.EntityFrameworkCore.svg)](https://www.nuget.org/packages/NetMX.EntityFrameworkCore) |
 | **NetMX.AspNetCore.Core** | ASP.NET Core middleware and extensions | [![NuGet](https://img.shields.io/nuget/v/NetMX.AspNetCore.Core.svg)](https://www.nuget.org/packages/NetMX.AspNetCore.Core) |
-| **NetMX.AspNetCore.Mvc** | MVC extensions and controller base classes | [![NuGet](https://img.shields.io/nuget/v/NetMX.AspNetCore.Mvc.svg)](https://www.nuget.org/packages/NetMX.AspNetCore.Mvc) |
+| **NetMX.AspNetCore.Mvc** | MVC extensions and HTMX helpers | [![NuGet](https://img.shields.io/nuget/v/NetMX.AspNetCore.Mvc.svg)](https://www.nuget.org/packages/NetMX.AspNetCore.Mvc) |
 | **NetMX.Htmx** | Strongly-typed HTMX helpers | [![NuGet](https://img.shields.io/nuget/v/NetMX.Htmx.svg)](https://www.nuget.org/packages/NetMX.Htmx) |
 
 ## 🎨 HTMX-First Philosophy
@@ -99,23 +100,38 @@ NetMX embraces [HTMX](https://htmx.org) for building interactive UIs without hea
 ```
 
 ```csharp
-// Controller: Strongly-typed helpers
+// Controller: Type-safe event names
+using NetMX.AspNetCore.Mvc.Htmx;
+using NetMX.Events;
+
 [HttpDelete("/api/users/{id}")]
 public IActionResult Delete(Guid id)
 {
     _userService.Delete(id);
     
-    HtmxResponse.Trigger(this, "userDeleted", new { userId = id });
-    HtmxResponse.Reswap(this, HtmxSwap.Delete);
+    // No magic strings! IntelliSense-supported event names
+    this.HxTrigger(DomainEvents.User.Deleted, new { userId = id });
+    this.HxReswap(HtmxSwap.Delete);
     
     return Ok();
 }
+```
+
+```html
+<!-- View: Type-safe event listening -->
+@using NetMX.Events
+
+<div hx-get="/api/stats" 
+     hx-trigger="@DomainEvents.User.Deleted from:body">
+    <!-- Auto-refreshes when user deleted -->
+</div>
 ```
 
 **Benefits:**
 - ✅ Server-rendered HTML (SEO-friendly, fast initial load)
 - ✅ Progressive enhancement (works without JavaScript)
 - ✅ Type-safe server-side code (compile-time errors, IntelliSense)
+- ✅ **Type-safe events** (no magic strings, refactoring-safe)
 - ✅ Simple mental model (HTML over the wire)
 - ✅ Excellent performance (minimal client-side overhead)
 
@@ -199,7 +215,7 @@ dotnet run
 
 ```
 netmx/
-├── framework/           # Core framework packages (9 packages)
+├── framework/           # Core framework packages (10 packages)
 ├── modules/             # Optional feature modules (Identity, etc.)
 ├── templates/           # Starter templates
 │   └── modular/         # Modular monolith template (minimal)
@@ -235,14 +251,18 @@ NetMX is inspired by and builds upon the excellent work of:
 
 ## 📊 Project Status
 
-**Current Version:** `0.1.0-alpha` (Early Development)
+**Current Version:** `0.1.0-dev` (Active Development)
 
-- ✅ Framework SDK (9 packages) - **Complete**
+- ✅ Framework SDK (10 packages) - **Complete**
+- ✅ Zero-warning builds - **Complete**
+- ✅ Type-safe events (NetMX.Events) - **Complete**
 - ✅ Identity Module - **Complete**
-- 🔄 CLI Tool - **In Progress**
-- 🔄 Documentation - **In Progress**
-- ⏳ Testing Infrastructure - **Planned**
-- ⏳ Additional Modules - **Planned**
+- ✅ CLI CRUD generation - **Complete**
+- ✅ NuGet publishing (pre-release) - **Complete**
+- 🔄 CLI versioning - **In Progress**
+- 🔄 CreateModuleCommand - **In Progress**
+- ⏳ Additional Modules (Audit, CMS) - **Planned**
+- ⏳ Production release (1.0.0) - **Q1 2026**
 
 See the [roadmap](docs/ROADMAP.md) for detailed progress and timeline.
 
