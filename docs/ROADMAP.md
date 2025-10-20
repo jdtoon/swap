@@ -334,7 +334,143 @@ NetMX is a **pure, modular, HTMX-first framework** for building web applications
 
 ---
 
-## 📋 Phase 4: Developer Experience (Target: 2026)
+## 📋 Phase 4: Distributed Architecture (Months 7-9, Target: Q2 2026)
+
+### Distributed Systems Support
+
+- [ ] **Distributed Event Bus**
+  - [ ] RabbitMQ integration
+  - [ ] Kafka integration
+  - [ ] Azure Service Bus
+  - [ ] AWS SQS/SNS
+  - [ ] Event replay
+  - [ ] Dead letter queues
+
+- [ ] **API Gateway**
+  - [ ] YARP integration
+  - [ ] Rate limiting
+  - [ ] Authentication forwarding
+  - [ ] Request/response transformation
+  - [ ] Circuit breaker
+  - [ ] Load balancing
+
+- [ ] **Microservices Template**
+  - [ ] Service-to-service auth
+  - [ ] Service discovery (Consul)
+  - [ ] Health checks
+  - [ ] Distributed tracing
+  - [ ] Service mesh (Istio)
+  - [ ] Docker/Kubernetes support
+
+---
+
+## 📋 Phase 5: Studio & Suite (Months 10-15, Target: Q3 2026) ⭐ NEW
+
+See [STUDIO-SUITE-VISION.md](STUDIO-SUITE-VISION.md) for complete details.
+
+### NetMX Studio (Desktop App - FREE)
+
+- [ ] **VS Code Fork** (Months 10-11)
+  - [ ] Fork VS Code codebase
+  - [ ] Custom branding & splash screen
+  - [ ] Pre-installed NetMX extensions
+  - [ ] Custom welcome screen
+  - [ ] Integrated CLI terminal
+  - [ ] Project templates
+
+- [ ] **Module Marketplace** (Month 11)
+  - [ ] Browse modules (free/paid)
+  - [ ] One-click installation
+  - [ ] License management
+  - [ ] Update notifications
+  - [ ] Dependency resolution
+
+- [ ] **Solution Explorer** (Month 11)
+  - [ ] Enhanced project view
+  - [ ] Module management UI
+  - [ ] Right-click actions (Update, Remove, Configure)
+  - [ ] Visual indicators (free/paid/installed)
+  - [ ] Dependency graph
+
+- [ ] **Observability Dashboard** (Month 11)
+  - [ ] Real-time health checks
+  - [ ] Request metrics
+  - [ ] Error logs
+  - [ ] Slow query detection
+  - [ ] Performance graphs
+
+- [ ] **Entity Designer** (Month 11)
+  - [ ] Visual entity builder
+  - [ ] Drag-and-drop properties
+  - [ ] Relationship mapping
+  - [ ] Validation rules
+  - [ ] One-click code generation
+
+- [ ] **HTMX Preview** (Month 11)
+  - [ ] Live HTMX preview
+  - [ ] Hot reload
+  - [ ] Request/response inspector
+  - [ ] Event visualization
+
+### NetMX Suite (Web SaaS - PAID)
+
+- [ ] **Visual Project Builder** (Month 12)
+  - [ ] Project templates
+  - [ ] Module selection
+  - [ ] Configuration wizard
+  - [ ] Preview structure
+  - [ ] Generate & download
+
+- [ ] **Advanced Entity Designer** (Month 12)
+  - [ ] Drag-and-drop canvas
+  - [ ] Entity relationships (1:1, 1:N, M:N)
+  - [ ] Inheritance support
+  - [ ] Business rules
+  - [ ] Custom methods
+
+- [ ] **UI Designer** (Month 13)
+  - [ ] HTMX component library
+  - [ ] Drag-and-drop layout
+  - [ ] Responsive design
+  - [ ] Theme customization (Bulma)
+  - [ ] Live preview
+
+- [ ] **Business Logic Editor** (Month 13)
+  - [ ] Visual rule builder
+  - [ ] Conditions (IF/THEN)
+  - [ ] Actions (Validate, Calculate, Send)
+  - [ ] Custom C# code editor
+  - [ ] Test runner
+
+- [ ] **Permission Designer** (Month 13)
+  - [ ] Visual role management
+  - [ ] Permission matrix
+  - [ ] Policy builder
+  - [ ] Test authorization rules
+
+- [ ] **Deployment Wizard** (Month 14)
+  - [ ] Azure deployment
+  - [ ] AWS deployment
+  - [ ] Docker container
+  - [ ] Cost estimation
+  - [ ] Environment configuration
+
+- [ ] **Polish & Launch** (Months 14-15)
+  - [ ] Beta testing (500 users)
+  - [ ] Documentation
+  - [ ] Video tutorials
+  - [ ] Marketing campaign
+  - [ ] Launch event
+
+### Suite Pricing
+
+- [ ] **Free Tier**: 1 project, 5 entities, NetMX branding
+- [ ] **Standard Tier**: $49/mo - Unlimited projects, export code
+- [ ] **Enterprise Tier**: $199/mo - Team collab, white-label
+
+---
+
+## 📋 Phase 6: Developer Experience & Community (Target: 2026)
 
 ### Tooling
 
