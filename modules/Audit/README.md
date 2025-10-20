@@ -15,7 +15,7 @@ Audit module for NetMX framework.
 
 ```bash
 cd Audit.Web
-netmx generate crud YourEntity
+netmx generate feature YourEntity -m Audit
 ```
 
 ### Integration

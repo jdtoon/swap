@@ -7,10 +7,11 @@ This file provides context for GitHub Copilot when working with the NetMX framew
 **NetMX uses its own CLI for development - we dogfood our tools!**
 
 - Use `netmx create module Audit` to scaffold modules ✅ **AVAILABLE**
-- Use `netmx generate crud AuditLog -m Audit` to generate CRUD in modules ✅ **AVAILABLE**
-- Use `netmx generate crud Product` to generate CRUD in apps ✅ **AVAILABLE**
+- Use `netmx generate feature AuditLog -m Audit` to generate features in modules ✅ **AVAILABLE**
+- Use `netmx generate feature Product` to generate features in apps ✅ **AVAILABLE**
 - Don't create files manually unless adding custom business logic
 - Learn patterns from generated code
+- **Note**: `netmx generate crud` still works as backward-compatible alias
 
 See [QUICK-START.md](../docs/QUICK-START.md) and [TERMINOLOGY.md](../docs/TERMINOLOGY.md)
 
@@ -107,7 +108,7 @@ netmx create module Audit
 
 # Generate features in the module
 cd modules/Audit/Audit.Web
-netmx generate crud AuditLog -m Audit
+netmx generate feature AuditLog -m Audit
 ```
 
 **Manual work only for**:
@@ -446,10 +447,10 @@ netmx new modular MyApp --output ./MyApp
 netmx add module Identity
 ```
 
-### Generating CRUD
+### Generating Features
 
 ```bash
-netmx generate crud User --module Identity
+netmx generate feature User --module Identity
 ```
 
 ## Performance Considerations

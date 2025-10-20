@@ -260,14 +260,14 @@ NetMX is inspired by and builds upon the excellent work of:
 - ✅ Type-safe events (NetMX.Events) - **Complete**
 - ✅ CLI versioning (`netmx --version`) - **Complete**
 - ✅ Module creation (`netmx create module`) - **Complete**
-- ✅ Feature generation (`netmx generate crud`) - **Complete**
+- ✅ Feature generation (`netmx generate feature`) - **Complete**
 - ✅ DDD patterns (Entity<Guid>, repository) - **Complete**
 - ✅ Dogfooding validated (Audit module) - **Complete**
 - ✅ NuGet publishing (pre-release) - **Complete**
 
 **What's Working:**
 - Create modules: `netmx create module Audit` ✅
-- Generate features: `netmx generate crud AuditLog -m Audit` ✅
+- Generate features: `netmx generate feature AuditLog -m Audit` ✅
 - DDD patterns: Entity<Guid>, IQueryableRepository ✅
 - Type-safe events: DomainEvents.AuditLog.Created ✅
 
