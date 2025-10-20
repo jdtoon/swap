@@ -18,38 +18,55 @@ NetMX is designed around a simple principle: **framework first, features optiona
 
 ## 🚀 Quick Start
 
-### Installation
+**From zero to HTMX app in 5 minutes!** See [QUICK-START.md](docs/QUICK-START.md) for detailed guide.
+
+### 1. Install CLI
 
 ```bash
-# Install the CLI tool (coming soon)
-dotnet tool install -g NetMX.CLI
+# Install NetMX CLI globally
+dotnet tool install --global NetMX.CLI
 
-# Create a new modular monolith application
-netmx new modular MyApp --output ./MyApp
-
-# Navigate to your app
-cd MyApp
-
-# Run it!
-dotnet run --project src/MyApp.Web
+# Verify installation
+netmx --help
 ```
 
-### Manual Installation (Current)
+### 2. Create Project
 
 ```bash
-# Clone the repository
-git clone https://github.com/toonjd/netmx.git
-cd netmx
+# Clone template (dotnet templates coming soon)
+git clone https://github.com/netmx-framework/template-modular.git MyApp
+cd MyApp
+```
 
-# Build the framework
-dotnet build framework/NetMX.sln
+### 3. Start Database
 
-# Run the template
-cd templates/modular/src/NetMXApp.Web
+```bash
+# Using Docker (recommended)
+docker-compose up -d db
+```
+
+### 4. Generate Your First Feature
+
+```bash
+cd src/MyApp.Web
+
+# Generate complete CRUD with HTMX patterns
+netmx generate feature Product
+
+# Add DbSet to AppDbContext, then migrate
+dotnet ef migrations add AddProduct
+dotnet ef database update
+```
+
+### 5. Run!
+
+```bash
 dotnet run
 ```
 
-Visit `https://localhost:5001` and see your HTMX-powered application!
+Visit `http://localhost:5263/Product` - Your HTMX-powered CRUD is ready! 🎉
+
+**No manual file creation. No boilerplate. Just CLI commands and business logic.**
 
 ## 📦 Framework Packages
 
