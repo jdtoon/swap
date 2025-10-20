@@ -31,6 +31,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NetMX.AspNetCore.Core.Tests
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NetMX.AspNetCore.Mvc.Tests", "NetMX.AspNetCore.Mvc.Tests\NetMX.AspNetCore.Mvc.Tests.csproj", "{5FC559C6-E102-4672-95AE-37455D886E58}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NetMX.Events", "NetMX.Events\NetMX.Events.csproj", "{0E57376C-0439-4E7A-BA0B-3A5E16C3A705}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -209,6 +211,18 @@ Global
 		{5FC559C6-E102-4672-95AE-37455D886E58}.Release|x64.Build.0 = Release|Any CPU
 		{5FC559C6-E102-4672-95AE-37455D886E58}.Release|x86.ActiveCfg = Release|Any CPU
 		{5FC559C6-E102-4672-95AE-37455D886E58}.Release|x86.Build.0 = Release|Any CPU
+		{0E57376C-0439-4E7A-BA0B-3A5E16C3A705}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0E57376C-0439-4E7A-BA0B-3A5E16C3A705}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0E57376C-0439-4E7A-BA0B-3A5E16C3A705}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{0E57376C-0439-4E7A-BA0B-3A5E16C3A705}.Debug|x64.Build.0 = Debug|Any CPU
+		{0E57376C-0439-4E7A-BA0B-3A5E16C3A705}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{0E57376C-0439-4E7A-BA0B-3A5E16C3A705}.Debug|x86.Build.0 = Debug|Any CPU
+		{0E57376C-0439-4E7A-BA0B-3A5E16C3A705}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0E57376C-0439-4E7A-BA0B-3A5E16C3A705}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0E57376C-0439-4E7A-BA0B-3A5E16C3A705}.Release|x64.ActiveCfg = Release|Any CPU
+		{0E57376C-0439-4E7A-BA0B-3A5E16C3A705}.Release|x64.Build.0 = Release|Any CPU
+		{0E57376C-0439-4E7A-BA0B-3A5E16C3A705}.Release|x86.ActiveCfg = Release|Any CPU
+		{0E57376C-0439-4E7A-BA0B-3A5E16C3A705}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

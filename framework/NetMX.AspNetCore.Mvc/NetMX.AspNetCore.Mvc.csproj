@@ -35,5 +35,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\NetMX.AspNetCore.Core\NetMX.AspNetCore.Core.csproj" />
+    <ProjectReference Include="..\NetMX.Events\NetMX.Events.csproj" />
   </ItemGroup>
 </Project>

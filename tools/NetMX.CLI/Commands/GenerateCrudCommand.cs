@@ -54,10 +54,13 @@ public class GenerateCrudCommand
             ConsoleHelper.WriteStep(3, "Generating service interface and implementation");
             GenerateService(webProjectDir);
 
-            ConsoleHelper.WriteStep(4, "Generating controller with HTMX support");
+            ConsoleHelper.WriteStep(4, "Generating event constants");
+            GenerateEventConstants(webProjectDir);
+
+            ConsoleHelper.WriteStep(5, "Generating controller with HTMX support");
             GenerateController(webProjectDir);
 
-            ConsoleHelper.WriteStep(5, "Generating views with HTMX patterns");
+            ConsoleHelper.WriteStep(6, "Generating views with HTMX patterns");
             GenerateViews(webProjectDir);
 
             ConsoleHelper.WriteSuccess($"CRUD for '{_entityName}' generated successfully!");
@@ -68,6 +71,7 @@ public class GenerateCrudCommand
             ConsoleHelper.WriteInfo($"  - Dtos/Update{_entityName}Dto.cs");
             ConsoleHelper.WriteInfo($"  - Services/I{_entityName}Service.cs");
             ConsoleHelper.WriteInfo($"  - Services/{_entityName}Service.cs");
+            ConsoleHelper.WriteInfo($"  - Events/DomainEvents.{_entityName}.cs");
             ConsoleHelper.WriteInfo($"  - Controllers/{_entityName}Controller.cs");
             ConsoleHelper.WriteInfo($"  - Views/{_entityName}/Index.cshtml");
             ConsoleHelper.WriteInfo($"  - Views/{_entityName}/_List.cshtml");
@@ -361,6 +365,7 @@ public class {{_entityName}}Service : I{{_entityName}}Service
         var content = $$"""
 using Microsoft.AspNetCore.Mvc;
 using NetMX.AspNetCore.Mvc.Htmx;
+using NetMX.Events;
 using {{ns}}.Dtos;
 using {{ns}}.Services;
 
@@ -406,10 +411,10 @@ public class {{_entityName}}Controller : Controller
             return PartialView("_Form", dto);
         }
 
-        await _service.CreateAsync(dto);
+        var created = await _service.CreateAsync(dto);
         
-        // Trigger success event and reload list
-        this.HxTrigger("{{_entityName.ToLower()}}-created");
+        // Trigger type-safe event (extend DomainEvents with partial class for {{_entityName}})
+        this.HxTrigger(DomainEvents.{{_entityName}}.Created, new { id = created.Id });
         
         return await List();
     }
@@ -444,8 +449,8 @@ public class {{_entityName}}Controller : Controller
 
         await _service.UpdateAsync(dto);
         
-        // Trigger success event and reload list
-        this.HxTrigger("{{_entityName.ToLower()}}-updated");
+        // Trigger type-safe event (extend DomainEvents with partial class for {{_entityName}})
+        this.HxTrigger(DomainEvents.{{_entityName}}.Updated, new { id = dto.Id });
         
         return await List();
     }
@@ -455,6 +460,9 @@ public class {{_entityName}}Controller : Controller
     public async Task<IActionResult> Delete(Guid id)
     {
         await _service.DeleteAsync(id);
+        
+        // Trigger type-safe event
+        this.HxTrigger(DomainEvents.{{_entityName}}.Deleted, new { id });
         
         // Tell HTMX to remove the row
         this.HxReswap(HtmxSwap.Delete);
@@ -475,6 +483,7 @@ public class {{_entityName}}Controller : Controller
         // Index.cshtml
         var indexView = $$"""
 @model List<{{_entityName}}Dto>
+@using NetMX.Events
 @{
     ViewData["Title"] = "{{_entityName}} Management";
 }
@@ -515,7 +524,7 @@ public class {{_entityName}}Controller : Controller
         <!-- List Container -->
         <div id="list-container" 
              hx-get="/{{_entityName}}/List" 
-             hx-trigger="load, {{_entityName.ToLower()}}-created from:body, {{_entityName.ToLower()}}-updated from:body">
+             hx-trigger="load, @DomainEvents.{{_entityName}}.Created from:body, @DomainEvents.{{_entityName}}.Updated from:body">
             <div class="has-text-centered">
                 <span class="icon is-large">
                     <i class="fas fa-spinner fa-pulse"></i>
@@ -524,6 +533,7 @@ public class {{_entityName}}Controller : Controller
         </div>
     </div>
 </div>
+
 
 <style>
     .htmx-indicator {
@@ -664,5 +674,51 @@ else
         File.WriteAllText(Path.Combine(viewsDir, "Index.cshtml"), indexView);
         File.WriteAllText(Path.Combine(viewsDir, "_List.cshtml"), listView);
         File.WriteAllText(Path.Combine(viewsDir, "_Form.cshtml"), formView);
+    }
+
+    private void GenerateEventConstants(string webProjectDir)
+    {
+        var eventsDir = Path.Combine(webProjectDir, "Events");
+        Directory.CreateDirectory(eventsDir);
+
+        var content = $$"""
+namespace NetMX.Events;
+
+/// <summary>
+/// Event constants for {{_entityName}} entity.
+/// </summary>
+/// <remarks>
+/// This partial class extends DomainEvents with {{_entityName}}-specific events.
+/// Use these constants in controllers and views for type-safe event communication.
+/// </remarks>
+public static partial class DomainEvents
+{
+    /// <summary>
+    /// {{_entityName}}-related events.
+    /// </summary>
+    public static class {{_entityName}}
+    {
+        /// <summary>
+        /// Triggered when a new {{_entityName.ToLower()}} is created.
+        /// Payload: { id: Guid }
+        /// </summary>
+        public const string Created = "{{_entityName.ToLower()}}:created";
+        
+        /// <summary>
+        /// Triggered when a {{_entityName.ToLower()}} is updated.
+        /// Payload: { id: Guid }
+        /// </summary>
+        public const string Updated = "{{_entityName.ToLower()}}:updated";
+        
+        /// <summary>
+        /// Triggered when a {{_entityName.ToLower()}} is deleted.
+        /// Payload: { id: Guid }
+        /// </summary>
+        public const string Deleted = "{{_entityName.ToLower()}}:deleted";
+    }
+}
+""";
+
+        File.WriteAllText(Path.Combine(eventsDir, $"DomainEvents.{_entityName}.cs"), content);
     }
 }

@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <RootNamespace>NetMX.Events</RootNamespace>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    
+    <PackageId>NetMX.Events</PackageId>
+    <Description>Type-safe event naming system for NetMX framework - eliminates magic strings in HTMX event-driven architecture.</Description>
+    <PackageTags>netmx;events;htmx;event-driven;type-safe</PackageTags>
+  </PropertyGroup>
+
+</Project>
