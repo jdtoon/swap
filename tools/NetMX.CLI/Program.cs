@@ -56,6 +56,27 @@ class Program
         addCommand.Subcommands.Add(addModuleCommand);
         rootCommand.Subcommands.Add(addCommand);
 
+        // Create Command
+        var createCommand = new Command("create", "Create new items in your NetMX solution");
+        
+        var createModuleCommand = new Command("module", "Create a new NetMX module with 4-layer structure");
+        var moduleNameArgCreate = new Argument<string>("name") 
+        { 
+            Description = "Name of the module (e.g., Audit, CMS)" 
+        };
+        
+        createModuleCommand.Arguments.Add(moduleNameArgCreate);
+        
+        createModuleCommand.SetAction((parseResult) =>
+        {
+            var name = parseResult.GetValue(moduleNameArgCreate);
+            var command = new CreateModuleCommand(name!);
+            return command.ExecuteAsync().GetAwaiter().GetResult();
+        });
+        
+        createCommand.Subcommands.Add(createModuleCommand);
+        rootCommand.Subcommands.Add(createCommand);
+
         // Generate Command
         var generateCommand = new Command("generate", "Generate code for entities, controllers, views");
         
