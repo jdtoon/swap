@@ -1,23 +1,32 @@
 using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using NetMX.AspNetCore.Mvc.Htmx;
 using NetMX.Identity.Contracts.Services;
 using NetMX.Identity.Contracts.Users;
+using NetMX.Identity.Core.Users;
 using System.Security.Claims;
 
 namespace NetMX.Identity.Web.Controllers;
 
 /// <summary>
-/// Account management controller with HTMX-powered login, register, and profile flows
+/// Account management controller with HTMX-powered login, register, and profile flows.
+/// Uses ASP.NET Core Identity's SignInManager for authentication.
 /// </summary>
 public class AccountController : Controller
 {
     private readonly IUserAppService _userAppService;
+    private readonly SignInManager<AppUser> _signInManager;
+    private readonly UserManager<AppUser> _userManager;
 
-    public AccountController(IUserAppService userAppService)
+    public AccountController(
+        IUserAppService userAppService,
+        SignInManager<AppUser> signInManager,
+        UserManager<AppUser> userManager)
     {
         _userAppService = userAppService;
+        _signInManager = signInManager;
+        _userManager = userManager;
     }
 
     /// <summary>
@@ -46,18 +55,27 @@ public class AccountController : Controller
             return View(model);
         }
 
-        var result = await _userAppService.LoginAsync(model);
+        // Use SignInManager for authentication
+        var result = await _signInManager.PasswordSignInAsync(
+            model.UserName, 
+            model.Password, 
+            model.RememberMe, 
+            lockoutOnFailure: true);
 
-        if (!result.Success)
+        if (result.Succeeded)
         {
-            ModelState.AddModelError(string.Empty, result.Message ?? "Login failed");
-            
+            // Get user for triggering events
+            var user = await _userManager.FindByNameAsync(model.UserName);
+
             if (Request.IsHtmx())
             {
-                // Return form with error message
-                return PartialView("_LoginForm", model);
+                // Trigger success event and redirect
+                this.HxTrigger("login:success", new { userId = user?.Id });
+                this.HxRedirect(returnUrl ?? "/");
+                return Ok();
             }
-            return View(model);
+
+            return LocalRedirect(returnUrl ?? "/");
         }
 
         if (result.IsLockedOut)
@@ -81,35 +99,15 @@ public class AccountController : Controller
             return RedirectToAction(nameof(TwoFactor), new { returnUrl });
         }
 
-        // Success - create authentication cookie
-        var claims = new List<Claim>
-        {
-            new(ClaimTypes.NameIdentifier, result.User!.Id.ToString()),
-            new(ClaimTypes.Name, result.User.UserName),
-            new(ClaimTypes.Email, result.User.Email),
-        };
-
-        var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-        var authProperties = new AuthenticationProperties
-        {
-            IsPersistent = model.RememberMe,
-            ExpiresUtc = model.RememberMe ? DateTimeOffset.UtcNow.AddDays(30) : DateTimeOffset.UtcNow.AddHours(1)
-        };
-
-        await HttpContext.SignInAsync(
-            CookieAuthenticationDefaults.AuthenticationScheme,
-            new ClaimsPrincipal(claimsIdentity),
-            authProperties);
-
+        // Failed login
+        ModelState.AddModelError(string.Empty, "Invalid username or password");
+        
         if (Request.IsHtmx())
         {
-            // Trigger success event and redirect
-            this.HxTrigger("login:success", new { userId = result.User.Id });
-            this.HxRedirect(returnUrl ?? "/");
-            return Ok();
+            // Return form with error message
+            return PartialView("_LoginForm", model);
         }
-
-        return LocalRedirect(returnUrl ?? "/");
+        return View(model);
     }
 
     /// <summary>
@@ -287,7 +285,7 @@ public class AccountController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Logout()
     {
-        await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+        await _signInManager.SignOutAsync();
 
         if (Request.IsHtmx())
         {

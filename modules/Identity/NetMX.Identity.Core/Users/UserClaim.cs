@@ -1,35 +1,22 @@
-using NetMX.Ddd.Domain.Entities;
+using Microsoft.AspNetCore.Identity;
+using NetMX.Ddd.Domain;
 
 namespace NetMX.Identity.Core.Users;
 
 /// <summary>
 /// Represents a claim associated with a user.
+/// Extends ASP.NET Core Identity with custom navigation properties.
 /// </summary>
-public class UserClaim : Entity<Guid>
+public class UserClaim : IdentityUserClaim<Guid>
 {
-    /// <summary>
-    /// The user ID.
-    /// </summary>
-    public Guid UserId { get; private set; }
-
-    /// <summary>
-    /// The claim type.
-    /// </summary>
-    public string ClaimType { get; private set; }
-
-    /// <summary>
-    /// The claim value.
-    /// </summary>
-    public string ClaimValue { get; private set; }
+    // Note: Id, UserId, ClaimType, ClaimValue are inherited from IdentityUserClaim<Guid>
 
     // Navigation property
     public AppUser User { get; private set; } = null!;
 
     // EF Core constructor
-    private UserClaim()
+    public UserClaim()
     {
-        ClaimType = string.Empty;
-        ClaimValue = string.Empty;
     }
 
     /// <summary>
@@ -37,7 +24,6 @@ public class UserClaim : Entity<Guid>
     /// </summary>
     public UserClaim(Guid userId, string claimType, string claimValue)
     {
-        Id = Guid.NewGuid();
         UserId = userId;
         ClaimType = Guard.NotNullOrEmpty(claimType, nameof(claimType));
         ClaimValue = Guard.NotNullOrEmpty(claimValue, nameof(claimValue));

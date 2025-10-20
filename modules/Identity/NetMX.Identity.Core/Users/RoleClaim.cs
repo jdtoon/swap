@@ -1,35 +1,22 @@
-using NetMX.Ddd.Domain.Entities;
+using Microsoft.AspNetCore.Identity;
+using NetMX.Ddd.Domain;
 
 namespace NetMX.Identity.Core.Users;
 
 /// <summary>
 /// Represents a claim associated with a role.
+/// Extends ASP.NET Core Identity with custom navigation properties.
 /// </summary>
-public class RoleClaim : Entity<Guid>
+public class RoleClaim : IdentityRoleClaim<Guid>
 {
-    /// <summary>
-    /// The role ID.
-    /// </summary>
-    public Guid RoleId { get; private set; }
-
-    /// <summary>
-    /// The claim type.
-    /// </summary>
-    public string ClaimType { get; private set; }
-
-    /// <summary>
-    /// The claim value.
-    /// </summary>
-    public string ClaimValue { get; private set; }
+    // Note: Id, RoleId, ClaimType, ClaimValue are inherited from IdentityRoleClaim<Guid>
 
     // Navigation property
     public AppRole Role { get; private set; } = null!;
 
     // EF Core constructor
-    private RoleClaim()
+    public RoleClaim()
     {
-        ClaimType = string.Empty;
-        ClaimValue = string.Empty;
     }
 
     /// <summary>
@@ -37,7 +24,6 @@ public class RoleClaim : Entity<Guid>
     /// </summary>
     public RoleClaim(Guid roleId, string claimType, string claimValue)
     {
-        Id = Guid.NewGuid();
         RoleId = roleId;
         ClaimType = Guard.NotNullOrEmpty(claimType, nameof(claimType));
         ClaimValue = Guard.NotNullOrEmpty(claimValue, nameof(claimValue));

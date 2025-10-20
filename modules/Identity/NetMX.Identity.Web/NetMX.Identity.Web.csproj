@@ -12,6 +12,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\NetMX.Identity.Core\NetMX.Identity.Core.csproj" />
     <ProjectReference Include="..\NetMX.Identity.Application\NetMX.Identity.Application.csproj" />
     <ProjectReference Include="..\NetMX.Identity.Contracts\NetMX.Identity.Contracts.csproj" />
     <ProjectReference Include="..\..\..\framework\NetMX.AspNetCore.Mvc\NetMX.AspNetCore.Mvc.csproj" />

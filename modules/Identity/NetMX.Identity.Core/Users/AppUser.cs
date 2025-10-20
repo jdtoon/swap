@@ -1,66 +1,17 @@
-using NetMX.Ddd.Domain.Entities;
+using Microsoft.AspNetCore.Identity;
+using NetMX.Ddd.Domain;
 
 namespace NetMX.Identity.Core.Users;
 
 /// <summary>
 /// Represents a user in the system.
+/// Extends ASP.NET Core Identity with custom properties and business logic.
 /// </summary>
-public class AppUser : AggregateRoot<Guid>
+public class AppUser : IdentityUser<Guid>, IMultiTenant, ISoftDelete, IHasConcurrencyStamp
 {
-    /// <summary>
-    /// The unique username for login.
-    /// </summary>
-    public string UserName { get; private set; }
-
-    /// <summary>
-    /// The user's email address.
-    /// </summary>
-    public string Email { get; private set; }
-
-    /// <summary>
-    /// The user's email confirmation status.
-    /// </summary>
-    public bool EmailConfirmed { get; private set; }
-
-    /// <summary>
-    /// The hashed password.
-    /// </summary>
-    public string PasswordHash { get; private set; }
-
-    /// <summary>
-    /// Security stamp for invalidating tokens/sessions.
-    /// </summary>
-    public string SecurityStamp { get; private set; }
-
-    /// <summary>
-    /// The user's phone number.
-    /// </summary>
-    public string? PhoneNumber { get; private set; }
-
-    /// <summary>
-    /// The user's phone confirmation status.
-    /// </summary>
-    public bool PhoneNumberConfirmed { get; private set; }
-
-    /// <summary>
-    /// Whether two-factor authentication is enabled.
-    /// </summary>
-    public bool TwoFactorEnabled { get; private set; }
-
-    /// <summary>
-    /// The UTC date/time when lockout ends, if any.
-    /// </summary>
-    public DateTime? LockoutEnd { get; private set; }
-
-    /// <summary>
-    /// Whether lockout is enabled for this user.
-    /// </summary>
-    public bool LockoutEnabled { get; private set; }
-
-    /// <summary>
-    /// The number of failed login attempts.
-    /// </summary>
-    public int AccessFailedCount { get; private set; }
+    // Note: UserName, Email, EmailConfirmed, PasswordHash, SecurityStamp, 
+    // PhoneNumber, PhoneNumberConfirmed, TwoFactorEnabled, LockoutEnd, 
+    // LockoutEnabled, AccessFailedCount are inherited from IdentityUser<Guid>
 
     /// <summary>
     /// The user's first name.

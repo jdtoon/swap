@@ -1,21 +1,15 @@
-using NetMX.Ddd.Domain.Entities;
+using Microsoft.AspNetCore.Identity;
+using NetMX.Ddd.Domain;
 
 namespace NetMX.Identity.Core.Users;
 
 /// <summary>
 /// Represents a role in the system.
+/// Extends ASP.NET Core Identity with custom properties and business logic.
 /// </summary>
-public class AppRole : AggregateRoot<Guid>
+public class AppRole : IdentityRole<Guid>, IMultiTenant, ISoftDelete, IHasConcurrencyStamp
 {
-    /// <summary>
-    /// The unique role name.
-    /// </summary>
-    public string Name { get; private set; }
-
-    /// <summary>
-    /// The normalized role name for lookups.
-    /// </summary>
-    public string NormalizedName { get; private set; }
+    // Note: Name, NormalizedName, ConcurrencyStamp are inherited from IdentityRole<Guid>
 
     /// <summary>
     /// The role description.
@@ -39,8 +33,6 @@ public class AppRole : AggregateRoot<Guid>
     // EF Core constructor
     private AppRole()
     {
-        Name = string.Empty;
-        NormalizedName = string.Empty;
     }
 
     /// <summary>
@@ -56,6 +48,7 @@ public class AppRole : AggregateRoot<Guid>
         Id = id;
         Name = Guard.NotNullOrEmpty(name, nameof(name));
         NormalizedName = name.ToUpperInvariant();
+        ConcurrencyStamp = Guid.NewGuid().ToString();
         Description = description;
         IsSystemRole = isSystemRole;
         TenantId = tenantId;
