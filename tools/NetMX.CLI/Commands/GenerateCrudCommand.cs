@@ -65,23 +65,52 @@ public class GenerateCrudCommand
 
             ConsoleHelper.WriteSuccess($"CRUD for '{_entityName}' generated successfully!");
             ConsoleHelper.WriteInfo("Generated files:");
-            ConsoleHelper.WriteInfo($"  - Models/{_entityName}.cs");
-            ConsoleHelper.WriteInfo($"  - Dtos/{_entityName}Dto.cs");
-            ConsoleHelper.WriteInfo($"  - Dtos/Create{_entityName}Dto.cs");
-            ConsoleHelper.WriteInfo($"  - Dtos/Update{_entityName}Dto.cs");
-            ConsoleHelper.WriteInfo($"  - Services/I{_entityName}Service.cs");
-            ConsoleHelper.WriteInfo($"  - Services/{_entityName}Service.cs");
-            ConsoleHelper.WriteInfo($"  - Events/DomainEvents.{_entityName}.cs");
-            ConsoleHelper.WriteInfo($"  - Controllers/{_entityName}Controller.cs");
-            ConsoleHelper.WriteInfo($"  - Views/{_entityName}/Index.cshtml");
-            ConsoleHelper.WriteInfo($"  - Views/{_entityName}/_List.cshtml");
-            ConsoleHelper.WriteInfo($"  - Views/{_entityName}/_Form.cshtml");
+            
+            if (!string.IsNullOrEmpty(_module))
+            {
+                // Module context
+                ConsoleHelper.WriteInfo($"  - {_module}.Core/Entities/{_entityName}.cs");
+                ConsoleHelper.WriteInfo($"  - {_module}.Contracts/Dtos/{_entityName}Dto.cs");
+                ConsoleHelper.WriteInfo($"  - {_module}.Contracts/Dtos/Create{_entityName}Dto.cs");
+                ConsoleHelper.WriteInfo($"  - {_module}.Contracts/Dtos/Update{_entityName}Dto.cs");
+                ConsoleHelper.WriteInfo($"  - {_module}.Contracts/Services/I{_entityName}Service.cs");
+                ConsoleHelper.WriteInfo($"  - {_module}.Application/Services/{_entityName}Service.cs");
+                ConsoleHelper.WriteInfo($"  - {_module}.Web/Events/DomainEvents.{_entityName}.cs");
+                ConsoleHelper.WriteInfo($"  - {_module}.Web/Controllers/{_entityName}Controller.cs");
+                ConsoleHelper.WriteInfo($"  - {_module}.Web/Views/{_entityName}/Index.cshtml");
+                ConsoleHelper.WriteInfo($"  - {_module}.Web/Views/{_entityName}/_List.cshtml");
+                ConsoleHelper.WriteInfo($"  - {_module}.Web/Views/{_entityName}/_Form.cshtml");
+            }
+            else
+            {
+                // App context
+                ConsoleHelper.WriteInfo($"  - Models/{_entityName}.cs");
+                ConsoleHelper.WriteInfo($"  - Dtos/{_entityName}Dto.cs");
+                ConsoleHelper.WriteInfo($"  - Dtos/Create{_entityName}Dto.cs");
+                ConsoleHelper.WriteInfo($"  - Dtos/Update{_entityName}Dto.cs");
+                ConsoleHelper.WriteInfo($"  - Services/I{_entityName}Service.cs");
+                ConsoleHelper.WriteInfo($"  - Services/{_entityName}Service.cs");
+                ConsoleHelper.WriteInfo($"  - Events/DomainEvents.{_entityName}.cs");
+                ConsoleHelper.WriteInfo($"  - Controllers/{_entityName}Controller.cs");
+                ConsoleHelper.WriteInfo($"  - Views/{_entityName}/Index.cshtml");
+                ConsoleHelper.WriteInfo($"  - Views/{_entityName}/_List.cshtml");
+                ConsoleHelper.WriteInfo($"  - Views/{_entityName}/_Form.cshtml");
+            }
 
             ConsoleHelper.WriteInfo("\nNext steps:");
-            ConsoleHelper.WriteInfo("  1. Add DbSet to your DbContext");
-            ConsoleHelper.WriteInfo($"  2. Run: dotnet ef migrations add Add{_entityName}");
-            ConsoleHelper.WriteInfo("  3. Run: dotnet ef database update");
-            ConsoleHelper.WriteInfo($"  4. Navigate to /{_entityName} to test");
+            if (!string.IsNullOrEmpty(_module))
+            {
+                ConsoleHelper.WriteInfo("  1. Add entity to module DbContext");
+                ConsoleHelper.WriteInfo("  2. Register services in DI container");
+                ConsoleHelper.WriteInfo($"  3. Navigate to /{_entityName} to test");
+            }
+            else
+            {
+                ConsoleHelper.WriteInfo("  1. Add DbSet to your DbContext");
+                ConsoleHelper.WriteInfo($"  2. Run: dotnet ef migrations add Add{_entityName}");
+                ConsoleHelper.WriteInfo("  3. Run: dotnet ef database update");
+                ConsoleHelper.WriteInfo($"  4. Navigate to /{_entityName} to test");
+            }
 
             return 0;
         }
@@ -118,12 +147,73 @@ public class GenerateCrudCommand
 
     private void GenerateEntity(string webProjectDir)
     {
-        var modelsDir = Path.Combine(webProjectDir, "Models");
-        Directory.CreateDirectory(modelsDir);
-
-        var entityFile = Path.Combine(modelsDir, $"{_entityName}.cs");
+        var isModuleContext = !string.IsNullOrEmpty(_module);
         
-        var content = $$"""
+        if (isModuleContext)
+        {
+            // For modules, entity goes in Core project
+            var moduleDir = Path.GetDirectoryName(webProjectDir)!; // Get parent of Audit.Web
+            var entitiesDir = Path.Combine(moduleDir, $"{_module}.Core", "Entities");
+            Directory.CreateDirectory(entitiesDir);
+
+            var entityFile = Path.Combine(entitiesDir, $"{_entityName}.cs");
+            
+            var content = $$"""
+using System.ComponentModel.DataAnnotations;
+using NetMX.Ddd.Domain.Entities;
+
+namespace {{_module}}.Core.Entities;
+
+public class {{_entityName}} : Entity<Guid>
+{
+    [Required]
+    [MaxLength(256)]
+    public string Name { get; private set; } = string.Empty;
+    
+    [MaxLength(1000)]
+    public string? Description { get; private set; }
+    
+    public bool IsActive { get; private set; } = true;
+    
+    public DateTime CreatedAt { get; private set; } = DateTime.UtcNow;
+    
+    public DateTime? UpdatedAt { get; private set; }
+
+    // EF Core requires a parameterless constructor
+    private {{_entityName}}()
+    {
+    }
+
+    public {{_entityName}}(Guid id, string name, string? description = null, bool isActive = true)
+    {
+        Id = id;
+        Name = name;
+        Description = description;
+        IsActive = isActive;
+        CreatedAt = DateTime.UtcNow;
+    }
+
+    public void UpdateDetails(string name, string? description, bool isActive)
+    {
+        Name = name;
+        Description = description;
+        IsActive = isActive;
+        UpdatedAt = DateTime.UtcNow;
+    }
+}
+""";
+
+            File.WriteAllText(entityFile, content);
+        }
+        else
+        {
+            // For apps, entity goes in Models folder
+            var modelsDir = Path.Combine(webProjectDir, "Models");
+            Directory.CreateDirectory(modelsDir);
+
+            var entityFile = Path.Combine(modelsDir, $"{_entityName}.cs");
+            
+            var content = $$"""
 using System.ComponentModel.DataAnnotations;
 
 namespace {{Path.GetFileName(webProjectDir).Replace(".Web", "")}}.Models;
@@ -147,18 +237,25 @@ public class {{_entityName}}
 }
 """;
 
-        File.WriteAllText(entityFile, content);
+            File.WriteAllText(entityFile, content);
+        }
     }
 
     private void GenerateDtos(string webProjectDir)
     {
-        var dtosDir = Path.Combine(webProjectDir, "Dtos");
-        Directory.CreateDirectory(dtosDir);
+        var isModuleContext = !string.IsNullOrEmpty(_module);
+        
+        if (isModuleContext)
+        {
+            // For modules, DTOs go in Contracts project
+            var moduleDir = Path.GetDirectoryName(webProjectDir)!; // Get parent of Audit.Web
+            var dtosDir = Path.Combine(moduleDir, $"{_module}.Contracts", "Dtos");
+            Directory.CreateDirectory(dtosDir);
 
-        var ns = Path.GetFileName(webProjectDir).Replace(".Web", "");
+            var ns = $"{_module}.Contracts";
 
-        // Read DTO
-        var readDto = $$"""
+            // Read DTO
+            var readDto = $$"""
 using System.ComponentModel.DataAnnotations;
 
 namespace {{ns}}.Dtos;
@@ -174,8 +271,8 @@ public class {{_entityName}}Dto
 }
 """;
 
-        // Create DTO
-        var createDto = $$"""
+            // Create DTO
+            var createDto = $$"""
 using System.ComponentModel.DataAnnotations;
 
 namespace {{ns}}.Dtos;
@@ -193,8 +290,8 @@ public class Create{{_entityName}}Dto
 }
 """;
 
-        // Update DTO
-        var updateDto = $$"""
+            // Update DTO
+            var updateDto = $$"""
 using System.ComponentModel.DataAnnotations;
 
 namespace {{ns}}.Dtos;
@@ -214,12 +311,96 @@ public class Update{{_entityName}}Dto
 }
 """;
 
-        File.WriteAllText(Path.Combine(dtosDir, $"{_entityName}Dto.cs"), readDto);
-        File.WriteAllText(Path.Combine(dtosDir, $"Create{_entityName}Dto.cs"), createDto);
-        File.WriteAllText(Path.Combine(dtosDir, $"Update{_entityName}Dto.cs"), updateDto);
+            File.WriteAllText(Path.Combine(dtosDir, $"{_entityName}Dto.cs"), readDto);
+            File.WriteAllText(Path.Combine(dtosDir, $"Create{_entityName}Dto.cs"), createDto);
+            File.WriteAllText(Path.Combine(dtosDir, $"Update{_entityName}Dto.cs"), updateDto);
+        }
+        else
+        {
+            // For apps, DTOs go in Dtos folder
+            var dtosDir = Path.Combine(webProjectDir, "Dtos");
+            Directory.CreateDirectory(dtosDir);
+
+            var ns = Path.GetFileName(webProjectDir).Replace(".Web", "");
+
+            // Read DTO
+            var readDto = $$"""
+using System.ComponentModel.DataAnnotations;
+
+namespace {{ns}}.Dtos;
+
+public class {{_entityName}}Dto
+{
+    public Guid Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string? Description { get; set; }
+    public bool IsActive { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public DateTime? UpdatedAt { get; set; }
+}
+""";
+
+            // Create DTO
+            var createDto = $$"""
+using System.ComponentModel.DataAnnotations;
+
+namespace {{ns}}.Dtos;
+
+public class Create{{_entityName}}Dto
+{
+    [Required(ErrorMessage = "Name is required")]
+    [MaxLength(256, ErrorMessage = "Name cannot exceed 256 characters")]
+    public string Name { get; set; } = string.Empty;
+    
+    [MaxLength(1000, ErrorMessage = "Description cannot exceed 1000 characters")]
+    public string? Description { get; set; }
+    
+    public bool IsActive { get; set; } = true;
+}
+""";
+
+            // Update DTO
+            var updateDto = $$"""
+using System.ComponentModel.DataAnnotations;
+
+namespace {{ns}}.Dtos;
+
+public class Update{{_entityName}}Dto
+{
+    public Guid Id { get; set; }
+    
+    [Required(ErrorMessage = "Name is required")]
+    [MaxLength(256, ErrorMessage = "Name cannot exceed 256 characters")]
+    public string Name { get; set; } = string.Empty;
+    
+    [MaxLength(1000, ErrorMessage = "Description cannot exceed 1000 characters")]
+    public string? Description { get; set; }
+    
+    public bool IsActive { get; set; }
+}
+""";
+
+            File.WriteAllText(Path.Combine(dtosDir, $"{_entityName}Dto.cs"), readDto);
+            File.WriteAllText(Path.Combine(dtosDir, $"Create{_entityName}Dto.cs"), createDto);
+            File.WriteAllText(Path.Combine(dtosDir, $"Update{_entityName}Dto.cs"), updateDto);
+        }
     }
 
     private void GenerateService(string webProjectDir)
+    {
+        var isModuleContext = !string.IsNullOrEmpty(_module);
+        
+        if (isModuleContext)
+        {
+            GenerateModuleService(webProjectDir);
+        }
+        else
+        {
+            GenerateAppService(webProjectDir);
+        }
+    }
+
+    private void GenerateAppService(string webProjectDir)
     {
         var servicesDir = Path.Combine(webProjectDir, "Services");
         Directory.CreateDirectory(servicesDir);
@@ -355,19 +536,155 @@ public class {{_entityName}}Service : I{{_entityName}}Service
         File.WriteAllText(Path.Combine(servicesDir, $"{_entityName}Service.cs"), implContent);
     }
 
+    private void GenerateModuleService(string webProjectDir)
+    {
+        // For modules, we need to generate in multiple projects:
+        // 1. Interface in Contracts project
+        // 2. Implementation in Application project
+        
+        var moduleDir = Path.GetDirectoryName(webProjectDir)!; // Get parent of Audit.Web
+        var contractsDir = Path.Combine(moduleDir, $"{_module}.Contracts", "Services");
+        var applicationDir = Path.Combine(moduleDir, $"{_module}.Application", "Services");
+        
+        Directory.CreateDirectory(contractsDir);
+        Directory.CreateDirectory(applicationDir);
+
+        // Interface in Contracts
+        var interfaceContent = $$"""
+using {{_module}}.Contracts.Dtos;
+
+namespace {{_module}}.Contracts.Services;
+
+public interface I{{_entityName}}Service
+{
+    Task<List<{{_entityName}}Dto>> GetAllAsync();
+    Task<{{_entityName}}Dto?> GetByIdAsync(Guid id);
+    Task<{{_entityName}}Dto> CreateAsync(Create{{_entityName}}Dto dto);
+    Task<{{_entityName}}Dto> UpdateAsync(Update{{_entityName}}Dto dto);
+    Task DeleteAsync(Guid id);
+}
+""";
+
+        // Implementation in Application using repository pattern
+        var implContent = $$"""
+using Microsoft.EntityFrameworkCore;
+using NetMX.Ddd.Domain.Repositories;
+using {{_module}}.Core.Entities;
+using {{_module}}.Contracts.Dtos;
+using {{_module}}.Contracts.Services;
+
+namespace {{_module}}.Application.Services;
+
+public class {{_entityName}}Service : I{{_entityName}}Service
+{
+    private readonly IQueryableRepository<{{_entityName}}, Guid> _repository;
+
+    public {{_entityName}}Service(IQueryableRepository<{{_entityName}}, Guid> repository)
+    {
+        _repository = repository;
+    }
+
+    public async Task<List<{{_entityName}}Dto>> GetAllAsync()
+    {
+        var queryable = await _repository.GetQueryableAsync();
+        return await queryable
+            .Select(e => new {{_entityName}}Dto
+            {
+                Id = e.Id,
+                Name = e.Name,
+                Description = e.Description,
+                IsActive = e.IsActive,
+                CreatedAt = e.CreatedAt,
+                UpdatedAt = e.UpdatedAt
+            })
+            .ToListAsync();
+    }
+
+    public async Task<{{_entityName}}Dto?> GetByIdAsync(Guid id)
+    {
+        var entity = await _repository.GetAsync(id);
+        if (entity == null) return null;
+
+        return new {{_entityName}}Dto
+        {
+            Id = entity.Id,
+            Name = entity.Name,
+            Description = entity.Description,
+            IsActive = entity.IsActive,
+            CreatedAt = entity.CreatedAt,
+            UpdatedAt = entity.UpdatedAt
+        };
+    }
+
+    public async Task<{{_entityName}}Dto> CreateAsync(Create{{_entityName}}Dto dto)
+    {
+        var entity = new {{_entityName}}(
+            Guid.NewGuid(),
+            dto.Name,
+            dto.Description,
+            dto.IsActive
+        );
+
+        await _repository.InsertAsync(entity);
+
+        return new {{_entityName}}Dto
+        {
+            Id = entity.Id,
+            Name = entity.Name,
+            Description = entity.Description,
+            IsActive = entity.IsActive,
+            CreatedAt = entity.CreatedAt
+        };
+    }
+
+    public async Task<{{_entityName}}Dto> UpdateAsync(Update{{_entityName}}Dto dto)
+    {
+        var entity = await _repository.GetAsync(dto.Id);
+        if (entity == null)
+            throw new InvalidOperationException($"{{_entityName}} with ID {dto.Id} not found");
+
+        entity.UpdateDetails(dto.Name, dto.Description, dto.IsActive);
+        await _repository.UpdateAsync(entity);
+
+        return new {{_entityName}}Dto
+        {
+            Id = entity.Id,
+            Name = entity.Name,
+            Description = entity.Description,
+            IsActive = entity.IsActive,
+            CreatedAt = entity.CreatedAt,
+            UpdatedAt = entity.UpdatedAt
+        };
+    }
+
+    public async Task DeleteAsync(Guid id)
+    {
+        await _repository.DeleteAsync(id);
+    }
+}
+""";
+
+        File.WriteAllText(Path.Combine(contractsDir, $"I{_entityName}Service.cs"), interfaceContent);
+        File.WriteAllText(Path.Combine(applicationDir, $"{_entityName}Service.cs"), implContent);
+    }
+
     private void GenerateController(string webProjectDir)
     {
         var controllersDir = Path.Combine(webProjectDir, "Controllers");
         Directory.CreateDirectory(controllersDir);
 
-        var ns = Path.GetFileName(webProjectDir).Replace(".Web", "");
+        var isModuleContext = !string.IsNullOrEmpty(_module);
+        var ns = isModuleContext ? _module : Path.GetFileName(webProjectDir).Replace(".Web", "");
+        
+        var dtoNamespace = isModuleContext ? $"{_module}.Contracts.Dtos" : $"{ns}.Dtos";
+        var serviceNamespace = isModuleContext ? $"{_module}.Contracts.Services" : $"{ns}.Services";
 
         var content = $$"""
 using Microsoft.AspNetCore.Mvc;
 using NetMX.AspNetCore.Mvc.Htmx;
 using NetMX.Events;
-using {{ns}}.Dtos;
-using {{ns}}.Services;
+using {{dtoNamespace}};
+using {{serviceNamespace}};
 
 namespace {{ns}}.Controllers;
 
@@ -480,9 +797,13 @@ public class {{_entityName}}Controller : Controller
         var viewsDir = Path.Combine(webProjectDir, "Views", _entityName);
         Directory.CreateDirectory(viewsDir);
 
+        var isModuleContext = !string.IsNullOrEmpty(_module);
+        var dtoNamespace = isModuleContext ? $"{_module}.Contracts.Dtos" : $"{Path.GetFileName(webProjectDir).Replace(".Web", "")}.Dtos";
+
         // Index.cshtml
         var indexView = $$"""
 @model List<{{_entityName}}Dto>
+@using {{dtoNamespace}}
 @using NetMX.Events
 @{
     ViewData["Title"] = "{{_entityName}} Management";
@@ -550,6 +871,7 @@ public class {{_entityName}}Controller : Controller
         // _List.cshtml
         var listView = $$"""
 @model List<{{_entityName}}Dto>
+@using {{dtoNamespace}}
 
 @if (Model.Any())
 {
