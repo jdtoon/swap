@@ -33,8 +33,18 @@ jobs:
     - name: Run Tests
       run: dotnet test framework/NetMX.sln --configuration Release --no-build --verbosity normal
     
-    - name: Pack NuGet Packages (Dry Run)
-      run: dotnet pack framework/NetMX.sln --configuration Release --no-build --output ./nupkg
+    - name: Pack NuGet Packages
+      run: |
+        if [ "${{ github.ref }}" == "refs/heads/develop" ]; then
+          # Develop branch: pre-release version with date
+          VERSION_SUFFIX="dev.$(date +%Y%m%d).$(echo ${{ github.sha }} | cut -c1-7)"
+          dotnet pack framework/NetMX.sln --configuration Release --no-build --output ./nupkg --version-suffix $VERSION_SUFFIX
+          echo "Built pre-release version: 0.1.0-$VERSION_SUFFIX"
+        else
+          # Master or PR: dry run without version suffix
+          dotnet pack framework/NetMX.sln --configuration Release --no-build --output ./nupkg
+          echo "Built packages (dry run)"
+        fi
     
     - name: Upload Build Artifacts
       uses: actions/upload-artifact@v4
@@ -42,3 +52,12 @@ jobs:
         name: nuget-packages
         path: ./nupkg/*.nupkg
         retention-days: 7
+    
+    - name: Publish to NuGet.org (develop branch only)
+      if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
+      run: |
+        dotnet nuget push ./nupkg/*.nupkg \
+          --api-key ${{ secrets.NUGET_API_KEY }} \
+          --source https://api.nuget.org/v3/index.json \
+          --skip-duplicate
+        echo "Published pre-release packages to NuGet.org" >> $GITHUB_STEP_SUMMARY
