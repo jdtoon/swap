@@ -4,16 +4,16 @@ using NetMX.CLI.Infrastructure;
 namespace NetMX.CLI.Commands;
 
 /// <summary>
-/// Command to generate CRUD operations for an entity
+/// Command to generate a complete feature (entity with CRUD operations)
 /// </summary>
-public class GenerateCrudCommand
+public class GenerateFeatureCommand
 {
     private readonly string _entityName;
     private readonly string? _module;
     private readonly bool _includeSearch;
     private readonly bool _includeExport;
 
-    public GenerateCrudCommand(string entityName, string? module = null, bool includeSearch = false, bool includeExport = false)
+    public GenerateFeatureCommand(string entityName, string? module = null, bool includeSearch = false, bool includeExport = false)
     {
         _entityName = entityName;
         _module = module;
@@ -25,7 +25,7 @@ public class GenerateCrudCommand
     {
         try
         {
-            ConsoleHelper.WriteHeader($"Generating CRUD for {_entityName}");
+            ConsoleHelper.WriteHeader($"Generating Feature: {_entityName}");
 
             var solutionPath = FindSolutionFile();
             if (solutionPath == null)
@@ -63,7 +63,7 @@ public class GenerateCrudCommand
             ConsoleHelper.WriteStep(6, "Generating views with HTMX patterns");
             GenerateViews(webProjectDir);
 
-            ConsoleHelper.WriteSuccess($"CRUD for '{_entityName}' generated successfully!");
+            ConsoleHelper.WriteSuccess($"Feature '{_entityName}' generated successfully!");
             ConsoleHelper.WriteInfo("Generated files:");
             
             if (!string.IsNullOrEmpty(_module))

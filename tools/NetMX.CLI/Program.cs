@@ -80,7 +80,10 @@ class Program
         // Generate Command
         var generateCommand = new Command("generate", "Generate code for entities, controllers, views");
         
-        var generateCrudCommand = new Command("crud", "Generate CRUD operations for an entity");
+        // Keep 'crud' as alias for backward compatibility
+        var generateFeatureCommand = new Command("feature", "Generate a complete feature (entity with CRUD operations)");
+        var generateCrudCommand = new Command("crud", "Alias for 'feature' (deprecated, use 'feature' instead)");
+        
         var entityNameArg = new Argument<string>("name") 
         { 
             Description = "Name of the entity (e.g., Product, Order)" 
@@ -98,23 +101,40 @@ class Program
             Description = "Include export to CSV" 
         };
         
-        generateCrudCommand.Arguments.Add(entityNameArg);
-        generateCrudCommand.Options.Add(moduleOption);
-        generateCrudCommand.Options.Add(searchOption);
-        generateCrudCommand.Options.Add(exportOption);
-        
-        generateCrudCommand.SetAction((parseResult) =>
+        // Configure both commands with same arguments
+        foreach (var cmd in new[] { generateFeatureCommand, generateCrudCommand })
         {
-            var name = parseResult.GetValue(entityNameArg);
-            var module = parseResult.GetValue(moduleOption);
-            var search = parseResult.GetValue(searchOption);
-            var export = parseResult.GetValue(exportOption);
+            cmd.Arguments.Add(new Argument<string>("name") 
+            { 
+                Description = "Name of the entity (e.g., Product, Order)" 
+            });
+            cmd.Options.Add(new Option<string?>("--module", "-m") 
+            { 
+                Description = "Target module name" 
+            });
+            cmd.Options.Add(new Option<bool>("--search") 
+            { 
+                Description = "Include search functionality" 
+            });
+            cmd.Options.Add(new Option<bool>("--export") 
+            { 
+                Description = "Include export to CSV" 
+            });
             
-            var command = new GenerateCrudCommand(name!, module, search, export);
-            return command.ExecuteAsync().GetAwaiter().GetResult();
-        });
+            cmd.SetAction((parseResult) =>
+            {
+                var name = parseResult.GetValue<string>("name");
+                var module = parseResult.GetValue<string?>("--module");
+                var search = parseResult.GetValue<bool>("--search");
+                var export = parseResult.GetValue<bool>("--export");
+                
+                var command = new GenerateFeatureCommand(name!, module, search, export);
+                return command.ExecuteAsync().GetAwaiter().GetResult();
+            });
+        }
         
-        generateCommand.Subcommands.Add(generateCrudCommand);
+        generateCommand.Subcommands.Add(generateFeatureCommand);
+        generateCommand.Subcommands.Add(generateCrudCommand); // Keep as alias
         rootCommand.Subcommands.Add(generateCommand);
 
         return rootCommand.Parse(args).Invoke();
