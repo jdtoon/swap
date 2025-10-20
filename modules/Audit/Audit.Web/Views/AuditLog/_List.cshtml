@@ -1,0 +1,58 @@
+@model List<AuditLogDto>
+@using Audit.Contracts.Dtos
+
+@if (Model.Any())
+{
+    <table class="table is-fullwidth is-striped is-hoverable">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Description</th>
+                <th>Status</th>
+                <th>Created</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model)
+            {
+                <tr id="row-@item.Id">
+                    <td>@item.Name</td>
+                    <td>@(item.Description ?? "-")</td>
+                    <td>
+                        <span class="tag @(item.IsActive ? "is-success" : "is-danger")">
+                            @(item.IsActive ? "Active" : "Inactive")
+                        </span>
+                    </td>
+                    <td>@item.CreatedAt.ToString("yyyy-MM-dd")</td>
+                    <td>
+                        <div class="buttons are-small">
+                            <button class="button is-info" 
+                                    hx-get="/AuditLog/Edit/@item.Id" 
+                                    hx-target="#form-container" 
+                                    hx-swap="innerHTML">
+                                <span class="icon is-small">
+                                    <i class="fas fa-edit"></i>
+                                </span>
+                            </button>
+                            <button class="button is-danger" 
+                                    hx-delete="/AuditLog/Delete/@item.Id" 
+                                    hx-target="#row-@item.Id" 
+                                    hx-confirm="Are you sure you want to delete @item.Name?">
+                                <span class="icon is-small">
+                                    <i class="fas fa-trash"></i>
+                                </span>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+else
+{
+    <div class="notification is-info has-text-centered">
+        <p>No auditlogs found. Click "Add AuditLog" to create one.</p>
+    </div>
+}

@@ -1,0 +1,16 @@
+{
+  "name": "Audit",
+  "version": "0.1.0",
+  "description": "Audit module for NetMX",
+  "author": "Your Name",
+  "license": "MIT",
+  "dependencies": {
+    "netmx": "0.1.0"
+  },
+  "projects": [
+    "Audit.Core",
+    "Audit.Contracts",
+    "Audit.Application",
+    "Audit.Web"
+  ]
+}

@@ -1,0 +1,59 @@
+@model dynamic
+@{
+    var isCreate = Model.GetType().Name.StartsWith("Create");
+    var title = isCreate ? "Add AuditEntry" : "Edit AuditEntry";
+    var action = isCreate ? "/AuditEntry/Create" : "/AuditEntry/Edit";
+}
+
+<div class="box has-background-light">
+    <h3 class="title is-5">@title</h3>
+    
+    <form hx-post="@action" 
+          hx-target="#list-container" 
+          hx-swap="innerHTML">
+        
+        @if (!isCreate)
+        {
+            <input type="hidden" name="Id" value="@Model.Id" />
+        }
+
+        <div class="field">
+            <label class="label">Name</label>
+            <div class="control">
+                <input class="input" type="text" name="Name" value="@Model.Name" required>
+            </div>
+        </div>
+
+        <div class="field">
+            <label class="label">Description</label>
+            <div class="control">
+                <textarea class="textarea" name="Description" rows="3">@Model.Description</textarea>
+            </div>
+        </div>
+
+        <div class="field">
+            <label class="checkbox">
+                <input type="checkbox" name="IsActive" value="true" @(Model.IsActive ? "checked" : "")>
+                Active
+            </label>
+        </div>
+
+        <div class="field is-grouped">
+            <div class="control">
+                <button type="submit" class="button is-primary">
+                    <span class="icon">
+                        <i class="fas fa-save"></i>
+                    </span>
+                    <span>Save</span>
+                </button>
+            </div>
+            <div class="control">
+                <button type="button" 
+                        class="button is-light" 
+                        onclick="document.getElementById('form-container').innerHTML = ''">
+                    Cancel
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
