@@ -1,0 +1,52 @@
+@model ContactViewModel
+
+<form id="contact-edit" 
+      hx-post="/Demo/SaveContact" 
+      hx-target="#contact-container" 
+      hx-swap="innerHTML"
+      class="box">
+    
+    <div class="field">
+        <label class="label">Name</label>
+        <div class="control">
+            <input class="input" type="text" name="Name" value="@Model.Name" required>
+        </div>
+    </div>
+
+    <div class="field">
+        <label class="label">Email</label>
+        <div class="control">
+            <input class="input" type="email" name="Email" value="@Model.Email" required>
+        </div>
+    </div>
+
+    <div class="field">
+        <label class="checkbox">
+            <input type="checkbox" name="Active" value="true" @(Model.Active ? "checked" : "")>
+            Active
+        </label>
+    </div>
+
+    <div class="field is-grouped">
+        <div class="control">
+            <button type="submit" class="button is-success">
+                <span class="icon">
+                    <i class="fas fa-check"></i>
+                </span>
+                <span>Save</span>
+            </button>
+        </div>
+        <div class="control">
+            <button type="button" 
+                    class="button is-light" 
+                    hx-delete="/Demo/CancelEdit" 
+                    hx-target="#contact-container" 
+                    hx-swap="innerHTML">
+                <span class="icon">
+                    <i class="fas fa-times"></i>
+                </span>
+                <span>Cancel</span>
+            </button>
+        </div>
+    </div>
+</form>

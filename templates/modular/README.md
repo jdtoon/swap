@@ -12,6 +12,23 @@ A starter template for building modular monolith applications with NetMX framewo
 - **HTMX-First UI** - Server-rendered HTML with HTMX for interactivity
 - **Bulma CSS** - Clean, modern UI framework
 - **Modular Architecture** - Clean separation of concerns
+- **🎯 HTMX Showcase** - 8+ interactive examples demonstrating HTMX patterns
+
+## 🎯 HTMX Showcase
+
+This template includes a comprehensive **HTMX Showcase** at `/Demo` with real-world examples:
+
+1. **Click to Edit** - Inline editing without page reload
+2. **Delete with Confirmation** - Surgical DOM updates
+3. **Infinite Scroll** - Auto-load content when scrolling
+4. **Search with Debounce** - Live search with 500ms delay
+5. **Tab Switching** - Dynamic tab content loading
+6. **Form Validation** - Server-side validation with inline errors
+7. **Out-of-Band Updates** - Update multiple page sections at once
+8. **Lazy Loading** - Load expensive content when visible
+
+👉 **See it live**: Navigate to `/Demo` after starting the app  
+📖 **Learn the patterns**: See [HTMX Patterns Guide](../../docs/HTMX-PATTERNS.md)
 
 ## Quick Start
 

@@ -1,0 +1,210 @@
+{
+  "name": "NetMX.Identity",
+  "version": "1.0.0",
+  "description": "Authentication and authorization module with ASP.NET Core Identity integration",
+  "author": "NetMX Team",
+  "category": "security",
+  "tags": ["authentication", "authorization", "identity", "security", "user-management"],
+  "homepage": "https://github.com/toonjd/netmx",
+  "dependencies": [
+    "NetMX.Core >= 1.0.0",
+    "NetMX.Ddd.Domain >= 1.0.0",
+    "NetMX.Ddd.Application >= 1.0.0",
+    "NetMX.EntityFrameworkCore >= 1.0.0",
+    "NetMX.AspNetCore.Mvc >= 1.0.0"
+  ],
+  "nugetDependencies": [
+    "Microsoft.AspNetCore.Identity.EntityFrameworkCore >= 9.0.0",
+    "Microsoft.EntityFrameworkCore >= 9.0.0"
+  ],
+  "projects": [
+    {
+      "name": "NetMX.Identity.Core",
+      "path": "NetMX.Identity.Core/NetMX.Identity.Core.csproj",
+      "type": "domain",
+      "description": "Domain entities and data access for Identity"
+    },
+    {
+      "name": "NetMX.Identity.Contracts",
+      "path": "NetMX.Identity.Contracts/NetMX.Identity.Contracts.csproj",
+      "type": "contracts",
+      "description": "DTOs and service interfaces"
+    },
+    {
+      "name": "NetMX.Identity.Application",
+      "path": "NetMX.Identity.Application/NetMX.Identity.Application.csproj",
+      "type": "application",
+      "description": "Application services and business logic"
+    },
+    {
+      "name": "NetMX.Identity.Web",
+      "path": "NetMX.Identity.Web/NetMX.Identity.Web.csproj",
+      "type": "web",
+      "description": "MVC controllers and Razor views"
+    }
+  ],
+  "services": [
+    {
+      "type": "module",
+      "class": "NetMX.Identity.Web.NetMXIdentityWebModule",
+      "description": "Configures ASP.NET Core Identity services"
+    },
+    {
+      "type": "dbcontext",
+      "class": "NetMX.Identity.Core.Data.IdentityDbContext",
+      "connectionStringName": "DefaultConnection",
+      "migrationHistoryTable": "__EFMigrationsHistory_Identity",
+      "description": "Identity database context with ASP.NET Core Identity tables"
+    }
+  ],
+  "migrations": {
+    "enabled": true,
+    "autoApply": true,
+    "context": "IdentityDbContext",
+    "assembly": "NetMX.Identity.Core"
+  },
+  "configuration": {
+    "section": "Identity",
+    "required": false,
+    "defaults": {
+      "Password": {
+        "RequireDigit": true,
+        "RequireLowercase": true,
+        "RequireUppercase": true,
+        "RequireNonAlphanumeric": true,
+        "RequiredLength": 8
+      },
+      "Lockout": {
+        "DefaultLockoutTimeSpan": "00:15:00",
+        "MaxFailedAccessAttempts": 5,
+        "AllowedForNewUsers": true
+      },
+      "User": {
+        "RequireUniqueEmail": true
+      },
+      "SignIn": {
+        "RequireConfirmedEmail": false,
+        "RequireConfirmedPhoneNumber": false
+      }
+    }
+  },
+  "seeding": {
+    "enabled": true,
+    "method": "SeedDataAsync",
+    "description": "Creates Admin and User roles, and default admin user (admin@netmx.dev / Admin123!)"
+  },
+  "features": [
+    {
+      "name": "authentication",
+      "description": "User authentication with username/email and password",
+      "enabled": true
+    },
+    {
+      "name": "authorization",
+      "description": "Role-based authorization",
+      "enabled": true
+    },
+    {
+      "name": "user-management",
+      "description": "CRUD operations for users",
+      "enabled": true
+    },
+    {
+      "name": "role-management",
+      "description": "CRUD operations for roles",
+      "enabled": true
+    },
+    {
+      "name": "profile-management",
+      "description": "Update user profile (name, email, phone)",
+      "enabled": true
+    },
+    {
+      "name": "password-management",
+      "description": "Change password, password reset",
+      "enabled": true
+    },
+    {
+      "name": "email-confirmation",
+      "description": "Email confirmation workflow",
+      "enabled": false,
+      "requiresConfiguration": true
+    },
+    {
+      "name": "two-factor-auth",
+      "description": "Two-factor authentication support",
+      "enabled": false,
+      "requiresConfiguration": true
+    },
+    {
+      "name": "external-auth",
+      "description": "External authentication providers (Google, Microsoft, GitHub)",
+      "enabled": false,
+      "requiresConfiguration": true
+    },
+    {
+      "name": "account-lockout",
+      "description": "Automatic account lockout after failed login attempts",
+      "enabled": true
+    },
+    {
+      "name": "multi-tenancy",
+      "description": "Multi-tenant user isolation",
+      "enabled": false,
+      "requiresConfiguration": true
+    }
+  ],
+  "routes": [
+    {
+      "pattern": "/account/*",
+      "description": "Account management pages (login, register, profile)"
+    },
+    {
+      "pattern": "/identity/*",
+      "description": "Identity management UI (admin only)"
+    }
+  ],
+  "middleware": [
+    {
+      "type": "Authentication",
+      "order": 100,
+      "description": "ASP.NET Core authentication middleware"
+    },
+    {
+      "type": "Authorization",
+      "order": 101,
+      "description": "ASP.NET Core authorization middleware"
+    }
+  ],
+  "installation": {
+    "steps": [
+      "Add project references to NetMX.Identity.* projects",
+      "Configure IdentityDbContext in Program.cs",
+      "Add Identity services (AddIdentity, ConfigureApplicationCookie)",
+      "Add authentication middleware (UseAuthentication, UseAuthorization)",
+      "Generate and apply migrations",
+      "Seed initial data (optional)"
+    ],
+    "cliCommand": "netmx add module Identity",
+    "documentation": "https://github.com/toonjd/netmx/blob/main/modules/Identity/README.md"
+  },
+  "testing": {
+    "unitTests": 81,
+    "integrationTests": 0,
+    "testProject": "NetMX.Identity.Tests"
+  },
+  "changelog": [
+    {
+      "version": "1.0.0",
+      "date": "2025-10-20",
+      "changes": [
+        "Initial release with ASP.NET Core Identity integration",
+        "User and role management",
+        "Profile management",
+        "Password policies and account lockout",
+        "Multi-tenancy support (optional)",
+        "HTMX-based UI"
+      ]
+    }
+  ]
+}

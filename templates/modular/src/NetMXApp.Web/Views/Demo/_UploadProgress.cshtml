@@ -1,0 +1,13 @@
+<div class="box">
+    <p class="has-text-weight-bold">Uploading file...</p>
+    <progress class="progress is-primary is-large" value="@ViewBag.Progress" max="100">@ViewBag.Progress%</progress>
+    <p class="has-text-grey">@ViewBag.Progress% complete</p>
+</div>
+
+@if (ViewBag.Progress < 100)
+{
+    <div hx-get="/Demo/GetUploadProgress" 
+         hx-trigger="load delay:500ms" 
+         hx-swap="outerHTML">
+    </div>
+}
