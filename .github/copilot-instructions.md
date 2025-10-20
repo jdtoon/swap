@@ -1,6 +1,33 @@
 # NetMX Development Guidelines
 
-This file provides context for GitHub Copilot when working with the NetMX framework.
+**Last Updated**: October 20, 2025  
+**Current Phase**: Phase 2 - Essential Infrastructure (Week 1 - Authorization Module 70% complete)  
+**Progress**: 5% → 20% of ABP Framework feature parity (on track)
+
+This file provides **complete context** for GitHub Copilot when working with the NetMX framework. It's designed to allow picking up where we left off in any new chat session.
+
+## 📋 Current Status (October 20, 2025)
+
+### Completed Today
+- ✅ Authorization module: 70% complete (entities, services, attributes, handlers, policy provider)
+- ✅ PermissionChecker with full observability (caching, tracing, logging)
+- ✅ [RequirePermission], [RequireAllPermissions], [RequireAnyPermissions] attributes
+- ✅ Policy-based authorization infrastructure (3 handlers, dynamic policy provider)
+- ✅ Comprehensive Authorization README (400+ lines)
+- ✅ Fixed CI pipeline (removed Audit from framework solution)
+- ✅ CLI improvements document created
+
+### Active Work
+- 🔄 Permission seeding (next task)
+- 🔄 Unit tests for Authorization (target: 80%+ coverage)
+- 🔄 CLI improvements (auto-migration, better output)
+
+### Next Steps
+1. Complete Authorization module (seeding, tests) - Week 1
+2. Settings module - Week 3
+3. Audit logging (complete) - Week 4-5
+4. Observability module - Week 6-7
+5. Testing infrastructure - Week 8-9
 
 ## ⚠️ CLI-First Development
 
@@ -12,6 +39,8 @@ This file provides context for GitHub Copilot when working with the NetMX framew
 - Don't create files manually unless adding custom business logic
 - Learn patterns from generated code
 - **Note**: `netmx generate crud` still works as backward-compatible alias
+
+**CLI Improvements Identified**: See [CLI-IMPROVEMENTS.md](../docs/CLI-IMPROVEMENTS.md) for detailed plan
 
 See [QUICK-START.md](../docs/QUICK-START.md) and [TERMINOLOGY.md](../docs/TERMINOLOGY.md)
 
@@ -70,6 +99,160 @@ scripts/            # Build and development scripts
 - `modules/` = Reusable features (each with own solution)
 - `pro/` = Commercial modules (future)
 - Each module is self-contained with its own .sln file
+
+## Strategic Position & Roadmap
+
+### Competitive Context (vs ABP Framework)
+
+**Current Status**: ~20% of ABP's feature set (up from 5% at Phase 1)  
+**Target**: 80% feature parity by Month 12  
+**Advantages**: HTMX-first, 70-95% cheaper, observability built-in, modern .NET 9
+
+**Tiering Strategy** (see [TIERING-STRATEGY.md](../docs/TIERING-STRATEGY.md)):
+- **FREE** (MIT): Framework + essential modules (Identity, Authorization, Settings, Audit, Observability, Testing)
+- **STANDARD** ($99/mo): Advanced modules (Multi-Tenancy, Jobs, Caching, Email, CMS)
+- **ENTERPRISE** ($499/mo): Scale features (Advanced observability, distributed tracing, AI review)
+
+**Revenue Model**: Path to $8M ARR by Year 4
+- Year 1: $180K (100 Standard, 10 Enterprise customers)
+- Year 2: $1.4M (modules + Suite beta)
+- Year 3: $4.5M (modules + Suite launched)
+- Year 4: $8M (full ecosystem)
+
+### Current Modules (Phase 2)
+
+#### 1. Authorization Module (70% Complete - FREE)
+
+**Status**: Week 1 of Phase 2, production-ready core  
+**Location**: `modules/Authorization/`
+
+**Completed Components**:
+- ✅ **Entities** (DDD patterns):
+  - `Permission`: Name, DisplayName, Group, IsSystemPermission, IsActive
+  - `Role`: Name, IsSystemRole, IsDefault, RolePermissions
+  - `RolePermission`: Join entity with audit trail (GrantedBy, GrantedAt)
+  
+- ✅ **Services** (with full observability):
+  - `IPermissionChecker`: Check permissions (single, all, any)
+  - `PermissionChecker`: Implementation with 15-min cache, distributed tracing
+  - Activity Source: "NetMX.Authorization"
+  - Structured logging with timing metrics
+  - Performance metrics (cache hit rate, query duration)
+  
+- ✅ **Authorization Attributes**:
+  - `[RequirePermission("Users.View")]` - Single permission
+  - `[RequireAllPermissions("Users.View", "Users.Edit")]` - AND logic
+  - `[RequireAnyPermissions("Users.View", "Users.Edit")]` - OR logic
+  
+- ✅ **Policy Infrastructure** (ASP.NET Core integration):
+  - `PermissionRequirement`, `AllPermissionsRequirement`, `AnyPermissionsRequirement`
+  - `PermissionAuthorizationHandler` (with observability)
+  - `AllPermissionsAuthorizationHandler` (with observability)
+  - `AnyPermissionsAuthorizationHandler` (with observability)
+  - `PermissionPolicyProvider`: Dynamic policy creation
+  - Activity Source: "NetMX.Authorization.Handler"
+  
+- ✅ **Service Extensions**:
+  - `AddPermissionAuthorization()`: One-line setup
+  
+- ✅ **Documentation**:
+  - Comprehensive README (400+ lines)
+  - Usage examples (attributes, service, views)
+  - Observability guide
+  - Best practices
+
+**Remaining Work** (30%):
+- 🔄 Permission seeding (system permissions)
+- 🔄 Role seeding (Admin, User roles)
+- 🔄 UI enhancement (permission tree, role matrix)
+- 🔄 Unit tests (80%+ coverage target)
+
+**Usage Example**:
+```csharp
+// 1. Add to Program.cs
+services.AddPermissionAuthorization();
+services.AddMemoryCache();
+
+// 2. Use on controllers
+[RequirePermission("Users.View")]
+public class UsersController : Controller { }
+
+// 3. Check in code
+await _permissionChecker.IsGrantedAsync("Users.View");
+```
+
+**Observability**:
+```
+Activity Sources:
+  - "NetMX.Authorization" (service layer)
+  - "NetMX.Authorization.Handler" (ASP.NET Core layer)
+
+Tags:
+  - permission.name, user.id, cache.hit, duration.ms
+  - authorization.result (granted/denied_*)
+```
+
+#### 2. Audit Module (Scaffolded - FREE)
+
+**Status**: Created for dogfooding validation  
+**Location**: `modules/Audit/`  
+**Next Phase**: Week 4-5 (Complete implementation)
+
+#### 3. Identity Module (Existing - FREE)
+
+**Status**: Reference implementation  
+**Location**: `modules/Identity/`
+
+#### 4. Settings Module (Planned - FREE)
+
+**Status**: Week 3 of Phase 2  
+**Scope**: Global, user, tenant-ready settings
+
+#### 5. Observability Module (Planned - FREE)
+
+**Status**: Week 6-7 of Phase 2  
+**Scope**: Health checks UI, metrics endpoint, tracing setup, log aggregation
+
+#### 6. Testing Module (Planned - FREE)
+
+**Status**: Week 8-9 of Phase 2  
+**Scope**: Unit test helpers, integration test setup, E2E framework
+
+### Planned Modules (Phase 3+)
+
+**STANDARD Tier** ($99/mo):
+- Multi-Tenancy (Week 10-12)
+- Background Jobs (Hangfire)
+- Distributed Caching (Redis)
+- Email/SMS
+- BLOB Storage
+- Localization
+- CMS
+- Payment Integration
+
+**ENTERPRISE Tier** ($499/mo):
+- Advanced Observability Dashboard
+- Distributed Tracing (Jaeger/Zipkin)
+- Security & Compliance
+- Microservices Support
+- AI-Powered Code Review
+
+### Studio & Suite Products (Phase 5)
+
+**NetMX Studio** (FREE Desktop App):
+- VS Code fork with NetMX customizations
+- Module marketplace
+- Visual entity designer
+- Observability dashboard
+- HTMX live preview
+
+**NetMX Suite** (PAID Web SaaS):
+- Free: 1 project, 5 entities, branded
+- Standard ($49/mo): Unlimited projects, export code
+- Enterprise ($199/mo): Team collaboration, white-label
+- Revenue potential: +$532K ARR
+
+See [STUDIO-SUITE-VISION.md](../docs/STUDIO-SUITE-VISION.md) for complete details.
 
 ## Development Workflow
 
@@ -487,37 +670,206 @@ netmx generate feature User --module Identity
 - Use EF Core parameterized queries (automatic)
 - Never concatenate SQL strings
 
+## CI/CD & Quality
+
+### Pipeline Status
+
+**Location**: `.github/workflows/ci-build.yml`
+
+**Important**: 
+- Framework solution (`framework/NetMX.sln`) should ONLY contain framework packages
+- Modules have their own solutions (e.g., `modules/Authorization/Authorization.sln`)
+- Never add module projects to framework solution (causes CI failures)
+
+**Fixed Issues**:
+- ✅ Removed Audit module from framework solution (Oct 20, 2025)
+- ✅ CI now builds framework packages only
+- ✅ Module solutions build independently
+
+**Pre-commit Checklist**:
+1. Build framework solution: `dotnet build framework/NetMX.sln`
+2. Build module solutions individually
+3. Run tests: `dotnet test`
+4. Check for zero warnings
+5. Verify CI will pass
+
+### Quality Standards
+
+- **Zero warnings** in all builds
+- **80%+ test coverage** for all modules
+- **XML documentation** for all public APIs
+- **Observability built-in** (not added later)
+- **DDD patterns** consistently applied
+
+## CLI Improvements & Learnings
+
+### Recent Discoveries (Oct 20, 2025)
+
+**What Works Well**:
+- ✅ `netmx create module` - Creates proper 4-layer structure
+- ✅ `netmx generate feature` - Saves 2+ hours per entity
+- ✅ DDD patterns applied automatically
+- ✅ HTMX views generated with best practices
+- ✅ Type-safe events (NetMX.Events)
+
+**Pain Points Identified**:
+- ❌ Must manually add DbSet to DbContext after feature generation
+- ❌ Must manually run EF Core migrations
+- ❌ Easy to accidentally add modules to wrong solution
+- ❌ No validation of entity names (plural vs singular)
+- ❌ No next-steps guidance after generation
+
+**Improvements Planned** (see [CLI-IMPROVEMENTS.md](../docs/CLI-IMPROVEMENTS.md)):
+1. Auto-migration support (`--migrate` flag)
+2. `netmx db` commands (migrate, update, reset, seed)
+3. Solution file auto-detection and validation
+4. Entity name validation (prevent plurals, reserved words)
+5. Rich CLI output with progress indicators
+6. `netmx generate seeder` command
+7. Health check command
+
+**Priority**: Auto-migration and `netmx db` commands (Week 2-3)
+
+## Recent Commits & Progress
+
+### October 20, 2025
+
+**Authorization Module Development** (4 commits, 39 files, 2,582 lines):
+
+1. `19b4eb7` - Enhance Authorization entities with domain logic
+   - Permission: DisplayName, Group, IsSystemPermission, validation
+   - Role: IsSystemRole, IsDefault, RolePermissions
+   - RolePermission: Audit trail with GrantedBy, GrantedAt
+
+2. `21261be` - Add PermissionChecker service with full observability
+   - IPermissionChecker, ICurrentUser interfaces
+   - PermissionChecker with caching, tracing, logging
+   - Activity Source: "NetMX.Authorization"
+   - 15-minute memory cache for performance
+
+3. `579f944` - Add authorization attributes and policy infrastructure
+   - [RequirePermission], [RequireAllPermissions], [RequireAnyPermissions]
+   - 3 authorization handlers with observability
+   - Dynamic policy provider (PermissionPolicyProvider)
+   - Activity Source: "NetMX.Authorization.Handler"
+
+4. `fb2134f` - Add comprehensive Authorization module README
+   - 400+ lines of documentation
+   - Usage examples, API reference, best practices
+   - Observability guide, performance tips
+
+5. `3a7b3b7` - Fix CI pipeline: Remove Audit from framework solution
+   - Modules should be in their own solutions
+   - Framework solution for framework packages only
+
+**Current Status**: Authorization 70% complete, production-ready core
+
 ## Future Roadmap
 
-### Phase 1 (Current): Modular Monolith
-- ✅ Framework SDK (9 packages)
+### Phase 1: Foundation ✅ COMPLETE (100%)
+- ✅ Framework SDK (10 packages)
 - ✅ Zero-warning builds
 - ✅ Static event names (NetMX.Events)
 - ✅ Identity module
 - ✅ HTMX helpers package
-- ✅ CLI scaffolding (CRUD generation)
+- ✅ CLI scaffolding (feature generation)
 - ✅ NuGet pre-release publishing
-- 🔄 CreateModuleCommand
-- 🔄 CLI versioning
+- ✅ Dogfooding validated (built Audit & Authorization)
 
-### Phase 2: Enhanced Modules
-- Audit logging module
-- Background jobs module
-- File storage module
-- Email/notifications module
+### Phase 2: Essential Infrastructure ⏳ IN PROGRESS (20%)
 
-### Phase 3: Distributed Capabilities
-- SignalR/SSE for real-time events
-- Message bus integration
-- Multi-tenant isolation
-- API gateway support
+**Week 1** (Oct 21-27) - Authorization Module:
+- ✅ Entities with DDD patterns
+- ✅ PermissionChecker with observability
+- ✅ Authorization attributes & policies
+- ✅ Comprehensive documentation
+- 🔄 Permission seeding
+- 🔄 Unit tests (80%+ coverage)
 
-### Phase 4: Developer Experience
+**Week 2-3** (Oct 28 - Nov 10):
+- Settings Module (global, user, tenant)
+- CLI improvements (auto-migration, db commands)
+
+**Week 4-5** (Nov 11-24):
+- Audit Logging (complete implementation)
+- Entity change tracking
+- Action audit logging
+
+**Week 6-7** (Nov 25 - Dec 8):
+- Observability Module
+- Health checks UI
+- Metrics endpoint (Prometheus)
+- Tracing setup (OpenTelemetry)
+
+**Week 8-9** (Dec 9-22):
+- Testing Infrastructure
+- Unit test helpers
+- Integration test setup
+- E2E framework (Playwright)
+
+**Week 10-12** (Dec 23 - Jan 12):
+- Multi-Tenancy Module (FIRST PAID MODULE)
+- Database-per-tenant
+- License key validation
+- First paying customer target
+
+### Phase 3: Advanced Modules (Months 4-6)
+- Background Jobs (Hangfire)
+- Distributed Caching (Redis)
+- Email/SMS (templating, providers)
+- BLOB Storage (Azure, AWS, S3)
+- Localization (i18n)
+- CMS Module
+- Payment Integration (Stripe, PayPal)
+
+### Phase 4: Distributed Architecture (Months 7-9)
+- Event Bus (RabbitMQ, Kafka)
+- API Gateway (YARP)
+- Microservices Template
+- Distributed Tracing (Jaeger, Zipkin)
+
+### Phase 5: Studio & Suite (Months 10-15)
+- NetMX Studio (VS Code fork) - FREE
+- NetMX Suite (Web SaaS) - $49-$199/mo
+- Module marketplace
+- Visual designers
+- Beta testing & launch
+
+### Phase 6: Enterprise & Community (Months 16-18)
 - Visual Studio templates
-- Hot reload for modules
-- Admin dashboard generator
-- API documentation generator
+- Advanced observability dashboard
+- AI-powered code review
+- Security & compliance features
+- Community building
+- Documentation site
+- Video tutorials
+
+**Milestone**: $8M ARR by Year 4
+
+## Critical Reminders
+
+### Before Every Commit
+1. ✅ Build framework solution
+2. ✅ Build module solutions
+3. ✅ Run all tests
+4. ✅ Check for zero warnings
+5. ✅ Update copilot-instructions.md (this file)
+
+### Architecture Principles
+1. **Framework = Pure Infrastructure** - Zero features in framework/
+2. **Everything is Optional** - All features are modules
+3. **Observability-First** - Built-in from day one, not added later
+4. **Testing-First** - 80%+ coverage target
+5. **Module-Based** - Reusable, self-contained, own solutions
+6. **Dogfooding** - Use our own CLI to validate DX
+
+### Development Workflow
+1. **Use CLI** - Don't create files manually
+2. **Add Business Logic** - After generation, add domain-specific code
+3. **Document** - Update READMEs and copilot-instructions.md
+4. **Test** - Write tests as you build, not after
+5. **Observe** - Add tracing, logging, metrics to every service
 
 ---
 
-**Remember**: Build before commit, test thoroughly, zero warnings, and keep the framework pure!
+**Remember**: Build before commit, test thoroughly, zero warnings, keep framework pure, and always update this file!
