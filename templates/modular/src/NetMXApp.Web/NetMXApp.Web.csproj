@@ -9,6 +9,11 @@
     <ProjectReference Include="..\..\..\..\framework\NetMX.EntityFrameworkCore\NetMX.EntityFrameworkCore.csproj" />
     <ProjectReference Include="..\..\..\..\framework\NetMX.AspNetCore.Core\NetMX.AspNetCore.Core.csproj" />
     <ProjectReference Include="..\..\..\..\framework\NetMX.AspNetCore.Mvc\NetMX.AspNetCore.Mvc.csproj" />
+    <!-- Identity Module -->
+    <ProjectReference Include="..\..\..\..\modules\Identity\NetMX.Identity.Core\NetMX.Identity.Core.csproj" />
+    <ProjectReference Include="..\..\..\..\modules\Identity\NetMX.Identity.Contracts\NetMX.Identity.Contracts.csproj" />
+    <ProjectReference Include="..\..\..\..\modules\Identity\NetMX.Identity.Application\NetMX.Identity.Application.csproj" />
+    <ProjectReference Include="..\..\..\..\modules\Identity\NetMX.Identity.Web\NetMX.Identity.Web.csproj" />
   </ItemGroup>
 
   <ItemGroup>

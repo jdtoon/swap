@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
-using NetMX.Core;
+using NetMX;
 using NetMX.Identity.Core.Data;
 using NetMX.Identity.Core.Users;
 

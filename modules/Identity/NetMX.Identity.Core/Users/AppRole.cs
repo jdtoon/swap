@@ -7,7 +7,7 @@ namespace NetMX.Identity.Core.Users;
 /// Represents a role in the system.
 /// Extends ASP.NET Core Identity with custom properties and business logic.
 /// </summary>
-public class AppRole : IdentityRole<Guid>, IMultiTenant, ISoftDelete, IHasConcurrencyStamp
+public class AppRole : IdentityRole<Guid>
 {
     // Note: Name, NormalizedName, ConcurrencyStamp are inherited from IdentityRole<Guid>
 
@@ -22,9 +22,14 @@ public class AppRole : IdentityRole<Guid>, IMultiTenant, ISoftDelete, IHasConcur
     public bool IsSystemRole { get; private set; }
 
     /// <summary>
-    /// The tenant ID for multi-tenant scenarios.
+    /// The tenant ID for multi-tenant scenarios (nullable for single-tenant).
     /// </summary>
     public Guid? TenantId { get; private set; }
+
+    /// <summary>
+    /// Whether the role is soft-deleted.
+    /// </summary>
+    public bool IsDeleted { get; private set; }
 
     // Navigation properties
     private readonly List<RoleClaim> _claims = new();

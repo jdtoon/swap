@@ -7,7 +7,7 @@ namespace NetMX.Identity.Core.Users;
 /// Represents a user in the system.
 /// Extends ASP.NET Core Identity with custom properties and business logic.
 /// </summary>
-public class AppUser : IdentityUser<Guid>, IMultiTenant, ISoftDelete, IHasConcurrencyStamp
+public class AppUser : IdentityUser<Guid>
 {
     // Note: UserName, Email, EmailConfirmed, PasswordHash, SecurityStamp, 
     // PhoneNumber, PhoneNumberConfirmed, TwoFactorEnabled, LockoutEnd, 
@@ -29,9 +29,14 @@ public class AppUser : IdentityUser<Guid>, IMultiTenant, ISoftDelete, IHasConcur
     public bool IsActive { get; private set; }
 
     /// <summary>
-    /// The tenant ID for multi-tenant scenarios.
+    /// The tenant ID for multi-tenant scenarios (nullable for single-tenant).
     /// </summary>
     public Guid? TenantId { get; private set; }
+
+    /// <summary>
+    /// Whether the user is soft-deleted.
+    /// </summary>
+    public bool IsDeleted { get; private set; }
 
     // Navigation properties
     private readonly List<UserRole> _userRoles = new();

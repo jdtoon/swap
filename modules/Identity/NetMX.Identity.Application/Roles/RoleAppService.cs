@@ -1,6 +1,6 @@
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using NetMX.DependencyInjection;
-using NetMX.Ddd.Domain.Repositories;
 using NetMX.Identity.Contracts.Roles;
 using NetMX.Identity.Contracts.Services;
 using NetMX.Identity.Core.Users;
@@ -9,83 +9,91 @@ namespace NetMX.Identity.Application.Roles;
 
 /// <summary>
 /// Application service for role management.
+/// Wraps ASP.NET Core Identity's RoleManager with NetMX abstractions.
 /// </summary>
 public class RoleAppService : IRoleAppService, IScopedDependency
 {
-    private readonly IQueryableRepository<AppRole, Guid> _roleRepository;
+    private readonly RoleManager<AppRole> _roleManager;
 
-    public RoleAppService(IQueryableRepository<AppRole, Guid> roleRepository)
+    public RoleAppService(RoleManager<AppRole> roleManager)
     {
-        _roleRepository = roleRepository;
+        _roleManager = roleManager;
     }
 
     public async Task<RoleDto?> GetAsync(Guid id)
     {
-        var role = await _roleRepository.GetAsync(id);
+        var role = await _roleManager.FindByIdAsync(id.ToString());
         return role == null ? null : MapToDto(role);
     }
 
     public async Task<RoleDto?> GetByNameAsync(string name)
     {
-        var queryable = await _roleRepository.GetQueryableAsync();
-        var role = await queryable
-            .FirstOrDefaultAsync(r => r.Name == name);
+        var role = await _roleManager.FindByNameAsync(name);
         return role == null ? null : MapToDto(role);
     }
 
     public async Task<List<RoleDto>> GetListAsync()
     {
-        var roles = await _roleRepository.GetListAsync();
+        var roles = await _roleManager.Roles.ToListAsync();
         return roles.Select(MapToDto).ToList();
     }
 
     public async Task<RoleDto> CreateAsync(CreateRoleDto input)
     {
-        // Check if role already exists
-        var existingRole = await GetByNameAsync(input.Name);
-        if (existingRole != null)
-            throw new InvalidOperationException($"Role with name '{input.Name}' already exists.");
-
-        // Create role
         var role = new AppRole(
             Guid.NewGuid(),
             input.Name,
             input.Description,
-            false, // Not a system role
+            false, // Not a system role by default
             input.TenantId);
 
-        await _roleRepository.InsertAsync(role);
+        var result = await _roleManager.CreateAsync(role);
+        if (!result.Succeeded)
+        {
+            var errors = string.Join(", ", result.Errors.Select(e => e.Description));
+            throw new InvalidOperationException($"Failed to create role: {errors}");
+        }
+
         return MapToDto(role);
     }
 
     public async Task<RoleDto> UpdateAsync(Guid id, UpdateRoleDto input)
     {
-        var role = await _roleRepository.GetAsync(id);
+        var role = await _roleManager.FindByIdAsync(id.ToString());
         if (role == null)
             throw new InvalidOperationException($"Role with id '{id}' not found.");
 
-        // Prevent updating system roles
         if (role.IsSystemRole)
             throw new InvalidOperationException("Cannot update system roles.");
 
         role.UpdateName(input.Name);
         role.UpdateDescription(input.Description);
-        
-        await _roleRepository.UpdateAsync(role);
+
+        var result = await _roleManager.UpdateAsync(role);
+        if (!result.Succeeded)
+        {
+            var errors = string.Join(", ", result.Errors.Select(e => e.Description));
+            throw new InvalidOperationException($"Failed to update role: {errors}");
+        }
+
         return MapToDto(role);
     }
 
     public async Task DeleteAsync(Guid id)
     {
-        var role = await _roleRepository.GetAsync(id);
+        var role = await _roleManager.FindByIdAsync(id.ToString());
         if (role == null)
             throw new InvalidOperationException($"Role with id '{id}' not found.");
 
-        // Prevent deleting system roles
         if (role.IsSystemRole)
             throw new InvalidOperationException("Cannot delete system roles.");
 
-        await _roleRepository.DeleteAsync(id);
+        var result = await _roleManager.DeleteAsync(role);
+        if (!result.Succeeded)
+        {
+            var errors = string.Join(", ", result.Errors.Select(e => e.Description));
+            throw new InvalidOperationException($"Failed to delete role: {errors}");
+        }
     }
 
     private static RoleDto MapToDto(AppRole role)

@@ -51,16 +51,14 @@ public class UserAppService : IUserAppService, IScopedDependency
 
     public async Task<UserDto> CreateAsync(CreateUserDto input)
     {
-        // Create user with Identity's UserManager (handles password hashing)
-        var user = new AppUser
-        {
-            Id = Guid.NewGuid(),
-            UserName = input.UserName,
-            Email = input.Email,
-            TenantId = input.TenantId,
-            IsActive = true,
-            EmailConfirmed = false
-        };
+        // Create user using the proper constructor
+        // Note: We'll let Identity handle password hashing, so we pass empty string initially
+        var user = new AppUser(
+            Guid.NewGuid(),
+            input.UserName,
+            input.Email,
+            string.Empty, // Password will be set by UserManager.CreateAsync
+            input.TenantId);
 
         // Update profile if provided
         if (!string.IsNullOrEmpty(input.FirstName) || !string.IsNullOrEmpty(input.LastName) || !string.IsNullOrEmpty(input.PhoneNumber))
@@ -264,14 +262,14 @@ public class UserAppService : IUserAppService, IScopedDependency
         return new UserDto
         {
             Id = user.Id,
-            UserName = user.UserName,
-            Email = user.Email,
+            UserName = user.UserName ?? string.Empty,
+            Email = user.Email ?? string.Empty,
             EmailConfirmed = user.EmailConfirmed,
             PhoneNumber = user.PhoneNumber,
             PhoneNumberConfirmed = user.PhoneNumberConfirmed,
             TwoFactorEnabled = user.TwoFactorEnabled,
             LockoutEnabled = user.LockoutEnabled,
-            LockoutEnd = user.LockoutEnd,
+            LockoutEnd = user.LockoutEnd?.DateTime, // Convert DateTimeOffset? to DateTime?
             AccessFailedCount = user.AccessFailedCount,
             FirstName = user.FirstName,
             LastName = user.LastName,
