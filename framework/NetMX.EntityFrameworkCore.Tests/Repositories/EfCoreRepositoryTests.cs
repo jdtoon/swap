@@ -196,6 +196,9 @@ public class TestDbContext : DbContext
             b.ToTable("TestEntities");
             b.HasKey(x => x.Id);
             b.Property(x => x.Name).IsRequired().HasMaxLength(256);
+            
+            // Ignore domain events - they're not meant to be persisted
+            b.Ignore(x => x.DomainEvents);
         });
     }
 }
