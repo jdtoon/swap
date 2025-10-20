@@ -108,16 +108,25 @@ scripts/            # Build and development scripts
 **Target**: 80% feature parity by Month 12  
 **Advantages**: HTMX-first, 70-95% cheaper, observability built-in, modern .NET 9
 
-**Tiering Strategy** (see [TIERING-STRATEGY.md](../docs/TIERING-STRATEGY.md)):
+**Tiering Strategy** (One-Time Purchase Model):
 - **FREE** (MIT): Framework + essential modules (Identity, Authorization, Settings, Audit, Observability, Testing)
-- **STANDARD** ($99/mo): Advanced modules (Multi-Tenancy, Jobs, Caching, Email, CMS)
-- **ENTERPRISE** ($499/mo): Scale features (Advanced observability, distributed tracing, AI review)
+- **STANDARD** ($499 one-time): Advanced modules bundle (Multi-Tenancy, Jobs, Caching, Email, CMS, BLOB Storage)
+- **PRO** ($1,499 one-time): All STANDARD + Pro modules (Distributed tracing, Microservices, Event Bus, API Gateway)
+- **ENTERPRISE** ($4,999 one-time): All PRO + Enterprise features (Advanced observability, Security scanning, AI review, Priority support)
 
-**Revenue Model**: Path to $8M ARR by Year 4
-- Year 1: $180K (100 Standard, 10 Enterprise customers)
-- Year 2: $1.4M (modules + Suite beta)
-- Year 3: $4.5M (modules + Suite launched)
-- Year 4: $8M (full ecosystem)
+**Individual Pro Modules**: $149-$299 each (à la carte)
+- Multi-Tenancy: $299
+- Background Jobs: $149
+- Email/SMS: $149
+- CMS: $249
+- BLOB Storage: $149
+- Payment Integration: $199
+
+**Revenue Model**: Path to sustainable business
+- Year 1: $150K (300 STANDARD, 50 PRO, 10 ENTERPRISE + 200 individual modules)
+- Year 2: $800K (scale + Studio/Suite revenue)
+- Year 3: $2.5M (ecosystem maturity)
+- Year 4: $5M+ (full ecosystem + enterprise adoption)
 
 ### Current Modules (Phase 2)
 

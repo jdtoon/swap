@@ -61,11 +61,11 @@
 
 ---
 
-## 💼 **STANDARD TIER** (Paid Modules)
+## 💼 **STANDARD TIER** (One-Time Purchase)
 
 **Target**: Growing businesses, SaaS startups, agencies
 
-**Pricing**: $99/month or $999/year per project (unlimited developers)
+**Pricing**: $499 one-time purchase (unlimited projects, unlimited developers, lifetime updates)
 
 ### Standard Tier Modules
 
@@ -78,7 +78,9 @@
 - Tenant-specific settings
 - Cross-tenant reporting (admin only)
 
-**Why Paid**: Complex feature, ongoing support, critical for SaaS
+**Individual Price**: $299 one-time (if purchased separately)
+
+**Why Paid**: Complex feature, critical for SaaS, high development cost
 
 ---
 
@@ -90,6 +92,8 @@
 - Failed job retry policies
 - Priority queues
 - Email queue integration
+
+**Individual Price**: $149 one-time
 
 **Why Paid**: Hangfire Pro license cost, enterprise monitoring
 
@@ -103,6 +107,8 @@
 - Cache monitoring dashboard
 - Performance recommendations
 - Automatic cache warming
+
+**Individual Price**: $149 one-time
 
 **Why Paid**: Advanced patterns, Redis management, monitoring
 
@@ -120,6 +126,8 @@
 - Template management UI
 - A/B testing support
 
+**Individual Price**: $149 one-time
+
 **Why Paid**: Multiple provider integrations, ongoing maintenance
 
 ---
@@ -136,6 +144,8 @@
 - Quota management
 - CDN integration
 
+**Individual Price**: $149 one-time
+
 **Why Paid**: Multiple cloud integrations, ongoing API updates
 
 ---
@@ -150,6 +160,8 @@
 - Google Translate integration
 - Missing translation detection
 - Fallback languages
+
+**Individual Price**: $149 one-time
 
 **Why Paid**: Complex feature, translation API costs
 
@@ -167,6 +179,8 @@
 - Dynamic forms
 - Content blocks
 
+**Individual Price**: $249 one-time
+
 **Why Paid**: TinyMCE Pro license, complex features
 
 ---
@@ -181,32 +195,78 @@
 - Refund management
 - Payment analytics
 
+**Individual Price**: $199 one-time
+
 **Why Paid**: Multiple payment gateway integrations
 
 ---
 
 ### Standard Tier Benefits
 - ✅ All Free Tier features
-- ✅ 8 advanced modules (pick what you need)
+- ✅ 8 advanced modules included (Multi-Tenancy, Jobs, Caching, Email, BLOB, Localization, CMS, Payment)
 - ✅ Priority email support (48h response)
-- ✅ Private Slack channel
-- ✅ Monthly office hours call
+- ✅ Private Slack channel access
+- ✅ Quarterly office hours calls
 - ✅ Commercial use license
-- ✅ All updates & new modules
+- ✅ Lifetime updates (no recurring fees)
 
 ### Standard Tier Pricing
-- **Monthly**: $99/project/month
-- **Annual**: $999/project/year (save 17%)
-- **Unlimited developers** per project
+- **One-Time**: $499 (unlimited projects, unlimited developers)
+- **À la carte**: $149-$299 per module
 - **Source code included** (no DLL obfuscation)
+- **Lifetime updates** included
 
 ---
 
-## 🏢 **ENTERPRISE TIER** (Pro Features)
+## 🏢 **PRO TIER** (One-Time Purchase)
 
-**Target**: Large enterprises, distributed systems, high-scale apps
+**Target**: Distributed systems, microservices, high-scale apps
 
-**Pricing**: $499/month or $4,990/year per organization (unlimited projects)
+**Pricing**: $1,499 one-time purchase (includes all STANDARD modules + PRO modules, unlimited projects, unlimited developers, lifetime updates)
+
+### PRO Tier Modules (Additional to STANDARD)
+
+#### 1. **Distributed Tracing Module** 🔥
+- Jaeger integration
+- Zipkin integration
+- Request flow visualization
+- Slow transaction analysis
+- Error correlation
+- Service dependency map
+- Trace sampling configuration
+
+#### 2. **Microservices Support Module** 🔥
+- Service-to-service auth (JWT)
+- Service discovery (Consul)
+- API gateway (YARP)
+- Circuit breaker patterns
+- Retry policies
+- Load balancing
+- Service mesh integration (Istio)
+
+#### 3. **Event Bus Module** 🔥
+- RabbitMQ integration
+- Kafka integration
+- Event sourcing patterns
+- Message routing
+- Dead letter handling
+- Retry policies
+
+#### 4. **API Gateway Module** 🔥
+- YARP-based gateway
+- Rate limiting
+- Request transformation
+- Response caching
+- Load balancing
+- Service discovery integration
+
+---
+
+## 🏢 **ENTERPRISE TIER** (One-Time Purchase)
+
+**Target**: Large enterprises, compliance-heavy industries, mission-critical apps
+
+**Pricing**: $4,999 one-time purchase (includes all PRO + STANDARD modules + ENTERPRISE features, unlimited projects, unlimited developers, lifetime updates, priority support)
 
 ### Enterprise Exclusive Features
 
@@ -288,24 +348,23 @@
 ---
 
 ### Enterprise Tier Benefits
-- ✅ All Standard Tier modules
+- ✅ All PRO + STANDARD Tier modules
 - ✅ All Enterprise exclusive features
-- ✅ Priority phone support (24h response)
+- ✅ Priority email/phone support (24h response)
 - ✅ Dedicated Slack channel
-- ✅ Weekly office hours
-- ✅ Architecture review sessions
+- ✅ Monthly office hours
+- ✅ Architecture review sessions (quarterly)
 - ✅ Custom module development (negotiable)
-- ✅ On-site training (optional)
-- ✅ SLA guarantee (99.9% uptime)
+- ✅ On-site training (optional, extra cost)
 - ✅ Early access to new features
+- ✅ Lifetime updates
 
 ### Enterprise Tier Pricing
-- **Monthly**: $499/org/month
-- **Annual**: $4,990/org/year (save 17%)
-- **Unlimited projects**
-- **Unlimited developers**
-- **White-label option** available
+- **One-Time**: $4,999 (unlimited projects, unlimited developers)
+- **Lifetime updates** included
+- **White-label option** available (extra cost)
 - **Custom licensing** available
+- **Volume discounts** available (5+ licenses)
 
 ---
 
@@ -348,25 +407,42 @@
 
 ---
 
-## 💡 **Revenue Model**
+## 💡 **Revenue Model** (One-Time Purchase)
 
 ### Year 1 Goals
 - **Free Tier**: 10,000 developers
-- **Standard Tier**: 100 customers ($119,000/year)
-- **Enterprise Tier**: 10 customers ($59,880/year)
-- **Total ARR**: ~$180,000
+- **Standard Tier**: 300 customers ($149,700)
+- **PRO Tier**: 50 customers ($74,950)
+- **Enterprise Tier**: 10 customers ($49,990)
+- **Individual Modules**: 200 sales ($30,000)
+- **Studio/Suite**: Beta (minimal revenue)
+- **Total Revenue**: ~$300K
 
 ### Year 2 Goals
 - **Free Tier**: 50,000 developers
-- **Standard Tier**: 500 customers ($594,000/year)
-- **Enterprise Tier**: 50 customers ($299,400/year)
-- **Total ARR**: ~$900,000
+- **Standard Tier**: 1,000 customers ($499,000)
+- **PRO Tier**: 200 customers ($299,800)
+- **Enterprise Tier**: 50 customers ($249,950)
+- **Individual Modules**: 1,000 sales ($180,000)
+- **Studio/Suite**: Launch ($300K ARR)
+- **Total Revenue**: ~$1.5M
 
 ### Year 3 Goals
 - **Free Tier**: 200,000 developers
-- **Standard Tier**: 2,000 customers ($2,376,000/year)
-- **Enterprise Tier**: 200 customers ($1,197,600/year)
-- **Total ARR**: ~$3,500,000
+- **Standard Tier**: 3,000 customers ($1,497,000)
+- **PRO Tier**: 500 customers ($749,500)
+- **Enterprise Tier**: 150 customers ($749,850)
+- **Individual Modules**: 2,000 sales ($360,000)
+- **Studio/Suite**: Growth ($800K ARR)
+- **Total Revenue**: ~$4M+
+
+### Year 4 Goals
+- **Standard Tier**: 5,000+ customers ($2.5M)
+- **PRO Tier**: 1,000+ customers ($1.5M)
+- **Enterprise Tier**: 300+ customers ($1.5M)
+- **Individual Modules**: 3,000+ sales ($540K)
+- **Studio/Suite**: Maturity ($2M ARR)
+- **Total Revenue**: ~$8M+
 
 ---
 
@@ -414,15 +490,20 @@
 |---------|------------|----------|----------------|
 | **Price** | $0 | $0 | $1,999/dev/year |
 | **Core Framework** | ✅ MIT | ✅ MIT | ✅ |
-| **Multi-tenancy** | 💰 $99/mo | ❌ | ✅ |
-| **Background Jobs** | 💰 $99/mo | ❌ | ✅ |
-| **Observability** | ✅ Basic | ❌ | ✅ |
+| **Multi-tenancy** | 💰 $499 one-time | ❌ | ✅ (recurring) |
+| **Background Jobs** | 💰 $499 one-time | ❌ | ✅ (recurring) |
+| **Observability** | ✅ Basic | ❌ | ✅ (recurring) |
 | **HTMX-First** | ✅ | ❌ | ❌ |
 | **Type-Safe Events** | ✅ | ❌ | ❌ |
-| **CLI Scaffolding** | ✅ Free | ⚠️ Limited | ✅ Paid |
-| **Source Code** | ✅ | ✅ | 💰 Extra |
+| **CLI Scaffolding** | ✅ Free | ⚠️ Limited | ✅ (recurring) |
+| **Source Code** | ✅ | ✅ | ✅ (recurring) |
+| **Lifetime Updates** | ✅ | ✅ | ❌ (expires) |
 
-**NetMX Advantage**: More affordable, better DX, modern stack
+**NetMX Advantage**: 
+- **70-95% cheaper** ($499 one-time vs $1,999/year per dev)
+- **No recurring fees** (pay once, use forever)
+- **Better DX** (HTMX-first, type-safe events)
+- **Modern stack** (.NET 9, observability built-in)
 
 ---
 
