@@ -4,7 +4,7 @@ using Authorization.Core.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
-using NetMX.Core.DependencyInjection;
+using NetMX.DependencyInjection;
 using NetMX.Ddd.Domain.Repositories;
 
 namespace Authorization.Application.Services;

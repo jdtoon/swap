@@ -1,7 +1,7 @@
-using NetMX.Authorization.Entities;
+using Authorization.Core.Entities;
 using NetMX.Ddd.Domain.Repositories;
 
-namespace NetMX.Authorization.Seeding;
+namespace Authorization.Application.Seeding;
 
 /// <summary>
 /// Seeds system permissions for the Authorization module.
@@ -23,7 +23,8 @@ public class PermissionSeeder
     public async Task SeedAsync()
     {
         // Check if already seeded
-        if (await _permissionRepository.GetCountAsync() > 0)
+        var existingPermissions = await _permissionRepository.GetListAsync();
+        if (existingPermissions.Count > 0)
         {
             return; // Already seeded
         }

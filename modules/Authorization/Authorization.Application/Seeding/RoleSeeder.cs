@@ -1,7 +1,7 @@
-using NetMX.Authorization.Entities;
+using Authorization.Core.Entities;
 using NetMX.Ddd.Domain.Repositories;
 
-namespace NetMX.Authorization.Seeding;
+namespace Authorization.Application.Seeding;
 
 /// <summary>
 /// Seeds system roles for the Authorization module.
@@ -27,7 +27,8 @@ public class RoleSeeder
     public async Task SeedAsync(Guid? adminUserId = null)
     {
         // Check if already seeded
-        if (await _roleRepository.GetCountAsync() > 0)
+        var existingRoles = await _roleRepository.GetListAsync();
+        if (existingRoles.Count > 0)
         {
             return; // Already seeded
         }
@@ -58,7 +59,7 @@ public class RoleSeeder
         // Grant ALL permissions to Admin
         foreach (var permission in permissions.Values)
         {
-            adminRole.GrantPermission(permission.Id, grantedBy ?? Guid.Empty, DateTime.UtcNow);
+            adminRole.GrantPermission(permission.Id, grantedBy ?? Guid.Empty);
         }
 
         await _roleRepository.InsertAsync(adminRole);
@@ -90,7 +91,7 @@ public class RoleSeeder
         {
             if (permissions.TryGetValue(permissionName, out var permission))
             {
-                userRole.GrantPermission(permission.Id, grantedBy ?? Guid.Empty, DateTime.UtcNow);
+                userRole.GrantPermission(permission.Id, grantedBy ?? Guid.Empty);
             }
         }
 
@@ -128,7 +129,7 @@ public class RoleSeeder
         {
             if (permissions.TryGetValue(permissionName, out var permission))
             {
-                moderatorRole.GrantPermission(permission.Id, grantedBy ?? Guid.Empty, DateTime.UtcNow);
+                moderatorRole.GrantPermission(permission.Id, grantedBy ?? Guid.Empty);
             }
         }
 

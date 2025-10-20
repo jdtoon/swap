@@ -1,4 +1,4 @@
-namespace NetMX.Authorization.Seeding;
+namespace Authorization.Application.Seeding;
 
 /// <summary>
 /// Master seeder for the Authorization module.
