@@ -35,7 +35,20 @@ public class CreateModuleCommand
 
             // Step 2: Create module directory structure
             ConsoleHelper.WriteStep(2, "Creating module directory structure");
-            var modulesDir = Path.Combine(solutionDir, "modules", _moduleName);
+            
+            // Determine correct modules directory
+            // If in framework/, create modules in repo root; otherwise create relative to solution
+            var modulesBaseDir = solutionDir;
+            var solutionDirName = Path.GetFileName(solutionDir);
+            
+            if (solutionDirName == "framework")
+            {
+                // We're in framework/, so create in repo root modules/
+                modulesBaseDir = Path.GetDirectoryName(solutionDir)!;
+                ConsoleHelper.WriteInfo($"  Detected framework directory, creating in repository modules/");
+            }
+            
+            var modulesDir = Path.Combine(modulesBaseDir, "modules", _moduleName);
             
             if (Directory.Exists(modulesDir))
             {
@@ -57,9 +70,9 @@ public class CreateModuleCommand
             ConsoleHelper.WriteStep(4, "Configuring project references");
             AddProjectReferences(modulesDir);
 
-            // Step 5: Add projects to solution
-            ConsoleHelper.WriteStep(5, "Adding projects to solution");
-            AddProjectsToSolution(solutionFile, modulesDir);
+            // Step 5: Create module solution file
+            ConsoleHelper.WriteStep(5, "Creating module solution");
+            CreateModuleSolution(modulesDir);
 
             // Step 6: Create module.json
             ConsoleHelper.WriteStep(6, "Creating module descriptor");
@@ -76,13 +89,14 @@ public class CreateModuleCommand
             ConsoleHelper.WriteInfo($"    ├── {_moduleName}.Contracts/  (DTOs & interfaces)");
             ConsoleHelper.WriteInfo($"    ├── {_moduleName}.Application/ (Services)");
             ConsoleHelper.WriteInfo($"    ├── {_moduleName}.Web/        (Controllers & views)");
+            ConsoleHelper.WriteInfo($"    ├── {_moduleName}.sln         (Module solution)");
             ConsoleHelper.WriteInfo($"    ├── module.json");
             ConsoleHelper.WriteInfo($"    └── README.md");
 
             ConsoleHelper.WriteInfo("\nNext steps:");
-            ConsoleHelper.WriteInfo($"  1. cd modules/{_moduleName}/{_moduleName}.Web");
-            ConsoleHelper.WriteInfo("  2. netmx generate crud YourEntity");
-            ConsoleHelper.WriteInfo("  3. Add module to your application");
+            ConsoleHelper.WriteInfo($"  1. cd modules/{_moduleName}");
+            ConsoleHelper.WriteInfo($"  2. cd {_moduleName}.Web");
+            ConsoleHelper.WriteInfo($"  3. netmx generate crud YourEntity -m {_moduleName}");
 
             return 0;
         }
@@ -248,8 +262,23 @@ public class CreateModuleCommand
         ConsoleHelper.WriteInfo("  ✓ Project references configured");
     }
 
-    private void AddProjectsToSolution(string solutionFile, string moduleDir)
+    private void CreateModuleSolution(string moduleDir)
     {
+        var solutionFile = Path.Combine(moduleDir, $"{_moduleName}.sln");
+        
+        // Create solution file
+        var createSlnProcess = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+        {
+            FileName = "dotnet",
+            Arguments = $"new sln -n {_moduleName} -o \"{moduleDir}\"",
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            UseShellExecute = false,
+            CreateNoWindow = true
+        });
+        createSlnProcess?.WaitForExit();
+
+        // Add all projects to the solution
         var projects = new[]
         {
             Path.Combine(moduleDir, $"{_moduleName}.Core", $"{_moduleName}.Core.csproj"),
@@ -260,8 +289,8 @@ public class CreateModuleCommand
 
         foreach (var project in projects)
         {
-            var relativePath = Path.GetRelativePath(Path.GetDirectoryName(solutionFile)!, project);
-            var process = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+            var relativePath = Path.GetRelativePath(moduleDir, project);
+            var addProcess = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
             {
                 FileName = "dotnet",
                 Arguments = $"sln \"{solutionFile}\" add \"{relativePath}\"",
@@ -270,11 +299,10 @@ public class CreateModuleCommand
                 UseShellExecute = false,
                 CreateNoWindow = true
             });
-
-            process?.WaitForExit();
+            addProcess?.WaitForExit();
         }
 
-        ConsoleHelper.WriteInfo("  ✓ Projects added to solution");
+        ConsoleHelper.WriteInfo($"  ✓ Created {_moduleName}.sln");
     }
 
     private void CreateModuleJson(string moduleDir)
