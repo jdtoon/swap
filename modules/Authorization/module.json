@@ -1,0 +1,16 @@
+{
+  "name": "Authorization",
+  "version": "0.1.0",
+  "description": "Authorization module for NetMX",
+  "author": "Your Name",
+  "license": "MIT",
+  "dependencies": {
+    "netmx": "0.1.0"
+  },
+  "projects": [
+    "Authorization.Core",
+    "Authorization.Contracts",
+    "Authorization.Application",
+    "Authorization.Web"
+  ]
+}
