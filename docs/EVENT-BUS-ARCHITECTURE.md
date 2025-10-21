@@ -475,25 +475,146 @@ HX-Trigger: {
 
 ---
 
-### 5. Cross-Instance Coordination (Redis)
+### 5. Deployment Strategy: Monolith vs Microservices
+
+**Key Insight**: "we need to consider lengths to go to for a normal monolith (i dont think we need redis here) vs microservices"
+
+#### Monolith (Single Instance) - Week 2
+
+**Use**: IMemoryCache (built-in .NET)
+
+```csharp
+public class EventBus : IEventBus
+{
+    private readonly IMemoryCache _cache; // In-memory, single instance
+    private readonly ConcurrentDictionary<Guid, List<TriggeredEvent>> _requestEvents = new();
+    
+    public async Task PublishAsync<TData>(string eventName, TData data, EventContext context)
+    {
+        // Per-request deduplication (in-memory HashSet)
+        var fingerprint = CreateFingerprint(eventName, data, context);
+        
+        if (context.ProcessedEvents.Contains(fingerprint))
+            return; // Already processed in this request
+        
+        context.ProcessedEvents.Add(fingerprint);
+        
+        // Per-session rate limiting (IMemoryCache - sufficient for single instance!)
+        if (await IsRateLimitedAsync(eventName, context))
+            return;
+        
+        // Process event
+        await ProcessEventAsync(eventName, data, context);
+    }
+    
+    private async Task<bool> IsRateLimitedAsync(string eventName, EventContext context)
+    {
+        var key = $"event-rate:{eventName}:{context.SessionId}";
+        var count = await _cache.GetOrCreateAsync(key, entry =>
+        {
+            entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(1);
+            return Task.FromResult(0);
+        });
+        
+        if (count >= 10) return true; // 10 events/min per session
+        
+        _cache.Set(key, count + 1);
+        return false;
+    }
+}
+```
+
+**Monolith Benefits**:
+- ✅ Zero external dependencies (IMemoryCache is .NET built-in)
+- ✅ Simpler deployment (no Redis needed)
+- ✅ Lower cost (no cache server)
+- ✅ Sufficient for 99% of applications
+- ✅ <1ms overhead (in-process)
+
+**When to use**: Single web instance, <10K concurrent users
+
+---
+
+#### Load-Balanced Monolith (Multiple Instances) - Week 4
 
 **Problem**: Multiple web app instances, same user session
 
 ```
-User Session ABC123
+User Session ABC123 (Sticky Session via Load Balancer)
 
 ┌─────────────┐         ┌─────────────┐         ┌─────────────┐
 │  Instance 1 │         │  Instance 2 │         │  Instance 3 │
 └─────────────┘         └─────────────┘         └─────────────┘
-     Request 1              Request 2               Request 3
-     (Tab 1)                (Tab 2)                 (Tab 3)
-       ↓                       ↓                       ↓
-   Creates Order          Creates Order           Creates Order
-       ↓                       ↓                       ↓
-   ??? How to prevent same event from all 3 instances ???
+   IMemoryCache           IMemoryCache            IMemoryCache
+   (independent)          (independent)           (independent)
 ```
 
-**Solution**: Redis-based distributed event tracking
+**Solution 1: Sticky Sessions (Recommended for Monolith)**
+
+```csharp
+// Load balancer config (Azure App Service, AWS ALB, nginx)
+// Route same session to same instance
+// Each instance has independent IMemoryCache
+// No Redis needed!
+```
+
+**Monolith (Sticky) Benefits**:
+- ✅ Still zero external dependencies
+- ✅ Same user always hits same instance
+- ✅ IMemoryCache works perfectly
+- ✅ Lower latency (no network calls)
+
+**When to use**: Load-balanced monolith, sticky sessions enabled
+
+---
+
+**Solution 2: Distributed Cache (If sticky sessions not possible)**
+
+**Use**: IDistributedCache with Redis (optional)
+
+```csharp
+public class DistributedEventBus : IEventBus
+{
+    private readonly IDistributedCache _cache; // Redis
+    private readonly IConnectionMultiplexer _redis; // Redis pub/sub
+    
+    public async Task PublishAsync<TData>(string eventName, TData data, EventContext context)
+    {
+        // Try to acquire Redis lock (ensures only one instance processes)
+        var lockKey = $"event-lock:{CreateFingerprint(eventName, data, context)}";
+        var acquired = await _cache.SetAsync(
+            lockKey, 
+            BitConverter.GetBytes(true),
+            new DistributedCacheEntryOptions
+            {
+                AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(5)
+            });
+        
+        if (!acquired) return; // Another instance is handling it
+        
+        // Process event
+        await ProcessEventAsync(eventName, data, context);
+    }
+}
+```
+
+**Distributed Benefits**:
+- ✅ Works without sticky sessions
+- ✅ Cross-instance coordination
+- ✅ Single event processing guarantee
+
+**Tradeoffs**:
+- ⚠️ Requires Redis (external dependency)
+- ⚠️ Network latency (+2-5ms)
+- ⚠️ Additional cost (Redis server)
+
+**When to use**: Multiple instances, no sticky sessions, or microservices
+
+---
+
+#### Microservices (Distributed) - Month 7
+
+**Problem**: Events need to cross service boundaries
 
 ```csharp
 public class DistributedEventBus : IEventBus
@@ -612,14 +733,19 @@ Request: POST /api/orders
 
 ## 📦 Package Structure
 
+**Philosophy**: "we don't want to have any dependancies unless absolutely core to .NET"
+
 ### NetMX.Core (Add to existing package)
+
+**Dependencies**: ZERO external (only .NET built-in)
+- ✅ Microsoft.Extensions.Caching.Memory (built-in .NET)
+- ✅ System.Diagnostics.DiagnosticSource (built-in .NET)
 
 ```
 NetMX.Core/
 ├─ Events/
 │   ├─ IEventBus.cs                     (interface)
-│   ├─ EventBus.cs                      (in-memory implementation)
-│   ├─ DistributedEventBus.cs           (Redis implementation)
+│   ├─ EventBus.cs                      (in-memory - Week 2)
 │   ├─ EventContext.cs                  (request metadata)
 │   ├─ EventDirection.cs                (enum)
 │   ├─ EventDirectionAttribute.cs       (attribute)
@@ -631,6 +757,8 @@ NetMX.Core/
 
 ### NetMX.Events (NEW - Static event definitions)
 
+**Dependencies**: ZERO (pure constants)
+
 ```
 NetMX.Events/
 └─ DomainEvents.cs                      (all static event names)
@@ -638,6 +766,37 @@ NetMX.Events/
     ├─ DomainEvents.Order.*
     ├─ DomainEvents.Product.*
     └─ ... (generated by CLI)
+```
+
+**Reminder**: "we want to keep events/event pipelines static. easy to debug and trace"
+
+---
+
+### NetMX.Caching.Redis (OPTIONAL - Add in Week 4 if needed)
+
+**Only if**: Multiple instances without sticky sessions
+
+**Dependencies**: 
+- StackExchange.Redis (industry standard, mature)
+
+```
+NetMX.Caching.Redis/
+├─ DistributedEventBus.cs               (Redis implementation)
+├─ RedisEventBusOptions.cs              (configuration)
+└─ ServiceCollectionExtensions.cs       (DI registration)
+```
+
+**Usage** (opt-in):
+```csharp
+// Without Redis (default - single instance or sticky sessions)
+services.AddEventBus(); // Uses IMemoryCache
+
+// With Redis (optional - multiple instances, no sticky sessions)
+services.AddEventBus()
+    .AddRedisDistribution(options =>
+    {
+        options.ConnectionString = "localhost:6379";
+    });
 ```
 
 ---
@@ -682,30 +841,30 @@ app.UseEventBus();
 
 ## 📅 Implementation Timeline
 
-### Week 2 (Oct 21-27) - Foundation
+### Week 2 (Oct 21-27) - Foundation (Monolith Focus)
 - ✅ EventContext class
 - ✅ IEventBus interface
-- ✅ EventBus implementation (in-memory)
-- ✅ EventBusMiddleware
-- ✅ Unit tests (40+ tests)
-
-### Week 3 (Oct 28 - Nov 3) - Advanced
+- ✅ EventBus implementation (IMemoryCache - zero external deps!)
 - ✅ EventDirection enforcement
-- ✅ Duplicate detection
-- ✅ Rate limiting
+- ✅ Duplicate detection (in-memory)
+- ✅ Rate limiting (IMemoryCache)
+- ✅ EventBusMiddleware
 - ✅ OpenTelemetry integration
+- ✅ Unit tests (40+ tests)
+- ✅ Documentation
 
-### Week 4 (Nov 4-10) - Distributed
-- ✅ DistributedEventBus (Redis)
+**Result**: Production-ready for 99% of applications (single instance + sticky sessions)
+
+### Week 4 (Nov 4-10) - Distributed (Optional)
+**Only if needed**: Multiple instances without sticky sessions
+
+- ✅ NetMX.Caching.Redis package (separate, optional)
+- ✅ DistributedEventBus (Redis-backed)
 - ✅ Cross-instance coordination
-- ✅ Integration tests
-- ✅ Performance benchmarks
+- ✅ Integration tests (10+ instances)
+- ✅ Performance benchmarks (<5ms overhead)
 
-### Week 5 (Nov 11-17) - Polish
-- ✅ Complete documentation
-- ✅ Real-world examples
-- ✅ CLI integration (auto-generate event definitions)
-- ✅ Module marketplace ready
+**Note**: Most apps won't need this (sticky sessions + IMemoryCache sufficient)
 
 ---
 
