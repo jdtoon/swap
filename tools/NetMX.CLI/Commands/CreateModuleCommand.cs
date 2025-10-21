@@ -66,12 +66,20 @@ public class CreateModuleCommand
             CreateApplicationProject(modulesDir);
             CreateWebProject(modulesDir);
 
-            // Step 4: Add project references
-            ConsoleHelper.WriteStep(4, "Configuring project references");
-            AddProjectReferences(modulesDir);
+            // Step 4: Create test projects
+            ConsoleHelper.WriteStep(4, "Creating test projects");
+            
+            CreateUnitTestProject(modulesDir);
+            CreateIntegrationTestProject(modulesDir);
+            CreateE2ETestProject(modulesDir);
 
-            // Step 5: Create module solution file
-            ConsoleHelper.WriteStep(5, "Creating module solution");
+            // Step 5: Add project references
+            ConsoleHelper.WriteStep(5, "Configuring project references");
+            AddProjectReferences(modulesDir);
+            AddTestProjectReferences(modulesDir);
+
+            // Step 6: Create module solution file
+            ConsoleHelper.WriteStep(6, "Creating module solution");
             CreateModuleSolution(modulesDir);
 
             // Step 6: Create module.json
@@ -85,11 +93,14 @@ public class CreateModuleCommand
             ConsoleHelper.WriteSuccess($"Module '{_moduleName}' created successfully!");
             ConsoleHelper.WriteInfo("\nModule structure:");
             ConsoleHelper.WriteInfo($"  modules/{_moduleName}/");
-            ConsoleHelper.WriteInfo($"    ├── {_moduleName}.Core/       (Domain layer)");
-            ConsoleHelper.WriteInfo($"    ├── {_moduleName}.Contracts/  (DTOs & interfaces)");
-            ConsoleHelper.WriteInfo($"    ├── {_moduleName}.Application/ (Services)");
-            ConsoleHelper.WriteInfo($"    ├── {_moduleName}.Web/        (Controllers & views)");
-            ConsoleHelper.WriteInfo($"    ├── {_moduleName}.sln         (Module solution)");
+            ConsoleHelper.WriteInfo($"    ├── {_moduleName}.Core/           (Domain layer)");
+            ConsoleHelper.WriteInfo($"    ├── {_moduleName}.Contracts/      (DTOs & interfaces)");
+            ConsoleHelper.WriteInfo($"    ├── {_moduleName}.Application/    (Services)");
+            ConsoleHelper.WriteInfo($"    ├── {_moduleName}.Web/            (Controllers & views)");
+            ConsoleHelper.WriteInfo($"    ├── {_moduleName}.Tests/          (Unit tests)");
+            ConsoleHelper.WriteInfo($"    ├── {_moduleName}.Web.Tests/      (Integration tests)");
+            ConsoleHelper.WriteInfo($"    ├── {_moduleName}.E2E.Tests/      (E2E tests with Playwright)");
+            ConsoleHelper.WriteInfo($"    ├── {_moduleName}.sln             (Module solution)");
             ConsoleHelper.WriteInfo($"    ├── module.json");
             ConsoleHelper.WriteInfo($"    └── README.md");
 
@@ -97,6 +108,8 @@ public class CreateModuleCommand
             ConsoleHelper.WriteInfo($"  1. cd modules/{_moduleName}");
             ConsoleHelper.WriteInfo($"  2. cd {_moduleName}.Web");
             ConsoleHelper.WriteInfo($"  3. netmx generate crud YourEntity -m {_moduleName}");
+            ConsoleHelper.WriteInfo($"  4. Run tests: dotnet test");
+            ConsoleHelper.WriteInfo($"  5. E2E tests: dotnet playwright install (first time only)");
 
             return 0;
         }
@@ -284,7 +297,10 @@ public class CreateModuleCommand
             Path.Combine(moduleDir, $"{_moduleName}.Core", $"{_moduleName}.Core.csproj"),
             Path.Combine(moduleDir, $"{_moduleName}.Contracts", $"{_moduleName}.Contracts.csproj"),
             Path.Combine(moduleDir, $"{_moduleName}.Application", $"{_moduleName}.Application.csproj"),
-            Path.Combine(moduleDir, $"{_moduleName}.Web", $"{_moduleName}.Web.csproj")
+            Path.Combine(moduleDir, $"{_moduleName}.Web", $"{_moduleName}.Web.csproj"),
+            Path.Combine(moduleDir, $"{_moduleName}.Tests", $"{_moduleName}.Tests.csproj"),
+            Path.Combine(moduleDir, $"{_moduleName}.Web.Tests", $"{_moduleName}.Web.Tests.csproj"),
+            Path.Combine(moduleDir, $"{_moduleName}.E2E.Tests", $"{_moduleName}.E2E.Tests.csproj")
         };
 
         foreach (var project in projects)
@@ -334,6 +350,243 @@ public class CreateModuleCommand
 
         File.WriteAllText(Path.Combine(moduleDir, "module.json"), json);
         ConsoleHelper.WriteInfo("  ✓ Created module.json");
+    }
+
+    private void CreateUnitTestProject(string moduleDir)
+    {
+        var projectName = $"{_moduleName}.Tests";
+        var projectDir = Path.Combine(moduleDir, projectName);
+        Directory.CreateDirectory(projectDir);
+
+        var csproj = $$"""
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.0" />
+    <PackageReference Include="xunit" Version="2.9.2" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Moq" Version="4.20.70" />
+    <PackageReference Include="FluentAssertions" Version="6.12.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\{{_moduleName}}.Core\{{_moduleName}}.Core.csproj" />
+    <ProjectReference Include="..\{{_moduleName}}.Application\{{_moduleName}}.Application.csproj" />
+  </ItemGroup>
+</Project>
+""";
+
+        File.WriteAllText(Path.Combine(projectDir, $"{projectName}.csproj"), csproj);
+
+        // Create sample unit test
+        var testClass = $$"""
+using Xunit;
+
+namespace {{_moduleName}}.Tests;
+
+/// <summary>
+/// Sample unit test class.
+/// Replace with actual tests for your domain logic.
+/// </summary>
+public class SampleUnitTests
+{
+    [Fact]
+    public void Sample_Test_Passes()
+    {
+        // Arrange
+        var expected = true;
+        
+        // Act
+        var actual = true;
+        
+        // Assert
+        Assert.Equal(expected, actual);
+    }
+}
+""";
+
+        File.WriteAllText(Path.Combine(projectDir, "SampleUnitTests.cs"), testClass);
+        ConsoleHelper.WriteInfo($"  ✓ Created {projectName} (Unit tests)");
+    }
+
+    private void CreateIntegrationTestProject(string moduleDir)
+    {
+        var projectName = $"{_moduleName}.Web.Tests";
+        var projectDir = Path.Combine(moduleDir, projectName);
+        Directory.CreateDirectory(projectDir);
+
+        var csproj = $$"""
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="9.0.0" />
+    <PackageReference Include="xunit" Version="2.9.2" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="FluentAssertions" Version="6.12.0" />
+    <PackageReference Include="NetMX.Testing" Version="*" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\{{_moduleName}}.Web\{{_moduleName}}.Web.csproj" />
+  </ItemGroup>
+</Project>
+""";
+
+        File.WriteAllText(Path.Combine(projectDir, $"{projectName}.csproj"), csproj);
+
+        // Create sample integration test
+        var testClass = $$"""
+using Microsoft.AspNetCore.Mvc.Testing;
+using Xunit;
+
+namespace {{_moduleName}}.Web.Tests;
+
+/// <summary>
+/// Sample integration test using WebApplicationFactory.
+/// Replace with actual HTTP integration tests.
+/// </summary>
+public class SampleIntegrationTests : IClassFixture<WebApplicationFactory<Program>>
+{
+    private readonly WebApplicationFactory<Program> _factory;
+
+    public SampleIntegrationTests(WebApplicationFactory<Program> factory)
+    {
+        _factory = factory;
+    }
+
+    [Fact]
+    public async Task Sample_Integration_Test_Passes()
+    {
+        // Arrange
+        var client = _factory.CreateClient();
+        
+        // Act
+        var response = await client.GetAsync("/");
+        
+        // Assert
+        response.EnsureSuccessStatusCode();
+    }
+}
+""";
+
+        File.WriteAllText(Path.Combine(projectDir, "SampleIntegrationTests.cs"), testClass);
+        ConsoleHelper.WriteInfo($"  ✓ Created {projectName} (Integration tests with WebApplicationFactory)");
+    }
+
+    private void CreateE2ETestProject(string moduleDir)
+    {
+        var projectName = $"{_moduleName}.E2E.Tests";
+        var projectDir = Path.Combine(moduleDir, projectName);
+        Directory.CreateDirectory(projectDir);
+
+        var csproj = $$"""
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.0" />
+    <PackageReference Include="xunit" Version="2.9.2" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="NetMX.Testing" Version="*" />
+  </ItemGroup>
+</Project>
+""";
+
+        File.WriteAllText(Path.Combine(projectDir, $"{projectName}.csproj"), csproj);
+
+        // Create sample E2E test using PlaywrightTestBase
+        var testClass = $$"""
+using NetMX.Testing;
+using Xunit;
+
+namespace {{_moduleName}}.E2E.Tests;
+
+/// <summary>
+/// Sample E2E test using PlaywrightTestBase for HTMX testing.
+/// Run 'dotnet playwright install' before running these tests.
+/// </summary>
+public class SampleE2ETests : PlaywrightTestBase, IAsyncLifetime
+{
+    private const string BaseUrl = "http://localhost:5000";
+
+    public async Task InitializeAsync()
+    {
+        // Initialize Playwright with Chromium in headless mode
+        await base.InitializeAsync("chromium", headless: true);
+    }
+
+    public new async Task DisposeAsync()
+    {
+        await base.DisposeAsync();
+    }
+
+    [Fact(Skip = "Requires running application - remove Skip attribute when ready")]
+    public async Task Sample_E2E_Test_With_HTMX()
+    {
+        // Navigate to page
+        await Page.GotoAsync($"{BaseUrl}/");
+
+        // Example: Click button with hx-get attribute
+        // await ClickAndWaitForHxSwapAsync("button[hx-get='/api/data']", "#result");
+
+        // Example: Fill and submit HTMX form
+        // await FillAndSubmitHxFormAsync("#my-form", new Dictionary<string, string>
+        // {
+        //     ["Name"] = "Test",
+        //     ["Email"] = "test@example.com"
+        // });
+
+        // Example: Wait for HTMX event
+        // await WaitForHxEventAsync("data-loaded");
+
+        // Example: Verify text content
+        // await AssertTextContainsAsync("h1", "Welcome");
+        
+        // Placeholder assertion
+        Assert.True(true, "Replace with actual E2E test logic");
+    }
+}
+""";
+
+        File.WriteAllText(Path.Combine(projectDir, "SampleE2ETests.cs"), testClass);
+        ConsoleHelper.WriteInfo($"  ✓ Created {projectName} (E2E tests with Playwright)");
+    }
+
+    private void AddTestProjectReferences(string moduleDir)
+    {
+        // Test projects are already configured with their references in the .csproj files
+        // No additional work needed - just a placeholder for future enhancements
+        ConsoleHelper.WriteInfo("  ✓ Test project references configured");
     }
 
     private void CreateReadme(string moduleDir)
