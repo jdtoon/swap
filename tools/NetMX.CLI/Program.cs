@@ -182,6 +182,10 @@ class Program
         var dbCommand = NetMX.CLI.Commands.Database.DatabaseCommand.Create();
         rootCommand.Subcommands.Add(dbCommand);
 
+        // Test Command - Feature, module, and E2E testing
+        var testCommand = NetMX.CLI.Commands.Test.TestCommand.Create();
+        rootCommand.Subcommands.Add(testCommand);
+
         return rootCommand.Parse(args).Invoke();
     }
 
