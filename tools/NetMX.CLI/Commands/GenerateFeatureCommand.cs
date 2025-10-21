@@ -12,13 +12,15 @@ public class GenerateFeatureCommand
     private readonly string? _module;
     private readonly bool _includeSearch;
     private readonly bool _includeExport;
+    private readonly bool _autoMigrate;
 
-    public GenerateFeatureCommand(string entityName, string? module = null, bool includeSearch = false, bool includeExport = false)
+    public GenerateFeatureCommand(string entityName, string? module = null, bool includeSearch = false, bool includeExport = false, bool autoMigrate = false)
     {
         _entityName = entityName;
         _module = module;
         _includeSearch = includeSearch;
         _includeExport = includeExport;
+        _autoMigrate = autoMigrate;
     }
 
     public async Task<int> ExecuteAsync()
@@ -97,19 +99,92 @@ public class GenerateFeatureCommand
                 ConsoleHelper.WriteInfo($"  - Views/{_entityName}/_Form.cshtml");
             }
 
-            ConsoleHelper.WriteInfo("\nNext steps:");
-            if (!string.IsNullOrEmpty(_module))
+            // Auto-migration if requested
+            if (_autoMigrate && string.IsNullOrEmpty(_module))
             {
-                ConsoleHelper.WriteInfo("  1. Add entity to module DbContext");
-                ConsoleHelper.WriteInfo("  2. Register services in DI container");
-                ConsoleHelper.WriteInfo($"  3. Navigate to /{_entityName} to test");
+                ConsoleHelper.WriteInfo("\n🔧 Auto-migration enabled...");
+                
+                // Check if EF Core tools are installed
+                var efInstalled = await MigrationRunner.IsEfCoreInstalledAsync();
+                if (!efInstalled)
+                {
+                    ConsoleHelper.WriteWarning("⚠️  EF Core tools not installed. Install with:");
+                    ConsoleHelper.WriteInfo("   dotnet tool install --global dotnet-ef");
+                    ConsoleHelper.WriteInfo("\nManual steps:");
+                    ConsoleHelper.WriteInfo("  1. Add DbSet to your DbContext");
+                    ConsoleHelper.WriteInfo($"  2. Run: dotnet ef migrations add Add{_entityName}");
+                    ConsoleHelper.WriteInfo("  3. Run: dotnet ef database update");
+                    return 0;
+                }
+
+                // Find DbContext
+                var dbContextPath = DbContextInjector.FindDbContext();
+                if (dbContextPath == null)
+                {
+                    ConsoleHelper.WriteWarning("⚠️  DbContext not found in current solution");
+                    ConsoleHelper.WriteInfo("\nManual steps:");
+                    ConsoleHelper.WriteInfo("  1. Add DbSet to your DbContext");
+                    ConsoleHelper.WriteInfo($"  2. Run: dotnet ef migrations add Add{_entityName}");
+                    ConsoleHelper.WriteInfo("  3. Run: dotnet ef database update");
+                    return 0;
+                }
+
+                ConsoleHelper.WriteStep(7, "Injecting DbSet into DbContext");
+                var dbSetAdded = await DbContextInjector.AddDbSetAsync(dbContextPath, _entityName);
+                
+                if (!dbSetAdded)
+                {
+                    ConsoleHelper.WriteWarning("⚠️  Failed to inject DbSet automatically");
+                    ConsoleHelper.WriteInfo("\nManual steps:");
+                    ConsoleHelper.WriteInfo($"  1. Add DbSet<{_entityName}> {_entityName}s => Set<{_entityName}>(); to your DbContext");
+                    ConsoleHelper.WriteInfo($"  2. Run: dotnet ef migrations add Add{_entityName}");
+                    ConsoleHelper.WriteInfo("  3. Run: dotnet ef database update");
+                    return 0;
+                }
+
+                ConsoleHelper.WriteStep(8, $"Creating migration: Add{_entityName}");
+                var migrationCreated = await MigrationRunner.CreateMigrationAsync($"Add{_entityName}", webProjectDir);
+                
+                if (!migrationCreated)
+                {
+                    ConsoleHelper.WriteWarning("⚠️  Failed to create migration automatically");
+                    ConsoleHelper.WriteInfo($"\nDbSet added, but migration failed. Run manually:");
+                    ConsoleHelper.WriteInfo($"  dotnet ef migrations add Add{_entityName}");
+                    ConsoleHelper.WriteInfo("  dotnet ef database update");
+                    return 0;
+                }
+
+                ConsoleHelper.WriteStep(9, "Applying migration to database");
+                var dbUpdated = await MigrationRunner.UpdateDatabaseAsync(webProjectDir);
+                
+                if (!dbUpdated)
+                {
+                    ConsoleHelper.WriteWarning("⚠️  Failed to update database automatically");
+                    ConsoleHelper.WriteInfo($"\nMigration created, but database update failed. Run manually:");
+                    ConsoleHelper.WriteInfo("  dotnet ef database update");
+                    return 0;
+                }
+
+                ConsoleHelper.WriteSuccess($"\n✅ Auto-migration complete! Database ready for {_entityName}");
+                ConsoleHelper.WriteInfo($"\n🚀 Navigate to /{_entityName} to test your feature!");
             }
             else
             {
-                ConsoleHelper.WriteInfo("  1. Add DbSet to your DbContext");
-                ConsoleHelper.WriteInfo($"  2. Run: dotnet ef migrations add Add{_entityName}");
-                ConsoleHelper.WriteInfo("  3. Run: dotnet ef database update");
-                ConsoleHelper.WriteInfo($"  4. Navigate to /{_entityName} to test");
+                ConsoleHelper.WriteInfo("\nNext steps:");
+                if (!string.IsNullOrEmpty(_module))
+                {
+                    ConsoleHelper.WriteInfo("  1. Add entity to module DbContext");
+                    ConsoleHelper.WriteInfo("  2. Register services in DI container");
+                    ConsoleHelper.WriteInfo($"  3. Navigate to /{_entityName} to test");
+                }
+                else
+                {
+                    ConsoleHelper.WriteInfo("  1. Add DbSet to your DbContext");
+                    ConsoleHelper.WriteInfo($"  2. Run: dotnet ef migrations add Add{_entityName}");
+                    ConsoleHelper.WriteInfo("  3. Run: dotnet ef database update");
+                    ConsoleHelper.WriteInfo($"  4. Navigate to /{_entityName} to test");
+                    ConsoleHelper.WriteInfo($"\n💡 Tip: Use --migrate flag next time to automate steps 1-3!");
+                }
             }
 
             return 0;

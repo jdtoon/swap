@@ -120,6 +120,10 @@ class Program
             { 
                 Description = "Include export to CSV" 
             });
+            cmd.Options.Add(new Option<bool>("--migrate") 
+            { 
+                Description = "Automatically add DbSet, create migration, and update database (app context only)" 
+            });
             
             cmd.SetAction((parseResult) =>
             {
@@ -127,8 +131,9 @@ class Program
                 var module = parseResult.GetValue<string?>("--module");
                 var search = parseResult.GetValue<bool>("--search");
                 var export = parseResult.GetValue<bool>("--export");
+                var migrate = parseResult.GetValue<bool>("--migrate");
                 
-                var command = new GenerateFeatureCommand(name!, module, search, export);
+                var command = new GenerateFeatureCommand(name!, module, search, export, migrate);
                 return command.ExecuteAsync().GetAwaiter().GetResult();
             });
         }
