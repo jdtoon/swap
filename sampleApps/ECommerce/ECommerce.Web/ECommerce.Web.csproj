@@ -4,20 +4,23 @@
     <TargetFramework>net9.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>ECommerce.Web</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- NetMX Framework Packages -->
+    <PackageReference Include="NetMX.Ddd.Domain" Version="0.1.0-*" />
+    <PackageReference Include="NetMX.EntityFrameworkCore" Version="0.1.0-*" />
+    <PackageReference Include="NetMX.AspNetCore.Mvc" Version="0.1.0-*" />
+    
+    <!-- Entity Framework Core -->
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.10">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
+    
+    <!-- Database Provider -->
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.4" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\..\..\framework\NetMX.AspNetCore.Mvc\NetMX.AspNetCore.Mvc.csproj" />
-    <ProjectReference Include="..\..\..\framework\NetMX.Ddd.Domain\NetMX.Ddd.Domain.csproj" />
-    <ProjectReference Include="..\..\..\framework\NetMX.EntityFrameworkCore\NetMX.EntityFrameworkCore.csproj" />
   </ItemGroup>
 
 </Project>

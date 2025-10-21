@@ -128,10 +128,36 @@ public class CodeModificationHelper
     /// </summary>
     private static CompilationUnitSyntax AddUsingDirective(CompilationUnitSyntax root, string namespaceName)
     {
-        // Check if using directive already exists
+        // Check if using directive already exists (exact match)
         var existingUsing = root.Usings.FirstOrDefault(u => u.Name?.ToString() == namespaceName);
         if (existingUsing != null)
             return root;
+
+        // Check if a qualified version already exists (e.g., "MyApp.Models" when adding "Models")
+        // Or vice versa (e.g., "Models" exists when adding "MyApp.Models")
+        var namespaceToAdd = namespaceName;
+        var existingConflict = root.Usings.FirstOrDefault(u =>
+        {
+            var existing = u.Name?.ToString();
+            if (existing == null) return false;
+            
+            // Check if one is a suffix of the other (e.g., "Models" vs "MyApp.Models")
+            return existing.EndsWith("." + namespaceToAdd) || namespaceToAdd.EndsWith("." + existing);
+        });
+
+        // If a more specific (qualified) version exists, don't add the simple one
+        if (existingConflict != null)
+        {
+            var existing = existingConflict.Name?.ToString();
+            // Keep the more qualified version (longer namespace)
+            if (existing != null && existing.Length > namespaceToAdd.Length)
+            {
+                return root; // Don't add the shorter version
+            }
+            
+            // Remove the shorter version and add the longer one
+            root = root.RemoveNode(existingConflict, SyntaxRemoveOptions.KeepNoTrivia) ?? root;
+        }
 
         // Create new using directive
         var usingDirective = SyntaxFactory.UsingDirective(
