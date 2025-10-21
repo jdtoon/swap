@@ -44,8 +44,16 @@ public static class TestProjectFactory
     /// <summary>
     /// Creates an in-memory SQLite connection for testing.
     /// Connection must be kept open for the duration of the test.
+    /// IMPORTANT: Dispose the connection when done to free memory.
     /// </summary>
-    /// <returns>Open SQLite connection</returns>
+    /// <returns>Open SQLite connection (disposable)</returns>
+    /// <example>
+    /// <code>
+    /// using var connection = TestProjectFactory.CreateInMemoryConnection();
+    /// // ... use connection ...
+    /// // Automatically disposed at end of using block
+    /// </code>
+    /// </example>
     public static SqliteConnection CreateInMemoryConnection()
     {
         var connection = new SqliteConnection("DataSource=:memory:");
@@ -69,19 +77,49 @@ public static class TestProjectFactory
 
     /// <summary>
     /// Cleans up a test project directory.
+    /// Attempts cleanup multiple times if files are locked.
     /// </summary>
     /// <param name="projectPath">Path to the project directory</param>
-    public static void CleanupTestProject(string projectPath)
+    /// <param name="retryCount">Number of retry attempts (default: 3)</param>
+    public static void CleanupTestProject(string projectPath, int retryCount = 3)
     {
-        if (Directory.Exists(projectPath))
+        if (!Directory.Exists(projectPath))
+            return;
+
+        for (int i = 0; i < retryCount; i++)
         {
             try
             {
+                // Force close any SQLite connections
+                GC.Collect();
+                GC.WaitForPendingFinalizers();
+                
+                // Delete database files explicitly first (they can be locked)
+                var dbFiles = Directory.GetFiles(projectPath, "*.db*", SearchOption.AllDirectories);
+                foreach (var dbFile in dbFiles)
+                {
+                    try
+                    {
+                        File.Delete(dbFile);
+                    }
+                    catch
+                    {
+                        // Continue even if some files are locked
+                    }
+                }
+                
+                // Delete the entire directory
                 Directory.Delete(projectPath, recursive: true);
+                return; // Success
             }
             catch
             {
-                // Ignore cleanup errors (files may be locked)
+                if (i < retryCount - 1)
+                {
+                    // Wait before retry (files may be locked)
+                    System.Threading.Thread.Sleep(100);
+                }
+                // Last attempt failed - ignore to prevent test failures
             }
         }
     }

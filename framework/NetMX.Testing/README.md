@@ -245,13 +245,36 @@ var product = new Product
 ### 4. Test Cleanup
 
 ```csharp
-// Auto-cleanup (default)
+// Auto-cleanup (default) - RECOMMENDED
 using var runner = new FeatureTestRunner();
+// Project and SQLite database automatically deleted
 
-// Manual cleanup (for debugging)
+// Manual cleanup (for debugging only)
 using var runner = new FeatureTestRunner(cleanupOnDispose: false);
 // Project stays in: %TEMP%\netmx-tests\[ProjectName]
+// WARNING: Manual cleanup required to prevent disk space issues!
 ```
+
+**Important**: Always use `using` statements or call `Dispose()` explicitly to prevent disk space accumulation.
+
+### 5. Memory Management
+
+```csharp
+// In-memory SQLite: Connection must stay open
+using var connection = TestProjectFactory.CreateInMemoryConnection();
+// ... use connection ...
+// Automatically closed and memory freed at end of using block
+
+// File-based SQLite: Explicit cleanup
+using var runner = new FeatureTestRunner();
+// Database files deleted on dispose (retries if locked)
+```
+
+**Best Practice**: NetMX.Testing automatically:
+- Deletes temp project directories on dispose
+- Forces garbage collection before cleanup
+- Retries cleanup if files are locked (up to 3 attempts)
+- Explicitly deletes .db files before directory removal
 
 ## Examples
 

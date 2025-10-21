@@ -5,6 +5,7 @@ namespace NetMX.CLI.Commands.Database;
 
 /// <summary>
 /// Command to run database seeders.
+/// Seeds initial data into the database.
 /// </summary>
 public static class SeedCommand
 {
@@ -34,25 +35,69 @@ public static class SeedCommand
         {
             ConsoleHelper.WriteHeader("Running Seeders");
 
-            ConsoleHelper.WriteWarning("⚠️  Seeder execution not implemented yet");
-            ConsoleHelper.WriteInfo("   Seeders will be available in CLI Phase 2D (Week 4)");
+            // Find project directory
+            var projectPath = Directory.GetCurrentDirectory();
+            var projectFile = Directory.GetFiles(projectPath, "*.csproj").FirstOrDefault();
             
-            ConsoleHelper.WriteInfo("\n📋 Planned features:");
-            ConsoleHelper.WriteInfo("   • Auto-discover seeder classes");
-            ConsoleHelper.WriteInfo("   • Run seeders in dependency order");
-            ConsoleHelper.WriteInfo("   • Skip already-seeded data");
-            ConsoleHelper.WriteInfo("   • Seed specific modules");
-            
-            ConsoleHelper.WriteInfo("\n💡 Current workaround:");
-            ConsoleHelper.WriteInfo("   1. Add seeder logic to your Startup/Program.cs");
-            ConsoleHelper.WriteInfo("   2. Call seeders after EnsureCreated()");
-            ConsoleHelper.WriteInfo("   3. Or use EF Core data seeding (HasData)");
+            if (projectFile == null)
+            {
+                ConsoleHelper.WriteError("❌ No .csproj file found in current directory");
+                return 1;
+            }
 
-            return 0;
+            ConsoleHelper.WriteInfo($"Project: {Path.GetFileNameWithoutExtension(projectFile)}");
+
+            // Create seeder executor
+            var executor = new SeederExecutor(projectPath);
+
+            // Discover seeders
+            ConsoleHelper.WriteInfo("\n🔍 Discovering seeders...");
+            var seeders = await executor.DiscoverSeedersAsync();
+
+            if (seeders.Count == 0)
+            {
+                ConsoleHelper.WriteWarning("⚠️  No seeders found");
+                ConsoleHelper.WriteInfo("\nSearched in:");
+                ConsoleHelper.WriteInfo("  • Data/Seeders/");
+                ConsoleHelper.WriteInfo("  • Database/Seeders/");
+                ConsoleHelper.WriteInfo("  • Seeders/");
+                ConsoleHelper.WriteInfo("  • Data/");
+                ConsoleHelper.WriteInfo("\n💡 Tip: Use 'netmx generate seeder' to create seeder classes");
+                return 0;
+            }
+
+            ConsoleHelper.WriteInfo($"Found {seeders.Count} seeder(s):");
+            foreach (var s in seeders)
+            {
+                ConsoleHelper.WriteInfo($"  • {s}");
+            }
+
+            // Run seeders
+            ConsoleHelper.WriteInfo("\n▶ Running seeders...");
+            Console.WriteLine(new string('─', 60));
+
+            var result = await executor.RunSeedersAsync(seeder);
+
+            Console.WriteLine(new string('─', 60));
+
+            if (result.Success)
+            {
+                ConsoleHelper.WriteSuccess($"✅ Successfully ran {result.SeedersRun.Count} seeder(s)");
+                return 0;
+            }
+            else
+            {
+                ConsoleHelper.WriteError($"❌ Seeding failed: {result.ErrorMessage}");
+                return 1;
+            }
         }
         catch (Exception ex)
         {
-            ConsoleHelper.WriteError($"Error: {ex.Message}");
+            ConsoleHelper.WriteError($"❌ Error: {ex.Message}");
+            if (ex.InnerException != null)
+            {
+                ConsoleHelper.WriteError($"   {ex.InnerException.Message}");
+            }
             return 1;
         }
     }
