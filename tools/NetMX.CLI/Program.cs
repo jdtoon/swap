@@ -155,6 +155,27 @@ class Program
         
         generateCommand.Subcommands.Add(generateFeatureCommand);
         generateCommand.Subcommands.Add(generateCrudCommand); // Keep as alias
+        
+        // Generate Seeder Command
+        var generateSeederCommand = new Command("seeder", "Generate a database seeder class");
+        generateSeederCommand.Arguments.Add(new Argument<string>("name")
+        {
+            Description = "Name of the seeder (e.g., ProductSeeder)"
+        });
+        generateSeederCommand.Options.Add(new Option<string?>("--module", "-m")
+        {
+            Description = "Target module name (if generating in a module)"
+        });
+        generateSeederCommand.SetAction((parseResult) =>
+        {
+            var name = parseResult.GetValue<string>("name");
+            var module = parseResult.GetValue<string?>("--module");
+            
+            var command = new GenerateSeederCommand(name!, module);
+            return command.ExecuteAsync().GetAwaiter().GetResult();
+        });
+        
+        generateCommand.Subcommands.Add(generateSeederCommand);
         rootCommand.Subcommands.Add(generateCommand);
 
         // DB Command (Rails-inspired)

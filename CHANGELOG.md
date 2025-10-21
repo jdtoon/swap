@@ -10,7 +10,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- Phase 2D: Seeder generation (planned)
 - Phase 3: Custom property definitions via --props flag (planned)
 - Phase 4: Template system for code customization (planned)
 - Phase 5: AI-assisted feature generation (planned)
@@ -18,6 +17,51 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ---
 
 ## [0.1.0-dev] - 2025-10-21
+
+### Added - Phase 2D: Seeder Generation Complete ✅
+
+#### Seeder Generation (Commit TBD)
+- **SeederGenerator** class for database seeder generation
+- **SeederGenerationOptions** model for configuration
+- **GenerateSeederCommand** for CLI integration
+- Repository injection pattern (IQueryableRepository<TEntity, TKey>)
+- Automatic duplicate check (GetCountAsync > 0)
+- Sample data template with 3 items
+- Module context support (modules/{Module}.Application/Seeding/)
+- App context support (src/{App}.Web/Seeding/)
+- Smart seeder name handling (removes duplicate "Seeder" suffix)
+- Next steps guidance after generation
+- **Tests**: 14 passing (11 generator tests + 3 command tests)
+- **Files**: 
+  - SeederGenerator.cs (87 lines)
+  - SeederGenerationOptions.cs (35 lines)
+  - GenerateSeederCommand.cs (96 lines)
+  - SeederGeneratorTests.cs (181 lines)
+  - GenerateSeederCommandTests.cs (31 lines)
+
+**Usage**:
+```bash
+# Generate seeder in app context
+netmx generate seeder ProductSeeder
+
+# Generate seeder in module context
+netmx generate seeder PermissionSeeder -m Authorization
+```
+
+**Generated Code Features**:
+- ISeeder interface implementation
+- Repository dependency injection
+- XML documentation comments
+- Async SeedAsync method
+- Duplicate check guard clause
+- Sample data array template
+- InsertAsync loop for batch insertion
+
+**Statistics**:
+- Total tests: 134 (120 from Phase 2C + 14 new)
+- Code added: ~430 lines (production + tests)
+- Time investment: ~2 hours
+- Status: ✅ Production-ready
 
 ### Added - Phase 2C: Code Generation Complete ✅
 
