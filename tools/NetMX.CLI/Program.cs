@@ -133,7 +133,22 @@ class Program
                 var export = parseResult.GetValue<bool>("--export");
                 var migrate = parseResult.GetValue<bool>("--migrate");
                 
-                var command = new GenerateFeatureCommand(name!, module, search, export, migrate);
+                // For now, use default properties (name, description, isActive, createdAt, updatedAt)
+                // Future: Add property parsing from CLI (--props flag)
+                var command = new GenerateFeatureCommand(
+                    entityName: name!,
+                    module: module,
+                    properties: null, // Use default properties
+                    pageSize: search ? 20 : null, // Enable pagination if search is enabled
+                    searchableProperties: search ? new List<string> { "Name", "Description" } : null,
+                    filterableProperties: null,
+                    sortableProperties: search ? new List<string> { "Name", "CreatedAt" } : null,
+                    exportFormats: export ? new List<string> { "csv" } : null,
+                    autoMigrate: migrate,
+                    includeAuditFields: true,
+                    includeSoftDelete: false
+                );
+                
                 return command.ExecuteAsync().GetAwaiter().GetResult();
             });
         }
