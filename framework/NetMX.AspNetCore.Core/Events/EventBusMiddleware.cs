@@ -34,15 +34,13 @@ public class EventBusMiddleware
         // 1. Create EventContext from HTTP request
         var eventContext = new EventContext
         {
-            RequestId = Guid.TryParse(context.TraceIdentifier, out var traceId)
-                ? traceId
-                : Guid.NewGuid(),
-            SessionId = context.Session.Id ?? string.Empty,
+            RequestId = Guid.NewGuid(), // Use new GUID for each request
+            SessionId = GetSessionId(context),
             UserId = GetUserId(context)
         };
 
         // 2. Store EventContext in HttpContext.Items for controllers/services
-        context.Items["EventContext"] = eventContext;
+        context.Items["NetMX.EventContext"] = eventContext;
 
         // 3. Execute the rest of the pipeline
         await _next(context);
@@ -67,11 +65,39 @@ public class EventBusMiddleware
     }
 
     /// <summary>
+    /// Extracts session ID from HTTP context (if sessions enabled).
+    /// </summary>
+    private static string GetSessionId(HttpContext context)
+    {
+        try
+        {
+            // Check if session is available
+            if (context.Session != null && context.Session.IsAvailable)
+            {
+                return context.Session.Id;
+            }
+        }
+        catch
+        {
+            // Session might not be configured, ignore
+        }
+
+        return string.Empty;
+    }
+
+    /// <summary>
     /// Extracts user ID from HTTP context (if authenticated).
     /// </summary>
     private static Guid? GetUserId(HttpContext context)
     {
-        var userIdClaim = context.User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
+        if (context.User?.Identity?.IsAuthenticated != true)
+            return null;
+
+        // Try multiple claim types (OpenID Connect, ASP.NET Identity, custom)
+        var userIdClaim = context.User.FindFirst("sub")
+            ?? context.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)
+            ?? context.User.FindFirst("userId");
+
         if (userIdClaim != null && Guid.TryParse(userIdClaim.Value, out var userId))
         {
             return userId;
