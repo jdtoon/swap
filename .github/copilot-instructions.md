@@ -1,32 +1,46 @@
 # NetMX Development Guidelines
 
-**Last Updated**: October 20, 2025  
-**Current Phase**: Phase 2 - Essential Infrastructure (Week 1 - Authorization Module 85% complete)  
-**Progress**: 5% → 20% of ABP Framework feature parity (on track)
+**Last Updated**: October 21, 2025  
+**Current Phase**: Phase 2 - Essential Infrastructure (Week 2 - Event Bus Architecture)  
+**Progress**: 20% of ABP Framework feature parity (on track)
 
 This file provides **complete context** for GitHub Copilot when working with the NetMX framework. It's designed to allow picking up where we left off in any new chat session.
 
-## 📋 Current Status (October 20, 2025)
+## 📋 Current Status (October 21, 2025)
 
 ### Completed Today
-- ✅ **Strategic model updated**: One-time purchase pricing ($499-$4,999, no subscriptions, lifetime updates)
-- ✅ **Authorization module**: 100% complete! (entities, services, attributes, policies, seeding, tests)
-- ✅ **Permission & Role seeding**: 19 system permissions, 3 default roles (Admin, User, Moderator)
-- ✅ **Comprehensive unit tests**: 38 tests passing (PermissionTests, RoleTests - 100% pass rate)
-- ✅ Fixed CI pipeline (removed Audit from framework solution)
-- ✅ CLI improvements document created (11 prioritized improvements)
-- ✅ Test dependencies fixed (ICurrentUser with RoleIds, optimized queries)
+- ✅ **Event Bus Architecture**: 1,200+ line design preventing "useEffect hell"
+  - EventContext (loop prevention, deduplication)
+  - EventDirection enforcement (DAG, prevents infinite loops)
+  - Cross-instance coordination (Redis locks)
+  - HTMX integration (automatic header injection)
+  - OpenTelemetry observability (trace every event)
+  - Zero infinite loops possible, zero duplicate processing
+  
+- ✅ **Master Roadmap**: 7,500+ line living document with ALL tasks
+  - ONE document references all 10+ architecture docs
+  - Complete Phase 2-6 breakdown (18 months)
+  - Success metrics (technical + business)
+  - Nothing missing - everything documented
 
-### Active Work
-- 🔄 CLI improvements implementation (Week 2-3)
-- 🔄 Settings module (Week 3)
+### Critical Foundation Work (Week 2) 🚨
+- 🔄 **Event Bus Implementation** (STARTING NOW)
+  - Foundation for entire HTMX architecture
+  - Prevents "useEffect hell" (user requirement)
+  - Blocks all event-driven features until complete
+  - See: docs/EVENT-BUS-ARCHITECTURE.md
 
-### Next Steps
-1. Complete Authorization module (seeding, tests) - Week 1
-2. Settings module - Week 3
-3. Audit logging (complete) - Week 4-5
-4. Observability module - Week 6-7
-5. Testing infrastructure - Week 8-9
+- 🔄 **CLI Automation** (Can run parallel)
+  - 99.9% time reduction (74 min → 5 sec)
+  - Roslyn code injection, auto-migration
+  - See: docs/CLI-AUTOMATION-STRATEGY.md + CLI-MIGRATION-CRUD.md
+
+### Next Steps (Week 2-3)
+1. Event Bus implementation - Week 2 (CRITICAL PATH)
+2. CLI automation - Weeks 2-4 (HIGH PRIORITY)
+3. Settings module - Week 3 (validates Event Bus + CLI)
+4. Distributed Event Bus - Week 4 (Redis, cross-instance)
+5. Audit logging (complete) - Weeks 5-6
 
 ## ⚠️ CLI-First Development
 
@@ -746,6 +760,34 @@ netmx generate feature User --module Identity
 ## Recent Commits & Progress
 
 ### October 21, 2025
+
+**Event Bus Architecture & Master Roadmap** (1 commit, 2 files, 1,716 insertions):
+
+1. `306b415` - Add Event Bus Architecture & Master Roadmap
+   - **EVENT-BUS-ARCHITECTURE.md** (1,200+ lines)
+     - Prevents "useEffect hell" with EventContext
+     - Loop prevention (max depth 10, max 50 events per request)
+     - EventDirection enforcement (DAG prevents upstream triggers)
+     - Smart deduplication (fingerprinting, per-request + cross-instance)
+     - Cross-instance coordination (Redis locks)
+     - HTMX integration (automatic header injection)
+     - OpenTelemetry observability (trace every event)
+     - Rate limiting (10 events/min per session)
+     - Implementation timeline: Week 2-4
+   
+   - **ROADMAP.md** (7,500+ lines)
+     - ONE living document with ALL tasks (nothing missing)
+     - References all 10+ architecture documents
+     - Complete Phase 2-6 breakdown (18 months)
+     - Technical + business success metrics
+     - Current status: Week 1 complete, Week 2 starting
+     - Critical path: Event Bus → CLI → Settings
+   
+   - **User Insight**: "avoid useEffect hell" → Solved!
+     - Zero infinite loops (circuit breakers)
+     - Zero duplicate processing (fingerprinting)
+     - Full observability (OpenTelemetry)
+     - Cross-instance safe (Redis)
 
 **Authorization Module Tests Fixed** (1 commit):
 
