@@ -1,21 +1,31 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <ItemGroup>
-    <ProjectReference Include="..\NetMX.Identity.Core\NetMX.Identity.Core.csproj" />
-    <ProjectReference Include="..\..\..\framework\NetMX.Ddd.Application\NetMX.Ddd.Application.csproj" />
-    <ProjectReference Include="..\NetMX.Identity.Contracts\NetMX.Identity.Contracts.csproj" />
-    <ProjectReference Include="..\..\..\framework\NetMX.Core\NetMX.Core.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Identity.Core" Version="9.0.0" />
-  </ItemGroup>
-
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Development: Use ProjectReferences for active development -->
+    <ProjectReference Include="..\..\..\framework\NetMX.Core\NetMX.Core.csproj" />
+    <ProjectReference Include="..\..\..\framework\NetMX.Ddd.Application\NetMX.Ddd.Application.csproj" />
+    <ProjectReference Include="..\..\..\framework\NetMX.EntityFrameworkCore\NetMX.EntityFrameworkCore.csproj" />
+    <!-- TODO: Switch to PackageReferences when publishing to NuGet -->
+    <!--
+    <PackageReference Include="NetMX.Core" Version="0.1.0-*" />
+    <PackageReference Include="NetMX.Ddd.Application" Version="0.1.0-*" />
+    <PackageReference Include="NetMX.EntityFrameworkCore" Version="0.1.0-*" />
+    -->
+    
+    <!-- Microsoft Identity -->
+    <PackageReference Include="Microsoft.Extensions.Identity.Core" Version="9.0.10" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Module dependencies - use ProjectReferences for local development -->
+    <ProjectReference Include="..\NetMX.Identity.Core\NetMX.Identity.Core.csproj" />
+    <ProjectReference Include="..\NetMX.Identity.Contracts\NetMX.Identity.Contracts.csproj" />
+  </ItemGroup>
 
 </Project>

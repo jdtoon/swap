@@ -24,7 +24,7 @@
     </PackageReference>
     
     <!-- Database Provider (PostgreSQL by default) -->
-    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.2" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.4" />
   </ItemGroup>
 
   <!-- 

@@ -19,7 +19,6 @@
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
     
     <!-- Test data generation -->
-    <PackageReference Include="Bogus" Version="35.6.1" />
     
     <!-- Database testing -->
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="9.0.0" />

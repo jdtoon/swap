@@ -12,11 +12,23 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- Development: Use ProjectReferences for active development -->
+    <ProjectReference Include="..\..\..\framework\NetMX.Core\NetMX.Core.csproj" />
+    <ProjectReference Include="..\..\..\framework\NetMX.AspNetCore.Mvc\NetMX.AspNetCore.Mvc.csproj" />
+    <ProjectReference Include="..\..\..\framework\NetMX.Events\NetMX.Events.csproj" />
+    <!-- TODO: Switch to PackageReferences when publishing to NuGet -->
+    <!--
+    <PackageReference Include="NetMX.Core" Version="0.1.0-*" />
+    <PackageReference Include="NetMX.AspNetCore.Mvc" Version="0.1.0-*" />
+    <PackageReference Include="NetMX.Events" Version="0.1.0-*" />
+    -->
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Module dependencies - use ProjectReferences for local development -->
     <ProjectReference Include="..\NetMX.Identity.Core\NetMX.Identity.Core.csproj" />
     <ProjectReference Include="..\NetMX.Identity.Application\NetMX.Identity.Application.csproj" />
     <ProjectReference Include="..\NetMX.Identity.Contracts\NetMX.Identity.Contracts.csproj" />
-    <ProjectReference Include="..\..\..\framework\NetMX.AspNetCore.Mvc\NetMX.AspNetCore.Mvc.csproj" />
-    <ProjectReference Include="..\..\..\framework\NetMX.Core\NetMX.Core.csproj" />
   </ItemGroup>
 
 </Project>

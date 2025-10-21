@@ -1,18 +1,22 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <ItemGroup>
-    <ProjectReference Include="..\..\..\framework\NetMX.Ddd.Domain\NetMX.Ddd.Domain.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="9.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Identity.Stores" Version="9.0.0" />
-  </ItemGroup>
-
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Development: Use ProjectReferences for active development -->
+    <ProjectReference Include="..\..\..\framework\NetMX.Ddd.Domain\NetMX.Ddd.Domain.csproj" />
+    <!-- TODO: Switch to PackageReferences when publishing to NuGet -->
+    <!--
+    <PackageReference Include="NetMX.Ddd.Domain" Version="0.1.0-*" />
+    -->
+    
+    <!-- Microsoft Identity - authentication and authorization (KEEP: Core .NET infrastructure) -->
+    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="9.0.10" />
+    <PackageReference Include="Microsoft.Extensions.Identity.Stores" Version="9.0.10" />
+  </ItemGroup>
 
 </Project>
