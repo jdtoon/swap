@@ -37,3 +37,7 @@ bld/
 project.lock.json
 project.assets.json
 publish/
+
+# Sample apps directory (showcase and validation apps)
+# Note: These are committed for demonstration purposes
+# sampleApps/

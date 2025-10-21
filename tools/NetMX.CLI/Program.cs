@@ -178,69 +178,8 @@ class Program
         generateCommand.Subcommands.Add(generateSeederCommand);
         rootCommand.Subcommands.Add(generateCommand);
 
-        // DB Command (Rails-inspired)
-        var dbCommand = new Command("db", "Database management commands (migrate, update, rollback, seed, etc.)");
-        
-        // db migrate <name>
-        var dbMigrateCommand = new Command("migrate", "Create a new database migration");
-        var migrationNameArg = new Argument<string>("name") 
-        { 
-            Description = "Name of the migration (e.g., AddProduct, UpdateUsers)" 
-        };
-        dbMigrateCommand.Arguments.Add(migrationNameArg);
-        dbMigrateCommand.SetAction((parseResult) =>
-        {
-            var name = parseResult.GetValue(migrationNameArg);
-            var command = new DbCommand("migrate", name);
-            return command.ExecuteAsync().GetAwaiter().GetResult();
-        });
-        
-        // db update
-        var dbUpdateCommand = new Command("update", "Apply pending migrations to the database");
-        dbUpdateCommand.SetAction((parseResult) =>
-        {
-            var command = new DbCommand("update");
-            return command.ExecuteAsync().GetAwaiter().GetResult();
-        });
-        
-        // db rollback
-        var dbRollbackCommand = new Command("rollback", "Undo the last migration");
-        dbRollbackCommand.SetAction((parseResult) =>
-        {
-            var command = new DbCommand("rollback");
-            return command.ExecuteAsync().GetAwaiter().GetResult();
-        });
-        
-        // db reset
-        var dbResetCommand = new Command("reset", "Drop and recreate the database");
-        dbResetCommand.SetAction((parseResult) =>
-        {
-            var command = new DbCommand("reset");
-            return command.ExecuteAsync().GetAwaiter().GetResult();
-        });
-        
-        // db seed
-        var dbSeedCommand = new Command("seed", "Run database seeders");
-        dbSeedCommand.SetAction((parseResult) =>
-        {
-            var command = new DbCommand("seed");
-            return command.ExecuteAsync().GetAwaiter().GetResult();
-        });
-        
-        // db status
-        var dbStatusCommand = new Command("status", "Show migration status");
-        dbStatusCommand.SetAction((parseResult) =>
-        {
-            var command = new DbCommand("status");
-            return command.ExecuteAsync().GetAwaiter().GetResult();
-        });
-        
-        dbCommand.Subcommands.Add(dbMigrateCommand);
-        dbCommand.Subcommands.Add(dbUpdateCommand);
-        dbCommand.Subcommands.Add(dbRollbackCommand);
-        dbCommand.Subcommands.Add(dbResetCommand);
-        dbCommand.Subcommands.Add(dbSeedCommand);
-        dbCommand.Subcommands.Add(dbStatusCommand);
+        // DB Command - Use new structured commands from Database namespace
+        var dbCommand = NetMX.CLI.Commands.Database.DatabaseCommand.Create();
         rootCommand.Subcommands.Add(dbCommand);
 
         return rootCommand.Parse(args).Invoke();

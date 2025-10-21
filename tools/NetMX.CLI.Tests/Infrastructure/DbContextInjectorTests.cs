@@ -65,7 +65,7 @@ public class TestDbContext : DbContext
         var result = await DbContextInjector.AddDbSetAsync(dbContextPath, "Product");
 
         // Assert
-        result.Should().BeTrue(); // Not an error, just already exists
+        result.Should().BeFalse(); // Should fail - already exists
 
         var updatedCode = await File.ReadAllTextAsync(dbContextPath);
         // Should only appear once
@@ -136,7 +136,7 @@ public class TestDbContext : DbContext
         updatedCode.Should().Contain("DbSet<Category>");
         updatedCode.Should().Contain("DbSet<Order>");
         updatedCode.Should().Contain("Products");
-        updatedCode.Should().Contain("Categorys"); // Note: Simple pluralization (entity name + "s")
+        updatedCode.Should().Contain("Categories"); // Smart pluralization
         updatedCode.Should().Contain("Orders");
     }
 

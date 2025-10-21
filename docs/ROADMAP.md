@@ -207,7 +207,18 @@ NetMX is a **pure, modular, HTMX-first framework** for building web applications
 
 ---
 
-### Testing Infrastructure (0% Complete - Deferred to Phase 2)
+### Testing Infrastructure (Phase 2D - Week 2)
+
+- [ ] **NetMX.Testing Package** (NEW!)
+  - [ ] TestProjectFactory (temp projects with SQLite)
+  - [ ] FeatureTestRunner (test features in isolation)
+  - [ ] InMemoryDbContext helpers
+  - [ ] Playwright integration for HTMX
+  
+- [ ] **CLI Testing Commands** (NEW!)
+  - [ ] `netmx test feature <name>` - Test with SQLite
+  - [ ] `netmx test module <name>` - Test all features
+  - [ ] `netmx test e2e --feature <name>` - Playwright E2E
 
 - [ ] **Unit Tests**
   - [ ] Framework packages (xUnit)
@@ -228,7 +239,40 @@ NetMX is a **pure, modular, HTMX-first framework** for building web applications
 
 ---
 
-## 📋 Phase 2: Enhanced Modules (Target: Q2 2025)
+## � Dogfooding Validation (After Each Milestone)
+
+**Critical Process**: Build real apps to validate our work!
+
+### Purpose
+After each major milestone, create a real application in `sampleApps/` directory (committed for showcase):
+- Validates CLI workflow works end-to-end
+- Ensures documentation is accurate
+- Tests developer experience
+- Catches bugs before users do
+
+### Schedule
+
+| Milestone | App to Build | Features | Duration |
+|-----------|-------------|----------|----------|
+| Phase 2D (Oct 23) | E-Commerce | Product, Category, Order | 2-3h |
+| Week 3 (Nov 8) | Blog Platform | Post, Comment, Tag | 2-3h |
+| Week 6 (Dec 6) | Task Manager | Project, Task, User | 2-3h |
+| Week 9 (Dec 20) | CRM System | Contact, Company, Deal | 3-4h |
+| Week 12 (Jan 3) | SaaS Starter | Tenant, Subscription | 3-4h |
+
+### Process
+1. Create app in `sampleApps/` (separate folder, not committed)
+2. Use **ONLY CLI** to generate features (no manual files)
+3. Test real workflows in browser
+4. Document pain points in `ISSUES.md`
+5. Fix critical issues immediately
+6. Delete `sampleApps/` after validation (or keep for reference)
+
+**See [COMPLETE-DEVELOPMENT-ROADMAP.md](COMPLETE-DEVELOPMENT-ROADMAP.md) for detailed dogfooding process.**
+
+---
+
+## �📋 Phase 2: Enhanced Modules (Target: Q2 2025)
 
 ### Priority Modules
 
