@@ -74,6 +74,12 @@ public class EntityGenerationOptions
     public string KeyType { get; set; } = "Guid";
 
     /// <summary>
+    /// Project root namespace (e.g., "ECommerce.Web")
+    /// Detected from .csproj file or inferred from project name
+    /// </summary>
+    public string? ProjectNamespace { get; set; }
+
+    /// <summary>
     /// Check if pagination is enabled
     /// </summary>
     public bool HasPagination => PageSize.HasValue && PageSize > 0;

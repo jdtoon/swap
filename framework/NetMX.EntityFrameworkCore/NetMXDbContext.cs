@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using NetMX.Ddd.Domain;
+using NetMX.Ddd.Domain.Events;
 using System.Linq.Expressions;
 using System.Reflection;
 
@@ -14,6 +15,9 @@ public abstract class NetMXDbContext<TDbContext> : DbContext where TDbContext : 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+
+        // Ignore DomainEvent base class (not a database entity)
+        modelBuilder.Ignore<DomainEvent>();
 
         foreach (var entityType in modelBuilder.Model.GetEntityTypes())
         {

@@ -18,7 +18,9 @@ public static class ControllerGenerator
         // Namespace
         var namespaceName = options.ModuleName != null
             ? $"{options.ModuleName}.Web.Controllers"
-            : "Controllers";
+            : options.ProjectNamespace != null
+                ? $"{options.ProjectNamespace}.Controllers"
+                : "Controllers";
 
         sb.AppendLine($"namespace {namespaceName};");
         sb.AppendLine();
@@ -28,9 +30,13 @@ public static class ControllerGenerator
         
         var contractsNamespace = options.ModuleName != null
             ? $"{options.ModuleName}.Contracts"
-            : "Contracts";
-        sb.AppendLine($"using {contractsNamespace}.Dtos;");
-        sb.AppendLine($"using {contractsNamespace}.Services;");
+            : options.ProjectNamespace;
+        
+        if (contractsNamespace != null)
+        {
+            sb.AppendLine($"using {contractsNamespace}.Dtos;");
+            sb.AppendLine($"using {contractsNamespace}.Services;");
+        }
         sb.AppendLine("using NetMX.AspNetCore.Mvc.Htmx;");
         sb.AppendLine();
 

@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Text;
 using NetMX.CLI.Infrastructure;
 using NetMX.CLI.Models;
@@ -64,6 +65,17 @@ public class GenerateFeatureCommand
             }
 
             var webProjectDir = Path.GetDirectoryName(webProjectPath)!;
+
+            // Step 0: Ensure required packages are installed
+            ConsoleHelper.WriteStep(0, "Checking required package references");
+            await EnsureRequiredPackagesAsync(webProjectPath);
+
+            // Detect project namespace
+            _options.ProjectNamespace = await DetectProjectNamespaceAsync(webProjectPath);
+            if (_options.ProjectNamespace != null)
+            {
+                ConsoleHelper.WriteSuccess($"  Detected namespace: {_options.ProjectNamespace}");
+            }
 
             // Step 1: Generate Entity
             ConsoleHelper.WriteStep(1, "Generating entity class (DDD patterns)");
@@ -279,6 +291,51 @@ public static partial class DomainEvents
         File.WriteAllText(Path.Combine(viewsDir, "Index.cshtml"), indexView);
         File.WriteAllText(Path.Combine(viewsDir, "_List.cshtml"), listView);
         File.WriteAllText(Path.Combine(viewsDir, "_Form.cshtml"), formView);
+        
+        // Ensure _ViewImports.cshtml exists with correct namespaces
+        EnsureViewImports(webProjectDir);
+    }
+
+    private void EnsureViewImports(string webProjectDir)
+    {
+        var viewsDir = Path.Combine(webProjectDir, "Views");
+        var viewImportsPath = Path.Combine(viewsDir, "_ViewImports.cshtml");
+        
+        // Generate content with project namespace
+        var projectNamespace = _options.ProjectNamespace ?? "App";
+        var content = $@"@using {projectNamespace}
+@using {projectNamespace}.Models
+@using {projectNamespace}.Dtos
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+";
+
+        // Create or update _ViewImports.cshtml
+        Directory.CreateDirectory(viewsDir);
+        
+        if (File.Exists(viewImportsPath))
+        {
+            // Check if our namespaces are already included
+            var existing = File.ReadAllText(viewImportsPath);
+            if (!existing.Contains($"@using {projectNamespace}.Dtos"))
+            {
+                // Append our namespaces if missing
+                var lines = new List<string> { existing.TrimEnd() };
+                if (!existing.Contains($"@using {projectNamespace}"))
+                    lines.Add($"@using {projectNamespace}");
+                if (!existing.Contains($"@using {projectNamespace}.Models"))
+                    lines.Add($"@using {projectNamespace}.Models");
+                if (!existing.Contains($"@using {projectNamespace}.Dtos"))
+                    lines.Add($"@using {projectNamespace}.Dtos");
+                
+                File.WriteAllText(viewImportsPath, string.Join(Environment.NewLine, lines));
+            }
+        }
+        else
+        {
+            // Create new _ViewImports.cshtml
+            File.WriteAllText(viewImportsPath, content);
+            ConsoleHelper.WriteSuccess("  ✓ Created _ViewImports.cshtml");
+        }
     }
 
     private void ShowGeneratedFiles()
@@ -455,5 +512,93 @@ public static partial class DomainEvents
             if (webProjects.Length > 0) return webProjects[0];
         }
         return null;
+    }
+
+    private async Task EnsureRequiredPackagesAsync(string projectPath)
+    {
+        var projectDir = Path.GetDirectoryName(projectPath);
+        if (projectDir == null)
+        {
+            ConsoleHelper.WriteError("  Could not determine project directory");
+            return;
+        }
+
+        var requiredPackages = new[]
+        {
+            "NetMX.Ddd.Domain",
+            "NetMX.AspNetCore.Mvc"
+        };
+
+        // Read .csproj file to check for existing package references
+        var csprojContent = await File.ReadAllTextAsync(projectPath);
+
+        foreach (var package in requiredPackages)
+        {
+            if (csprojContent.Contains($"<PackageReference Include=\"{package}\""))
+            {
+                ConsoleHelper.WriteSuccess($"  ✓ {package} already referenced");
+                continue;
+            }
+
+            // Package is missing, add it
+            ConsoleHelper.WriteInfo($"  Adding {package}...");
+            
+            var addPackageCommand = $"dotnet add \"{projectPath}\" package {package} --version \"0.1.0-*\"";
+            var processInfo = new ProcessStartInfo
+            {
+                FileName = "dotnet",
+                Arguments = $"add \"{projectPath}\" package {package} --version \"0.1.0-*\"",
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false,
+                CreateNoWindow = true,
+                WorkingDirectory = projectDir
+            };
+
+            using var process = Process.Start(processInfo);
+            if (process == null)
+            {
+                ConsoleHelper.WriteError($"  Failed to start dotnet add command for {package}");
+                continue;
+            }
+
+            await process.WaitForExitAsync();
+
+            if (process.ExitCode == 0)
+            {
+                ConsoleHelper.WriteSuccess($"  ✓ Added {package}");
+            }
+            else
+            {
+                var error = await process.StandardError.ReadToEndAsync();
+                ConsoleHelper.WriteError($"  Failed to add {package}: {error}");
+            }
+        }
+    }
+
+    private async Task<string?> DetectProjectNamespaceAsync(string projectPath)
+    {
+        try
+        {
+            var csprojContent = await File.ReadAllTextAsync(projectPath);
+            
+            // Try to find <RootNamespace> element
+            var rootNamespaceMatch = System.Text.RegularExpressions.Regex.Match(
+                csprojContent,
+                @"<RootNamespace>(.*?)</RootNamespace>");
+            
+            if (rootNamespaceMatch.Success)
+            {
+                return rootNamespaceMatch.Groups[1].Value;
+            }
+
+            // Fallback: Infer from project file name
+            var projectName = Path.GetFileNameWithoutExtension(projectPath);
+            return projectName;
+        }
+        catch
+        {
+            return null;
+        }
     }
 }

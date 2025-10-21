@@ -23,12 +23,14 @@ public class DtoGenerator
         // Namespace
         var namespaceName = options.ModuleName != null
             ? $"{options.ModuleName}.Contracts.Dtos"
-            : "Dtos";
+            : options.ProjectNamespace != null
+                ? $"{options.ProjectNamespace}.Dtos"
+                : "Dtos";
 
         sb.AppendLine($"namespace {namespaceName};");
         sb.AppendLine();
 
-        // Class
+        // Class header
         sb.AppendLine("/// <summary>");
         sb.AppendLine($"/// {options.EntityName} read DTO");
         sb.AppendLine("/// </summary>");
@@ -73,12 +75,14 @@ public class DtoGenerator
         // Namespace
         var namespaceName = options.ModuleName != null
             ? $"{options.ModuleName}.Contracts.Dtos"
-            : "Dtos";
+            : options.ProjectNamespace != null
+                ? $"{options.ProjectNamespace}.Dtos"
+                : "Dtos";
 
         sb.AppendLine($"namespace {namespaceName};");
         sb.AppendLine();
 
-        // Class
+        // Class header
         sb.AppendLine("/// <summary>");
         sb.AppendLine($"/// {options.EntityName} create DTO");
         sb.AppendLine("/// </summary>");
@@ -135,12 +139,14 @@ public class DtoGenerator
         // Namespace
         var namespaceName = options.ModuleName != null
             ? $"{options.ModuleName}.Contracts.Dtos"
-            : "Dtos";
+            : options.ProjectNamespace != null
+                ? $"{options.ProjectNamespace}.Dtos"
+                : "Dtos";
 
         sb.AppendLine($"namespace {namespaceName};");
         sb.AppendLine();
 
-        // Class
+        // Class header
         sb.AppendLine("/// <summary>");
         sb.AppendLine($"/// {options.EntityName} update DTO");
         sb.AppendLine("/// </summary>");
@@ -202,12 +208,14 @@ public class DtoGenerator
         // Namespace
         var namespaceName = options.ModuleName != null
             ? $"{options.ModuleName}.Contracts.Dtos"
-            : "Dtos";
+            : options.ProjectNamespace != null
+                ? $"{options.ProjectNamespace}.Dtos"
+                : "Dtos";
 
         sb.AppendLine($"namespace {namespaceName};");
         sb.AppendLine();
 
-        // Class
+        // Class header
         sb.AppendLine("/// <summary>");
         sb.AppendLine($"/// {options.EntityName} filter DTO");
         sb.AppendLine("/// </summary>");
@@ -274,12 +282,14 @@ public class DtoGenerator
         // Namespace
         var namespaceName = options.ModuleName != null
             ? $"{options.ModuleName}.Contracts.Dtos"
-            : "Dtos";
+            : options.ProjectNamespace != null
+                ? $"{options.ProjectNamespace}.Dtos"
+                : "Dtos";
 
         sb.AppendLine($"namespace {namespaceName};");
         sb.AppendLine();
 
-        // Class
+        // Class header
         sb.AppendLine("/// <summary>");
         sb.AppendLine($"/// Paged result for {options.EntityName}");
         sb.AppendLine("/// </summary>");

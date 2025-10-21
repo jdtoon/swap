@@ -318,7 +318,7 @@ public static class ViewGenerator
         sb.AppendLine("            <p class=\"modal-card-title\">@title</p>");
         sb.AppendLine("            <button class=\"delete\" aria-label=\"close\" onclick=\"this.closest('.modal').remove()\"></button>");
         sb.AppendLine("        </header>");
-        sb.AppendLine("        <form hx-post=\"/@($\"/{options.EntityName}/{action}\")\"");
+        sb.AppendLine($"        <form hx-post=\"/@($\"/{options.EntityName}/{{action}}\")\"");
         sb.AppendLine("              hx-target=\"#modal-container\"");
         sb.AppendLine("              hx-swap=\"outerHTML\">");
         sb.AppendLine("            <section class=\"modal-card-body\">");

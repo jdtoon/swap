@@ -18,7 +18,9 @@ public static class ServiceGenerator
         // Namespace
         var namespaceName = options.ModuleName != null
             ? $"{options.ModuleName}.Contracts.Services"
-            : "Services";
+            : options.ProjectNamespace != null
+                ? $"{options.ProjectNamespace}.Services"
+                : "Services";
 
         sb.AppendLine($"namespace {namespaceName};");
         sb.AppendLine();
@@ -26,7 +28,9 @@ public static class ServiceGenerator
         // Using statements
         var dtoNamespace = options.ModuleName != null
             ? $"{options.ModuleName}.Contracts.Dtos"
-            : "Dtos";
+            : options.ProjectNamespace != null
+                ? $"{options.ProjectNamespace}.Dtos"
+                : "Dtos";
         sb.AppendLine($"using {dtoNamespace};");
         sb.AppendLine();
 
@@ -101,7 +105,9 @@ public static class ServiceGenerator
         // Namespace
         var namespaceName = options.ModuleName != null
             ? $"{options.ModuleName}.Application.Services"
-            : "Services";
+            : options.ProjectNamespace != null
+                ? $"{options.ProjectNamespace}.Services"
+                : "Services";
 
         sb.AppendLine($"namespace {namespaceName};");
         sb.AppendLine();
@@ -110,13 +116,19 @@ public static class ServiceGenerator
         sb.AppendLine("using Microsoft.EntityFrameworkCore;");
         var contractsNamespace = options.ModuleName != null
             ? $"{options.ModuleName}.Contracts"
-            : "Contracts";
-        sb.AppendLine($"using {contractsNamespace}.Dtos;");
-        sb.AppendLine($"using {contractsNamespace}.Services;");
+            : options.ProjectNamespace;
+        
+        if (contractsNamespace != null)
+        {
+            sb.AppendLine($"using {contractsNamespace}.Dtos;");
+            sb.AppendLine($"using {contractsNamespace}.Services;");
+        }
         
         var modelsNamespace = options.ModuleName != null
             ? $"{options.ModuleName}.Core.Entities"
-            : "Models";
+            : options.ProjectNamespace != null
+                ? $"{options.ProjectNamespace}.Models"
+                : "Models";
         sb.AppendLine($"using {modelsNamespace};");
         sb.AppendLine();
 

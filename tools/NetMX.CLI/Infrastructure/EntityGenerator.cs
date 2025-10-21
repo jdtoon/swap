@@ -30,8 +30,10 @@ public class EntityGenerator
 
         // Namespace
         var namespaceName = options.ModuleName != null 
-            ? $"{options.ModuleName}.Core.Entities" 
-            : "Models";
+            ? $"{options.ModuleName}.Core.Entities"
+            : options.ProjectNamespace != null
+                ? $"{options.ProjectNamespace}.Models"
+                : "Models";
         
         sb.AppendLine($"namespace {namespaceName};");
         sb.AppendLine();
@@ -172,8 +174,11 @@ public class EntityGenerator
 
         sb.Append($"    public {options.EntityName}(");
         sb.Append(string.Join(", ", parameters));
-        sb.AppendLine(") : base(id)");
+        sb.AppendLine(")");
         sb.AppendLine("    {");
+        
+        // Set Id property
+        sb.AppendLine("        Id = id;");
 
         // Constructor assignments
         foreach (var prop in requiredProps)
