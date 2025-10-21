@@ -129,16 +129,14 @@ public class PermissionChecker : IPermissionChecker, IScopedDependency
 
         try
         {
-            // Query permissions from database
-            // Note: In a real implementation, you'd query user roles from Identity module
-            // For now, we assume roles are available through ICurrentUser
-            var roleNames = _currentUser.Roles;
+            // Query permissions from database using user's role IDs
+            var roleIds = _currentUser.RoleIds;
 
             var queryable = await _rolePermissionRepository.GetQueryableAsync();
             
             var permissions = await queryable
                 .Include(rp => rp.Permission)
-                .Where(rp => roleNames.Contains(rp.Role.Name) && rp.Permission.IsActive)
+                .Where(rp => roleIds.Contains(rp.RoleId) && rp.Permission.IsActive)
                 .Select(rp => rp.Permission.Name)
                 .Distinct()
                 .ToListAsync();

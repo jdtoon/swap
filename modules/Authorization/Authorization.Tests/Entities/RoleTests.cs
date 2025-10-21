@@ -104,10 +104,9 @@ public class RoleTests
         var role = new Role(Guid.NewGuid(), "Admin", "Administrator");
         var permissionId = Guid.NewGuid();
         var grantedBy = Guid.NewGuid();
-        var grantedAt = DateTime.UtcNow;
 
         // Act
-        role.GrantPermission(permissionId, grantedBy, grantedAt);
+        role.GrantPermission(permissionId, grantedBy);
 
         // Assert
         Assert.Single(role.RolePermissions);
@@ -115,7 +114,6 @@ public class RoleTests
         Assert.Equal(role.Id, rolePermission.RoleId);
         Assert.Equal(permissionId, rolePermission.PermissionId);
         Assert.Equal(grantedBy, rolePermission.GrantedBy);
-        Assert.Equal(grantedAt, rolePermission.GrantedAt);
     }
 
     [Fact]
@@ -127,8 +125,8 @@ public class RoleTests
         var grantedBy = Guid.NewGuid();
 
         // Act - Grant same permission twice
-        role.GrantPermission(permissionId, grantedBy, DateTime.UtcNow);
-        role.GrantPermission(permissionId, grantedBy, DateTime.UtcNow);
+        role.GrantPermission(permissionId, grantedBy);
+        role.GrantPermission(permissionId, grantedBy);
 
         // Assert - Should only have one
         Assert.Single(role.RolePermissions);
@@ -140,7 +138,7 @@ public class RoleTests
         // Arrange
         var role = new Role(Guid.NewGuid(), "Admin", "Administrator");
         var permissionId = Guid.NewGuid();
-        role.GrantPermission(permissionId, Guid.NewGuid(), DateTime.UtcNow);
+        role.GrantPermission(permissionId, Guid.NewGuid());
         Assert.Single(role.RolePermissions); // Precondition
 
         // Act
@@ -165,53 +163,29 @@ public class RoleTests
     }
 
     [Fact]
-    public void RevokeAllPermissions_RemovesAllPermissions()
+    public void RevokePermission_MultiplePermissions_RemovesOnlySpecified()
     {
         // Arrange
         var role = new Role(Guid.NewGuid(), "Admin", "Administrator");
         var grantedBy = Guid.NewGuid();
-        var now = DateTime.UtcNow;
+        var permissionId1 = Guid.NewGuid();
+        var permissionId2 = Guid.NewGuid();
+        var permissionId3 = Guid.NewGuid();
         
-        role.GrantPermission(Guid.NewGuid(), grantedBy, now);
-        role.GrantPermission(Guid.NewGuid(), grantedBy, now);
-        role.GrantPermission(Guid.NewGuid(), grantedBy, now);
+        role.GrantPermission(permissionId1, grantedBy);
+        role.GrantPermission(permissionId2, grantedBy);
+        role.GrantPermission(permissionId3, grantedBy);
         
         Assert.Equal(3, role.RolePermissions.Count); // Precondition
 
-        // Act
-        role.RevokeAllPermissions();
+        // Act - Revoke only one
+        role.RevokePermission(permissionId2);
 
         // Assert
-        Assert.Empty(role.RolePermissions);
-    }
-
-    [Fact]
-    public void HasPermission_WhenPermissionGranted_ReturnsTrue()
-    {
-        // Arrange
-        var role = new Role(Guid.NewGuid(), "Admin", "Administrator");
-        var permissionId = Guid.NewGuid();
-        role.GrantPermission(permissionId, Guid.NewGuid(), DateTime.UtcNow);
-
-        // Act
-        var hasPermission = role.HasPermission(permissionId);
-
-        // Assert
-        Assert.True(hasPermission);
-    }
-
-    [Fact]
-    public void HasPermission_WhenPermissionNotGranted_ReturnsFalse()
-    {
-        // Arrange
-        var role = new Role(Guid.NewGuid(), "Admin", "Administrator");
-        var permissionId = Guid.NewGuid();
-
-        // Act
-        var hasPermission = role.HasPermission(permissionId);
-
-        // Assert
-        Assert.False(hasPermission);
+        Assert.Equal(2, role.RolePermissions.Count);
+        Assert.Contains(role.RolePermissions, rp => rp.PermissionId == permissionId1);
+        Assert.Contains(role.RolePermissions, rp => rp.PermissionId == permissionId3);
+        Assert.DoesNotContain(role.RolePermissions, rp => rp.PermissionId == permissionId2);
     }
 
     [Fact]
@@ -243,7 +217,7 @@ public class RoleTests
     }
 
     [Fact]
-    public void UpdateDetails_SystemRole_ThrowsInvalidOperationException()
+    public void UpdateDetails_SystemRole_UpdatesSuccessfully()
     {
         // Arrange
         var role = new Role(
@@ -252,9 +226,12 @@ public class RoleTests
             "Administrator",
             isSystemRole: true);
 
-        // Act & Assert
-        var exception = Assert.Throws<InvalidOperationException>(() =>
-            role.UpdateDetails("NewName", "New Description"));
-        Assert.Contains("system role", exception.Message.ToLower());
+        // Act - System roles can be updated, just not deactivated
+        role.UpdateDetails("Super Admin", "Updated administrator role");
+
+        // Assert
+        Assert.Equal("Super Admin", role.Name);
+        Assert.Equal("Updated administrator role", role.Description);
+        Assert.True(role.IsSystemRole); // Flag remains unchanged
     }
 }

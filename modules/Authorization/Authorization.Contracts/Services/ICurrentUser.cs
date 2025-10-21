@@ -22,7 +22,12 @@ public interface ICurrentUser
     string? UserName { get; }
     
     /// <summary>
-    /// Gets the roles assigned to the current user
+    /// Gets the role names assigned to the current user
     /// </summary>
     string[] Roles { get; }
+    
+    /// <summary>
+    /// Gets the role IDs assigned to the current user
+    /// </summary>
+    Guid[] RoleIds { get; }
 }

@@ -108,17 +108,16 @@ public class PermissionTests
             "Users");
 
         var newDisplayName = "View All Users";
-        var newGroup = "User Management";
         var newDescription = "Updated description";
 
         // Act
-        permission.UpdateDetails(newDisplayName, newGroup, newDescription);
+        permission.UpdateDetails(newDisplayName, newDescription);
 
         // Assert
         Assert.Equal(newDisplayName, permission.DisplayName);
-        Assert.Equal(newGroup, permission.Group);
         Assert.Equal(newDescription, permission.Description);
         Assert.Equal("Users.View", permission.Name); // Name should not change
+        Assert.Equal("Users", permission.Group); // Group should not change
     }
 
     [Theory]
@@ -128,11 +127,11 @@ public class PermissionTests
     public void UpdateDetails_WithInvalidDisplayName_ThrowsArgumentException(string? invalidDisplayName)
     {
         // Arrange
-        var permission = new Permission(Guid.NewGuid(), "Name", "Display", "Group");
+        var permission = new Permission(Guid.NewGuid(), "Users.View", "Display", "Users");
 
         // Act & Assert
         Assert.Throws<ArgumentException>(() =>
-            permission.UpdateDetails(invalidDisplayName!, "Group", null));
+            permission.UpdateDetails(invalidDisplayName!, null));
     }
 
     [Fact]
