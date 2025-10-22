@@ -22,6 +22,34 @@ class Program
             DisplayBanner();
         }
 
+        // New Command (Create new projects from templates)
+        var newCommand = new Command("new", "Create a new NetMX project from a template");
+        
+        var newModularCommand = new Command("modular", "Create a new modular monolith project");
+        var projectNameArg = new Argument<string>("name")
+        {
+            Description = "Name of the project (e.g., ECommerceApp)"
+        };
+        var outputOption = new Option<string?>("--output", "-o")
+        {
+            Description = "Output directory (default: ./{name})"
+        };
+        
+        newModularCommand.Arguments.Add(projectNameArg);
+        newModularCommand.Options.Add(outputOption);
+        
+        newModularCommand.SetAction((parseResult) =>
+        {
+            var name = parseResult.GetValue(projectNameArg);
+            var output = parseResult.GetValue(outputOption);
+            
+            var command = new NewCommand("modular", name!, output);
+            return command.ExecuteAsync().GetAwaiter().GetResult();
+        });
+        
+        newCommand.Subcommands.Add(newModularCommand);
+        rootCommand.Subcommands.Add(newCommand);
+
         // Add Module Command
         var addCommand = new Command("add", "Add items to your NetMX solution");
         

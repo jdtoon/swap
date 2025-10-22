@@ -16,6 +16,7 @@
     <PackageReference Include="NetMX.EntityFrameworkCore" Version="0.1.0-*" />
     <PackageReference Include="NetMX.AspNetCore.Core" Version="0.1.0-*" />
     <PackageReference Include="NetMX.AspNetCore.Mvc" Version="0.1.0-*" />
+    <PackageReference Include="NetMX.Events" Version="0.1.0-*" />
     
     <!-- Entity Framework Core -->
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.10">
