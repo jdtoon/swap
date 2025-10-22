@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using NetMX.AspNetCore.Mvc.Htmx;
+using NetMX.Events;
 using NetMX.Identity.Contracts.Services;
 using NetMX.Identity.Contracts.Users;
 using NetMX.Identity.Core.Users;
@@ -70,7 +71,7 @@ public class AccountController : Controller
             if (Request.IsHtmx())
             {
                 // Trigger success event and redirect
-                this.HxTrigger("login:success", new { userId = user?.Id });
+                this.HxTrigger(DomainEvents.Login.Success, new { userId = user?.Id, userName = user?.UserName });
                 this.HxRedirect(returnUrl ?? "/");
                 return Ok();
             }
@@ -82,6 +83,8 @@ public class AccountController : Controller
         {
             if (Request.IsHtmx())
             {
+                // Trigger account locked event
+                this.HxTrigger(DomainEvents.Account.Locked, new { userName = model.UserName });
                 // Show lockout notification
                 return PartialView("_LockedOut");
             }
@@ -104,6 +107,8 @@ public class AccountController : Controller
         
         if (Request.IsHtmx())
         {
+            // Trigger failed login event
+            this.HxTrigger(DomainEvents.Login.Failed, new { userName = model.UserName, reason = "Invalid credentials" });
             // Return form with error message
             return PartialView("_LoginForm", model);
         }
@@ -142,7 +147,12 @@ public class AccountController : Controller
             if (Request.IsHtmx())
             {
                 // Trigger success event and show success message
-                this.HxTrigger("register:success", new { userId = user.Id });
+                this.HxTrigger(DomainEvents.Registration.Success, new 
+                { 
+                    userId = user.Id, 
+                    email = user.Email,
+                    userName = user.UserName 
+                });
                 return PartialView("_RegisterSuccess");
             }
 
@@ -154,6 +164,11 @@ public class AccountController : Controller
             
             if (Request.IsHtmx())
             {
+                this.HxTrigger(DomainEvents.Registration.Failed, new 
+                { 
+                    email = model.Email, 
+                    errors = new[] { ex.Message } 
+                });
                 return PartialView("_RegisterForm", model);
             }
             return View(model);
@@ -207,7 +222,11 @@ public class AccountController : Controller
 
             if (Request.IsHtmx())
             {
-                this.HxTrigger("profile:updated");
+                this.HxTrigger(DomainEvents.Profile.Updated, new 
+                { 
+                    userId, 
+                    changedFields = new[] { "Email", "FirstName", "LastName" } // Simplified
+                });
                 return PartialView("_ProfileSuccess", updatedUser);
             }
 
