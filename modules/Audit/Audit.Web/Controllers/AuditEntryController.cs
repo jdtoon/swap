@@ -48,8 +48,8 @@ public class AuditEntryController : Controller
 
         var created = await _service.CreateAsync(dto);
         
-        // Trigger type-safe event (extend DomainEvents with partial class for AuditEntry)
-        this.HxTrigger(DomainEvents.AuditEntry.Created, new { id = created.Id });
+        // Trigger type-safe event
+        this.HxTrigger(NetMX.Events.Events.AuditEntry.Created, new { id = created.Id });
         
         return await List();
     }
@@ -84,8 +84,8 @@ public class AuditEntryController : Controller
 
         await _service.UpdateAsync(dto);
         
-        // Trigger type-safe event (extend DomainEvents with partial class for AuditEntry)
-        this.HxTrigger(DomainEvents.AuditEntry.Updated, new { id = dto.Id });
+        // Trigger type-safe event
+        this.HxTrigger(NetMX.Events.Events.AuditEntry.Updated, new { id = dto.Id });
         
         return await List();
     }
@@ -97,7 +97,7 @@ public class AuditEntryController : Controller
         await _service.DeleteAsync(id);
         
         // Trigger type-safe event
-        this.HxTrigger(DomainEvents.AuditEntry.Deleted, new { id });
+        this.HxTrigger(NetMX.Events.Events.AuditEntry.Deleted, new { id });
         
         // Tell HTMX to remove the row
         this.HxReswap(HtmxSwap.Delete);

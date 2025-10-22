@@ -71,7 +71,7 @@ public class AccountController : Controller
             if (Request.IsHtmx())
             {
                 // Trigger success event and redirect
-                this.HxTrigger(DomainEvents.Login.Success, new { userId = user?.Id, userName = user?.UserName });
+                this.HxTrigger(NetMX.Events.Events.User.Login.Success, new { userId = user?.Id, userName = user?.UserName });
                 this.HxRedirect(returnUrl ?? "/");
                 return Ok();
             }
@@ -84,7 +84,7 @@ public class AccountController : Controller
             if (Request.IsHtmx())
             {
                 // Trigger account locked event
-                this.HxTrigger(DomainEvents.Account.Locked, new { userName = model.UserName });
+                this.HxTrigger(NetMX.Events.Events.User.Account.Locked, new { userName = model.UserName });
                 // Show lockout notification
                 return PartialView("_LockedOut");
             }
@@ -108,7 +108,7 @@ public class AccountController : Controller
         if (Request.IsHtmx())
         {
             // Trigger failed login event
-            this.HxTrigger(DomainEvents.Login.Failed, new { userName = model.UserName, reason = "Invalid credentials" });
+            this.HxTrigger(NetMX.Events.Events.User.Login.Failed, new { userName = model.UserName, reason = "Invalid credentials" });
             // Return form with error message
             return PartialView("_LoginForm", model);
         }
@@ -147,7 +147,7 @@ public class AccountController : Controller
             if (Request.IsHtmx())
             {
                 // Trigger success event and show success message
-                this.HxTrigger(DomainEvents.Registration.Success, new 
+                this.HxTrigger(NetMX.Events.Events.User.Registered, new 
                 { 
                     userId = user.Id, 
                     email = user.Email,
@@ -164,7 +164,7 @@ public class AccountController : Controller
             
             if (Request.IsHtmx())
             {
-                this.HxTrigger(DomainEvents.Registration.Failed, new 
+                this.HxTrigger(NetMX.Events.Events.User.Registered, new 
                 { 
                     email = model.Email, 
                     errors = new[] { ex.Message } 
@@ -222,7 +222,7 @@ public class AccountController : Controller
 
             if (Request.IsHtmx())
             {
-                this.HxTrigger(DomainEvents.Profile.Updated, new 
+                this.HxTrigger(NetMX.Events.Events.User.ProfileUpdated, new 
                 { 
                     userId, 
                     changedFields = new[] { "Email", "FirstName", "LastName" } // Simplified

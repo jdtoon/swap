@@ -10,4 +10,8 @@
     <PackageTags>netmx;events;htmx;event-driven;type-safe</PackageTags>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\NetMX.Core\NetMX.Core.csproj" />
+  </ItemGroup>
+
 </Project>

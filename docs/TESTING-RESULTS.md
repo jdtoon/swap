@@ -11,7 +11,7 @@
 | Category | Tests | Passed | Failed | Skipped | Progress |
 |----------|-------|--------|--------|---------|----------|
 | **P0: EventBus Core** | 15 | 13 | 0 | 2 | ✅ 87% |
-| **P0: Domain Events** | 12 | 0 | 0 | 12 | ⏸️ 0% |
+| **P0: Domain Events** | 12 | 0 | 0 | 12 | ❌ BLOCKED |
 | **P1: Identity Manual** | 4 | 0 | 0 | 4 | ⏸️ 0% |
 | **P1: Authorization Manual** | 3 | 0 | 0 | 3 | ⏸️ 0% |
 | **P1: Audit Manual** | 3 | 0 | 0 | 3 | ⏸️ 0% |
@@ -428,17 +428,54 @@ All tested features working as designed.
 
 ---
 
+## ⚠️ P0: Domain Events Integration Tests (BLOCKED)
+
+**Status**: ❌ Blocked by compiler ambiguity  
+**Tests Planned**: 12 (Authorization 6, Identity 6)  
+**Tests Created**: 41 (across 3 modules)  
+**Tests Passing**: 0
+
+### Issue: Partial Class `DomainEvents` Ambiguity
+
+**Problem**: Cannot compile tests due to CS0433 error:
+```
+error CS0433: The type 'DomainEvents' exists in both 
+  'Authorization.Web' and 'NetMX.Events'
+```
+
+**Root Cause**:
+- `NetMX.Events` package contains `public static partial class DomainEvents` (base)
+- Each module extends with `public static partial class DomainEvents` (adds events)
+- Test projects reference both assemblies → compiler sees two `DomainEvents` types
+- `global::` prefix doesn't resolve ambiguity (both types in same namespace)
+
+**Impact**:
+- 41 tests created but won't compile (Authorization 7, Identity 18, Audit 16)
+- Can't validate event names via unit tests
+- Can't validate EventDirection attributes programmatically
+
+**Workarounds Available**:
+1. ✅ **Manual testing** - Validate events fire through browser DevTools (HX-Trigger headers)
+2. ✅ **Log inspection** - Check EventBus logs for correct events published
+3. ✅ **Integration tests** - Test full controller→event→handler flow (future)
+
+**Files Created (Not Committed)**:
+- `modules/Authorization/Authorization.Web.Tests/DomainEventsIntegrationTests.cs` (220 lines)
+- `modules/Identity/NetMX.Identity.Web.Tests/DomainEventsIntegrationTests.cs` (430 lines)
+- `modules/Audit/Audit.Web.Tests/DomainEventsIntegrationTests.cs` (390 lines)
+
+**Resolution**: See `docs/DOMAIN-EVENTS-TESTING-BLOCKER.md` for detailed analysis and proposed solutions.
+
+**Decision**: Defer domain events unit tests, proceed with manual validation (P1).
+
+---
+
 ## 🎯 Next Actions
 
-### Immediate (Next Session)
-1. ✅ **Create domain events integration tests** (12 tests)
-   - Authorization: Permission/Role events
-   - Identity: Login/Registration/Profile/Account/Session/UserRole events
-   - Audit: AuditLog/AuditEntry/EntityChange/Compliance events
-
-2. ✅ **Run domain events tests** and validate all 38 events fire correctly
-
-3. ✅ **Update TESTING-RESULTS.md** with domain events results
+### Immediate (This Session)
+1. ✅ **EventBus integration tests** - COMPLETE (13/15 passing)
+2. ✅ **Document domain events blocker** - COMPLETE (DOMAIN-EVENTS-TESTING-BLOCKER.md)
+3. ⏸️ **Manual testing preparation** - NEXT STEP
 
 ### Then (User QA Session)
 4. **Manual testing: Identity workflows** (4 tests, 2-3 hours)

@@ -49,7 +49,7 @@ public class RoleController : Controller
         var created = await _service.CreateAsync(dto);
         
         // Trigger type-safe event
-        this.HxTrigger(DomainEvents.Role.Created, new { id = created.Id });
+        this.HxTrigger(Events.Role.Created, new { id = created.Id });
         
         return await List();
     }
@@ -85,7 +85,7 @@ public class RoleController : Controller
         await _service.UpdateAsync(dto);
         
         // Trigger type-safe event
-        this.HxTrigger(DomainEvents.Role.Updated, new { id = dto.Id });
+        this.HxTrigger(Events.Role.Updated, new { id = dto.Id });
         
         return await List();
     }
@@ -97,7 +97,7 @@ public class RoleController : Controller
         await _service.DeleteAsync(id);
         
         // Trigger type-safe event
-        this.HxTrigger(DomainEvents.Role.Deleted, new { id });
+        this.HxTrigger(Events.Role.Deleted, new { id });
         
         // Tell HTMX to remove the row
         this.HxReswap(HtmxSwap.Delete);

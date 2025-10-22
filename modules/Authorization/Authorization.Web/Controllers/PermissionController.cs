@@ -49,7 +49,7 @@ public class PermissionController : Controller
         var created = await _service.CreateAsync(dto);
         
         // Trigger type-safe event
-        this.HxTrigger(DomainEvents.Permission.Created, new { id = created.Id });
+        this.HxTrigger(Events.Permission.Created, new { id = created.Id });
         
         return await List();
     }
@@ -85,7 +85,7 @@ public class PermissionController : Controller
         await _service.UpdateAsync(dto);
         
         // Trigger type-safe event
-        this.HxTrigger(DomainEvents.Permission.Updated, new { id = dto.Id });
+        this.HxTrigger(Events.Permission.Updated, new { id = dto.Id });
         
         return await List();
     }
@@ -97,7 +97,7 @@ public class PermissionController : Controller
         await _service.DeleteAsync(id);
         
         // Trigger type-safe event
-        this.HxTrigger(DomainEvents.Permission.Deleted, new { id });
+        this.HxTrigger(Events.Permission.Deleted, new { id });
         
         // Tell HTMX to remove the row
         this.HxReswap(HtmxSwap.Delete);

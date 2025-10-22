@@ -41,7 +41,7 @@
         <!-- List Container -->
         <div id="list-container" 
              hx-get="/AuditEntry/List" 
-             hx-trigger="load, @DomainEvents.AuditEntry.Created from:body, @DomainEvents.AuditEntry.Updated from:body">
+             hx-trigger="load, @NetMX.Events.Events.AuditEntry.Created from:body, @NetMX.Events.Events.AuditEntry.Updated from:body">
             <div class="has-text-centered">
                 <span class="icon is-large">
                     <i class="fas fa-spinner fa-pulse"></i>

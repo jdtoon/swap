@@ -37,6 +37,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NetMX.Core.Tests", "NetMX.C
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NetMX.Testing", "NetMX.Testing\NetMX.Testing.csproj", "{35EEC5FE-6F11-42FD-ABF2-EFB8DC51F070}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NetMX.Events.Tests", "NetMX.Events.Tests\NetMX.Events.Tests.csproj", "{E2B29FEB-6F84-4D7C-90B7-6D567C79A5EF}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -251,6 +253,18 @@ Global
 		{35EEC5FE-6F11-42FD-ABF2-EFB8DC51F070}.Release|x64.Build.0 = Release|Any CPU
 		{35EEC5FE-6F11-42FD-ABF2-EFB8DC51F070}.Release|x86.ActiveCfg = Release|Any CPU
 		{35EEC5FE-6F11-42FD-ABF2-EFB8DC51F070}.Release|x86.Build.0 = Release|Any CPU
+		{E2B29FEB-6F84-4D7C-90B7-6D567C79A5EF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E2B29FEB-6F84-4D7C-90B7-6D567C79A5EF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E2B29FEB-6F84-4D7C-90B7-6D567C79A5EF}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{E2B29FEB-6F84-4D7C-90B7-6D567C79A5EF}.Debug|x64.Build.0 = Debug|Any CPU
+		{E2B29FEB-6F84-4D7C-90B7-6D567C79A5EF}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{E2B29FEB-6F84-4D7C-90B7-6D567C79A5EF}.Debug|x86.Build.0 = Debug|Any CPU
+		{E2B29FEB-6F84-4D7C-90B7-6D567C79A5EF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E2B29FEB-6F84-4D7C-90B7-6D567C79A5EF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E2B29FEB-6F84-4D7C-90B7-6D567C79A5EF}.Release|x64.ActiveCfg = Release|Any CPU
+		{E2B29FEB-6F84-4D7C-90B7-6D567C79A5EF}.Release|x64.Build.0 = Release|Any CPU
+		{E2B29FEB-6F84-4D7C-90B7-6D567C79A5EF}.Release|x86.ActiveCfg = Release|Any CPU
+		{E2B29FEB-6F84-4D7C-90B7-6D567C79A5EF}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
