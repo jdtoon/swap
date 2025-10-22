@@ -227,46 +227,12 @@ public class GenerateFeatureCommand
 
     private void GenerateEventConstants(string webProjectDir)
     {
-        var eventsDir = Path.Combine(webProjectDir, "Events");
-        Directory.CreateDirectory(eventsDir);
-
-        var eventConstants = $@"namespace NetMX.Events;
-
-/// <summary>
-/// Event constants for {_options.EntityName} entity.
-/// </summary>
-/// <remarks>
-/// This partial class extends DomainEvents with {_options.EntityName}-specific events.
-/// Use these constants in controllers and views for type-safe event communication.
-/// </remarks>
-public static partial class DomainEvents
-{{
-    /// <summary>
-    /// Events for {_options.EntityName} entity
-    /// </summary>
-    public static class {_options.EntityName}
-    {{
-        /// <summary>
-        /// Triggered when a new {_options.EntityName} is created.
-        /// Payload: {{ id: Guid }}
-        /// </summary>
-        public const string Created = ""{_options.EntityName.ToLower()}-created"";
-
-        /// <summary>
-        /// Triggered when an existing {_options.EntityName} is updated.
-        /// Payload: {{ id: Guid }}
-        /// </summary>
-        public const string Updated = ""{_options.EntityName.ToLower()}-updated"";
-
-        /// <summary>
-        /// Triggered when a {_options.EntityName} is deleted.
-        /// Payload: {{ id: Guid }}
-        /// </summary>
-        public const string Deleted = ""{_options.EntityName.ToLower()}-deleted"";
-    }}
-}}";
-
-        File.WriteAllText(Path.Combine(eventsDir, $"DomainEvents.{_options.EntityName}.cs"), eventConstants);
+        // Generate three files for Event Registry pattern:
+        // 1. Events.{EntityName}.cs in NetMX.Events (partial Events class)
+        // 2. {EntityName}EventDefinitions.cs (Register method)
+        // 3. Extension method Add{EntityName}Events()
+        
+        GenerateEventRegistryFiles(webProjectDir);
     }
 
     private void GenerateController(string webProjectDir)
@@ -360,7 +326,8 @@ public static partial class DomainEvents
             
             ConsoleHelper.WriteInfo($"  {module}.Contracts/Services/I{entityName}Service.cs");
             ConsoleHelper.WriteInfo($"  {module}.Application/Services/{entityName}Service.cs");
-            ConsoleHelper.WriteInfo($"  {module}.Web/Events/DomainEvents.{entityName}.cs");
+            ConsoleHelper.WriteInfo($"  {module}.Web/Events/{entityName}EventDefinitions.cs");
+            ConsoleHelper.WriteInfo($"  {module}.Web/Extensions/{entityName}EventExtensions.cs");
             ConsoleHelper.WriteInfo($"  {module}.Web/Controllers/{entityName}Controller.cs");
             ConsoleHelper.WriteInfo($"  {module}.Web/Views/{entityName}/Index.cshtml");
             ConsoleHelper.WriteInfo($"  {module}.Web/Views/{entityName}/_List.cshtml");
@@ -382,7 +349,8 @@ public static partial class DomainEvents
             
             ConsoleHelper.WriteInfo($"  Services/I{entityName}Service.cs");
             ConsoleHelper.WriteInfo($"  Services/{entityName}Service.cs");
-            ConsoleHelper.WriteInfo($"  Events/DomainEvents.{entityName}.cs");
+            ConsoleHelper.WriteInfo($"  Events/{entityName}EventDefinitions.cs");
+            ConsoleHelper.WriteInfo($"  Extensions/{entityName}EventExtensions.cs");
             ConsoleHelper.WriteInfo($"  Controllers/{entityName}Controller.cs");
             ConsoleHelper.WriteInfo($"  Views/{entityName}/Index.cshtml");
             ConsoleHelper.WriteInfo($"  Views/{entityName}/_List.cshtml");
@@ -600,5 +568,216 @@ public static partial class DomainEvents
         {
             return null;
         }
+    }
+
+    /// <summary>
+    /// Generates Event Registry pattern files:
+    /// 1. Events.{EntityName}.cs in NetMX.Events project (partial Events class)
+    /// 2. {EntityName}EventDefinitions.cs in Events/ directory (Register method)
+    /// 3. Extension method Add{EntityName}Events() in Extensions/ directory
+    /// </summary>
+    private void GenerateEventRegistryFiles(string webProjectDir)
+    {
+        var entityName = _options.EntityName;
+        var entityNameLower = entityName.ToLower();
+        var moduleName = _options.ModuleName ?? "App";
+        
+        // 1. Generate Events.{EntityName}.cs for NetMX.Events project
+        // This file goes in framework/NetMX.Events/ directory
+        var netmxEventsDir = FindNetMXEventsProjectDirectory();
+        if (netmxEventsDir != null)
+        {
+            GenerateEventsPartialClass(netmxEventsDir, entityName, entityNameLower);
+        }
+        
+        // 2. Generate {EntityName}EventDefinitions.cs in Events/ directory
+        GenerateEventDefinitionsClass(webProjectDir, entityName, entityNameLower, moduleName);
+        
+        // 3. Generate extension method in Extensions/ directory
+        GenerateEventExtensionMethod(webProjectDir, entityName, moduleName);
+    }
+
+    private string? FindNetMXEventsProjectDirectory()
+    {
+        // Try to find NetMX.Events project from current directory
+        var currentDir = Directory.GetCurrentDirectory();
+        
+        // Strategy 1: If we're in a module or app, go up to find framework/
+        var searchDir = currentDir;
+        for (int i = 0; i < 5; i++)
+        {
+            var frameworkDir = Path.Combine(searchDir, "framework", "NetMX.Events");
+            if (Directory.Exists(frameworkDir))
+            {
+                return frameworkDir;
+            }
+            
+            var parentDir = Directory.GetParent(searchDir);
+            if (parentDir == null) break;
+            searchDir = parentDir.FullName;
+        }
+        
+        // Strategy 2: Check if we're already in NetMX.Events
+        if (currentDir.EndsWith("NetMX.Events"))
+        {
+            return currentDir;
+        }
+        
+        ConsoleHelper.WriteWarning("  ⚠️  Could not find NetMX.Events project. Skipping Events.{EntityName}.cs generation.");
+        ConsoleHelper.WriteInfo("     Event constants will be generated in local Events/ directory instead.");
+        return null;
+    }
+
+    private void GenerateEventsPartialClass(string netmxEventsDir, string entityName, string entityNameLower)
+    {
+        var eventsPartialClass = $@"namespace NetMX.Events;
+
+/// <summary>
+/// {entityName} entity events (partial extension of global Events class).
+/// </summary>
+/// <remarks>
+/// This partial class extends the global <see cref=""Events""/> class with
+/// {entityName}-specific event constants. This allows type-safe access like:
+/// <code>Events.{entityName}.Created</code> from any module without project references.
+/// </remarks>
+public static partial class Events
+{{
+    /// <summary>
+    /// {entityName}-related events.
+    /// </summary>
+    public static class {entityName}
+    {{
+        /// <summary>
+        /// Event: ""{entityNameLower}.created""
+        /// </summary>
+        /// <remarks>
+        /// Triggered when a new {entityName} is created.
+        /// Payload: {{ {entityNameLower}Id: Guid }}
+        /// </remarks>
+        public const string Created = ""{entityNameLower}.created"";
+        
+        /// <summary>
+        /// Event: ""{entityNameLower}.updated""
+        /// </summary>
+        /// <remarks>
+        /// Triggered when a {entityName} is updated.
+        /// Payload: {{ {entityNameLower}Id: Guid, changes: string[] }}
+        /// </remarks>
+        public const string Updated = ""{entityNameLower}.updated"";
+        
+        /// <summary>
+        /// Event: ""{entityNameLower}.deleted""
+        /// </summary>
+        /// <remarks>
+        /// Triggered when a {entityName} is deleted.
+        /// Payload: {{ {entityNameLower}Id: Guid }}
+        /// </remarks>
+        public const string Deleted = ""{entityNameLower}.deleted"";
+    }}
+}}
+";
+
+        var filePath = Path.Combine(netmxEventsDir, $"Events.{entityName}.cs");
+        File.WriteAllText(filePath, eventsPartialClass);
+        ConsoleHelper.WriteSuccess($"  ✓ Generated Events.{entityName}.cs in NetMX.Events");
+    }
+
+    private void GenerateEventDefinitionsClass(string webProjectDir, string entityName, string entityNameLower, string moduleName)
+    {
+        var eventsDir = Path.Combine(webProjectDir, "Events");
+        Directory.CreateDirectory(eventsDir);
+        
+        var projectNamespace = _options.ProjectNamespace ?? moduleName;
+        
+        var eventDefinitions = $@"using NetMX.Events;
+
+namespace {projectNamespace}.Events;
+
+/// <summary>
+/// Defines and registers all {entityName} events.
+/// </summary>
+public static class {entityName}EventDefinitions
+{{
+    /// <summary>
+    /// Registers all {entityName} events with the event registry.
+    /// </summary>
+    /// <param name=""registry"">The event registry to register events with.</param>
+    public static void Register(IEventRegistry registry)
+    {{
+        registry.RegisterEvent(Events.{entityName}.Created, new EventMetadata
+        {{
+            Name = Events.{entityName}.Created,
+            Module = ""{moduleName}"",
+            Category = ""{entityName}"",
+            Direction = EventDirection.Upstream,
+            Description = ""Triggered when a new {entityName} is created. Payload: {{ {entityNameLower}Id: Guid }}""
+        }});
+        
+        registry.RegisterEvent(Events.{entityName}.Updated, new EventMetadata
+        {{
+            Name = Events.{entityName}.Updated,
+            Module = ""{moduleName}"",
+            Category = ""{entityName}"",
+            Direction = EventDirection.Upstream,
+            Description = ""Triggered when a {entityName} is updated. Payload: {{ {entityNameLower}Id: Guid, changes: string[] }}""
+        }});
+        
+        registry.RegisterEvent(Events.{entityName}.Deleted, new EventMetadata
+        {{
+            Name = Events.{entityName}.Deleted,
+            Module = ""{moduleName}"",
+            Category = ""{entityName}"",
+            Direction = EventDirection.Terminal,
+            Description = ""Triggered when a {entityName} is deleted. Payload: {{ {entityNameLower}Id: Guid }}""
+        }});
+    }}
+}}
+";
+
+        var filePath = Path.Combine(eventsDir, $"{entityName}EventDefinitions.cs");
+        File.WriteAllText(filePath, eventDefinitions);
+    }
+
+    private void GenerateEventExtensionMethod(string webProjectDir, string entityName, string moduleName)
+    {
+        var extensionsDir = Path.Combine(webProjectDir, "Extensions");
+        Directory.CreateDirectory(extensionsDir);
+        
+        var projectNamespace = _options.ProjectNamespace ?? moduleName;
+        var fileName = $"{entityName}EventExtensions.cs";
+        var filePath = Path.Combine(extensionsDir, fileName);
+        
+        // Check if extensions file already exists
+        if (File.Exists(filePath))
+        {
+            ConsoleHelper.WriteWarning($"  ⚠️  {fileName} already exists. Skipping extension method generation.");
+            return;
+        }
+        
+        var extensionMethod = $@"using NetMX.Events;
+using {projectNamespace}.Events;
+
+namespace {projectNamespace}.Extensions;
+
+/// <summary>
+/// Extension methods for registering {entityName} events.
+/// </summary>
+public static class {entityName}EventExtensions
+{{
+    /// <summary>
+    /// Registers {entityName} events with the event registry.
+    /// Call this during application startup after adding the event registry.
+    /// </summary>
+    /// <param name=""registry"">The event registry</param>
+    /// <returns>The event registry for chaining</returns>
+    public static IEventRegistry Add{entityName}Events(this IEventRegistry registry)
+    {{
+        {entityName}EventDefinitions.Register(registry);
+        return registry;
+    }}
+}}
+";
+
+        File.WriteAllText(filePath, extensionMethod);
     }
 }

@@ -15,6 +15,8 @@ public static class ViewGenerator
     {
         var sb = new StringBuilder();
 
+        sb.AppendLine("@using NetMX.Events");
+        sb.AppendLine();
         sb.AppendLine("@{");
         sb.AppendLine($"    ViewData[\"Title\"] = \"{options.EntityName}s\";");
         sb.AppendLine("}");
@@ -104,7 +106,7 @@ public static class ViewGenerator
         sb.AppendLine("        <!-- List Container -->");
         sb.AppendLine("        <div id=\"list-container\"");
         sb.AppendLine($"             hx-get=\"/{options.EntityName}/List\"");
-        sb.AppendLine($"             hx-trigger=\"load, {options.EntityName.ToLower()}-created from:body, {options.EntityName.ToLower()}-updated from:body, {options.EntityName.ToLower()}-deleted from:body\"");
+        sb.AppendLine($"             hx-trigger=\"load, @Events.{options.EntityName}.Created from:body, @Events.{options.EntityName}.Updated from:body, @Events.{options.EntityName}.Deleted from:body\"");
         sb.AppendLine("             hx-include=\"[name='searchQuery'],[name^='filter']\">");
         sb.AppendLine("            <div class=\"has-text-centered\">");
         sb.AppendLine("                <span class=\"icon is-large\">");
