@@ -14,10 +14,10 @@
 | NetMX.Core.Tests | 13 | 13 | 0 | ✅ |
 | NetMX.AspNetCore.Core.Tests | 13 | 13 | 0 | ✅ |
 | NetMX.AspNetCore.Mvc.Tests | 44 | 44 | 0 | ✅ |
-| NetMX.Events.Tests | 47 | 47 | 0 | ✅ |
+| NetMX.Events.Tests | 66 | 66 | 0 | ✅ |
 | NetMX.EntityFrameworkCore.Tests | 7 | 7 | 0 | ✅ |
 | NetMX.Ddd.Application.Tests | 23 | 23 | 0 | ✅ |
-| **Total Framework** | **147** | **147** | **0** | ✅ |
+| **Total Framework** | **166** | **166** | **0** | ✅ |
 
 ### Module Tests
 | Module | Tests | Passed | Failed | Status |
@@ -26,7 +26,9 @@
 | Identity.Core.Tests | 28 | 28 | 0 | ✅ |
 | **Total Modules** | **66** | **66** | **0** | ✅ |
 
-### **GRAND TOTAL: 213 tests, all passing ✅**
+### **GRAND TOTAL: 232 tests, all passing ✅**
+
+(147 framework + 66 modules + 19 Event Registry integration = 232 total)
 
 ---
 
@@ -50,15 +52,16 @@
 
 ### Immediate (Today - Oct 22)
 1. ✅ Run all existing tests - **COMPLETE**
-2. 🔄 Create Event Registry integration tests - **NEXT**
-3. ⏸️ Create CLI E2E tests
+2. ✅ Create Event Registry integration tests - **COMPLETE (19 tests)**
+3. 🔄 Run full system test - **NEXT**
 4. ⏸️ Build dogfooding sample app
 
-### Testing Infrastructure Additions Needed
-- [ ] Event Registry integration tests (15+ tests)
-- [ ] CLI generation E2E tests (10+ tests)
-- [ ] Cross-module event tests (5+ tests)
-- [ ] **Target**: 240+ total tests
+### Testing Infrastructure Completed
+- ✅ Event Registry integration tests (19 tests added)
+- ✅ Cross-module event tests (included in 19)
+- ⏸️ CLI generation E2E tests (10+ tests) - Next phase
+- **Current**: 232 total tests
+- **Target**: 250+ with CLI E2E tests
 
 ---
 
@@ -66,8 +69,9 @@
 
 ### Test Coverage Growth
 - **Week 1 (Oct 14)**: 114 tests
-- **Week 2 (Oct 22)**: 213 tests
-- **Growth**: +99 tests (+87%)
+- **Week 2 (Oct 22 AM)**: 213 tests
+- **Week 2 (Oct 22 PM)**: 232 tests
+- **Growth**: +118 tests (+103%)
 
 ### Module Maturity
 - **Framework**: 147 tests across 10 packages
