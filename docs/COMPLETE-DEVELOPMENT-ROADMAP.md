@@ -1,8 +1,8 @@
 # NetMX Complete Development Roadmap
 
-**Current Date**: October 21, 2025  
-**Current Status**: Phase 2A Complete (Week 2, Day 1)  
-**Overall Progress**: 23% of ABP Framework feature parity
+**Current Date**: October 22, 2025  
+**Current Status**: Event Registry Complete, Documentation Cleanup Complete  
+**Overall Progress**: ~25% of ABP Framework feature parity
 
 ---
 
@@ -26,59 +26,88 @@
 **Git History**:
 - Commit `2cced5e`: Roslyn Auto-Migration Phase 1 (CodeModificationHelper)
 - Commit `b376041`: DbContextModifier wrapper with ModificationResult pattern
-- Progress doc: `PROGRESS-OCT21-CLI-AUTOMATION-PHASE1.md` (524 lines)
+- Progress doc: `docs/archive/progress-reports/PROGRESS-OCT21-CLI-AUTOMATION-PHASE1.md`
 
 **Time Savings Achieved**: 99.9% (90 seconds → 0.1 seconds per DbSet injection)
 
 ---
 
-### ✅ Phase 2A: MigrationOrchestrator (COMPLETE - Oct 21)
+### ✅ Phase 2: Event Registry (COMPLETE - Oct 22) ⭐ NEW
 
-**Duration**: 2 hours  
-**Status**: 100% Complete  
+**Duration**: 2 days  
+**Status**: 100% Complete
 
 **Deliverables**:
-1. ✅ MigrationOrchestrator.cs (339 lines) - Full workflow automation
-2. ✅ Rollback capabilities (DbSet + Migration)
-3. ✅ EF Core integration (migration creation + database update)
-4. ✅ 158 tests passing (2 new unit tests)
-5. ✅ 4 integration tests skipped (planned for E2E suite)
-6. ✅ Fixed duplicate definition error (Success property vs method)
-7. ✅ Fixed legacy test failures (pluralization + duplicate behavior)
+1. ✅ **Core Implementation**:
+   - IEventRegistry interface and EventRegistry implementation
+   - EventMetadata record for event information storage
+   - Events static class for type-safe global access
+   - Thread-safe registration with collision detection
+   - 34 unit tests passing (EventRegistryTests + EventsStaticClassTests)
 
-**Progress doc**: `PROGRESS-OCT21-CLI-AUTOMATION-PHASE2A.md`
+2. ✅ **Module Integration** (All 3 modules):
+   - Authorization: 6 events (Permission, Role)
+   - Identity: 16 events (User, Login, Session, Password, Account)
+   - Audit: 15 events (AuditLog, AuditEntry, EntityChange, Compliance)
+   - Total: 18 controller updates, 6 view updates, 3 integration tests
 
-**Time Savings Target**: 30-50% per entity (manual steps eliminated)
+3. ✅ **Benefits Achieved**:
+   - No CS0436 duplicate definition errors
+   - Type-safe IntelliSense across all modules
+   - No module project references needed for events
+   - Compile-time event name validation
+   - Centralized event catalog in NetMX.Events
+
+4. ✅ **Documentation Updated**:
+   - QUICK-START.md: Added Event Registry examples
+   - TERMINOLOGY.md: Added Event Registry definitions
+   - EVENT-REGISTRY-GUIDELINES.md: Comprehensive usage guide
+   - MASTER-REFERENCE.md: Created navigation hub
+
+**Git History**:
+- Commit `af1c4f1`: Event Registry implementation + module integration (41 files)
+- Documentation: `docs/EVENT-REGISTRY-ARCHITECTURE.md`, `docs/TYPE-SAFE-EVENTS-EXAMPLES.md`
+
+**Test Results**: 47 tests passing (34 Event Registry + 13 module integration)
 
 ---
 
-## 🚀 Immediate Next Steps (October 21-25, 2025)
+### ✅ Documentation Cleanup (COMPLETE - Oct 22)
 
-### 🔄 Phase 2B: CLI Integration (IN PROGRESS - Next 2-3 hours)
+**Duration**: 3 hours  
+**Status**: 100% Complete
 
-**Goal**: Wire MigrationOrchestrator into CLI commands
+**Actions Completed**:
+1. ✅ Deleted stale ECommerce sample app (103 files removed)
+2. ✅ Archived 46 historical documents into organized subdirectories:
+   - progress-reports/ (13 files)
+   - session-summaries/ (10 files)
+   - completed-phases/ (9 files)
+   - completed-tasks/ (14 files)
+3. ✅ Removed 3 orphaned DomainEvents files from modules
+4. ✅ Consolidated 5 duplicate/superseded documentation files
+5. ✅ Created MASTER-REFERENCE.md as single source of truth
+6. ✅ Created DOCUMENTATION-CLEANUP-SUMMARY.md for tracking
 
-**Tasks**:
-1. [ ] Add `--migrate` flag to `GenerateFeatureCommand`
-   - Location: `tools/NetMX.CLI/Commands/GenerateFeatureCommand.cs`
-   - Add boolean option: `[Option("--migrate", Description = "Create migration and update database")]`
-   
-2. [ ] Update `ExecuteAsync()` method
-   - After entity/DTOs/services/views generation
-   - If `--migrate` flag set → call MigrationOrchestrator
-   - Handle success/failure with colored output
-   
-3. [ ] Add progress indicators
-   - Use current emoji-based progress (✅, ⚠️, ❌)
-   - Or upgrade to Spectre.Console for spinners/progress bars
-   
-4. [ ] Test end-to-end
-   - Create test project
-   - Run `netmx generate feature Product --migrate`
-   - Verify: entity, DTOs, services, views, DbSet, migration, database
+**Impact**:
+- Living documents: 111 → 65 files (41% reduction)
+- Archive: 46 historical documents preserved
+- Cleaner structure, easier navigation
 
-**Expected CLI Output**:
-```bash
+**Git History**:
+- Commit: Documentation cleanup and reorganization
+
+---
+
+## 🚀 Immediate Next Steps (October 22-25, 2025)
+
+### 🔄 Phase 3: CLI Event Registry Generation (HIGH PRIORITY - Next 2-3 hours)
+
+**Goal**: Update CLI to generate Event Registry pattern automatically
+
+**Current Problem**: CLI still generates old `DomainEvents.*` partial class pattern (line 242 in GenerateFeatureCommand.cs)
+
+**Tasks**:bash
 $ netmx generate feature Product --migrate
 
 ✨ Generating Feature: Product

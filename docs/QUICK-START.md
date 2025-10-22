@@ -165,18 +165,20 @@ public class Product
 }
 ```
 
-### Controller with HTMX (`Controllers/ProductController.cs`)
+### Controller with HTMX & Events (`Controllers/ProductController.cs`)
 ```csharp
+using NetMX.Events; // Type-safe event system
+
 [HttpPost]
 public async Task<IActionResult> Create(CreateProductDto dto)
 {
     if (!ModelState.IsValid)
         return PartialView("_Form", dto);
 
-    await _service.CreateAsync(dto);
+    var product = await _service.CreateAsync(dto);
     
-    // Trigger HTMX event to refresh list
-    this.HxTrigger("product-created");
+    // Trigger type-safe HTMX event (IntelliSense support!)
+    this.HxTrigger(Events.Product.Created, new { productId = product.Id });
     return Ok();
 }
 
@@ -185,14 +187,25 @@ public async Task<IActionResult> Delete(int id)
 {
     await _service.DeleteAsync(id);
     
+    // Trigger delete event
+    this.HxTrigger(Events.Product.Deleted, new { productId = id });
+    
     // Remove row from table (no page reload!)
     this.HxReswap(HtmxSwap.Delete);
     return Ok();
 }
 ```
 
-### View with HTMX (`Views/Product/_List.cshtml`)
+**Event Registry Benefits**:
+- ✅ IntelliSense for event names: `Events.Product.Created`
+- ✅ Compile-time safety (no magic strings!)
+- ✅ Refactoring support
+- ✅ Self-documenting code
+
+### View with HTMX & Type-Safe Events (`Views/Product/_List.cshtml`)
 ```html
+@using NetMX.Events
+
 <!-- Edit button - loads form inline -->
 <button hx-get="/Product/Edit/@item.Id" 
         hx-target="#form-container">
@@ -209,9 +222,14 @@ public async Task<IActionResult> Delete(int id)
 <!-- List container - auto-refreshes on events -->
 <div id="list-container" 
      hx-get="/Product/List" 
-     hx-trigger="load, product-created from:body">
+     hx-trigger="load, @Events.Product.Created from:body, @Events.Product.Updated from:body">
 </div>
 ```
+
+**Type-Safe Events in Views**:
+- Use `@Events.Product.Created` instead of magic strings
+- IntelliSense shows all available events
+- Refactoring updates all references
 
 **Learn by reading!** The generated code shows you HTMX best practices.
 

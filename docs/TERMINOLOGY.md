@@ -161,6 +161,63 @@ netmx add components
 
 ---
 
+### 🎯 Event Registry
+
+**Definition**: A **centralized system** for managing type-safe event names across the entire NetMX ecosystem.
+
+**Characteristics**:
+- Centralized event registration in `NetMX.Events` package
+- Type-safe access via `Events` static class
+- No module project references needed
+- IntelliSense support for all events
+- Compile-time safety (no magic strings)
+
+**Key Components**:
+- **Events Static Class**: Global access point (`Events.Product.Created`)
+- **IEventRegistry**: Interface for registering events
+- **EventRegistry**: Implementation with collision detection
+- **EventMetadata**: Stores event information (name, category, description, payload type)
+- **EventDefinitions**: Module classes that register events
+
+**Example**:
+```csharp
+// Register events (in module)
+public static class ProductEventDefinitions
+{
+    public static void Register(IEventRegistry registry)
+    {
+        registry.Register<ProductCreatedPayload>(
+            Events.Product.Created,
+            category: "Product",
+            description: "Triggered when a product is created"
+        );
+    }
+}
+
+// Use in controller
+this.HxTrigger(Events.Product.Created, new { productId = product.Id });
+
+// Use in view
+<div hx-trigger="@Events.Product.Created from:body">
+```
+
+**Benefits**:
+- ✅ No CS0436 duplicate definition errors
+- ✅ IntelliSense across all modules
+- ✅ Compile-time type safety
+- ✅ Refactoring support
+- ✅ Self-documenting event catalog
+
+**When to Use**:
+- ✅ All HTMX event triggers
+- ✅ Cross-module event communication
+- ✅ Event-driven architecture
+- ✅ Distributed systems (future)
+
+**Documentation**: [EVENT-REGISTRY-ARCHITECTURE.md](EVENT-REGISTRY-ARCHITECTURE.md)
+
+---
+
 ## Comparison Table
 
 | Aspect | Module | Feature | Component |
@@ -371,6 +428,11 @@ modules/CMS/         # Just content
 | **HTMX** | Library for server-side HTML with AJAX |
 | **Bulma** | CSS framework used in NetMX |
 | **DDD** | Domain-Driven Design |
+| **Event Registry** | Centralized system for managing type-safe events |
+| **Events Static Class** | Global access point for all registered events (e.g., `Events.Product.Created`) |
+| **EventMetadata** | Stores event name, category, description, and payload type information |
+| **IEventRegistry** | Interface for registering and retrieving event metadata |
+| **EventDefinitions** | Module-specific class that registers events with the Event Registry |
 
 ---
 
