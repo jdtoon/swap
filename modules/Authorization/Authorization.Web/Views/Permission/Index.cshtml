@@ -39,10 +39,9 @@
         <div id="form-container" class="mb-4"></div>
 
         <!-- List Container -->
-        <!-- TODO: Re-enable domain events when DomainEvents.Permission is implemented -->
         <div id="list-container" 
              hx-get="/Permission/List" 
-             hx-trigger="load">
+             hx-trigger="load, @DomainEvents.Permission.Created from:body, @DomainEvents.Permission.Updated from:body">
             <div class="has-text-centered">
                 <span class="icon is-large">
                     <i class="fas fa-spinner fa-pulse"></i>

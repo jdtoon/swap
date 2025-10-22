@@ -48,8 +48,8 @@ public class RoleController : Controller
 
         var created = await _service.CreateAsync(dto);
         
-        // TODO: Add domain event when DomainEvents.Role is implemented
-        // this.HxTrigger(DomainEvents.Role.Created, new { id = created.Id });
+        // Trigger type-safe event
+        this.HxTrigger(DomainEvents.Role.Created, new { id = created.Id });
         
         return await List();
     }
@@ -84,8 +84,8 @@ public class RoleController : Controller
 
         await _service.UpdateAsync(dto);
         
-        // TODO: Add domain event when DomainEvents.Role is implemented
-        // this.HxTrigger(DomainEvents.Role.Updated, new { id = dto.Id });
+        // Trigger type-safe event
+        this.HxTrigger(DomainEvents.Role.Updated, new { id = dto.Id });
         
         return await List();
     }
@@ -96,8 +96,8 @@ public class RoleController : Controller
     {
         await _service.DeleteAsync(id);
         
-        // TODO: Add domain event when DomainEvents.Role is implemented
-        // this.HxTrigger(DomainEvents.Role.Deleted, new { id });
+        // Trigger type-safe event
+        this.HxTrigger(DomainEvents.Role.Deleted, new { id });
         
         // Tell HTMX to remove the row
         this.HxReswap(HtmxSwap.Delete);

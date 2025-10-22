@@ -48,8 +48,8 @@ public class PermissionController : Controller
 
         var created = await _service.CreateAsync(dto);
         
-        // TODO: Add domain event when DomainEvents.Permission is implemented
-        // this.HxTrigger(DomainEvents.Permission.Created, new { id = created.Id });
+        // Trigger type-safe event
+        this.HxTrigger(DomainEvents.Permission.Created, new { id = created.Id });
         
         return await List();
     }
@@ -84,8 +84,8 @@ public class PermissionController : Controller
 
         await _service.UpdateAsync(dto);
         
-        // TODO: Add domain event when DomainEvents.Permission is implemented
-        // this.HxTrigger(DomainEvents.Permission.Updated, new { id = dto.Id });
+        // Trigger type-safe event
+        this.HxTrigger(DomainEvents.Permission.Updated, new { id = dto.Id });
         
         return await List();
     }
@@ -96,8 +96,8 @@ public class PermissionController : Controller
     {
         await _service.DeleteAsync(id);
         
-        // TODO: Add domain event when DomainEvents.Permission is implemented
-        // this.HxTrigger(DomainEvents.Permission.Deleted, new { id });
+        // Trigger type-safe event
+        this.HxTrigger(DomainEvents.Permission.Deleted, new { id });
         
         // Tell HTMX to remove the row
         this.HxReswap(HtmxSwap.Delete);

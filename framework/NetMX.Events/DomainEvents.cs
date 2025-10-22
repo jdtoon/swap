@@ -10,9 +10,12 @@ namespace NetMX.Events;
 /// - Refactoring safety
 /// - Self-documenting code
 /// 
+/// This class is marked as partial to allow modules to extend it with their own events.
+/// Each module should create a DomainEvents.{ModuleName}.cs file that extends this class.
+/// 
 /// Example usage in controller:
 /// <code>
-/// HtmxResponse.Trigger(this, DomainEvents.User.Created, new { userId = user.Id });
+/// this.HxTrigger(DomainEvents.User.Created, new { userId = user.Id });
 /// </code>
 /// 
 /// Example usage in view:
@@ -21,8 +24,22 @@ namespace NetMX.Events;
 ///      hx-trigger="@DomainEvents.User.Created from:body"&gt;
 /// &lt;/div&gt;
 /// </code>
+/// 
+/// Example module extension:
+/// <code>
+/// // In Authorization.Web/Events/DomainEvents.Authorization.cs
+/// namespace NetMX.Events;
+/// 
+/// public static partial class DomainEvents
+/// {
+///     public static class Permission
+///     {
+///         public const string Created = "permission.created";
+///     }
+/// }
+/// </code>
 /// </remarks>
-public static class DomainEvents
+public static partial class DomainEvents
 {
     /// <summary>
     /// User-related events.
