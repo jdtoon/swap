@@ -25,8 +25,8 @@
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
     
-    <!-- Database Provider (PostgreSQL by default) -->
-    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.4" />
+    <!-- Database Provider (SQLite by default for easy getting started) -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="9.0.10" />
   </ItemGroup>
 
   <!-- 

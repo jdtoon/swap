@@ -14,9 +14,8 @@ public class AppDbContextFactory : IDesignTimeDbContextFactory<AppDbContext>
         var configuration = BuildConfiguration();
 
         var builder = new DbContextOptionsBuilder<AppDbContext>()
-            .UseNpgsql(
-                configuration.GetConnectionString("DefaultConnection"),
-                options => options.MigrationsHistoryTable("__EFMigrationsHistory")
+            .UseSqlite(
+                configuration.GetConnectionString("DefaultConnection")
             );
 
         return new AppDbContext(builder.Options);

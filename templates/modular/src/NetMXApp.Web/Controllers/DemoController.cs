@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
 using NetMX.AspNetCore.Mvc.Htmx;
-using NetMX.Htmx;
 using System.ComponentModel.DataAnnotations;
 
 namespace NetMXApp.Web.Controllers;

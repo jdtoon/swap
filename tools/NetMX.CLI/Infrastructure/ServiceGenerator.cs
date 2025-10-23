@@ -130,6 +130,14 @@ public static class ServiceGenerator
                 ? $"{options.ProjectNamespace}.Models"
                 : "Models";
         sb.AppendLine($"using {modelsNamespace};");
+        
+        // Add Data namespace for DbContext
+        var dataNamespace = options.ModuleName != null
+            ? $"{options.ModuleName}.Infrastructure.Data"
+            : options.ProjectNamespace != null
+                ? $"{options.ProjectNamespace}.Data"
+                : "Data";
+        sb.AppendLine($"using {dataNamespace};");
         sb.AppendLine();
 
         // Class
@@ -139,12 +147,19 @@ public static class ServiceGenerator
         sb.AppendLine($"public class {options.EntityName}Service : I{options.EntityName}Service");
         sb.AppendLine("{");
         
+        // Determine DbContext name
+        var dbContextName = options.ModuleName != null
+            ? $"{options.ModuleName}DbContext"
+            : options.ProjectNamespace != null
+                ? "AppDbContext"
+                : "AppDbContext";
+        
         // Fields
-        sb.AppendLine("    private readonly DbContext _context;");
+        sb.AppendLine($"    private readonly {dbContextName} _context;");
         sb.AppendLine();
 
         // Constructor
-        sb.AppendLine($"    public {options.EntityName}Service(DbContext context)");
+        sb.AppendLine($"    public {options.EntityName}Service({dbContextName} context)");
         sb.AppendLine("    {");
         sb.AppendLine("        _context = context;");
         sb.AppendLine("    }");
