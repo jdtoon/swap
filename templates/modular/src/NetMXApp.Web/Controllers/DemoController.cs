@@ -95,8 +95,9 @@ public class DemoController : Controller
             Items.Remove(item);
         }
 
-        // Use HTMX helper to swap delete mode
-        this.HxReswap(HtmxSwap.Delete);
+        // TODO: Fix HtmxResponseExtensions not being found in package
+        // this.HxReswap(HtmxSwap.Delete);
+        Response.Headers["HX-Reswap"] = "delete";
         
         return Ok();
     }
@@ -209,7 +210,9 @@ public class DemoController : Controller
         }
 
         // Success! Trigger an event and show success message
-        this.HxTrigger("signup-success", new { email = model.Email });
+        // TODO: Fix HtmxResponseExtensions not being found in package
+        // this.HxTrigger("signup-success", new { email = model.Email });
+        Response.Headers["HX-Trigger"] = "signup-success";
         
         return PartialView("_SignupSuccess", model);
     }
@@ -313,11 +316,20 @@ public class DemoController : Controller
         var content = $"<p class='has-text-success'>Main content updated at {timestamp}</p>";
         var footer = $"<small class='has-text-grey'>Footer refreshed at {timestamp}</small>";
 
-        return this.HxOutOfBandSwaps(
-            ("oob-header", header, HtmxSwap.InnerHTML),
-            ("oob-content", content, HtmxSwap.InnerHTML),
-            ("oob-footer", footer, HtmxSwap.InnerHTML)
-        );
+        // TODO: Fix HtmxResponseExtensions not being found in package
+        // return this.HxOutOfBandSwaps(
+        //     ("oob-header", header, HtmxSwap.InnerHTML),
+        //     ("oob-content", content, HtmxSwap.InnerHTML),
+        //     ("oob-footer", footer, HtmxSwap.InnerHTML)
+        // );
+        
+        var html = $@"
+            <div id=""oob-header"" hx-swap-oob=""innerHTML"">{header}</div>
+            <div id=""oob-content"" hx-swap-oob=""innerHTML"">{content}</div>
+            <div id=""oob-footer"" hx-swap-oob=""innerHTML"">{footer}</div>
+        ";
+        
+        return Content(html, "text/html");
     }
 
     #endregion
