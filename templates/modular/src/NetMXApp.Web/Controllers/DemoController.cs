@@ -95,9 +95,7 @@ public class DemoController : Controller
             Items.Remove(item);
         }
 
-        // TODO: Fix HtmxResponseExtensions not being found in package
-        // this.HxReswap(HtmxSwap.Delete);
-        Response.Headers["HX-Reswap"] = "delete";
+        this.HxReswap(HtmxSwap.Delete);
         
         return Ok();
     }
@@ -210,9 +208,7 @@ public class DemoController : Controller
         }
 
         // Success! Trigger an event and show success message
-        // TODO: Fix HtmxResponseExtensions not being found in package
-        // this.HxTrigger("signup-success", new { email = model.Email });
-        Response.Headers["HX-Trigger"] = "signup-success";
+        this.HxTrigger("signup-success");
         
         return PartialView("_SignupSuccess", model);
     }

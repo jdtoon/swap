@@ -27,6 +27,7 @@ public static class ControllerGenerator
 
         // Using statements
         sb.AppendLine("using Microsoft.AspNetCore.Mvc;");
+        sb.AppendLine("using NetMX.AspNetCore.Mvc.Htmx;");
         sb.AppendLine("using NetMX.Events;");
         
         var contractsNamespace = options.ModuleName != null
@@ -38,7 +39,6 @@ public static class ControllerGenerator
             sb.AppendLine($"using {contractsNamespace}.Dtos;");
             sb.AppendLine($"using {contractsNamespace}.Services;");
         }
-        sb.AppendLine("using NetMX.AspNetCore.Mvc.Htmx;");
         sb.AppendLine();
 
         // Controller class
@@ -245,7 +245,7 @@ public static class ControllerGenerator
         sb.AppendLine("        await _service.CreateAsync(dto);");
         sb.AppendLine();
         sb.AppendLine("        // Trigger HTMX event to refresh list and close modal");
-        sb.AppendLine($"        this.HxTrigger(Events.{options.EntityName}.Created, new {{ {options.EntityName.ToLower()}Id = dto.Id }});");
+        sb.AppendLine($"        this.HxTrigger(Events.{options.EntityName}.Created);");
         sb.AppendLine();
         sb.AppendLine("        return Ok();");
         sb.AppendLine("    }");
@@ -299,7 +299,7 @@ public static class ControllerGenerator
         sb.AppendLine("        await _service.UpdateAsync(dto);");
         sb.AppendLine();
         sb.AppendLine("        // Trigger HTMX event to refresh list and close modal");
-        sb.AppendLine($"        this.HxTrigger(Events.{options.EntityName}.Updated, new {{ {options.EntityName.ToLower()}Id = id }});");
+        sb.AppendLine($"        this.HxTrigger(Events.{options.EntityName}.Updated);");
         sb.AppendLine();
         sb.AppendLine("        return Ok();");
         sb.AppendLine("    }");
@@ -317,7 +317,7 @@ public static class ControllerGenerator
         sb.AppendLine("        await _service.DeleteAsync(id);");
         sb.AppendLine();
         sb.AppendLine("        // Trigger HTMX event to refresh list");
-        sb.AppendLine($"        this.HxTrigger(Events.{options.EntityName}.Deleted, new {{ {options.EntityName.ToLower()}Id = id }});");
+        sb.AppendLine($"        this.HxTrigger(Events.{options.EntityName}.Deleted);");
         sb.AppendLine();
         sb.AppendLine("        // Use HTMX swap to remove the row");
         sb.AppendLine("        this.HxReswap(HtmxSwap.Delete);");

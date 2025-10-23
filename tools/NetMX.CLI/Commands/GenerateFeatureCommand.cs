@@ -326,8 +326,8 @@ public class GenerateFeatureCommand
             
             ConsoleHelper.WriteInfo($"  {module}.Contracts/Services/I{entityName}Service.cs");
             ConsoleHelper.WriteInfo($"  {module}.Application/Services/{entityName}Service.cs");
-            ConsoleHelper.WriteInfo($"  {module}.Web/Events/{entityName}EventDefinitions.cs");
-            ConsoleHelper.WriteInfo($"  {module}.Web/Extensions/{entityName}EventExtensions.cs");
+            // ConsoleHelper.WriteInfo($"  {module}.Web/Events/{entityName}EventDefinitions.cs");
+            // ConsoleHelper.WriteInfo($"  {module}.Web/Extensions/{entityName}EventExtensions.cs");
             ConsoleHelper.WriteInfo($"  {module}.Web/Controllers/{entityName}Controller.cs");
             ConsoleHelper.WriteInfo($"  {module}.Web/Views/{entityName}/Index.cshtml");
             ConsoleHelper.WriteInfo($"  {module}.Web/Views/{entityName}/_List.cshtml");
@@ -349,8 +349,8 @@ public class GenerateFeatureCommand
             
             ConsoleHelper.WriteInfo($"  Services/I{entityName}Service.cs");
             ConsoleHelper.WriteInfo($"  Services/{entityName}Service.cs");
-            ConsoleHelper.WriteInfo($"  Events/{entityName}EventDefinitions.cs");
-            ConsoleHelper.WriteInfo($"  Extensions/{entityName}EventExtensions.cs");
+            // ConsoleHelper.WriteInfo($"  Events/{entityName}EventDefinitions.cs");
+            // ConsoleHelper.WriteInfo($"  Extensions/{entityName}EventExtensions.cs");
             ConsoleHelper.WriteInfo($"  Controllers/{entityName}Controller.cs");
             ConsoleHelper.WriteInfo($"  Views/{entityName}/Index.cshtml");
             ConsoleHelper.WriteInfo($"  Views/{entityName}/_List.cshtml");
@@ -590,11 +590,12 @@ public class GenerateFeatureCommand
             GenerateEventsPartialClass(netmxEventsDir, entityName, entityNameLower);
         }
         
+        // TODO: Re-enable when package exports EventDirection properly
         // 2. Generate {EntityName}EventDefinitions.cs in Events/ directory
-        GenerateEventDefinitionsClass(webProjectDir, entityName, entityNameLower, moduleName);
+        // GenerateEventDefinitionsClass(webProjectDir, entityName, entityNameLower, moduleName);
         
         // 3. Generate extension method in Extensions/ directory
-        GenerateEventExtensionMethod(webProjectDir, entityName, moduleName);
+        // GenerateEventExtensionMethod(webProjectDir, entityName, moduleName);
     }
 
     private string? FindNetMXEventsProjectDirectory()
@@ -704,30 +705,30 @@ public static class {entityName}EventDefinitions
     /// <param name=""registry"">The event registry to register events with.</param>
     public static void Register(IEventRegistry registry)
     {{
-        registry.RegisterEvent(Events.{entityName}.Created, new EventMetadata
+        registry.RegisterEvent(NetMX.Events.Events.{entityName}.Created, new EventMetadata
         {{
-            Name = Events.{entityName}.Created,
+            Name = NetMX.Events.Events.{entityName}.Created,
             Module = ""{moduleName}"",
             Category = ""{entityName}"",
-            Direction = EventDirection.Upstream,
+            Direction = NetMX.Events.EventDirection.Upstream,
             Description = ""Triggered when a new {entityName} is created. Payload: {{ {entityNameLower}Id: Guid }}""
         }});
         
-        registry.RegisterEvent(Events.{entityName}.Updated, new EventMetadata
+        registry.RegisterEvent(NetMX.Events.Events.{entityName}.Updated, new EventMetadata
         {{
-            Name = Events.{entityName}.Updated,
+            Name = NetMX.Events.Events.{entityName}.Updated,
             Module = ""{moduleName}"",
             Category = ""{entityName}"",
-            Direction = EventDirection.Upstream,
+            Direction = NetMX.Events.EventDirection.Upstream,
             Description = ""Triggered when a {entityName} is updated. Payload: {{ {entityNameLower}Id: Guid, changes: string[] }}""
         }});
         
-        registry.RegisterEvent(Events.{entityName}.Deleted, new EventMetadata
+        registry.RegisterEvent(NetMX.Events.Events.{entityName}.Deleted, new EventMetadata
         {{
-            Name = Events.{entityName}.Deleted,
+            Name = NetMX.Events.Events.{entityName}.Deleted,
             Module = ""{moduleName}"",
             Category = ""{entityName}"",
-            Direction = EventDirection.Terminal,
+            Direction = NetMX.Events.EventDirection.Terminal,
             Description = ""Triggered when a {entityName} is deleted. Payload: {{ {entityNameLower}Id: Guid }}""
         }});
     }}
