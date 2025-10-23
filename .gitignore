@@ -2,6 +2,9 @@
 *.nupkg
 *.snupkg
 
+# Local NuGet repository (packages rebuilt via setup script)
+.nuget/
+
 # User-specific files
 *.suo
 *.user

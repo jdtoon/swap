@@ -16,12 +16,18 @@
 #>
 
 param(
-    [string]$OutputPath = "C:\LocalNuGet",
+    [string]$OutputPath,
     [string]$Version = "0.2.0-local",
     [string]$Configuration = "Release"
 )
 
 $ErrorActionPreference = "Stop"
+
+# Use repository-relative .nuget folder by default
+$repoRoot = Split-Path -Parent $PSScriptRoot
+if (-not $OutputPath) {
+    $OutputPath = Join-Path $repoRoot ".nuget"
+}
 
 Write-Host ""
 Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor Cyan

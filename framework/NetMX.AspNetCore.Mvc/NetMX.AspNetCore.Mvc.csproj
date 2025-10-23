@@ -2,6 +2,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\NetMX.AspNetCore.Core\NetMX.AspNetCore.Core.csproj" />
+    <ProjectReference Include="..\NetMX.Htmx\NetMX.Htmx.csproj" />
   </ItemGroup>
 
   <PropertyGroup>

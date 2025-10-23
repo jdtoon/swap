@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using System.Text.Json;
+using NetMX.Htmx;
 
 namespace NetMX.AspNetCore.Mvc.Htmx;
 
@@ -67,6 +68,14 @@ public static class HtmxResponseExtensions
     public static void HxReswap(this Controller controller, string swapStyle)
     {
         controller.Response.Headers[HX_RESWAP] = swapStyle;
+    }
+
+    /// <summary>
+    /// Specifies how the response will be swapped using the HtmxSwap enum.
+    /// </summary>
+    public static void HxReswap(this Controller controller, NetMX.Htmx.HtmxSwap swap)
+    {
+        controller.Response.Headers[HX_RESWAP] = swap.ToHtmxValue();
     }
 
     /// <summary>
@@ -151,5 +160,22 @@ public static class HtmxResponseExtensions
             [eventName] = eventData
         };
         controller.Response.Headers[HX_TRIGGER_AFTER_SWAP] = JsonSerializer.Serialize(payload);
+    }
+
+    /// <summary>
+    /// Sends multiple out-of-band swaps. Each tuple contains (targetId, content, swapMode).
+    /// </summary>
+    public static IActionResult HxOutOfBandSwaps(this Controller controller, params (string targetId, string content, NetMX.Htmx.HtmxSwap swapMode)[] swaps)
+    {
+        var fragments = new System.Text.StringBuilder();
+        
+        foreach (var (targetId, content, swapMode) in swaps)
+        {
+            fragments.AppendLine($"<div id=\"{targetId}\" hx-swap-oob=\"{swapMode.ToHtmxValue()}\">");
+            fragments.AppendLine(content);
+            fragments.AppendLine("</div>");
+        }
+        
+        return controller.Content(fragments.ToString(), "text/html");
     }
 }
