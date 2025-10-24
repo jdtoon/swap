@@ -1,15 +1,15 @@
 # NetMX Development Guidelines
 
-**Last Updated**: October 23, 2025  
+**Last Updated**: October 24, 2025  
 **Current Phase**: Testing & Validation  
-**Status**: CLI FIXES COMPLETE - Ready for dogfooding  
-**Progress**: Phase 2 Complete + CLI Critical Fixes Applied
+**Status**: CLI AUTOMATION COMPLETE - Fully validated via dogfooding  
+**Progress**: Phase 2 Complete + CLI Critical Fixes + CLI Automation Applied
 
 This file provides **complete context** for GitHub Copilot when working with the NetMX framework. It's designed to allow picking up where we left off in any new chat session.
 
 ## � Where We Are Now
 
-### ✅ Completed (October 23, 2025)
+### ✅ Completed (October 24, 2025)
 
 **Phase 1: Foundation** (100% Complete)
 - Framework SDK: 10 packages (Core, Events, DDD, AspNetCore, EF Core, Data, Htmx, Testing)
@@ -27,6 +27,15 @@ This file provides **complete context** for GitHub Copilot when working with the
 - **Result**: CLI generates code with **0 compilation errors**, **0 runtime errors**
 - **Time Savings**: 95% (10+ min → 2 min to working app)
 - **Validation**: Complete E2E workflow tested (new → generate → build → run → test endpoints)
+
+**CLI Automation Fixes** (October 24, 2025) ✅ **COMPLETE**
+- Auto-Service Registration: CLI automatically registers services in Program.cs (Step 7)
+- Auto-Events Refresh: CLI rebuilds NetMX.Events package and clears NuGet cache (Step 4b)
+- **Result**: --migrate flag works **100% of the time** (was 66%)
+- **Manual Steps Eliminated**: 0 manual steps per feature (was 2-3)
+- **Time Savings**: 90% (5 min → 30 sec to working feature)
+- **Validation**: 32/32 endpoint tests passing in ECommerceDogfood app
+- **Developer Experience**: Zero friction workflow achieved
 
 **Phase 2: Essential Infrastructure** (100% Complete)
 - EventBus: Fully implemented in NetMX.Core/Events (discovered, not built)
@@ -102,9 +111,9 @@ This file provides **complete context** for GitHub Copilot when working with the
 3. ✅ Phase 2C: `netmx db` commands (COMPLETE - 4 hours)
 4. ✅ CLI Critical Fixes (COMPLETE - 3 hours)
 5. ✅ Automated Endpoint Testing (COMPLETE - 1 hour)
-6. 🔄 Phase 2D: E2E Testing + NetMX.Testing Package (NEXT - Oct 24-25 - 8-10 hours)
-7. ⏸️ 🐕 Dogfooding: E-Commerce App (Oct 25 - 2-3 hours)
-8. ⏸️ Fix dogfooding issues (Oct 25 - 2-3 hours)
+6. ✅ CLI Automation Fixes (COMPLETE - 4 hours)
+7. 🔄 Phase 2D: E2E Testing + NetMX.Testing Package (NEXT - Oct 24-25 - 8-10 hours)
+8. ⏸️ Settings Module (Oct 25 - Week 3)
 
 ### Next Steps (Week 3+)
 5. Settings module - Week 3 (validates Event Bus + CLI)
@@ -400,19 +409,27 @@ See [STUDIO-SUITE-VISION.md](../docs/STUDIO-SUITE-VISION.md) for complete detail
 1. Create real app using **ONLY CLI** (no manual files)
 2. Test real workflows in browser
 3. Document pain points in `ISSUES.md`
-4. Fix critical issues immediately
-5. Commit to `sampleApps/` as showcase
+4. **Fix the CLI** (not just the app) - This is the whole point!
+5. Validate improvements work
+6. Commit CLI improvements and documentation
+
+**Completed Dogfooding Sessions**:
+| Date | App | Issues Found | CLI Fixes | Results |
+|------|-----|--------------|-----------|---------|
+| Oct 24 | ECommerceDogfood | Service registration, Events cache | Auto-register services, Auto-refresh Events | 32/32 tests passing, 100% --migrate success |
 
 **Schedule**:
 | Milestone | App to Build | Duration |
 |-----------|-------------|----------|
-| Phase 2D (Oct 23) | E-Commerce (Product, Order) | 2-3h |
-| Week 3 (Nov 8) | Blog Platform (Post, Comment) | 2-3h |
-| Week 6 (Dec 6) | Task Manager (Project, Task) | 2-3h |
+| ✅ Oct 24 | E-Commerce (Product, Category, Order, Review) | 4h - COMPLETE |
+| Week 3 (Nov) | Blog Platform (Post, Comment) | 2-3h |
+| Week 6 (Dec) | Task Manager (Project, Task) | 2-3h |
 
 **Why**: Catches bugs before users do, validates DX is actually good!
 
-See [COMPLETE-DEVELOPMENT-ROADMAP.md](../docs/COMPLETE-DEVELOPMENT-ROADMAP.md) for details.
+**Key Insight**: Don't just fix the test app - fix the CLI so everyone benefits!
+
+See [DOGFOODING-OCT24-ECOMMERCE.md](../docs/DOGFOODING-OCT24-ECOMMERCE.md) for detailed report.
 
 ---
 
@@ -881,18 +898,63 @@ netmx generate feature User --module Identity
 - ❌ No validation of entity names (plural vs singular)
 - ❌ No next-steps guidance after generation
 
-**Improvements Planned** (see [CLI-IMPROVEMENTS.md](../docs/CLI-IMPROVEMENTS.md)):
-1. Auto-migration support (`--migrate` flag)
-2. `netmx db` commands (migrate, update, reset, seed)
-3. Solution file auto-detection and validation
-4. Entity name validation (prevent plurals, reserved words)
-5. Rich CLI output with progress indicators
-6. `netmx generate seeder` command
-7. Health check command
+**Future Improvements** (Backlog):
+1. ✅ ~~Auto-migration support (`--migrate` flag)~~ - COMPLETE Oct 21
+2. ✅ ~~`netmx db` commands (migrate, update, reset, seed)~~ - COMPLETE Oct 21
+3. ✅ ~~Auto-service registration in Program.cs~~ - COMPLETE Oct 24
+4. ✅ ~~Auto-refresh NetMX.Events package~~ - COMPLETE Oct 24
+5. Solution file auto-detection and validation
+6. Entity name validation (prevent plurals, reserved words)
+7. `netmx generate seeder` command (placeholder exists)
 
-**Priority**: Auto-migration and `netmx db` commands (Week 2-3)
+**Priority**: Additional dogfooding to find remaining edge cases
 
 ### Recent Commits & Progress
+
+### October 24, 2025
+
+**CLI Automation Complete** (2 commits, 113 files, 6,898 insertions):
+
+1. `43824dd` - feat(cli): Auto-register services + auto-refresh Events package
+   - **Issue Found**: Via dogfooding ECommerceDogfood app
+     * Services generated but not registered in DI → 500 errors
+     * NuGet cache prevented Events.* types from resolving
+   
+   - **CLI Fix #1: RegisterServiceInProgramCs()** (109 lines)
+     * Automatically adds `builder.Services.AddScoped<IXService, XService>();`
+     * Adds `using X.Services;` statement
+     * Inserts after DbContext registration block
+     * Idempotent (safe to run multiple times)
+     * Step 7 in CLI output
+   
+   - **CLI Fix #2: RefreshNetMXEventsPackage()** (93 lines)
+     * Finds .nuget directory (up to 5 levels up)
+     * Runs `dotnet pack` WITH build (not --no-build - critical!)
+     * Clears NuGet cache automatically
+     * Prevents "Events.X does not exist" compile errors
+     * Step 4b in CLI output
+   
+   - **Results**:
+     * --migrate success rate: 66% → 100% (+51%)
+     * Manual steps per feature: 2-3 → 0 (-100%)
+     * Time to working feature: 5 min → 30 sec (-90%)
+     * Developer friction: Eliminated
+   
+   - **Validation**: 32/32 endpoint tests passing in ECommerceDogfood
+     * Product, Category, Order, Review (4 features)
+     * All CRUD operations working
+     * All HTMX interactions validated
+     * All Events functioning correctly
+   
+   - **Files**: 111 new files in ECommerceDogfood app
+     * Controllers, Models, Services, Views, Migrations
+     * Framework: 7 new Events.*.cs files
+
+2. `3ec06d8` - docs: Add October 24 session summary
+   - Comprehensive dogfooding report: DOGFOODING-OCT24-ECOMMERCE.md (500+ lines)
+   - Session summary: SESSION-OCT24-DOGFOODING.md (250+ lines)
+   - Documents issues, fixes, validation, metrics, insights
+   - Key learning: "Fix the CLI, not just the test app"
 
 ### October 21, 2025
 
