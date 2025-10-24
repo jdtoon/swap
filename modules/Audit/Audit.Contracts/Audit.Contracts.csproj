@@ -8,7 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\framework\NetMX.Ddd.Application.Contracts\NetMX.Ddd.Application.Contracts.csproj" />
+    <PackageReference Include="NetMX.Ddd.Application.Contracts" Version="0.2.0-local" />
     <ProjectReference Include="..\Audit.Core\Audit.Core.csproj" />
   </ItemGroup>
 
