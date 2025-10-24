@@ -92,6 +92,9 @@ public class GenerateFeatureCommand
             // Step 4: Generate Event Constants
             ConsoleHelper.WriteStep(4, "Generating event constants (type-safe)");
             GenerateEventConstants(webProjectDir);
+            
+            // Step 4b: Refresh NetMX.Events package (critical for --migrate to work)
+            RefreshNetMXEventsPackage();
 
             // Step 5: Generate Controller
             ConsoleHelper.WriteStep(5, "Generating controller with HTMX support");
@@ -100,6 +103,13 @@ public class GenerateFeatureCommand
             // Step 6: Generate Views
             ConsoleHelper.WriteStep(6, "Generating views with HTMX patterns");
             GenerateViews(webProjectDir);
+
+            // Step 7: Register Service in DI (apps only, not modules)
+            if (string.IsNullOrEmpty(_options.ModuleName))
+            {
+                ConsoleHelper.WriteStep(7, "Registering service in Program.cs");
+                RegisterServiceInProgramCs(webProjectDir);
+            }
 
             // Success Message
             ConsoleHelper.WriteSuccess($"Feature '{_options.EntityName}' generated successfully!");
@@ -374,6 +384,205 @@ public class GenerateFeatureCommand
         }
     }
 
+    private void RegisterServiceInProgramCs(string webProjectDir)
+    {
+        var programPath = Path.Combine(webProjectDir, "Program.cs");
+        
+        if (!File.Exists(programPath))
+        {
+            ConsoleHelper.WriteWarning($"Program.cs not found at {programPath}");
+            return;
+        }
+
+        try
+        {
+            var content = File.ReadAllText(programPath);
+            var serviceName = _options.EntityName;
+            
+            // Check if service already registered
+            var serviceRegistration = $"builder.Services.AddScoped<I{serviceName}Service, {serviceName}Service>();";
+            if (content.Contains(serviceRegistration))
+            {
+                ConsoleHelper.WriteInfo($"  ✓ Service already registered");
+                return;
+            }
+
+            // Find the DbContext registration to add our service after it
+            var dbContextRegistration = "builder.Services.AddDbContext<";
+            var dbContextIndex = content.IndexOf(dbContextRegistration);
+            
+            if (dbContextIndex == -1)
+            {
+                ConsoleHelper.WriteWarning("  Could not find DbContext registration in Program.cs");
+                ConsoleHelper.WriteInfo($"  Add manually: {serviceRegistration}");
+                return;
+            }
+
+            // Find the end of the DbContext block (the closing });)
+            var searchStart = dbContextIndex;
+            var blockEnd = content.IndexOf("});", searchStart);
+            
+            if (blockEnd == -1)
+            {
+                ConsoleHelper.WriteWarning("  Could not find suitable insertion point");
+                ConsoleHelper.WriteInfo($"  Add manually: {serviceRegistration}");
+                return;
+            }
+
+            // Move past the closing });
+            var insertionPoint = blockEnd + 3; // "});" is 3 characters
+            
+            // Skip any trailing whitespace/newlines to find the next line
+            while (insertionPoint < content.Length && 
+                   (content[insertionPoint] == '\r' || content[insertionPoint] == '\n'))
+            {
+                insertionPoint++;
+            }
+
+            // Check if we need to add the Services namespace using
+            var needsServicesUsing = !content.Contains($"using {GetServiceNamespace(webProjectDir)}.Services;");
+            
+            // Build the insertion text
+            var sb = new StringBuilder();
+            
+            // Add comment if this is the first service registration
+            if (!content.Contains("// Register application services") && 
+                !content.Contains("builder.Services.AddScoped<I"))
+            {
+                sb.AppendLine();
+                sb.AppendLine("// Register application services");
+            }
+            
+            sb.AppendLine(serviceRegistration);
+
+            // Insert the service registration
+            content = content.Insert(insertionPoint, sb.ToString());
+
+            // Add using statement if needed
+            if (needsServicesUsing)
+            {
+                var firstUsingIndex = content.IndexOf("using ");
+                if (firstUsingIndex >= 0)
+                {
+                    // Find the end of the first using block
+                    var lastUsingIndex = content.LastIndexOf("using ", content.IndexOf("\nvar builder") > 0 
+                        ? content.IndexOf("\nvar builder") 
+                        : content.IndexOf("\nbuilder"));
+                    
+                    if (lastUsingIndex >= 0)
+                    {
+                        var endOfLine = content.IndexOf('\n', lastUsingIndex) + 1;
+                        content = content.Insert(endOfLine, $"using {GetServiceNamespace(webProjectDir)}.Services;\n");
+                    }
+                }
+            }
+
+            File.WriteAllText(programPath, content);
+            ConsoleHelper.WriteSuccess($"  ✓ Added I{serviceName}Service registration to Program.cs");
+        }
+        catch (Exception ex)
+        {
+            ConsoleHelper.WriteWarning($"  Failed to register service: {ex.Message}");
+            ConsoleHelper.WriteInfo($"  Add manually: builder.Services.AddScoped<I{_options.EntityName}Service, {_options.EntityName}Service>();");
+        }
+    }
+
+    private string GetServiceNamespace(string webProjectDir)
+    {
+        // Extract namespace from project directory name
+        var projectName = Path.GetFileName(webProjectDir);
+        return projectName;
+    }
+
+    private void RefreshNetMXEventsPackage()
+    {
+        try
+        {
+            // Find .nuget directory
+            var currentDir = Directory.GetCurrentDirectory();
+            string? nugetDir = null;
+            
+            for (int i = 0; i < 5; i++)
+            {
+                var testPath = Path.Combine(currentDir, ".nuget");
+                if (Directory.Exists(testPath))
+                {
+                    nugetDir = testPath;
+                    break;
+                }
+                
+                var parentDir = Directory.GetParent(currentDir);
+                if (parentDir == null) break;
+                currentDir = parentDir.FullName;
+            }
+            
+            if (nugetDir == null)
+            {
+                // No local .nuget/ found - user might be using NuGet.org packages
+                ConsoleHelper.WriteInfo("  💡 Tip: If build fails, run: dotnet nuget locals all --clear");
+                return;
+            }
+            
+            // Find NetMX.Events project
+            var eventsProject = Path.Combine(currentDir, "framework", "NetMX.Events", "NetMX.Events.csproj");
+            if (!File.Exists(eventsProject))
+            {
+                return; // Not in dev environment, skip
+            }
+            
+            // Repack NetMX.Events (WITH build to include new Events.* files)
+            ConsoleHelper.WriteInfo($"  🔄 Refreshing NetMX.Events package...");
+            
+            var packProcess = new Process
+            {
+                StartInfo = new ProcessStartInfo
+                {
+                    FileName = "dotnet",
+                    Arguments = $"pack \"{eventsProject}\" -o \"{nugetDir}\" /p:PackageVersion=0.1.0",
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true
+                }
+            };
+            
+            packProcess.Start();
+            packProcess.WaitForExit();
+            
+            if (packProcess.ExitCode == 0)
+            {
+                // Clear NuGet cache for NetMX.Events only
+                var clearProcess = new Process
+                {
+                    StartInfo = new ProcessStartInfo
+                    {
+                        FileName = "dotnet",
+                        Arguments = "nuget locals all --clear",
+                        RedirectStandardOutput = true,
+                        RedirectStandardError = true,
+                        UseShellExecute = false,
+                        CreateNoWindow = true
+                    }
+                };
+                
+                clearProcess.Start();
+                clearProcess.WaitForExit();
+                
+                ConsoleHelper.WriteSuccess($"  ✓ NetMX.Events package refreshed");
+            }
+            else
+            {
+                ConsoleHelper.WriteWarning("  ⚠️  Failed to refresh NetMX.Events package");
+                ConsoleHelper.WriteInfo("  If build fails, run: dotnet nuget locals all --clear");
+            }
+        }
+        catch (Exception)
+        {
+            // Silently fail - this is an optimization, not critical
+            ConsoleHelper.WriteInfo("  💡 Tip: If build fails, run: dotnet nuget locals all --clear");
+        }
+    }
+
     private async Task HandleAutoMigration(string webProjectDir)
     {
         ConsoleHelper.WriteInfo("\n🔧 Auto-migration enabled...");
@@ -383,9 +592,9 @@ public class GenerateFeatureCommand
             // Use new MigrationOrchestrator for complete workflow
             var orchestrator = new MigrationOrchestrator(webProjectDir, verbose: true);
             
-            ConsoleHelper.WriteStep(7, "Adding DbSet to DbContext");
-            ConsoleHelper.WriteStep(8, $"Creating migration: Add{_options.EntityName}");
-            ConsoleHelper.WriteStep(9, "Applying migration to database");
+            ConsoleHelper.WriteStep(8, "Adding DbSet to DbContext");
+            ConsoleHelper.WriteStep(9, $"Creating migration: Add{_options.EntityName}");
+            ConsoleHelper.WriteStep(10, "Applying migration to database");
             
             var result = await orchestrator.AddEntityWithMigrationAsync(
                 entityName: _options.EntityName,

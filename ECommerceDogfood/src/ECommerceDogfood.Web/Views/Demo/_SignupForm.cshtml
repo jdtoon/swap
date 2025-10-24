@@ -1,0 +1,72 @@
+@model SignupViewModel
+
+<form id="signup-form" 
+      hx-post="/Demo/ValidateForm" 
+      hx-target="#signup-container" 
+      hx-swap="innerHTML">
+    
+    <div class="field">
+        <label class="label">Username</label>
+        <div class="control has-icons-left">
+            <input class="input @(!string.IsNullOrEmpty(Html.ViewData.ModelState["Username"]?.Errors.FirstOrDefault()?.ErrorMessage) ? "is-danger" : "")" 
+                   type="text" 
+                   name="Username" 
+                   value="@Model.Username" 
+                   placeholder="johndoe">
+            <span class="icon is-small is-left">
+                <i class="fas fa-user"></i>
+            </span>
+        </div>
+        @if (!string.IsNullOrEmpty(Html.ViewData.ModelState["Username"]?.Errors.FirstOrDefault()?.ErrorMessage))
+        {
+            <p class="help is-danger">@Html.ViewData.ModelState["Username"]!.Errors.First().ErrorMessage</p>
+        }
+    </div>
+
+    <div class="field">
+        <label class="label">Email</label>
+        <div class="control has-icons-left">
+            <input class="input @(!string.IsNullOrEmpty(Html.ViewData.ModelState["Email"]?.Errors.FirstOrDefault()?.ErrorMessage) ? "is-danger" : "")" 
+                   type="email" 
+                   name="Email" 
+                   value="@Model.Email" 
+                   placeholder="john@example.com">
+            <span class="icon is-small is-left">
+                <i class="fas fa-envelope"></i>
+            </span>
+        </div>
+        @if (!string.IsNullOrEmpty(Html.ViewData.ModelState["Email"]?.Errors.FirstOrDefault()?.ErrorMessage))
+        {
+            <p class="help is-danger">@Html.ViewData.ModelState["Email"]!.Errors.First().ErrorMessage</p>
+        }
+    </div>
+
+    <div class="field">
+        <label class="label">Password</label>
+        <div class="control has-icons-left">
+            <input class="input @(!string.IsNullOrEmpty(Html.ViewData.ModelState["Password"]?.Errors.FirstOrDefault()?.ErrorMessage) ? "is-danger" : "")" 
+                   type="password" 
+                   name="Password" 
+                   value="@Model.Password" 
+                   placeholder="********">
+            <span class="icon is-small is-left">
+                <i class="fas fa-lock"></i>
+            </span>
+        </div>
+        @if (!string.IsNullOrEmpty(Html.ViewData.ModelState["Password"]?.Errors.FirstOrDefault()?.ErrorMessage))
+        {
+            <p class="help is-danger">@Html.ViewData.ModelState["Password"]!.Errors.First().ErrorMessage</p>
+        }
+    </div>
+
+    <div class="field">
+        <div class="control">
+            <button type="submit" class="button is-primary">
+                <span class="icon">
+                    <i class="fas fa-user-plus"></i>
+                </span>
+                <span>Sign Up</span>
+            </button>
+        </div>
+    </div>
+</form>
