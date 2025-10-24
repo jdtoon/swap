@@ -330,16 +330,39 @@ public class CreateModuleCommand
             description = $"{_moduleName} module for NetMX",
             author = "Your Name",
             license = "MIT",
-            dependencies = new
+            dependencies = new[]
             {
-                netmx = "0.1.0"
+                "NetMX.Core >= 0.1.0",
+                "NetMX.Ddd.Domain >= 0.1.0",
+                "NetMX.Ddd.Application >= 0.1.0",
+                "NetMX.EntityFrameworkCore >= 0.1.0"
             },
             projects = new[]
             {
-                $"{_moduleName}.Core",
-                $"{_moduleName}.Contracts",
-                $"{_moduleName}.Application",
-                $"{_moduleName}.Web"
+                new
+                {
+                    name = $"{_moduleName}.Core",
+                    path = $"{_moduleName}.Core/{_moduleName}.Core.csproj",
+                    type = "domain"
+                },
+                new
+                {
+                    name = $"{_moduleName}.Contracts",
+                    path = $"{_moduleName}.Contracts/{_moduleName}.Contracts.csproj",
+                    type = "contracts"
+                },
+                new
+                {
+                    name = $"{_moduleName}.Application",
+                    path = $"{_moduleName}.Application/{_moduleName}.Application.csproj",
+                    type = "application"
+                },
+                new
+                {
+                    name = $"{_moduleName}.Web",
+                    path = $"{_moduleName}.Web/{_moduleName}.Web.csproj",
+                    type = "web"
+                }
             }
         };
 
