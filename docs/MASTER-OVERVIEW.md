@@ -112,9 +112,45 @@ NetMX uses **template-based project creation** where developers start from produ
 
 ### Available Templates
 
-#### 1. Modular Monolith Template (`templates/modular/`)
+#### 1. Simple Monolith Template (`templates/monolith/`) - FREE
+
+**What It Is**: All code in a single project (no modules directory)
+
+**Price**: FREE (MIT License)
+
+**Structure**:
+```
+MyApp/                          # Created by: netmx new monolith MyApp
+├── MyApp.sln
+├── src/
+│   └── MyApp/
+│       ├── Program.cs
+│       ├── Data/
+│       ├── Models/             # All entities here
+│       ├── Services/           # All services here
+│       ├── Controllers/        # All controllers here
+│       └── Views/              # All views here
+└── tests/
+    └── MyApp.Tests/
+```
+
+**Use Cases**:
+- Small applications (< 10 features)
+- Prototypes, MVPs
+- Learning NetMX
+- When module boundaries aren't needed
+
+#### 2. Modular Monolith Template (`templates/modular/`) - PAID ($99)
 
 **What It Is**: A single deployment with logically separated modules
+
+**Price**: $99 one-time purchase
+
+**Why Paid?**
+- More complex architecture pattern
+- Production-ready module structure
+- Advanced configuration
+- Ongoing maintenance and updates
 
 **Structure**:
 ```
@@ -164,55 +200,11 @@ MyApp/
 - Easy debugging (all code in one solution)
 - Can extract to microservices later if needed
 
-#### 2. Simple Monolith Template (`templates/monolith/`)
-
-**What It Is**: All code in a single project (no modules directory)
-
-**Structure**:
-```
-MyApp/                          # Created by: netmx new monolith MyApp
-├── MyApp.sln
-├── src/
-│   └── MyApp/
-│       ├── Program.cs
-│       ├── Data/
-│       ├── Models/             # All entities here
-│       ├── Services/           # All services here
-│       ├── Controllers/        # All controllers here
-│       └── Views/              # All views here
-└── tests/
-    └── MyApp.Tests/
-```
-
-**How Modules Are Added**:
-```bash
-# Developer runs:
-netmx add module Identity
-
-# CLI "bakes in" module code:
-MyApp/
-├── Models/                     # ← AppUser.cs, AppRole.cs copied here
-├── Services/                   # ← UserService.cs copied here
-├── Controllers/                # ← UsersController.cs copied here
-└── Views/
-    └── Users/                  # ← Index.cshtml, etc. copied here
-```
-
-**Module Integration**:
-- ✅ **Flatten Structure** - Module files copied directly into app folders
-- ✅ **Namespace Adjustment** - Changed from `Identity.*` to `MyApp.*`
-- ✅ **Single Project** - All code compiled together
-- ✅ **No Boundaries** - Can freely modify/mix module code
-
-**Use Cases**:
-- Small applications (< 10 features)
-- Prototypes, MVPs
-- Learning NetMX
-- When module boundaries aren't needed
-
 #### 3. Microservices Template (`templates/microservices/`) ⏳ PLANNED
 
 **Status**: Planned for Phase 4 (Months 7-9)
+
+**Price**: $199 one-time purchase
 
 **What It Will Be**: Multiple independently deployable services
 

@@ -1,4 +1,4 @@
-# Pro Module Licensing Strategy
+# Pro Module & Template Licensing Strategy
 
 **Last Updated**: October 24, 2025  
 **Status**: Planning Phase  
@@ -8,7 +8,13 @@
 
 ## 🎯 Overview
 
-NetMX uses a **source code copy + license key** model for Pro modules, NOT NuGet packages. This gives customers full access to source code while protecting our intellectual property through licensing.
+NetMX uses a **source code copy + license key** model for Pro modules and advanced templates, NOT NuGet packages. This gives customers full access to source code while protecting our intellectual property through licensing.
+
+### What's Paid?
+
+1. **Pro Modules** - Advanced modules (Multi-Tenancy, Background Jobs, etc.)
+2. **Advanced Templates** - Modular monolith and microservices templates
+3. **Framework & CLI** - Always FREE (NuGet packages, MIT license)
 
 ---
 
@@ -36,7 +42,40 @@ NetMX uses a **source code copy + license key** model for Pro modules, NOT NuGet
 
 ## 📦 Distribution Strategy
 
-### Free Modules vs Pro Modules
+### Free vs Paid Components
+
+| Component | Free | Paid |
+|-----------|------|------|
+| **Framework SDK** | ✅ All packages (MIT) | - |
+| **CLI** | ✅ All commands (MIT) | - |
+| **Templates** | ✅ Simple Monolith | 💰 Modular ($99), Microservices ($199) |
+| **Modules** | ✅ Identity, Authorization, Settings, Audit, Observability, Testing | 💰 Multi-Tenancy ($299), Jobs ($149), Email ($149), CMS ($249), etc. |
+
+### Templates Pricing
+
+| Template | Price | Description | License Required |
+|----------|-------|-------------|------------------|
+| **Simple Monolith** | FREE | Single project, all code in one place | ❌ No |
+| **Modular Monolith** | $99 one-time | Modules directory, source separation | ✅ Yes |
+| **Microservices** | $199 one-time | Multiple services, Docker, K8s | ✅ Yes |
+
+**Why Paid Templates?**
+- More complex architecture patterns
+- Production-ready infrastructure setup
+- Advanced configuration (Docker, K8s, service discovery)
+- Ongoing maintenance and updates
+
+**Template License Validation**:
+```bash
+# Free template (no license)
+netmx new monolith MyApp
+
+# Paid template (license required)
+netmx new modular MyApp --license NETMX-TEMPLATE-MODULAR-ABC123-...
+netmx new microservices MyApp --license NETMX-TEMPLATE-MICRO-ABC123-...
+```
+
+### Modules Pricing
 
 | Aspect | Free Modules | Pro Modules |
 |--------|--------------|-------------|
@@ -230,6 +269,37 @@ Components:
 ---
 
 ## 💻 CLI Integration
+
+### Creating Projects from Paid Templates
+
+**Command**:
+```bash
+# Free template (no license)
+netmx new monolith MyApp
+
+# Paid templates (license required)
+netmx new modular MyApp --license NETMX-TEMPLATE-MODULAR-ABC123-...
+netmx new microservices MyApp --license NETMX-TEMPLATE-MICRO-ABC123-...
+
+# Alternative: Prompt for license key
+netmx new modular MyApp
+# CLI prompts: "Modular template is paid ($99). Enter license key:"
+```
+
+**Template License Workflow**:
+1. User purchases template license from netmx.dev
+2. Receives license key via email
+3. Runs `netmx new modular MyApp --license KEY`
+4. CLI validates license format
+5. Creates project from template
+6. License key stored in `.netmx/license.json` (not in code)
+7. No runtime validation (templates are one-time use)
+
+**Why No Runtime Validation for Templates?**
+- Templates are starter code (one-time copy)
+- Customer owns generated code completely
+- License is for template access, not generated code
+- Simpler than module licensing
 
 ### Adding Pro Modules
 
