@@ -1,180 +1,357 @@
-# NetMX Monolith Template# NetMX Modular Template
+# NetMX Simple Monolith Template# NetMX Monolith Template# NetMX Modular Template
 
 
 
-**Single-Project Architecture** for simpler applicationsA starter template for building modular monolith applications with NetMX framework.
+**Single-Project Architecture** - All code in one place
 
 
 
-## Overview## Features
+## 💡 Best For**Single-Project Architecture** for simpler applicationsA starter template for building modular monolith applications with NetMX framework.
 
 
 
-This template provides a **traditional monolithic application** structure where all features live within a single project. It's ideal for:- **ASP.NET Core 9.0** - Latest .NET stack
+- ✅ Small to medium applications (< 10 entities)
 
-- **PostgreSQL Database** - Production-ready relational database
+- ✅ MVPs and prototypes
 
-- ✅ Small to medium-sized applications- **Entity Framework Core** - Code-first migrations and LINQ queries
+- ✅ Learning NetMX## Overview## Features
 
-- ✅ Teams preferring simpler project structure- **ASP.NET Core Identity** - Complete authentication and authorization
+- ✅ Simple applications without complex boundaries
 
-- ✅ Applications not requiring module reusability- **Docker Support** - Containerized PostgreSQL for development
+- ✅ Solo developers or small teams
 
-- ✅ Rapid prototyping and MVP development- **HTMX-First UI** - Server-rendered HTML with HTMX for interactivity
 
-- **Bulma CSS** - Clean, modern UI framework
 
-## Structure- **Modular Architecture** - Clean separation of concerns
+## 📦 What You GetThis template provides a **traditional monolithic application** structure where all features live within a single project. It's ideal for:- **ASP.NET Core 9.0** - Latest .NET stack
 
-- **🎯 HTMX Showcase** - 8+ interactive examples demonstrating HTMX patterns
+
+
+- **ASP.NET Core 9.0** - Latest .NET stack- **PostgreSQL Database** - Production-ready relational database
+
+- **SQLite Database** - Zero setup, file-based database
+
+- **Entity Framework Core** - Code-first migrations- ✅ Small to medium-sized applications- **Entity Framework Core** - Code-first migrations and LINQ queries
+
+- **HTMX-First UI** - Server-rendered HTML with interactivity
+
+- **Bulma CSS** - Clean, modern styling- ✅ Teams preferring simpler project structure- **ASP.NET Core Identity** - Complete authentication and authorization
+
+- **Docker Ready** - Dockerfile + docker-compose.yml included
+
+- **NetMX Framework** - DDD patterns, HTMX helpers, events- ✅ Applications not requiring module reusability- **Docker Support** - Containerized PostgreSQL for development
+
+
+
+## 🏗️ Structure- ✅ Rapid prototyping and MVP development- **HTMX-First UI** - Server-rendered HTML with HTMX for interactivity
+
+
+
+```- **Bulma CSS** - Clean, modern UI framework
+
+MyApp/
+
+├── MyApp.sln## Structure- **Modular Architecture** - Clean separation of concerns
+
+├── src/
+
+│   └── MyApp.Web/                 # ALL code in ONE project- **🎯 HTMX Showcase** - 8+ interactive examples demonstrating HTMX patterns
+
+│       ├── Models/                # Entities (flat)
+
+│       ├── Dtos/                  # Data transfer objects```
+
+│       ├── Services/              # Business logic
+
+│       ├── Controllers/           # HTTP handlersMonolithApp/## 🎯 HTMX Showcase
+
+│       ├── Views/                 # Razor views
+
+│       ├── Data/├── MonolithApp.sln
+
+│       │   └── AppDbContext.cs   # Single DbContext
+
+│       ├── wwwroot/               # Static files├── src/This template includes a comprehensive **HTMX Showcase** at `/Demo` with real-world examples:
+
+│       ├── Program.cs
+
+│       └── appsettings.json│   └── MonolithApp.Web/           # All code in one project
+
+├── Dockerfile
+
+├── docker-compose.yml│       ├── Features/              # Feature folders (not modules)1. **Click to Edit** - Inline editing without page reload
+
+└── nuget.config
+
+```│       │   ├── Users/2. **Delete with Confirmation** - Surgical DOM updates
+
+
+
+**Key Characteristic**: Flat folder structure - `Models/Product.cs`, `Controllers/ProductController.cs`, `Services/ProductService.cs`│       │   ├── Products/3. **Infinite Scroll** - Auto-load content when scrolling
+
+
+
+## 🚀 Quick Start│       │   └── Orders/4. **Search with Debounce** - Live search with 500ms delay
+
+
+
+### 1. Prerequisites│       ├── Data/                  # Database context5. **Tab Switching** - Dynamic tab content loading
+
+
+
+- .NET 9.0 SDK│       ├── Program.cs6. **Form Validation** - Server-side validation with inline errors
+
+- Docker Desktop (optional - for deployment)
+
+- NetMX CLI: `dotnet tool install --global NetMX.CLI`│       └── appsettings.json7. **Out-of-Band Updates** - Update multiple page sections at once
+
+
+
+### 2. Create Your App├── nuget.config                   # NuGet sources8. **Lazy Loading** - Load expensive content when visible
+
+
+
+```bash└── docker-compose.yml             # Database services
+
+netmx new monolith MyShop
+
+cd MyShop```👉 **See it live**: Navigate to `/Demo` after starting the app  
 
 ```
-
-MonolithApp/## 🎯 HTMX Showcase
-
-├── MonolithApp.sln
-
-├── src/This template includes a comprehensive **HTMX Showcase** at `/Demo` with real-world examples:
-
-│   └── MonolithApp.Web/           # All code in one project
-
-│       ├── Features/              # Feature folders (not modules)1. **Click to Edit** - Inline editing without page reload
-
-│       │   ├── Users/2. **Delete with Confirmation** - Surgical DOM updates
-
-│       │   ├── Products/3. **Infinite Scroll** - Auto-load content when scrolling
-
-│       │   └── Orders/4. **Search with Debounce** - Live search with 500ms delay
-
-│       ├── Data/                  # Database context5. **Tab Switching** - Dynamic tab content loading
-
-│       ├── Program.cs6. **Form Validation** - Server-side validation with inline errors
-
-│       └── appsettings.json7. **Out-of-Band Updates** - Update multiple page sections at once
-
-├── nuget.config                   # NuGet sources8. **Lazy Loading** - Load expensive content when visible
-
-└── docker-compose.yml             # Database services
-
-```👉 **See it live**: Navigate to `/Demo` after starting the app  
 
 📖 **Learn the patterns**: See [HTMX Patterns Guide](../../docs/HTMX-PATTERNS.md)
 
-## Key Differences from Modular Template
-
-## Quick Start
-
-| Aspect | Monolith Template | Modular Template |
-
-|--------|------------------|------------------|### Prerequisites
-
-| **Project Count** | 1 (Web project) | 1 Web + Multiple module projects |
-
-| **Organization** | Feature folders | Module projects (4-layer each) |- .NET 9.0 SDK
-
-| **Reusability** | Low (copy-paste) | High (NuGet packages) |- Docker Desktop (for PostgreSQL)
-
-| **Complexity** | Low | Medium |- Your favorite IDE (Visual Studio 2022, VS Code, or Rider)
-
-| **CLI Support** | `netmx generate feature` | `netmx add module`, `netmx generate feature -m Module` |
-
-| **Best For** | Simple apps, MVPs | Complex apps, teams, multi-project |### 1. Start the Database
-
-
-
-## Getting Started```bash
-
-cd templates/modular
-
-### 1. Prerequisitesdocker-compose up -d db
-
-```
-
-- .NET 9 SDK
-
-- PostgreSQL or DockerThis will start PostgreSQL on `localhost:5432` with:
-
-- NetMX CLI (`dotnet tool install --global NetMX.CLI`)- Database: `netmx_db`
-
-- Username: `postgres`
-
-### 2. Create Your Application- Password: `postgres`
-
-
-
-```bash### 2. Run the Application
-
-# Clone this template
-
-git clone <template-url> MyMonolithApp```bash
-
-cd MyMonolithAppcd src/NetMXApp.Web
-
-dotnet run
-
-# Update solution/project names```
-
-# (Replace "MonolithApp" with your app name)
-
-The application will:
-
-# Start database- Automatically apply database migrations on startup
-
-docker-compose up -d- Create Admin and User roles
-
-```- Seed an admin user account
-
-- Start listening on `http://localhost:5263`
-
 ### 3. Generate Features
 
-### 3. Login
+## Key Differences from Modular Template
 
 ```bash
 
-# Generate a new feature (entity with CRUD)Navigate to `http://localhost:5263` and login with:
+cd src/MyShop.Web## Quick Start
 
-cd src/MonolithApp.Web
+netmx generate feature Product
 
-netmx generate feature Product- **Email**: `admin@netmx.dev`
+```| Aspect | Monolith Template | Modular Template |
 
-- **Password**: `Admin123!`
 
-# This creates:
+
+**This creates**:|--------|------------------|------------------|### Prerequisites
+
+- `Models/Product.cs` - Entity with DDD patterns
+
+- `Dtos/ProductDto.cs` - Data transfer objects| **Project Count** | 1 (Web project) | 1 Web + Multiple module projects |
+
+- `Services/IProductService.cs` + `ProductService.cs` - Business logic
+
+- `Controllers/ProductController.cs` - HTMX-enabled controller| **Organization** | Feature folders | Module projects (4-layer each) |- .NET 9.0 SDK
+
+- `Views/Product/` - Index, _List, _Form
+
+| **Reusability** | Low (copy-paste) | High (NuGet packages) |- Docker Desktop (for PostgreSQL)
+
+### 4. Add to DbContext
+
+| **Complexity** | Low | Medium |- Your favorite IDE (Visual Studio 2022, VS Code, or Rider)
+
+```csharp
+
+// Data/AppDbContext.cs| **CLI Support** | `netmx generate feature` | `netmx add module`, `netmx generate feature -m Module` |
+
+public DbSet<Product> Products => Set<Product>();
+
+```| **Best For** | Simple apps, MVPs | Complex apps, teams, multi-project |### 1. Start the Database
+
+
+
+### 5. Create & Apply Migration
+
+
+
+```bash## Getting Started```bash
+
+dotnet ef migrations add AddProduct
+
+dotnet ef database updatecd templates/modular
+
+```
+
+### 1. Prerequisitesdocker-compose up -d db
+
+### 6. Run Your App
+
+```
+
+```bash
+
+dotnet run- .NET 9 SDK
+
+```
+
+- PostgreSQL or DockerThis will start PostgreSQL on `localhost:5432` with:
+
+Navigate to `http://localhost:5263/Product`
+
+- NetMX CLI (`dotnet tool install --global NetMX.CLI`)- Database: `netmx_db`
+
+## 🐳 Docker Deployment
+
+- Username: `postgres`
+
+### Build & Run
+
+### 2. Create Your Application- Password: `postgres`
+
+```bash
+
+# Build image
+
+docker build -t myshop:latest .
+
+```bash### 2. Run the Application
+
+# Run with docker-compose
+
+docker-compose up# Clone this template
+
+```
+
+git clone <template-url> MyMonolithApp```bash
+
+### Access
+
+cd MyMonolithAppcd src/NetMXApp.Web
+
+- App: `http://localhost:8080`
+
+- Health: `http://localhost:8080/health`dotnet run
+
+
+
+## 📊 When to Choose This Template# Update solution/project names```
+
+
+
+**Choose Simple Monolith if:**# (Replace "MonolithApp" with your app name)
+
+- ✅ Building < 10 entities
+
+- ✅ MVP or prototypeThe application will:
+
+- ✅ Learning NetMX
+
+- ✅ Solo developer# Start database- Automatically apply database migrations on startup
+
+- ✅ Simple business domain
+
+docker-compose up -d- Create Admin and User roles
+
+**Upgrade to Vertical Slice if:**
+
+- ⚠️ Need better organization (10-20 entities)```- Seed an admin user account
+
+- ⚠️ Want feature folders
+
+- Start listening on `http://localhost:5263`
+
+**Upgrade to Modular if:**
+
+- ⚠️ Need reusable modules### 3. Generate Features
+
+- ⚠️ Multiple teams
+
+- ⚠️ Complex boundaries### 3. Login
+
+
+
+## 🎯 HTMX Showcase```bash
+
+
+
+Navigate to `/Demo` to see 8 interactive HTMX examples:# Generate a new feature (entity with CRUD)Navigate to `http://localhost:5263` and login with:
+
+
+
+1. **Click to Edit** - Inline editingcd src/MonolithApp.Web
+
+2. **Delete with Confirmation** - Surgical DOM updates
+
+3. **Infinite Scroll** - Auto-load contentnetmx generate feature Product- **Email**: `admin@netmx.dev`
+
+4. **Search with Debounce** - Live search (500ms delay)
+
+5. **Tab Switching** - Dynamic tabs- **Password**: `Admin123!`
+
+6. **Form Validation** - Server-side validation
+
+7. **Out-of-Band Updates** - Multi-section updates# This creates:
+
+8. **Lazy Loading** - Load when visible
 
 # - Models/Product.cs## Project Structure
 
+📖 **Learn more**: [HTMX Patterns Guide](../../docs/HTMX-PATTERNS.md)
+
 # - Services/IProductService.cs + ProductService.cs
+
+## 🔧 CLI Commands
 
 # - Controllers/ProductController.cs```
 
-# - Views/Product/ (Index, _List, _Form)templates/modular/
+```bash
+
+# Generate CRUD feature# - Views/Product/ (Index, _List, _Form)templates/modular/
+
+netmx generate feature Customer
 
 ```├── docker-compose.yml           # PostgreSQL service definition
 
-├── NetMXApp.sln                 # Solution file
+# Generate with options
 
-### 4. Add DbSet and Migrate└── src/
+netmx generate feature Order --migrate├── NetMXApp.sln                 # Solution file
 
-    └── NetMXApp.Web/           # Main web application
 
-```bash        ├── Data/               # Database context
+
+# Database commands### 4. Add DbSet and Migrate└── src/
+
+netmx db migrate AddOrders
+
+netmx db update    └── NetMXApp.Web/           # Main web application
+
+netmx db rollback
+
+netmx db status```bash        ├── Data/               # Database context
+
+```
 
 # 1. Add DbSet to Data/AppDbContext.cs        ├── Migrations/         # EF Core migrations
 
+## 📚 Learn More
+
 public DbSet<Product> Products => Set<Product>();        │   ├── *.cs           # AppDbContext migrations
 
-        │   └── IdentityDb/    # Identity migrations (separate)
+- [NetMX Documentation](../../docs/)
 
-# 2. Create migration        ├── Properties/         # Launch settings
+- [Quick Start Guide](../../docs/QUICK-START.md)        │   └── IdentityDb/    # Identity migrations (separate)
 
-dotnet ef migrations add AddProduct        ├── wwwroot/           # Static files (CSS, JS, images)
+- [HTMX Patterns](../../docs/HTMX-PATTERNS.md)
 
-        ├── Program.cs         # Application startup
+- [Terminology](../../docs/TERMINOLOGY.md)# 2. Create migration        ├── Properties/         # Launch settings
 
-# 3. Apply migration        └── appsettings*.json  # Configuration
 
-dotnet ef database update```
+
+## 💰 Pricingdotnet ef migrations add AddProduct        ├── wwwroot/           # Static files (CSS, JS, images)
+
+
+
+**FREE** (MIT License) - Use for any project, commercial or personal        ├── Program.cs         # Application startup
+
+
+
+---# 3. Apply migration        └── appsettings*.json  # Configuration
+
+
+
+**Remember**: Start simple, scale when needed. You can always migrate to Vertical Slice ($49) or Modular ($99) templates later.dotnet ef database update```
+
 
 ```
 

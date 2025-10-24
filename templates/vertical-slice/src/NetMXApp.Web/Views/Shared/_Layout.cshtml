@@ -1,0 +1,62 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - NetMX App</title>
+    <link rel="stylesheet" href="~/lib/bulma/css/bulma.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <link rel="stylesheet" href="~/NetMXApp.Web.styles.css" asp-append-version="true" />
+</head>
+<body>
+    <nav class="navbar is-light" role="navigation" aria-label="main navigation">
+        <div class="navbar-brand">
+            <a class="navbar-item" asp-area="" asp-controller="Home" asp-action="Index">
+                <strong>NetMX App</strong>
+            </a>
+        </div>
+
+        <div class="navbar-menu">
+            <div class="navbar-start">
+                <a class="navbar-item" asp-area="" asp-controller="Home" asp-action="Index">
+                    <span class="icon">
+                        <i class="fas fa-home"></i>
+                    </span>
+                    <span>Home</span>
+                </a>
+                
+                <a class="navbar-item" asp-area="" asp-controller="Demo" asp-action="Index">
+                    <span class="icon">
+                        <i class="fas fa-bolt"></i>
+                    </span>
+                    <span>HTMX Showcase</span>
+                </a>
+                
+                <a class="navbar-item" asp-area="" asp-controller="Home" asp-action="Privacy">
+                    <span class="icon">
+                        <i class="fas fa-shield-alt"></i>
+                    </span>
+                    <span>Privacy</span>
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <section class="section">
+        <div class="container">
+            @RenderBody()
+        </div>
+    </section>
+
+    <footer class="footer">
+        <div class="content has-text-centered">
+            <p>
+                &copy; 2025 - NetMX App - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+            </p>
+        </div>
+    </footer>
+
+    <script src="~/lib/htmx/dist/htmx.min.js"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

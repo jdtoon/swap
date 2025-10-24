@@ -1,0 +1,93 @@
+﻿@{
+    ViewData["Title"] = "Home Page";
+}
+
+<div class="hero is-primary">
+    <div class="hero-body">
+        <p class="title">
+            Welcome to NetMX
+        </p>
+        <p class="subtitle">
+            A modern, server-rendered web application framework for .NET
+        </p>
+    </div>
+</div>
+
+<div class="columns mt-5">
+    <div class="column">
+        <div class="box">
+            <h2 class="title is-4">
+                <span class="icon-text">
+                    <span class="icon has-text-primary">
+                        <i class="fas fa-rocket"></i>
+                    </span>
+                    <span>HTMX Powered</span>
+                </span>
+            </h2>
+            <p class="mb-4">NetMX leverages HTMX for highly interactive, server-rendered experiences without complex JavaScript.</p>
+            
+            <a href="/Demo" class="button is-primary is-medium">
+                <span class="icon">
+                    <i class="fas fa-bolt"></i>
+                </span>
+                <span>View HTMX Showcase</span>
+            </a>
+            
+            <div class="mt-4">
+                <p class="has-text-grey is-size-7 mb-2">Quick demo:</p>
+                <button class="button is-info is-outlined" 
+                        hx-get="/Home/GetMessage" 
+                        hx-target="#htmx-demo-result"
+                        hx-swap="innerHTML">
+                    <span class="icon">
+                        <i class="fas fa-hand-pointer"></i>
+                    </span>
+                    <span>Click Me</span>
+                </button>
+                <div id="htmx-demo-result" class="mt-3 has-text-weight-bold has-text-success"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="column">
+        <div class="box">
+            <h2 class="title is-4">
+                <span class="icon-text">
+                    <span class="icon has-text-info">
+                        <i class="fas fa-palette"></i>
+                    </span>
+                    <span>Bulma Styled</span>
+                </span>
+            </h2>
+            <p>Clean, modern CSS framework with zero JavaScript dependencies.</p>
+            
+            <div class="tags mt-3">
+                <span class="tag is-info">Modular</span>
+                <span class="tag is-success">DDD</span>
+                <span class="tag is-warning">Multi-tenant</span>
+                <span class="tag is-danger">Enterprise Ready</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="column">
+        <div class="box">
+            <h2 class="title is-4">
+                <span class="icon-text">
+                    <span class="icon has-text-success">
+                        <i class="fas fa-box"></i>
+                    </span>
+                    <span>Feature Rich</span>
+                </span>
+            </h2>
+            <p>Built-in modules for Identity, Authentication, Authorization, and more.</p>
+            
+            <progress class="progress is-primary mt-3" value="85" max="100">85%</progress>
+            <p class="is-size-7 has-text-grey">Framework Completion: 85%</p>
+        </div>
+    </div>
+</div>
+
+<div class="notification is-info is-light">
+    <strong>Getting Started:</strong> This is your NetMX starter template. Start building by adding modules and implementing your business logic.
+</div>
