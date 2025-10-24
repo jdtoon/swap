@@ -65,29 +65,34 @@ public class CreateModuleCommand
             CreateContractsProject(modulesDir);
             CreateApplicationProject(modulesDir);
             CreateWebProject(modulesDir);
+            
+            // Step 3.5: Create integration files (ServiceCollectionExtensions, EventDefinitions)
+            ConsoleHelper.WriteStep(4, "Creating module integration files");
+            CreateServiceCollectionExtensions(modulesDir);
+            CreateEventDefinitionsClass(modulesDir);
 
             // Step 4: Create test projects
-            ConsoleHelper.WriteStep(4, "Creating test projects");
+            ConsoleHelper.WriteStep(5, "Creating test projects");
             
             CreateUnitTestProject(modulesDir);
             CreateIntegrationTestProject(modulesDir);
             CreateE2ETestProject(modulesDir);
 
-            // Step 5: Add project references
-            ConsoleHelper.WriteStep(5, "Configuring project references");
+            // Step 6: Add project references
+            ConsoleHelper.WriteStep(6, "Configuring project references");
             AddProjectReferences(modulesDir);
             AddTestProjectReferences(modulesDir);
 
-            // Step 6: Create module solution file
-            ConsoleHelper.WriteStep(6, "Creating module solution");
+            // Step 7: Create module solution file
+            ConsoleHelper.WriteStep(7, "Creating module solution");
             CreateModuleSolution(modulesDir);
 
-            // Step 6: Create module.json
-            ConsoleHelper.WriteStep(6, "Creating module descriptor");
+            // Step 8: Create module.json
+            ConsoleHelper.WriteStep(8, "Creating module descriptor");
             CreateModuleJson(modulesDir);
 
-            // Step 7: Create README
-            ConsoleHelper.WriteStep(7, "Creating module documentation");
+            // Step 9: Create README
+            ConsoleHelper.WriteStep(9, "Creating module documentation");
             CreateReadme(modulesDir);
 
             ConsoleHelper.WriteSuccess($"Module '{_moduleName}' created successfully!");
@@ -97,6 +102,8 @@ public class CreateModuleCommand
             ConsoleHelper.WriteInfo($"    ├── {_moduleName}.Contracts/      (DTOs & interfaces)");
             ConsoleHelper.WriteInfo($"    ├── {_moduleName}.Application/    (Services)");
             ConsoleHelper.WriteInfo($"    ├── {_moduleName}.Web/            (Controllers & views)");
+            ConsoleHelper.WriteInfo($"    │   ├── Extensions/               ⭐ ServiceCollectionExtensions");
+            ConsoleHelper.WriteInfo($"    │   └── Events/                   ⭐ EventDefinitions");
             ConsoleHelper.WriteInfo($"    ├── {_moduleName}.Tests/          (Unit tests)");
             ConsoleHelper.WriteInfo($"    ├── {_moduleName}.Web.Tests/      (Integration tests)");
             ConsoleHelper.WriteInfo($"    ├── {_moduleName}.E2E.Tests/      (E2E tests with Playwright)");
@@ -104,10 +111,14 @@ public class CreateModuleCommand
             ConsoleHelper.WriteInfo($"    ├── module.json");
             ConsoleHelper.WriteInfo($"    └── README.md");
 
+            ConsoleHelper.WriteInfo("\n⭐ Module is ready to use!");
+            ConsoleHelper.WriteInfo("  Extensions/ServiceCollectionExtensions.cs - Register services with Add{_moduleName}()");
+            ConsoleHelper.WriteInfo("  Events/EventDefinitions.cs - Type-safe event registration");
+            
             ConsoleHelper.WriteInfo("\nNext steps:");
             ConsoleHelper.WriteInfo($"  1. cd modules/{_moduleName}");
             ConsoleHelper.WriteInfo($"  2. cd {_moduleName}.Web");
-            ConsoleHelper.WriteInfo($"  3. netmx generate crud YourEntity -m {_moduleName}");
+            ConsoleHelper.WriteInfo($"  3. netmx generate feature YourEntity -m {_moduleName}");
             ConsoleHelper.WriteInfo($"  4. Run tests: dotnet test");
             ConsoleHelper.WriteInfo($"  5. E2E tests: dotnet playwright install (first time only)");
 
@@ -658,5 +669,99 @@ MIT
 
         File.WriteAllText(Path.Combine(moduleDir, "README.md"), readme);
         ConsoleHelper.WriteInfo("  ✓ Created README.md");
+    }
+    
+    private void CreateServiceCollectionExtensions(string moduleDir)
+    {
+        var projectDir = Path.Combine(moduleDir, $"{_moduleName}.Web");
+        var extensionsDir = Path.Combine(projectDir, "Extensions");
+        Directory.CreateDirectory(extensionsDir);
+        
+        var extensionsFile = $$"""
+using Microsoft.Extensions.DependencyInjection;
+using {{_moduleName}}.Application.Services;
+using {{_moduleName}}.Contracts.Services;
+using NetMX.Events;
+
+namespace {{_moduleName}}.Web.Extensions;
+
+/// <summary>
+/// Extension methods for registering {{_moduleName}} module services.
+/// </summary>
+public static class {{_moduleName}}ServiceCollectionExtensions
+{
+    /// <summary>
+    /// Registers {{_moduleName}} module services with the dependency injection container.
+    /// This includes:
+    /// - Service registrations (scoped by default)
+    /// - Caching configuration (if needed)
+    /// - Full observability with distributed tracing and logging
+    /// </summary>
+    /// <param name="services">The service collection</param>
+    /// <returns>The service collection for chaining</returns>
+    public static IServiceCollection Add{{_moduleName}}(this IServiceCollection services)
+    {
+        // TODO: Register your services here
+        // Example:
+        // services.AddScoped<I{{_moduleName}}Service, {{_moduleName}}Service>();
+        
+        // TODO: Add caching if needed
+        // services.AddMemoryCache();
+        
+        return services;
+    }
+    
+    /// <summary>
+    /// Registers {{_moduleName}} module events with the event registry.
+    /// Call this during application startup after adding the event registry.
+    /// </summary>
+    /// <param name="registry">The event registry</param>
+    /// <returns>The event registry for chaining</returns>
+    public static IEventRegistry Add{{_moduleName}}Events(this IEventRegistry registry)
+    {
+        {{_moduleName}}EventDefinitions.Register(registry);
+        return registry;
+    }
+}
+""";
+        
+        File.WriteAllText(Path.Combine(extensionsDir, $"{_moduleName}ServiceCollectionExtensions.cs"), extensionsFile);
+        ConsoleHelper.WriteInfo($"  ✓ Created {_moduleName}ServiceCollectionExtensions.cs");
+    }
+    
+    private void CreateEventDefinitionsClass(string moduleDir)
+    {
+        var projectDir = Path.Combine(moduleDir, $"{_moduleName}.Web");
+        var eventsDir = Path.Combine(projectDir, "Events");
+        // Directory already created in CreateWebProject
+        
+        var eventsFile = $$"""
+using NetMX.Events;
+
+namespace {{_moduleName}}.Web.Events;
+
+/// <summary>
+/// Registers {{_moduleName}} module events with the event registry.
+/// </summary>
+public static class {{_moduleName}}EventDefinitions
+{
+    /// <summary>
+    /// Registers all {{_moduleName}} events with metadata.
+    /// </summary>
+    public static void Register(IEventRegistry registry)
+    {
+        // TODO: Register your events here when features are generated
+        // Example:
+        // registry.Register<YourEntityCreatedPayload>(
+        //     Events.YourEntity.Created,
+        //     category: "{{_moduleName}}",
+        //     description: "Triggered when a your entity is created"
+        // );
+    }
+}
+""";
+        
+        File.WriteAllText(Path.Combine(eventsDir, $"{_moduleName}EventDefinitions.cs"), eventsFile);
+        ConsoleHelper.WriteInfo($"  ✓ Created {_moduleName}EventDefinitions.cs");
     }
 }
