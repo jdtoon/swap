@@ -140,7 +140,54 @@ MyApp/                          # Created by: netmx new monolith MyApp
 - Learning NetMX
 - When module boundaries aren't needed
 
-#### 2. Modular Monolith Template (`templates/modular/`) - PAID ($99)
+#### 2. Vertical Slice Template (`templates/vertical-slice/`) - PAID ($49)
+
+**What It Is**: Organized by feature with Features/ folders (vertical slice architecture)
+
+**Price**: $49 one-time purchase
+
+**Why Paid?**
+- Proven architecture pattern for medium-sized apps
+- Feature-focused organization
+- Reduces coupling between features
+- Production-ready structure
+
+**Structure**:
+```
+MyApp/                          # Created by: netmx new vertical MyApp
+├── MyApp.sln
+├── src/
+│   └── MyApp.Web/
+│       ├── Program.cs
+│       ├── Data/
+│       ├── Features/           # Features organized here
+│       │   ├── Products/
+│       │   │   ├── ProductController.cs
+│       │   │   ├── ProductService.cs
+│       │   │   ├── Product.cs
+│       │   │   └── Views/
+│       │   └── Orders/
+│       │       ├── OrderController.cs
+│       │       ├── OrderService.cs
+│       │       ├── Order.cs
+│       │       └── Views/
+│       └── Shared/             # Shared components
+└── tests/
+    └── MyApp.Tests/
+```
+
+**Use Cases**:
+- Medium applications (10-20 features)
+- Feature-focused development
+- Teams organized by feature ownership
+- When you want feature isolation without full modules
+
+**CLI Command**:
+```bash
+netmx new vertical MyApp
+```
+
+#### 3. Modular Monolith Template (`templates/modular/`) - PAID ($99)
 
 **What It Is**: A single deployment with logically separated modules
 
@@ -200,13 +247,32 @@ MyApp/
 - Easy debugging (all code in one solution)
 - Can extract to microservices later if needed
 
-#### 3. Microservices Template (`templates/microservices/`) ⏳ PLANNED
+#### 3. Microservices Template (`templates/microservices/`) ✅ IMPLEMENTED
 
-**Status**: Planned for Phase 4 (Months 7-9)
+**Status**: Structure complete, content needs polish (October 25, 2025)
 
 **Price**: $199 one-time purchase
 
-**What It Will Be**: Multiple independently deployable services
+**What It Is**: Multiple independently deployable services
+
+**Structure**:
+```
+MyApp/                          # Created by: netmx new microservices MyApp
+├── MyApp.sln
+├── services/                   # Microservices go here
+├── gateway/                    # API gateway
+├── shared/                     # Contracts
+└── infrastructure/
+    ├── docker-compose.yml
+    └── kubernetes/
+```
+
+**CLI Command**:
+```bash
+netmx new microservices MyApp
+```
+
+**Status**: ✅ Template creation working, needs content polish
 
 ---
 
@@ -308,9 +374,11 @@ MyApp.Web/
 - ✅ **Authorization**: Permissions, roles, policies (6 events, 38 tests)
 - ⏸️ **Audit**: Scaffolded (needs implementation)
 
-**CLI Commands**
-- ✅ `netmx new modular` - Create from modular template
-- ✅ `netmx new monolith` - Create from monolith template
+**CLI Commands** (All Working ✅)
+- ✅ `netmx new monolith <name>` - Create simple monolith (flat structure)
+- ✅ `netmx new vertical <name>` - Create vertical slice (Features/ folders)
+- ✅ `netmx new modular <name>` - Create modular monolith (modules/ directory)
+- ✅ `netmx new microservices <name>` - Create microservices (services/ directory)
 - ✅ `netmx create module` - Scaffold new module
 - ✅ `netmx generate feature` - Generate CRUD feature (13 files)
 - ✅ `netmx add module` - Add existing module to project
@@ -321,6 +389,7 @@ MyApp.Web/
 - ✅ Auto-service registration in Program.cs
 - ✅ Auto-Events package refresh
 - ✅ Auto-DbSet addition with pluralization
+- ✅ Template discovery fixed (bundled at root level)
 - ✅ Zero manual steps per feature
 - ✅ 95% time savings (10 min → 30 sec)
 
@@ -333,15 +402,26 @@ MyApp.Web/
 - ✅ Zero warnings across all builds
 - ✅ Dogfooding validated (ECommerceDogfood: 32/32 endpoints passing)
 
-**Templates**
-- ✅ Modular monolith template (SQLite, HTMX, Bulma)
-- ✅ Simple monolith template
-- ✅ Template copy working (`netmx new`)
-- ✅ Module addition working (`netmx add module`)
+**Templates** (All 4 Working ✅)
+- ✅ **Monolith** (FREE) - Flat structure, simple projects
+- ✅ **Vertical Slice** ($49) - Features/ folders, medium projects
+- ✅ **Modular** ($99) - modules/ directory, reusable code
+- ✅ **Microservices** ($199) - services/ directory, distributed systems
+- ✅ Template discovery working (commit: 86dc4bd)
+- ✅ ShowTemplateInfo() displays correct guidance
+- ✅ Project renaming working (NetMXApp → ProjectName)
+- ⚠️ Template content needs polish (Dockerfiles, better README)
 
-### 🔄 In Progress
+### 🔄 In Progress (This Week - Oct 25)
 
-**Phase 2D**: E2E Testing + NetMX.Testing Package
+**CLI Enhancements**
+- 🔄 Fix bin/obj warnings (200+ NU5100 during pack)
+- 🔄 Update `generate feature` for template type detection
+- 🔄 Generate flat structure for monolith
+- 🔄 Generate Features/ structure for vertical slice
+- 🔄 Polish template content (better READMEs, Dockerfiles)
+
+**Phase 2D**: E2E Testing + NetMX.Testing Package (Next Week)
 - NetMX.Testing package enhancements
 - CLI test commands (`netmx test feature/module/e2e`)
 - Playwright integration

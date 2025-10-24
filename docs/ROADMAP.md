@@ -2,8 +2,9 @@
 
 **Last Updated**: October 25, 2025  
 **Current Phase**: Phase 2 - Essential Infrastructure  
-**Status**: Week 3 - Settings Module Next  
-**Progress**: Phase 1 Complete (100%), Phase 2 (30%)
+**Status**: Week 3 Complete - CLI Templates Working (All 4) ✅  
+**Next**: CLI Enhancements + Settings Module  
+**Progress**: Phase 1 Complete (100%), Phase 2 (35%)
 
 > **See Also**: [MASTER-OVERVIEW.md](MASTER-OVERVIEW.md) for complete product context
 
@@ -182,13 +183,38 @@ NetMX is a **pure, modular, HTMX-first framework** for building web applications
 - [x] Created MASTER-OVERVIEW.md
 - [x] Updated ROADMAP.md
 - [x] Template strategy documented
+- [x] **CLI Template Commands** (All 4 working)
+  - [x] Added `netmx new monolith` command
+  - [x] Added `netmx new vertical` command
+  - [x] Added `netmx new modular` command
+  - [x] Added `netmx new microservices` command
+  - [x] Fixed template discovery (bundled at root level, not templates/)
+  - [x] All templates creating successfully
+  - [x] ShowTemplateInfo() displaying correct guidance
+  - [x] Commits: d2f77d2, 86dc4bd, 52f3c42
 
-### Week 3-4 🔄 IN PROGRESS - Settings Module
+### Week 3-4 🔄 IN PROGRESS - CLI Enhancements & Settings Module
 **Oct 28 - Nov 3, 2025** (NEXT UP)
 
-**Goal**: Global, user, and tenant-ready settings
+**Goal 1**: Polish CLI for all template types
 
-**Tasks**:
+**CLI Tasks**:
+- [ ] Fix bin/obj warnings (200+ NU5100 during CLI pack)
+- [ ] Update `generate feature` for template type detection
+  - [ ] Detect monolith (flat Models/, Services/, Controllers/)
+  - [ ] Detect vertical slice (Features/{EntityName}/)
+  - [ ] Detect modular (modules/{ModuleName}/)
+  - [ ] Detect microservices (services/{ServiceName}/)
+- [ ] Generate production-ready READMEs
+- [ ] Interactive entity property scaffolding
+- [ ] Seeder template generation
+- [ ] EF Core configuration templates
+
+**Time Estimate**: 2-3 days
+
+**Goal 2**: Global, user, and tenant-ready settings
+
+**Settings Tasks**:
 - [ ] Create Settings module structure (4 layers)
 - [ ] Implement SettingProvider (get, set, delete)
 - [ ] Add caching layer (15-min TTL like Authorization)

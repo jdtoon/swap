@@ -1,9 +1,10 @@
 # NetMX Development Guidelines
 
 **Last Updated**: October 25, 2025  
-**Current Phase**: Phase 2 - Week 3 (Settings Module Next)  
+**Current Phase**: Phase 2 - Week 3 Complete (CLI Templates Working)  
 **Status**: All Tests Passing (356/356) - Zero Technical Debt  
-**Progress**: Phase 1 Complete (100%), Phase 2 (30%)
+**Progress**: Phase 1 Complete (100%), Phase 2 (35%)  
+**Next**: CLI Enhancements + Settings Module
 
 > **IMPORTANT**: For complete product context, see [MASTER-OVERVIEW.md](../docs/MASTER-OVERVIEW.md)  
 > **IMPORTANT**: For updated roadmap, see [ROADMAP.md](../docs/ROADMAP.md)  
@@ -11,9 +12,9 @@
 
 This file provides **development guidelines** for GitHub Copilot when working with the NetMX framework. For comprehensive product understanding, always reference MASTER-OVERVIEW.md first.
 
-## � Where We Are Now
+## 🎯 Where We Are Now
 
-### ✅ Completed (October 24, 2025)
+### ✅ Completed (October 25, 2025)
 
 **Phase 1: Foundation** (100% Complete)
 - Framework SDK: 10 packages (Core, Events, DDD, AspNetCore, EF Core, Data, Htmx, Testing)
@@ -22,6 +23,15 @@ This file provides **development guidelines** for GitHub Copilot when working wi
 - Audit Module: Scaffolded with domain events
 - CLI: Feature generation and module creation working ✅ **VALIDATED**
 - **Zero Warnings Policy**: All builds compile with 0 errors AND 0 warnings ✅ **MANDATORY**
+
+**CLI Template Commands** (October 25, 2025) ✅ **COMPLETE**
+- Template Discovery: Fixed path issue (templates bundled at root level)
+- All 4 Commands Working: `netmx new monolith/vertical/modular/microservices`
+- Project Creation: Namespace replacement, structure generation working
+- ShowTemplateInfo: Template-specific guidance displaying correctly
+- Time to Create: ~15 seconds per project
+- **Result**: CLI fully functional for all 4 template types
+- **Commits**: d2f77d2, 86dc4bd, 52f3c42
 
 **CLI Critical Fixes** (October 23, 2025) ✅ **COMPLETE**
 - Package Resolution: Added nuget.config to template (projects use local .nuget/)
