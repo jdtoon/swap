@@ -6,7 +6,8 @@
 **Progress**: Phase 1 Complete (100%), Phase 2 (30%)
 
 > **IMPORTANT**: For complete product context, see [MASTER-OVERVIEW.md](../docs/MASTER-OVERVIEW.md)  
-> **IMPORTANT**: For updated roadmap, see [ROADMAP.md](../docs/ROADMAP.md)
+> **IMPORTANT**: For updated roadmap, see [ROADMAP.md](../docs/ROADMAP.md)  
+> **IMPORTANT**: For Pro module licensing, see [PRO-MODULE-LICENSING.md](../docs/PRO-MODULE-LICENSING.md)
 
 This file provides **development guidelines** for GitHub Copilot when working with the NetMX framework. For comprehensive product understanding, always reference MASTER-OVERVIEW.md first.
 

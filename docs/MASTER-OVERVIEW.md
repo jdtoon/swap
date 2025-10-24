@@ -28,7 +28,8 @@ This master document references and integrates all key documentation:
 
 ### Business & Future
 - [STUDIO-SUITE-VISION.md](STUDIO-SUITE-VISION.md) - Visual tools roadmap
-- [ROADMAP.md](ROADMAP.md) - Complete roadmap (needs update - see below)
+- [PRO-MODULE-LICENSING.md](PRO-MODULE-LICENSING.md) - Pro module licensing strategy
+- [ROADMAP.md](ROADMAP.md) - Complete roadmap
 
 ---
 
@@ -241,6 +242,15 @@ netmx add module Identity
 # - Wires up in Program.cs: services.AddIdentity()
 # - Updates AppDbContext with Identity tables
 
+# 2b. Add Pro modules (requires license key)
+netmx add module MultiTenancy --license NETMX-MT-ABC123-...
+
+# Result:
+# - Same as free modules (source code copy)
+# - Adds license key to appsettings.json
+# - License validated at application startup
+# - See PRO-MODULE-LICENSING.md for details
+
 # 3. Generate custom features
 netmx generate feature Product
 
@@ -424,9 +434,18 @@ MyApp.Web/
 
 **How Modules Work**:
 - 4-layer architecture (Core, Contracts, Application, Web)
-- Copied as source code into consuming apps
+- Copied as source code into consuming apps (free AND paid)
 - Fully customizable (developer owns the code)
+- Pro modules require license key validation at runtime
 - Can be extracted to microservices later
+
+**Pro Module Distribution**:
+- **Source code copy** (NOT NuGet packages for Pro modules)
+- License key required: `netmx add module MultiTenancy --license KEY`
+- License validated at application startup (graceful error if invalid)
+- One-time purchase, perpetual usage license
+- 1 year of updates included, optional $49/year renewal
+- See [PRO-MODULE-LICENSING.md](PRO-MODULE-LICENSING.md) for complete details
 
 ### 4. CLI Tools (Developer Tooling)
 

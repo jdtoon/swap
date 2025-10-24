@@ -303,6 +303,8 @@ NetMX is a **pure, modular, HTMX-first framework** for building web applications
 
 **Time Estimate**: 15-20 days
 
+**Reference**: [PRO-MODULE-LICENSING.md](PRO-MODULE-LICENSING.md)
+
 ---
 
 ## 📅 Phase 3: Advanced Modules (Months 4-6)
