@@ -120,44 +120,78 @@ netmx generate feature Product --search --export
 
 ---
 
-### 🎨 Component
+### 🎨 Component ⭐ NEW
 
-**Definition**: A **reusable HTMX UI pattern** that can be shared across views and projects.
+**Definition**: A **self-contained UI building block** with HTMX interactivity that can be composed into features.
 
 **Characteristics**:
-- Typically Razor partial views or view components
-- Implements specific HTMX pattern (click-to-edit, infinite scroll, etc.)
-- Can be packaged in Razor class libraries
-- Self-contained with styles and behavior
+- Razor partial view (`.cshtml`) with view model
+- Optional scoped CSS (BEM naming)
+- Optional JavaScript (minimal, HTMX-enhancing only)
+- Strongly-typed props via view model
+- Independent, testable, composable
 
-**Examples**:
-- **ContactCard** - Display + inline edit for contact info
-- **FileUpload** - HTMX file upload with progress
-- **SearchBox** - Debounced search with results
-- **DataTable** - Table with sorting, filtering, pagination
-- **InfiniteScroll** - Lazy loading content
-- **Toast** - HTMX-driven notifications
-
-**CLI Commands** (Future):
-```bash
-# Generate new component
-netmx generate component ContactCard
-
-# List available components
-netmx list components
-
-# Add component library to project
-netmx add components
+**Structure**:
+```
+Components/DataTable/
+├── _DataTable.cshtml          # Razor partial
+├── DataTableViewModel.cs      # View model (props)
+├── DataTable.css              # Scoped styles
+└── README.md                  # Usage docs
 ```
 
-**Current Status**: Manual creation  
-**Future**: CLI-generated with best practices
+**Examples**:
+- **DataTable** - Sortable, filterable table with pagination
+- **SearchBox** - Debounced search with live results
+- **InlineEdit** - Click-to-edit pattern
+- **FileUpload** - File upload with progress bar
+- **Toast** - Notification system
+- **Modal** - Dialog window
+- **DeleteConfirm** - Confirmation dialog
+- **Pagination** - Page navigation
+- **LoadingSpinner** - Loading indicator
+- **EmptyState** - No data display
 
-**When to Create**:
-- ✅ UI pattern is reused multiple times
+**CLI Commands** (In Development):
+```bash
+# Generate component in shared location
+netmx generate component DataTable
+
+# Generate component in feature
+netmx generate component ProductCard --feature Products
+
+# Add pre-built components to project
+netmx add components
+
+# List available component templates
+netmx component list
+```
+
+**What Gets Generated**:
+1. **Razor Partial** - HTMX-powered HTML template
+2. **View Model** - Strongly-typed props class
+3. **Scoped CSS** - BEM-named styles (optional)
+4. **README.md** - Usage examples and documentation
+
+**Generated Code Includes**:
+- ✅ HTMX interaction patterns
+- ✅ Strongly-typed view model
+- ✅ Bulma CSS styling
+- ✅ ARIA accessibility attributes
+- ✅ Unit test scaffolding
+- ✅ E2E test scaffolding
+- ✅ Comprehensive documentation
+
+**When to Use**:
+- ✅ UI pattern is reused across features
 - ✅ Pattern is complex (HTMX + CSS + validation)
 - ✅ You want consistent behavior across app
-- ✅ Pattern can benefit other developers
+- ✅ You want to save 30+ minutes of manual work
+
+**When NOT to Use**:
+- ❌ One-off UI (just write it in the view)
+- ❌ Feature-specific logic (belongs in feature)
+- ❌ Full pages (use features for that)
 
 ---
 
