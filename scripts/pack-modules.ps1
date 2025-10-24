@@ -44,8 +44,16 @@ Push-Location "$PSScriptRoot\..\modules"
 
 try {
     $modules = @(
-        @{ Path = "Authorization/Authorization.Web"; Name = "Authorization.Web" },
+        # Identity Module - All layers
+        @{ Path = "Identity/NetMX.Identity.Core"; Name = "NetMX.Identity.Core" },
+        @{ Path = "Identity/NetMX.Identity.Contracts"; Name = "NetMX.Identity.Contracts" },
+        @{ Path = "Identity/NetMX.Identity.Application"; Name = "NetMX.Identity.Application" },
         @{ Path = "Identity/NetMX.Identity.Web"; Name = "NetMX.Identity.Web" },
+        
+        # Authorization Module
+        @{ Path = "Authorization/Authorization.Web"; Name = "Authorization.Web" },
+        
+        # Audit Module
         @{ Path = "Audit/Audit.Web"; Name = "Audit.Web" }
     )
     

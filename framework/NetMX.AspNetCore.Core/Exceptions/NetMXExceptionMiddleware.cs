@@ -14,12 +14,22 @@ public class NetMXExceptionMiddleware
     private readonly RequestDelegate _next;
     private readonly ILogger<NetMXExceptionMiddleware> _logger;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="NetMXExceptionMiddleware"/> class.
+    /// </summary>
+    /// <param name="next">The next middleware in the pipeline.</param>
+    /// <param name="logger">The logger instance.</param>
     public NetMXExceptionMiddleware(RequestDelegate next, ILogger<NetMXExceptionMiddleware> logger)
     {
         _next = next;
         _logger = logger;
     }
 
+    /// <summary>
+    /// Invokes the middleware to process the HTTP context.
+    /// </summary>
+    /// <param name="context">The HTTP context.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
     public async Task InvokeAsync(HttpContext context)
     {
         try

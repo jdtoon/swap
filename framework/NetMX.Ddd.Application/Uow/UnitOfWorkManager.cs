@@ -12,6 +12,10 @@ public class UnitOfWorkManager : IUnitOfWorkManager, IScopedDependency
     private static readonly AsyncLocal<IUnitOfWork?> _current = new();
     private readonly IDomainEventDispatcher? _eventDispatcher;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="UnitOfWorkManager"/> class.
+    /// </summary>
+    /// <param name="eventDispatcher">Optional event dispatcher for domain events.</param>
     public UnitOfWorkManager(IDomainEventDispatcher? eventDispatcher = null)
     {
         _eventDispatcher = eventDispatcher;

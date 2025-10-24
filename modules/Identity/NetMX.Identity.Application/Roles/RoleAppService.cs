@@ -101,7 +101,7 @@ public class RoleAppService : IRoleAppService, IScopedDependency
         return new RoleDto
         {
             Id = role.Id,
-            Name = role.Name,
+            Name = role.Name ?? string.Empty,
             Description = role.Description,
             IsSystemRole = role.IsSystemRole,
             TenantId = role.TenantId

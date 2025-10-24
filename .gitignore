@@ -50,6 +50,9 @@ dogfood/
 *Dogfood*/app.db-shm
 *Dogfood*/app.db-wal
 
-# Test apps (temporary E2E testing - NOT committed)
+# Test apps (temporary testing - NOT committed)
+testApps/
 E2ETest*/
 E2EValidation*/
+*ModuleTest*/
+IdentityModuleTest/

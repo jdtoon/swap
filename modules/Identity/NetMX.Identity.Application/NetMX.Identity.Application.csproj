@@ -4,6 +4,11 @@
     <TargetFramework>net9.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    
+    <!-- NuGet Package Metadata -->
+    <PackageId>NetMX.Identity.Application</PackageId>
+    <Description>Application services for NetMX Identity module. Provides user management, role management, and authentication services.</Description>
+    <PackageTags>netmx;identity;application;services;ddd</PackageTags>
   </PropertyGroup>
 
   <ItemGroup>

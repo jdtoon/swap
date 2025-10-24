@@ -1,13 +1,18 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <ItemGroup>
-    <ProjectReference Include="..\..\..\framework\NetMX.Ddd.Application.Contracts\NetMX.Ddd.Application.Contracts.csproj" />
-  </ItemGroup>
-
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    
+    <!-- NuGet Package Metadata -->
+    <PackageId>NetMX.Identity.Contracts</PackageId>
+    <Description>DTOs and service interfaces for NetMX Identity module. Provides contracts for user and role management operations.</Description>
+    <PackageTags>netmx;identity;contracts;dtos;interfaces</PackageTags>
   </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\framework\NetMX.Ddd.Application.Contracts\NetMX.Ddd.Application.Contracts.csproj" />
+  </ItemGroup>
 
 </Project>

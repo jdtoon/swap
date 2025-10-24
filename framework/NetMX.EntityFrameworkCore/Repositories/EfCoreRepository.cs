@@ -13,13 +13,23 @@ public class EfCoreRepository<TDbContext, TEntity, TKey> : IQueryableRepository<
     where TDbContext : DbContext
     where TEntity : Entity<TKey>
 {
+    /// <summary>
+    /// The database context.
+    /// </summary>
     protected readonly TDbContext _dbContext;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="EfCoreRepository{TDbContext, TEntity, TKey}"/> class.
+    /// </summary>
+    /// <param name="dbContext">The database context.</param>
     public EfCoreRepository(TDbContext dbContext)
     {
         _dbContext = dbContext;
     }
 
+    /// <summary>
+    /// Gets the DbSet for the entity.
+    /// </summary>
     protected virtual DbSet<TEntity> DbSet => _dbContext.Set<TEntity>();
 
     /// <summary>
@@ -30,6 +40,11 @@ public class EfCoreRepository<TDbContext, TEntity, TKey> : IQueryableRepository<
         return await Task.FromResult(ApplySoftDeleteFilter(DbSet.AsQueryable()));
     }
 
+    /// <summary>
+    /// Gets an entity by its identifier.
+    /// </summary>
+    /// <param name="id">The entity identifier.</param>
+    /// <returns>The entity, or null if not found or soft deleted.</returns>
     public virtual async Task<TEntity> GetAsync(TKey id)
     {
         var entity = await DbSet.FindAsync(id);
@@ -43,11 +58,20 @@ public class EfCoreRepository<TDbContext, TEntity, TKey> : IQueryableRepository<
         return entity!;
     }
 
+    /// <summary>
+    /// Gets all entities with soft delete filtering applied.
+    /// </summary>
+    /// <returns>A list of all non-deleted entities.</returns>
     public virtual async Task<List<TEntity>> GetListAsync()
     {
         return await ApplySoftDeleteFilter(DbSet).ToListAsync();
     }
 
+    /// <summary>
+    /// Inserts a new entity, setting creation audit properties.
+    /// </summary>
+    /// <param name="entity">The entity to insert.</param>
+    /// <returns>The inserted entity.</returns>
     public virtual async Task<TEntity> InsertAsync(TEntity entity)
     {
         // Set creation audit fields
@@ -57,6 +81,11 @@ public class EfCoreRepository<TDbContext, TEntity, TKey> : IQueryableRepository<
         return entry.Entity;
     }
 
+    /// <summary>
+    /// Updates an existing entity, setting modification audit properties.
+    /// </summary>
+    /// <param name="entity">The entity to update.</param>
+    /// <returns>The updated entity.</returns>
     public virtual async Task<TEntity> UpdateAsync(TEntity entity)
     {
         // Set modification audit fields
@@ -67,6 +96,11 @@ public class EfCoreRepository<TDbContext, TEntity, TKey> : IQueryableRepository<
         return updatedEntry.Entity;
     }
 
+    /// <summary>
+    /// Deletes an entity (soft delete if supported, otherwise hard delete).
+    /// </summary>
+    /// <param name="id">The identifier of the entity to delete.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
     public virtual async Task DeleteAsync(TKey id)
     {
         var entity = await DbSet.FindAsync(id);

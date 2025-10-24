@@ -16,6 +16,10 @@ public class UnitOfWork : IUnitOfWork
     private bool _isCompleted;
     private bool _isDisposed;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="UnitOfWork"/> class.
+    /// </summary>
+    /// <param name="eventDispatcher">Optional event dispatcher for domain events.</param>
     public UnitOfWork(IDomainEventDispatcher? eventDispatcher = null)
     {
         _eventDispatcher = eventDispatcher;
@@ -24,7 +28,14 @@ public class UnitOfWork : IUnitOfWork
     /// <inheritdoc />
     public Guid Id { get; } = Guid.NewGuid();
 
+    /// <summary>
+    /// Gets a value indicating whether this unit of work has been completed.
+    /// </summary>
     public bool IsCompleted => _isCompleted;
+    
+    /// <summary>
+    /// Gets a value indicating whether this unit of work has been disposed.
+    /// </summary>
     public bool IsDisposed => _isDisposed;
 
     /// <summary>

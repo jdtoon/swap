@@ -11,11 +11,21 @@ public class DomainEventDispatcher : IDomainEventDispatcher, IScopedDependency
 {
     private readonly IServiceProvider _serviceProvider;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="DomainEventDispatcher"/> class.
+    /// </summary>
+    /// <param name="serviceProvider">The service provider used to resolve event handlers.</param>
     public DomainEventDispatcher(IServiceProvider serviceProvider)
     {
         _serviceProvider = serviceProvider;
     }
 
+    /// <summary>
+    /// Dispatches a single domain event to all registered handlers.
+    /// </summary>
+    /// <param name="domainEvent">The domain event to dispatch.</param>
+    /// <param name="cancellationToken">A cancellation token to cancel the operation.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
     public async Task DispatchAsync(DomainEvent domainEvent, CancellationToken cancellationToken = default)
     {
         var eventType = domainEvent.GetType();
@@ -35,6 +45,12 @@ public class DomainEventDispatcher : IDomainEventDispatcher, IScopedDependency
         }
     }
 
+    /// <summary>
+    /// Dispatches multiple domain events to their registered handlers in sequence.
+    /// </summary>
+    /// <param name="domainEvents">The collection of domain events to dispatch.</param>
+    /// <param name="cancellationToken">A cancellation token to cancel the operation.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
     public async Task DispatchAsync(IEnumerable<DomainEvent> domainEvents, CancellationToken cancellationToken = default)
     {
         foreach (var domainEvent in domainEvents)

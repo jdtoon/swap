@@ -5,6 +5,11 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <AddRazorSupportForMvc>true</AddRazorSupportForMvc>
+    
+    <!-- NuGet Package Metadata -->
+    <PackageId>NetMX.Identity.Web</PackageId>
+    <Description>Identity module for NetMX framework providing user authentication, registration, and profile management with ASP.NET Core Identity integration.</Description>
+    <PackageTags>netmx;identity;authentication;aspnetcore;htmx</PackageTags>
   </PropertyGroup>
 
   <ItemGroup>

@@ -8,7 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="NetMX.Ddd.Domain" Version="0.1.0-*" />
+    <ProjectReference Include="..\..\..\framework\NetMX.Ddd.Domain\NetMX.Ddd.Domain.csproj" />
   </ItemGroup>
 
 </Project>

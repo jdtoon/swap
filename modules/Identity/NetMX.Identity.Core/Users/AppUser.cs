@@ -263,6 +263,6 @@ public class AppUser : IdentityUser<Guid>
         if (!string.IsNullOrEmpty(LastName))
             return LastName;
         
-        return UserName;
+        return UserName ?? string.Empty;
     }
 }

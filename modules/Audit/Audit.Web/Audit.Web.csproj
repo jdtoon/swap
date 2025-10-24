@@ -16,16 +16,14 @@
     <!-- Development: Use ProjectReferences for active development -->
     <ProjectReference Include="..\..\..\framework\NetMX.AspNetCore.Mvc\NetMX.AspNetCore.Mvc.csproj" />
     <ProjectReference Include="..\..\..\framework\NetMX.Events\NetMX.Events.csproj" />
+    <ProjectReference Include="..\..\..\framework\NetMX.Ddd.Domain\NetMX.Ddd.Domain.csproj" />
     <!-- TODO: Switch to PackageReferences when publishing to NuGet -->
     <!--
     <PackageReference Include="NetMX.AspNetCore.Mvc" Version="0.1.0-*" />
     <PackageReference Include="NetMX.Events" Version="0.1.0-*" />
+    <PackageReference Include="NetMX.Ddd.Domain" Version="0.1.0-*" />
     -->
     <ProjectReference Include="..\Audit.Application\Audit.Application.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Include="NetMX.Ddd.Domain" Version="0.1.0-*" />
   </ItemGroup>
 
 </Project>

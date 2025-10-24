@@ -64,6 +64,11 @@ public class ValidationError
     /// </summary>
     public string ErrorMessage { get; }
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ValidationError"/> class.
+    /// </summary>
+    /// <param name="propertyName">The name of the property that failed validation.</param>
+    /// <param name="errorMessage">The validation error message.</param>
     public ValidationError(string propertyName, string errorMessage)
     {
         PropertyName = propertyName;

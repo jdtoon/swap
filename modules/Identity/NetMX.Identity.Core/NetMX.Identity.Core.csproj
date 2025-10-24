@@ -4,6 +4,11 @@
     <TargetFramework>net9.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    
+    <!-- NuGet Package Metadata -->
+    <PackageId>NetMX.Identity.Core</PackageId>
+    <Description>Core domain entities and value objects for NetMX Identity module. Includes AppUser, AppRole, and ASP.NET Core Identity integration.</Description>
+    <PackageTags>netmx;identity;domain;ddd;entities</PackageTags>
   </PropertyGroup>
 
   <ItemGroup>

@@ -71,33 +71,60 @@ public class AddModuleCommand
                 ConsoleHelper.WriteStep(4, $"Loaded module descriptor: {descriptor.Name} v{descriptor.Version}");
             }
 
-            // Step 5: Add project references
-            var projectsToAdd = descriptor?.Projects ?? DiscoverModuleProjects(modulePath);
+            // Step 5: Copy module source code to solution
+            ConsoleHelper.WriteStep(5, $"Copying module source code");
             
-            ConsoleHelper.WriteStep(5, $"Adding {projectsToAdd.Count} project reference(s)");
+            var modulesDir = Path.Combine(solutionDir, "src", $"{Path.GetFileNameWithoutExtension(Path.GetFileNameWithoutExtension(webProjectPath))}.Modules");
+            var targetModulePath = Path.Combine(modulesDir, _moduleName);
+            
+            if (Directory.Exists(targetModulePath))
+            {
+                ConsoleHelper.WriteWarning($"Module already exists at {targetModulePath}");
+                ConsoleHelper.WriteInfo($"Use --force to overwrite");
+                return 1;
+            }
+            
+            Directory.CreateDirectory(modulesDir);
+            CopyDirectory(modulePath, targetModulePath);
+            
+            ConsoleHelper.WriteSuccess($"  ✓ Copied to {Path.GetRelativePath(solutionDir, targetModulePath)}");
+            
+            // Step 6: Add module projects to solution
+            var projectsToAdd = descriptor?.Projects ?? DiscoverModuleProjects(targetModulePath);
+            
+            ConsoleHelper.WriteStep(6, $"Adding {projectsToAdd.Count} project(s) to solution");
             
             foreach (var project in projectsToAdd)
             {
-                var projectPath = Path.Combine(modulePath, project.Path);
+                var projectPath = Path.Combine(targetModulePath, project.Path);
                 if (File.Exists(projectPath))
                 {
                     ConsoleHelper.WriteProgress($"  Adding {project.Name}");
-                    AddProjectReference(webProjectPath, projectPath);
+                    
+                    // Add to solution
+                    AddProjectToSolution(solutionPath, projectPath);
+                    
+                    // Add reference from Web project to module's Web project
+                    if (project.Path.Contains(".Web"))
+                    {
+                        AddProjectReference(webProjectPath, projectPath);
+                    }
+                    
                     ConsoleHelper.WriteProgressDone();
                 }
             }
 
-            // Step 6: Update Program.cs (if module has services)
+            // Step 7: Update Program.cs (if module has services)
             if (descriptor?.Services != null && descriptor.Services.Any())
             {
-                ConsoleHelper.WriteStep(6, "Updating Program.cs to register module");
+                ConsoleHelper.WriteStep(7, "Updating Program.cs to register module");
                 UpdateProgramCs(webProjectPath, descriptor);
             }
 
-            // Step 7: Run migrations (if enabled)
+            // Step 8: Run migrations (if enabled)
             if (!_skipMigration && descriptor?.Migrations?.Enabled == true)
             {
-                ConsoleHelper.WriteStep(7, "Running database migrations");
+                ConsoleHelper.WriteStep(8, "Running database migrations");
                 await RunMigrationsAsync(webProjectPath, descriptor);
             }
 
@@ -385,6 +412,72 @@ public class AddModuleCommand
         {
             ConsoleHelper.WriteWarning($"  ⚠ Could not run migrations: {ex.Message}");
             ConsoleHelper.WriteInfo($"    Run manually: dotnet ef database update --context {contextName}");
+        }
+    }
+
+    private void CopyDirectory(string sourceDir, string targetDir)
+    {
+        // Create target directory
+        Directory.CreateDirectory(targetDir);
+
+        // Copy all files
+        foreach (var file in Directory.GetFiles(sourceDir))
+        {
+            var fileName = Path.GetFileName(file);
+            var targetFile = Path.Combine(targetDir, fileName);
+            File.Copy(file, targetFile, overwrite: true);
+        }
+
+        // Copy subdirectories recursively
+        foreach (var subDir in Directory.GetDirectories(sourceDir))
+        {
+            var dirName = Path.GetFileName(subDir);
+            
+            // Skip bin, obj, .vs directories
+            if (dirName.Equals("bin", StringComparison.OrdinalIgnoreCase) ||
+                dirName.Equals("obj", StringComparison.OrdinalIgnoreCase) ||
+                dirName.Equals(".vs", StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            var targetSubDir = Path.Combine(targetDir, dirName);
+            CopyDirectory(subDir, targetSubDir);
+        }
+    }
+
+    private void AddProjectToSolution(string solutionPath, string projectPath)
+    {
+        try
+        {
+            var process = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = "dotnet",
+                Arguments = $"sln \"{solutionPath}\" add \"{projectPath}\"",
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            });
+
+            if (process != null)
+            {
+                process.WaitForExit();
+                
+                if (process.ExitCode != 0)
+                {
+                    var error = process.StandardError.ReadToEnd();
+                    // Ignore "already in solution" errors
+                    if (!error.Contains("already"))
+                    {
+                        ConsoleHelper.WriteWarning($"    ⚠ Could not add to solution: {error}");
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            ConsoleHelper.WriteWarning($"    ⚠ Could not add to solution: {ex.Message}");
         }
     }
 }
