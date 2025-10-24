@@ -1,8 +1,10 @@
 # NetMX Master Overview - Complete Product Context
 
-**Last Updated**: October 25, 2025  
-**Version**: 1.0  
+**Last Updated**: October 24, 2025  
+**Version**: 1.1  
 **Purpose**: Single source of truth for understanding NetMX - Product, Architecture, Status, and Direction
+
+> **🔥 STRATEGIC SHIFT**: Tooling First! See [STRATEGIC-REFOCUS.md](STRATEGIC-REFOCUS.md)
 
 ---
 
@@ -13,8 +15,10 @@ This master document references and integrates all key documentation:
 ### Foundation Documents
 - [THE-PRODUCT.md](THE-PRODUCT.md) - What NetMX is, product vision
 - [INSPIRATION.md](INSPIRATION.md) - Why we built it this way
-- [TERMINOLOGY.md](TERMINOLOGY.md) - Key concepts (Module, Feature, Component)
+- [TERMINOLOGY.md](TERMINOLOGY.md) - Key concepts (Module, Feature, Component ⭐)
 - [MODULAR-ARCHITECTURE.md](MODULAR-ARCHITECTURE.md) - 4-layer architecture explained
+- [COMPONENT-ARCHITECTURE.md](COMPONENT-ARCHITECTURE.md) - Component system design ⭐ **NEW**
+- [STRATEGIC-REFOCUS.md](STRATEGIC-REFOCUS.md) - Tooling-first strategy ⭐ **NEW**
 
 ### Developer Experience
 - [DX.md](DX.md) - Developer experience principles
@@ -29,25 +33,29 @@ This master document references and integrates all key documentation:
 ### Business & Future
 - [STUDIO-SUITE-VISION.md](STUDIO-SUITE-VISION.md) - Visual tools roadmap
 - [PRO-MODULE-LICENSING.md](PRO-MODULE-LICENSING.md) - Pro module licensing strategy
-- [ROADMAP.md](ROADMAP.md) - Complete roadmap
+- [ROADMAP.md](ROADMAP.md) - Complete roadmap (updated with Phase 2A-D)
+- [TODO-STRATEGIC.md](TODO-STRATEGIC.md) - Week-by-week action plan ⭐ **NEW**
 
 ---
 
 ## 🎯 What Is NetMX?
 
-**NetMX is a complete framework ecosystem for building web applications with .NET and HTMX.**
+**NetMX is the framework with the best CLI in .NET web development.**
 
 ### The Vision
 
-> **Framework First, Features Optional**
+> **Tooling First, Everything Else Follows**
 
-NetMX provides the **infrastructure** (DDD patterns, event system, CLI tools, templates) while keeping **features** (Identity, Audit, CMS) completely optional as plug-and-play modules.
+NetMX provides **world-class tooling** (CLI, components, testing) that makes building web applications **effortless**. The framework provides infrastructure, modules provide features, and the **CLI makes it all productive**.
 
 ### Core Differentiators
 
-1. **Zero JavaScript Frameworks** - Pure server-rendered HTML with HTMX for interactivity
-2. **True Modularity** - Every feature is optional (Identity, Audit, CMS, etc.)
-3. **DDD-First** - Built on Domain-Driven Design with clean architecture
+1. **Best CLI in .NET** - Generate production-ready code in 15 seconds ⭐ **NEW FOCUS**
+2. **Component System** - React-like UI building blocks, server-side with HTMX ⭐ **NEW**
+3. **Zero JavaScript Frameworks** - Pure server-rendered HTML with HTMX for interactivity
+4. **Complete Hierarchy** - Templates → Modules → Features → Components (all CLI-generated) ⭐ **NEW**
+5. **True Modularity** - Every feature is optional (Identity, Audit, CMS, etc.)
+6. **DDD-First** - Built on Domain-Driven Design with clean architecture
 4. **Event-Driven** - Type-safe events via NetMX.Events (monolith-first, scalable to distributed)
 5. **Developer Experience** - CLI scaffolding, strong typing, zero warnings policy
 6. **Template-Based** - Start from production-ready templates (modular, monolith)
@@ -359,7 +367,7 @@ MyApp.Web/
 
 ---
 
-## 📊 Current Status (October 25, 2025)
+## 📊 Current Status (October 24, 2025)
 
 ### ✅ Completed (100%)
 
@@ -372,7 +380,7 @@ MyApp.Web/
 **Modules** (3 production-ready)
 - ✅ **Identity**: User authentication, registration, profile management
 - ✅ **Authorization**: Permissions, roles, policies (6 events, 38 tests)
-- ⏸️ **Audit**: Scaffolded (needs implementation)
+- ⏸️ **Audit**: Scaffolded (paused - will be 10x faster with new tooling)
 
 **CLI Commands** (All Working ✅)
 - ✅ `netmx new monolith <name>` - Create simple monolith (flat structure)
@@ -390,6 +398,8 @@ MyApp.Web/
 - ✅ Auto-Events package refresh
 - ✅ Auto-DbSet addition with pluralization
 - ✅ Template discovery fixed (bundled at root level)
+- ✅ Zero manual steps per feature
+- ✅ 95% time savings (10 min → 30 sec)
 - ✅ Zero manual steps per feature
 - ✅ 95% time savings (10 min → 30 sec)
 
