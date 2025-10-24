@@ -1,27 +1,28 @@
 # NetMX Roadmap
 
-**Last Updated**: October 25, 2025  
-**Current Phase**: Phase 2 - Essential Infrastructure  
-**Status**: Week 3 Complete - CLI Templates Working (All 4) ✅  
-**Next**: CLI Enhancements + Settings Module  
-**Progress**: Phase 1 Complete (100%), Phase 2 (35%)
+**Last Updated**: October 24, 2025  
+**Current Phase**: Phase 2A - Component System (Tooling First!)  
+**Status**: Week 3 - Strategic Pivot ⚡  
+**Next**: Component System → CLI Perfection → Testing → DX Polish → Modules (10x faster!)  
+**Progress**: Phase 1 Complete (100%), Phase 2A Started (5%)
 
-> **See Also**: [MASTER-OVERVIEW.md](MASTER-OVERVIEW.md) for complete product context
+> **STRATEGIC SHIFT**: Pausing module development to perfect tooling first  
+> **See Also**: [STRATEGIC-REFOCUS.md](STRATEGIC-REFOCUS.md) for rationale
 
 ---
 
 ## 🎯 Vision Statement
 
-NetMX is a **pure, modular, HTMX-first framework** for building web applications with ASP.NET Core. It follows the principle: **framework first, features optional**.
+NetMX is **the best CLI in .NET web development** - a pure, modular, HTMX-first framework built on **world-class tooling**.
 
 ### Core Differentiators
 
-1. **Zero JavaScript frameworks** - Pure server-rendered HTML with HTMX
-2. **True modularity** - Every feature is optional
-3. **DDD-first** - Clean architecture with clear boundaries
-4. **Event-driven** - Type-safe events via NetMX.Events (scalable to distributed)
-5. **Template-based** - Start from production-ready templates (modular/monolith)
-6. **Developer experience** - CLI scaffolding, strong typing, zero warnings
+1. **Best CLI** - Generate production-ready code in seconds ⭐ **NEW FOCUS**
+2. **Component System** - React-like components, server-side with HTMX ⭐ **NEW**
+3. **Zero JavaScript frameworks** - Pure server-rendered HTML with HTMX
+4. **True modularity** - Templates → Modules → Features → Components (all CLI-generated)
+5. **DDD-first** - Clean architecture with clear boundaries
+6. **Event-driven** - Type-safe events via NetMX.Events
 
 ---
 
@@ -195,6 +196,140 @@ NetMX is a **pure, modular, HTMX-first framework** for building web applications
 
 ### Week 3-4 🔄 IN PROGRESS - CLI Enhancements & Settings Module
 **Oct 28 - Nov 3, 2025** (NEXT UP)
+
+## 🔄 Phase 2: Tooling First (Months 1-2) - IN PROGRESS
+
+**Goal**: Production-ready CLI + Component System
+
+**Progress**: 5% complete (strategic docs done, implementation starting)
+
+### Phase 2A: Component System (Weeks 3-4) 🔄 IN PROGRESS
+
+**Goal**: Make UI development effortless
+
+- [ ] **Week 3: Foundation** (THIS WEEK)
+  - [x] Create COMPONENT-ARCHITECTURE.md documentation
+  - [x] Create STRATEGIC-REFOCUS.md plan
+  - [x] Update TERMINOLOGY.md with Components
+  - [ ] Update ROADMAP.md (this file)
+  - [ ] Update MASTER-OVERVIEW.md
+  - [ ] Update copilot-instructions.md
+  - [ ] Create `NetMX.Components` project
+  - [ ] Implement `netmx generate component` command structure
+  
+- [ ] **Week 4: Core Components**
+  - [ ] DataTable (sortable, filterable, paginated)
+  - [ ] SearchBox (debounced search)
+  - [ ] Toast (notifications)
+  - [ ] Modal (dialogs)
+  - [ ] Pagination (page navigation)
+  - [ ] Unit tests for view models
+  - [ ] Integration tests for rendering
+  - [ ] E2E tests for interactions
+
+**Deliverable**: `netmx generate component DataTable` → Production-ready component
+
+**Time Estimate**: 14 days
+
+---
+
+### Phase 2B: CLI Perfection (Weeks 5-6)
+
+**Goal**: Zero manual work for common tasks
+
+- [ ] **Week 5: Smart Generation**
+  - [ ] Fix: `generate feature` detects template type
+  - [ ] Fix: bin/obj warnings (200+ NU5100)
+  - [ ] Add: Interactive property generation
+  - [ ] Add: Smart defaults for entities
+  
+- [ ] **Week 6: Auto-Documentation**
+  - [ ] Generate production-ready README.md
+  - [ ] Generate seeder templates
+  - [ ] Generate EF Core configurations
+  - [ ] Add: `netmx docs generate` command
+
+**Deliverable**: `netmx generate feature Product` → Complete, documented code
+
+**Time Estimate**: 14 days
+
+---
+
+### Phase 2C: Testing Infrastructure (Weeks 7-8)
+
+**Goal**: Make testing dead simple
+
+- [ ] **Week 7: Test Generation**
+  - [ ] `netmx test generate feature Product` → Unit tests
+  - [ ] `netmx test generate component DataTable` → E2E tests
+  - [ ] Test data builders (fluent API)
+  - [ ] SQLite test database support
+  
+- [ ] **Week 8: Test Runners**
+  - [ ] `netmx test feature Product` → Run isolated tests
+  - [ ] `netmx test component DataTable` → Run E2E tests
+  - [ ] `netmx test module Identity` → Run full module tests
+  - [ ] Coverage reporting
+
+**Deliverable**: `netmx test feature Product` → Tests in < 5 seconds
+
+**Time Estimate**: 14 days
+
+---
+
+### Phase 2D: DX Polish (Week 9)
+
+**Goal**: CLI feels like magic
+
+- [ ] Add: `netmx validate` command
+- [ ] Add: `netmx upgrade` command
+- [ ] Add: `netmx scaffold app` (interactive)
+- [ ] Improve: Error messages (clear, actionable)
+- [ ] Add: `--dry-run` flag
+- [ ] Add: `--verbose` flag
+- [ ] Add: Tab completion
+
+**Deliverable**: Best CLI in .NET ecosystem
+
+**Time Estimate**: 7 days
+
+---
+
+## 📦 Phase 3: Module Development (Months 3-4) - 10x Faster!
+
+**Goal**: Validate tooling works, build essential modules
+
+**Settings Module** (Week 10 - 2 days)
+- Use CLI to generate complete structure
+- Add business logic (caching, scopes)
+- Test with new infrastructure
+- Auto-generated documentation
+
+**Audit Module** (Week 11 - 3 days)
+- Use CLI to generate complete structure
+- Add automatic change tracking
+- Add action audit logging
+- Test comprehensively
+
+**Observability Module** (Week 12 - 3 days)
+- Use CLI to generate complete structure
+- Health checks, metrics, tracing
+- Test and document
+
+**Multi-Tenancy Module 💰** (Week 13 - 5 days)
+- Use CLI to generate complete structure
+- Tenant isolation, resolver
+- License validation
+- FIRST PAID MODULE
+
+**Result**: 4 modules in 4 weeks (vs 4 modules in 9 weeks before!)
+
+---
+
+## 🚫 OLD Phase 2 (PAUSED - Will Resume as Phase 3)
+
+**Note**: We paused traditional module-first development to perfect tooling.  
+These will be 10x faster once CLI is perfected.
 
 **Goal 1**: Polish CLI for all template types
 
