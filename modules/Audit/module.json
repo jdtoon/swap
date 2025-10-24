@@ -4,13 +4,32 @@
   "description": "Audit module for NetMX",
   "author": "Your Name",
   "license": "MIT",
-  "dependencies": {
-    "netmx": "0.1.0"
-  },
+  "dependencies": [
+    "NetMX.Core >= 0.1.0",
+    "NetMX.Ddd.Domain >= 0.1.0",
+    "NetMX.Ddd.Application >= 0.1.0",
+    "NetMX.EntityFrameworkCore >= 0.1.0"
+  ],
   "projects": [
-    "Audit.Core",
-    "Audit.Contracts",
-    "Audit.Application",
-    "Audit.Web"
+    {
+      "name": "Audit.Core",
+      "path": "Audit.Core/Audit.Core.csproj",
+      "type": "domain"
+    },
+    {
+      "name": "Audit.Contracts",
+      "path": "Audit.Contracts/Audit.Contracts.csproj",
+      "type": "contracts"
+    },
+    {
+      "name": "Audit.Application",
+      "path": "Audit.Application/Audit.Application.csproj",
+      "type": "application"
+    },
+    {
+      "name": "Audit.Web",
+      "path": "Audit.Web/Audit.Web.csproj",
+      "type": "web"
+    }
   ]
 }
