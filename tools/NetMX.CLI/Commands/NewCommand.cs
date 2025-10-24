@@ -79,6 +79,15 @@ public class NewCommand
         var toolDirectory = Path.GetDirectoryName(assemblyLocation);
         if (toolDirectory != null)
         {
+            // Try direct path first (templates bundled at root level)
+            var directPath = Path.Combine(toolDirectory, templateName);
+            if (Directory.Exists(directPath))
+            {
+                ConsoleHelper.WriteInfo($"  Using template: {directPath}");
+                return directPath;
+            }
+            
+            // Try templates subdirectory (alternative bundling structure)
             var templatesPath = Path.Combine(toolDirectory, "templates", templateName);
             if (Directory.Exists(templatesPath))
             {
