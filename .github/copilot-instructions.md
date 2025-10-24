@@ -403,7 +403,8 @@ See [STUDIO-SUITE-VISION.md](../docs/STUDIO-SUITE-VISION.md) for complete detail
 
 **Critical**: After major milestones, we build **real apps** to validate our work!
 
-**Location**: `dogfood/` directory (NOT committed, in `.gitignore`)
+**Location**: `dogfood/` directory (NOT committed, in `.gitignore`)  
+**Showcase**: Exceptional apps moved to `sampleApps/` (committed as examples)
 
 **Process**:
 1. Create real app using **ONLY CLI** (no manual files)
@@ -414,9 +415,9 @@ See [STUDIO-SUITE-VISION.md](../docs/STUDIO-SUITE-VISION.md) for complete detail
 6. Commit CLI improvements and documentation
 
 **Completed Dogfooding Sessions**:
-| Date | App | Issues Found | CLI Fixes | Results |
-|------|-----|--------------|-----------|---------|
-| Oct 24 | ECommerceDogfood | Service registration, Events cache | Auto-register services, Auto-refresh Events | 32/32 tests passing, 100% --migrate success |
+| Date | App | Issues Found | CLI Fixes | Results | Location |
+|------|-----|--------------|-----------|---------|----------|
+| Oct 24 | ECommerceDogfood | Service registration, Events cache | Auto-register services, Auto-refresh Events | 32/32 tests passing, 100% --migrate success | `sampleApps/ECommerceDogfood` |
 
 **Schedule**:
 | Milestone | App to Build | Duration |
