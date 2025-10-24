@@ -1,11 +1,14 @@
 # NetMX Development Guidelines
 
-**Last Updated**: October 24, 2025  
-**Current Phase**: Testing & Validation  
-**Status**: CLI AUTOMATION COMPLETE - Fully validated via dogfooding  
-**Progress**: Phase 2 Complete + CLI Critical Fixes + CLI Automation Applied
+**Last Updated**: October 25, 2025  
+**Current Phase**: Phase 2 - Week 3 (Settings Module Next)  
+**Status**: All Tests Passing (356/356) - Zero Technical Debt  
+**Progress**: Phase 1 Complete (100%), Phase 2 (30%)
 
-This file provides **complete context** for GitHub Copilot when working with the NetMX framework. It's designed to allow picking up where we left off in any new chat session.
+> **IMPORTANT**: For complete product context, see [MASTER-OVERVIEW.md](../docs/MASTER-OVERVIEW.md)  
+> **IMPORTANT**: For updated roadmap, see [ROADMAP.md](../docs/ROADMAP.md)
+
+This file provides **development guidelines** for GitHub Copilot when working with the NetMX framework. For comprehensive product understanding, always reference MASTER-OVERVIEW.md first.
 
 ## � Where We Are Now
 
