@@ -13,11 +13,11 @@ public class ModuleDescriptor
     public List<string> Tags { get; set; } = new();
     public List<string> Dependencies { get; set; } = new();
     public List<ModuleProject> Projects { get; set; } = new();
-    public ModuleServices? Services { get; set; }
+    public List<ModuleService>? Services { get; set; }
     public ModuleMigrations? Migrations { get; set; }
     public Dictionary<string, object>? Configuration { get; set; }
     public List<ModuleFeature>? Features { get; set; }
-    public List<string>? Routes { get; set; }
+    public List<ModuleRoute>? Routes { get; set; }
     public List<ModuleMiddleware>? Middleware { get; set; }
 
     public static ModuleDescriptor? LoadFrom(string filePath)
@@ -40,10 +40,13 @@ public class ModuleProject
     public string Type { get; set; } = string.Empty;
 }
 
-public class ModuleServices
+public class ModuleService
 {
-    public string? ModuleClass { get; set; }
-    public string? DbContext { get; set; }
+    public string Type { get; set; } = string.Empty;
+    public string Class { get; set; } = string.Empty;
+    public string? ConnectionStringName { get; set; }
+    public string? MigrationHistoryTable { get; set; }
+    public string? Description { get; set; }
 }
 
 public class ModuleMigrations
@@ -61,8 +64,16 @@ public class ModuleFeature
     public string? Description { get; set; }
 }
 
+public class ModuleRoute
+{
+    public string Pattern { get; set; } = string.Empty;
+    public string? Description { get; set; }
+}
+
 public class ModuleMiddleware
 {
-    public string Name { get; set; } = string.Empty;
+    public string Type { get; set; } = string.Empty;
     public int Order { get; set; }
+    public string? Description { get; set; }
 }
+

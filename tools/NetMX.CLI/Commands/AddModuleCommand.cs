@@ -88,7 +88,7 @@ public class AddModuleCommand
             }
 
             // Step 6: Update Program.cs (if module has services)
-            if (descriptor?.Services?.ModuleClass != null)
+            if (descriptor?.Services != null && descriptor.Services.Any())
             {
                 ConsoleHelper.WriteStep(6, "Updating Program.cs to register module");
                 UpdateProgramCs(webProjectPath, descriptor);
@@ -268,8 +268,17 @@ public class AddModuleCommand
 
         var programCs = File.ReadAllText(programCsPath);
 
+        // Get module services
+        var moduleServices = descriptor.Services!.Where(s => s.Type == "module").ToList();
+        if (!moduleServices.Any())
+        {
+            ConsoleHelper.WriteInfo($"  No module services to register");
+            return;
+        }
+
         // Check if already registered
-        if (programCs.Contains(descriptor.Services!.ModuleClass!))
+        var moduleClass = moduleServices.First().Class;
+        if (programCs.Contains(moduleClass))
         {
             ConsoleHelper.WriteInfo($"  Module already registered in Program.cs");
             return;
@@ -280,13 +289,25 @@ public class AddModuleCommand
         if (programCs.Contains(searchText))
         {
             var insertionPoint = programCs.IndexOf(searchText) + searchText.Length;
-            var insertText = $"\n\n// Add {descriptor.Name} Module\n// builder.Services.Add{descriptor.Services.ModuleClass}();";
+            
+            // Build registration code for all module services
+            var registrationCode = new System.Text.StringBuilder();
+            registrationCode.AppendLine();
+            registrationCode.AppendLine($"// Add {descriptor.Name} Module");
+            
+            foreach (var service in moduleServices)
+            {
+                // Extract method name from class (e.g., NetMXIdentityWebModule -> AddIdentity)
+                var className = service.Class.Split('.').Last();
+                var methodName = className.Replace("NetMX", "").Replace("WebModule", "").Replace("Module", "");
+                registrationCode.AppendLine($"// builder.Services.Add{methodName}();");
+            }
 
-            programCs = programCs.Insert(insertionPoint, insertText);
+            programCs = programCs.Insert(insertionPoint, registrationCode.ToString());
             File.WriteAllText(programCsPath, programCs);
 
             ConsoleHelper.WriteInfo($"  Added commented registration code to Program.cs");
-            ConsoleHelper.WriteInfo($"  Uncomment the line to enable the module");
+            ConsoleHelper.WriteInfo($"  Uncomment the lines to enable the module");
         }
     }
 
