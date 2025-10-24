@@ -37,4 +37,9 @@
     <PackageReference Include="System.Text.Json" Version="9.0.10" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- Include templates in the NuGet package -->
+    <Content Include="..\..\templates\**\*.*" PackagePath="templates/" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>

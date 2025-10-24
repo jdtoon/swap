@@ -25,29 +25,90 @@ class Program
         // New Command (Create new projects from templates)
         var newCommand = new Command("new", "Create a new NetMX project from a template");
         
-        var newModularCommand = new Command("modular", "Create a new modular monolith project");
-        var projectNameArg = new Argument<string>("name")
+        // Template: Simple Monolith (FREE)
+        var newMonolithCommand = new Command("monolith", "Create a simple monolith project (flat structure)");
+        var monolithProjectNameArg = new Argument<string>("name")
         {
-            Description = "Name of the project (e.g., ECommerceApp)"
+            Description = "Name of the project (e.g., MyShop)"
         };
-        var outputOption = new Option<string?>("--output", "-o")
+        var monolithOutputOption = new Option<string?>("--output", "-o")
         {
             Description = "Output directory (default: ./{name})"
         };
+        newMonolithCommand.Arguments.Add(monolithProjectNameArg);
+        newMonolithCommand.Options.Add(monolithOutputOption);
+        newMonolithCommand.SetAction((parseResult) =>
+        {
+            var name = parseResult.GetValue(monolithProjectNameArg);
+            var output = parseResult.GetValue(monolithOutputOption);
+            var command = new NewCommand("monolith", name!, output);
+            return command.ExecuteAsync().GetAwaiter().GetResult();
+        });
+        newCommand.Subcommands.Add(newMonolithCommand);
         
-        newModularCommand.Arguments.Add(projectNameArg);
-        newModularCommand.Options.Add(outputOption);
+        // Template: Vertical Slice ($49)
+        var newVerticalCommand = new Command("vertical", "Create a vertical slice project (Features/ folders)");
+        var verticalProjectNameArg = new Argument<string>("name")
+        {
+            Description = "Name of the project (e.g., MyShop)"
+        };
+        var verticalOutputOption = new Option<string?>("--output", "-o")
+        {
+            Description = "Output directory (default: ./{name})"
+        };
+        newVerticalCommand.Arguments.Add(verticalProjectNameArg);
+        newVerticalCommand.Options.Add(verticalOutputOption);
+        newVerticalCommand.SetAction((parseResult) =>
+        {
+            var name = parseResult.GetValue(verticalProjectNameArg);
+            var output = parseResult.GetValue(verticalOutputOption);
+            var command = new NewCommand("vertical-slice", name!, output);
+            return command.ExecuteAsync().GetAwaiter().GetResult();
+        });
+        newCommand.Subcommands.Add(newVerticalCommand);
         
+        // Template: Modular Monolith ($99)
+        var newModularCommand = new Command("modular", "Create a modular monolith project (modules/ directory)");
+        var modularProjectNameArg = new Argument<string>("name")
+        {
+            Description = "Name of the project (e.g., ECommerceApp)"
+        };
+        var modularOutputOption = new Option<string?>("--output", "-o")
+        {
+            Description = "Output directory (default: ./{name})"
+        };
+        newModularCommand.Arguments.Add(modularProjectNameArg);
+        newModularCommand.Options.Add(modularOutputOption);
         newModularCommand.SetAction((parseResult) =>
         {
-            var name = parseResult.GetValue(projectNameArg);
-            var output = parseResult.GetValue(outputOption);
-            
+            var name = parseResult.GetValue(modularProjectNameArg);
+            var output = parseResult.GetValue(modularOutputOption);
             var command = new NewCommand("modular", name!, output);
             return command.ExecuteAsync().GetAwaiter().GetResult();
         });
-        
         newCommand.Subcommands.Add(newModularCommand);
+        
+        // Template: Microservices ($199)
+        var newMicroservicesCommand = new Command("microservices", "Create a microservices project (services/ directory)");
+        var microservicesProjectNameArg = new Argument<string>("name")
+        {
+            Description = "Name of the project (e.g., MyShop)"
+        };
+        var microservicesOutputOption = new Option<string?>("--output", "-o")
+        {
+            Description = "Output directory (default: ./{name})"
+        };
+        newMicroservicesCommand.Arguments.Add(microservicesProjectNameArg);
+        newMicroservicesCommand.Options.Add(microservicesOutputOption);
+        newMicroservicesCommand.SetAction((parseResult) =>
+        {
+            var name = parseResult.GetValue(microservicesProjectNameArg);
+            var output = parseResult.GetValue(microservicesOutputOption);
+            var command = new NewCommand("microservices", name!, output);
+            return command.ExecuteAsync().GetAwaiter().GetResult();
+        });
+        newCommand.Subcommands.Add(newMicroservicesCommand);
+        
         rootCommand.Subcommands.Add(newCommand);
 
         // Add Module Command

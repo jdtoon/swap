@@ -58,26 +58,9 @@ public class NewCommand
             RenameProjectFiles(_outputPath, _projectName);
             ConsoleHelper.WriteSuccess("  Project structure updated");
 
-            // Success
+            // Success - show template-specific info
             ConsoleHelper.WriteSuccess($"\n✨ Project '{_projectName}' created successfully!");
-            ConsoleHelper.WriteInfo("\n📁 Project structure:");
-            ConsoleHelper.WriteInfo($"   {_outputPath}/");
-            ConsoleHelper.WriteInfo($"   ├─ {_projectName}.sln");
-            ConsoleHelper.WriteInfo($"   ├─ src/{_projectName}.Web/");
-            ConsoleHelper.WriteInfo($"   │  ├─ Program.cs");
-            ConsoleHelper.WriteInfo($"   │  ├─ Data/AppDbContext.cs");
-            ConsoleHelper.WriteInfo($"   │  └─ {_projectName}.Web.csproj");
-            ConsoleHelper.WriteInfo($"   └─ docker-compose.yml (PostgreSQL)");
-
-            ConsoleHelper.WriteInfo("\n🚀 Next steps:");
-            ConsoleHelper.WriteInfo($"   1. cd {_projectName}");
-            ConsoleHelper.WriteInfo("   2. Update connection string in appsettings.json");
-            ConsoleHelper.WriteInfo("   3. docker-compose up -d (start PostgreSQL)");
-            ConsoleHelper.WriteInfo("   4. dotnet run --project src/{ProjectName}.Web");
-            ConsoleHelper.WriteInfo($"   5. netmx generate feature Product --migrate");
-            ConsoleHelper.WriteInfo("\n💡 Add modules:");
-            ConsoleHelper.WriteInfo("   netmx add module Identity");
-            ConsoleHelper.WriteInfo("   netmx add module Authorization");
+            ShowTemplateInfo(_templateName, _projectName, _outputPath);
 
             return 0;
         }
@@ -91,9 +74,20 @@ public class NewCommand
 
     private string? FindTemplateDirectory(string templateName)
     {
-        // Strategy: Find templates/ directory relative to the repository root
-        // Walk up from current directory until we find templates/ or reach root
+        // Strategy 1: Check if templates are bundled with the CLI tool (installed globally)
+        var assemblyLocation = typeof(NewCommand).Assembly.Location;
+        var toolDirectory = Path.GetDirectoryName(assemblyLocation);
+        if (toolDirectory != null)
+        {
+            var templatesPath = Path.Combine(toolDirectory, "templates", templateName);
+            if (Directory.Exists(templatesPath))
+            {
+                ConsoleHelper.WriteInfo($"  Using template: {templatesPath}");
+                return templatesPath;
+            }
+        }
         
+        // Strategy 2: Walk up from current directory (development scenario)
         var currentDir = Directory.GetCurrentDirectory();
         var maxDepth = 10; // Safety limit
         
@@ -114,7 +108,7 @@ public class NewCommand
             currentDir = parentDir.FullName;
         }
         
-        // If not found, check if we're IN the netmx repository
+        // Strategy 3: Check if we're IN the netmx repository
         var repoRoot = FindRepositoryRoot();
         if (repoRoot != null)
         {
@@ -254,4 +248,83 @@ public class NewCommand
             }
         }
     }
+    
+    private void ShowTemplateInfo(string templateName, string projectName, string outputPath)
+    {
+        ConsoleHelper.WriteInfo("\n📁 Project structure:");
+        ConsoleHelper.WriteInfo($"   {outputPath}/");
+        
+        switch (templateName.ToLower())
+        {
+            case "monolith":
+                ConsoleHelper.WriteInfo($"   ├─ {projectName}.sln");
+                ConsoleHelper.WriteInfo($"   ├─ src/{projectName}.Web/");
+                ConsoleHelper.WriteInfo($"   │  ├─ Models/          (flat structure)");
+                ConsoleHelper.WriteInfo($"   │  ├─ Services/");
+                ConsoleHelper.WriteInfo($"   │  ├─ Controllers/");
+                ConsoleHelper.WriteInfo($"   │  └─ Views/");
+                ConsoleHelper.WriteInfo($"   └─ docker-compose.yml");
+                
+                ConsoleHelper.WriteInfo("\n🚀 Next steps:");
+                ConsoleHelper.WriteInfo($"   1. cd {projectName}");
+                ConsoleHelper.WriteInfo($"   2. cd src/{projectName}.Web");
+                ConsoleHelper.WriteInfo($"   3. netmx generate feature Product --migrate");
+                ConsoleHelper.WriteInfo($"   4. dotnet run");
+                ConsoleHelper.WriteInfo($"   5. Navigate to http://localhost:5263/Product");
+                break;
+                
+            case "vertical-slice":
+                ConsoleHelper.WriteInfo($"   ├─ {projectName}.sln");
+                ConsoleHelper.WriteInfo($"   ├─ src/{projectName}.Web/");
+                ConsoleHelper.WriteInfo($"   │  ├─ Features/        (vertical slices)");
+                ConsoleHelper.WriteInfo($"   │  │  ├─ Products/");
+                ConsoleHelper.WriteInfo($"   │  │  └─ Orders/");
+                ConsoleHelper.WriteInfo($"   │  └─ Data/");
+                ConsoleHelper.WriteInfo($"   └─ docker-compose.yml");
+                
+                ConsoleHelper.WriteInfo("\n🚀 Next steps:");
+                ConsoleHelper.WriteInfo($"   1. cd {projectName}");
+                ConsoleHelper.WriteInfo($"   2. cd src/{projectName}.Web");
+                ConsoleHelper.WriteInfo($"   3. netmx generate feature Product --migrate");
+                ConsoleHelper.WriteInfo("      (Creates Features/Product/ folder)");
+                ConsoleHelper.WriteInfo($"   4. dotnet run");
+                break;
+                
+            case "modular":
+                ConsoleHelper.WriteInfo($"   ├─ {projectName}.sln");
+                ConsoleHelper.WriteInfo($"   ├─ src/{projectName}.Web/      (host app)");
+                ConsoleHelper.WriteInfo($"   ├─ modules/                     (modules here)");
+                ConsoleHelper.WriteInfo($"   │  └─ .gitkeep");
+                ConsoleHelper.WriteInfo($"   └─ docker-compose.yml");
+                
+                ConsoleHelper.WriteInfo("\n🚀 Next steps:");
+                ConsoleHelper.WriteInfo($"   1. cd {projectName}");
+                ConsoleHelper.WriteInfo($"   2. netmx add module Identity");
+                ConsoleHelper.WriteInfo($"   3. netmx create module Catalog");
+                ConsoleHelper.WriteInfo($"   4. cd modules/Catalog/Catalog.Web");
+                ConsoleHelper.WriteInfo($"   5. netmx generate feature Product --migrate");
+                ConsoleHelper.WriteInfo("\n💡 Add modules:");
+                ConsoleHelper.WriteInfo("   netmx add module Identity");
+                ConsoleHelper.WriteInfo("   netmx add module Authorization");
+                break;
+                
+            case "microservices":
+                ConsoleHelper.WriteInfo($"   ├─ {projectName}.sln");
+                ConsoleHelper.WriteInfo($"   ├─ services/                    (services here)");
+                ConsoleHelper.WriteInfo($"   ├─ gateway/                     (API gateway)");
+                ConsoleHelper.WriteInfo($"   ├─ shared/                      (contracts)");
+                ConsoleHelper.WriteInfo($"   └─ infrastructure/");
+                ConsoleHelper.WriteInfo($"       ├─ docker-compose.yml");
+                ConsoleHelper.WriteInfo($"       └─ kubernetes/");
+                
+                ConsoleHelper.WriteInfo("\n🚀 Next steps:");
+                ConsoleHelper.WriteInfo($"   1. cd {projectName}");
+                ConsoleHelper.WriteInfo($"   2. netmx add service Identity");
+                ConsoleHelper.WriteInfo($"   3. netmx create service Catalog");
+                ConsoleHelper.WriteInfo($"   4. docker-compose up");
+                ConsoleHelper.WriteInfo($"   5. Access gateway at http://localhost:8080");
+                break;
+        }
+    }
 }
+
