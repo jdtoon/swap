@@ -12,7 +12,7 @@
 - [x] Create COMPONENT-ARCHITECTURE.md documentation
 - [x] Create STRATEGIC-REFOCUS.md plan
 - [x] Update TERMINOLOGY.md with Components
-- [ ] Update ROADMAP.md (pause modules, focus tooling)
+- [x] Update ROADMAP.md (pause modules, focus tooling)
 - [ ] Update MASTER-OVERVIEW.md (add component system)
 - [ ] Create `NetMX.Components` project structure
 - [ ] Design component scaffolding structure
