@@ -41,6 +41,15 @@ project.lock.json
 project.assets.json
 publish/
 
-# Sample apps directory (showcase and validation apps)
-# Note: These are committed for demonstration purposes
-# sampleApps/
+# Sample apps directory (showcase apps - committed for demonstration)
+# sampleApps/ - Intentionally committed to show CLI capabilities
+
+# Dogfooding apps (temporary validation apps - NOT committed)
+dogfood/
+*Dogfood*/app.db
+*Dogfood*/app.db-shm
+*Dogfood*/app.db-wal
+
+# Test apps (temporary E2E testing - NOT committed)
+E2ETest*/
+E2EValidation*/
