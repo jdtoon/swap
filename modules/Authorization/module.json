@@ -4,13 +4,32 @@
   "description": "Authorization module for NetMX",
   "author": "Your Name",
   "license": "MIT",
-  "dependencies": {
-    "netmx": "0.1.0"
-  },
+  "dependencies": [
+    "NetMX.Core >= 0.1.0",
+    "NetMX.Ddd.Domain >= 0.1.0",
+    "NetMX.Ddd.Application >= 0.1.0",
+    "NetMX.EntityFrameworkCore >= 0.1.0"
+  ],
   "projects": [
-    "Authorization.Core",
-    "Authorization.Contracts",
-    "Authorization.Application",
-    "Authorization.Web"
+    {
+      "name": "Authorization.Core",
+      "path": "Authorization.Core/Authorization.Core.csproj",
+      "type": "domain"
+    },
+    {
+      "name": "Authorization.Contracts",
+      "path": "Authorization.Contracts/Authorization.Contracts.csproj",
+      "type": "contracts"
+    },
+    {
+      "name": "Authorization.Application",
+      "path": "Authorization.Application/Authorization.Application.csproj",
+      "type": "application"
+    },
+    {
+      "name": "Authorization.Web",
+      "path": "Authorization.Web/Authorization.Web.csproj",
+      "type": "web"
+    }
   ]
 }
