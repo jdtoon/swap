@@ -98,8 +98,8 @@ public class ServiceGeneratorTests
         // Assert
         Assert.Contains("namespace Services;", code);
         Assert.Contains("public class ProductService : IProductService", code);
-        Assert.Contains("private readonly DbContext _context;", code);
-        Assert.Contains("public ProductService(DbContext context)", code);
+        Assert.Contains("private readonly AppDbContext _context;", code);
+        Assert.Contains("public ProductService(AppDbContext context)", code);
         Assert.Contains("_context = context;", code);
     }
 

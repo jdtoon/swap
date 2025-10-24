@@ -27,7 +27,8 @@ public class EntityGeneratorTests
         Assert.Contains("public class Product : AggregateRoot<Guid>", code);
         Assert.Contains("public string Name { get; private set; }", code);
         Assert.Contains("public decimal Price { get; private set; }", code);
-        Assert.Contains("public Product(Guid id, string name, decimal price) : base(id)", code);
+        Assert.Contains("public Product(Guid id, string name, decimal price)", code);
+        Assert.Contains("Id = id;", code);
         Assert.Contains("Guard.NotNullOrEmpty(name, nameof(name))", code);
         Assert.Contains("public void SetName(string name)", code);
         Assert.Contains("public void SetPrice(decimal price)", code);

@@ -28,7 +28,7 @@ public class ViewGeneratorTests
         Assert.Contains("<i class=\"fas fa-box\"></i> Products", code);
         Assert.Contains("id=\"list-container\"", code);
         Assert.Contains("hx-get=\"/Product/List\"", code);
-        Assert.Contains("hx-trigger=\"load, product-created from:body, product-updated from:body, product-deleted from:body\"", code);
+        Assert.Contains($"hx-trigger=\"load, @Events.Product.Created from:body, @Events.Product.Updated from:body, @Events.Product.Deleted from:body\"", code);
         Assert.Contains("id=\"modal-container\"", code);
     }
 
@@ -288,7 +288,7 @@ public class ViewGeneratorTests
         Assert.Contains("@model dynamic", code);
         Assert.Contains("<div class=\"modal is-active\">", code);
         Assert.Contains("<p class=\"modal-card-title\">@title</p>", code);
-        Assert.Contains("hx-post=\"/@($\"/{options.EntityName}/{action}\")\"", code);
+        Assert.Contains("hx-post=\"/@($\"/Product/{action}\")\"", code);
         Assert.Contains("hx-target=\"#modal-container\"", code);
         Assert.Contains("hx-swap=\"outerHTML\"", code);
     }

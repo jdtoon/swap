@@ -243,7 +243,7 @@ public class ControllerGeneratorTests
         Assert.Contains("if (!ModelState.IsValid)", code);
         Assert.Contains("return PartialView(\"_Form\", dto);", code);
         Assert.Contains("await _service.CreateAsync(dto);", code);
-        Assert.Contains("this.HxTrigger(\"product-created\");", code);
+        Assert.Contains("this.HxTrigger(Events.Product.Created);", code);
         Assert.Contains("return Ok();", code);
     }
 
@@ -297,7 +297,7 @@ public class ControllerGeneratorTests
         Assert.Contains("if (!ModelState.IsValid)", code);
         Assert.Contains("return PartialView(\"_Form\", dto);", code);
         Assert.Contains("await _service.UpdateAsync(dto);", code);
-        Assert.Contains("this.HxTrigger(\"product-updated\");", code);
+        Assert.Contains("this.HxTrigger(Events.Product.Updated);", code);
         Assert.Contains("return Ok();", code);
     }
 
@@ -321,7 +321,7 @@ public class ControllerGeneratorTests
         Assert.Contains("[HttpDelete]", code);
         Assert.Contains("public async Task<IActionResult> Delete(Guid id)", code);
         Assert.Contains("await _service.DeleteAsync(id);", code);
-        Assert.Contains("this.HxTrigger(\"product-deleted\");", code);
+        Assert.Contains("this.HxTrigger(Events.Product.Deleted);", code);
         Assert.Contains("this.HxReswap(HtmxSwap.Delete);", code);
         Assert.Contains("return Ok();", code);
     }
