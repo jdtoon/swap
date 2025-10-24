@@ -12,16 +12,10 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- Development: Use ProjectReferences for active development -->
-    <ProjectReference Include="..\..\..\framework\NetMX.Core\NetMX.Core.csproj" />
-    <ProjectReference Include="..\..\..\framework\NetMX.Ddd.Application\NetMX.Ddd.Application.csproj" />
-    <ProjectReference Include="..\..\..\framework\NetMX.EntityFrameworkCore\NetMX.EntityFrameworkCore.csproj" />
-    <!-- TODO: Switch to PackageReferences when publishing to NuGet -->
-    <!--
-    <PackageReference Include="NetMX.Core" Version="0.1.0-*" />
-    <PackageReference Include="NetMX.Ddd.Application" Version="0.1.0-*" />
-    <PackageReference Include="NetMX.EntityFrameworkCore" Version="0.1.0-*" />
-    -->
+    <!-- Framework dependencies via NuGet -->
+    <PackageReference Include="NetMX.Core" Version="0.2.0-local" />
+    <PackageReference Include="NetMX.Ddd.Application" Version="0.2.0-local" />
+    <PackageReference Include="NetMX.EntityFrameworkCore" Version="0.2.0-local" />
     
     <!-- Microsoft Identity -->
     <PackageReference Include="Microsoft.Extensions.Identity.Core" Version="9.0.10" />

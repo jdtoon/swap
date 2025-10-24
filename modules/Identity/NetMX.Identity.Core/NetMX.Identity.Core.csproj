@@ -12,14 +12,10 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- Development: Use ProjectReferences for active development -->
-    <ProjectReference Include="..\..\..\framework\NetMX.Ddd.Domain\NetMX.Ddd.Domain.csproj" />
-    <!-- TODO: Switch to PackageReferences when publishing to NuGet -->
-    <!--
-    <PackageReference Include="NetMX.Ddd.Domain" Version="0.1.0-*" />
-    -->
+    <!-- Framework dependencies via NuGet -->
+    <PackageReference Include="NetMX.Ddd.Domain" Version="0.2.0-local" />
     
-    <!-- Microsoft Identity - authentication and authorization (KEEP: Core .NET infrastructure) -->
+    <!-- Microsoft Identity - authentication and authorization -->
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="9.0.10" />
     <PackageReference Include="Microsoft.Extensions.Identity.Stores" Version="9.0.10" />
   </ItemGroup>
