@@ -2,6 +2,9 @@ using NetMX.DependencyInjection;
 
 namespace NetMX.Data.Filtering;
 
+/// <summary>
+/// Interface for managing data filters (e.g., soft delete, multi-tenancy) that can be enabled/disabled at runtime.
+/// </summary>
 public interface IDataFilter : IScopedDependency
 {
     /// <summary>

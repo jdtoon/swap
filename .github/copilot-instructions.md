@@ -17,7 +17,7 @@ This file provides **complete context** for GitHub Copilot when working with the
 - Authorization Module: Complete with permissions, roles, domain events
 - Audit Module: Scaffolded with domain events
 - CLI: Feature generation and module creation working ✅ **VALIDATED**
-- Zero warnings: All builds compile cleanly
+- **Zero Warnings Policy**: All builds compile with 0 errors AND 0 warnings ✅ **MANDATORY**
 
 **CLI Critical Fixes** (October 23, 2025) ✅ **COMPLETE**
 - Package Resolution: Added nuget.config to template (projects use local .nuget/)
@@ -1149,11 +1149,33 @@ netmx generate feature User --module Identity
 ## Critical Reminders
 
 ### Before Every Commit
-1. ✅ Build framework solution
-2. ✅ Build module solutions
-3. ✅ Run all tests
-4. ✅ Check for zero warnings
+1. ✅ Build framework solution with **ZERO errors AND ZERO warnings**
+2. ✅ Build module solutions with **ZERO errors AND ZERO warnings**
+3. ✅ Run all tests (100% pass rate required)
+4. ✅ Verify CLI-generated code has **ZERO errors AND ZERO warnings**
 5. ✅ Update copilot-instructions.md (this file)
+
+### Zero Warnings Policy (MANDATORY)
+**All code MUST compile with 0 errors AND 0 warnings**
+
+This applies to:
+- ✅ Framework packages (framework/*)
+- ✅ Module code (modules/*)
+- ✅ CLI-generated code (templates/*)
+- ✅ Test projects (*Tests/)
+- ✅ Sample applications (dogfood/, sampleApps/)
+
+**Common Warnings to Fix**:
+1. **CS1591**: Missing XML documentation comments
+2. **CS8618**: Non-nullable property not initialized
+3. **CS8603**: Possible null reference return
+4. **CS8601**: Possible null reference assignment
+
+**How to Fix**:
+- Add XML documentation comments (`/// <summary>`)
+- Use nullable reference types (`string?`)
+- Initialize properties or use `required` modifier
+- Add null checks or use null-forgiving operator (`!`)
 
 ### Architecture Principles
 1. **Framework = Pure Infrastructure** - Zero features in framework/
@@ -1162,6 +1184,7 @@ netmx generate feature User --module Identity
 4. **Testing-First** - 80%+ coverage target
 5. **Module-Based** - Reusable, self-contained, own solutions
 6. **Dogfooding** - Use our own CLI to validate DX
+7. **Zero Warnings** - All code compiles cleanly ✅ **MANDATORY**
 
 ### Development Workflow
 1. **Use CLI** - Don't create files manually

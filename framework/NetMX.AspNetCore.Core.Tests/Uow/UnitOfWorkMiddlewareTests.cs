@@ -14,7 +14,7 @@ public class UnitOfWorkMiddlewareTests
         var mockUowManager = new Mock<IUnitOfWorkManager>();
         var mockUow = new Mock<IUnitOfWork>();
         mockUowManager.Setup(m => m.Begin(It.IsAny<bool>(), It.IsAny<bool>())).Returns(mockUow.Object);
-        mockUowManager.Setup(m => m.Current).Returns((IUnitOfWork)null);
+        mockUowManager.Setup(m => m.Current).Returns((IUnitOfWork?)null);
 
         var context = new DefaultHttpContext();
         context.Response.StatusCode = 200;
@@ -45,7 +45,7 @@ public class UnitOfWorkMiddlewareTests
         var mockUowManager = new Mock<IUnitOfWorkManager>();
         var mockUow = new Mock<IUnitOfWork>();
         mockUowManager.Setup(m => m.Begin(It.IsAny<bool>(), It.IsAny<bool>())).Returns(mockUow.Object);
-        mockUowManager.Setup(m => m.Current).Returns((IUnitOfWork)null);
+        mockUowManager.Setup(m => m.Current).Returns((IUnitOfWork?)null);
 
         var context = new DefaultHttpContext();
         context.Response.StatusCode = 500; // Server error
@@ -69,7 +69,7 @@ public class UnitOfWorkMiddlewareTests
         var mockUowManager = new Mock<IUnitOfWorkManager>();
         var mockUow = new Mock<IUnitOfWork>();
         mockUowManager.Setup(m => m.Begin(It.IsAny<bool>(), It.IsAny<bool>())).Returns(mockUow.Object);
-        mockUowManager.Setup(m => m.Current).Returns((IUnitOfWork)null);
+        mockUowManager.Setup(m => m.Current).Returns((IUnitOfWork?)null);
 
         var context = new DefaultHttpContext();
 
@@ -118,7 +118,7 @@ public class UnitOfWorkMiddlewareTests
         var mockUowManager = new Mock<IUnitOfWorkManager>();
         var mockUow = new Mock<IUnitOfWork>();
         mockUowManager.Setup(m => m.Begin(It.IsAny<bool>(), It.IsAny<bool>())).Returns(mockUow.Object);
-        mockUowManager.Setup(m => m.Current).Returns((IUnitOfWork)null);
+        mockUowManager.Setup(m => m.Current).Returns((IUnitOfWork?)null);
 
         var context = new DefaultHttpContext();
         context.Response.StatusCode = 400; // Bad Request
@@ -142,7 +142,7 @@ public class UnitOfWorkMiddlewareTests
         var mockUowManager = new Mock<IUnitOfWorkManager>();
         var mockUow = new Mock<IUnitOfWork>();
         mockUowManager.Setup(m => m.Begin(It.IsAny<bool>(), It.IsAny<bool>())).Returns(mockUow.Object);
-        mockUowManager.Setup(m => m.Current).Returns((IUnitOfWork)null);
+        mockUowManager.Setup(m => m.Current).Returns((IUnitOfWork?)null);
 
         var context = new DefaultHttpContext();
         context.Response.StatusCode = 399; // Edge case: just below 400
