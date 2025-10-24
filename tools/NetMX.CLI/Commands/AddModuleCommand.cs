@@ -108,7 +108,8 @@ public class AddModuleCommand
             
             if (descriptor?.Routes != null && descriptor.Routes.Any())
             {
-                ConsoleHelper.WriteInfo($"  3. Navigate to {descriptor.Routes.First()} to see the module");
+                var firstRoute = descriptor.Routes.First();
+                ConsoleHelper.WriteInfo($"  3. Navigate to {firstRoute.Pattern} to see the module");
             }
 
             return 0;
@@ -314,17 +315,50 @@ public class AddModuleCommand
     private async Task RunMigrationsAsync(string webProjectPath, ModuleDescriptor descriptor)
     {
         var webProjectDir = Path.GetDirectoryName(webProjectPath)!;
+        var contextName = descriptor.Migrations!.GetContextName();
+        
+        if (string.IsNullOrEmpty(contextName))
+        {
+            ConsoleHelper.WriteWarning("  No DbContext specified in module.json migrations section");
+            return;
+        }
 
         try
         {
-            var process = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+            // First, check if there are any migrations to apply
+            var checkProcess = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
             {
                 FileName = "dotnet",
-                Arguments = $"ef database update --context {descriptor.Migrations!.ContextName}",
+                Arguments = $"ef migrations list --context {contextName} --no-build",
                 WorkingDirectory = webProjectDir,
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
-                UseShellExecute = false
+                UseShellExecute = false,
+                CreateNoWindow = true
+            });
+
+            if (checkProcess != null)
+            {
+                var output = await checkProcess.StandardOutput.ReadToEndAsync();
+                await checkProcess.WaitForExitAsync();
+                
+                if (checkProcess.ExitCode != 0 || string.IsNullOrWhiteSpace(output))
+                {
+                    ConsoleHelper.WriteInfo($"  ✓ No migrations found for {contextName}");
+                    return;
+                }
+            }
+
+            // Now apply migrations
+            var process = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = "dotnet",
+                Arguments = $"ef database update --context {contextName}",
+                WorkingDirectory = webProjectDir,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
             });
 
             if (process != null)
@@ -333,18 +367,24 @@ public class AddModuleCommand
                 
                 if (process.ExitCode == 0)
                 {
-                    ConsoleHelper.WriteInfo("  Migrations applied successfully");
+                    ConsoleHelper.WriteSuccess($"  ✓ Migrations applied successfully for {contextName}");
                 }
                 else
                 {
-                    ConsoleHelper.WriteWarning("  Migrations failed (you may need to run manually)");
+                    var error = await process.StandardError.ReadToEndAsync();
+                    ConsoleHelper.WriteWarning($"  ⚠ Migrations failed for {contextName}");
+                    if (!string.IsNullOrWhiteSpace(error))
+                    {
+                        ConsoleHelper.WriteInfo($"    Error: {error.Split('\n')[0]}");
+                    }
+                    ConsoleHelper.WriteInfo($"    Run manually: dotnet ef database update --context {contextName}");
                 }
             }
         }
         catch (Exception ex)
         {
-            ConsoleHelper.WriteWarning($"  Could not run migrations: {ex.Message}");
-            ConsoleHelper.WriteInfo($"  Run manually: dotnet ef database update --context {descriptor.Migrations!.ContextName}");
+            ConsoleHelper.WriteWarning($"  ⚠ Could not run migrations: {ex.Message}");
+            ConsoleHelper.WriteInfo($"    Run manually: dotnet ef database update --context {contextName}");
         }
     }
 }

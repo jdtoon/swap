@@ -53,8 +53,16 @@ public class ModuleMigrations
 {
     public bool Enabled { get; set; }
     public bool AutoApply { get; set; }
+    
+    // Support both ContextName and Context for backwards compatibility
     public string? ContextName { get; set; }
+    public string? Context { get; set; }
+    
     public string? MigrationHistoryTable { get; set; }
+    public string? Assembly { get; set; }
+    
+    // Helper property to get the context name from either field
+    public string? GetContextName() => ContextName ?? Context;
 }
 
 public class ModuleFeature
