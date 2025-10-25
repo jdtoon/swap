@@ -4,14 +4,11 @@ sidebar_position: 1
 
 # Installation
 
-This guide will help you install Swap CLI and set up your development environment.
+Install Swap CLI and set up your development environment.
 
 ## Prerequisites
 
-Before installing Swap CLI, ensure you have:
-
 - **.NET 9.0 SDK or later** - [Download here](https://dotnet.microsoft.com/download)
-- **Node.js 18+ (optional)** - Required only if building HTMX/frontend components
 - **Git** - For version control
 - **Visual Studio 2022**, **VS Code**, or **Rider** - Recommended IDEs
 
@@ -24,12 +21,12 @@ dotnet --version
 
 ## Install the CLI
 
-### Global Installation (Recommended)
+### Global Installation
 
-Install the CLI as a global .NET tool:
+Install as a global .NET tool:
 
 ```bash
-dotnet tool install -g NetMX.CLI
+dotnet tool install -g Swap.CLI
 ```
 
 Verify the installation:
@@ -40,123 +37,111 @@ swap --version
 
 ### Update the CLI
 
-To update to the latest version:
+Update to the latest version:
 
 ```bash
-dotnet tool update -g NetMX.CLI
+dotnet tool update -g Swap.CLI
 ```
 
 ### Uninstall the CLI
 
 ```bash
-dotnet tool uninstall -g NetMX.CLI
+dotnet tool uninstall -g Swap.CLI
 ```
 
 ## Local Development Installation
 
-If you're contributing to NetMX or want to use a local build:
+For contributors or local builds:
 
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/toonjd/netmx.git
-cd netmx
+git clone https://github.com/yourusername/swap-cli.git
+cd swap-cli
 ```
 
 ### 2. Build the CLI
 
 ```bash
-cd tools/NetMX.CLI
+cd tools/Swap.CLI
 dotnet build
 ```
 
 ### 3. Install Locally
 
 ```bash
-dotnet tool install --global --add-source ./bin/Debug NetMX.CLI
+dotnet tool install --global --add-source ./bin/Debug Swap.CLI
 ```
 
 Or use the convenience script:
 
 ```bash
-# From repository root
+# PowerShell
 .\scripts\reinstall-cli.ps1
 ```
 
 ## Database Providers
 
-NetMX supports multiple database providers. Install the Entity Framework Core tools:
+Swap generates projects with SQLite by default. To use other providers:
+
+### SQL Server
 
 ```bash
-dotnet tool install -g dotnet-ef
+dotnet add package Microsoft.EntityFrameworkCore.SqlServer
 ```
 
-Verify installation:
+Update connection string in `appsettings.json`:
+
+```json
+"ConnectionStrings": {
+  "DefaultConnection": "Server=(localdb)\\mssqllocaldb;Database=MyApp;Trusted_Connection=true;"
+}
+```
+
+### PostgreSQL
 
 ```bash
-dotnet ef --version
+dotnet add package Npgsql.EntityFrameworkCore.PostgreSQL
 ```
 
-## IDE Extensions (Optional)
+Update connection string:
 
-### Visual Studio Code
-
-Recommended extensions:
-
-- **C# Dev Kit** - Official Microsoft C# support
-- **C#** - IntelliSense and debugging
-- **.NET Core Test Explorer** - Run tests from the editor
-- **GitHub Copilot** - AI-powered code completion
-
-### Visual Studio 2022
-
-- Install the latest version with ASP.NET and web development workload
-- Entity Framework Core Power Tools (optional, for advanced EF Core features)
+```json
+"ConnectionStrings": {
+  "DefaultConnection": "Host=localhost;Database=myapp;Username=postgres;Password=password"
+}
+```
 
 ## Troubleshooting
 
-### Command not found
+### CLI Not Found After Installation
 
-If `swap` command is not recognized after installation:
+Add the .NET tools directory to your PATH:
 
-**Windows (PowerShell):**
+**Windows:**
 ```powershell
-$env:PATH += ";$env:USERPROFILE\.dotnet\tools"
+$env:Path += ";$env:USERPROFILE\.dotnet\tools"
 ```
 
-**Linux/macOS:**
+**macOS/Linux:**
 ```bash
 export PATH="$PATH:$HOME/.dotnet/tools"
 ```
 
-Add the above to your shell profile (`~/.bashrc`, `~/.zshrc`, etc.) to persist.
+### Permission Denied on macOS/Linux
 
-### Permission Issues
-
-**Windows:**
-- Run PowerShell as Administrator
-- Or use: `dotnet tool install -g NetMX.CLI --tool-path C:\Tools`
-
-**Linux/macOS:**
 ```bash
-sudo dotnet tool install -g NetMX.CLI
+sudo dotnet tool install -g Swap.CLI
 ```
 
-### Version Conflicts
-
-If you have multiple .NET SDK versions:
+### Old Version Persisting
 
 ```bash
-# List installed SDKs
-dotnet --list-sdks
-
-# Create global.json to pin version
-dotnet new globaljson --sdk-version 9.0.100
+dotnet tool uninstall -g Swap.CLI
+dotnet tool install -g Swap.CLI
 ```
 
 ## Next Steps
 
-Now that you have the CLI installed, let's create your first project:
-
-- [Your First Project](./first-project) - Build a simple application
-- [CLI Overview](../cli/overview) - Learn about available commands
+- [Your First Project](./first-project) - Build a simple CRUD app
+- [CLI Reference](../cli/overview) - Complete command documentation

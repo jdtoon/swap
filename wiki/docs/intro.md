@@ -1,4 +1,4 @@
-------------
+---------------
 
 sidebar_position: 1
 
@@ -6,7 +6,7 @@ slug: /sidebar_position: 1
 
 ---
 
-slug: /sidebar_position: 1sidebar_position: 1
+slug: /sidebar_position: 1
 
 # Swap CLI
 
@@ -14,11 +14,11 @@ slug: /sidebar_position: 1sidebar_position: 1
 
 A command-line tool for scaffolding ASP.NET Core applications with HTMX.
 
-slug: /---
+slug: /sidebar_position: 1sidebar_position: 1
 
 ## What is Swap?
 
-# Welcome to Swap CLI
+# Swap CLI
 
 Swap generates ASP.NET Core projects with HTMX-powered views. It handles the boring stuff so you can focus on building features.
 
@@ -26,53 +26,128 @@ Swap generates ASP.NET Core projects with HTMX-powered views. It handles the bor
 
 **Core Features:**
 
-- Generate complete projects with `swap new`**The Rails of .NET** - Build modular ASP.NET Core applications faster with our powerful command-line interface.
+A command-line tool for scaffolding ASP.NET Core applications with HTMX.
 
-- Scaffold models with custom fields
+- Generate complete projects with `swap new`
 
-- Create CRUD controllers with HTMX views# Tutorial Intro
+- Scaffold models with custom fieldsslug: /---
 
-- Entity Framework Core setup included
+- Create CRUD controllers with HTMX views
 
-## What is Swap?
+- Entity Framework Core setup included## What is Swap?
 
-## Quick Start
 
-# Welcome to NetMX CLI
 
-Install globally:
+## Quick Start# Welcome to Swap CLI
 
-Swap is the command-line tool for NetMX, a comprehensive framework for building modular, enterprise-grade ASP.NET Core applications. It combines:
 
-```bash
 
-dotnet tool install -g NetMX.CLILet's discover **Docusaurus in less than 5 minutes**.
+Install globally:Swap generates ASP.NET Core projects with HTMX-powered views. It handles the boring stuff so you can focus on building features.
 
-```
 
-- **Modular Architecture** - Domain-driven design with clean boundaries
+
+```bash---
+
+dotnet tool install -g Swap.CLI
+
+```**Core Features:**
+
+
+
+Create a project:- Generate complete projects with `swap new`**The Rails of .NET** - Build modular ASP.NET Core applications faster with our powerful command-line interface.
+
+
+
+```bash- Scaffold models with custom fields
+
+swap new MyApp
+
+cd MyApp- Create CRUD controllers with HTMX views# Tutorial Intro
+
+dotnet run
+
+```- Entity Framework Core setup included
+
+
+
+Generate a resource:## What is Swap?
+
+
+
+```bash## Quick Start
+
+swap g r Product --fields Name:string,Price:decimal,Stock:int
+
+dotnet ef migrations add AddProduct# Welcome to NetMX CLI
+
+dotnet ef database update
+
+```Install globally:
+
+
+
+Navigate to `http://localhost:5000/Product` and you have a working CRUD interface.Swap is the command-line tool for NetMX, a comprehensive framework for building modular, enterprise-grade ASP.NET Core applications. It combines:
+
+
+
+## Why HTMX?```bash
+
+
+
+HTMX lets you build modern, interactive web apps without writing JavaScript. The CLI generates:dotnet tool install -g NetMX.CLILet's discover **Docusaurus in less than 5 minutes**.
+
+
+
+- Server-rendered HTML```
+
+- HTMX attributes for dynamic updates
+
+- Partial views for AJAX responses- **Modular Architecture** - Domain-driven design with clean boundaries
+
+- Bootstrap 5 styling
 
 Create a project:
 
+Example generated view:
+
 - **Rapid Scaffolding** - Generate projects, models, controllers, and more**The Rails of .NET** - Build modular ASP.NET Core applications faster with our powerful command-line interface.
 
-```bash
+```html
 
-swap new MyApp- **Built-in Patterns** - Event-driven architecture, CQRS, DDD patterns
+<div hx-get="/Product/List" hx-trigger="load" hx-target="#product-list">```bash
 
-cd MyApp
+    <div id="product-list">Loading...</div>
 
-dotnet run- **Production-Ready** - Identity, authorization, auditing out of the box## Getting Started
+</div>swap new MyApp- **Built-in Patterns** - Event-driven architecture, CQRS, DDD patterns
 
 ```
 
+cd MyApp
+
+## Commands
+
+dotnet run- **Production-Ready** - Identity, authorization, auditing out of the box## Getting Started
+
+- [swap new](./cli/new) - Create new projects
+
+- [swap generate model](./cli/generate-model) - Generate entity models```
+
+- [swap generate controller](./cli/generate-controller) - Generate controllers with HTMX views
+
+- [swap generate resource](./cli/generate-resource) - Generate model + controller together
 
 
-Generate a resource:
 
-## Quick Start## What is NetMX?
+## Next StepsGenerate a resource:
 
-```bash
+
+
+- [Installation](./getting-started/installation) - Set up Swap CLI## Quick Start## What is NetMX?
+
+- [Your First Project](./getting-started/first-project) - Build a simple CRUD app
+
+- [CLI Reference](./cli/overview) - Complete command documentation```bash
+
 
 swap g r Product --fields Name:string,Price:decimal,Stock:int
 
