@@ -195,8 +195,23 @@ public static class GenerateControllerCommand
             throw new InvalidOperationException("Could not find any DbSet properties in DbContext");
         }
         
-        // Find the end of the line after the last DbSet
-        var lineEnd = content.IndexOf('\n', lastDbSetIndex);
+        // Find the end of the DbSet property (look for ; or } then newline)
+        // This handles both styles: { get; set; } and => Set<T>()
+        var lineEnd = -1;
+        var searchStart = lastDbSetIndex;
+        for (int i = searchStart; i < content.Length; i++)
+        {
+            if ((content[i] == ';' || content[i] == '}') && i + 1 < content.Length)
+            {
+                // Found property terminator, now find the newline
+                lineEnd = content.IndexOf('\n', i);
+                if (lineEnd != -1)
+                {
+                    break;
+                }
+            }
+        }
+        
         if (lineEnd == -1) lineEnd = content.Length;
         
         // Insert new DbSet property with fully qualified type name to avoid conflicts
