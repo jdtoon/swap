@@ -1,4 +1,4 @@
----------------
+------------------
 
 sidebar_position: 1
 
@@ -14,13 +14,13 @@ slug: /sidebar_position: 1
 
 A command-line tool for scaffolding ASP.NET Core applications with HTMX.
 
-slug: /sidebar_position: 1sidebar_position: 1
+slug: /sidebar_position: 1
 
 ## What is Swap?
 
 # Swap CLI
 
-Swap generates ASP.NET Core projects with HTMX-powered views. It handles the boring stuff so you can focus on building features.
+Swap generates ASP.NET Core projects with HTMX-powered views. It handles the project setup and boilerplate so you can focus on building features.
 
 ---
 
@@ -30,19 +30,19 @@ A command-line tool for scaffolding ASP.NET Core applications with HTMX.
 
 - Generate complete projects with `swap new`
 
-- Scaffold models with custom fieldsslug: /---
+- Scaffold models with custom fieldsslug: /sidebar_position: 1sidebar_position: 1
 
 - Create CRUD controllers with HTMX views
 
-- Entity Framework Core setup included## What is Swap?
+- Entity Framework Core integration included## What is Swap?
 
 
 
-## Quick Start# Welcome to Swap CLI
+## Quick Start# Swap CLI
 
 
 
-Install globally:Swap generates ASP.NET Core projects with HTMX-powered views. It handles the boring stuff so you can focus on building features.
+Install the CLI globally:Swap generates ASP.NET Core projects with HTMX-powered views. It handles the boring stuff so you can focus on building features.
 
 
 
@@ -54,24 +54,99 @@ dotnet tool install -g Swap.CLI
 
 
 
-Create a project:- Generate complete projects with `swap new`**The Rails of .NET** - Build modular ASP.NET Core applications faster with our powerful command-line interface.
+Create a new project:A command-line tool for scaffolding ASP.NET Core applications with HTMX.
 
 
 
-```bash- Scaffold models with custom fields
+```bash- Generate complete projects with `swap new`
 
 swap new MyApp
 
-cd MyApp- Create CRUD controllers with HTMX views# Tutorial Intro
+cd MyApp- Scaffold models with custom fieldsslug: /---
 
 dotnet run
 
-```- Entity Framework Core setup included
+```- Create CRUD controllers with HTMX views
 
 
 
-Generate a resource:## What is Swap?
+Generate a resource with custom fields:- Entity Framework Core setup included## What is Swap?
 
+
+
+```bash
+
+swap g r Product --fields Name:string,Price:decimal,Stock:int
+
+dotnet ef migrations add AddProduct## Quick Start# Welcome to Swap CLI
+
+dotnet ef database update
+
+```
+
+
+
+Navigate to `http://localhost:5000/Product` to see your working CRUD interface.Install globally:Swap generates ASP.NET Core projects with HTMX-powered views. It handles the boring stuff so you can focus on building features.
+
+
+
+## Why HTMX?
+
+
+
+HTMX lets you build modern, interactive web applications without writing JavaScript. The CLI generates views with:```bash---
+
+
+
+- Server-rendered HTMLdotnet tool install -g Swap.CLI
+
+- HTMX attributes for dynamic updates
+
+- Partial views for AJAX responses```**Core Features:**
+
+- Bootstrap 5 styling
+
+
+
+Example generated view:
+
+Create a project:- Generate complete projects with `swap new`**The Rails of .NET** - Build modular ASP.NET Core applications faster with our powerful command-line interface.
+
+```html
+
+<div hx-get="/Product/List" hx-trigger="load" hx-target="#product-list">
+
+    <div id="product-list">Loading...</div>
+
+</div>```bash- Scaffold models with custom fields
+
+```
+
+swap new MyApp
+
+## Commands
+
+cd MyApp- Create CRUD controllers with HTMX views# Tutorial Intro
+
+- [swap new](./cli/new) - Create new projects
+
+- [swap generate model](./cli/generate-model) - Generate entity modelsdotnet run
+
+- [swap generate controller](./cli/generate-controller) - Generate controllers with HTMX views
+
+- [swap generate resource](./cli/generate-resource) - Generate model + controller together```- Entity Framework Core setup included
+
+
+
+## Next Steps
+
+
+
+- [Installation](./getting-started/installation) - Set up Swap CLIGenerate a resource:## What is Swap?
+
+- [Your First Project](./getting-started/first-project) - Build a simple CRUD app
+
+- [CLI Reference](./cli/overview) - Complete command documentation
 
 
 ```bash## Quick Start

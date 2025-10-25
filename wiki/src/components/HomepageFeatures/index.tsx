@@ -11,32 +11,32 @@ type FeatureItem = {
 
 const FeatureList: FeatureItem[] = [
   {
-    title: 'Easy to Use',
+    title: 'Rapid Scaffolding',
     Svg: require('@site/static/img/undraw_docusaurus_mountain.svg').default,
     description: (
       <>
-        Docusaurus was designed from the ground up to be easily installed and
-        used to get your website up and running quickly.
+        Generate complete projects, models, controllers, and views with a single command.
+        Focus on your business logic, not boilerplate code.
       </>
     ),
   },
   {
-    title: 'Focus on What Matters',
+    title: 'HTMX Integration',
     Svg: require('@site/static/img/undraw_docusaurus_tree.svg').default,
     description: (
       <>
-        Docusaurus lets you focus on your docs, and we&apos;ll do the chores. Go
-        ahead and move your docs into the <code>docs</code> directory.
+        Build modern, interactive web applications without writing JavaScript.
+        HTMX views are generated automatically for all CRUD operations.
       </>
     ),
   },
   {
-    title: 'Powered by React',
+    title: 'ASP.NET Core',
     Svg: require('@site/static/img/undraw_docusaurus_react.svg').default,
     description: (
       <>
-        Extend or customize your website layout by reusing React. Docusaurus can
-        be extended while reusing the same header and footer.
+        Built on ASP.NET Core with Entity Framework Core integration.
+        Supports SQLite, SQL Server, and PostgreSQL out of the box.
       </>
     ),
   },
