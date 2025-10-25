@@ -33,6 +33,25 @@ public static class NewCommand
     
     private static async Task<int> ExecuteAsync(string name, string database, string? output)
     {
+        // Validate project name
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            AnsiConsole.MarkupLine($"[red]Error:[/] Project name cannot be empty.");
+            return 1;
+        }
+        
+        if (name.Contains(' '))
+        {
+            AnsiConsole.MarkupLine($"[red]Error:[/] Project name cannot contain spaces. Use PascalCase (e.g., 'MyApp' instead of 'My App').");
+            return 1;
+        }
+        
+        if (!char.IsLetter(name[0]))
+        {
+            AnsiConsole.MarkupLine($"[red]Error:[/] Project name must start with a letter.");
+            return 1;
+        }
+        
         // Validate database option
         if (database != "sqlite" && database != "sqlserver" && database != "postgres")
         {

@@ -48,6 +48,9 @@ publish/
 dogfood/
 *Dogfood*/app.db
 *Dogfood*/app.db-shm
+
+# Test projects directory (generated via CLI for testing - NOT committed)
+testProjects/
 *Dogfood*/app.db-wal
 
 # Test apps (temporary testing - NOT committed)
