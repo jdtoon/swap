@@ -12,6 +12,7 @@ public static class GenerateCommand
         // Add subcommands
         command.AddCommand(GenerateControllerCommand.Create());
         command.AddCommand(GenerateModelCommand.Create());
+        command.AddCommand(GenerateResourceCommand.Create());
         
         return command;
     }
