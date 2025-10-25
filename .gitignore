@@ -56,3 +56,29 @@ E2ETest*/
 E2EValidation*/
 *ModuleTest*/
 IdentityModuleTest/
+
+# Node.js dependencies
+node_modules/
+**/node_modules/
+
+# NPM/Yarn files
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+yarn.lock
+
+# Compiled CSS (generated from Tailwind)
+**/wwwroot/css/*.min.css
+**/wwwroot/css/*.css.map
+
+# SQLite databases (sample/test apps)
+*.db
+*.db-shm
+*.db-wal
+**/app.db
+**/app.db-shm
+**/app.db-wal
+
+# LibMan cache
+**/wwwroot/lib/
