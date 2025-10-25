@@ -18,12 +18,12 @@ const config: Config = {
   url: 'https://toonjd.github.io',
   // Set the /<baseUrl>/ pathname under which your site is served
   // For GitHub pages deployment, it is often '/<projectName>/'
-  baseUrl: '/netmx/',
+  baseUrl: '/swap-cli/',
 
   // GitHub pages deployment config.
   // If you aren't using GitHub pages, you don't need these.
   organizationName: 'toonjd', // Usually your GitHub org/user name.
-  projectName: 'netmx', // Usually your repo name.
+  projectName: 'swap-cli', // Usually your repo name.
 
   onBrokenLinks: 'throw',
 
@@ -42,7 +42,7 @@ const config: Config = {
         docs: {
           sidebarPath: './sidebars.ts',
           editUrl:
-            'https://github.com/toonjd/netmx/tree/develop/wiki/',
+            'https://github.com/toonjd/swap-cli/tree/develop/wiki/',
         },
         blog: false,
         theme: {
@@ -72,7 +72,7 @@ const config: Config = {
           label: 'Documentation',
         },
         {
-          href: 'https://github.com/toonjd/netmx',
+          href: 'https://github.com/toonjd/swap-cli',
           label: 'GitHub',
           position: 'right',
         },
@@ -99,7 +99,7 @@ const config: Config = {
           items: [
             {
               label: 'GitHub',
-              href: 'https://github.com/toonjd/netmx',
+              href: 'https://github.com/toonjd/swap-cli',
             },
             {
               label: 'ASP.NET Core',

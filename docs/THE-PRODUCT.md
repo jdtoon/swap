@@ -490,38 +490,52 @@ Swap generate feature Product --service MyProductService --dto MyProductDto
 
 ## 🎯 Current Status (October 25, 2025)
 
-### ✅ What's Done
+### ✅ Phase 1-2A Complete (73 tests)
 
-- **Sample Apps**: 4 production apps analyzed (TTW, Kanban, Habits, Carestream)
-- **Pattern Library**: 30+ patterns documented
-- **CLI Foundation**: Basic commands work
-- **Clean Slate**: Removed all pre-supposed infrastructure
+**Basic CLI Infrastructure**:
+- ✅ `swap new` - Project scaffolding with ASP.NET Core + HTMX
+- ✅ `swap generate controller` - CRUD controllers with HTMX views
+- ✅ Bootstrap 5 UI integration
+- ✅ Entity Framework Core setup
+- ✅ 73 passing unit tests
 
-### 🔄 What's In Progress
+### ✅ Phase 2B Complete (122 tests)
 
-- **Template Rebuilding**: Creating templates based on learned patterns
-- **Generator Implementation**: Implementing pattern-based code generation
-- **Documentation**: Writing guides based on real patterns
+**Model Generation & Documentation**:
+- ✅ `swap generate model` - Entity models with custom fields
+- ✅ `swap generate resource` - Combined model + controller generation
+- ✅ Support for 11 C# data types (int, string, decimal, datetime, etc.)
+- ✅ Nullable field syntax (`Name:string?`)
+- ✅ Automatic DbContext registration
+- ✅ 49 new unit tests (122 total passing)
+- ✅ Complete Docusaurus documentation wiki
+- ✅ HTMX-focused tutorials and guides
 
-### ⏳ What's Next
+**Commands Available**:
+```bash
+swap new MyApp                        # Create project
+swap g m Product --fields Name:string,Price:decimal   # Generate model
+swap g c Product                      # Generate controller
+swap g r Product --fields Name:string,Price:decimal   # Generate both
+```
 
-**Week 1-2**:
-1. Build monolithic template from learned patterns
-2. Implement `Swap generate feature` with pagination
-3. Add response header helpers
-4. Add toast notification system
+### 🔄 Phase 3 Options
 
-**Week 3-4**:
-5. Implement modal CRUD generation
-6. Add component generation
-7. Implement search with debouncing
-8. Add session state helpers
+Choose next direction:
+1. **Relationships** - Foreign keys, navigation properties
+2. **API Controllers** - Generate REST APIs alongside HTMX
+3. **Test Generation** - Unit tests for generated code
+4. **Validation** - Data annotations and validation
+5. **Authentication** - User authentication scaffolding
+6. **Module System** - Multi-module applications
 
-**Week 5-6**:
-9. Build modular template
-10. Implement `Swap db` commands
-11. Add validation error retargeting
-12. Polish and test
+### 📚 Documentation
+
+- ✅ Comprehensive wiki at `/wiki`
+- ✅ Command reference for all CLI commands
+- ✅ Getting started tutorial
+- ✅ HTMX patterns and examples
+- ✅ Field type reference
 
 ---
 

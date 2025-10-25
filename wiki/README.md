@@ -1,4 +1,4 @@
-# Swap CLI Documentation# NetMX Documentation Wiki# Website
+# Swap CLI Documentation# Swap CLI Documentation# NetMX Documentation Wiki# Website
 
 
 
@@ -6,7 +6,7 @@ This directory contains the complete documentation for Swap CLI, built with [Doc
 
 
 
-## StructureThis directory contains the complete documentation for NetMX CLI, built with [Docusaurus](https://docusaurus.io/).This website is built using [Docusaurus](https://docusaurus.io/), a modern static website generator.
+## StructureThis directory contains the complete documentation for Swap CLI, built with [Docusaurus](https://docusaurus.io/).
 
 
 
@@ -14,7 +14,7 @@ This directory contains the complete documentation for Swap CLI, built with [Doc
 
 wiki/
 
-├── docs/                       # Documentation content## Structure## Installation
+├── docs/                       # Documentation content## StructureThis directory contains the complete documentation for NetMX CLI, built with [Docusaurus](https://docusaurus.io/).This website is built using [Docusaurus](https://docusaurus.io/), a modern static website generator.
 
 │   ├── intro.md               # Homepage
 
@@ -22,15 +22,15 @@ wiki/
 
 │   │   ├── installation.md
 
-│   │   └── first-project.md``````bash
+│   │   └── first-project.md```
 
 │   └── cli/                   # CLI command reference
 
-│       ├── overview.mdwiki/yarn
+│       ├── overview.mdwiki/
 
 │       ├── new.md
 
-│       ├── generate-model.md├── docs/                       # Documentation content```
+│       ├── generate-model.md├── docs/                       # Documentation content## Structure## Installation
 
 │       ├── generate-controller.md
 
@@ -38,7 +38,7 @@ wiki/
 
 ├── src/                       # React components and pages
 
-├── static/                    # Static assets│   ├── getting-started/       # Installation and first project guides## Local Development
+├── static/                    # Static assets│   ├── getting-started/       # Installation and first project guides
 
 ├── docusaurus.config.ts       # Site configuration
 
@@ -46,15 +46,15 @@ wiki/
 
 └── package.json
 
-```│   │   └── first-project.md```bash
+```│   │   └── first-project.md``````bash
 
 
 
-## Development│   └── cli/                   # CLI command referenceyarn start
+## Development│   └── cli/                   # CLI command reference
 
 
 
-### Prerequisites│       ├── overview.md```
+### Prerequisites│       ├── overview.mdwiki/yarn
 
 
 
@@ -62,33 +62,124 @@ wiki/
 
 - npm or yarn
 
-│       ├── generate-model.mdThis command starts a local development server and opens up a browser window. Most changes are reflected live without having to restart the server.
+│       ├── generate-model.md├── docs/                       # Documentation content```
 
 ### Install Dependencies
 
-│       └── generate-controller.md
+│       ├── generate-controller.md
 
 ```bash
 
-npm install├── src/                       # React components and pages## Build
+npm install│       └── generate-resource.md│   ├── intro.md               # Homepage
 
 ```
 
-├── static/                    # Static assets
+├── src/                       # React components and pages
 
 ### Start Development Server
 
-├── docusaurus.config.ts       # Site configuration```bash
+├── static/                    # Static assets│   ├── getting-started/       # Installation and first project guides## Local Development
 
 ```bash
 
-npm start├── sidebars.ts                # Sidebar navigationyarn build
+npm start├── docusaurus.config.ts       # Site configuration
 
 ```
 
-└── package.json```
+├── sidebars.ts                # Sidebar navigation│   │   ├── installation.md
 
-The site will be available at `http://localhost:3000/netmx/`
+The site will be available at `http://localhost:3000/swap-cli/`
+
+└── package.json
+
+### Build for Production
+
+```│   │   └── first-project.md```bash
+
+```bash
+
+npm run build
+
+```
+
+## Development│   └── cli/                   # CLI command referenceyarn start
+
+This generates static content into the `build` directory.
+
+
+
+### Serve Production Build Locally
+
+### Prerequisites│       ├── overview.md```
+
+```bash
+
+npm run serve
+
+```
+
+- Node.js 18+│       ├── new.md
+
+## Documentation Guidelines
+
+- npm or yarn
+
+### Writing Documentation
+
+│       ├── generate-model.mdThis command starts a local development server and opens up a browser window. Most changes are reflected live without having to restart the server.
+
+- Use clear, concise language
+
+- Include code examples with proper syntax highlighting### Install Dependencies
+
+- Add command examples for CLI commands
+
+- Focus on HTMX patterns and integration│       └── generate-controller.md
+
+
+
+### File Organization```bash
+
+
+
+- `intro.md` - Main landing page for documentationnpm install├── src/                       # React components and pages## Build
+
+- `getting-started/` - Installation and tutorials
+
+- `cli/` - Command reference documentation```
+
+
+
+### Links├── static/                    # Static assets
+
+
+
+- Use relative links: `[Installation](./getting-started/installation)`### Start Development Server
+
+- For same directory: `[Overview](./overview)`
+
+- For parent directory: `[Home](../intro)`├── docusaurus.config.ts       # Site configuration```bash
+
+
+
+## Deployment```bash
+
+
+
+The site is configured to deploy to GitHub Pages:npm start├── sidebars.ts                # Sidebar navigationyarn build
+
+
+
+```bash```
+
+npm run deploy
+
+```└── package.json```
+
+
+
+This builds and deploys to the `gh-pages` branch.The site will be available at `http://localhost:3000/netmx/`
+
 
 ```
 
