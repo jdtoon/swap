@@ -1,3 +1,3 @@
-# How to Contribute to NetMX
+# How to Contribute to Swap
 
-Details on contributing to the NetMX framework will be provided here.
+Details on contributing to the Swap framework will be provided here.

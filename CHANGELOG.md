@@ -1,6 +1,6 @@
-# NetMX CLI Changelog
+# Swap CLI Changelog
 
-All notable changes to the NetMX CLI will be documented in this file.
+All notable changes to the Swap CLI will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
@@ -42,10 +42,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 **Usage**:
 ```bash
 # Generate seeder in app context
-netmx generate seeder ProductSeeder
+Swap generate seeder ProductSeeder
 
 # Generate seeder in module context
-netmx generate seeder PermissionSeeder -m Authorization
+Swap generate seeder PermissionSeeder -m Authorization
 ```
 
 **Generated Code Features**:
@@ -163,12 +163,12 @@ netmx generate seeder PermissionSeeder -m Authorization
 - **Files**: PropertyParser.cs (314 lines), PropertyDefinition.cs (150 lines)
 
 ### Added - Phase 2A: DB Commands (October 2025)
-- `netmx db migrate <name>` - Create database migration
-- `netmx db update` - Apply pending migrations
-- `netmx db rollback` - Undo last migration
-- `netmx db reset` - Drop and recreate database
-- `netmx db seed` - Run database seeders (placeholder)
-- `netmx db status` - Show migration status
+- `Swap db migrate <name>` - Create database migration
+- `Swap db update` - Apply pending migrations
+- `Swap db rollback` - Undo last migration
+- `Swap db reset` - Drop and recreate database
+- `Swap db seed` - Run database seeders (placeholder)
+- `Swap db status` - Show migration status
 - **DbContextInjector** for automatic DbSet injection
 - **MigrationRunner** for EF Core migration automation
 - **Tests**: 8 passing
@@ -176,10 +176,10 @@ netmx generate seeder PermissionSeeder -m Authorization
 
 ### Added - Phase 1: Foundation (September-October 2025)
 - Basic CLI structure with System.CommandLine
-- `netmx create module <name>` command
+- `Swap create module <name>` command
 - Module scaffolding (4-layer architecture)
-- `netmx generate feature <name>` command (basic)
-- `netmx generate crud <name>` alias (deprecated)
+- `Swap generate feature <name>` command (basic)
+- `Swap generate crud <name>` alias (deprecated)
 - ConsoleHelper for formatted output
 - Zero-warning builds
 - NuGet packaging support
@@ -252,7 +252,7 @@ netmx generate seeder PermissionSeeder -m Authorization
 
 ### Added
 - Initial CLI project structure
-- Basic `netmx` command
+- Basic `Swap` command
 - Development setup documentation
 
 ---
@@ -263,13 +263,13 @@ netmx generate seeder PermissionSeeder -m Authorization
 Format: `0.1.0-dev.YYYYMMDD.sha`
 - Example: `0.1.0-dev.20251021.2ac2d6d`
 - Published to NuGet.org as pre-release
-- Installed with: `dotnet tool install --global NetMX.CLI --version "0.1.0-dev*"`
+- Installed with: `dotnet tool install --global Swap.CLI --version "0.1.0-dev*"`
 
 ### Stable Versions (main branch)
 Format: `0.1.0`
 - Example: `0.1.0` (first stable release)
 - Published to NuGet.org as stable
-- Installed with: `dotnet tool install --global NetMX.CLI`
+- Installed with: `dotnet tool install --global Swap.CLI`
 
 ### Semantic Versioning Rules
 - **Major** (x.0.0): Breaking changes
@@ -285,38 +285,38 @@ Format: `0.1.0`
 **New Commands**:
 ```bash
 # Old (still works, deprecated)
-netmx generate crud Product
+Swap generate crud Product
 
 # New (recommended)
-netmx generate feature Product
+Swap generate feature Product
 ```
 
 **New Flags**:
 ```bash
 # Enable pagination, search, sorting
-netmx generate feature Product --search
+Swap generate feature Product --search
 
 # Enable CSV export
-netmx generate feature Product --export
+Swap generate feature Product --export
 
 # Auto-migration (app context only)
-netmx generate feature Product --migrate
+Swap generate feature Product --migrate
 ```
 
 **Breaking Changes**:
 - None (fully backwards compatible)
 
 **Deprecations**:
-- `netmx generate crud` is deprecated, use `netmx generate feature` instead
+- `Swap generate crud` is deprecated, use `Swap generate feature` instead
 
 ---
 
 ## Future Roadmap
 
 ### Phase 2D: Seeders (Week 4)
-- `netmx generate seeder <name>` command
+- `Swap generate seeder <name>` command
 - Seeder class scaffolding
-- Seeder execution in `netmx db seed`
+- Seeder execution in `Swap db seed`
 - Seeder ordering (1_, 2_, 3_)
 - Idempotent seeding
 
@@ -330,7 +330,7 @@ netmx generate feature Product --migrate
 ### Phase 4: Templates (Weeks 7-8)
 - Customizable code templates (Liquid)
 - Template inheritance
-- User templates directory (~/.netmx/templates/)
+- User templates directory (~/.Swap/templates/)
 - Template variables (EntityName, Properties, Options)
 
 ### Phase 5: AI-Assisted Generation (Week 9+)
@@ -358,10 +358,10 @@ MIT License - See [LICENSE](../LICENSE) for details.
 
 ---
 
-**Maintained By**: NetMX Team  
-**Repository**: https://github.com/toonjd/netmx  
-**Documentation**: https://netmx.dev/docs/cli (planned)  
-**Issues**: https://github.com/toonjd/netmx/issues
+**Maintained By**: Swap Team  
+**Repository**: https://github.com/toonjd/Swap  
+**Documentation**: https://Swap.dev/docs/cli (planned)  
+**Issues**: https://github.com/toonjd/Swap/issues
 
 ---
 

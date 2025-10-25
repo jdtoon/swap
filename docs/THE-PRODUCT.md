@@ -1,4 +1,4 @@
-# NetMX - The Product
+# Swap - The Product
 
 **Last Updated**: October 25, 2025  
 **Status**: Active Development - Learning from Real Apps  
@@ -6,11 +6,11 @@
 
 ---
 
-## 🎯 What Is NetMX?
+## 🎯 What Is Swap?
 
 > **"The Rails of .NET" - but better**
 
-**NetMX is a CLI-driven web framework that generates production-ready code from patterns learned from real applications.**
+**Swap is a CLI-driven web framework that generates production-ready code from patterns learned from real applications.**
 
 It's not a collection of base classes or abstractions—it's a **code generator** that creates concrete, proven patterns you can customize and extend.
 
@@ -18,11 +18,11 @@ It's not a collection of base classes or abstractions—it's a **code generator*
 
 > **Patterns Over Packages. Generate Over Abstract.**
 
-NetMX generates code based on patterns extracted from real production apps. No magic base classes. No hidden abstractions. Just concrete, readable code that you own and control.
+Swap generates code based on patterns extracted from real production apps. No magic base classes. No hidden abstractions. Just concrete, readable code that you own and control.
 
 **What makes it "Rails-like"**:
 - ✅ **Convention over configuration** - Sensible defaults everywhere
-- ✅ **Powerful CLI** - `netmx generate feature Product` creates everything
+- ✅ **Powerful CLI** - `Swap generate feature Product` creates everything
 - ✅ **Rails-level productivity** - Generate features in seconds, not hours
 - ✅ **Full-stack** - Backend + Frontend generated together
 
@@ -49,12 +49,12 @@ Web development is either too complex or too rigid:
 
 **Server-Rendered HTML + HTMX + CLI Code Generation + .NET**
 
-NetMX combines the best ideas from multiple ecosystems:
+Swap combines the best ideas from multiple ecosystems:
 
 **From Rails**:
-- ✅ Powerful CLI (`rails generate` → `netmx generate`)
+- ✅ Powerful CLI (`rails generate` → `Swap generate`)
 - ✅ Convention over configuration
-- ✅ Migrations (`rails db:migrate` → `netmx db migrate`)
+- ✅ Migrations (`rails db:migrate` → `Swap db migrate`)
 - ✅ Scaffolding that actually works
 
 **From Laravel**:
@@ -82,14 +82,14 @@ NetMX combines the best ideas from multiple ecosystems:
 
 ---
 
-## 📦 What NetMX Generates
+## 📦 What Swap Generates
 
-NetMX is built on **patterns learned from analyzing 4 production apps** (TTW, Kanban, Habits, Carestream). Every generated file uses proven, production-tested patterns.
+Swap is built on **patterns learned from analyzing 4 production apps** (TTW, Kanban, Habits, Carestream). Every generated file uses proven, production-tested patterns.
 
 ### 1. Complete CRUD Features
 
 ```bash
-netmx generate feature Product
+Swap generate feature Product
 ```
 
 **Generates**:
@@ -160,7 +160,7 @@ public IActionResult DeleteProduct(int id)
 
 ### 4. Response Header Helpers
 
-NetMX generates controllers that use **HTMX response headers** for advanced UX:
+Swap generates controllers that use **HTMX response headers** for advanced UX:
 
 ```csharp
 [HttpPost]
@@ -187,7 +187,7 @@ public IActionResult Create(ProductCreateDto dto)
 ### 5. Component-Based Partials
 
 ```bash
-netmx generate component UserDisplay
+Swap generate component UserDisplay
 ```
 
 **Generates**:
@@ -202,7 +202,7 @@ netmx generate component UserDisplay
 ### 6. Toast Notification System
 
 ```bash
-netmx add toasts
+Swap add toasts
 ```
 
 **Generates**:
@@ -238,81 +238,81 @@ var filters = HttpContext.Session.GetObject<FilterDto>("Filters");
 
 ## 🛠️ The CLI - Your Productivity Superpower
 
-NetMX CLI is **Rails-inspired** but **better for .NET developers**.
+Swap CLI is **Rails-inspired** but **better for .NET developers**.
 
 ### Project Commands
 
 ```bash
 # Create new project (future - templates being rebuilt)
-netmx new MyApp
+Swap new MyApp
 
 # Run development server
-netmx serve
+Swap serve
 
 # Run tests
-netmx test
+Swap test
 ```
 
 ### Generation Commands
 
 ```bash
 # Generate complete CRUD feature
-netmx generate feature Product
-netmx generate feature Order --paginated
+Swap generate feature Product
+Swap generate feature Order --paginated
 
 # Generate modal CRUD
-netmx generate modal Customer
+Swap generate modal Customer
 
 # Generate reusable component
-netmx generate component UserMenu
+Swap generate component UserMenu
 
 # Generate API endpoint
-netmx generate api ProductApi
+Swap generate api ProductApi
 
 # Generate background job
-netmx generate job SendWelcomeEmail
+Swap generate job SendWelcomeEmail
 ```
 
 ### Database Commands (Rails-Inspired)
 
 ```bash
 # Create migration
-netmx db migrate AddProductsTable
+Swap db migrate AddProductsTable
 
 # Run pending migrations
-netmx db update
+Swap db update
 
 # Rollback last migration
-netmx db rollback
+Swap db rollback
 
 # Reset database
-netmx db reset
+Swap db reset
 
 # Seed database
-netmx db seed
+Swap db seed
 ```
 
 ### Enhancement Commands
 
 ```bash
 # Add toast notification system
-netmx add toasts
+Swap add toasts
 
 # Add pagination helpers
-netmx add pagination
+Swap add pagination
 
 # Add global search
-netmx add search
+Swap add search
 
 # Add sortable lists (drag-drop)
-netmx add sortable
+Swap add sortable
 ```
 
 ### Scaffolding vs Generation
 
 **Traditional scaffolding** (like ASP.NET): Empty templates with TODOs
 
-**NetMX generation**: Production-ready code with proven patterns:
+**Swap generation**: Production-ready code with proven patterns:
 - ✅ HX-Request detection
 - ✅ Partial view returns
 - ✅ Modal CRUD
@@ -327,7 +327,7 @@ netmx add sortable
 
 ## 📚 Learning from Real Apps
 
-**NetMX's secret sauce**: We don't guess what patterns to generate. We analyze real production apps.
+**Swap's secret sauce**: We don't guess what patterns to generate. We analyze real production apps.
 
 ### Sample Apps Analyzed (So Far)
 
@@ -368,7 +368,7 @@ netmx add sortable
 - Pre-suppose what developers need
 - Hope features fit the infrastructure
 
-**NetMX approach** (what we kept):
+**Swap approach** (what we kept):
 - Build sample apps first
 - Extract proven patterns
 - Generate concrete implementations
@@ -386,10 +386,10 @@ public class ProductAppService : CrudAppService<Product, ProductDto>
 }
 ```
 
-**NetMX**: Generated concrete code you can read and modify
+**Swap**: Generated concrete code you can read and modify
 
 ```csharp
-// NetMX: Generated concrete code
+// Swap: Generated concrete code
 public class ProductService : IProductService
 {
     private readonly AppDbContext _context;
@@ -423,14 +423,14 @@ public class ProductService : IProductService
 
 ### Convention Over Configuration
 
-NetMX provides **sensible defaults** but lets you override everything:
+Swap provides **sensible defaults** but lets you override everything:
 
 ```bash
 # Uses conventions (Entity, Dto, Service, Controller, Views)
-netmx generate feature Product
+Swap generate feature Product
 
 # Override conventions if needed
-netmx generate feature Product --service MyProductService --dto MyProductDto
+Swap generate feature Product --service MyProductService --dto MyProductDto
 ```
 
 **Conventions**:
@@ -440,15 +440,15 @@ netmx generate feature Product --service MyProductService --dto MyProductDto
 - Controllers in `Controllers/`
 - Views in `Views/{ControllerName}/`
 
-**Configuration**: Override via `netmx.config.json` if needed
+**Configuration**: Override via `Swap.config.json` if needed
 
 ---
 
-## 🚀 What Makes NetMX Different?
+## 🚀 What Makes Swap Different?
 
 ### vs Rails
 
-| Feature | NetMX | Rails |
+| Feature | Swap | Rails |
 |---------|-------|-------|
 | **Language** | C# (.NET) | Ruby |
 | **Type Safety** | ✅ Compile-time | ❌ Runtime |
@@ -458,11 +458,11 @@ netmx generate feature Product --service MyProductService --dto MyProductDto
 | **Enterprise Adoption** | ✅ Common | ⚠️ Niche |
 | **Frontend** | HTMX (simple) | Hotwire (similar) |
 
-**NetMX = Rails DX + .NET type safety**
+**Swap = Rails DX + .NET type safety**
 
 ### vs ABP Framework
 
-| Feature | NetMX | ABP |
+| Feature | Swap | ABP |
 |---------|-------|-----|
 | **Approach** | Code generation | Base classes |
 | **Magic** | ❌ None | ✅ Heavy |
@@ -472,11 +472,11 @@ netmx generate feature Product --service MyProductService --dto MyProductDto
 | **Pricing** | TBD | Subscription |
 | **Patterns** | From real apps | Pre-supposed |
 
-**NetMX = Simpler, more transparent**
+**Swap = Simpler, more transparent**
 
 ### vs ASP.NET Core MVC
 
-| Feature | NetMX | ASP.NET MVC |
+| Feature | Swap | ASP.NET MVC |
 |---------|-------|-------------|
 | **CLI** | ✅ Powerful | ⚠️ Basic |
 | **Generation** | Production-ready | Empty templates |
@@ -484,7 +484,7 @@ netmx generate feature Product --service MyProductService --dto MyProductDto
 | **HTMX** | First-class | Manual |
 | **Productivity** | ✅✅✅ | ⚠️ |
 
-**NetMX = ASP.NET MVC + Rails CLI + HTMX patterns**
+**Swap = ASP.NET MVC + Rails CLI + HTMX patterns**
 
 ---
 
@@ -507,7 +507,7 @@ netmx generate feature Product --service MyProductService --dto MyProductDto
 
 **Week 1-2**:
 1. Build monolithic template from learned patterns
-2. Implement `netmx generate feature` with pagination
+2. Implement `Swap generate feature` with pagination
 3. Add response header helpers
 4. Add toast notification system
 
@@ -519,7 +519,7 @@ netmx generate feature Product --service MyProductService --dto MyProductDto
 
 **Week 5-6**:
 9. Build modular template
-10. Implement `netmx db` commands
+10. Implement `Swap db` commands
 11. Add validation error retargeting
 12. Polish and test
 
@@ -531,7 +531,7 @@ netmx generate feature Product --service MyProductService --dto MyProductDto
 
 ### Time Saved
 
-| Task | Manual | With NetMX | Savings |
+| Task | Manual | With Swap | Savings |
 |------|--------|------------|---------|
 | CRUD feature | 4-6 hours | 5 seconds | **99.9%** |
 | Modal CRUD | 1-2 hours | 3 seconds | **99.8%** |
@@ -539,7 +539,7 @@ netmx generate feature Product --service MyProductService --dto MyProductDto
 | Toast system | 1 hour | 10 seconds | **99.7%** |
 | Search with debounce | 30 mins | Auto-generated | **100%** |
 
-**Total**: NetMX saves **20-30 hours per feature** when you factor in all the patterns.
+**Total**: Swap saves **20-30 hours per feature** when you factor in all the patterns.
 
 ### Code Quality
 
@@ -551,7 +551,7 @@ netmx generate feature Product --service MyProductService --dto MyProductDto
 
 ### Developer Experience
 
-- ✅ **"Wow" moment**: First `netmx generate` command
+- ✅ **"Wow" moment**: First `Swap generate` command
 - ✅ **Fast answers**: Generated code shows you how
 - ✅ **Learning**: Code teaches best practices
 - ✅ **Control**: You own and modify everything
@@ -596,7 +596,7 @@ netmx generate feature Product --service MyProductService --dto MyProductDto
 ## 🎯 The Vision
 
 **Short-Term (3 months)**:
-- NetMX CLI generates production-ready CRUD with all patterns
+- Swap CLI generates production-ready CRUD with all patterns
 - Monolithic template ready for real projects
 - 10+ patterns automated (pagination, modals, toasts, search, etc.)
 - **Goal**: Developers save 20+ hours per feature
@@ -609,20 +609,20 @@ netmx generate feature Product --service MyProductService --dto MyProductDto
 - **Goal**: "Rails of .NET" reputation established
 
 **Long-Term (12-24 months)**:
-- NetMX Studio (VS Code fork) launched
+- Swap Studio (VS Code fork) launched
 - Visual designers for non-coders
 - 30+ patterns automated
-- 10,000+ developers using NetMX
+- 10,000+ developers using Swap
 - **Goal**: Go-to framework for .NET + HTMX apps
 
 ---
 
 ## 🎯 Summary
 
-**NetMX is "The Rails of .NET" - but better:**
+**Swap is "The Rails of .NET" - but better:**
 
 **Like Rails**:
-- ✅ Amazing CLI (`netmx generate`, `netmx db`, etc.)
+- ✅ Amazing CLI (`Swap generate`, `Swap db`, etc.)
 - ✅ Convention over configuration
 - ✅ Rapid development (seconds, not hours)
 - ✅ Developer happiness is a feature
@@ -643,3 +643,4 @@ netmx generate feature Product --service MyProductService --dto MyProductDto
 1. Read [HTMX-PATTERNS-LEARNED.md](HTMX-PATTERNS-LEARNED.md) for deep pattern analysis
 2. Check out sample apps in `sampleApps/` to see the patterns in action
 3. Stay tuned for CLI updates as we implement generators
+

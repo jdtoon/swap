@@ -1,4 +1,4 @@
-# NetMX HTMX Pattern Analysis & Recommendations
+# Swap HTMX Pattern Analysis & Recommendations
 
 **Date**: October 25, 2025  
 **Source**: Analysis of 4 production ASP.NET Core + HTMX applications  
@@ -8,7 +8,7 @@
 
 ## 📊 Executive Summary
 
-After analyzing **4 production ASP.NET Core + HTMX applications** and reviewing the official HTMX documentation, we've identified **30+ reusable patterns** that form the foundation for NetMX's approach to web development.
+After analyzing **4 production ASP.NET Core + HTMX applications** and reviewing the official HTMX documentation, we've identified **30+ reusable patterns** that form the foundation for Swap's approach to web development.
 
 **Key Insights:**
 - **Common Foundation**: All apps share 5-7 core patterns (HX-Request detection, partial views, modal CRUD)
@@ -16,7 +16,7 @@ After analyzing **4 production ASP.NET Core + HTMX applications** and reviewing 
 - **Architecture Flexibility**: Both monolithic (Habits) and Clean Architecture (Carestream) work well with HTMX
 - **HTMX is Feature-Rich**: 40+ attributes, 20+ events, 10+ response headers available
 
-**NetMX Philosophy**: Learn from real apps, not theoretical frameworks. Generate what developers actually use.
+**Swap Philosophy**: Learn from real apps, not theoretical frameworks. Generate what developers actually use.
 
 ---
 
@@ -642,7 +642,7 @@ var result = _service.RegisterPatient(dto, userId);
 - ✅ Better for enterprise apps
 - ✅ Easier to test in isolation
 
-**NetMX Approach**:
+**Swap Approach**:
 - **Default**: Monolithic (simpler, faster)
 - **Allow**: Raw SQL via `FromSqlRaw()` when needed
 - **Support**: Clean architecture for advanced users
@@ -679,7 +679,7 @@ var result = _service.RegisterPatient(dto, userId);
 9. ✅ Session state management (50% of apps)
 10. ✅ Multi-event triggering (25% of apps - advanced)
 
-### What NetMX Should Generate
+### What Swap Should Generate
 
 **Essential (Every App Needs)**:
 - HX-Request detection in controllers
@@ -705,7 +705,7 @@ var result = _service.RegisterPatient(dto, userId);
 
 ---
 
-## 💡 The NetMX Way
+## 💡 The Swap Way
 
 ### Philosophy
 
@@ -724,7 +724,7 @@ We analyzed 4 production apps and found:
 - Create abstractions before implementations
 - Build infrastructure, hope features fit
 
-**NetMX Approach** (what we learned):
+**Swap Approach** (what we learned):
 - Analyze real apps first
 - Generate what developers actually use
 - Provide implementations, not abstractions
@@ -826,7 +826,7 @@ We analyzed 4 production apps and found:
 
 ### Complete CRUD Feature Example
 
-**What NetMX Should Generate**:
+**What Swap Should Generate**:
 
 ```csharp
 // ProductController.cs
@@ -957,7 +957,7 @@ public class ProductController : Controller
 
 **Time Savings per Feature**:
 - Manual CRUD: 2-4 hours
-- With NetMX patterns: 15-30 minutes
+- With Swap patterns: 15-30 minutes
 - **Reduction: 85-90%**
 
 **Code Quality**:
@@ -982,7 +982,7 @@ After analyzing 4 production apps, we learned:
 4. **HTMX is powerful** - 40+ attributes, we use 10
 5. **Simple beats complex** - Monolithic > Clean Architecture for most apps
 
-**The NetMX Way**:
+**The Swap Way**:
 - Learn from real apps
 - Generate proven patterns
 - Ship fast, refactor later
@@ -990,3 +990,4 @@ After analyzing 4 production apps, we learned:
 - Productivity over purity
 
 **Next**: Build CLI to generate these patterns automatically. 🚀
+
