@@ -5,8 +5,8 @@ import type * as Preset from '@docusaurus/preset-classic';
 // This runs in Node.js - Don't use client-side code here (browser APIs, JSX...)
 
 const config: Config = {
-  title: 'Swap CLI Documentation',
-  tagline: 'The Rails of .NET - Build modular ASP.NET Core applications faster',
+  title: 'Swap CLI',
+  tagline: 'Scaffold ASP.NET Core apps with HTMX',
   favicon: 'img/favicon.ico',
 
   // Future flags, see https://docusaurus.io/docs/api/docusaurus-config#future

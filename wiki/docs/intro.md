@@ -1,76 +1,150 @@
----------
+------------
 
 sidebar_position: 1
 
-slug: /sidebar_position: 1sidebar_position: 1
+slug: /sidebar_position: 1
 
 ---
+
+slug: /sidebar_position: 1sidebar_position: 1
+
+# Swap CLI
+
+---
+
+A command-line tool for scaffolding ASP.NET Core applications with HTMX.
 
 slug: /---
 
+## What is Swap?
+
 # Welcome to Swap CLI
+
+Swap generates ASP.NET Core projects with HTMX-powered views. It handles the boring stuff so you can focus on building features.
 
 ---
 
-**The Rails of .NET** - Build modular ASP.NET Core applications faster with our powerful command-line interface.
+**Core Features:**
 
-# Tutorial Intro
+- Generate complete projects with `swap new`**The Rails of .NET** - Build modular ASP.NET Core applications faster with our powerful command-line interface.
+
+- Scaffold models with custom fields
+
+- Create CRUD controllers with HTMX views# Tutorial Intro
+
+- Entity Framework Core setup included
 
 ## What is Swap?
 
+## Quick Start
+
 # Welcome to NetMX CLI
+
+Install globally:
 
 Swap is the command-line tool for NetMX, a comprehensive framework for building modular, enterprise-grade ASP.NET Core applications. It combines:
 
-Let's discover **Docusaurus in less than 5 minutes**.
+```bash
+
+dotnet tool install -g NetMX.CLILet's discover **Docusaurus in less than 5 minutes**.
+
+```
 
 - **Modular Architecture** - Domain-driven design with clean boundaries
 
+Create a project:
+
 - **Rapid Scaffolding** - Generate projects, models, controllers, and more**The Rails of .NET** - Build modular ASP.NET Core applications faster with our powerful command-line interface.
 
-- **Built-in Patterns** - Event-driven architecture, CQRS, DDD patterns
+```bash
 
-- **Production-Ready** - Identity, authorization, auditing out of the box## Getting Started
+swap new MyApp- **Built-in Patterns** - Event-driven architecture, CQRS, DDD patterns
+
+cd MyApp
+
+dotnet run- **Production-Ready** - Identity, authorization, auditing out of the box## Getting Started
+
+```
 
 
+
+Generate a resource:
 
 ## Quick Start## What is NetMX?
 
+```bash
+
+swap g r Product --fields Name:string,Price:decimal,Stock:int
+
+dotnet ef migrations add AddProduct
+
+dotnet ef database updateInstall the CLI globally:Get started by **creating a new site**.
+
+```
 
 
-Install the CLI globally:Get started by **creating a new site**.
 
-
+Navigate to `http://localhost:5000/Product` and you have a working CRUD interface.
 
 ```bashNetMX is a comprehensive framework and CLI toolset for building modular, enterprise-grade ASP.NET Core applications. It combines:
 
+## Why HTMX?
+
 dotnet tool install -g NetMX.CLI
+
+HTMX lets you build modern, interactive web apps without writing JavaScript. The CLI generates:
 
 ```Or **try Docusaurus immediately** with **[docusaurus.new](https://docusaurus.new)**.
 
+- Server-rendered HTML
+
+- HTMX attributes for dynamic updates
+
+- Partial views for AJAX responses
+
+- Bootstrap 5 stylingCreate a new project:- **Modular Architecture** - Domain-driven design with clean boundaries
 
 
-Create a new project:- **Modular Architecture** - Domain-driven design with clean boundaries
+
+Example generated view:
 
 
 
-```bash- **Rapid Scaffolding** - Generate projects, models, controllers, and more### What you'll need
+```html```bash- **Rapid Scaffolding** - Generate projects, models, controllers, and more### What you'll need
 
-swap new MyApp
+<div hx-get="/Product/List" hx-trigger="load" hx-target="#product-list">
 
-cd MyApp- **Built-in Patterns** - Event-driven architecture, CQRS, DDD patterns
+    <div id="product-list">Loading...</div>swap new MyApp
 
-dotnet run
+</div>
 
-```- **Production-Ready** - Identity, authorization, auditing out of the box- [Node.js](https://nodejs.org/en/download/) version 20.0 or above:
+```cd MyApp- **Built-in Patterns** - Event-driven architecture, CQRS, DDD patterns
 
 
+
+## Commandsdotnet run
+
+
+
+- [swap new](./cli/new) - Create new projects```- **Production-Ready** - Identity, authorization, auditing out of the box- [Node.js](https://nodejs.org/en/download/) version 20.0 or above:
+
+- [swap generate model](./cli/generate-model) - Generate entity models
+
+- [swap generate controller](./cli/generate-controller) - Generate controllers with HTMX views
+
+- [swap generate resource](./cli/generate-resource) - Generate model + controller together
 
 ## What Can You Build?  - When installing Node.js, you are recommended to check all checkboxes related to dependencies.
 
+## Next Steps
 
 
-- **Modular Applications** - Multi-tenant SaaS platforms with isolated modules## Quick Start
+
+- [Installation](./getting-started/installation) - Set up Swap CLI
+
+- [Your First Project](./getting-started/first-project) - Build a simple CRUD app- **Modular Applications** - Multi-tenant SaaS platforms with isolated modules## Quick Start
+
+- [CLI Reference](./cli/overview) - Complete command documentation
 
 - **Monolithic Applications** - Traditional layered applications with clean architecture
 

@@ -1,6 +1,0 @@
-﻿@model PagedResult<CalendarEventTypeDto>
-
-@foreach (var eventType in Model.Data)
-{
-    <partial name="_EventTypeItem" model="@eventType" />
-}
