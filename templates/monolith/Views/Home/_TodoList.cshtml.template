@@ -1,0 +1,34 @@
+@model List<TodoItem>
+
+<ul class="space-y-2">
+    @if (!Model.Any())
+    {
+        <li class="text-gray-500 italic">No todos yet. Add one above!</li>
+    }
+    else
+    {
+        @foreach (var item in Model)
+        {
+            <li class="flex items-center gap-2 p-3 bg-base-200 rounded-lg">
+                <input type="checkbox" 
+                       class="checkbox checkbox-primary"
+                       @(item.IsComplete ? "checked" : "")
+                       hx-post="@Url.Action("ToggleTodo", new { id = item.Id })"
+                       hx-target="#todo-list"
+                       hx-swap="outerHTML" />
+                
+                <span class="flex-1 @(item.IsComplete ? "line-through text-gray-500" : "")">
+                    @item.Title
+                </span>
+                
+                <button class="btn btn-sm btn-error"
+                        hx-delete="@Url.Action("DeleteTodo", new { id = item.Id })"
+                        hx-target="#todo-list"
+                        hx-swap="outerHTML"
+                        hx-confirm="Are you sure?">
+                    Delete
+                </button>
+            </li>
+        }
+    }
+</ul>

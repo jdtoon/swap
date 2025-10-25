@@ -40,7 +40,11 @@
 
   <ItemGroup>
     <!-- Include templates in the NuGet package -->
-    <Content Include="..\..\templates\**\*.*" PackagePath="templates/" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\..\templates\**\*.*">
+      <PackagePath>templates/%(RecursiveDir)%(Filename)%(Extension)</PackagePath>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>templates\%(RecursiveDir)%(Filename)%(Extension)</Link>
+    </Content>
   </ItemGroup>
 
 </Project>

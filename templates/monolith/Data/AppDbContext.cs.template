@@ -1,0 +1,25 @@
+using Microsoft.EntityFrameworkCore;
+using {{ProjectName}}.Models;
+
+namespace {{ProjectName}}.Data;
+
+public class AppDbContext : DbContext
+{
+    public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
+    {
+    }
+
+    // Example DbSet - add your entities here
+    public DbSet<TodoItem> TodoItems => Set<TodoItem>();
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        base.OnModelCreating(modelBuilder);
+
+        // Seed example data
+        modelBuilder.Entity<TodoItem>().HasData(
+            new TodoItem { Id = 1, Title = "Welcome to Swap!", IsComplete = false },
+            new TodoItem { Id = 2, Title = "Build something amazing", IsComplete = false }
+        );
+    }
+}

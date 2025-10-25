@@ -1,0 +1,80 @@
+using Microsoft.AspNetCore.Mvc;
+using {{ProjectName}}.Data;
+using {{ProjectName}}.Models;
+
+namespace {{ProjectName}}.Controllers;
+
+public class HomeController : Controller
+{
+    private readonly AppDbContext _context;
+
+    public HomeController(AppDbContext context)
+    {
+        _context = context;
+    }
+
+    public IActionResult Index()
+    {
+        var isHtmxRequest = HttpContext.Items["IsHtmxRequest"] as bool? ?? false;
+
+        if (isHtmxRequest)
+        {
+            // Return partial view for HTMX requests
+            return PartialView("_TodoList", _context.TodoItems.ToList());
+        }
+
+        // Return full page for initial load
+        return View(_context.TodoItems.ToList());
+    }
+
+    [HttpPost]
+    public IActionResult AddTodo(string title)
+    {
+        if (string.IsNullOrWhiteSpace(title))
+        {
+            return BadRequest();
+        }
+
+        var todo = new TodoItem
+        {
+            Title = title,
+            IsComplete = false
+        };
+
+        _context.TodoItems.Add(todo);
+        _context.SaveChanges();
+
+        // Return the updated list
+        return PartialView("_TodoList", _context.TodoItems.ToList());
+    }
+
+    [HttpPost]
+    public IActionResult ToggleTodo(int id)
+    {
+        var todo = _context.TodoItems.Find(id);
+        if (todo == null)
+        {
+            return NotFound();
+        }
+
+        todo.IsComplete = !todo.IsComplete;
+        _context.SaveChanges();
+
+        return PartialView("_TodoList", _context.TodoItems.ToList());
+    }
+
+    [HttpDelete]
+    public IActionResult DeleteTodo(int id)
+    {
+        var todo = _context.TodoItems.Find(id);
+        if (todo == null)
+        {
+            return NotFound();
+        }
+
+        _context.TodoItems.Remove(todo);
+        _context.SaveChanges();
+
+        return PartialView("_TodoList", _context.TodoItems.ToList());
+    }
+}
