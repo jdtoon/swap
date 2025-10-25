@@ -1,0 +1,61 @@
+@model City
+
+<dialog id="createModal" class="modal modal-open">
+    <div class="modal-box">
+        <h3 class="font-bold text-lg mb-4">Add New City</h3>
+        <form hx-post="@Url.Action("Create")" 
+              hx-target="#cityList"
+              hx-swap="innerHTML"
+              hx-indicator="#loading-indicator"
+              hx-on::after-request="document.getElementById('createModal').remove();">
+            @Html.AntiForgeryToken()
+            
+            <div class="form-control">
+                <label class="label">
+                    <span class="label-text">City Name</span>
+                </label>
+                <input type="text" name="Name" class="input input-bordered" required />
+            </div>
+
+            <div class="form-control mt-4">
+                <label class="label">
+                    <span class="label-text">Image</span>
+                </label>
+                <select name="Image" 
+                        class="select select-bordered" 
+                        onchange="previewImage(this)">
+                    @foreach (SelectListItem item in (ViewData["images"] as SelectList)!)
+                    {
+                        <option value="@item.Value">@item.Text</option>
+                    }
+                </select>
+            </div>
+
+            <div class="mt-4">
+                <img id="imagePreview" class="h-48 object-cover rounded" />
+            </div>
+
+            <div class="modal-action">
+                <button type="button" 
+                        class="btn btn-ghost"
+                        onclick="closeModal('createModal')">
+                    Cancel
+                </button>
+                <button type="submit" class="btn btn-primary">Save</button>
+            </div>
+        </form>
+    </div>
+</dialog>
+
+<script>
+    function closeModal(modalId) {
+        document.getElementById(modalId).remove();
+    }
+
+    function previewImage(select) {
+        document.getElementById('imagePreview').src = select.value;
+    }
+
+    // Initialize preview
+    previewImage(document.querySelector('select[name="Image"]'));
+</script> 

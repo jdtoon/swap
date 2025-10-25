@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="cupcake">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Kanban Board</title>
+    <link rel="stylesheet" href="~/css/app.min.css" asp-append-version="true" />
+    <script src="~/lib/htmx/htmx.min.js"></script>
+</head>
+<body>
+    <div class="navbar bg-base-300">
+        <div class="flex-1">
+            <a href="/" class="btn btn-ghost text-xl">📋 KanbanApp</a>
+        </div>
+        <div class="flex-none">
+            <button class="btn btn-ghost">About</button>
+        </div>
+    </div>
+    
+    <main class="container mx-auto py-4">
+        @RenderBody()
+    </main>
+    
+    <!-- Modal Container (TTW pattern) -->
+    <div id="modalContainer"></div>
+    
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

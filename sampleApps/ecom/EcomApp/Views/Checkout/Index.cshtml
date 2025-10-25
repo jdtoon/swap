@@ -1,0 +1,81 @@
+@model EcomApp.Models.Cart
+@{
+    ViewData["Title"] = "Checkout";
+    var total = ViewBag.Total as decimal? ?? 0;
+}
+
+<h1 class="title">Checkout</h1>
+
+<div class="columns">
+    <div class="column is-two-thirds">
+        <div class="box">
+            <h2 class="title is-4">Shipping Information</h2>
+            
+            <form method="post" action="/Checkout/Process">
+                <div class="field">
+                    <label class="label">Full Name</label>
+                    <div class="control">
+                        <input class="input" type="text" name="customerName" required placeholder="John Doe">
+                    </div>
+                </div>
+                
+                <div class="field">
+                    <label class="label">Email</label>
+                    <div class="control">
+                        <input class="input" type="email" name="customerEmail" required placeholder="john@example.com">
+                    </div>
+                </div>
+                
+                <div class="field">
+                    <label class="label">Shipping Address</label>
+                    <div class="control">
+                        <textarea class="textarea" name="shippingAddress" required placeholder="123 Main St, City, State, ZIP"></textarea>
+                    </div>
+                </div>
+                
+                @if (!ViewData.ModelState.IsValid)
+                {
+                    <div class="notification is-danger">
+                        @Html.ValidationSummary()
+                    </div>
+                }
+                
+                <div class="field is-grouped">
+                    <div class="control">
+                        <button type="submit" class="button is-primary is-medium">
+                            Place Order
+                        </button>
+                    </div>
+                    <div class="control">
+                        <a href="/Cart" class="button is-light is-medium">
+                            Back to Cart
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <div class="column">
+        <div class="box">
+            <h2 class="title is-4">Order Summary</h2>
+            
+            <div class="content">
+                @foreach (var item in Model.Items)
+                {
+                    <div class="is-flex is-justify-content-space-between mb-2">
+                        <span>@item.Product?.Name x @item.Quantity</span>
+                        <span>$@((item.Quantity * item.PriceAtAdd).ToString("F2"))</span>
+                    </div>
+                }
+            </div>
+            
+            <hr>
+            
+            <div class="is-flex is-justify-content-space-between">
+                <strong>Total</strong>
+                <strong class="is-size-4 has-text-primary">$@total.ToString("F2")</strong>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,56 @@
+@model PagedResult<Board>
+
+<!-- Search Box with TTW pattern: hx-on::after-settle focus retention -->
+<div class="mb-4">
+    <input type="text" 
+           placeholder="Search boards..." 
+           class="input input-bordered w-full"
+           name="search"
+           value="@ViewBag.Search"
+           hx-get="@Url.Action("GetBoardList")"
+           hx-trigger="keyup changed delay:500ms"
+           hx-target="#boardList"
+           hx-swap="innerHTML"
+           hx-on::after-settle="this.focus();" />
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    @foreach (var board in Model.Data)
+    {
+        <div class="card bg-base-100 shadow-xl" id="board-@board.Id">
+            <div class="card-body">
+                <h2 class="card-title">@board.Name</h2>
+                <p class="text-sm text-gray-600">@board.Description</p>
+                <div class="card-actions justify-end mt-4">
+                    <a href="@Url.Action("Details", new { id = board.Id })" class="btn btn-sm btn-primary">Open</a>
+                    <button class="btn btn-sm btn-ghost"
+                            hx-get="@Url.Action("EditModal", new { id = board.Id })"
+                            hx-target="#modalContainer"
+                            hx-swap="innerHTML">
+                        Edit
+                    </button>
+                    <!-- TTW pattern: Delete with hx-target="#board-id" and hx-swap="outerHTML" -->
+                    <button class="btn btn-sm btn-error"
+                            hx-delete="@Url.Action("Delete", new { id = board.Id })"
+                            hx-target="#board-@board.Id"
+                            hx-swap="outerHTML"
+                            hx-confirm="Delete this board?">
+                        Delete
+                    </button>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@if (Model.HasMore)
+{
+    <div class="text-center mt-4">
+        <button class="btn btn-outline"
+                hx-get="@Url.Action("GetBoardList", new { skip = ViewBag.Skip + ViewBag.Take, take = ViewBag.Take, search = ViewBag.Search })"
+                hx-target="#boardList"
+                hx-swap="innerHTML">
+            Load More
+        </button>
+    </div>
+}

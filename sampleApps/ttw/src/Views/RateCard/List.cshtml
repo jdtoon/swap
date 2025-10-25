@@ -1,0 +1,45 @@
+﻿@model IEnumerable<ttw.Data.Models.RateCard>
+@{
+    ViewBag.Title = "Rate Cards";
+}
+
+<div class="p-4">
+    <div class="flex justify-between items-center mb-6">
+        <h2 class="text-2xl font-bold">Rate Cards</h2>
+        <button class="btn btn-primary"
+                hx-get="@Url.Action("Index", "RateCard")"
+                hx-target="#main-content"
+                hx-push-url="true"
+                hx-indicator="#loading-indicator">New Rate Card</button>
+    </div>
+
+    <div class="card bg-base-100 shadow-xl">
+        <div class="card-body" 
+             hx-trigger="load"
+             hx-get="@Url.Action("RateCardsList")"
+             hx-target="#rateCardsTable"
+             hx-indicator="#loading-indicator">
+            <div id="rateCardsTable">
+                <!-- Content will be loaded here -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Download Modal -->
+<dialog id="downloadModal" class="modal">
+    <div class="modal-box">
+        <div id="downloadModalContent">
+            <!-- Content loaded via HTMX -->
+        </div>
+    </div>
+</dialog>
+
+<!-- View Modal -->
+<dialog id="viewModal" class="modal">
+    <div class="modal-box">
+        <div id="viewModalContent">
+            <!-- Content loaded via HTMX -->
+        </div>
+    </div>
+</dialog>

@@ -1,0 +1,99 @@
+@model IEnumerable<ttw.Data.Models.RateCard>
+
+<div class="overflow-x-auto">
+    <div class="mb-4">
+        <input type="text" 
+               placeholder="Quick Search ..." 
+               class="input input-bordered w-full max-w-xs"
+               value="@ViewBag.CurrentSearch"
+               hx-trigger="keyup changed delay:500ms"
+               hx-get="@Url.Action("RateCardsList")"
+               hx-target="#rateCardsTable"
+               hx-indicator="#loading-indicator"
+               hx-on::after-settle="this.focus(); this.setSelectionRange(this.value.length, this.value.length);"
+               autofocus
+               name="search" />
+    </div>
+
+    <table class="table w-full">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td>@item.Name</td>
+                    <td>
+                        <div class="flex gap-2">
+                            <button class="btn btn-primary btn-sm"
+                                    hx-get="@Url.Action("Edit", new { id = item.Id })"
+                                    hx-target="#main-content"
+                                    hx-indicator="#loading-indicator"
+                                    hx-push-url="true">Edit</button>
+                            <button class="btn btn-ghost btn-sm" 
+                                    hx-get="@Url.Action("DownloadModal", new { id = item.Id })"
+                                    hx-target="#downloadModalContent"
+                                    hx-indicator="#loading-indicator"
+                                    onclick="document.getElementById('downloadModal').showModal()">Download</button>
+                            <button class="btn btn-primary btn-sm" 
+                                    hx-get="@Url.Action("ViewModal", new { id = item.Id })"
+                                    hx-target="#viewModalContent"
+                                    hx-indicator="#loading-indicator"
+                                    onclick="document.getElementById('viewModal').showModal()">View</button>
+                        </div>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <div class="flex justify-center gap-2 mt-4">
+        @if (ViewBag.CurrentPage > 1)
+        {
+            <button class="btn btn-primary"
+                    hx-get="@Url.Action("RateCardsList", new { page = ViewBag.CurrentPage - 1, pageSize = ViewBag.PageSize, search = ViewBag.CurrentSearch })"
+                    hx-target="#rateCardsTable"
+                    hx-indicator="#loading-indicator">
+                Previous
+            </button>
+        }
+        
+        @if (ViewBag.CurrentPage < ViewBag.TotalPages)
+        {
+            <button class="btn btn-primary"
+                    hx-get="@Url.Action("RateCardsList", new { page = ViewBag.CurrentPage + 1, pageSize = ViewBag.PageSize, search = ViewBag.CurrentSearch })"
+                    hx-target="#rateCardsTable"
+                    hx-indicator="#loading-indicator">
+                Next
+            </button>
+        }
+    </div>
+</div>
+
+<!-- Download Modal -->
+<dialog id="downloadModal" class="modal">
+    <div class="modal-box">
+        <div id="downloadModalContent">
+            <!-- Content loaded via HTMX -->
+        </div>
+    </div>
+    <form method="dialog" class="modal-backdrop">
+        <button>close</button>
+    </form>
+</dialog>
+
+<!-- View Modal -->
+<dialog id="viewModal" class="modal">
+    <div class="modal-box">
+        <div id="viewModalContent">
+            <!-- Content loaded via HTMX -->
+        </div>
+    </div>
+    <form method="dialog" class="modal-backdrop">
+        <button>close</button>
+    </form>
+</dialog> 

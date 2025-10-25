@@ -1,0 +1,49 @@
+@model EcomApp.Models.Cart
+@{
+    ViewData["Title"] = "Shopping Cart";
+    var total = ViewBag.Total as decimal? ?? 0;
+}
+
+<h1 class="title">Shopping Cart</h1>
+
+<div class="columns">
+    <div class="column is-two-thirds">
+        <div id="cart-items">
+            @await Html.PartialAsync("_CartItems", Model)
+        </div>
+    </div>
+    
+    <div class="column">
+        <div class="box" id="cart-summary" 
+             hx-trigger="cartUpdated from:body"
+             hx-get="/Cart/Index"
+             hx-target="#cart-summary"
+             hx-swap="outerHTML">
+            <h2 class="title is-4">Order Summary</h2>
+            
+            <table class="table is-fullwidth">
+                <tbody>
+                    <tr>
+                        <td>Subtotal</td>
+                        <td class="has-text-right"><strong>$@total.ToString("F2")</strong></td>
+                    </tr>
+                    <tr>
+                        <td>Shipping</td>
+                        <td class="has-text-right">FREE</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Total</strong></td>
+                        <td class="has-text-right"><strong class="is-size-4 has-text-primary">$@total.ToString("F2")</strong></td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            @if (Model.Items.Any())
+            {
+                <a href="/Checkout" class="button is-primary is-fullwidth is-medium">
+                    Proceed to Checkout
+                </a>
+            }
+        </div>
+    </div>
+</div>

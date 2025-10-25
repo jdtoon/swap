@@ -1,0 +1,65 @@
+@model List<EcomApp.Models.Product>
+@{
+    ViewData["Title"] = "Products";
+    var categories = ViewBag.Categories as List<EcomApp.Models.Category>;
+    var currentCategory = ViewBag.CurrentCategory as int?;
+    var searchQuery = ViewBag.SearchQuery as string;
+}
+
+<h1 class="title">Products</h1>
+
+<div class="columns">
+    <div class="column is-one-quarter">
+        <aside class="menu">
+            <p class="menu-label">
+                Categories
+            </p>
+            <ul class="menu-list">
+                <li>
+                    <a href="/Products" class="@(currentCategory == null && string.IsNullOrEmpty(searchQuery) ? "is-active" : "")">
+                        All Products
+                    </a>
+                </li>
+                @if (categories != null)
+                {
+                    @foreach (var category in categories)
+                    {
+                        <li>
+                            <a href="#" 
+                               class="@(currentCategory == category.Id ? "is-active" : "")"
+                               hx-get="/Products?categoryId=@category.Id"
+                               hx-target="#product-list"
+                               hx-swap="innerHTML">
+                                @category.Name
+                            </a>
+                        </li>
+                    }
+                }
+            </ul>
+        </aside>
+        
+        <div class="box mt-4">
+            <p class="menu-label">Search</p>
+            <div class="field">
+                <div class="control">
+                    <input class="input" 
+                           type="text" 
+                           name="search" 
+                           placeholder="Search products..."
+                           value="@searchQuery"
+                           hx-get="/Products/Search"
+                           hx-trigger="keyup changed delay:500ms"
+                           hx-target="#product-list"
+                           hx-swap="innerHTML"
+                           hx-include="[name='search']">
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="column">
+        <div id="product-list">
+            @await Html.PartialAsync("_ProductList", Model)
+        </div>
+    </div>
+</div>

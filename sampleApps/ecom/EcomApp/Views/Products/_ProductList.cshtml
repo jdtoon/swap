@@ -1,0 +1,58 @@
+@model List<EcomApp.Models.Product>
+
+@if (!Model.Any())
+{
+    <div class="notification is-warning">
+        <p>No products found.</p>
+    </div>
+}
+else
+{
+    <div class="columns is-multiline">
+        @foreach (var product in Model)
+        {
+            <div class="column is-one-third">
+                <div class="card product-card">
+                    <div class="card-image">
+                        <figure class="image is-4by3">
+                            <img src="@product.ImageUrl" alt="@product.Name" class="product-image">
+                        </figure>
+                    </div>
+                    <div class="card-content">
+                        <p class="title is-5">@product.Name</p>
+                        <p class="subtitle is-6">@product.Category?.Name</p>
+                        <div class="content">
+                            @product.Description
+                        </div>
+                        <p class="title is-4 has-text-primary">$@product.Price.ToString("F2")</p>
+                        <p class="subtitle is-6">
+                            @if (product.Stock > 0)
+                            {
+                                <span class="tag is-success">In Stock (@product.Stock)</span>
+                            }
+                            else
+                            {
+                                <span class="tag is-danger">Out of Stock</span>
+                            }
+                        </p>
+                    </div>
+                    <footer class="card-footer">
+                        <a href="/Products/Details/@product.Id" class="card-footer-item">View Details</a>
+                        @if (product.Stock > 0)
+                        {
+                            <a class="card-footer-item" 
+                               hx-post="/Cart/Add?productId=@product.Id&quantity=1"
+                               hx-target="#cart-items"
+                               hx-swap="outerHTML">
+                                <span class="icon">
+                                    <i class="fas fa-cart-plus"></i>
+                                </span>
+                                <span>Add to Cart</span>
+                            </a>
+                        }
+                    </footer>
+                </div>
+            </div>
+        }
+    </div>
+}

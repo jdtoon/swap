@@ -1,0 +1,72 @@
+@model List<EcomApp.Models.Order>
+@{
+    ViewData["Title"] = "Orders";
+}
+
+<h1 class="title">Order History</h1>
+
+@if (!Model.Any())
+{
+    <div class="notification is-info">
+        <p class="is-size-5">You haven't placed any orders yet</p>
+        <a href="/Products" class="button is-primary mt-3">Start Shopping</a>
+    </div>
+}
+else
+{
+    <div class="table-container">
+        <table class="table is-fullwidth is-hoverable">
+            <thead>
+                <tr>
+                    <th>Order Number</th>
+                    <th>Date</th>
+                    <th>Customer</th>
+                    <th>Items</th>
+                    <th>Total</th>
+                    <th>Status</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var order in Model)
+                {
+                    <tr>
+                        <td><strong>@order.OrderNumber</strong></td>
+                        <td>@order.CreatedAt.ToString("MMM dd, yyyy")</td>
+                        <td>@order.CustomerName</td>
+                        <td>@order.Items.Count items</td>
+                        <td><strong>$@order.TotalAmount.ToString("F2")</strong></td>
+                        <td>
+                            @switch (order.Status)
+                            {
+                                case EcomApp.Models.OrderStatus.Pending:
+                                    <span class="tag is-warning">Pending</span>
+                                    break;
+                                case EcomApp.Models.OrderStatus.Processing:
+                                    <span class="tag is-info">Processing</span>
+                                    break;
+                                case EcomApp.Models.OrderStatus.Shipped:
+                                    <span class="tag is-link">Shipped</span>
+                                    break;
+                                case EcomApp.Models.OrderStatus.Delivered:
+                                    <span class="tag is-success">Delivered</span>
+                                    break;
+                                case EcomApp.Models.OrderStatus.Cancelled:
+                                    <span class="tag is-danger">Cancelled</span>
+                                    break;
+                            }
+                        </td>
+                        <td>
+                            <a href="/Orders/Details/@order.Id" class="button is-small is-info">
+                                <span class="icon is-small">
+                                    <i class="fas fa-eye"></i>
+                                </span>
+                                <span>View</span>
+                            </a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}

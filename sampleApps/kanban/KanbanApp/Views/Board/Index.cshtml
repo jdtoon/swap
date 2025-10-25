@@ -1,0 +1,23 @@
+@{
+    ViewData["Title"] = "Boards";
+}
+
+<div class="flex justify-between items-center mb-4">
+    <h1 class="text-3xl font-bold">My Boards</h1>
+    <button class="btn btn-primary" 
+            hx-get="@Url.Action("CreateModal")" 
+            hx-target="#modalContainer"
+            hx-swap="innerHTML">
+        + Create Board
+    </button>
+</div>
+
+<!-- TTW pattern: Empty shell with hx-trigger="load" to fetch data -->
+<div id="boardList" 
+     hx-get="@Url.Action("GetBoardList")" 
+     hx-trigger="load"
+     hx-swap="innerHTML">
+    <div class="flex justify-center p-8">
+        <span class="loading loading-spinner loading-lg"></span>
+    </div>
+</div>

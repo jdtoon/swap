@@ -1,0 +1,27 @@
+﻿<!DOCTYPE html>
+<html lang="en" data-theme="cupcake">
+<head>
+    <meta charset="utf-8" />
+    <meta name="robots" content="noindex">
+    <meta name="googlebot" content="noindex">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>App</title>
+    <link rel="stylesheet" href="~/css/output.css" asp-append-version="true" />
+    @await RenderSectionAsync("HeadContent", required: false)
+</head>
+<body>
+    <main class="container mx-auto flex-grow">
+        <div id="primary-container">
+            @RenderBody()
+        </div>
+    </main>
+
+    <!-- Loading Indicator -->
+    <div id="loading-indicator" class="htmx-indicator flex justify-center">
+        <span class="loading loading-spinner loading-lg"></span>
+    </div>
+
+    <script src="~/lib/htmx/htmx.min.js"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

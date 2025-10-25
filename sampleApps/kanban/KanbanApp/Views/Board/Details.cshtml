@@ -1,0 +1,126 @@
+@model Board
+
+@{
+    ViewData["Title"] = Model.Name;
+}
+
+<div class="container mx-auto py-6">
+    <!-- Board Header -->
+    <div class="flex justify-between items-center mb-6">
+        <div>
+            <h1 class="text-3xl font-bold">@Model.Name</h1>
+            @if (!string.IsNullOrEmpty(Model.Description))
+            {
+                <p class="text-gray-600 mt-2">@Model.Description</p>
+            }
+        </div>
+        <div class="flex gap-2">
+            <button class="btn btn-sm btn-primary"
+                    hx-get="@Url.Action("CreateListModal", new { boardId = Model.Id })"
+                    hx-target="#modalContainer"
+                    hx-swap="innerHTML">
+                + Add List
+            </button>
+            <a href="@Url.Action("Index")" class="btn btn-sm btn-ghost">
+                ← Back to Boards
+            </a>
+        </div>
+    </div>
+
+    <!-- Kanban Board -->
+    <div class="kanban-board" id="kanbanBoard">
+        @foreach (var list in Model.Lists.OrderBy(l => l.Position))
+        {
+            <div class="kanban-list" id="list-@list.Id">
+                <!-- List Header -->
+                <div class="flex justify-between items-center mb-3 p-3 bg-base-200 rounded-lg">
+                    <h3 class="font-semibold text-lg">@list.Name</h3>
+                    <div class="dropdown dropdown-end">
+                        <label tabindex="0" class="btn btn-ghost btn-xs">⋮</label>
+                        <ul tabindex="0" class="dropdown-content menu p-2 shadow bg-base-100 rounded-box w-52">
+                            <li>
+                                <button hx-get="@Url.Action("EditListModal", new { id = list.Id })"
+                                        hx-target="#modalContainer"
+                                        hx-swap="innerHTML">
+                                    Edit List
+                                </button>
+                            </li>
+                            <li>
+                                <button class="text-error"
+                                        hx-delete="@Url.Action("DeleteList", new { id = list.Id })"
+                                        hx-target="#list-@list.Id"
+                                        hx-swap="outerHTML"
+                                        hx-confirm="Delete this list and all its cards?">
+                                    Delete List
+                                </button>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Cards Container -->
+                <div class="space-y-2 min-h-[100px]" id="cards-@list.Id">
+                    @foreach (var card in list.Cards.OrderBy(c => c.Position))
+                    {
+                        <div class="card bg-white shadow-md hover:shadow-lg transition-shadow cursor-pointer" 
+                             id="card-@card.Id"
+                             draggable="true">
+                            <div class="card-body p-4">
+                                <div class="flex justify-between items-start">
+                                    <h4 class="font-semibold text-sm flex-1">@card.Title</h4>
+                                    @if (card.Priority != CardPriority.Low)
+                                    {
+                                        <span class="badge badge-sm priority-@card.Priority.ToString().ToLower()">
+                                            @card.Priority
+                                        </span>
+                                    }
+                                </div>
+                                
+                                @if (!string.IsNullOrEmpty(card.Description))
+                                {
+                                    <p class="text-xs text-gray-600 mt-2 line-clamp-2">@card.Description</p>
+                                }
+                                
+                                @if (card.DueDate.HasValue)
+                                {
+                                    <div class="text-xs text-gray-500 mt-2 flex items-center gap-1">
+                                        <span>📅</span>
+                                        <span>@card.DueDate.Value.ToString("MMM dd, yyyy")</span>
+                                    </div>
+                                }
+
+                                <!-- Card Actions -->
+                                <div class="card-actions justify-end mt-3">
+                                    <button class="btn btn-ghost btn-xs"
+                                            hx-get="@Url.Action("EditCardModal", new { id = card.Id })"
+                                            hx-target="#modalContainer"
+                                            hx-swap="innerHTML">
+                                        Edit
+                                    </button>
+                                    <button class="btn btn-ghost btn-xs text-error"
+                                            hx-delete="@Url.Action("DeleteCard", new { id = card.Id })"
+                                            hx-target="#card-@card.Id"
+                                            hx-swap="outerHTML"
+                                            hx-confirm="Delete this card?">
+                                        Delete
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+
+                <!-- Add Card Button -->
+                <button class="btn btn-ghost btn-sm w-full mt-2"
+                        hx-get="@Url.Action("CreateCardModal", new { listId = list.Id })"
+                        hx-target="#modalContainer"
+                        hx-swap="innerHTML">
+                    + Add Card
+                </button>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Modal Container -->
+<div id="modalContainer"></div>

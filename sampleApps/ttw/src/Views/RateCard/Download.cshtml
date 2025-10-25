@@ -1,0 +1,451 @@
+﻿@model RateCardEditModel
+@{
+    Layout = null;
+    bool isPageBroken = false;
+    var baseUrl = $"{Context.Request.Scheme}://{Context.Request.Host}";
+}
+
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <link rel="stylesheet" href="@baseUrl/css/downloadpdf.css" />
+    <title></title>
+    <style>
+        td {
+            vertical-align: middle !important;
+            text-align: center !important;
+            padding: 2px !important
+        }
+
+        th {
+            padding: 2px !important
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+        }
+        
+        .page-break {
+            page-break-after: always;
+            page-break-inside: avoid;
+        }
+    </style>
+</head>
+<body>
+    <div>
+        <!-- Cover Page -->
+        <div id="firstPage" style="width: 100vw; height: 100vh; margin: 0; padding: 0;">
+            <div class="row" style="width: 100%; height: 100%; margin: 0; padding: 0;">
+                <img src="@baseUrl/images/main-page-cover-2025-06-23.png"
+                     style="width: 100%; height: 100%; object-fit: cover; display: block; margin: 0; padding: 0;" />
+            </div>
+        </div>
+
+        <div style="page-break-after: always;"></div>
+
+        <!-- Rates Pages -->
+        <div id="cardRatePages">
+            @{
+                var countPageRows = 0.0;
+                const int maxPageRows = 38;
+                string currentCity = Model.Model.Count > 0 ? Model.Model[0].City.Name : "";
+
+                for (int cardNo = 1; cardNo <= Model.Model.Count; cardNo++)
+                {
+                    if (currentCity != Model.Model[cardNo - 1].City.Name)
+                    {
+                        if (countPageRows != 0)
+                        {
+                            countPageRows = 0;
+                            <footer>
+                                <ul>
+                                    <li>Triple = DBL + Extra Bed | Quad = DBL + 2 Extra Bed</li>
+                                    <li>WE [Weekend]: Thursday & Friday | WD [Weekday]: Saturday to Wednesday</li>
+                                </ul>
+                            </footer>
+                            <div style="page-break-after: always;"></div>
+                        }
+                    }
+                    currentCity = Model.Model[cardNo - 1].City.Name;
+
+                    if (countPageRows == 0)
+                    {
+                        <div style="display: flex; justify-content: space-between; width: 100%;">
+                            <div style="padding-left: 1cm;">
+                                <img src="@baseUrl/@Model.Model[cardNo-1].City.Image" style="display: block;">
+                            </div>
+                            <div>
+                                <img src="@baseUrl/images/logo-ttw.png" style="display: block;">
+                            </div>
+                        </div>
+                        <div class="row" style="padding-bottom:1cm;">
+                            <p class="s7" style="text-indent: 0pt; text-align: center; vertical-align: middle; font-size: 22pt;">
+                                RATE SHEET - @Model.Currency.Name.ToUpper()
+                            </p>
+                        </div>
+                    }
+
+                    <!-- Single Rate Card Table -->
+                    <div class="row" style="margin-left:2cm;margin-right:2cm;margin-bottom:1cm">
+                        @{
+                            var mealRowSpan = (Model.Model[cardNo - 1].rows.Where(x => x.selection == RowRateCard.WeekendRate).Count() * 2) +
+                                  (Model.Model[cardNo - 1].rows.Where(x => x.selection == RowRateCard.FlatRate).Count() * 1);
+                            var commentColSpan = Model.Model[cardNo - 1].numberOfRooms + 4;
+
+                            <table class="table table-bordered" style="border-collapse:collapse; width:90%" cellspacing="0">
+                                <thead>
+                                    <tr style="height:15pt">
+                                        <th colspan="3" bgcolor="#b22025" style="width:243pt;border-top-style:solid;border-top-width:1pt;border-left-style:solid;border-left-width:1pt;border-bottom-style:solid;border-bottom-width:1pt;border-right-style:solid;border-right-width:1pt">
+                                            <p class="s8" style="text-indent: 0pt;line-height: 13pt;text-align: center;">
+                                                @Model.Model[cardNo - 1].SelectedHotelName @(Model.IncludeSupplier ? '(' + @Model.Model[cardNo - 1].SelectedSupplierName + ')' : "")
+                                            </p>
+                                        </th>
+                                        <th colspan="@Model.Model[cardNo - 1].numberOfRooms" style="width:223pt;border-top-style:solid;border-top-width:1pt;border-left-style:solid;border-left-width:1pt;border-bottom-style:solid;border-bottom-width:1pt;border-right-style:solid;border-right-width:1pt">
+                                            <p class="s9" style="padding-top: 2pt;padding-left: 87pt;padding-right: 85pt;text-indent: 0pt;line-height: 11pt;text-align: center;">
+                                                Room Type
+                                            </p>
+                                        </th>
+                                        <th style="width:43pt;border-top-style:solid;border-top-width:1pt;border-left-style:solid;border-left-width:1pt;border-bottom-style:solid;border-bottom-width:1pt;border-right-style:solid;border-right-width:1pt">
+                                            <p class="s9" style="padding-top: 2pt;padding-left: 10pt;text-indent: 0pt;line-height: 11pt; text-align: center !important">
+                                                MEAL
+                                            </p>
+                                        </th>
+                                    </tr>
+                                    <tr style="height:12pt">
+                                        <th style="width:83pt;border-top-style:solid;border-top-width:1pt;border-left-style:solid;border-left-width:1pt;border-bottom-style:solid;border-bottom-width:1pt;border-right-style:solid;border-right-width:1pt">
+                                            <p class="s10" style="text-indent: 0pt; line-height: 11pt; text-align: center !important">
+                                                FROM
+                                            </p>
+                                        </th>
+                                        <th style="width:121pt;border-top-style:solid;border-top-width:1pt;border-left-style:solid;border-left-width:1pt;border-bottom-style:solid;border-bottom-width:1pt;border-right-style:solid;border-right-width:1pt">
+                                            <p class="s10" style="text-indent: 0pt; line-height: 11pt; text-align: center; text-align: center !important">
+                                                TO
+                                            </p>
+                                        </th>
+                                        <th></th>
+                                        @for (int x = 1; x <= Model.Model[cardNo - 1].numberOfRooms; x++)
+                                        {
+                                            <th style="width:49pt;border-top-style:solid;border-top-width:1pt;border-left-style:solid;border-left-width:1pt;border-bottom-style:solid;border-bottom-width:1pt;border-right-style:solid;border-right-width:1pt">
+                                                <p class="s10" style="padding-left: 7pt;padding-right: 5pt;text-indent: 0pt;line-height: 11pt;text-align: center;">
+                                                    @Model.Model[cardNo - 1].SelectedRoomNames[x - 1]
+                                                </p>
+                                            </th>
+                                        }
+                                        <th style="border-bottom-color:white; border-right-color:black; border-right:solid; border-right-width:1pt"></th>
+                                    </tr>
+                                </thead>
+                                <tbody style="text-align:center;">
+                                    @for (int x = 1; x <= Model.Model[cardNo - 1].numberOfRows; x++)
+                                    {
+                                        if (Model.Model[cardNo - 1].rows[x - 1].selection == RowRateCard.FlatRate)
+                                        {
+                                            <tr style="height:12pt">
+                                                <td style="width:102pt;border-top-style:solid;border-top-width:1pt;border-left-style:solid;border-left-width:1pt;border-bottom-style:solid;border-bottom-width:1pt;border-right-style:solid;border-right-width:1pt">
+                                                    <p class="s12" style="padding-top: 5pt;text-indent: 0pt;">
+                                                        @if (Model.Model[cardNo - 1].rows[x - 1].from != String.Empty)
+                                                        {
+                                                            @DateTime.ParseExact(Model.Model[cardNo - 1].rows[x - 1].from, "yyyy'-'MM'-'dd", System.Globalization.CultureInfo.InvariantCulture).ToString("dd' 'MMM' 'y")
+                                                        }
+                                                    </p>
+                                                </td>
+                                                <td style="width:102pt;border-top-style:solid;border-top-width:1pt;border-left-style:solid;border-left-width:1pt;border-bottom-style:solid;border-bottom-width:1pt;border-right-style:solid;border-right-width:1pt">
+                                                    <p class="s12" style="padding-top: 5pt;text-indent: 0pt;">
+                                                        @if (Model.Model[cardNo - 1].rows[x - 1].to != String.Empty)
+                                                        {
+                                                            @DateTime.ParseExact(Model.Model[cardNo - 1].rows[x - 1].to, "yyyy'-'MM'-'dd", System.Globalization.CultureInfo.InvariantCulture).ToString("dd' 'MMM' 'y")
+                                                        }
+                                                    </p>
+                                                </td>
+                                                <td style="width:39pt;border-top-style:solid;border-top-width:1pt;border-left-style:solid;border-left-width:1pt;border-bottom-style:solid;border-bottom-width:1pt;border-right-style:solid;border-right-width:1pt">
+                                                    <p class="s12" style="padding-left: 1pt;text-indent: 0pt;line-height: 10pt;">
+                                                        FLAT
+                                                    </p>
+                                                </td>
+                                                @for (int y = 1; y <= Model.Model[cardNo - 1].numberOfRooms; y++)
+                                                {
+                                                    <td style="width:49pt;border-top-style:solid;border-top-width:1pt;border-left-style:solid;border-left-width:1pt;border-bottom-style:solid;border-bottom-width:1pt;border-right-style:solid;border-right-width:1pt">
+                                                        <p class="s12" style="text-indent: 0pt;line-height: 10pt;text-align: center;">
+                                                            @if (@Model.Model[cardNo - 1].rows[x - 1].rates[y - 1].rate1 > 0)
+                                                            {
+                                                                @Model.Model[cardNo - 1].rows[x - 1].rates[y - 1].rate1
+                                                            }
+                                                        </p>
+                                                    </td>
+                                                }
+                                                @if (Model.Model[cardNo - 1].mealPerRow)
+                                                {
+                                                    <td style="width: 43pt; border-top-style: solid; border-top-width: 1pt; border-left-style: solid; border-left-width: 1pt; border-bottom-style: solid; border-bottom-width: 1pt; border-right-style: solid; border-right-width: 1pt; vertical-align: middle; text-align: center;">
+                                                        <p class="s11" style="text-indent: 0pt;">
+                                                            @Model.Model[cardNo - 1].rows[x - 1].mealNote
+                                                        </p>
+                                                    </td>
+                                                }
+                                                @if (x == 1 && !Model.Model[cardNo - 1].mealPerRow)
+                                                {
+                                                    <td rowspan="@mealRowSpan" style="width: 43pt; border-top-style: solid; border-top-width: 1pt; border-left-style: solid; border-left-width: 1pt; border-bottom-style: solid; border-bottom-width: 1pt; border-right-style: solid; border-right-width: 1pt; vertical-align: middle; text-align: center;">
+                                                        <p class="s11" style="text-indent: 0pt;">
+                                                            @Model.Model[cardNo - 1].mealNotes
+                                                        </p>
+                                                    </td>
+                                                }
+                                            </tr>
+                                        }
+                                        else
+                                        {
+                                            <tr>
+                                                <td rowspan="2" style="width:83pt;border-top-style:solid;border-top-width:1pt;border-left-style:solid;border-left-width:1pt;border-bottom-style:solid;border-bottom-width:1pt;border-right-style:solid;border-right-width:1pt">
+                                                    <p class="s12" style="padding-top: 5pt;text-indent: 0pt;">
+                                                        @if (Model.Model[cardNo - 1].rows[x - 1].from != String.Empty)
+                                                        {
+                                                            @DateTime.ParseExact(Model.Model[cardNo - 1].rows[x - 1].from, "yyyy'-'MM'-'dd", System.Globalization.CultureInfo.InvariantCulture).ToString("dd' 'MMM' 'y")
+                                                        }
+                                                    </p>
+                                                </td>
+                                                <td rowspan="2" style="width:121pt;border-top-style:solid;border-top-width:1pt;border-left-style:solid;border-left-width:1pt;border-bottom-style:solid;border-bottom-width:1pt;border-right-style:solid;border-right-width:1pt">
+                                                    <p class="s12" style="padding-top: 5pt;text-indent: 0pt;">
+                                                        @if (Model.Model[cardNo - 1].rows[x - 1].to != String.Empty)
+                                                        {
+                                                            @DateTime.ParseExact(Model.Model[cardNo - 1].rows[x - 1].to, "yyyy'-'MM'-'dd", System.Globalization.CultureInfo.InvariantCulture).ToString("dd' 'MMM' 'y")
+                                                        }
+                                                    </p>
+                                                </td>
+                                                <td style="width:39pt;border-top-style:solid;border-top-width:1pt;border-left-style:solid;border-left-width:1pt;border-bottom-style:solid;border-bottom-width:1pt;border-right-style:solid;border-right-width:1pt">
+                                                    <p class="s12" style="padding-top: 3pt; padding-bottom: 3pt; text-indent: 0pt; line-height: 10pt;">
+                                                        W/D
+                                                    </p>
+                                                </td>
+                                                @for (int y = 1; y <= Model.Model[cardNo - 1].numberOfRooms; y++)
+                                                {
+                                                    <td style="width:49pt;border-top-style:solid;border-top-width:1pt;border-left-style:solid;border-left-width:1pt;border-bottom-style:solid;border-bottom-width:1pt;border-right-style:solid;border-right-width:1pt">
+                                                        <p class="s12" style="padding-top: 2pt; text-indent: 0pt; line-height: 10pt; text-align: center;">
+                                                            @if (@Model.Model[cardNo - 1].rows[x - 1].rates[y - 1].rate1 > 0)
+                                                            {
+                                                                @Model.Model[cardNo - 1].rows[x - 1].rates[y - 1].rate1
+                                                            }
+                                                        </p>
+                                                    </td>
+                                                }
+                                                @if (Model.Model[cardNo - 1].mealPerRow)
+                                                {
+                                                    <td rowspan="2" style="width: 43pt; border-top-style: solid; border-top-width: 1pt; border-left-style: solid; border-left-width: 1pt; border-bottom-style: solid; border-bottom-width: 1pt; border-right-style: solid; border-right-width: 1pt; vertical-align: middle; text-align: center;">
+                                                        <p class="s11" style="text-indent: 0pt;">
+                                                            @Model.Model[cardNo - 1].rows[x - 1].mealNote
+                                                        </p>
+                                                    </td>
+                                                }
+                                                @if (x == 1 && !Model.Model[cardNo - 1].mealPerRow)
+                                                {
+                                                    <td rowspan="@mealRowSpan" style="width: 43pt; border-top-style: solid; border-top-width: 1pt; border-left-style: solid; border-left-width: 1pt; border-bottom-style: solid; border-bottom-width: 1pt; border-right-style: solid; border-right-width: 1pt; vertical-align: middle; text-align: center;">
+                                                        <p class="s11" style="text-indent: 0pt;">
+                                                            @Model.Model[cardNo - 1].mealNotes
+                                                        </p>
+                                                    </td>
+                                                }
+                                            </tr>
+                                            <tr>
+                                                <td style="width:39pt;border-top-style:solid;border-top-width:1pt;border-left-style:solid;border-left-width:1pt;border-bottom-style:solid;border-bottom-width:1pt;border-right-style:solid;border-right-width:1pt">
+                                                    <p class="s12" style="padding-top: 3pt; padding-bottom: 3pt; text-indent: 0pt; line-height: 10pt; ">
+                                                        W/E
+                                                    </p>
+                                                </td>
+                                                @for (int y = 1; y <= Model.Model[cardNo - 1].numberOfRooms; y++)
+                                                {
+                                                    <td style="width:49pt;border-top-style:solid;border-top-width:1pt;border-left-style:solid;border-left-width:1pt;border-bottom-style:solid;border-bottom-width:1pt;border-right-style:solid;border-right-width:1pt">
+                                                        <p class="s12" style="text-indent: 0pt; line-height: 10pt; text-align: center;">
+                                                            @if (@Model.Model[cardNo - 1].rows[x - 1].rates[y - 1].rate2 > 0)
+                                                            {
+                                                                @Model.Model[cardNo - 1].rows[x - 1].rates[y - 1].rate2
+                                                            }
+                                                        </p>
+                                                    </td>
+                                                }
+                                            </tr>
+                                        }
+                                    }
+                                    @if (@Model.Model[cardNo - 1].additionalNotes != String.Empty)
+                                    {
+                                        <tr>
+                                            <td colspan="@commentColSpan" style="width:509pt;border-top-style:solid;border-top-width:1pt;border-left-style:solid;border-left-width:1pt;border-bottom-style:solid;border-bottom-width:1pt;border-right-style:solid;border-right-width:1pt">
+                                                <p class="s13" style="padding-left: 30pt; padding-right: 30pt; padding-top: 5pt; padding-bottom: 5pt; text-indent: 0pt; line-height: 10pt; text-align: center; ">
+                                                    @Model.Model[cardNo - 1].additionalNotes
+                                                </p>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        }
+                    </div>
+
+                    var weekendMultiplier = 1.8;
+                    var flatMultiplier = 1.4;
+                    var rowCountToAdd = (Model.Model[cardNo - 1].rows.Where(x => x.selection == RowRateCard.WeekendRate).Count() * weekendMultiplier) +
+                              (Model.Model[cardNo - 1].rows.Where(x => x.selection == RowRateCard.FlatRate).Count() * flatMultiplier);
+                    countPageRows += 3 + rowCountToAdd;
+
+                    <!-- Need to add a buffer to the countPageRows in the event of a longer meal note (character count) -->
+                    if (Model.Model[cardNo - 1].mealNotes.Length > 7 && !Model.Model[cardNo - 1].mealPerRow)
+                    {
+                        countPageRows += Convert.ToInt32((Model.Model[cardNo - 1].mealNotes.Length - 7) / 7);
+                    }
+
+                    if (Model.Model[cardNo - 1].mealPerRow)
+                    {
+                        for (int x = 1; x <= Model.Model[cardNo - 1].numberOfRows; x++)
+                        {
+                            if (Model.Model[cardNo - 1].rows[x - 1].selection == RowRateCard.FlatRate)
+                            {
+                                countPageRows += Convert.ToInt32((Model.Model[cardNo - 1].rows[x - 1].mealNote.Length - 7) / 7);
+                            }
+                            else
+                            {
+                                countPageRows += Convert.ToInt32((Model.Model[cardNo - 1].rows[x - 1].mealNote.Length - 14) / 7);
+                            }
+                        }
+                    }
+
+                    var checkNextCardCount = 0.0;
+                    if (Model.Model.ElementAtOrDefault(cardNo) != null)
+                    {
+                        checkNextCardCount = 2 + (Model.Model[cardNo].rows.Where(x => x.selection == RowRateCard.WeekendRate).Count() * weekendMultiplier) +
+                                (Model.Model[cardNo].rows.Where(x => x.selection == RowRateCard.FlatRate).Count() * flatMultiplier);
+                    }
+
+                    if (countPageRows >= maxPageRows)
+                    {
+                        countPageRows = 0;
+                        <footer>
+                            <ul>
+                                <li>Triple = DBL + Extra Bed | Quad = DBL + 2 Extra Bed</li>
+                                <li>WE [Weekend]: Thursday & Friday | WD [Weekday]: Saturday to Wednesday</li>
+                            </ul>
+                        </footer>
+                        <div style="page-break-after: always;"></div>
+                        isPageBroken = true;
+                    }
+                    else if (checkNextCardCount != 0)
+                    {
+                        if (countPageRows + checkNextCardCount > maxPageRows)
+                        {
+                            countPageRows = 0;
+                            <footer>
+                                <ul>
+                                    <li>Triple = DBL + Extra Bed | Quad = DBL + 2 Extra Bed</li>
+                                    <li>WE [Weekend]: Thursday & Friday | WD [Weekday]: Saturday to Wednesday</li>
+                                </ul>
+                            </footer>
+                            <div style="page-break-after: always;"></div>
+                            isPageBroken = true;
+                        }
+                    }
+                    else
+                    {
+                        isPageBroken = false;
+                    }
+                }
+
+            }
+        </div>
+
+        @if (!isPageBroken)
+        {
+            <div class="footer-container">
+                <footer>
+                    <ul>
+                        <li>Triple = DBL + Extra Bed | Quad = DBL + 2 Extra Bed</li>
+                        <li>WE [Weekend]: Thursday & Friday | WD [Weekday]: Saturday to Wednesday</li>
+                    </ul>
+                </footer>
+            </div>
+            <div style="page-break-after:always;"></div>
+        }
+
+        <!-- Last Page -->
+        <div id="lastPage">
+            <div class="row">
+                <div class="row" style="width:100%;margin-left:30pt;">
+                    <p style="text-indent: 0pt;text-align: left;"><br></p>
+                    <p style="text-indent: 0pt;text-align: left;"><br></p>
+                    <p style="text-indent: 0pt;text-align: left;"><br></p>
+                    <p style="text-indent: 0pt;text-align: left;"><br></p>
+                    <p style="text-indent: 0pt;text-align: left;"><br></p>
+                    <p class="s133" style="padding-top: 4pt;padding-left: 220pt;text-indent: 0pt;text-align: left;">Terms and sales conditions :</p>
+                    <p style="text-indent: 0pt;text-align: left;"><br></p>
+                    <ul id="l1">
+                        <li data-list-text="•">
+                            <p class="s12" style="padding-top: 5pt;padding-left: 29pt;text-indent: -8pt;text-align: left;">All rates are quoted per room per night</p>
+                        </li>
+                        <li data-list-text="•">
+                            <p class="s12" style="padding-top: 1pt;padding-left: 29pt;text-indent: -8pt;text-align: left;">All rates quoted in @Model.Currency.LongName</p>
+                        </li>
+                        <li data-list-text="•">
+                            <p class="s12" style="padding-top: 1pt;padding-left: 29pt;text-indent: -8pt;text-align: left;">
+                                All rates <span style=" color: #C00000;">included </span>Taxes <span style=" color: #000;">( </span>
+                                <span style=" color: #F00;">15 % VAT + 5% municipality fees </span>
+                                <span style=" color: #000;">)</span>
+                            </p>
+                        </li>
+                        <li data-list-text="•">
+                            <p class="s12" style="padding-top: 1pt;padding-left: 29pt;text-indent: -8pt;text-align: left;">
+                                All rates <span style=" color: #000;">subject to change without prior notice</span>
+                            </p>
+                        </li>
+                        <li data-list-text="•">
+                            <p class="s12" style="padding-top: 1pt;padding-left: 29pt;text-indent: -8pt;text-align: left;">Final costing can only be confirmed once rooms are confirmed by hotel</p>
+                        </li>
+                        <li data-list-text="•">
+                            <p class="s12" style="padding-top: 1pt;padding-left: 29pt;text-indent: -8pt;text-align: left;">Hotel check in time: After Asr</p>
+                        </li>
+                        <li data-list-text="•">
+                            <p class="s12" style="padding-top: 1pt;padding-left: 29pt;text-indent: -8pt;text-align: left;">3rd & 4th beds are provided as an extra bed concept (may not be full beds)</p>
+                        </li>
+                        <li data-list-text="•">
+                            <p class="s12" style="padding-top: 1pt;padding-left: 29pt;text-indent: -8pt;text-align: left;">Double Rooms consist of 2 x Twin Beds</p>
+                        </li>
+                        <li data-list-text="•">
+                            <p class="s12" style="padding-top: 1pt;padding-left: 29pt;text-indent: -8pt;text-align: left;">King beds will be on request and is subject to availability at time of check in</p>
+                        </li>
+                        <li data-list-text="•">
+                            <p class="s12" style="padding-top: 1pt;padding-left: 29pt;text-indent: -8pt;text-align: left;">Weekdays are: Saturday to Wednesday</p>
+                        </li>
+                        <li data-list-text="•">
+                            <p class="s12" style="padding-top: 1pt;padding-left: 29pt;text-indent: -8pt;text-align: left;">Weekends are: Thursday & Friday</p>
+                        </li>
+                        <li data-list-text="•">
+                            <p class="s12" style="padding-top: 1pt;padding-left: 29pt;text-indent: -8pt;text-align: left;">Haram View [HV] & Kaabah View [KV] rooms are on request</p>
+                        </li>
+                    </ul>
+                    <p style="text-indent: 0pt;text-align: left;"><br></p>
+                    <p style="text-indent: 0pt;text-align: left;"><br></p>
+                    <p style="text-indent: 0pt;text-align: left;"><br></p>
+                    <p style="text-indent: 0pt;text-align: left;"><br></p>
+                    <p style="text-indent: 0pt;text-align: left;"><br></p>
+                    <p style="text-indent: 0pt;text-align: left;"><br></p>
+                    <p style="text-indent: 0pt;text-align: left;"><br></p>
+                    <p style="text-indent: 0pt;text-align: left;"><br></p>
+                </div>
+
+                <div class="row">
+                    <div class="col-sm-12 text-center" style="text-align: center;">
+                        <img src="@baseUrl/images/footer-img-logo.png" style="display: inline-block;" height="350" />
+                    </div>
+                    <div class="col-sm-12 text-center" style="text-align: center;">
+                        <img src="@baseUrl/images/footer-img-site.png" style="width:16cm;" height="200" />
+                    </div>
+                    <div class="col-sm-12 text-center" style="text-align: center;">
+                        <img src="@baseUrl/images/footer-img-service.png" style="width:18cm;" height="250" />
+                    </div>
+                    <div class="col-sm-12 text-center" style="margin-bottom: 0;">
+                        <img src="@baseUrl/images/footer-img-info.png" style="width:32cm; height:230px; display: block; margin: 0; padding: 0;" />
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

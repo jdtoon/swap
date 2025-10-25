@@ -1,0 +1,55 @@
+@model RegisterDto
+
+<form hx-post="@Url.Action("Register", "Identity")"
+      hx-target="#primary-container"
+      hx-push-url="true"
+      hx-indicator="#loading-indicator">
+    
+    <div asp-validation-summary="ModelOnly" class="text-error mb-4" role="alert"></div>
+
+    <div class="form-control w-full mb-4">
+        <label class="label">
+            <span class="label-text">Email</span>
+        </label>
+        <input asp-for="Email"
+               type="email"
+               class="input input-bordered w-full"
+               autocomplete="username"
+               placeholder="name@example.com" />
+        <label class="label">
+            <span asp-validation-for="Email" class="label-text-alt text-error"></span>
+        </label>
+    </div>
+
+    <div class="form-control w-full mb-4">
+        <label class="label">
+            <span class="label-text">Password</span>
+        </label>
+        <input asp-for="Password"
+               type="password"
+               class="input input-bordered w-full"
+               autocomplete="new-password"
+               placeholder="Password" />
+        <label class="label">
+            <span asp-validation-for="Password" class="label-text-alt text-error"></span>
+        </label>
+    </div>
+
+    <div class="form-control w-full mb-6">
+        <label class="label">
+            <span class="label-text">Confirm Password</span>
+        </label>
+        <input asp-for="ConfirmPassword"
+               type="password"
+               class="input input-bordered w-full"
+               autocomplete="new-password"
+               placeholder="Confirm Password" />
+        <label class="label">
+            <span asp-validation-for="ConfirmPassword" class="label-text-alt text-error"></span>
+        </label>
+    </div>
+
+    <div class="form-control">
+        <button type="submit" class="btn btn-primary">Register</button>
+    </div>
+</form> 

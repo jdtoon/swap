@@ -1,0 +1,67 @@
+@model (int Id, IEnumerable<SelectListItem> Currencies)
+
+<h3 class="font-bold text-lg">Download PDF</h3>
+<div class="py-4">
+    <form action="@Url.Action("Download", new { id = Model.Id })" method="get">
+        <div class="form-control w-full">
+            <label class="label">
+                <span class="label-text">Currency</span>
+            </label>
+            <select name="currencyId" class="select select-bordered w-full">
+                @foreach (var currency in Model.Currencies)
+                {
+                    <option value="@currency.Value">@currency.Text</option>
+                }
+            </select>
+        </div>
+        <div class="form-control">
+            <label class="label cursor-pointer">
+                <span class="label-text">Include Supplier?</span>
+                <input type="checkbox" name="includeSupplier" class="checkbox" />
+            </label>
+        </div>
+        <div class="modal-action">
+            <button type="button" id="downloadBtn" class="btn btn-primary">Download</button>
+            <button type="button" class="btn" onclick="document.getElementById('downloadModal').close()">Close</button>
+        </div>
+    </form>
+</div>
+
+<div id="downloadingMessage" class="hidden text-center text-gray-600 mt-2">
+    Generating PDF, please wait...
+</div>
+
+<script>
+    document.getElementById('downloadBtn').addEventListener('click', async function(e) {
+        e.preventDefault();
+        const form = e.target.closest('form');
+        const currencyId = form.querySelector('[name="currencyId"]').value;
+        const includeSupplier = form.querySelector('[name="includeSupplier"]').checked;
+        
+        try {
+            // Show loading message
+            document.getElementById('downloadingMessage').classList.remove('hidden');
+            e.target.disabled = true;
+            
+            const response = await fetch(`/RateCard/Download?id=@Model.Id&currencyId=${currencyId}&includeSupplier=${includeSupplier}`);
+            if (!response.ok) throw new Error('Download failed');
+            
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = "ratecard.pdf";
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+            
+            document.getElementById('downloadModal').close();
+        } catch (error) {
+            alert('Failed to generate PDF. Please try again later.');
+        } finally {
+            document.getElementById('downloadingMessage').classList.add('hidden');
+            e.target.disabled = false;
+        }
+    });
+</script>

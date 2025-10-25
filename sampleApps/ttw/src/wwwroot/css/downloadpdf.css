@@ -1,0 +1,401 @@
+.s1 {
+  color: #221f1f;
+  font-family: "Arial Black", sans-serif;
+  font-style: normal;
+  font-weight: normal;
+  text-decoration: none;
+  font-size: 33pt;
+}
+
+.s3 {
+  color: #221f1f;
+  font-family: "Arial Black", sans-serif;
+  font-style: normal;
+  font-weight: normal;
+  text-decoration: none;
+  font-size: 33pt;
+}
+
+.s8 {
+  color: #fff;
+  font-family: Calibri, sans-serif;
+  font-style: normal;
+  font-weight: bold;
+  text-decoration: none;
+  font-size: 15pt;
+}
+
+h1 {
+  color: #221f1f;
+  font-family: Arial, sans-serif;
+  font-style: normal;
+  font-weight: bold;
+  text-decoration: none;
+  font-size: 72pt;
+}
+
+.s5 {
+  color: #221f1f;
+  font-family: "Arial Black", sans-serif;
+  font-style: normal;
+  font-weight: normal;
+  text-decoration: none;
+  font-size: 45pt;
+}
+
+h2 {
+  color: #fff;
+  font-family: Calibri, sans-serif;
+  font-style: normal;
+  font-weight: bold;
+  text-decoration: none;
+  font-size: 18pt;
+}
+
+.a,
+a {
+  color: #fff;
+  font-family: Calibri, sans-serif;
+  font-style: normal;
+  font-weight: bold;
+  text-decoration: none;
+  font-size: 17pt;
+}
+
+.s7 {
+  color: black;
+  font-family: "Arial Black", sans-serif;
+  font-style: normal;
+  font-weight: normal;
+  text-decoration: none;
+  font-size: 33pt;
+}
+
+.s8 {
+  color: #fff;
+  font-family: Calibri, sans-serif;
+  font-style: normal;
+  font-weight: bold;
+  text-decoration: none;
+  font-size: 15pt;
+}
+
+.s9 {
+  color: black;
+  font-family: Calibri, sans-serif;
+  font-style: normal;
+  font-weight: bold;
+  text-decoration: none;
+  font-size: 12pt;
+}
+
+.s10 {
+  color: #f00;
+  font-family: Calibri, sans-serif;
+  font-style: normal;
+  font-weight: bold;
+  text-decoration: none;
+  font-size: 13.5pt;
+}
+
+.s11 {
+  color: black;
+  font-family: Calibri, sans-serif;
+  font-style: normal;
+  font-weight: normal;
+  text-decoration: none;
+  font-size: 12pt;
+}
+
+.s12 {
+  color: black;
+  font-family: Calibri, sans-serif;
+  font-style: normal;
+  font-weight: normal;
+  text-decoration: none;
+  font-size: 13.5pt;
+}
+
+.s13 {
+  color: black;
+  font-family: Garamond, serif;
+  font-style: normal;
+  font-weight: bold;
+  text-decoration: none;
+  font-size: 13.5pt;
+}
+
+.s133 {
+    color: black;
+    font-family: Calibri, serif !important;
+    font-style: normal !important;
+    font-weight: bold !important;
+    text-decoration: underline !important;
+    font-size: 15.5pt !important;
+}
+
+.s14 {
+  color: #f00;
+  font-family: Calibri, sans-serif;
+  font-style: normal;
+  font-weight: bold;
+  text-decoration: none;
+  font-size: 12pt;
+}
+
+.s15 {
+  color: #fff;
+  font-family: Calibri, sans-serif;
+  font-style: normal;
+  font-weight: bold;
+  text-decoration: none;
+  font-size: 13.5pt;
+}
+
+.s16 {
+  color: #fff;
+  font-family: Calibri, sans-serif;
+  font-style: normal;
+  font-weight: bold;
+  text-decoration: none;
+  font-size: 14.5pt;
+}
+
+.s17 {
+  color: black;
+  font-family: Calibri, sans-serif;
+  font-style: normal;
+  font-weight: bold;
+  text-decoration: none;
+  font-size: 11.5pt;
+}
+
+.s18 {
+  color: #f00;
+  font-family: Calibri, sans-serif;
+  font-style: normal;
+  font-weight: bold;
+  text-decoration: none;
+  font-size: 11.5pt;
+}
+
+.s19 {
+  color: black;
+  font-family: Calibri, sans-serif;
+  font-style: normal;
+  font-weight: normal;
+  text-decoration: none;
+  font-size: 11.5pt;
+}
+
+.s20 {
+  color: #fff;
+  font-family: Calibri, sans-serif;
+  font-style: normal;
+  font-weight: bold;
+  text-decoration: none;
+  font-size: 11.5pt;
+}
+
+.s21 {
+  color: black;
+  font-family: Calibri, sans-serif;
+  font-style: normal;
+  font-weight: bold;
+  text-decoration: none;
+  font-size: 9.5pt;
+}
+
+.s22 {
+  color: #f00;
+  font-family: Calibri, sans-serif;
+  font-style: normal;
+  font-weight: bold;
+  text-decoration: none;
+  font-size: 9.5pt;
+}
+
+.s23 {
+  color: black;
+  font-family: Calibri, sans-serif;
+  font-style: normal;
+  font-weight: normal;
+  text-decoration: none;
+  font-size: 10pt;
+}
+
+.s24 {
+  color: black;
+  font-family: Calibri, sans-serif;
+  font-style: normal;
+  font-weight: normal;
+  text-decoration: none;
+  font-size: 9.5pt;
+}
+
+.s25 {
+  color: black;
+  font-family: Calibri, sans-serif;
+  font-style: normal;
+  font-weight: normal;
+  text-decoration: none;
+  font-size: 10.5pt;
+}
+
+.s26 {
+  color: #fff;
+  font-family: Calibri, sans-serif;
+  font-style: normal;
+  font-weight: bold;
+  text-decoration: none;
+  font-size: 10.5pt;
+}
+
+.s27 {
+  color: #fff;
+  font-family: Calibri, sans-serif;
+  font-style: normal;
+  font-weight: bold;
+  text-decoration: none;
+  font-size: 11pt;
+}
+
+.s28 {
+  color: black;
+  font-family: Calibri, sans-serif;
+  font-style: normal;
+  font-weight: normal;
+  text-decoration: none;
+  font-size: 9pt;
+}
+
+.s29 {
+  color: #f00;
+  font-family: Calibri, sans-serif;
+  font-style: normal;
+  font-weight: bold;
+  text-decoration: none;
+  font-size: 9pt;
+}
+
+.s30 {
+  color: black;
+  font-family: Calibri, sans-serif;
+  font-style: normal;
+  font-weight: bold;
+  text-decoration: none;
+  font-size: 9pt;
+}
+
+h3 {
+  color: black;
+  font-family: Tahoma, sans-serif;
+  font-style: normal;
+  font-weight: normal;
+  text-decoration: underline;
+  font-size: 14.5pt;
+}
+
+p {
+  color: #0d0d0d;
+  font-family: Verdana, sans-serif;
+  font-style: normal;
+  font-weight: normal;
+  text-decoration: none;
+  font-size: 13pt;
+  margin: 0pt;
+}
+
+.s34 {
+  color: black;
+  font-family: Verdana, sans-serif;
+  font-style: normal;
+  font-weight: normal;
+  text-decoration: none;
+  font-size: 13pt;
+  vertical-align: 6pt;
+}
+
+.s35 {
+  color: black;
+  font-family: Verdana, sans-serif;
+  font-style: normal;
+  font-weight: normal;
+  text-decoration: none;
+  font-size: 13pt;
+  vertical-align: 4pt;
+}
+
+.s36 {
+  color: black;
+  font-family: Verdana, sans-serif;
+  font-style: normal;
+  font-weight: normal;
+  text-decoration: none;
+  font-size: 10.5pt;
+  vertical-align: 1pt;
+}
+
+.s37 {
+  color: black;
+  font-family: Verdana, sans-serif;
+  font-style: normal;
+  font-weight: normal;
+  text-decoration: none;
+  font-size: 10pt;
+  vertical-align: 1pt;
+}
+
+.s38 {
+  color: black;
+  font-family: "Times New Roman", serif;
+  font-style: normal;
+  font-weight: normal;
+  text-decoration: none;
+  font-size: 10.5pt;
+  vertical-align: -2pt;
+}
+
+.s39 {
+  color: black;
+  font-family: "Times New Roman", serif;
+  font-style: normal;
+  font-weight: normal;
+  text-decoration: none;
+  font-size: 10pt;
+  vertical-align: -2pt;
+}
+
+.s40 {
+  color: black;
+  font-family: Verdana, sans-serif;
+  font-style: normal;
+  font-weight: normal;
+  text-decoration: none;
+  font-size: 10pt;
+  vertical-align: -1pt;
+}
+
+li {
+  display: block;
+}
+
+#l1 {
+  padding-left: 25pt;
+}
+
+#l1 > li > *:first-child:before {
+  content: "• ";
+  color: #0d0d0d;
+  font-family: Verdana, sans-serif;
+  font-style: normal;
+  font-weight: normal;
+  text-decoration: none;
+  font-size: 10pt;
+}
+
+table,
+tbody {
+  vertical-align: top;
+  overflow: visible;
+}
