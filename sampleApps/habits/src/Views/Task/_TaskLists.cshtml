@@ -1,0 +1,11 @@
+﻿@model List<TaskListDto>
+<div id="task-lists-sortable">
+    @foreach (var row in Model.OrderBy(x => x.Order))
+    {
+        <partial name="_TaskListsPartial" model="@row" />
+    }
+</div>
+
+<script>
+    initiateTaskList('@Url.Action("UpdateTaskListOrder", "Task")');
+</script>

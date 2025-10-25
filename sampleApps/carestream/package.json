@@ -1,0 +1,16 @@
+{
+  "name": "carestream",
+  "version": "1.0.0",
+  "description": "Carestream is an Electronic Medical Records (EMR) system designed for the South African Military Health Service (SAMHS). It aims to streamline patient check-ins, medical assessments, treatment, and pharmacy operations within a secure environment.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "prepare": "husky"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "husky": "^9.1.7"
+  }
+}

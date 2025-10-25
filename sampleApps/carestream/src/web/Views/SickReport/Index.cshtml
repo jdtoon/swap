@@ -1,0 +1,33 @@
+﻿@{
+    Layout = null;
+    ViewData["Title"] = "Sick Report";
+}
+
+@* Container for the Lookup Form and its Results - Loaded via HTMX *@
+<div id="patient-lookup-form-and-result-container" class="mb-2"
+     hx-get="@Url.Action("LookupFormPartial", "SickReport")"
+     hx-trigger="load"
+     hx-swap="innerHTML">
+    <div class="flex justify-center items-center p-10">
+        <span class="loading loading-lg loading-spinner"></span>
+        <p class="ml-2">Loading patient lookup...</p>
+    </div>
+</div>
+
+<div class="divider"></div>
+
+<div class="mt-6 mb-6">
+    <h2 class="text-2xl font-bold text-base-content">Patient Queue</h2>
+    <p class="text-sm text-base-content text-opacity-70">Manage patient waiting list and call patients for assessment.</p>
+</div>
+
+@* Container for the Patient Queue - Loads independently via new controller *@
+<div id="patient-queue-content-container" class="mt-2"
+     hx-get="@Url.Action("Index", "PatientQueue", new { viewType = "list" })" @* NOW CALLS NEW PATIENTQUEUECONTROLLER *@
+     hx-trigger="load once, refreshPatientQueue from:body" @* NEW: Custom event name for queue refresh *@
+     hx-swap="innerHTML">
+    <div class="flex justify-center items-center p-10 card bg-base-100 shadow">
+        <span class="loading loading-lg loading-spinner table-loading-indicator"></span>
+        <p class="ml-2">Loading patient queue...</p>
+    </div>
+</div>

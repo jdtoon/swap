@@ -1,0 +1,108 @@
+﻿@using carestream.core.dtos.messaging
+@model IEnumerable<MessageDto>
+@{
+    Layout = null;
+    int conversationId = ViewData["ConversationId"] as int? ?? 0;
+    int currentUserId = ViewData["CurrentUserId"] as int? ?? 0;
+    bool isConversationSelected = conversationId > 0;
+}
+
+<h2 class="card-title text-lg mb-4 flex items-center">
+    @if (isConversationSelected)
+    {
+        <i data-feather="message-circle" class="mr-2"></i>
+        @* Display conversation name here, if available in ConversationDto (you might need to fetch this from service when loading MessagePanelPartial) *@
+        <text>Conversation ID: @conversationId</text>
+    }
+    else
+    {
+        <i data-feather="message-circle" class="mr-2"></i>
+        <text>Select a Conversation</text>
+    }
+</h2>
+
+@if (isConversationSelected)
+{
+    <div id="messages-display-area" class="flex-grow overflow-y-auto mb-4 p-2 border rounded-md bg-base-200" style="max-height: calc(100vh - 350px);">
+        @if (Model != null && Model.Any())
+        {
+            @foreach (var message in Model.OrderBy(m => m.SentAt))
+            {
+                bool isCurrentUserMessage = message.SenderUserId == currentUserId;
+                <div class="chat @(isCurrentUserMessage ? "chat-end" : "chat-start")">
+                    <div class="chat-header text-xs text-base-content text-opacity-70">
+                        @(message.SenderUserName ?? "Unknown")
+                        <time class="text-xs opacity-50 ml-1">@message.SentAt.ToLocalTime().ToString("t")</time>
+                    </div>
+                    <div class="chat-bubble @(isCurrentUserMessage ? "chat-bubble-primary" : "")">@message.Content</div>
+                    <div class="chat-footer text-xs opacity-50">
+                        @message.SentAt.ToLocalTime().ToString("g")
+                    </div>
+                </div>
+            }
+        }
+        else
+        {
+            <div class="text-center py-8 text-sm text-gray-500">No messages yet. Start the conversation!</div>
+        }
+    </div>
+
+    <form id="message-input-form"
+          hx-post="@Url.Action("SendMessage", "Messages")"
+          hx-target="#messages-display-area"
+          hx-swap="beforeend" @* Append new message to the end *@
+          hx-on::after-request="this.reset(); scrollMessagesToBottom();" @* Scroll after appending *@
+          hx-indicator="#send-message-indicator">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="conversationId" value="@conversationId" />
+        <div class="form-control flex flex-row items-center gap-2">
+            <input type="text"
+                   name="content"
+                   placeholder="Type your message..."
+                   class="input input-bordered flex-grow" required />
+            <button type="submit" class="btn btn-primary">
+                <i data-feather="send" class="w-5 h-5"></i>
+                <span id="send-message-indicator" class="htmx-indicator loading loading-spinner loading-xs ml-1"></span>
+            </button>
+        </div>
+    </form>
+}
+else
+{
+    <div class="flex-grow flex items-center justify-center text-gray-500">
+        <p>Select a conversation from the left panel to view messages.</p>
+    </div>
+}
+
+<script>
+    if (typeof feather !== 'undefined') {
+        feather.replace();
+    }
+
+    // Scroll to bottom of messages-display-area on load and after new messages are appended
+    function scrollMessagesToBottom() {
+        const messagesDisplay = document.getElementById('messages-display-area');
+        if (messagesDisplay) {
+            messagesDisplay.scrollTop = messagesDisplay.scrollHeight;
+        }
+    }
+    // Initial scroll on load
+    document.addEventListener('DOMContentLoaded', scrollMessagesToBottom);
+
+    // Listener for refreshing the message panel when a new message is sent or other external updates occur
+    document.body.addEventListener('refreshMessagePanel', function(evt) {
+        const detail = evt.detail;
+        if (detail && detail.refreshMessagePanel) {
+            const incomingConversationId = detail.refreshMessagePanel;
+            // Only refresh if the target conversation is currently open
+            if (incomingConversationId === @conversationId) {
+                // Trigger a GET request to reload the current message panel
+                htmx.ajax('GET', '@Url.Action("MessagePanelPartial", "Messages", new { conversationId = 0 })'.replace('conversationId=0', 'conversationId=' + incomingConversationId), {
+                    target: '#message-panel-container', // Reloads the whole panel
+                    swap: 'innerHTML'
+                });
+            }
+        }
+    });
+
+</script>

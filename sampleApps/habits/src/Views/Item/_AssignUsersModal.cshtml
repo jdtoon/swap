@@ -1,0 +1,86 @@
+﻿@model AssignUsersDto
+
+<dialog id="assign-users-modal-@Model.ItemId" class="modal modal-middle sm:modal-middle">
+    <div class="modal-box">
+        <h3 class="font-bold text-lg mb-4">Assign Users</h3>
+        <div class="py-4">
+            <form hx-post="@Url.Action("AssignUsers", "Item")"
+                  hx-target="#item-@Model.ItemId"
+                  hx-swap="outerHTML transition:true"
+                  hx-indicator="#loading-indicator"
+                  hx-headers='{"Content-Type": "application/json"}'
+                  hx-on::after-swap="AssignUsers.closeModal(@Model.ItemId)"
+                  hx-on::after-request="if(event.detail.successful) AssignUsers.closeModal(@Model.ItemId)"
+                  class="space-y-4">
+                @Html.AntiForgeryToken()
+                @Html.HiddenFor(m => m.ItemId)
+                <div class="form-control w-full">
+                    <label class="label">
+                        <span class="label-text text-lg">Users</span>
+                    </label>
+                    <div class="relative">
+                        <div class="relative">
+                            <input type="text"
+                                   id="user-search-@Model.ItemId"
+                                   class="input input-bordered w-full pr-10"
+                                   placeholder="Search users..."
+                                   oninput="AssignUsers.filterUsers(@Model.ItemId)"
+                                   onfocus="AssignUsers.showDropdown(@Model.ItemId)" />
+                            <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                                <img src="~/svg/search.svg" class="h-4 w-4" />
+                            </div>
+                        </div>
+
+                        <div id="selected-users-@Model.ItemId" class="flex flex-wrap gap-2 mt-2">
+                            @foreach (var user in Model.Users.Where(u => Model.AssignedUserIds.Contains(u.Id)))
+                            {
+                                <div id="pill-@Model.ItemId-@user.Id" class="badge badge-primary gap-2">
+                                    <span>@user.Name</span>
+                                    <button type="button" onclick="AssignUsers.toggleUserSelection(@Model.ItemId, '@user.Id', '@user.Name')" class="btn btn-ghost btn-xs px-1">×</button>
+                                </div>
+                            }
+                        </div>
+
+                        <div id="user-dropdown-@Model.ItemId"
+                             class="hidden absolute z-50 w-1/2 mt-1 bg-base-100 rounded-box shadow-lg border border-base-300 max-h-60 overflow-y-auto">
+                            <div class="py-2">
+                                @foreach (var user in Model.Users)
+                                {
+                                    <div class="user-option"
+                                         data-user-id="@user.Id"
+                                         data-user-name="@user.Name">
+                                        <div class="flex items-center px-4 py-2 hover:bg-base-200 cursor-pointer"
+                                             onclick="AssignUsers.toggleUserSelection(@Model.ItemId, '@user.Id', '@user.Name')">
+                                            <input type="checkbox"
+                                                   class="checkbox checkbox-sm mr-3"
+                                                   id="user-checkbox-@Model.ItemId-@user.Id"
+                                                   name="AssignedUserIds"
+                                                   value="@user.Id"
+                                                   onclick="AssignUsers.toggleUserSelection(@Model.ItemId, '@user.Id', '@user.Name')"
+                                            @(Model.AssignedUserIds.Contains(user.Id) ? "checked" : "") />
+                                            <div class="flex-1">
+                                                <div class="font-medium">@user.Name</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-action">
+                    <button type="button" class="btn" onclick="AssignUsers.closeModal(@Model.ItemId)">Close</button>
+                    <button type="submit" class="btn btn-primary">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <form method="dialog" class="modal-backdrop">
+        <button onclick="AssignUsers.closeModal(@Model.ItemId)">close</button>
+    </form>
+</dialog>
+
+<script>
+    AssignUsers.init(@Model.ItemId);
+</script>

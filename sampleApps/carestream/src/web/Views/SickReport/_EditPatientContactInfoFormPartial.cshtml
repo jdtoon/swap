@@ -1,0 +1,73 @@
+﻿@using carestream.core.dtos.patient
+@model EditPatientContactInfoDto
+@{
+    Layout = null;
+}
+
+<div class="p-2 bg-base-200 rounded-md mb-2">
+    <div class="flex justify-between items-center">
+        <h3 class="font-semibold text-lg">Edit Contact Information</h3>
+    </div>
+</div>
+
+<form hx-post="@Url.Action("UpdateContactInfo", "SickReport")"
+      hx-target="#patient-contact-info-container-@Model.PatientId" @* TARGET THE STABLE CONTAINER *@
+      hx-swap="innerHTML" @* REPLACE THE INNER HTML OF THE STABLE CONTAINER *@
+      hx-indicator="#edit-contact-spinner">
+    @Html.AntiForgeryToken()
+    <input type="hidden" name="PatientId" value="@Model.PatientId" />
+
+    <div class="form-control mb-4">
+        <label class="label">
+            <span class="label-text">Email Address</span>
+        </label>
+        <input type="email" name="EmailAddress" value="@Model.EmailAddress" class="input input-bordered w-full" placeholder="Enter email address" />
+        @if (ViewData.ModelState.ContainsKey(nameof(Model.EmailAddress)))
+        {
+            <label class="label">
+                <span class="label-text-alt text-error">@Html.ValidationMessageFor(m => m.EmailAddress)</span>
+            </label>
+        }
+    </div>
+
+    <div class="form-control mb-4">
+        <label class="label">
+            <span class="label-text">Primary Phone Number</span>
+        </label>
+        <input type="tel" name="PrimaryPhoneNumber" value="@Model.PrimaryPhoneNumber" class="input input-bordered w-full" placeholder="e.g., +27821234567" />
+        @if (ViewData.ModelState.ContainsKey(nameof(Model.PrimaryPhoneNumber)))
+        {
+            <label class="label">
+                <span class="label-text-alt text-error">@Html.ValidationMessageFor(m => m.PrimaryPhoneNumber)</span>
+            </label>
+        }
+    </div>
+
+    @* General error message if any *@
+    @if (!ViewData.ModelState.IsValid && !ViewData.ModelState.Keys.Any(k => ViewData.ModelState[k]?.Errors?.Any() == true))
+    {
+        <div class="alert alert-error mb-4">
+            <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+            <span>@Html.ValidationSummary(true, "", new { @class = "text-sm" })</span>
+        </div>
+    }
+
+    <div class="flex justify-end gap-2 mt-4">
+        <button type="button" class="btn btn-secondary"
+                hx-get="@Url.Action("ContactDisplayPartial", "SickReport", new { patientId = Model.PatientId })"
+                hx-target="#patient-contact-info-container-@Model.PatientId" @* TARGET THE STABLE CONTAINER *@
+                hx-swap="innerHTML"> @* REPLACE THE INNER HTML OF THE STABLE CONTAINER *@
+        Cancel
+        </button>
+    <button type="submit" class="btn btn-primary">
+        Save Changes
+        <span id="edit-contact-spinner" class="htmx-indicator loading loading-spinner loading-sm ml-2"></span>
+    </button>
+    </div>
+</form>
+
+<script>
+    if (typeof feather !== 'undefined') {
+        feather.replace();
+    }
+</script>

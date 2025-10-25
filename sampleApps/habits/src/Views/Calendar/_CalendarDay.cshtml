@@ -1,0 +1,57 @@
+﻿@model CalendarDayDto
+
+@{
+    var todayPadding = Model.IsToday ? "" : "p-2";
+}
+
+<div class="calendar-day @todayPadding bg-base-100 flex flex-col min-h-[80px] items-center border-t border-slate-600"
+     id="calendar-day-@Model.Date.ToString("yyyy-MM-dd")"
+     hx-get="@Url.Action("GetDayViewer", "Calendar")?date=@Model.Date.ToString("yyyy-MM-dd")"
+     hx-target="#day-viewer-container"
+     hx-trigger="click"
+     hx-swap="innerHtml transition:true">
+    @if (Model.IsToday)
+    {
+        <div class="w-9 h-9 rounded-full bg-orange-300 flex flex-col items-center justify-center" style="margin-top:0.45rem;margin-bottom:0.06rem;">
+            <div class="text-sm font-semibold text-white">
+                @Model.DayNumber
+            </div>
+            <div class="text-center islamic-date text-white text-xs">
+                @if (Model.IsFirstDayOfIslamicMonth)
+                {
+                    <span class="islamic-month">@Model.IslamicMonthAbbreviation</span>
+                }
+                else
+                {
+                    <span>@Model.IslamicDate</span>
+                }
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="text-sm font-semibold">
+            @Model.DayNumber
+        </div>
+        <div class="text-center islamic-date">
+            @if (Model.IsFirstDayOfIslamicMonth)
+            {
+                <span class="islamic-month">@Model.IslamicMonthAbbreviation</span>
+            }
+            else
+            {
+                <span>@Model.IslamicDate</span>
+            }
+        </div>
+    }
+
+    <div class="flex flex-wrap gap-1 justify-center pt-1">
+        @foreach (var evt in Model.Events)
+        {
+            <div class="event-dot w-2 h-2 rounded-full"
+                 style="background-color: @evt.Color"
+                 title="@evt.Name"
+                 data-event-id="@evt.Id"></div>
+        }
+    </div>
+</div>

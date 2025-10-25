@@ -1,0 +1,82 @@
+﻿@using carestream.core.dtos.checkin
+@model CheckinConfirmationDto
+@{
+    Layout = null;
+}
+
+<div class="card bg-base-100 shadow-xl">
+    <div class="card-body">
+        @if (Model.Success)
+        {
+            <div class="alert alert-success mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                <span>Patient <strong>@Model.PatientName</strong> Successfully Checked In!</span>
+            </div>
+
+            <div class="alert alert-info mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-current shrink-0 w-6 h-6 mr-2"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                <span>Patient information has been sent to the <strong>@Model.NotificationTarget</strong>. They will call the patient's name when ready.</span>
+            </div>
+
+            @* Display brief reason and additional notes if available *@
+            @if (!string.IsNullOrWhiteSpace(Model.BriefReason) || !string.IsNullOrWhiteSpace(Model.AdditionalNotes))
+            {
+                <div class="card bg-base-200 shadow-sm p-4 mb-4">
+                    <h4 class="font-semibold text-lg mb-2">Check-in Details</h4>
+                    @if (!string.IsNullOrWhiteSpace(Model.BriefReason))
+                    {
+                        <p class="text-sm"><strong>Reason:</strong> @Model.BriefReason</p>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(Model.AdditionalNotes))
+                    {
+                        <p class="text-sm mt-1"><strong>Additional Notes:</strong> @Model.AdditionalNotes</p>
+                    }
+                </div>
+            }
+
+            <div class="card bg-base-200 shadow-sm p-4 mb-4">
+                <h4 class="font-semibold text-lg mb-2">Medical Staff Assignment (Conceptual)</h4>
+                <p class="text-sm">Assigned Medical Officer: Dr. Sarah Mitchell (Ward 3)</p>
+                <p class="text-sm">Estimated wait time: <strong>@Model.EstimatedWaitTime</strong></p>
+            </div>
+
+            <h4 class="font-semibold text-lg mb-2">Next Steps:</h4>
+            <ul class="list-disc list-inside text-sm">
+                <li>Please take a seat in the waiting area.</li>
+                <li>Wait for your name to be called by the Vital Signs department.</li>
+                <li>After vital signs, return to the waiting area for doctor consultation.</li>
+            </ul>
+
+            <div class="card-actions justify-end mt-6">
+                <button class="btn btn-primary"
+                        hx-get="@Url.Action("LookupFormPartial", "SickReport")"
+                        hx-target="#patient-lookup-form-and-result-container"
+                        hx-swap="innerHTML transition:true"
+                        type="button">
+                    Submit (New Lookup)
+                </button>
+            </div>
+        }
+        else
+        {
+            <div class="alert alert-error mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                <span>Check-in Failed: @(Model.ErrorMessage ?? "An unknown error occurred.")</span>
+            </div>
+            <div class="card-actions justify-end mt-6">
+                <button class="btn btn-secondary"
+                        hx-get="@Url.Action("LookupFormPartial", "SickReport")"
+                        hx-target="#patient-lookup-form-and-result-container"
+                        hx-swap="innerHTML transition:true"
+                        type="button">
+                    Return to Lookup
+                </button>
+            </div>
+        }
+    </div>
+</div>
+<script>
+    if (typeof feather !== 'undefined') {
+        feather.replace();
+    }
+</script>

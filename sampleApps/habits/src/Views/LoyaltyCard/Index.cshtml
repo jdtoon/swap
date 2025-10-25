@@ -1,0 +1,70 @@
+@inject IHttpContextAccessor HttpContextAccessor
+
+@{
+    ViewBag.IsHTMXRequest = HttpContextAccessor.HttpContext!.Request.Headers.ContainsKey("HX-Request");
+}
+
+<!-- Top Section -->
+<div hx-get="@Url.Action("GetBurgerMenu","Home")"
+     hx-trigger="load"
+     hx-target="#navbar-start-placeholder"
+     hx-swap="innerHtml transition:true"
+     hx-indicator="#loading-indicator">
+</div>
+
+<div hx-get="@Url.Action("GetPageHeading", "Home")"
+     hx-vals='{"heading": "Cards" }'
+     hx-target="#navbar-center-placeholder"
+     hx-swap="innerHtml transition:true"
+     hx-trigger="load"
+     hx-indicator="#loading-indicator">
+</div>
+
+<div hx-get="@Url.Action("GetLoginPartial", "Home")"
+     hx-target="#navbar-end-placeholder"
+     hx-swap="innerHtml transition:true"
+     hx-trigger="load"
+     hx-indicator="#loading-indicator">
+</div>
+
+<div hx-get="@Url.Action("ClearDiv", "Home")"
+     hx-target="#search-bar-container"
+     hx-swap="innerHtml transition:true"
+     hx-trigger="load"
+     hx-indicator="#loading-indicator">
+</div>
+
+<div class="p-4">
+    <!-- Add Card Button -->
+    <div class="flex justify-end mb-4">
+        <button class="btn bg-purple-300 btn-sm"
+                hx-get="@Url.Action("AddCard", "LoyaltyCard")"
+                hx-target="body"
+                hx-swap="beforeend transition:true"
+                hx-indicator="#loading-indicator">
+            <img src="~/svg/add.svg" class="h-5 w-5" />
+        </button>
+    </div>
+
+    <!-- Cards List -->
+    <div id="cards-list"
+         class="space-y-4"
+         hx-get="@Url.Action("GetCards", "LoyaltyCard")"
+         hx-trigger="load"
+         hx-target="#cards-list"
+         hx-indicator="#loading-indicator">
+    </div>
+</div>
+
+<div id="card-display-modal"></div>
+
+@if (ViewBag.IsHTMXRequest == true)
+{
+    <script defer src="~/js/loyalty-cards.js" asp-append-version="true"></script>
+}
+else
+{
+    @section Scripts {
+    <script defer src="~/js/loyalty-cards.js" asp-append-version="true"></script>
+    }
+} 

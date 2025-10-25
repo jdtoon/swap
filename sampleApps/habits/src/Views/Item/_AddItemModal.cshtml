@@ -1,0 +1,42 @@
+﻿@model ItemDto
+
+<dialog id="edit-modal-@Model.Id" class="modal modal-middle sm:modal-middle">
+    <div class="modal-box">
+        <h3 class="font-bold text-lg">Add Item</h3>
+        <div class="py-4">
+            <form hx-post="@Url.Action("CreateItem", "Item")"
+                  hx-target="#items-sortable"
+                  hx-swap="afterbegin transition:true"
+                  hx-indicator="#loading-indicator"
+                  hx-headers='{"Content-Type": "application/json"}'
+                  hx-on::after-swap="closeItemModal(@Model.Id)"
+                  hx-on::after-request="if(event.detail.successful) closeItemModal(@Model.Id)"
+                  class="space-y-4">
+                @Html.AntiForgeryToken()
+                @Html.HiddenFor(m => m.TaskListId)
+                <div class="form-control">
+                    @Html.TextBoxFor(m => m.Task, new { @class = "input input-bordered", required = "required" })
+                </div>
+                <div class="form-control">
+                    <label class="label">
+                        <span class="label-text">Heading?</span>
+                    </label>
+                    <label class="flex items-center">
+                        @Html.CheckBoxFor(m => m.IsHeader, new { @class = "checkbox checkbox-sm mr-4" })
+                    </label>
+                </div>
+                <div class="modal-action">
+                    <button type="button" class="btn" onclick="closeItemModal(@Model.Id)">Close</button>
+                    <button type="submit" class="btn bg-orange-300 text-base-200">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <form method="dialog" class="modal-backdrop">
+        <button onclick="closeItemModal(@Model.Id)">close</button>
+    </form>
+</dialog>
+
+<script>
+    document.getElementById('edit-modal-@Model.Id').showModal();
+</script>

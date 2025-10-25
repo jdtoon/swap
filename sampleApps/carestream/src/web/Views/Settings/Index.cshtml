@@ -1,0 +1,44 @@
+﻿@{ Layout = null; }
+
+<div class="mb-6">
+    <h1 class="text-2xl font-semibold text-gray-700">Settings</h1>
+    <p class="text-gray-500">Manage application configurations and monitor system health.</p>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <!-- System Health Section -->
+    <div id="system-health-container" class="md:col-span-1"
+         hx-get="@Url.Action("SystemHealthPartial", "Settings")"
+         hx-trigger="load once, every 30s"
+         hx-swap="innerHTML">
+        <div class="card bg-base-100 shadow-xl">
+            <div class="card-body">
+                <div class="flex justify-center items-center p-10">
+                    <span class="loading loading-lg loading-spinner"></span>
+                    <p class="ml-2">Loading system health...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Other Settings Sections (Placeholders) -->
+    <div class="card bg-base-100 shadow-xl">
+        <div class="card-body">
+            <h2 class="card-title text-lg mb-4">User Preferences</h2>
+            <p class="text-gray-500">Coming soon: Your personal preferences (e.g., theme, notifications).</p>
+        </div>
+    </div>
+
+    <div class="card bg-base-100 shadow-xl md:col-span-2">
+        <div class="card-body">
+            <h2 class="card-title text-lg mb-4">Technical Support</h2>
+            <p class="text-gray-500">Optional: support ticketing system</p>
+        </div>
+    </div>
+</div>
+
+<script>
+    if (typeof feather !== 'undefined') {
+        feather.replace();
+    }
+</script>

@@ -1,0 +1,58 @@
+﻿@using carestream.core.dtos.admin
+@model AdminUserEditInputDto
+@{
+    Layout = null; // Loaded into _UserDetailPartial
+}
+
+<h4 class="font-semibold text-md mb-3">Personal Information</h4>
+
+<form hx-post="@Url.Action("UpdateUserPersonalInfo", "Admin")"
+      hx-target="#user-personal-info-@Model.UserId"
+      hx-swap="innerHTML"
+      hx-indicator="#edit-user-personal-info-indicator-@Model.UserId">
+    @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="UserId" />
+
+    @if (!ViewData.ModelState.IsValid && ViewData.ModelState.Keys.Any(k => ViewData.ModelState[k]?.Errors?.Any() == true))
+    {
+        <div class="alert alert-warning text-xs p-2 mb-3">
+            <ul class="list-disc list-inside">
+                @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                {
+                    <li>@error.ErrorMessage</li>
+                }
+            </ul>
+        </div>
+    }
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2 text-sm">
+        <div class="form-control">
+            <label asp-for="Rank" class="label pb-0"><span class="label-text">Rank</span></label>
+            <input type="text" asp-for="Rank" class="input input-sm input-bordered w-full" />
+            <span asp-validation-for="Rank" class="text-error text-xs mt-1"></span>
+        </div>
+        <div class="form-control">
+            <label asp-for="Department" class="label pb-0"><span class="label-text">Department</span></label>
+            <input type="text" asp-for="Department" class="input input-sm input-bordered w-full" />
+            <span asp-validation-for="Department" class="text-error text-xs mt-1"></span>
+        </div>
+        <div class="form-control md:col-span-2 flex items-center justify-start flex-row mt-2">
+            <input type="checkbox" asp-for="IsActive" class="checkbox checkbox-primary" />
+            <label asp-for="IsActive" class="label pl-3"><span class="label-text cursor-pointer">Active User</span></label>
+            <span asp-validation-for="IsActive" class="text-error text-xs mt-1"></span>
+        </div>
+    </div>
+
+    <div class="mt-4 flex justify-end gap-2">
+        <button type="button" class="btn btn-sm btn-ghost"
+                hx-get="@Url.Action("GetUserPersonalInfoDisplayPartial", "Admin", new { userId = Model.UserId })" @* Changed to call the new display partial action *@
+                hx-target="#user-personal-info-@Model.UserId"
+                hx-swap="innerHTML">
+            Cancel
+        </button>
+        <button type="submit" class="btn btn-sm btn-primary">
+            Save Changes
+            <span id="edit-user-personal-info-indicator-@Model.UserId" class="htmx-indicator loading loading-spinner loading-xs ml-1"></span>
+        </button>
+    </div>
+</form>

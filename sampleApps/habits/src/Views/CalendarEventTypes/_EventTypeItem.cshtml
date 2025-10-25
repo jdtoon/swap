@@ -1,0 +1,70 @@
+﻿@model CalendarEventTypeDto
+@{
+    var calendarTypeFiles = JsonSerializer.Deserialize<IEnumerable<string>>(
+        Context.Session.GetString("CalendarTypeFiles") ?? "[]");
+}
+
+<div class="card bg-base-200 shadow-xl" id="event-type-@Model.Id">
+    <div class="card-body p-1">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2 flex-1">
+                <img src="@Model.IconPath" class="h-6 w-6" />
+                <input type="text"
+                       class="input input-ghost input-sm w-full max-w-md font-semibold"
+                       value="@Model.Name"
+                       hx-put="@Url.Action("UpdateEventType", "CalendarEventTypes")"
+                       hx-vals='{"id": "@Model.Id", "name": "", "color": "@Model.Color", "iconPath": "@Model.IconPath"}'
+                       oninput="this.setAttribute('hx-vals', JSON.stringify({
+                           id: '@Model.Id',
+                           name: this.value,
+                           color: document.getElementById('color-@Model.Id').value,
+                           iconPath: document.getElementById('icon-@Model.Id').value
+                       }))"
+                       hx-trigger="change"
+                       hx-target="#event-type-@Model.Id"
+                       hx-indicator="#loading-indicator" />
+            </div>
+
+            <div class="flex items-center gap-2">
+                <input type="color"
+                       id="color-@Model.Id"
+                       class="h-8 w-8 cursor-pointer"
+                       value="@Model.Color"
+                       onchange="updateEventType('@Model.Id', this)" 
+                       hx-indicator="#loading-indicator" />
+
+                <select id="icon-@Model.Id"
+                        class="select select-bordered select-sm"
+                        onchange="updateEventType('@Model.Id', this)"
+                        hx-indicator="#loading-indicator">
+                    @foreach (var svgPath in calendarTypeFiles!)
+                    {
+                        var pathParts = svgPath.Split('/');
+                        var fileName = pathParts[pathParts.Length - 1].Replace(".svg", "");
+                        var displayName = System.Globalization.CultureInfo.CurrentCulture.TextInfo
+                        .ToTitleCase(fileName.Substring(5).Replace("-", " "));
+
+                        if (svgPath == $"~{Model.IconPath}")
+                        {
+                            <option value="@svgPath" selected>@displayName</option>
+                        }
+                        else
+                        {
+                            <option value="@svgPath">@displayName</option>
+                        }
+                    }
+                </select>
+
+                <button class="btn btn-ghost btn-sm btn-square text-error"
+                        hx-delete="@Url.Action("DeleteEventType", "CalendarEventTypes")"
+                        hx-vals='{"id": "@Model.Id"}'
+                        hx-target="#day-viewer-evt-@Model.Id"
+                        hx-swap="outerHTML transition:true"
+                        hx-indicator="#loading-indicator"
+                        hx-confirm="Are you sure you want to delete this event type?">
+                    <img src="~/svg/delete.svg" class="h-5 w-5" />
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

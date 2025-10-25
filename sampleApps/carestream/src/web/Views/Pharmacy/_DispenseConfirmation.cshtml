@@ -1,0 +1,118 @@
+﻿@using carestream.core.dtos.pharmacy
+@model DispenseConfirmationDto
+@{
+    Layout = null;
+}
+
+<div class="card bg-base-100 shadow-xl">
+    <div class="card-body">
+        @if (Model.OverallSuccess)
+        {
+            <div class="alert alert-success mb-4">
+                <i data-feather="check-circle" class="w-6 h-6"></i>
+                <span>Dispense Processed Successfully!</span>
+            </div>
+        }
+        else if (!string.IsNullOrEmpty(Model.ErrorMessage) && !Model.DispensedItems.Any()) // Only main error, no items processed
+        {
+            <div class="alert alert-error mb-4">
+                <i data-feather="x-circle" class="w-6 h-6"></i>
+                <span>Dispense Failed: @Model.ErrorMessage</span>
+            </div>
+        }
+        else // Partial success or specific item errors/notes
+        {
+            <div class="alert alert-warning mb-4">
+                <i data-feather="alert-triangle" class="w-6 h-6"></i>
+                <span>Dispense Processed with Notes/Issues.</span>
+                @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+                {
+                    <p class="text-xs">@Model.ErrorMessage</p>
+                }
+            </div>
+        }
+
+        <h2 class="card-title text-lg">Dispense Summary</h2>
+        <p class="text-sm mb-1">Patient: <span class="font-medium">@Model.PatientName</span></p>
+        <p class="text-sm mb-3">Prescription: <span class="font-medium">@Model.PrescriptionIdentifier</span> (Visit ID: @Model.VisitId)</p>
+
+        @if (Model.DispensedItems.Any())
+        {
+            <div class="overflow-x-auto mb-4">
+                <table class="table table-sm w-full">
+                    <thead>
+                        <tr>
+                            <th>Medication</th>
+                            <th>Prescribed</th>
+                            <th>Dispensed Now</th>
+                            <th>Total Dispensed</th>
+                            <th>Status</th>
+                            <th>Notes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model.DispensedItems)
+                        {
+                            <tr class="@(string.IsNullOrEmpty(item.Notes) || item.Notes.Contains("successfully") ? "" : "bg-warning/20")">
+                                <td class="font-medium">@item.MedicationName</td>
+                                <td>@item.QuantityPrescribed</td>
+                                <td>@item.QuantityActuallyDispensedInTransaction</td>
+                                <td>@item.TotalQuantityDispensedSoFar</td>
+                                <td>
+                                    @if (item.IsFullyDispensedNow)
+                                    {
+                                        <span class="badge badge-success badge-sm">Fully Dispensed</span>
+                                    }
+                                    else if (!string.IsNullOrEmpty(item.QuantityActuallyDispensedInTransaction) && item.QuantityActuallyDispensedInTransaction != "0")
+                                    {
+                                        <span class="badge badge-info badge-sm">Partially Dispensed</span>
+                                    }
+                                    else if (item.Notes != null && item.Notes.Contains("Skipped"))
+                                    {
+                                        <span class="badge badge-ghost badge-sm">Skipped</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge badge-warning badge-sm">Pending Further Action</span>
+                                    }
+                                </td>
+                                <td>@(item.Notes ?? "-")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else if (!Model.OverallSuccess)
+        {
+            <p class="text-sm">No items were processed in this attempt.</p>
+        }
+
+
+        @if (!string.IsNullOrEmpty(Model.NextStepMessage))
+        {
+            <p class="mt-4 font-semibold">@Model.NextStepMessage</p>
+        }
+
+        <div class="card-actions justify-end mt-6">
+            <button class="btn btn-primary btn-sm"
+                    hx-get="@Url.Action("PharmacistDashboard", "Dashboard")"
+                    hx-target="#main-content"
+                    hx-swap="innerHTML transition:true"
+                    hx-push-url="true">
+                <i data-feather="arrow-left" class="w-4 h-4 mr-1"></i> Back to Dashboard
+            </button>
+            @if (!Model.OverallSuccess || Model.DispensedItems.Any(i => !i.IsFullyDispensedNow && !(i.Notes != null && i.Notes.Contains("Skipped"))))
+            {
+                @* Show "Return to Dispense Form" only if not overall success OR if there are items that were processed but not fully dispensed (and not explicitly skipped) *@
+                <button class="btn btn-outline btn-sm"
+                        hx-get="@Url.Action("StartDispensing", "Pharmacy", new { visitId = Model.VisitId })"
+                        hx-target="#main-content" @* Reload the whole main content with the dispense form for this visit *@
+                        hx-swap="innerHTML transition:true"
+                        hx-push-url="true">
+                    Return to Dispense Form
+                </button>
+            }
+        </div>
+    </div>
+</div>

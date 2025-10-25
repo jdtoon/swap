@@ -1,0 +1,91 @@
+﻿@using carestream.core.dtos.patient
+@model CreateUpdatePatientMedicalHistoryDto
+@{
+    Layout = null; // Loaded into a modal
+    string title = Model.HistoryId > 0 ? "Edit Medical History Entry" : "Add New Medical History Entry";
+    int patientId = ViewData["PatientId"] as int? ?? 0;
+}
+
+<form method="dialog">
+    <button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2" type="button" onclick="admin_generic_modal.close()">✕</button>
+</form>
+<h3 class="font-bold text-lg mb-4">@title</h3>
+<p class="py-2 text-sm">For Patient ID: <span class="font-semibold">@patientId</span></p>
+
+@if (!ViewData.ModelState.IsValid && ViewData.ModelState.Keys.Any(k => ViewData.ModelState[k]?.Errors?.Any() == true))
+{
+    <div class="alert alert-warning text-xs p-2 mb-3">
+        <ul class="list-disc list-inside">
+            @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+            {
+                <li>@error.ErrorMessage</li>
+            }
+        </ul>
+    </div>
+}
+
+<form hx-post="@Url.Action("SaveEntry", "PatientHistory")"
+      hx-target="#admin_generic_modal_content" @* Target the modal content for re-render on error *@
+      hx-swap="innerHTML"
+      hx-indicator="#history-save-indicator">
+    @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="HistoryId" />
+    <input type="hidden" name="PatientId" value="@patientId" /> @* Pass patientId as hidden input *@
+
+    <div class="form-control mb-3">
+        <label asp-for="Type" class="label pb-0"><span class="label-text">Type <span class="text-error">*</span></span></label>
+        <input type="text" asp-for="Type" class="input input-bordered input-sm w-full" placeholder="e.g., Allergy, Condition, Medication" required />
+        <span asp-validation-for="Type" class="text-error text-xs mt-1"></span>
+    </div>
+
+    <div class="form-control mb-3">
+        <label asp-for="Description" class="label pb-0"><span class="label-text">Description <span class="text-error">*</span></span></label>
+        <textarea asp-for="Description" class="textarea textarea-bordered textarea-sm h-24 w-full" placeholder="e.g., Penicillin allergy, Hypertension, Asthma"></textarea>
+        <span asp-validation-for="Description" class="text-error text-xs mt-1"></span>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="form-control mb-3">
+            <label asp-for="OnsetDate" class="label pb-0"><span class="label-text">Onset Date (Optional)</span></label>
+            <input type="date" asp-for="OnsetDate" class="input input-bordered input-sm w-full" />
+            <span asp-validation-for="OnsetDate" class="text-error text-xs mt-1"></span>
+        </div>
+        <div class="form-control mb-3">
+            <label asp-for="ResolutionDate" class="label pb-0"><span class="label-text">Resolution Date (Optional)</span></label>
+            <input type="date" asp-for="ResolutionDate" class="input input-bordered input-sm w-full" />
+            <span asp-validation-for="ResolutionDate" class="text-error text-xs mt-1"></span>
+        </div>
+    </div>
+
+    <div class="form-control mb-3">
+        <label asp-for="Severity" class="label pb-0"><span class="label-text">Severity (Optional)</span></label>
+        <input type="text" asp-for="Severity" class="input input-bordered input-sm w-full" placeholder="e.g., Mild, Moderate, Severe" />
+        <span asp-validation-for="Severity" class="text-error text-xs mt-1"></span>
+    </div>
+
+    <div class="form-control mb-4">
+        <label asp-for="Notes" class="label pb-0"><span class="label-text">Additional Notes (Optional)</span></label>
+        <textarea asp-for="Notes" class="textarea textarea-bordered textarea-sm h-20 w-full" placeholder="Any further details..."></textarea>
+        <span asp-validation-for="Notes" class="text-error text-xs mt-1"></span>
+    </div>
+
+    <div class="form-control flex items-center justify-start flex-row mt-2">
+        <input type="checkbox" asp-for="IsActive" class="checkbox checkbox-primary" />
+        <label asp-for="IsActive" class="label pl-3"><span class="label-text cursor-pointer">Active Entry</span></label>
+        <span asp-validation-for="IsActive" class="text-error text-xs mt-1"></span>
+    </div>
+
+    <div class="modal-action mt-6">
+        <button class="btn btn-sm btn-ghost" type="button" onclick="admin_generic_modal.close()">Cancel</button>
+        <button type="submit" class="btn btn-sm btn-primary">
+            Save Entry
+            <span id="history-save-indicator" class="htmx-indicator loading loading-spinner loading-xs ml-1"></span>
+        </button>
+    </div>
+</form>
+
+<script>
+    if (typeof feather !== 'undefined') {
+        feather.replace();
+    }
+</script>

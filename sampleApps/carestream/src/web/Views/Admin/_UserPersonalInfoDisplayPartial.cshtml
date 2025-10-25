@@ -1,0 +1,22 @@
+﻿@using carestream.core.dtos.admin
+@model AdminUserDetailDto
+@{
+    Layout = null; // Loaded into _UserDetailPartial
+}
+
+<h4 class="font-semibold text-md mb-3">Personal Information</h4>
+<div class="flex justify-end mb-2">
+    <button class="btn btn-xs btn-ghost"
+            hx-get="@Url.Action("EditUserPersonalInfoPartial", "Admin", new { userId = Model.UserId })"
+            hx-target="#user-personal-info-@Model.UserId" @* Target the parent container to swap with edit form *@
+            hx-swap="innerHTML">
+        <i data-feather="edit" class="w-4 h-4 mr-1"></i> Edit Details
+    </button>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-1 text-sm px-2">
+    <span><strong>Rank:</strong> @(Model.Rank ?? "N/A")</span>
+    <span><strong>Department:</strong> @(Model.Department ?? "N/A")</span>
+    <span><strong>Status:</strong> <span class="badge @(Model.IsActive ? "badge-success" : "badge-error") badge-xs">@(Model.IsActive ? "Active" : "Inactive")</span></span>
+    <span><strong>Logto Sub:</strong> @(Model.LogtoSub ?? "Not Linked")</span>
+</div>

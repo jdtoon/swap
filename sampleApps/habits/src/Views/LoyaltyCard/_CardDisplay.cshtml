@@ -1,0 +1,37 @@
+@model LoyaltyCardDto
+@inject IHttpContextAccessor HttpContextAccessor
+
+@{
+    ViewBag.IsHTMXRequest = HttpContextAccessor.HttpContext!.Request.Headers.ContainsKey("HX-Request");
+}
+
+<dialog id="display-card-modal" class="modal modal-middle sm:modal-middle">
+    <div class="modal-box">
+        <h3 class="font-bold text-lg">@Model.Name</h3>
+        <div class="py-4 flex flex-col items-center">
+            <svg id="barcode"></svg>
+        </div>
+        <div class="modal-action">
+            <button class="btn" onclick="closeDisplayModal()">Close</button>
+        </div>
+    </div>
+    <form method="dialog" class="modal-backdrop">
+        <button onclick="closeDisplayModal()">close</button>
+    </form>
+</dialog>
+
+<script>
+    document.getElementById('display-card-modal').showModal();
+
+    function closeDisplayModal() {
+        document.getElementById('display-card-modal').close();
+    }
+
+    // Generate barcode using JsBarcode
+    JsBarcode("#barcode", "@Model.Barcode", {
+        format: "CODE128",
+        width: 2,
+        height: 100,
+        displayValue: true
+    });
+</script>

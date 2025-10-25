@@ -1,0 +1,38 @@
+﻿@{
+    Layout = null;
+    string activeTab = ViewData["ActiveAdminTab"] as string ?? "users";
+}
+
+<div role="tablist" class="tabs tabs-lifted mb-4">
+    <input type="radio" name="admin_tabs" role="tab" class="tab [--tab-border-color:oklch(var(--s))] [--tab-bg:oklch(var(--s))] [--tab-color:oklch(var(--sc))]"
+           aria-label="Users"
+           hx-get="@Url.Action("UserListPartial", "Admin")"
+           hx-target="#admin-content-area"
+           hx-swap="innerHTML"
+           hx-push-url="?tab=users"
+           checked="@(activeTab == "users")" />
+
+    <input type="radio" name="admin_tabs" role="tab" class="tab [--tab-border-color:oklch(var(--s))] [--tab-bg:oklch(var(--s))] [--tab-color:oklch(var(--sc))]"
+           aria-label="Facilities"
+           hx-get="@Url.Action("Index", "FacilityAdmin")"
+           hx-target="#admin-content-area"
+           hx-swap="innerHTML"
+           hx-push-url="?tab=facilities"
+           checked="@(activeTab == "facilities")" />
+
+    <input type="radio" name="admin_tabs" role="tab" class="tab [--tab-border-color:oklch(var(--s))] [--tab-bg:oklch(var(--s))] [--tab-color:oklch(var(--sc))]"
+           aria-label="Departments"
+           hx-get="@Url.Action("Index", "DepartmentAdmin", new { facilityId = 0 })"
+           hx-target="#admin-content-area"
+           hx-swap="innerHTML"
+           hx-push-url="?tab=departments"
+           checked="@(activeTab == "departments")" />
+
+    <input type="radio" name="admin_tabs" role="tab" class="tab [--tab-border-color:oklch(var(--s))] [--tab-bg:oklch(var(--s))] [--tab-color:oklch(var(--sc))]"
+           aria-label="Wards"
+           hx-get="@Url.Action("Index", "WardAdmin", new { facilityId = 0 })"
+           hx-target="#admin-content-area"
+           hx-swap="innerHTML"
+           hx-push-url="?tab=wards"
+           checked="@(activeTab == "wards")" />
+</div>

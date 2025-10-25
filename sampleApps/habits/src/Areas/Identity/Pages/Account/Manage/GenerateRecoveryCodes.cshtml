@@ -1,0 +1,26 @@
+﻿@page
+@model GenerateRecoveryCodesModel
+@{
+    ViewData["Title"] = "Generate two-factor authentication (2FA) recovery codes";
+    ViewData["ActivePage"] = ManageNavPages.TwoFactorAuthentication;
+}
+
+<div class="container mx-auto p-1">
+    <partial name="_StatusMessage" for="StatusMessage" />
+
+    <div class="alert alert-warning mb-6">
+        <img src="~/svg/information.svg" class="h-6 w-6" />
+        <div>
+            <p class="font-bold">Put these codes in a safe place.</p>
+            <p>If you lose your device and don't have the recovery codes you will lose access to your account.</p>
+            <p class="mt-2">
+                Generating new recovery codes does not change the keys used in authenticator apps. If you wish to change the key
+                used in an authenticator app you should <a asp-page="./ResetAuthenticator" class="link link-primary">reset your authenticator keys.</a>
+            </p>
+        </div>
+    </div>
+
+    <form method="post">
+        <button class="btn btn-error" type="submit">Generate Recovery Codes</button>
+    </form>
+</div>

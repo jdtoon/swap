@@ -1,0 +1,53 @@
+﻿@using carestream.core.dtos.dashboard
+@model IEnumerable<RecentStaffReportDto>
+@{
+    Layout = null;
+}
+
+@{
+    string GetPriorityBadgeClass(string priority) => priority switch
+    {
+        "High" => "badge-error",
+        "Medium" => "badge-warning",
+        "Low" => "badge-success",
+        _ => "badge-ghost"
+    };
+}
+
+<div class="card bg-base-100 shadow-xl h-full">
+    <div class="card-body">
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="card-title">Recent Staff Reports</h2>
+            <button class="btn btn-xs btn-ghost"
+                    hx-get="@Url.Action("Index", "StaffReports")"
+                    hx-target="#main-content"
+                    hx-swap="innerHTML transition:true"
+                    hx-push-url="true">
+                View all staff reports →
+            </button>
+        </div>
+        <div class="overflow-x-auto">
+            @if (Model != null && Model.Any())
+            {
+                <ul class="space-y-2">
+                    @foreach (var report in Model)
+                    {
+                        <li class="border-b border-base-300 last:border-b-0 pb-2">
+                            <div class="flex justify-between items-start">
+                                <span class="font-semibold">@report.Title</span>
+                                <span class="badge @GetPriorityBadgeClass(report.Priority) badge-sm">@report.Priority</span>
+                            </div>
+                            <div class="text-xs text-gray-500">
+                                By @report.Author (@report.Department) - @report.Timestamp.ToString("g")
+                            </div>
+                        </li>
+                    }
+                </ul>
+            }
+            else
+            {
+                <p class="text-center text-gray-500 py-4">No recent staff reports found.</p>
+            }
+        </div>
+    </div>
+</div>

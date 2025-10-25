@@ -1,0 +1,84 @@
+﻿@using carestream.core.dtos.pharmacy
+@model DispensedHistoryViewModel
+@{
+    Layout = null;
+}
+
+@if (Model.DispensedItems.Any())
+{
+    <div class="overflow-x-auto">
+        <table class="table table-sm table-zebra w-full">
+            <thead>
+                <tr>
+                    <th>Dispensed At</th>
+                    <th>Patient</th>
+                    <th>Medication</th>
+                    <th>Qty Dispensed</th>
+                    <th>Pharmacist</th>
+                    <th>Notes/Batch</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model.DispensedItems)
+                {
+                    <tr>
+                        <td>@item.DispensedAt.ToLocalTime().ToString("g")</td>
+                        <td>
+                            <div>@item.PatientName</div>
+                            <div class="text-xs opacity-70">@item.PatientForceNumber</div>
+                        </td>
+                        <td class="font-medium">@item.MedicationName</td>
+                        <td>@item.QuantityDispensedInTransaction</td>
+                        <td>@item.PharmacistName</td>
+                        <td>
+                            @if (!string.IsNullOrWhiteSpace(item.PharmacistNotes))
+                            {
+                                <div class="text-xs">Notes: @item.PharmacistNotes</div>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(item.BatchNumber))
+                            {
+                                <div class="text-xs">Batch: @item.BatchNumber</div>
+                            }
+                            @if (item.ExpiryDate.HasValue)
+                            {
+                                <div class="text-xs">Expiry: @item.ExpiryDate.Value.ToString("yyyy-MM-dd")</div>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+else
+{
+    <div class="text-center py-8">
+        <i data-feather="inbox" class="w-12 h-12 mx-auto text-gray-400"></i>
+        <p class="mt-2 text-gray-500">No dispensed items found matching your criteria.</p>
+    </div>
+}
+
+@* Include Pagination Controls Partial *@
+@* Pass current filter values to pagination so they are maintained *@
+@{
+    Model.PaginationInfo.HxGetUrl = Url.Action("DispensedHistoryList", "Pharmacy", new
+    {
+        SearchTerm1 = Model.FilterPatientSearch,
+        SearchTerm2 = Model.FilterMedicationSearch,
+        StartDate = Model.FilterStartDate,
+        EndDate = Model.FilterEndDate
+    }) ?? "";
+    Model.PaginationInfo.HxTarget = "#dispensed-history-list-container"; 
+}
+<partial name="_PaginationControls" model="Model.PaginationInfo" />
+
+<div class="text-center py-2">
+    <span class="loading loading-md loading-spinner table-loading-indicator htmx-indicator"></span>
+</div>
+
+
+<script>
+    if (typeof feather !== 'undefined') {
+        feather.replace();
+    }
+</script>

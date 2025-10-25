@@ -1,0 +1,68 @@
+﻿@page
+@model EnableAuthenticatorModel
+@{
+    ViewData["Title"] = "Configure authenticator app";
+    ViewData["ActivePage"] = ManageNavPages.TwoFactorAuthentication;
+}
+
+<div class="container mx-auto p-1">
+    <partial name="_StatusMessage" for="StatusMessage" />
+
+    <div class="card bg-base-100 shadow-xl">
+        <div class="card-body p-2">
+            <p class="mb-4">To use an authenticator app go through the following steps:</p>
+            <ol class="list-decimal list-inside space-y-6">
+                <li>
+                    <p class="mb-2">
+                        Download a two-factor authenticator app like Microsoft Authenticator for
+                        <a href="https://go.microsoft.com/fwlink/?Linkid=825072" class="link link-primary">Android</a> and
+                        <a href="https://go.microsoft.com/fwlink/?Linkid=825073" class="link link-primary">iOS</a> or
+                        Google Authenticator for
+                        <a href="https://play.google.com/store/apps/details?id=com.google.android.apps.authenticator2&amp;hl=en" class="link link-primary">Android</a> and
+                        <a href="https://itunes.apple.com/us/app/google-authenticator/id388497605?mt=8" class="link link-primary">iOS</a>.
+                    </p>
+                </li>
+                <li>
+                    <p class="mb-2">Scan the QR Code or enter this key <kbd class="kbd kbd-sm">@Model.SharedKey</kbd> into your two factor authenticator app. Spaces and casing do not matter.</p>
+                    <div class="alert alert-info">
+                        <img src="~/svg/qr.svg" class="h-6 w-6" />
+                        <span>Learn how to <a href="https://go.microsoft.com/fwlink/?Linkid=852423" class="link link-primary">enable QR code generation</a>.</span>
+                    </div>
+                    <div id="qrCode" class="my-4"></div>
+                    <div id="qrCodeData" data-url="@Model.AuthenticatorUri"></div>
+                </li>
+                <li>
+                    <p class="mb-4">
+                        Once you have scanned the QR code or input the key above, your two factor authentication app will provide you
+                        with a unique code. Enter the code in the confirmation box below.
+                    </p>
+                    <form id="send-code" method="post" class="max-w-md">
+                        <div asp-validation-summary="ModelOnly" class="text-error" role="alert"></div>
+
+                        <div class="form-control w-full">
+                            <label class="label">
+                                <span class="label-text">Verification Code</span>
+                            </label>
+                            <input asp-for="Input.Code"
+                                   class="input input-bordered w-full"
+                                   autocomplete="off"
+                                   placeholder="Please enter the code." />
+                            <label class="label">
+                                <span asp-validation-for="Input.Code" class="label-text-alt text-error"></span>
+                            </label>
+                        </div>
+
+                        <div class="form-control mt-6">
+                            <button type="submit" class="btn btn-primary">Verify</button>
+                        </div>
+                    </form>
+                </li>
+            </ol>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script type="text/javascript" src="~/lib/qrcodejs/qrcode.min.js"></script>
+    <script type="text/javascript" src="~/js/qr.js"></script>
+}

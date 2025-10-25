@@ -1,0 +1,59 @@
+﻿@using Microsoft.AspNetCore.Identity
+@using System.Security.Claims
+@using habits.Data.Models
+@inject SignInManager<AppUser> SignInManager
+@inject UserManager<AppUser> UserManager
+
+<div class="flex items-center gap-2">
+    @if (SignInManager.IsSignedIn(User))
+    {
+        <div class="drawer drawer-end">
+            <input id="user-drawer" type="checkbox" class="drawer-toggle" />
+
+            <!-- Drawer trigger -->
+            <div class="drawer-content">
+                <label for="user-drawer" class="btn btn-ghost btn-circle avatar drawer-button">
+                    <img src="~/svg/profile-white.svg" class="h-10 w-10" />
+                </label>
+            </div>
+
+            <!-- Drawer side -->
+            <div class="drawer-side z-50">
+                <label for="user-drawer" class="drawer-overlay"></label>
+                <div class="menu w-80 min-h-full bg-base-200 p-4 text-base-content">
+                    <div class="flex flex-col space-y-4">
+                        <!-- User Profile Header -->
+                        <div class="text-xl font-bold px-4 py-2 mb-4 flex items-center space-x-3">
+                            <div class="btn btn-ghost btn-circle">
+                                <img src="~/svg/avatar.svg" class="h-8 w-8" />
+                            </div>
+                            <span>@User.FindFirstValue("Name") @User.FindFirstValue("Surname")</span>
+                        </div>
+
+                        <!-- Profile Link -->
+                        <a asp-area="Identity"
+                           asp-page="/Account/Manage/Index"
+                           hx-on:click="document.getElementById('user-drawer').checked = false"
+                           class="flex items-center space-x-3 p-3 rounded-lg hover:bg-base-300 transition-colors">
+                            <img src="~/svg/profile-circle.svg" class="h-6 w-6" />
+                            <span>Profile</span>
+                        </a>
+
+                        <div class="divider"></div>
+
+                        <!-- Logout Form -->
+                        <form asp-area="Identity"
+                              asp-page="/Account/Logout"
+                              class="w-full">
+                            <button type="submit"
+                                    class="flex items-center space-x-3 p-3 rounded-lg hover:bg-base-300 transition-colors w-full">
+                                <img src="~/svg/logout-white.svg" class="h-6 w-6" />
+                                <span>Logout</span>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>

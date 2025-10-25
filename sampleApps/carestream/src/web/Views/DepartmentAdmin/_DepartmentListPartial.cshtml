@@ -1,0 +1,106 @@
+﻿@using carestream.core.dtos.admin.facility
+@using carestream.core.dtos.shared
+@model DepartmentListViewModel
+@{
+    Layout = null;
+}
+
+<div id="department-list-container">
+    <div class="card bg-base-100 shadow-xl">
+        <div class="card-body">
+            <div class="flex flex-col sm:flex-row justify-between items-center mb-4 gap-2">
+                <h2 class="card-title">Departments in @Model.FacilityName</h2>
+                <div class="flex items-center gap-2">
+                    <form hx-get="@Url.Action("Index", "DepartmentAdmin", new { facilityId = Model.FacilityId })"
+                          hx-target="#department-list-container"
+                          hx-swap="innerHTML"
+                          class="join">
+                        <input type="search" name="SearchTerm1" value="@Model.CurrentFilters.SearchTerm1" placeholder="Search departments..." class="input input-sm input-bordered join-item" />
+                        <button type="submit" class="btn btn-sm btn-primary join-item">
+                            <i data-feather="search" class="w-4 h-4"></i>
+                        </button>
+                    </form>
+                    <button class="btn btn-sm btn-success"
+                            hx-get="@Url.Action("CreateEditModal", "DepartmentAdmin", new { facilityId = Model.FacilityId })"
+                            hx-target="#admin_generic_modal_content"
+                            hx-swap="innerHTML"
+                            onclick="admin_generic_modal.showModal()">
+                        <i data-feather="plus" class="w-4 h-4 mr-1"></i> New Department
+                    </button>
+                </div>
+            </div>
+
+            @if (Model.Departments.Any())
+            {
+                <div class="overflow-x-auto">
+                    <table class="table table-sm table-zebra w-full">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Name</th>
+                                <th>Description</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var department in Model.Departments)
+                            {
+                                <tr>
+                                    <td>@department.DepartmentId</td>
+                                    <td>@department.Name</td>
+                                    <td>@(department.Description ?? "-")</td>
+                                    <td>
+                                        <span class="badge @(department.IsActive ? "badge-success" : "badge-error") badge-xs">
+                                            @(department.IsActive ? "Active" : "Inactive")
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-xs btn-outline btn-info"
+                                                hx-get="@Url.Action("CreateEditModal", "DepartmentAdmin", new { facilityId = Model.FacilityId, departmentId = department.DepartmentId })"
+                                                hx-target="#admin_generic_modal_content"
+                                                hx-swap="innerHTML"
+                                                onclick="admin_generic_modal.showModal()">
+                                            Edit
+                                        </button>
+                                        @if (department.IsActive)
+                                        {
+                                            <form hx-post="@Url.Action("Deactivate", "DepartmentAdmin")"
+                                                  hx-vals='{"departmentId": @department.DepartmentId}'
+                                                  hx-confirm="Are you sure you want to deactivate @department.Name?"
+                                                  hx-target="this" hx-swap="none"
+                                                  hx-indicator="#deactivate-indicator-@department.DepartmentId"
+                                                  class="inline-block ml-1">
+                                                @Html.AntiForgeryToken()
+                                                <button type="submit" class="btn btn-xs btn-outline btn-warning">
+                                                    Deactivate
+                                                    <span id="deactivate-indicator-@department.DepartmentId" class="htmx-indicator loading loading-spinner loading-xs"></span>
+                                                </button>
+                                            </form>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+                <partial name="_PaginationControls" model="Model.PaginationInfo"
+                         view-data='new ViewDataDictionary(ViewData) { { "AdditionalRouteValues", new Dictionary<string, string> { { "SearchTerm1", Model.CurrentFilters.SearchTerm1 ?? "" }, { "facilityId", Model.FacilityId.ToString() } } } }' />
+            }
+            else
+            {
+                <p class="text-center py-4">No departments found @(!string.IsNullOrEmpty(Model.CurrentFilters.SearchTerm1) ? "matching your search." : "for this facility.")</p>
+            }
+        </div>
+    </div>
+</div>
+
+<script>
+    if (typeof feather !== 'undefined') { feather.replace(); }
+    document.body.addEventListener('refreshDepartmentList', function() {
+        htmx.ajax('GET', '@Url.Action("Index", "DepartmentAdmin", new { facilityId = Model.FacilityId, searchTerm1 = Model.CurrentFilters.SearchTerm1, pageNumber = Model.PaginationInfo.CurrentPage, pageSize = Model.PaginationInfo.PageSize })', {
+            target: '#department-list-container',
+            swap: 'innerHTML'
+        });
+    });
+</script>

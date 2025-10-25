@@ -1,0 +1,30 @@
+﻿@page
+@model ShowRecoveryCodesModel
+@{
+    ViewData["Title"] = "Recovery codes";
+    ViewData["ActivePage"] = "TwoFactorAuthentication";
+}
+
+<div class="container mx-auto p-1">
+    <partial name="_StatusMessage" for="StatusMessage" />
+
+    <div class="alert alert-warning mb-6">
+        <img src="~/svg/information.svg" class="h-6 w-6" />
+        <div>
+            <h3 class="font-bold">Put these codes in a safe place.</h3>
+            <p>If you lose your device and don't have the recovery codes you will lose access to your account.</p>
+        </div>
+    </div>
+
+    <div class="card bg-base-100 shadow-xl">
+        <div class="card-body">
+            <div class="grid grid-cols-2 gap-4">
+                @for (var row = 0; row < Model.RecoveryCodes.Length; row += 2)
+                {
+                    <code class="bg-base-200 p-2 rounded">@Model.RecoveryCodes[row]</code>
+                    <code class="bg-base-200 p-2 rounded">@Model.RecoveryCodes[row + 1]</code>
+                }
+            </div>
+        </div>
+    </div>
+</div>

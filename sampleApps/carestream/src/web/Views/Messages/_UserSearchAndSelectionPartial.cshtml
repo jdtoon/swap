@@ -1,0 +1,245 @@
+﻿@using carestream.core.dtos.admin
+@using System.Linq
+@{
+    Layout = null;
+    int currentUserId = ViewData["CurrentUserId"] as int? ?? 0;
+}
+
+<h2 class="card-title text-lg mb-4 flex justify-between items-center">
+    <button type="button"
+            class="btn btn-ghost btn-sm"
+            hx-get="@Url.Action("ConversationListPartial", "Messages")"
+            hx-target="#conversation-list-panel"
+            hx-swap="innerHTML"
+            hx-on::after-swap="cleanupNewChatScript()">
+        <i data-feather="arrow-left" class="w-5 h-5"></i> Back
+    </button>
+    <span class="flex-grow text-center">New Message</span>
+    <div></div>
+</h2>
+
+<div class="mb-4">
+    <div class="form-control">
+        <input type="text"
+               placeholder="Search staff members..."
+               class="input input-bordered w-full"
+               name="searchTerm"
+               hx-get="@Url.Action("SearchUsers", "Messages")"
+               hx-target="#user-search-results"
+               hx-trigger="keyup changed delay:300ms, search"
+               hx-indicator="#user-search-indicator" />
+        <span id="user-search-indicator" class="htmx-indicator loading loading-spinner loading-xs ml-1"></span>
+    </div>
+
+    <div id="selected-users-display" class="mt-2 flex flex-wrap gap-2 text-sm min-h-[30px] items-center">
+        <p class="text-xs text-gray-400" id="selected-users-placeholder">No users selected</p>
+    </div>
+</div>
+
+<form id="start-conversation-form"
+      hx-post="@Url.Action("StartConversation", "Messages")"
+      hx-target="#message-panel-container"
+      hx-swap="innerHTML"
+      hx-on::after-request="if(event.detail.successful) { htmx.trigger(document.body, 'refreshConversationList', { setActiveConversation: event.detail.serverResponse.setActiveConversation || @(ViewData["ActiveConversationId"] ?? 0) }); cleanupNewChatScript(); }" @* Pass actual new conv ID if returned *@
+      hx-indicator="#start-chat-indicator">
+    @Html.AntiForgeryToken()
+
+    <div id="user-search-results" class="overflow-y-auto max-h-[calc(100vh - 450px)] border rounded-md p-2">
+        <div class="text-center py-4 text-sm text-gray-500">Start typing to search for staff members.</div>
+    </div>
+
+    <div id="group-name-input-container" class="mt-2" style="display: none;">
+        <input type="text"
+               name="groupName"
+               placeholder="Group Name (optional)"
+               class="input input-bordered w-full" />
+    </div>
+
+    <button type="submit"
+            class="btn btn-primary btn-block mt-4"
+            disabled id="start-chat-button">
+        Start Chat
+        <span id="start-chat-indicator" class="htmx-indicator loading loading-spinner loading-xs ml-1"></span>
+    </button>
+</form>
+
+<script>
+    if (typeof feather !== 'undefined') {
+        feather.replace();
+    }
+
+    // IIFE to scope variables locally
+    (function() {
+        const startConversationForm = document.getElementById('start-conversation-form');
+        if (!startConversationForm) {
+            return; // Exit if the partial isn't fully loaded
+        }
+
+        // Global state for selected users - persists across reloads of this partial
+        window._selectedNewChatUsers = window._selectedNewChatUsers || new Map();
+        const selectedUsers = window._selectedNewChatUsers;
+
+        // Function to get fresh references to DOM elements
+        // This is crucial because HTMX can replace these elements
+        function getDOMElements() {
+            return {
+                startChatButton: document.getElementById('start-chat-button'),
+                selectedUsersDisplay: document.getElementById('selected-users-display'),
+                selectedUsersPlaceholder: document.getElementById('selected-users-placeholder'),
+                groupNameInputContainer: document.getElementById('group-name-input-container'),
+                userSearchResults: document.getElementById('user-search-results')
+            };
+        }
+
+        function updateSelectedUsersDisplay() {
+            const { startChatButton, selectedUsersDisplay, selectedUsersPlaceholder, groupNameInputContainer } = getDOMElements();
+
+            if (!selectedUsersDisplay) return; // Guard against element not found
+
+            selectedUsersDisplay.innerHTML = ''; // Clear current display
+
+            if (selectedUsers.size === 0) {
+                if (selectedUsersPlaceholder) selectedUsersPlaceholder.style.display = 'block';
+            } else {
+                if (selectedUsersPlaceholder) selectedUsersPlaceholder.style.display = 'none';
+                selectedUsers.forEach((user, userId) => {
+                    const span = document.createElement('span');
+                    span.className = 'badge badge-primary gap-1';
+                    span.innerHTML = `
+                        ${user.fullName}
+                        <button type="button" class="btn btn-xs btn-ghost text-white" data-user-id="${userId}">×</button>
+                    `;
+                    span.querySelector('button').addEventListener('click', handleRemoveUserClick);
+                    selectedUsersDisplay.appendChild(span);
+                });
+            }
+
+            // Update hidden inputs for form submission
+            startConversationForm.querySelectorAll('input[name="selectedUserIds"]').forEach(input => input.remove());
+            selectedUsers.forEach((user, userId) => {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'selectedUserIds';
+                input.value = userId;
+                startConversationForm.appendChild(input);
+            });
+
+            if (startChatButton) {
+                startChatButton.disabled = selectedUsers.size === 0;
+            }
+
+            if (groupNameInputContainer) {
+                if (selectedUsers.size > 1) {
+                    groupNameInputContainer.style.display = 'block';
+                } else {
+                    groupNameInputContainer.style.display = 'none';
+                    const groupNameInput = groupNameInputContainer.querySelector('input[name="groupName"]');
+                    if (groupNameInput) groupNameInput.value = '';
+                }
+            }
+        }
+
+        function addUser(userId, fullName, rank, department) {
+            if (userId === @currentUserId) {
+                 console.warn('Cannot add yourself to the chat participants.');
+                 return;
+            }
+
+            if (!selectedUsers.has(userId)) {
+                selectedUsers.set(userId, { fullName, rank, department });
+                updateSelectedUsersDisplay();
+                // Apply 'btn-disabled' class to the corresponding search result button
+                const btn = document.querySelector(`#user-search-results .add-user-btn[data-user-id="${userId}"]`);
+                if (btn) {
+                    btn.classList.add('btn-disabled');
+                }
+            }
+        }
+
+        function removeUser(userId) {
+            if (selectedUsers.delete(userId)) {
+                updateSelectedUsersDisplay();
+                // Remove 'btn-disabled' class from the corresponding search result button
+                const btn = document.querySelector(`#user-search-results .add-user-btn[data-user-id="${userId}"]`);
+                if (btn) {
+                    btn.classList.remove('btn-disabled');
+                }
+            }
+        }
+
+        // Helper functions for event listeners to avoid anonymous functions in loops
+        function handleAddUserClick() {
+            const userId = parseInt(this.dataset.userId);
+            const fullName = this.dataset.userName;
+            const rank = this.dataset.userRank;
+            const department = this.dataset.userDept;
+            addUser(userId, fullName, rank, department);
+        }
+
+        function handleRemoveUserClick() {
+            const userId = parseInt(this.dataset.userId);
+            removeUser(userId);
+        }
+
+
+        // Global HTMX event listener for after a swap occurs anywhere on the body
+        // This handles cases where the search results partial (`user-search-results`) is loaded
+        // and needs to re-attach listeners and update button states.
+        document.body.addEventListener('htmx:afterSwap', function(evt) {
+            const { userSearchResults } = getDOMElements(); // Get fresh reference
+
+            // Only process if the target is our search results div or the entire panel
+            if (evt.target.id === 'user-search-results' || evt.target.id === 'conversation-list-panel') {
+                if (userSearchResults) { // Ensure userSearchResults element exists
+                    userSearchResults.querySelectorAll('.add-user-btn').forEach(button => {
+                        // Ensure only one listener is attached
+                        button.removeEventListener('click', handleAddUserClick);
+                        button.addEventListener('click', handleAddUserClick);
+
+                        // Update button disabled state based on current selectedUsers state
+                        const userId = parseInt(button.dataset.userId);
+                        if (selectedUsers.has(userId)) {
+                            button.classList.add('btn-disabled');
+                        } else {
+                            button.classList.remove('btn-disabled');
+                        }
+                    });
+                }
+                // When the entire panel is swapped (e.g. going back from new chat),
+                // we need to re-initialize the selected users display too.
+                if (evt.target.id === 'conversation-list-panel' && evt.detail.elt.id === 'conversation-list-panel') {
+                     // This indicates we are going back to the conversation list,
+                     // so the new chat partial is being removed. The cleanupNewChatScript will handle state reset.
+                } else if (evt.target.id === 'conversation-list-panel' && !document.getElementById('user-search-results')) {
+                    // This implies a full refresh of the list panel happened, potentially re-rendering the new chat partial.
+                    // Call updateSelectedUsersDisplay() to ensure the UI reflects the current global state.
+                    updateSelectedUsersDisplay();
+                } else if (evt.target.id === 'message-panel-container' && !document.getElementById('user-search-results')) {
+                    // This is after starting a conversation, where the message panel is swapped.
+                    // The new chat partial is still active in the DOM, so ensure its display is updated.
+                    updateSelectedUsersDisplay();
+                }
+            }
+        });
+
+        // Initial setup when the partial is first loaded.
+        // This ensures the display is correct if there are users already selected from a previous session (due to _selectedNewChatUsers persistence)
+        // or if it's the first time and the map is empty.
+        updateSelectedUsersDisplay();
+
+    })(); // End of IIFE
+
+    // Global function to clean up the shared state when moving back to the conversation list
+    // This function must be defined globally so hx-on::after-swap can call it.
+    window.cleanupNewChatScript = function() {
+        if (window._selectedNewChatUsers) {
+            window._selectedNewChatUsers = new Map(); // Reset the map
+            console.log('New chat selection state reset.');
+        }
+        // Also ensure any search results are cleared when going back, if the search partial is still active.
+        const userSearchResults = document.getElementById('user-search-results');
+        if (userSearchResults) {
+            userSearchResults.innerHTML = '<div class="text-center py-4 text-sm text-gray-500">Start typing to search for staff members.</div>';
+        }
+    };
+</script>

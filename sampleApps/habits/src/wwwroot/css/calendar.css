@@ -1,0 +1,56 @@
+﻿.calendar-day {
+    transition: all 0.2s ease-in-out;
+}
+
+    .calendar-day:hover {
+        background-color: rgba(var(--primary-rgb), 0.1);
+    }
+
+.event-dot {
+    transition: transform 0.2s ease-in-out;
+}
+
+    .event-dot:hover {
+        transform: scale(1.5);
+        cursor: pointer;
+    }
+
+.islamic-date {
+    font-size: 0.65rem;
+    opacity: 0.7;
+}
+
+.islamic-month {
+    font-size: 0.65rem;
+    font-weight: 600;
+    color: var(--primary-color);
+}
+
+.w-13 {
+    width: 3.25rem;
+}
+
+.h-13 {
+    height: 3.25rem;
+}
+
+.day-viewer-event {
+    margin-bottom: 0.5rem;
+    padding: 0.5rem;
+    border-radius: 0.375rem;
+    position: relative;
+}
+
+.time-slot {
+    position: relative;
+    min-height: 48px;
+    border-top: 1px solid var(--base-300);
+}
+
+.time-event {
+    position: absolute;
+    width: 100%;
+    padding: 0.25rem;
+    border-radius: 0.375rem;
+    z-index: 1;
+}

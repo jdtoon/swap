@@ -1,0 +1,33 @@
+﻿<div id="search-bar-placeholder" class="navbar-row w-full flex justify-center mt-4 mb-4 px-4">
+    <div class="form-control w-full max-w-sm relative">
+        <form hx-get="@Url.Action("Search", "GlobalSearch")"
+              hx-trigger="keyup changed delay:500ms"
+              hx-indicator="#loading-indicator"
+              hx-target="#search-results">
+            <input class="input input-bordered w-full bg-white"
+                   type="text"
+                   name="search"
+                   placeholder="Search">
+
+            <!-- Search Icon -->
+            <div class="absolute inset-y-0 right-3 flex items-center pointer-events-none text-gray-400">
+                <img src="~/svg/search.svg" class="w-8 h-8">
+            </div>
+        </form>
+
+        <!-- Search Results Dropdown -->
+        <div id="search-results" class="absolute top-full left-0 w-full bg-white mt-1 rounded-lg shadow-lg z-50 overflow-y-auto">
+        </div>
+    </div>
+</div>
+
+@if (ViewBag.IsHTMXRequest == true)
+{
+    <script defer src="~/js/globalSearch.js" asp-append-version="true"></script>
+}
+else
+{
+    @section Scripts {
+    <script defer src="~/js/globalSearch.js" asp-append-version="true"></script>
+    }
+}

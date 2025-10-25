@@ -1,0 +1,59 @@
+﻿@page
+@model LoginWith2faModel
+@{
+    ViewData["Title"] = "Two-factor authentication";
+    Layout = "/Views/Shared/_LayoutNone.cshtml";
+}
+
+<div class="container">
+    <div class="min-h-screen flex">
+        <div class="card w-96 bg-base-100 shadow-xl">
+            <div class="card-body">
+                <h2 class="card-title text-2xl">@ViewData["Title"]</h2>
+                <div class="alert alert-info">
+                    <img src="~/svg/verified.svg" class="h-6 w-6" />
+                    <span>Your login is protected with an authenticator app. Enter your authenticator code below.</span>
+                </div>
+
+                <form method="post">
+                    <div asp-validation-summary="ModelOnly" class="text-error" role="alert"></div>
+
+                    <div class="form-control w-full">
+                        <label class="label">
+                            <span class="label-text" asp-for="Input.TwoFactorCode"></span>
+                        </label>
+                        <input asp-for="Input.TwoFactorCode"
+                               class="input input-bordered w-full"
+                               autocomplete="off" />
+                        <label class="label">
+                            <span asp-validation-for="Input.TwoFactorCode" class="label-text-alt text-error"></span>
+                        </label>
+                    </div>
+
+                    <div class="form-control">
+                        <label class="label cursor-pointer">
+                            <span class="label-text" asp-for="Input.RememberMachine">
+                                @Html.DisplayNameFor(m => m.Input.RememberMachine)
+                            </span>
+                            <input asp-for="Input.RememberMachine" type="checkbox" class="checkbox checkbox-primary" />
+                        </label>
+                    </div>
+
+                    <div class="form-control mt-6">
+                        <button type="submit" class="btn btn-primary">Log in</button>
+                    </div>
+                </form>
+
+                <div class="divider"></div>
+
+                <div class="text-center">
+                    <a id="recovery-code-login"
+                       asp-page="./LoginWithRecoveryCode"
+                       class="link link-primary">
+                        Log in with a recovery code
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

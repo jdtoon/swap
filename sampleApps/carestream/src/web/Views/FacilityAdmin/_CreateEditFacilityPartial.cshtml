@@ -1,0 +1,92 @@
+﻿@using carestream.core.dtos.admin.facility
+@model CreateUpdateFacilityDto
+@{
+    Layout = null; // Loaded into a modal
+    string title = Model.FacilityId.HasValue && Model.FacilityId.Value > 0 ? "Edit Facility" : "Create New Facility";
+}
+
+<form method="dialog">
+    <button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2" type="button" onclick="admin_generic_modal.close()">✕</button>
+</form>
+<h3 class="font-bold text-lg mb-4">@title</h3>
+
+@if (!ViewData.ModelState.IsValid && ViewData.ModelState.Keys.Any(k => ViewData.ModelState[k]?.Errors?.Any() == true))
+{
+    <div class="alert alert-warning text-xs p-2 mb-3">
+        <ul class="list-disc list-inside">
+            @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+            {
+                <li>@error.ErrorMessage</li>
+            }
+        </ul>
+    </div>
+}
+
+<form hx-post="@Url.Action("CreateOrUpdate", "FacilityAdmin")"
+      hx-target="#admin_generic_modal_content" @* Target the modal content for re-render on error *@
+      hx-swap="innerHTML"
+      hx-indicator="#facility-save-indicator">
+    @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="FacilityId" />
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="form-control">
+            <label asp-for="Name" class="label pb-0"><span class="label-text">Facility Name</span></label>
+            <input type="text" asp-for="Name" class="input input-bordered input-sm w-full" required />
+            <span asp-validation-for="Name" class="text-error text-xs mt-1"></span>
+        </div>
+        <div class="form-control">
+            <label asp-for="ShortCode" class="label pb-0"><span class="label-text">Short Code</span></label>
+            <input type="text" asp-for="ShortCode" class="input input-bordered input-sm w-full" />
+            <span asp-validation-for="ShortCode" class="text-error text-xs mt-1"></span>
+        </div>
+        <div class="form-control md:col-span-2">
+            <label asp-for="AddressLine1" class="label pb-0"><span class="label-text">Address Line 1</span></label>
+            <input type="text" asp-for="AddressLine1" class="input input-bordered input-sm w-full" />
+            <span asp-validation-for="AddressLine1" class="text-error text-xs mt-1"></span>
+        </div>
+        <div class="form-control md:col-span-2">
+            <label asp-for="AddressLine2" class="label pb-0"><span class="label-text">Address Line 2</span></label>
+            <input type="text" asp-for="AddressLine2" class="input input-bordered input-sm w-full" />
+            <span asp-validation-for="AddressLine2" class="text-error text-xs mt-1"></span>
+        </div>
+        <div class="form-control">
+            <label asp-for="City" class="label pb-0"><span class="label-text">City</span></label>
+            <input type="text" asp-for="City" class="input input-bordered input-sm w-full" />
+            <span asp-validation-for="City" class="text-error text-xs mt-1"></span>
+        </div>
+        <div class="form-control">
+            <label asp-for="Province" class="label pb-0"><span class="label-text">Province</span></label>
+            <input type="text" asp-for="Province" class="input input-bordered input-sm w-full" />
+            <span asp-validation-for="Province" class="text-error text-xs mt-1"></span>
+        </div>
+        <div class="form-control">
+            <label asp-for="Country" class="label pb-0"><span class="label-text">Country</span></label>
+            <input type="text" asp-for="Country" class="input input-bordered input-sm w-full" />
+            <span asp-validation-for="Country" class="text-error text-xs mt-1"></span>
+        </div>
+        <div class="form-control">
+            <label asp-for="PhoneNumber" class="label pb-0"><span class="label-text">Phone Number</span></label>
+            <input type="tel" asp-for="PhoneNumber" class="input input-bordered input-sm w-full" />
+            <span asp-validation-for="PhoneNumber" class="text-error text-xs mt-1"></span>
+        </div>
+        <div class="form-control md:col-span-2">
+            <label asp-for="EmailAddress" class="label pb-0"><span class="label-text">Email Address</span></label>
+            <input type="email" asp-for="EmailAddress" class="input input-bordered input-sm w-full" />
+            <span asp-validation-for="EmailAddress" class="text-error text-xs mt-1"></span>
+        </div>
+        <div class="form-control md:col-span-2 flex items-center justify-start flex-row mt-2">
+            <input type="checkbox" asp-for="IsActive" class="checkbox checkbox-primary" />
+            <label asp-for="IsActive" class="label pl-3"><span class="label-text cursor-pointer">Active Facility</span></label>
+            <span asp-validation-for="IsActive" class="text-error text-xs mt-1"></span>
+        </div>
+    </div>
+
+    <div class="modal-action mt-6">
+        <button class="btn btn-sm btn-ghost" type="button" onclick="admin_generic_modal.close()">Cancel</button>
+        <button type="submit" class="btn btn-sm btn-primary">
+            Save Facility
+            <span id="facility-save-indicator" class="htmx-indicator loading loading-spinner loading-xs ml-1"></span>
+        </button>
+    </div>
+</form>

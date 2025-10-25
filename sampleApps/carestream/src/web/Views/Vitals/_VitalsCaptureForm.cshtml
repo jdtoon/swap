@@ -1,0 +1,189 @@
+﻿@* File: src/web/Views/Vitals/_VitalsCaptureForm.cshtml *@
+@using carestream.core.dtos.vitals
+@model VitalsCaptureInputDto
+@{
+    Layout = null; // This is a partial view, so no layout is applied
+}
+
+<div class="mb-6">
+    <h1 class="text-2xl font-semibold text-gray-700">Capture Vital Signs</h1>
+    <p class="text-gray-500">
+        Patient: <span class="font-semibold">@Model.PatientRank @Model.PatientName</span> (ID: @Model.PatientId)
+        | Visit ID: <span class="font-semibold">@Model.VisitId</span>
+    </p>
+</div>
+
+@* Display general model errors from ModelState or TempData error messages from controller *@
+@if (!ViewData.ModelState.IsValid && ViewData.ModelState[string.Empty] != null && ViewData!.ModelState[string.Empty]!.Errors.Any())
+{
+    <div class="alert alert-error shadow-lg mb-4">
+        <div>
+            <i data-feather="alert-circle" class="w-6 h-6 mr-2"></i>
+            <span>@ViewData!.ModelState[string.Empty]!.Errors.First().ErrorMessage</span>
+        </div>
+    </div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-error shadow-lg mb-4">
+        <div>
+            <i data-feather="alert-circle" class="w-6 h-6 mr-2"></i>
+            <span>@TempData["ErrorMessage"]</span>
+        </div>
+    </div>
+}
+
+
+<form hx-post="@Url.Action("SaveVitals", "Vitals")"
+      hx-target="#main-content"
+      hx-swap="innerHTML transition:true"
+      hx-indicator="#vitals-save-indicator">
+
+    @Html.AntiForgeryToken() @* Security measure against CSRF attacks *@
+    @* Hidden fields to ensure these crucial IDs are posted back with the form data *@
+    @Html.HiddenFor(m => m.VisitId)
+    @Html.HiddenFor(m => m.PatientId)
+    @Html.HiddenFor(m => m.PatientName) @* Include patient name for re-display on validation error *@
+    @Html.HiddenFor(m => m.PatientRank) @* Include patient rank for re-display on validation error *@
+
+    <div class="card bg-base-100 shadow-xl">
+        <div class="card-body">
+            <h2 class="card-title text-lg">Vital Signs (FR-VS-006)</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+                @* Blood Pressure - Systolic *@
+                <div class="form-control">
+                    <label asp-for="BloodPressureSystolic" class="label">
+                        <span class="label-text">Blood Pressure (Systolic) <span class="text-error text-xs align-super">*</span></span>
+                    </label>
+                    <input asp-for="BloodPressureSystolic" type="number" placeholder="e.g., 120" class="input input-bordered" required />
+                    <span asp-validation-for="BloodPressureSystolic" class="text-error text-xs mt-1"></span>
+                </div>
+
+                @* Blood Pressure - Diastolic *@
+                <div class="form-control">
+                    <label asp-for="BloodPressureDiastolic" class="label">
+                        <span class="label-text">Blood Pressure (Diastolic) <span class="text-error text-xs align-super">*</span></span>
+                    </label>
+                    <input asp-for="BloodPressureDiastolic" type="number" placeholder="e.g., 80" class="input input-bordered" required />
+                    <span asp-validation-for="BloodPressureDiastolic" class="text-error text-xs mt-1"></span>
+                </div>
+
+                @* Heart Rate *@
+                <div class="form-control">
+                    <label asp-for="HeartRate" class="label">
+                        <span class="label-text">Heart Rate (bpm) <span class="text-error text-xs align-super">*</span></span>
+                    </label>
+                    <input asp-for="HeartRate" type="number" placeholder="e.g., 72" class="input input-bordered" required />
+                    <span asp-validation-for="HeartRate" class="text-error text-xs mt-1"></span>
+                </div>
+
+                @* Temperature *@
+                <div class="form-control">
+                    <label asp-for="Temperature" class="label">
+                        <span class="label-text">Temperature (°C) <span class="text-error text-xs align-super">*</span></span>
+                    </label>
+                    <input asp-for="Temperature" type="number" step="0.1" placeholder="e.g., 36.6" class="input input-bordered" required />
+                    <span asp-validation-for="Temperature" class="text-error text-xs mt-1"></span>
+                </div>
+
+                @* Respiratory Rate *@
+                <div class="form-control">
+                    <label asp-for="RespiratoryRate" class="label">
+                        <span class="label-text">Respiratory Rate (breaths/min) <span class="text-error text-xs align-super">*</span></span>
+                    </label>
+                    <input asp-for="RespiratoryRate" type="number" placeholder="e.g., 16" class="input input-bordered" required />
+                    <span asp-validation-for="RespiratoryRate" class="text-error text-xs mt-1"></span>
+                </div>
+
+                @* Oxygen Saturation *@
+                <div class="form-control">
+                    <label asp-for="OxygenSaturation" class="label">
+                        <span class="label-text">Oxygen Saturation (SpO2 %) <span class="text-error text-xs align-super">*</span></span>
+                    </label>
+                    <input asp-for="OxygenSaturation" type="number" placeholder="e.g., 98" class="input input-bordered" required />
+                    <span asp-validation-for="OxygenSaturation" class="text-error text-xs mt-1"></span>
+                </div>
+
+                @* Pain Level (Optional) *@
+                <div class="form-control md:col-span-2 lg:col-span-1">
+                    @* Spans multiple columns on medium screens, one on large for better layout *@
+                    <label asp-for="PainLevel" class="label"><span class="label-text">Pain Level (0-10)</span></label>
+                    <input asp-for="PainLevel" type="number" min="0" max="10" placeholder="e.g., 3" class="input input-bordered" />
+                    <span asp-validation-for="PainLevel" class="text-error text-xs mt-1"></span>
+                </div>
+            </div>
+
+            <div class="divider"></div>
+            <h2 class="card-title text-lg mt-4">Urinalysis (FR-VS-007)</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+                @* Urinalysis fields - using text inputs for now, can be made into dropdowns/selects later *@
+                <div class="form-control">
+                    <label asp-for="UrinalysisColor" class="label"><span class="label-text">Color</span></label>
+                    <input asp-for="UrinalysisColor" type="text" placeholder="e.g., Yellow" class="input input-bordered" />
+                    <span asp-validation-for="UrinalysisColor" class="text-error text-xs mt-1"></span>
+                </div>
+                <div class="form-control">
+                    <label asp-for="UrinalysisClarity" class="label"><span class="label-text">Clarity</span></label>
+                    <input asp-for="UrinalysisClarity" type="text" placeholder="e.g., Clear" class="input input-bordered" />
+                    <span asp-validation-for="UrinalysisClarity" class="text-error text-xs mt-1"></span>
+                </div>
+                <div class="form-control">
+                    <label asp-for="UrinalysisSpecificGravity" class="label"><span class="label-text">Specific Gravity</span></label>
+                    <input asp-for="UrinalysisSpecificGravity" type="number" step="0.001" placeholder="e.g., 1.015" class="input input-bordered" />
+                    <span asp-validation-for="UrinalysisSpecificGravity" class="text-error text-xs mt-1"></span>
+                </div>
+                <div class="form-control">
+                    <label asp-for="UrinalysisPh" class="label"><span class="label-text">pH</span></label>
+                    <input asp-for="UrinalysisPh" type="number" step="0.1" placeholder="e.g., 6.0" class="input input-bordered" />
+                    <span asp-validation-for="UrinalysisPh" class="text-error text-xs mt-1"></span>
+                </div>
+                <div class="form-control">
+                    <label asp-for="UrinalysisProtein" class="label"><span class="label-text">Protein</span></label>
+                    <input asp-for="UrinalysisProtein" type="text" placeholder="e.g., Negative, Trace, +" class="input input-bordered" />
+                    <span asp-validation-for="UrinalysisProtein" class="text-error text-xs mt-1"></span>
+                </div>
+                <div class="form-control">
+                    <label asp-for="UrinalysisGlucose" class="label"><span class="label-text">Glucose</span></label>
+                    <input asp-for="UrinalysisGlucose" type="text" placeholder="e.g., Negative" class="input input-bordered" />
+                    <span asp-validation-for="UrinalysisGlucose" class="text-error text-xs mt-1"></span>
+                </div>
+            </div>
+
+            <div class="divider"></div>
+            <h2 class="card-title text-lg mt-4">Notes & Flags (FR-VS-008, FR-VS-009)</h2>
+            <div class="form-control mb-4">
+                <label asp-for="ClinicalNotes" class="label"><span class="label-text">Clinical Notes</span></label>
+                <textarea asp-for="ClinicalNotes" class="textarea textarea-bordered h-24" placeholder="Add any observations..."></textarea>
+                <span asp-validation-for="ClinicalNotes" class="text-error text-xs mt-1"></span>
+            </div>
+
+            <div class="form-control">
+                <label class="label cursor-pointer justify-start gap-2">
+                    <input asp-for="RequiresFollowUp" type="checkbox" class="checkbox checkbox-sm" />
+                    <span class="label-text">Requires Follow-up</span>
+                </label>
+            </div>
+            <div class="form-control mb-6">
+                <label class="label cursor-pointer justify-start gap-2">
+                    <input asp-for="MarkAsUrgent" type="checkbox" class="checkbox checkbox-sm checkbox-warning" />
+                    <span class="label-text">Mark as Urgent</span>
+                </label>
+            </div>
+
+            <div class="card-actions justify-end">
+                <button type="button" class="btn btn-ghost"
+                        hx-get="@Url.Action("NurseDashboard", "Dashboard")"
+                        hx-target="#main-content"
+                        hx-swap="innerHTML transition:true"
+                        hx-push-url="true">
+                    @* Allows browser back button to work as expected *@
+                    Cancel (Back to Queue)
+                </button>
+                <button type="submit" class="btn btn-primary">
+                    Save Vitals
+                    <span id="vitals-save-indicator" class="htmx-indicator loading loading-spinner loading-sm ml-2"></span>
+                </button>
+            </div>
+        </div>
+    </div>
+</form>

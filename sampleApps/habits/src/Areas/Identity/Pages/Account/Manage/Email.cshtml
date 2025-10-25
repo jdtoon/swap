@@ -1,0 +1,75 @@
+﻿@page
+@model EmailModel
+@{
+    ViewData["Title"] = "Manage Email";
+    ViewData["ActivePage"] = ManageNavPages.Email;
+}
+
+<div class="container mx-auto p-1">
+    <partial name="_StatusMessage" for="StatusMessage" />
+
+    <div class="card bg-base-100 shadow-xl max-w-xl">
+        <div class="card-body p-2">
+            <form id="email-form" method="post">
+                <div asp-validation-summary="All" class="text-error" role="alert"></div>
+
+                @if (Model.IsEmailConfirmed)
+                {
+                    <div class="form-control w-full">
+                        <label class="label">
+                            <span class="label-text" asp-for="Email"></span>
+                        </label>
+                        <div class="input-group">
+                            <input asp-for="Email"
+                                   class="input input-bordered w-full"
+                                   placeholder="Please enter your email."
+                                   disabled />
+                            <span class="badge badge-success">✓</span>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div class="form-control w-full">
+                        <label class="label">
+                            <span class="label-text" asp-for="Email"></span>
+                        </label>
+                        <input asp-for="Email"
+                               class="input input-bordered w-full"
+                               placeholder="Please enter your email."
+                               disabled />
+                        <button id="email-verification"
+                                type="submit"
+                                asp-page-handler="SendVerificationEmail"
+                                class="btn btn-link mt-2">
+                            Send verification email
+                        </button>
+                    </div>
+                }
+
+                <div class="form-control w-full mt-4">
+                    <label class="label">
+                        <span class="label-text" asp-for="Input.NewEmail"></span>
+                    </label>
+                    <input asp-for="Input.NewEmail"
+                           class="input input-bordered w-full"
+                           autocomplete="email"
+                           aria-required="true"
+                           placeholder="Please enter new email." />
+                    <label class="label">
+                        <span asp-validation-for="Input.NewEmail" class="label-text-alt text-error"></span>
+                    </label>
+                </div>
+
+                <div class="form-control mt-6">
+                    <button id="change-email-button"
+                            type="submit"
+                            asp-page-handler="ChangeEmail"
+                            class="btn btn-primary">
+                        Change email
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

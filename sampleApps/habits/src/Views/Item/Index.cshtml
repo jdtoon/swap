@@ -1,0 +1,54 @@
+﻿<!-- Top Section -->
+<div hx-get="@Url.Action("GetBurgerMenu","Home")"
+     hx-trigger="load"
+     hx-target="#navbar-start-placeholder"
+     hx-swap="innerHtml transition:true"
+     hx-indicator="#loading-indicator">
+</div>
+
+<div hx-get="@Url.Action("GetPageHeading", "Home")"
+     hx-vals='{"heading": "Lists" }'
+     hx-target="#navbar-center-placeholder"
+     hx-swap="innerHtml transition:true"
+     hx-trigger="load"
+     hx-indicator="#loading-indicator">
+</div>
+
+<div hx-get="@Url.Action("GetLoginPartial", "Home")"
+     hx-target="#navbar-end-placeholder"
+     hx-swap="innerHtml transition:true"
+     hx-trigger="load"
+     hx-indicator="#loading-indicator">
+</div>
+
+<div hx-get="@Url.Action("ClearDiv", "Home")"
+     hx-target="#search-bar-container"
+     hx-swap="innerHtml transition:true"
+     hx-trigger="load"
+     hx-indicator="#loading-indicator">
+</div>
+
+<div class="p-4">
+    <div id="primary-task-container" class="bg-white shadow-2xl rounded-md">
+        <div class="container"
+             hx-get="@Url.Action("GetItems", "Item")"
+             hx-vals='{"taskListId": "@ViewData["taskListId"]"}'
+             hx-trigger="load"
+             hx-target="#primary-task-container"
+             hx-indicator="#loading-indicator">
+        </div>
+    </div>
+</div>
+
+@if (ViewBag.IsHTMXRequest == true)
+{
+    <script defer src="~/js/item.js" asp-append-version="true"></script>
+    <script defer src="~/js/assignUsers.js" asp-append-version="true"></script>
+}
+else
+{
+    @section Scripts {
+    <script defer src="~/js/item.js" asp-append-version="true"></script>
+    <script defer src="~/js/assignUsers.js" asp-append-version="true"></script>
+    }
+}

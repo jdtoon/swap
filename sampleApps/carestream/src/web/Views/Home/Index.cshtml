@@ -1,0 +1,61 @@
+@using System.Security.Claims;
+@{
+    ViewBag.Title = "Home";
+    Layout = "/Views/Shared/_Layout.cshtml";
+}
+
+@if (User.IsInRole("PatientAdmin"))
+{
+    <div hx-get="/Dashboard/PatientAdminDashboard" 
+         hx-target="#main-content" 
+         hx-swap="innerHTML transition:true" 
+         hx-push-url="true"
+         hx-trigger="load once">
+         <i data-feather="grid" class="w-5 h-5 mr-2"></i> 
+         Dashboard
+     </div>
+}
+else @if (User.IsInRole("Nurse"))
+{
+    <div hx-get="/Dashboard/NurseDashboard"
+         hx-target="#main-content"
+         hx-swap="innerHTML transition:true"
+         hx-push-url="true"
+         hx-trigger="load once">
+        <i data-feather="grid" class="w-5 h-5 mr-2"></i>
+        Dashboard
+    </div>
+}
+else @if (User.IsInRole("Doctor"))
+{
+    <div hx-get="/Dashboard/DoctorDashboard"
+         hx-target="#main-content"
+         hx-swap="innerHTML transition:true"
+         hx-push-url="true"
+         hx-trigger="load once">
+        <i data-feather="grid" class="w-5 h-5 mr-2"></i>
+        Dashboard
+    </div>
+}
+else @if (User.IsInRole("Pharmacist"))
+{
+    <div hx-get="/Dashboard/PharmacistDashboard"
+         hx-target="#main-content"
+         hx-swap="innerHTML transition:true"
+         hx-push-url="true"
+         hx-trigger="load once">
+        <i data-feather="grid" class="w-5 h-5 mr-2"></i>
+        Dashboard
+    </div>
+}
+else @if (User.IsInRole("SystemAdmin"))
+{
+    <div hx-get="@Url.Action("Index", "Admin")"
+         hx-target="#main-content"
+         hx-swap="innerHTML transition:true"
+         hx-push-url="true"
+         hx-trigger="load once">
+        <i data-feather="grid" class="w-5 h-5 mr-2"></i>
+        Dashboard
+    </div>
+}

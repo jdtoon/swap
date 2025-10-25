@@ -1,0 +1,155 @@
+﻿@inject IHttpContextAccessor HttpContextAccessor
+
+<!-- Top Section -->
+<div hx-get="@Url.Action("GetBurgerMenu","Home")"
+     hx-trigger="load"
+     hx-target="#navbar-start-placeholder"
+     hx-swap="innerHtml transition:true"
+     hx-indicator="#loading-indicator">
+</div>
+
+<div hx-get="@Url.Action("GetPageHeading", "Home")"
+     hx-vals='{"heading": "Files" }'
+     hx-target="#navbar-center-placeholder"
+     hx-swap="innerHtml transition:true"
+     hx-trigger="load"
+     hx-indicator="#loading-indicator">
+</div>
+
+<div hx-get="@Url.Action("GetLoginPartial", "Home")"
+     hx-target="#navbar-end-placeholder"
+     hx-swap="innerHtml transition:true"
+     hx-trigger="load"
+     hx-indicator="#loading-indicator">
+</div>
+
+<div hx-get="@Url.Action("ClearDiv", "Home")"
+     hx-target="#search-bar-container"
+     hx-swap="innerHtml transition:true"
+     hx-trigger="load"
+     hx-indicator="#loading-indicator">
+</div>
+
+<div class="p-4">
+    <!-- Add Document Button -->
+    <div class="flex justify-end mb-4">
+        <label for="add-document-modal" class="btn bg-purple-300 btn-sm">
+            <img src="~/svg/add.svg" class="h-5 w-5" />
+        </label>
+    </div>
+
+    <!-- Search Form -->
+    <form hx-get="@Url.Action("GetDocuments", "Documents")"
+          hx-target="#documents-list"
+          hx-trigger="keyup changed delay:500ms"
+          hx-indicator="#loading-indicator"
+          class="mb-4">
+        <input id="search-input"
+               class="input input-bordered w-full"
+               type="text"
+               name="search"
+               placeholder="Search files..."
+               value="@(HttpContextAccessor.HttpContext?.Session.GetString("SelectedSearchDocuments") ?? "")" />
+    </form>
+
+    <!-- Documents List -->
+    <div id="documents-list"
+         class="space-y-3"
+         hx-get="@(string.IsNullOrEmpty(HttpContextAccessor.HttpContext?.Session.GetString("SelectedSearchDocuments")) ? 
+            Url.Action("GetDocuments", "Documents") : 
+            Url.Action("GetDocuments", "Documents", new { search = HttpContextAccessor.HttpContext?.Session.GetString("SelectedSearchDocuments") }))"
+         hx-trigger="load"
+         hx-target="#documents-list">
+    </div>
+
+    <!-- Pagination -->
+    <div class="flex justify-between items-center mt-6 gap-4">
+        <button id="prev-page"
+                class="btn bg-sky-300 flex-1 text-base-200"
+                hx-get="@Url.Action("GetDocuments", "Documents")"
+                hx-target="#documents-list"
+                hx-indicator="#loading-indicator"
+                hx-vars='{
+                    search: document.getElementById("search-input").value,
+                    page: currentPage - 1
+                }'>
+            Previous
+        </button>
+
+        <button id="next-page"
+                class="btn bg-sky-300 flex-1 text-base-200"
+                hx-get="@Url.Action("GetDocuments", "Documents")"
+                hx-target="#documents-list"
+                hx-indicator="#loading-indicator"
+                hx-vars='{
+                    search: document.getElementById("search-input").value,
+                    page: currentPage + 1
+                }'>
+            Next
+        </button>
+    </div>
+</div>
+
+<div id="error-message" class="alert alert-error hidden">
+    <span class="error-text"></span>
+</div>
+
+<!-- Add Document Modal -->
+<!-- Add Document Modal -->
+<input type="checkbox" id="add-document-modal" class="modal-toggle" />
+<div class="modal">
+    <div class="modal-box">
+        <form id="add-document-form"
+              hx-post="@Url.Action("AddDocument", "Documents")"
+              hx-encoding="multipart/form-data"
+              hx-target="#documents-list"
+              hx-swap="afterbegin transition:true"
+              hx-trigger="submit"
+              hx-indicator="#modal-loading">
+            @Html.AntiForgeryToken()
+            <h3 class="font-bold text-lg mb-4">Add New File</h3>
+
+            <div class="form-control w-full mb-4">
+                <label class="label">
+                    <span class="label-text">Name</span>
+                </label>
+                <input type="text"
+                       name="name"
+                       class="input input-bordered w-full"
+                       required
+                       maxlength="100" />
+            </div>
+
+            <div class="form-control w-full mb-4">
+                <label class="label">
+                    <span class="label-text">File</span>
+                </label>
+                <input type="file"
+                       name="file"
+                       class="file-input file-input-bordered w-full"
+                       required
+                       hx-disable /> <!-- Add this to prevent HTMX from handling the file input -->
+            </div>
+
+            <div class="modal-action">
+                <label for="add-document-modal" class="btn">Cancel</label>
+                <button type="submit" class="btn text-base-200 bg-purple-300">
+                    Upload
+                    <span id="modal-loading" class="loading loading-spinner loading-sm ml-2 htmx-indicator"></span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+
+@if (ViewBag.IsHTMXRequest == true)
+{
+    <script defer src="~/js/documents.js" asp-append-version="true"></script>
+}
+else
+{
+    @section Scripts {
+    <script defer src="~/js/documents.js" asp-append-version="true"></script>
+    }
+}

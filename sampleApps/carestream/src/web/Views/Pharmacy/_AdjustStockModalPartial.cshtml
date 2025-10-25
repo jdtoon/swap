@@ -1,0 +1,69 @@
+﻿@using carestream.core.dtos.medication
+@model AdjustStockInputDto
+@{
+    Layout = null; // Loaded into a modal
+    string title = $"Adjust Stock for {Model.MedicationName}";
+}
+
+<form method="dialog">
+    <button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2" type="button" onclick="admin_generic_modal.close()">✕</button>
+</form>
+<h3 class="font-bold text-lg mb-4">@title</h3>
+<p class="py-2 text-sm">Current Stock: <span class="font-semibold">@Model.CurrentQuantity</span></p>
+
+@if (!ViewData.ModelState.IsValid && ViewData.ModelState.Keys.Any(k => ViewData.ModelState[k]?.Errors?.Any() == true))
+{
+    <div class="alert alert-warning text-xs p-2 mb-3">
+        <ul class="list-disc list-inside">
+            @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+            {
+                <li>@error.ErrorMessage</li>
+            }
+        </ul>
+    </div>
+}
+
+<form hx-post="@Url.Action("AdjustStock", "Pharmacy")"
+      hx-target="#admin_generic_modal_content" @* Target the modal content for re-render on error *@
+      hx-swap="innerHTML"
+      hx-indicator="#adjust-stock-indicator">
+    @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="MedicationId" />
+    <input type="hidden" asp-for="MedicationName" />
+    <input type="hidden" asp-for="CurrentQuantity" />
+
+    <div class="form-control mb-3">
+        <label asp-for="Quantity" class="label pb-0"><span class="label-text">Quantity to Adjust</span></label>
+        <input type="number" asp-for="Quantity" class="input input-bordered input-sm w-full max-w-xs" min="1" required />
+        <span asp-validation-for="Quantity" class="text-error text-xs mt-1"></span>
+    </div>
+
+    <div class="form-control mb-4">
+        <label class="label pb-0"><span class="label-text">Adjustment Type</span></label>
+        <div class="flex gap-4">
+            <label class="label cursor-pointer">
+                <input type="radio" asp-for="IsIncrement" value="true" class="radio radio-primary" checked="@Model.IsIncrement" />
+                <span class="label-text ml-2">Increment Stock</span>
+            </label>
+            <label class="label cursor-pointer">
+                <input type="radio" asp-for="IsIncrement" value="false" class="radio radio-secondary" checked="@(!Model.IsIncrement)" />
+                <span class="label-text ml-2">Decrement Stock</span>
+            </label>
+        </div>
+        <span asp-validation-for="IsIncrement" class="text-error text-xs mt-1"></span>
+    </div>
+
+    <div class="modal-action mt-6">
+        <button class="btn btn-sm btn-ghost" type="button" onclick="admin_generic_modal.close()">Cancel</button>
+        <button type="submit" class="btn btn-sm btn-primary">
+            Confirm Adjustment
+            <span id="adjust-stock-indicator" class="htmx-indicator loading loading-spinner loading-xs ml-1"></span>
+        </button>
+    </div>
+</form>
+
+<script>
+    if (typeof feather !== 'undefined') {
+        feather.replace();
+    }
+</script>

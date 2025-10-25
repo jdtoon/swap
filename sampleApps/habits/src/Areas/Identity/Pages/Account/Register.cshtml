@@ -1,0 +1,73 @@
+﻿@page
+@model RegisterModel
+@{
+    ViewData["Title"] = "Register";
+    var alert = TempData["Message"] != null ? Convert.ToBoolean(TempData["Success"]) ? "alert-success" : "alert-error" : "";
+    Layout = "/Views/Shared/_LayoutBase.cshtml";
+}
+
+<input type="hidden" class="alert-success alert-error" />
+<div class="container">
+    @if (TempData["Message"] != null)
+    {
+        <div class="alert @alert">
+            @TempData["Message"]
+        </div>
+    }
+    <div class="min-h-screen">
+        <div class="card w-96 bg-base-100 shadow-xl">
+            <div class="card-body">
+                <h2 class="card-title text-2xl">@ViewData["Title"]</h2>
+                <p class="text-base-content/70">Create a new account.</p>
+                <div class="divider"></div>
+
+                <form id="registerForm" method="post">
+                    <div asp-validation-summary="ModelOnly" class="text-error" role="alert"></div>
+
+                    <div class="form-control w-full">
+                        <label class="label">
+                            <span class="label-text">Email</span>
+                        </label>
+                        <input asp-for="Input.Email"
+                               type="email"
+                               class="input input-bordered w-full"
+                               autocomplete="username"
+                               aria-required="true"
+                               placeholder="name@example.com" />
+                        <label class="label">
+                            <span asp-validation-for="Input.Email" class="label-text-alt text-error"></span>
+                        </label>
+                    </div>
+
+                    <div class="form-control w-full">
+                        <label class="label">
+                            <span class="label-text">Role</span>
+                        </label>
+                        <select asp-for="Input.Role" class="select select-bordered w-full">
+                            <option value="member" selected>Member</option>
+                            <option value="admin">Admin</option>
+                            <option value="user">User</option>
+                        </select>
+                        <label class="label">
+                            <span asp-validation-for="Input.Role" class="label-text-alt text-error"></span>
+                        </label>
+                    </div>
+
+                    <div class="form-control w-full">
+                        <label class="label">
+                            <span class="label-text">Color</span>
+                        </label>
+                        <input asp-for="Input.Color" type="color" class="input input-bordered w-full" />
+                        <label class="label">
+                            <span asp-validation-for="Input.Color" class="label-text-alt text-error"></span>
+                        </label>
+                    </div>
+
+                    <div class="form-control mt-6">
+                        <button id="registerSubmit" type="submit" class="btn btn-primary">Register</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

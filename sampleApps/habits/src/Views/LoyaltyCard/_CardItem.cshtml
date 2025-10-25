@@ -1,0 +1,38 @@
+@model LoyaltyCardDto
+
+<div class="card bg-white shadow-xl" id="card-@Model.Id">
+    <div class="card-body p-4">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center gap-4">
+                <div class="bg-orange-300 rounded-full p-2">
+                    <img src="~/svg/barcodeWhite.svg" class="h-8 w-8" />
+                </div>
+                <input type="text"
+                       class="input input-ghost input-sm w-full max-w-md font-semibold"
+                       value="@Model.Name"
+                       hx-put="@Url.Action("UpdateCard", "LoyaltyCard")"
+                       hx-vals='{"id": "@Model.Id", "name": ""}'
+                       oninput="this.setAttribute('hx-vals', JSON.stringify({id: '@Model.Id', name: this.value}))"
+                       hx-trigger="change"
+                       hx-target="#card-@Model.Id"
+                       hx-indicator="#loading-indicator" />
+            </div>
+            
+            <div class="flex gap-2">
+                <button class="btn btn-ghost btn-sm"
+                        hx-get="@Url.Action("GetCard", "LoyaltyCard", new { id = Model.Id })"
+                        hx-target="#card-display-modal"
+                        hx-swap="innerHTML">
+                    <img src="~/svg/view.svg" class="h-5 w-5" />
+                </button>
+                <button class="btn btn-ghost btn-sm"
+                        hx-delete="@Url.Action("DeleteCard", "LoyaltyCard", new { id = Model.Id })"
+                        hx-target="#card-@Model.Id"
+                        hx-swap="outerHTML"
+                        hx-confirm="Are you sure you want to delete this card?">
+                    <img src="~/svg/delete.svg" class="h-5 w-5" />
+                </button>
+            </div>
+        </div>
+    </div>
+</div> 

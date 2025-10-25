@@ -1,0 +1,26 @@
+﻿<!DOCTYPE html>
+<html lang="en" data-theme="habitstheme">
+<head>
+    <meta charset="utf-8" />
+    <meta name="robots" content="noindex">
+    <meta name="googlebot" content="noindex">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="manifest" href="/manifest.json">
+    <title>Habits App</title>
+    <link rel="stylesheet" href="~/css/output.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/update.css" asp-append-version="true" />
+    <link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512.png">
+    <link rel="apple-touch-icon" href="~/icons/iphone-icon.png">
+    @await RenderSectionAsync("HeadContent", required: false)
+</head>
+<body class="font-poppins">
+    <main class="container mx-auto flex-grow">
+        <div id="primary-container">
+            @RenderBody()
+        </div>
+    </main>
+
+    <script src="~/js/theme.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

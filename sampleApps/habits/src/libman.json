@@ -1,0 +1,23 @@
+{
+  "version": "1.0",
+  "defaultProvider": "cdnjs",
+    "libraries": [
+        {
+            "library": "qrcodejs@1.0.0",
+            "destination": "wwwroot/lib/qrcodejs/"
+        },
+        {
+            "library": "Sortable@1.15.6",
+            "destination": "wwwroot/lib/sortable/"
+        },
+        {
+            "library": "htmx@2.0.3",
+            "destination": "wwwroot/lib/htmx/"
+        },
+        {
+          "provider": "cdnjs",
+          "library": "jsbarcode@3.11.6",
+          "destination": "wwwroot/lib/jsbarcode/"
+        }
+    ]
+}

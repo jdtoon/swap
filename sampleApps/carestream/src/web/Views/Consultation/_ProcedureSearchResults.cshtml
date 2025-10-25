@@ -1,0 +1,29 @@
+﻿@using carestream.core.dtos.consultation
+@model IEnumerable<ProcedureDto>
+@{
+    Layout = null;
+}
+
+@if (Model != null && Model.Any())
+{
+    <ul class="menu menu-sm bg-base-100 p-0">
+        @foreach (var proc in Model)
+        {
+            <li>
+                <button type="button"
+                        class="w-full text-left justify-start rounded-md hover:bg-base-200 focus:bg-primary focus:text-primary-content procedure-select-btn"
+                        data-id="@proc.ProcedureId"
+                        data-code="@proc.Code"
+                        data-name="@proc.Name"
+                        _="on click call addProcedureTag(my.dataset.id as Number, my.dataset.code, my.dataset.name)">
+                    <span class="font-medium">@proc.Code</span>
+                    <span class="text-xs text-base-content text-opacity-60">@proc.Name</span>
+                </button>
+            </li>
+        }
+    </ul>
+}
+else
+{
+    <p class="p-2 text-xs text-center text-base-content text-opacity-60">No procedures found matching your search. Try a different term.</p>
+}

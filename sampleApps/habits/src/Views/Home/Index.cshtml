@@ -1,0 +1,18 @@
+﻿<div hx-get="@Url.Action("Default", "Home")"
+     hx-target="#primary-container"
+     hx-swap="innerHtml transition:true"
+     hx-trigger="load"
+     hx-indicator="#loading-indicator">
+</div>
+
+
+@if (ViewBag.IsHTMXRequest == true)
+{
+    <script defer src="~/js/home.js" asp-append-version="true"></script>
+}
+else
+{
+    @section Scripts {
+    <script defer src="~/js/home.js" asp-append-version="true"></script>
+    }
+}

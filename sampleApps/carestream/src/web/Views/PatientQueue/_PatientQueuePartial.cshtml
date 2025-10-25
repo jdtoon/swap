@@ -1,0 +1,142 @@
+﻿@using carestream.core.dtos.patientadmin
+@using carestream.core.dtos.shared
+@model PatientQueueListViewModel
+@{
+    Layout = null;
+}
+
+<div class="card bg-base-100 shadow-xl">
+    <div class="card-body">
+        <div class="flex flex-col sm:flex-row justify-between items-center mb-4 gap-2">
+            <h2 class="card-title">
+                <i data-feather="users" class="mr-2"></i>Patient Queue
+            </h2>
+            <div id="patient-queue-toggle-container"
+                 hx-get="@Url.Action("TogglePartial", "PatientQueue", new { currentViewType = Model.CurrentViewType })"
+                 hx-trigger="load once"
+                 hx-swap="innerHTML">
+                <span class="loading loading-xs loading-spinner"></span>
+            </div>
+            <form id="pa-queue-filter-form"
+                  hx-get="@Url.Action("Index", "PatientQueue")"
+                  hx-target="#patient-queue-content-container"
+                  hx-swap="innerHTML"
+                  class="">
+                <div class="join">
+                    <input type="search" name="SearchTerm1" value="@Model.CurrentFilters.SearchTerm1" placeholder="Search patient..." class="input input-sm input-bordered join-item" />
+                    <button type="submit" class="btn btn-sm btn-primary join-item">
+                        <i data-feather="search" class="w-4 h-4"></i>
+                    </button>
+                </div>
+
+                <input type="hidden" name="pageNumber" value="1" />
+                <input type="hidden" name="pageSize" value="@Model.PaginationInfo.PageSize" />
+                <input type="hidden" name="viewType" value="@Model.CurrentViewType" />
+            </form>
+        </div>
+
+        @if (Model.QueueItems.Any())
+        {
+            <div class="overflow-x-auto">
+                <table class="table table-sm table-zebra w-full">
+                    <thead>
+                        <tr>
+                            <th>Patient</th>
+                            <th>Force No.</th>
+                            <th>Status</th>
+                            <th>Priority</th>
+                            <th>Waiting Since / Relevant Time</th>
+                            <th>Assigned To</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model.QueueItems)
+                        {
+                            <tr>
+                                <td>
+                                    <div class="font-bold">@item.PatientName</div>
+                                    <div class="text-xs opacity-70">@(item.Rank ?? "N/A")</div>
+                                </td>
+                                <td>@(item.ForceNumber ?? "N/A")</td>
+                                <td><span class="badge @GetStatusBadgeClass(item.Status) badge-sm">@item.Status</span></td>
+                                <td><span class="badge @GetPriorityBadgeClass(item.Priority) badge-sm">@item.Priority</span></td>
+                                <td class="@item.WaitTimeColorClass">@item.WaitTimeDisplay</td>
+                                <td>@(item.AssignedTo ?? "-")</td>
+                                <td>
+                                    <form hx-post="@Url.Action("CallPatient", "PatientQueue")"
+                                          hx-vals='{"visitId": @item.VisitId}'
+                                          hx-target="this"
+                                          hx-swap="none"
+                                          hx-indicator="#call-indicator-@item.VisitId"
+                                          class="inline">
+                                        <button type="submit" class="btn btn-xs btn-outline btn-info" title="Call Patient to next step">
+                                            <i data-feather="phone-call" class="w-4 h-4"></i>
+                                            <span id="call-indicator-@item.VisitId" class="htmx-indicator loading loading-spinner loading-xs"></span>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="text-center py-8">
+                <i data-feather="inbox" class="w-12 h-12 mx-auto text-gray-400"></i>
+                <p class="mt-2 text-gray-500">Patient queue is currently empty @(!string.IsNullOrWhiteSpace(Model.CurrentFilters.SearchTerm1) ? "for your search." : ".")</p>
+            </div>
+        }
+
+        @* Pagination Controls *@
+        @{
+            var routeValues = new Dictionary<string, string>();
+            if (!string.IsNullOrWhiteSpace(Model.CurrentFilters.SearchTerm1)) { routeValues["SearchTerm1"] = Model.CurrentFilters.SearchTerm1; }
+            routeValues["viewType"] = Model.CurrentViewType;
+        }
+        <partial name="_PaginationControls" model="Model.PaginationInfo"
+                 view-data='new ViewDataDictionary(ViewData) { { "AdditionalRouteValues", routeValues } }' />
+
+        <div class="text-center py-2">
+            <span class="loading loading-md loading-spinner table-loading-indicator htmx-indicator"></span>
+        </div>
+    </div>
+</div>
+
+@{
+    string GetStatusBadgeClass(string status) => status switch
+    {
+        "Waiting for Vitals" => "badge-info",
+        "Vitals In Progress" => "badge-accent",
+        "In Treatment" => "badge-accent",
+        "Ready for Doctor" => "badge-success",
+        "Consultation In Progress" => "badge-primary",
+        "Pending Checkin" => "badge-ghost",
+        _ => "badge-neutral"
+    };
+
+    string GetPriorityBadgeClass(string priority) => priority.ToLower() switch
+    {
+        "urgent" => "badge-error",
+        "high" => "badge-warning",
+        _ => "badge-ghost"
+    };
+}
+<script>
+    if (typeof feather !== 'undefined') { feather.replace(); }
+    document.body.addEventListener('refreshPatientQueue', function(evt) {
+        const url = new URL('@Url.Action("Index", "PatientQueue", new { viewType = Model.CurrentViewType })', window.location.origin);
+        url.searchParams.set('pageNumber', Model.PaginationInfo.CurrentPage);
+        url.searchParams.set('pageSize', Model.PaginationInfo.PageSize);
+        if (Model.CurrentFilters.SearchTerm1) {
+            url.searchParams.set('SearchTerm1', Model.CurrentFilters.SearchTerm1);
+        }
+
+        htmx.ajax('GET', url.toString(), {
+            target: '#patient-queue-content-container',
+            swap: 'innerHTML'
+        });
+    });
+</script>

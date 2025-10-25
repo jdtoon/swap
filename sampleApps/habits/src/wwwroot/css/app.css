@@ -1,0 +1,20 @@
+﻿.mobile-center {
+    text-align: -webkit-center;
+}
+
+#interactive.viewport {
+    position: relative;
+    width: 90%;
+    height: 18.75rem;
+}
+
+    #interactive.viewport > canvas, #interactive.viewport > video {
+        max-width: 90%;
+        width: 90%;
+    }
+
+canvas.drawing, canvas.drawingBuffer {
+    position: absolute;
+    left: 0;
+    top: 0;
+}

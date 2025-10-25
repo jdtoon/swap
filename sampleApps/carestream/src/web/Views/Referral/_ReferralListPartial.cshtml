@@ -1,0 +1,123 @@
+﻿@using carestream.core.dtos.consultation
+@model IEnumerable<ReferralDto>
+@{
+    Layout = null;
+    int visitId = ViewData["VisitId"] as int? ?? 0;
+    int patientId = ViewData["PatientId"] as int? ?? 0;
+}
+
+<div class="card-body">
+    <div class="flex justify-between items-center mb-4">
+        <h2 class="card-title">
+            <i data-feather="external-link" class="mr-2"></i>Referrals for this Visit
+        </h2>
+        <button class="btn btn-sm btn-primary"
+                hx-get="@Url.Action("CreateReferralModal", "Referral", new { visitId = visitId, patientId = patientId })"
+                hx-target="#admin_generic_modal_content"
+                hx-swap="innerHTML"
+                onclick="admin_generic_modal.showModal()">
+            <i data-feather="plus" class="w-4 h-4 mr-1"></i> New Referral
+        </button>
+    </div>
+
+    @if (Model != null && Model.Any())
+    {
+        <div class="overflow-x-auto">
+            <table class="table table-sm table-zebra w-full">
+                <thead>
+                    <tr>
+                        <th>Department</th>
+                        <th>Reason</th>
+                        <th>Status</th>
+                        <th>Created At</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var referral in Model.OrderByDescending(r => r.ReferralDate))
+                    {
+                        <tr>
+                            <td>@(referral.ReferredToDepartmentName ?? "N/A")</td>
+                            <td>@(referral.ReferralReason ?? "-")</td>
+                            <td>
+                                @{
+                                    string statusBadgeClass = referral.Status switch
+                                    {
+                                        "Pending" => "badge-warning",
+                                        "Accepted" => "badge-info",
+                                        "Completed" => "badge-success",
+                                        "Cancelled" => "badge-error",
+                                        _ => "badge-neutral"
+                                    };
+                                }
+                                <span class="badge @statusBadgeClass badge-sm">@referral.Status</span>
+                            </td>
+                            <td>@referral.ReferralDate.ToLocalTime().ToString("g")</td>
+                            <td>
+                                @if (referral.Status == "Pending")
+                                {
+                                    <form hx-post="@Url.Action("UpdateStatus", "Referral")"
+                                          hx-vals='{"referralId": @referral.ReferralId, "newStatus": "Accepted", "visitId": @visitId, "patientId": @patientId}'
+                                          hx-confirm="Accept this referral?"
+                                          hx-target="this" hx-swap="none"
+                                          hx-indicator="#accept-referral-indicator-@referral.ReferralId"
+                                          class="inline-block">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="btn btn-xs btn-outline btn-success">
+                                            Accept
+                                            <span id="accept-referral-indicator-@referral.ReferralId" class="htmx-indicator loading loading-spinner loading-xs"></span>
+                                        </button>
+                                    </form>
+                                    <form hx-post="@Url.Action("UpdateStatus", "Referral")"
+                                          hx-vals='{"referralId": @referral.ReferralId, "newStatus": "Cancelled", "visitId": @visitId, "patientId": @patientId}'
+                                          hx-confirm="Cancel this referral?"
+                                          hx-target="this" hx-swap="none"
+                                          hx-indicator="#cancel-referral-indicator-@referral.ReferralId"
+                                          class="inline-block ml-1">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="btn btn-xs btn-outline btn-error">
+                                            Cancel
+                                            <span id="cancel-referral-indicator-@referral.ReferralId" class="htmx-indicator loading loading-spinner loading-xs"></span>
+                                        </button>
+                                    </form>
+                                }
+                                else if (referral.Status == "Accepted")
+                                {
+                                    <form hx-post="@Url.Action("UpdateStatus", "Referral")"
+                                          hx-vals='{"referralId": @referral.ReferralId, "newStatus": "Completed", "visitId": @visitId, "patientId": @patientId}'
+                                          hx-confirm="Mark this referral as completed?"
+                                          hx-target="this" hx-swap="none"
+                                          hx-indicator="#complete-referral-indicator-@referral.ReferralId"
+                                          class="inline-block">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="btn btn-xs btn-outline btn-info">
+                                            Complete
+                                            <span id="complete-referral-indicator-@referral.ReferralId" class="htmx-indicator loading loading-spinner loading-xs"></span>
+                                        </button>
+                                    </form>
+                                }
+                                else
+                                {
+                                    <span class="text-xs text-base-content text-opacity-70">No actions</span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+    else
+    {
+        <div class="text-center py-8">
+            <i data-feather="external-link" class="w-12 h-12 mx-auto text-gray-400"></i>
+            <p class="mt-2 text-gray-500">No referral entries found for this visit.</p>
+        </div>
+    }
+</div>
+
+<script>
+    if (typeof feather !== 'undefined') {
+        feather.replace();
+    }
+</script>

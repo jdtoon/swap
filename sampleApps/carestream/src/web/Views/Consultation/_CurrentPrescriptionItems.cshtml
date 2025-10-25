@@ -1,0 +1,62 @@
+﻿@using carestream.core.dtos.prescription
+@model IEnumerable<PrescriptionItemDto>
+@{
+    Layout = null;
+    var visitIdForRemoveContext = ViewData["VisitIdForRemove"] as int? ?? 0;
+}
+
+@if (Model != null && Model.Any())
+{
+    <div class="overflow-x-auto">
+        <table class="table table-sm w-full">
+            <thead>
+                <tr>
+                    <th>Medication</th>
+                    <th>Dosage</th>
+                    <th>Frequency</th>
+                    <th>Duration</th>
+                    <th>Qty</th>
+                    <th>Instructions</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td class="font-medium">@item.MedicationName</td>
+                        <td>@item.Dosage</td>
+                        <td>@item.Frequency</td>
+                        <td>@(item.Duration ?? "-")</td>
+                        <td>@item.QuantityPrescribed</td>
+                        <td>@(item.SpecialInstructions ?? "-")</td>
+                        <td>
+                            <button class="btn btn-xs btn-error btn-outline"
+                                    hx-post="@Url.Action("RemovePrescriptionItem", "Consultation")"
+                                    hx-vals='{"prescriptionItemId": @item.PrescriptionItemId, "visitId": @visitIdForRemoveContext }'
+                                    hx-target="#current-prescription-items-list"
+                                    hx-swap="innerHTML"
+                                    hx-confirm="Are you sure you want to remove this item from the prescription?"
+                                    hx-indicator="#remove-item-indicator-@item.PrescriptionItemId">
+                                <i data-feather="trash-2" class="w-4 h-4"></i>
+                                <span id="remove-item-indicator-@item.PrescriptionItemId" class="htmx-indicator loading loading-spinner loading-xs"></span>
+                            </button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+else
+{
+    <div class="p-4 text-center text-sm text-base-content text-opacity-70 border border-dashed border-base-300 rounded-md">
+        No medications added to this prescription yet. Use the search and "Add Details" form above.
+    </div>
+}
+
+<script>
+    if (typeof feather !== 'undefined') {
+        feather.replace();
+    }
+</script>

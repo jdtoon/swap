@@ -1,0 +1,88 @@
+﻿@using carestream.core.dtos.prescription
+@model AddPrescriptionItemInputDto
+@{
+    Layout = null;
+    var medicationNameForDisplay = ViewData["SelectedMedicationName"] as string ?? "Select medication from search";
+    var medicationIdForInput = Model?.MedicationId > 0 ? Model.MedicationId : (int?)null;
+    // Check if ModelState was passed and is invalid for this specific DTO
+    var modelStateForValidation = ViewData.ModelState;
+}
+
+<h4 class="font-medium mb-1">2. Add Details & Prescribe</h4>
+@* This div is used by the controller to show validation or other status messages *@
+<div id="medication-add-form-status" class="text-xs mb-2">
+    @if (!modelStateForValidation.IsValid && modelStateForValidation.Keys.Any(k => string.IsNullOrEmpty(k) || modelStateForValidation[k]?.Errors?.Any() == true))
+    {
+        <div class="alert alert-error alert-sm p-2 text-xs">
+            <ul class="list-disc list-inside">
+                @foreach (var error in modelStateForValidation.Values.SelectMany(v => v.Errors))
+                {
+                    <li>@error.ErrorMessage</li>
+                }
+            </ul>
+        </div>
+    }
+</div>
+
+<form id="add-prescription-item-form"
+      hx-post="@Url.Action("AddPrescriptionItem", "Consultation")"
+      hx-target="#current-prescription-items-list" @* Targets the list of current items to refresh it *@
+      hx-swap="innerHTML" @* Swaps only the current items list. On validation error, controller will re-render this partial to a status div. *@
+      hx-indicator="#add-item-indicator">
+
+    @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="VisitId" /> @* Comes from the main ViewModel passed to _ConsultationMedicationsTab *@
+    <input type="hidden" asp-for="MedicationId" value="@medicationIdForInput" />
+
+    <div class="p-3 border rounded-md bg-base-200 @(Model?.MedicationId > 0 ? "" : "opacity-50 pointer-events-none")">
+        <div class="mb-3">
+            <label class="label pb-0">
+                <span class="label-text font-semibold">Selected Medication:</span>
+            </label>
+            <p id="selected-medication-name" class="text-sm font-medium text-primary min-h-[1.5rem]">@medicationNameForDisplay</p>
+            @if (!(Model?.MedicationId > 0))
+            {
+                <p class="text-xs text-base-content text-opacity-70">Select a medication from the search results to enable this form.</p>
+            }
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-4">
+            <div class="form-control mb-2">
+                <label asp-for="Dosage" class="label pb-0"><span class="label-text">Dosage (e.g., "1 tablet", "10ml")</span></label>
+                <input type="text" asp-for="Dosage" class="input input-sm input-bordered w-full @(modelStateForValidation.ContainsKey(nameof(Model.Dosage)) && modelStateForValidation[nameof(Model.Dosage)]?.Errors?.Any() == true ? "input-error" : "")" placeholder="e.g., 1 tablet" />
+                <span asp-validation-for="Dosage" class="text-error text-xs mt-1"></span>
+            </div>
+
+            <div class="form-control mb-2">
+                <label asp-for="Frequency" class="label pb-0"><span class="label-text">Frequency (e.g., "TDS", "BD")</span></label>
+                <input type="text" asp-for="Frequency" class="input input-sm input-bordered w-full @(modelStateForValidation.ContainsKey(nameof(Model.Frequency)) && modelStateForValidation[nameof(Model.Frequency)]?.Errors?.Any() == true ? "input-error" : "")" placeholder="e.g., TDS (3 times a day)" />
+                <span asp-validation-for="Frequency" class="text-error text-xs mt-1"></span>
+            </div>
+
+            <div class="form-control mb-2">
+                <label asp-for="Duration" class="label pb-0"><span class="label-text">Duration (e.g., "7 days")</span></label>
+                <input type="text" asp-for="Duration" class="input input-sm input-bordered w-full @(modelStateForValidation.ContainsKey(nameof(Model.Duration)) && modelStateForValidation[nameof(Model.Duration)]?.Errors?.Any() == true ? "input-error" : "")" placeholder="e.g., 7 days (optional)" />
+                <span asp-validation-for="Duration" class="text-error text-xs mt-1"></span>
+            </div>
+
+            <div class="form-control mb-2">
+                <label asp-for="QuantityPrescribed" class="label pb-0"><span class="label-text">Quantity (e.g., "21 tablets")</span></label>
+                <input type="text" asp-for="QuantityPrescribed" class="input input-sm input-bordered w-full @(modelStateForValidation.ContainsKey(nameof(Model.QuantityPrescribed)) && modelStateForValidation[nameof(Model.QuantityPrescribed)]?.Errors?.Any() == true ? "input-error" : "")" placeholder="e.g., 21 tablets" />
+                <span asp-validation-for="QuantityPrescribed" class="text-error text-xs mt-1"></span>
+            </div>
+        </div>
+
+        <div class="form-control mb-3">
+            <label asp-for="SpecialInstructions" class="label pb-0"><span class="label-text">Special Instructions</span></label>
+            <textarea asp-for="SpecialInstructions" class="textarea textarea-sm textarea-bordered w-full h-20 @(modelStateForValidation.ContainsKey(nameof(Model.SpecialInstructions)) && modelStateForValidation[nameof(Model.SpecialInstructions)]?.Errors?.Any() == true ? "textarea-error" : "")" placeholder="e.g., Take with food (optional)"></textarea>
+            <span asp-validation-for="SpecialInstructions" class="text-error text-xs mt-1"></span>
+        </div>
+
+        <div class="text-right">
+            <button type="submit" class="btn btn-sm btn-secondary" disabled="@(!(Model?.MedicationId > 0))">
+                Add to Prescription
+                <span id="add-item-indicator" class="htmx-indicator loading loading-spinner loading-xs ml-1"></span>
+            </button>
+        </div>
+    </div>
+</form>

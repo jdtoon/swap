@@ -1,0 +1,68 @@
+﻿@inject IHttpContextAccessor HttpContextAccessor
+
+@{
+    var selectedSearchDate = HttpContextAccessor.HttpContext!.Session.GetString("SelectedSearchDate");
+}
+
+@if (ViewBag.IsHTMXRequest == true)
+{
+    <link rel="stylesheet" href="~/css/calendar.css" />
+}
+else
+{
+    @section HeadContent {
+    <link rel="stylesheet" href="~/css/calendar.css" />
+    }
+}
+
+<!-- Top Section -->
+<div hx-get="@Url.Action("GetBurgerMenu","Home")"
+     hx-trigger="load"
+     hx-target="#navbar-start-placeholder"
+     hx-swap="innerHtml transition:true"
+     hx-indicator="#loading-indicator">
+</div>
+
+<div hx-get="@Url.Action("GetPageHeading", "Home")"
+     hx-vals='{"heading": "Calendar" }'
+     hx-target="#navbar-center-placeholder"
+     hx-swap="innerHtml transition:true"
+     hx-trigger="load"
+     hx-indicator="#loading-indicator">
+</div>
+
+<div hx-get="@Url.Action("GetLoginPartial", "Home")"
+     hx-target="#navbar-end-placeholder"
+     hx-swap="innerHtml transition:true"
+     hx-trigger="load"
+     hx-indicator="#loading-indicator">
+</div>
+
+<div hx-get="@Url.Action("ClearDiv", "Home")"
+     hx-target="#search-bar-container"
+     hx-swap="innerHtml transition:true"
+     hx-trigger="load"
+     hx-indicator="#loading-indicator">
+</div>
+
+<div id="primary-calendar-container"
+     class="container mt-4"
+     hx-get="@Url.Action("GetCalendar", "Calendar", new { date = selectedSearchDate })"
+     hx-trigger="load"
+     hx-target="#primary-calendar-container"
+     hx-indicator="#loading-indicator">
+</div>
+
+<div id="day-viewer-container"></div>
+<div id="edit-event-modal-content"></div>
+
+<partial name="_AddEventModal" />
+
+@if(ViewBag.IsHTMXRequest == true){
+    <script defer src="~/js/calendar.js" asp-append-version="true"></script>
+}
+else{
+    @section Scripts{
+    <script defer src="~/js/calendar.js" asp-append-version="true"></script>
+    }
+}

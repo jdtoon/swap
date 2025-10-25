@@ -1,0 +1,44 @@
+﻿@page
+@model LoginWithRecoveryCodeModel
+@{
+    ViewData["Title"] = "Recovery code verification";
+    Layout = "/Views/Shared/_LayoutNone.cshtml";
+}
+
+<div class="container">
+    <div class="min-h-screen flex">
+        <div class="card w-96 bg-base-100 shadow-xl">
+            <div class="card-body">
+                <h2 class="card-title text-2xl">@ViewData["Title"]</h2>
+                <div class="alert alert-info">
+                    <img src="~/svg/verified.svg" class="h-6 w-6" />
+                    <span>
+                        You have requested to log in with a recovery code. This login will not be remembered until you provide
+                        an authenticator app code at log in or disable 2FA and log in again.
+                    </span>
+                </div>
+
+                <form method="post">
+                    <div asp-validation-summary="ModelOnly" class="text-error" role="alert"></div>
+
+                    <div class="form-control w-full">
+                        <label class="label">
+                            <span class="label-text" asp-for="Input.RecoveryCode"></span>
+                        </label>
+                        <input asp-for="Input.RecoveryCode"
+                               class="input input-bordered w-full"
+                               autocomplete="off"
+                               placeholder="Recovery Code" />
+                        <label class="label">
+                            <span asp-validation-for="Input.RecoveryCode" class="label-text-alt text-error"></span>
+                        </label>
+                    </div>
+
+                    <div class="form-control mt-6">
+                        <button type="submit" class="btn btn-primary">Log in</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

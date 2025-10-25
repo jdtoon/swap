@@ -1,0 +1,23 @@
+{
+  "version": "1.0",
+  "defaultProvider": "cdnjs",
+    "libraries": [
+        {
+            "library": "htmx@2.0.4",
+            "destination": "wwwroot/lib/htmx/"
+        },
+        {
+            "library": "feather-icons@4.29.2",
+            "destination": "wwwroot/lib/feather-icons/"
+        },
+        {
+            "library": "toastify-js@1.12.0",
+            "destination": "wwwroot/lib/toastify-js/"
+        },
+        {
+            "provider": "cdnjs",
+            "library": "hyperscript@0.9.14",
+            "destination": "wwwroot/lib/hyperscript/"
+        }
+    ]
+}

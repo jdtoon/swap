@@ -1,0 +1,61 @@
+﻿@using carestream.core.dtos.admin
+@using carestream.core.dtos.admin.facility
+@{
+    Layout = null;
+    string activeTab = Context.Request.Query["tab"].FirstOrDefault() ?? "users"; // Default to 'users'
+}
+
+<div class="mb-6">
+    <h1 class="text-2xl font-semibold text-gray-700">Administrator Panel</h1>
+    <p class="text-gray-500">Manage users, system settings, and other administrative tasks.</p>
+</div>
+
+<div id="admin-sub-nav-container"
+     hx-get="@Url.Action("TogglePartial", "Admin", new { currentViewType = activeTab })"
+     hx-trigger="load once"
+     hx-swap="innerHTML">
+    <partial name="_AdminSubNavPartial" view-data='new ViewDataDictionary(ViewData) { { "ActiveAdminTab", activeTab } }' />
+</div>
+
+<div id="admin-content-area" class="mt-4 p-6 bg-base-100 border-base-300 rounded-box shadow"
+     hx-get="@(activeTab == "users" ? Url.Action("UserListPartial", "Admin") : "")"
+     hx-trigger="load once refreshUserList from:body"
+     hx-swap="innerHTML">
+    @if (activeTab == "users")
+    {
+        <div class="text-center py-8">
+            <span class="loading loading-spinner loading-lg text-primary"></span>
+            <p class="mt-4 text-gray-500">Loading users...</p>
+        </div>
+    }
+    else if (activeTab == "facilities")
+    {
+        <partial name="~/Views/FacilityAdmin/Index.cshtml" />
+    }
+    else if (activeTab == "departments")
+    {
+        <partial name="~/Views/DepartmentAdmin/Index.cshtml" model='new DepartmentListViewModel()' />
+    }
+    else if (activeTab == "wards")
+    {
+        <partial name="~/Views/WardAdmin/Index.cshtml" model='new WardListViewModel()' />
+    }
+    else
+    {
+        <p class="text-center text-gray-500">Select an administration category.</p>
+    }
+</div>
+
+<dialog id="admin_generic_modal" class="modal">
+    <div id="admin_generic_modal_content" class="modal-box w-11/12 max-w-lg">
+    </div>
+    <form method="dialog" class="modal-backdrop">
+        <button>close</button>
+    </form>
+</dialog>
+
+<script>
+    if (typeof feather !== 'undefined') {
+        feather.replace();
+    }
+</script>

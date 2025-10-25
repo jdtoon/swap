@@ -1,0 +1,114 @@
+﻿@using carestream.core.dtos.admin
+@using carestream.core.dtos.facility
+@using carestream.core.dtos.user
+@model AdminUserDetailDto
+@{
+    Layout = null; // Loaded into _UserDetailPartial
+    // Assuming Model.AllActiveFacilities contains all options for linking
+    var availableFacilitiesToLink = Model.AllActiveFacilities
+                                        .Where(f => !Model.LinkedFacilities.Any(lf => lf.FacilityId == f.FacilityId))
+                                        .ToList();
+}
+
+<h4 class="font-semibold text-md mb-3">Linked Facilities</h4>
+
+<div class="mb-4">
+    <form hx-post="@Url.Action("LinkUserToFacility", "Admin")"
+          hx-target="#user-facilities-@Model.UserId" @* Target this section itself *@
+          hx-swap="innerHTML"
+          hx-indicator="#link-facility-indicator-@Model.UserId"
+          class="flex items-center gap-2">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="UserId" value="@Model.UserId" />
+
+        <select name="FacilityId" class="select select-sm select-bordered w-full max-w-xs" required>
+            <option value="">Select Facility to Link</option>
+            @foreach (var facility in availableFacilitiesToLink)
+            {
+                <option value="@facility.FacilityId">@facility.Name (@facility.ShortCode)</option>
+            }
+        </select>
+        <button type="submit" class="btn btn-sm btn-primary" @(availableFacilitiesToLink.Any() ? "" : "disabled")>
+            Link
+            <span id="link-facility-indicator-@Model.UserId" class="htmx-indicator loading loading-spinner loading-xs ml-1"></span>
+        </button>
+    </form>
+    @if (!availableFacilitiesToLink.Any())
+    {
+        <p class="text-xs text-base-content text-opacity-70 mt-1">No more facilities available to link.</p>
+    }
+</div>
+
+@if (Model.LinkedFacilities.Any())
+{
+    <div class="overflow-x-auto">
+        <table class="table table-sm w-full">
+            <thead>
+                <tr>
+                    <th>Facility</th>
+                    <th>Default</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var linkedFacility in Model.LinkedFacilities)
+                {
+                    var facilityName = Model.AllActiveFacilities.FirstOrDefault(f => f.FacilityId == linkedFacility.FacilityId)?.Name ?? "Unknown Facility";
+                    <tr>
+                        <td>@facilityName</td>
+                        <td>
+                            @if (linkedFacility.IsDefault)
+                            {
+                                <span class="badge badge-primary badge-sm">Default</span>
+                            }
+                            else
+                            {
+                                <form hx-post="@Url.Action("SetUserDefaultFacility", "Admin")"
+                                      hx-vals='{"userId": @Model.UserId, "facilityId": @linkedFacility.FacilityId}'
+                                      hx-target="#user-facilities-@Model.UserId"
+                                      hx-swap="innerHTML"
+                                      hx-indicator="#set-default-indicator-@linkedFacility.FacilityId"
+                                      class="inline">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-xs btn-outline btn-info">Set Default</button>
+                                    <span id="set-default-indicator-@linkedFacility.FacilityId" class="htmx-indicator loading loading-spinner loading-xs ml-1"></span>
+                                </form>
+                            }
+                        </td>
+                        <td>
+                            @if (!linkedFacility.IsDefault && Model.LinkedFacilities.Count > 1)
+                            {
+                                <form hx-post="@Url.Action("UnlinkUserFromFacility", "Admin")"
+                                      hx-vals='{"userId": @Model.UserId, "facilityId": @linkedFacility.FacilityId}'
+                                      hx-target="#user-facilities-@Model.UserId"
+                                      hx-swap="innerHTML"
+                                      hx-confirm="Are you sure you want to unlink this user from @facilityName?"
+                                      hx-indicator="#unlink-indicator-@linkedFacility.FacilityId"
+                                      class="inline">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-xs btn-outline btn-error">Unlink</button>
+                                    <span id="unlink-indicator-@linkedFacility.FacilityId" class="htmx-indicator loading loading-spinner loading-xs ml-1"></span>
+                                </form>
+                            }
+                            else if (Model.LinkedFacilities.Count <= 1)
+                            {
+                                <span class="text-xs text-base-content text-opacity-70">Min 1 facility</span>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+else
+{
+    <div class="p-4 text-center text-sm text-base-content text-opacity-70 border border-dashed border-base-300 rounded-md">
+        This user is not linked to any facilities.
+    </div>
+}
+<script>
+    if (typeof feather !== 'undefined') {
+        feather.replace();
+    }
+</script>

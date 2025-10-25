@@ -1,0 +1,18 @@
+﻿@model MemberDto
+<button class="btn btn-sm @(Model.IsActive ? "" : "btn-warning")"
+        hx-put="@Url.Action("ToggleMemberStatus", "Members")"
+        hx-vals='{"id": "@Model.Id"}'
+        hx-target="this"
+        hx-indicator="#loading-indicator"
+        hx-swap="outerHTML transition:true">
+    <span class="flex items-center gap-2">
+        @if (Model.IsActive)
+        {
+            <img src="~/svg/member-active.svg" class="h-5 w-5" />
+        }
+        else
+        {
+            <img src="~/svg/member-inactive.svg" class=" h-5 w-5" />
+        }
+    </span>
+</button>

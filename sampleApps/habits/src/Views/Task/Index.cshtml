@@ -1,0 +1,60 @@
+﻿<!-- Top Section -->
+<div hx-get="@Url.Action("GetBurgerMenu","Home")"
+     hx-trigger="load"
+     hx-target="#navbar-start-placeholder"
+     hx-swap="innerHtml transition:true"
+     hx-indicator="#loading-indicator">
+</div>
+
+<div hx-get="@Url.Action("GetPageHeading", "Home")"
+     hx-vals='{"heading": "Lists" }'
+     hx-target="#navbar-center-placeholder"
+     hx-swap="innerHtml transition:true"
+     hx-trigger="load"
+     hx-indicator="#loading-indicator">
+</div>
+
+<div hx-get="@Url.Action("GetLoginPartial", "Home")"
+     hx-target="#navbar-end-placeholder"
+     hx-swap="innerHtml transition:true"
+     hx-trigger="load"
+     hx-indicator="#loading-indicator">
+</div>
+
+<div hx-get="@Url.Action("ClearDiv", "Home")"
+     hx-target="#search-bar-container"
+     hx-swap="innerHtml transition:true"
+     hx-trigger="load"
+     hx-indicator="#loading-indicator">
+</div>
+
+<div class="p-4">
+    <div class="flex justify-end mb-4">
+        <button class="btn bg-purple-300 btn-sm"
+                hx-get="@Url.Action("AddTaskList", "Task")"
+                hx-target="body"
+                hx-swap="beforeend transition:true"
+                hx-indicator="#loading-indicator">
+            <img src="~/svg/add.svg" class="h-5 w-5" />
+        </button>
+    </div>
+
+    <div id="primary-task-container"
+         class="container"
+         hx-get="@Url.Action("GetTaskLists", "Task")"
+         hx-trigger="load"
+         hx-target="#primary-task-container"
+         hx-indicator="#loading-indicator">
+    </div>
+</div>
+
+@if (ViewBag.IsHTMXRequest == true)
+{
+    <script defer src="~/js/task.js" asp-append-version="true"></script>
+}
+else
+{
+    @section Scripts {
+    <script defer src="~/js/task.js" asp-append-version="true"></script>
+    }
+}

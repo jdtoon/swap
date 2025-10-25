@@ -1,0 +1,104 @@
+﻿@using carestream.core.dtos.patientadmin
+@using carestream.core.dtos.shared
+@model PatientQueueBoardViewModel
+@{
+    Layout = null;
+    if (Model == null)
+    {
+        <div class="alert alert-error">Error: Invalid model for board view.</div>
+        return;
+    }
+
+    // Flatten all patients from the status-grouped dictionary into a single list
+    // and sort them, for example, by their relevant timestamp.
+    var allPatients = Model.PatientsByStatus.Values
+                            .SelectMany(list => list)
+                            .OrderBy(p => p.RelevantTimestamp) // Or by p.WaitTimeSeconds to prioritize longer waits
+                            .ToList();
+}
+
+<div class="flex justify-between items-center mb-4">
+    <h3 class="text-lg font-semibold">Patient Queue</h3> @* Changed title slightly as it's no longer strictly "Board View" layout-wise *@
+    <div id="patient-queue-toggle-container"
+         hx-get="@Url.Action("TogglePartial", "PatientQueue", new { currentViewType = Model.CurrentViewType })"
+         hx-trigger="load once"
+         hx-swap="innerHTML">
+        <span class="loading loading-xs loading-spinner"></span>
+    </div>
+</div>
+
+@* The main grid container for all patient tiles *@
+@if (allPatients.Any())
+{
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 p-2">
+        @foreach (var patient in allPatients)
+        {
+            <div class="card bg-base-100 shadow-md rounded-lg p-4">
+                <div class="card-body p-0">
+                    <div class="flex justify-between items-start mb-2">
+                        <h5 class="text-lg font-bold">@patient.Rank</h5>
+                        @* Status Badge *@
+                        @{
+                            string statusBadgeClass = "badge-neutral";
+                            if (patient.Status == "Waiting") { statusBadgeClass = "badge-warning"; }
+                            else if (patient.Status == "In Progress") { statusBadgeClass = "badge-primary"; }
+                            else if (patient.Status == "Ready for Doctor" || patient.Status == "Consultation In Progress") { statusBadgeClass = "badge-info"; } // Example mapping
+                            else if (patient.Status == "Waiting for Pharmacy") { statusBadgeClass = "badge-accent"; } // Example mapping
+                        }
+                        <span class="badge @statusBadgeClass">@patient.Status</span>
+                    </div>
+
+                    <div class="flex items-center gap-2 mb-2">
+                        <h6 class="text-base font-semibold">@patient.PatientName</h6>
+                        @* Priority Badge *@
+                        <span class="badge badge-sm @(patient.Priority == "High" ? "badge-error" : patient.Priority == "Urgent" ? "badge-warning" : "badge-success")">@patient.Priority</span>
+                    </div>
+
+                    <p class="text-sm text-base-content text-opacity-80 mb-2">
+                        Force Number: <span class="font-medium">@patient.ForceNumber</span>
+                    </p>
+
+                    <div class="text-sm text-base-content text-opacity-80 mb-3 flex items-center">
+                        <i data-feather="clock" class="w-4 h-4 mr-1 inline-block"></i>
+                        Wait time: <span class="font-semibold @(patient.WaitTimeColorClass)">@patient.WaitTimeDisplay</span>
+                    </div>
+
+                    @* Action button for Patient Admin - Call Patient *@
+                    <div class="card-actions justify-start mt-auto">
+                        @* mt-auto pushes it to the bottom if cards have varying height *@
+                        <form hx-post="@Url.Action("CallPatient", "PatientQueue")"
+                              hx-vals='{"visitId": @patient.VisitId}'
+                              hx-target="this"
+                              hx-swap="none"
+                              hx-indicator="#call-indicator-@patient.VisitId"
+                              class="inline">
+                            <button type="submit" class="btn btn-sm btn-info w-full" title="Call Patient to next step">
+                                Call Patient <i data-feather="arrow-right" class="w-4 h-4 ml-2"></i>
+                                <span id="call-indicator-@patient.VisitId" class="htmx-indicator loading loading-spinner loading-xs ml-1"></span>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+else
+{
+    <div class="p-8 text-center text-lg text-base-content text-opacity-70 border border-dashed border-base-300 rounded-md">
+        No patients in the queue.
+    </div>
+}
+
+<script>
+    if (typeof feather !== 'undefined') {
+        feather.replace();
+    }
+    document.body.addEventListener('refreshPatientQueue', function(evt) {
+        const url = new URL('@Url.Action("Index", "PatientQueue", new { viewType = Model.CurrentViewType })', window.location.origin);
+        htmx.ajax('GET', url.toString(), {
+            target: '#patient-queue-content-container',
+            swap: 'innerHTML'
+        });
+    });
+</script>

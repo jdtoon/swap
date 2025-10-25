@@ -1,0 +1,12 @@
+﻿@{
+    var isUserAuthenticated = User.Identity!.IsAuthenticated;
+
+    if (isUserAuthenticated)
+    {
+        Layout = "/Views/Shared/_LayoutBase.cshtml";
+    }
+    else
+    {
+        Layout = "/Views/Shared/_LayoutNone.cshtml";
+    }
+}

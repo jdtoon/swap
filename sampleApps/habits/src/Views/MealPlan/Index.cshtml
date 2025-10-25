@@ -1,0 +1,51 @@
+@inject IHttpContextAccessor HttpContextAccessor
+
+<!-- Top Section -->
+<div hx-get="@Url.Action("GetBurgerMenu","Home")"
+     hx-trigger="load"
+     hx-target="#navbar-start-placeholder"
+     hx-swap="innerHtml transition:true"
+     hx-indicator="#loading-indicator">
+</div>
+
+<div hx-get="@Url.Action("GetPageHeading", "Home")"
+     hx-vals='{"heading": "Meal Plan" }'
+     hx-target="#navbar-center-placeholder"
+     hx-swap="innerHtml transition:true"
+     hx-trigger="load"
+     hx-indicator="#loading-indicator">
+</div>
+
+<div hx-get="@Url.Action("GetLoginPartial", "Home")"
+     hx-target="#navbar-end-placeholder"
+     hx-swap="innerHtml transition:true"
+     hx-trigger="load"
+     hx-indicator="#loading-indicator">
+</div>
+
+<div hx-get="@Url.Action("ClearDiv", "Home")"
+     hx-target="#search-bar-container"
+     hx-swap="innerHtml transition:true"
+     hx-trigger="load"
+     hx-indicator="#loading-indicator">
+</div>
+
+<div id="meal-plan-container"
+     class="p-4"
+     hx-get="@Url.Action("GetMealPlan", "MealPlan")"
+     hx-trigger="load"
+     hx-target="#meal-plan-container"
+     hx-indicator="#loading-indicator">
+</div>
+
+
+@if (ViewBag.IsHTMXRequest == true)
+{
+    <script defer src="~/js/mealplan.js" asp-append-version="true"></script>
+}
+else
+{
+    @section Scripts {
+    <script defer src="~/js/mealplan.js" asp-append-version="true"></script>
+    }
+}

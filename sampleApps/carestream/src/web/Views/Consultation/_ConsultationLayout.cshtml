@@ -1,0 +1,164 @@
+﻿@using carestream.core.dtos.consultation
+@model ConsultationViewModel
+@{
+    Layout = null;
+}
+
+@* Patient Banner *@
+<div class="card bg-base-100 shadow-md mb-6 print:hidden">
+    @* Hide banner on print *@
+    <div class="card-body p-4">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            <div>
+                <h1 class="text-xl font-bold text-primary">
+                    @Model.PatientBanner.PatientName
+                    <span class="text-sm font-normal text-base-content text-opacity-70">
+                        (@(Model.PatientBanner.Rank ?? "N/A"), @(Model.PatientBanner.Age?.ToString() ?? "N/A") yrs, @(Model.PatientBanner.Gender ?? "N/A"))
+                    </span>
+                </h1>
+                <p class="text-xs text-base-content text-opacity-70">
+                    Force No: @(Model.PatientBanner.ForceNumber ?? "N/A") | Visit ID: @Model.PatientBanner.VisitId | Arrived: @Model.PatientBanner.VisitTimestamp.ToString("g")
+                </p>
+            </div>
+            <div class="text-sm text-base-content text-opacity-90 mt-2 sm:mt-0 sm:text-right">
+                <strong>Reason:</strong> @(Model.PatientBanner.BriefReasonForVisit ?? "Not specified")
+            </div>
+        </div>
+    </div>
+</div>
+
+@* Tabs (FR-DN-008) *@
+<div role="tablist" class="tabs tabs-lifted tabs-lg mb-1 print:hidden">
+    @* Hide tabs on print *@
+    @* Vital Signs Tab *@
+    <input type="radio" name="consultation_tabs" role="tab" class="tab [--tab-border-color:oklch(var(--p))] [--tab-bg:oklch(var(--p))] [--tab-color:oklch(var(--pc))]" aria-label="Vital Signs"
+           checked="@(Model.ActiveTab == "VitalSigns")"
+           hx-get="@Url.Action("VitalsTab", "Consultation", new { visitId = Model.PatientBanner.VisitId, patientId = Model.PatientBanner.PatientId })"
+           hx-target="#consultation-tab-content"
+           hx-swap="innerHTML"
+           hx-indicator="#tab-load-indicator"
+           hx-push-url="false" />
+    @* The corresponding tabpanel is part of the #consultation-tab-content div below for HTMX loading *@
+
+    @* Medications Tab *@
+    <input type="radio" name="consultation_tabs" role="tab" class="tab [--tab-border-color:oklch(var(--p))] [--tab-bg:oklch(var(--p))] [--tab-color:oklch(var(--pc))]" aria-label="Medications"
+           checked="@(Model.ActiveTab == "Medications")"
+           hx-get="@Url.Action("MedicationsTab", "Consultation", new { visitId = Model.PatientBanner.VisitId, patientId = Model.PatientBanner.PatientId })"
+           hx-target="#consultation-tab-content"
+           hx-swap="innerHTML"
+           hx-indicator="#tab-load-indicator"
+           hx-push-url="false" />
+
+    @* Sick Note Tab *@
+    <input type="radio" name="consultation_tabs" role="tab" class="tab [--tab-border-color:oklch(var(--p))] [--tab-bg:oklch(var(--p))] [--tab-color:oklch(var(--pc))]" aria-label="Sick Note"
+           checked="@(Model.ActiveTab == "SickNote")"
+           hx-get="@Url.Action("SickNoteTab", "Consultation", new { visitId = Model.PatientBanner.VisitId, patientId = Model.PatientBanner.PatientId })"
+           hx-target="#consultation-tab-content"
+           hx-swap="innerHTML"
+           hx-indicator="#tab-load-indicator"
+           hx-push-url="false" />
+
+    @* Patient History Tab *@
+    <input type="radio" name="consultation_tabs" role="tab" class="tab [--tab-border-color:oklch(var(--p))] [--tab-bg:oklch(var(--p))] [--tab-color:oklch(var(--pc))]" aria-label="History"
+           checked="@(Model.ActiveTab == "History")"
+           hx-get="@Url.Action("Index", "PatientHistory", new { patientId = Model.PatientBanner.PatientId })"
+           hx-target="#consultation-tab-content"
+           hx-swap="innerHTML"
+           hx-indicator="#tab-load-indicator"
+           hx-push-url="false" />
+
+    @* Visit Assessment Tab *@
+    <input type="radio" name="consultation_tabs" role="tab" class="tab [--tab-border-color:oklch(var(--p))] [--tab-bg:oklch(var(--p))] [--tab-color:oklch(var(--pc))]" aria-label="Assessment"
+           checked="@(Model.ActiveTab == "Assessment")"
+           hx-get="@Url.Action("Index", "VisitAssessment", new { visitId = Model.PatientBanner.VisitId, patientId = Model.PatientBanner.PatientId })"
+           hx-target="#consultation-tab-content"
+           hx-swap="innerHTML"
+           hx-indicator="#tab-load-indicator"
+           hx-push-url="false" />
+
+    @* NEW: Referrals Tab *@
+    <input type="radio" name="consultation_tabs" role="tab" class="tab [--tab-border-color:oklch(var(--p))] [--tab-bg:oklch(var(--p))] [--tab-color:oklch(var(--pc))]" aria-label="Referrals"
+           checked="@(Model.ActiveTab == "Referrals")"
+           hx-get="@Url.Action("Index", "Referral", new { visitId = Model.PatientBanner.VisitId, patientId = Model.PatientBanner.PatientId })"
+           hx-target="#consultation-tab-content"
+           hx-swap="innerHTML"
+           hx-indicator="#tab-load-indicator"
+           hx-push-url="false" />
+
+    @* Add more consultation tabs here as needed, e.g., "Orders" *@
+</div>
+
+@* Main content area for the active tab's content loaded via HTMX OR rendered initially *@
+<div id="consultation-tab-content" class="bg-base-100 border-base-300 rounded-b-box p-6 shadow">
+    @if (Model.ActiveTab == "VitalSigns")
+    {
+        <partial name="_ConsultationVitalsTab" model="Model" />
+    }
+    else if (Model.ActiveTab == "Medications")
+    {
+        <partial name="_ConsultationMedicationsTab" model="Model.MedicationsData" />
+    }
+    else if (Model.ActiveTab == "SickNote")
+    {
+        <partial name="_ConsultationSickNoteTab" model='new carestream.core.dtos.consultation.SickNoteInputDto { VisitId = Model.PatientBanner.VisitId }' view-data='new ViewDataDictionary(ViewData) { { "PatientId", Model.PatientBanner.PatientId } }' />
+    }
+    else if (Model.ActiveTab == "History")
+    {
+        <partial name="~/Views/PatientHistory/Index.cshtml" model='new carestream.core.dtos.patient.PatientMedicalHistoryDto()' view-data='new ViewDataDictionary(ViewData) { { "PatientId", Model.PatientBanner.PatientId } }' />
+    }
+    else if (Model.ActiveTab == "Assessment")
+    {
+        <partial name="~/Views/VisitAssessment/Index.cshtml" model='new carestream.core.dtos.consultation.CreateUpdateVisitAssessmentDto { VisitId = Model.PatientBanner.VisitId, PatientId = Model.PatientBanner.PatientId }' />
+    }
+    else if (Model.ActiveTab == "Referrals") // NEW: Render Referrals tab if active
+    {
+        <partial name="~/Views/Referral/Index.cshtml" model='new carestream.core.dtos.consultation.CreateUpdateReferralDto { VisitId = Model.PatientBanner.VisitId, PatientId = Model.PatientBanner.PatientId }' />
+    }
+    else
+    {
+        <div class="alert alert-info">No tab content available for this selection.</div>
+    }
+</div>
+
+<div class="flex justify-center items-center p-10">
+    <span id="tab-load-indicator" class="loading loading-lg loading-spinner htmx-indicator"></span>
+</div>
+
+<div class="mt-6 flex justify-end print:hidden">
+    @* Hide on print *@
+    <button class="btn btn-outline btn-sm mr-2"
+            hx-get="@Url.Action("DoctorDashboard", "Dashboard")"
+            hx-target="#main-content"
+            hx-swap="innerHTML transition:true"
+            hx-push-url="true">
+        <i data-feather="arrow-left" class="w-4 h-4 mr-1"></i> Back to Dashboard
+    </button>
+    <form hx-post="@Url.Action("FinalizeConsultation", "Consultation")"
+          hx-vals='{"visitId": @Model.PatientBanner.VisitId, "patientId": @Model.PatientBanner.PatientId}'
+          hx-confirm="Are you sure you want to finalize this consultation? This will mark the patient as discharged (or ready for pharmacy)."
+          hx-indicator="#finalize-indicator"
+          hx-target="body"
+          hx-swap="none"
+          class="inline">
+        @Html.AntiForgeryToken()
+        <button type="submit" class="btn btn-primary btn-sm">
+            Finalize Consultation
+            <i data-feather="check-circle" class="w-4 h-4 ml-1"></i>
+            <span id="finalize-indicator" class="htmx-indicator loading loading-spinner loading-xs ml-1"></span>
+        </button>
+    </form>
+</div>
+
+<dialog id="admin_generic_modal" class="modal">
+    <div id="admin_generic_modal_content" class="modal-box w-11/12 max-w-lg">
+    </div>
+    <form method="dialog" class="modal-backdrop">
+        <button>close</button>
+    </form>
+</dialog>
+
+<script>
+    if (typeof feather !== 'undefined') {
+        feather.replace();
+    }
+</script>

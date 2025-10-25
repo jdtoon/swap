@@ -1,0 +1,31 @@
+# docker-compose.prod.yml
+# This file is for deploying the web application ONLY.
+# It assumes Logto and PostgreSQL are already running and accessible from this host.
+
+services:
+  carestream-web:
+    # It's best practice to pull a specific, versioned image from a container registry in production
+    # instead of building it on the server.
+    image: ${DOCKER_REGISTRY-}carestream.web:1.0.0 # Example: your-registry.com/carestream.web:1.0.0
+    # The 'build' section is typically removed for production. You would build and push the image
+    # in your CI/CD pipeline and then pull it here. If you must build on the server, you can keep it.
+    build:
+      context: .
+      dockerfile: src/web/Dockerfile
+    
+    restart: always # Ensures the container restarts if it crashes or the server reboots
+
+    ports:
+      # Expose the app's port 3000 to the host machine's port 3000
+      - "3000:3000"
+
+    environment:
+      - DOTNET_RUNNING_IN_CONTAINER=true
+      - ASPNETCORE_ENVIRONMENT=Production # CRITICAL: Changed from Development to Production
+      - ASPNETCORE_URLS=http://+:3000
+      
+      - Logto:Authority=${LOGTO_AUTHORITY}
+      - Logto:BaseURL=${LOGTO_BASEURL}
+      - Logto:ClientId=${LOGTO_CLIENTID}
+      - Logto:ClientSecret=${LOGTO_CLIENTSECRET}
+      - ConnectionStrings:DefaultConnection=${CONNECTIONSTRINGS_DEFAULTCONNECTION}

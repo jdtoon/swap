@@ -1,0 +1,88 @@
+﻿@using carestream.core.dtos.admin.facility
+@using carestream.core.dtos.admin.staffreport
+@model CreateUpdateStaffReportDto
+@{
+    Layout = null;
+    string title = Model.ReportId > 0 ? "Edit Staff Report" : "Create New Staff Report";
+    string currentFacilityName = ViewData["CurrentFacilityName"] as string ?? "N/A";
+    var priorities = new List<string> { "Low", "Normal", "High", "Urgent" };
+    var departments = ViewData["Departments"] as IEnumerable<DepartmentDto> ?? Enumerable.Empty<DepartmentDto>();
+}
+
+<form method="dialog">
+    <button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2" type="button" onclick="admin_generic_modal.close()">✕</button>
+</form>
+<h3 class="font-bold text-lg mb-4">@title</h3>
+<p class="py-2 text-sm">For Facility: <span class="font-semibold">@currentFacilityName</span> (ID: @Model.FacilityId)</p>
+
+@if (!ViewData.ModelState.IsValid && ViewData.ModelState.Keys.Any(k => ViewData.ModelState[k]?.Errors?.Any() == true))
+{
+    <div class="alert alert-warning text-xs p-2 mb-3">
+        <ul class="list-disc list-inside">
+            @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+            {
+                <li>@error.ErrorMessage</li>
+            }
+        </ul>
+    </div>
+}
+
+<form hx-post="@Url.Action("SaveReport", "StaffReports")"
+      hx-target="#admin_generic_modal_content"
+      hx-swap="innerHTML"
+      hx-indicator="#report-save-indicator">
+    @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="ReportId" />
+    <input type="hidden" asp-for="FacilityId" />
+    <input type="hidden" asp-for="AuthorUserId" /> 
+
+    <div class="form-control mb-3">
+        <label asp-for="Title" class="label pb-0"><span class="label-text">Report Title <span class="text-error">*</span></span></label>
+        <input type="text" asp-for="Title" class="input input-bordered input-sm w-full" required />
+        <span asp-validation-for="Title" class="text-error text-xs mt-1"></span>
+    </div>
+
+    <div class="form-control mb-3">
+        <label asp-for="Priority" class="label pb-0"><span class="label-text">Priority</span></label>
+        <select asp-for="Priority" class="select select-bordered input-sm w-full">
+            <option value="">Select Priority (Optional)</option>
+            @foreach (var p in priorities)
+            {
+                <option value="@p" selected="@(Model.Priority == p)">@p</option>
+            }
+        </select>
+        <span asp-validation-for="Priority" class="text-error text-xs mt-1"></span>
+    </div>
+
+    <div class="form-control mb-3">
+        <label asp-for="DepartmentId" class="label pb-0"><span class="label-text">Department (Optional)</span></label>
+        <select asp-for="DepartmentId" class="select select-bordered input-sm w-full">
+            <option value="">Select Department</option>
+            @foreach (var dept in departments.OrderBy(d => d.Name))
+            {
+                <option value="@dept.DepartmentId" selected="@(Model.DepartmentId == dept.DepartmentId)">@dept.Name</option>
+            }
+        </select>
+        <span asp-validation-for="DepartmentId" class="text-error text-xs mt-1"></span>
+    </div>
+
+    <div class="form-control mb-4">
+        <label asp-for="Content" class="label pb-0"><span class="label-text">Report Content <span class="text-error">*</span></span></label>
+        <textarea asp-for="Content" class="textarea textarea-bordered textarea-sm h-32 w-full" placeholder="Enter the detailed content of the report..." required></textarea>
+        <span asp-validation-for="Content" class="text-error text-xs mt-1"></span>
+    </div>
+
+    <div class="modal-action mt-6">
+        <button class="btn btn-sm btn-ghost" type="button" onclick="admin_generic_modal.close()">Cancel</button>
+        <button type="submit" class="btn btn-sm btn-primary">
+            Save Report
+            <span id="report-save-indicator" class="htmx-indicator loading loading-spinner loading-xs ml-1"></span>
+        </button>
+    </div>
+</form>
+
+<script>
+    if (typeof feather !== 'undefined') {
+        feather.replace();
+    }
+</script>

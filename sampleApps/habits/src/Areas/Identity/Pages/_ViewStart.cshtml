@@ -1,0 +1,5 @@
+﻿@{
+    Layout = User.Identity?.IsAuthenticated == true
+        ? "/Views/Shared/_LayoutBase.cshtml"
+        : "/Views/Shared/_LayoutNone.cshtml";
+}

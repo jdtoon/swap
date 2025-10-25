@@ -1,0 +1,109 @@
+﻿@using carestream.core.dtos.pharmacy
+@model StartDispenseViewModel
+@{
+    Layout = null; // This is a partial view
+}
+
+<div id="dispense-form-wrapper">
+    <div class="mb-4 flex justify-between items-center">
+        <div>
+            <h1 class="text-xl font-semibold text-gray-700">Dispense Medications</h1>
+            <p class="text-sm text-gray-500">
+                Patient: <span class="font-medium">@Model.PatientName</span> | Prescription: <span class="font-medium">@Model.PrescriptionIdentifier</span> (Visit ID: @Model.VisitId)
+            </p>
+        </div>
+        <button class="btn btn-sm btn-ghost"
+                hx-get="@Url.Action("ViewPrescriptionDetails", "Pharmacy", new { visitId = Model.VisitId })"
+                hx-target="#main-content"
+                hx-swap="innerHTML"
+                hx-push-url="true">
+            <i data-feather="arrow-left" class="w-4 h-4 mr-1"></i> Back to Details
+        </button>
+    </div>
+
+    @if (!Model.ItemsToDispense.Any())
+    {
+        <div class="alert alert-info">
+            <i data-feather="info" class="w-5 h-5"></i>
+            <span>No items currently require dispensing for this prescription, or all items have been processed.</span>
+        </div>
+    }
+    else
+    {
+        <form id="confirm-dispense-form"
+              hx-post="@Url.Action("ConfirmDispense", "Pharmacy")" @* Placeholder action *@
+              hx-target="#dispense-form-wrapper" @* Or a status div *@
+              hx-swap="innerHTML" @* Or outerHTML for the whole form wrapper *@
+              hx-indicator="#dispense-confirm-indicator">
+
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="VisitId" />
+
+            <div class="overflow-x-auto mb-4">
+                <table class="table table-sm w-full">
+                    <thead>
+                        <tr>
+                            <th class="w-8"><input type="checkbox" class="checkbox checkbox-xs" checked @@change="document.querySelectorAll('.dispense-item-select').forEach(el => el.checked = $event.target.checked);" /></th>
+                            <th>Medication</th>
+                            <th>Prescribed Qty</th>
+                            <th>Stock</th>
+                            <th>Qty to Dispense</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (int i = 0; i < Model.ItemsToDispense.Count; i++)
+                        {
+                            var item = Model.ItemsToDispense[i];
+                            <tr>
+                                <td>
+                                    <input type="checkbox" asp-for="ItemsToDispense[i].IsSelectedForDispense" class="checkbox checkbox-xs dispense-item-select" />
+                                    <input type="hidden" asp-for="ItemsToDispense[i].PrescriptionItemId" />
+                                    <input type="hidden" asp-for="ItemsToDispense[i].MedicationId" />
+                                    <input type="hidden" asp-for="ItemsToDispense[i].MedicationName" />
+                                    <input type="hidden" asp-for="ItemsToDispense[i].QuantityPrescribed" />
+                                </td>
+                                <td>
+                                    <div class="font-medium">@item.MedicationName</div>
+                                    <div class="text-xs opacity-70">Dosage: @item.OriginalDosage, Freq: @item.OriginalFrequency, Dur: @(item.OriginalDuration ?? "-")</div>
+                                    @if (!string.IsNullOrWhiteSpace(item.SpecialInstructions))
+                                    {
+                                        <div class="text-xs opacity-70 mt-1">Instruct: <em>@item.SpecialInstructions</em></div>
+                                    }
+                                </td>
+                                <td>@item.QuantityPrescribed</td>
+                                <td>
+                                    <span class="badge @(item.StockOnHand < 10 ? "badge-error" : (item.StockOnHand < 50 ? "badge-warning" : "badge-success")) badge-sm">
+                                        @item.StockOnHand
+                                    </span>
+                                </td>
+                                <td>
+                                    <input type="text" asp-for="ItemsToDispense[i].QuantityToDispense" class="input input-xs input-bordered w-24" />
+                                    <span asp-validation-for="ItemsToDispense[i].QuantityToDispense" class="text-error text-xs"></span>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="form-control mb-4">
+                <label asp-for="DispensingNotes" class="label pb-1"><span class="label-text">Dispensing Notes (Optional)</span></label>
+                <textarea asp-for="DispensingNotes" class="textarea textarea-bordered h-20" placeholder="Any notes specific to this dispensing event..."></textarea>
+            </div>
+
+            <div class="form-control mb-4 max-w-xs">
+                <label asp-for="PharmacistVerificationCode" class="label pb-1"><span class="label-text">Pharmacist Verification Code</span></label>
+                <input type="password" asp-for="PharmacistVerificationCode" class="input input-bordered" placeholder="Enter your code" />
+                <span asp-validation-for="PharmacistVerificationCode" class="text-error text-xs mt-1"></span>
+            </div>
+
+            <div class="card-actions justify-end mt-6">
+                <div id="dispense-status-message" class="mr-auto"></div> @* For status messages from POST *@
+                <button type="submit" class="btn btn-primary">
+                    <i data-feather="check-square" class="w-4 h-4 mr-1"></i> Confirm & Log Dispense
+                    <span id="dispense-confirm-indicator" class="htmx-indicator loading loading-spinner loading-xs ml-2"></span>
+                </button>
+            </div>
+        </form>
+    }
+</div>

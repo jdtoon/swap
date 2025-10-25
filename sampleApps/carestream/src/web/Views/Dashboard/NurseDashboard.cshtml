@@ -1,0 +1,134 @@
+﻿@* File: src/web/Views/Dashboard/NurseDashboard.cshtml *@
+@using carestream.core.dtos.vitals
+@model NurseDashboardViewModel
+@{
+    Layout = null; // This is a partial view
+
+    // Helper function to calculate wait time string and get color class
+    (string waitTime, string colorClass) GetWaitTimeDisplay(DateTime checkinTime)
+    {
+        var waitDuration = DateTime.UtcNow - checkinTime;
+        string timeString;
+        if (waitDuration.TotalMinutes < 1) timeString = "< 1 min";
+        else if (waitDuration.TotalHours >= 1) timeString = $"{(int)waitDuration.TotalHours}h {(int)waitDuration.Minutes}m";
+        else timeString = $"{(int)waitDuration.TotalMinutes} min";
+
+        string color = "text-success"; // Default: Green < 10 min
+        if (waitDuration.TotalMinutes >= 20) color = "text-error"; // Red > 20 min
+        else if (waitDuration.TotalMinutes >= 10) color = "text-warning"; // Orange 10-20 min
+
+        return (timeString, color);
+    }
+}
+
+<div class="mb-6">
+    <h1 class="text-2xl font-semibold text-gray-700">Nurse Dashboard - Vitals Management</h1>
+    <p class="text-gray-500">Oversee patients awaiting vital signs assessment and manage the queue.</p>
+</div>
+
+@* Stats Section *@
+@if (Model?.Stats != null)
+{
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div class="stats shadow bg-base-100">
+            <div class="stat">
+                <div class="stat-figure text-primary"><i data-feather="users" class="w-8 h-8"></i></div>
+                <div class="stat-title">Waiting for Vitals</div>
+                <div class="stat-value">@Model.Stats.WaitingForVitals</div>
+            </div>
+        </div>
+        <div class="stats shadow bg-base-100">
+            <div class="stat">
+                <div class="stat-figure text-info"><i data-feather="activity" class="w-8 h-8"></i></div>
+                <div class="stat-title">Vitals In Progress</div>
+                <div class="stat-value text-info">@Model.Stats.VitalsInProgress</div>
+            </div>
+        </div>
+        <div class="stats shadow bg-base-100">
+            <div class="stat">
+                <div class="stat-figure text-success"><i data-feather="user-check" class="w-8 h-8"></i></div>
+                <div class="stat-title">Ready for Doctor</div>
+                <div class="stat-value text-success">@Model.Stats.ReadyForDoctor</div>
+            </div>
+        </div>
+    </div>
+}
+else
+{
+    <div class="alert alert-info mb-6">
+        <i data-feather="loader" class="animate-spin"></i>
+        <span>Loading vital stats...</span>
+    </div>
+}
+
+@* Vitals Queue Table *@
+<div class="card bg-base-100 shadow-xl">
+    <div class="card-body">
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="card-title">
+                <i data-feather="list" class="mr-2"></i>Vitals Queue
+            </h2>
+            <button class="btn btn-xs btn-ghost"
+                    hx-get="@Url.Action("NurseDashboard", "Dashboard")"
+                    hx-target="#main-content"
+                    hx-swap="innerHTML">
+                @* Example: Refresh button for the whole dashboard *@
+                <i data-feather="refresh-cw" class="w-4 h-4"></i> Refresh
+            </button>
+        </div>
+
+        @if (Model?.VitalsQueue != null && Model.VitalsQueue.Any())
+        {
+            <div class="overflow-x-auto">
+                <table class="table table-zebra table-sm w-full">
+                    <thead>
+                        <tr>
+                            <th>Patient Name</th>
+                            <th>Rank</th>
+                            <th>Age</th>
+                            <th>Wait Time</th>
+                            <th>Priority</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model.VitalsQueue)
+                        {
+                            var (waitTimeDisplay, waitTimeColorClass) = GetWaitTimeDisplay(item.CheckinTimestamp);
+                            <tr>
+                                <td>
+                                    <div class="font-bold">@item.PatientName</div>
+                                    <div class="text-xs opacity-70">Patient ID: @item.PatientId / Visit ID: @item.VisitId</div>
+                                </td>
+                                <td>@(item.Rank ?? "N/A")</td>
+                                <td>@(item.Age?.ToString() ?? "N/A")</td>
+                                <td class="@waitTimeColorClass font-semibold">@waitTimeDisplay</td>
+                                <td>
+                                    <span class="badge @(item.Priority == "Urgent" ? "badge-error" : (item.Priority == "High" ? "badge-warning" : "badge-ghost")) badge-sm">
+                                        @item.Priority
+                                    </span>
+                                </td>
+                                <td>
+                                    <button class="btn btn-xs btn-primary"
+                                            hx-get="@Url.Action("StartVitalsCapture", "Vitals", new { visitId = item.VisitId, patientId = item.PatientId })"
+                                            hx-target="#main-content"
+                                            hx-swap="innerHTML transition:true"
+                                            hx-push-url="true">
+                                        <i data-feather="play-circle" class="w-4 h-4 mr-1"></i> Start Vitals
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="text-center py-8">
+                <i data-feather="inbox" class="w-12 h-12 mx-auto text-gray-400"></i>
+                <p class="mt-2 text-gray-500">The Vitals Queue is currently empty.</p>
+            </div>
+        }
+    </div>
+</div>

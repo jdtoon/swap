@@ -1,0 +1,35 @@
+services:
+  carestream-web:
+    ports:
+      - "5237:3000"
+      # Map host port 7300 to container port 8081 (if needed for debugging/other purposes)
+      # - "7300:8081" # Commented out as 8081 wasn't specified in Dockerfile EXPOSE or ASPNETCORE_URLS
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      # Override Logto settings if needed for local testing (use placeholder values here)
+      - Logto:ClientId=3dpi76r1tcszlcy4gd6x4 # Get this after setting up Logto
+      - Logto:ClientSecret=mbdihDHgyKHB8boUjFX0l4UyeTHb3o5Q # Get this after setting up Logto
+
+  # PostgreSQL service - mapping port and local volume for data
+  postgres:
+    ports:
+      # Map host port 5433 to container port 5432 to avoid conflicts with local Postgres if installed
+      - "5433:5432"
+    volumes:
+      # Map the named volume 'postgres_data' to a local path for easier inspection/backup if needed
+      # Or just use the named volume defined in the base file, which is usually sufficient.
+      # Using named volumes is generally preferred over bind mounts for database data.
+      - postgres_data:/var/lib/postgresql/data
+
+  # Logto service - mapping ports for local access
+  logto:
+    ports:
+      # Map host port 3001 to container port 3001 (Logto Core API)
+      - "3001:3001"
+      # Map host port 3002 to container port 3002 (Logto Admin Console)
+      - "3002:3002"
+
+# Define the named volume (if not using bind mount above)
+volumes:
+  postgres_data: {} # Docker manages this volume
+
