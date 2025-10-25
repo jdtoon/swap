@@ -1,0 +1,80 @@
+using Microsoft.AspNetCore.Mvc;
+using {{ProjectName}}.Data;
+using {{ProjectName}}.Models;
+
+namespace {{ProjectName}}.Controllers;
+
+public class {{EntityName}}Controller : Controller
+{
+    private readonly AppDbContext _context;
+
+    public {{EntityName}}Controller(AppDbContext context)
+    {
+        _context = context;
+    }
+
+    public IActionResult Index()
+    {
+        var isHtmxRequest = HttpContext.Items["IsHtmxRequest"] as bool? ?? false;
+
+        if (isHtmxRequest)
+        {
+            // Return partial view for HTMX requests
+            return PartialView("_{{EntityName}}List", _context.{{EntityNamePlural}}.ToList());
+        }
+
+        // Return full page for initial load
+        return View(_context.{{EntityNamePlural}}.ToList());
+    }
+
+    [HttpPost]
+    public IActionResult Create(string title)
+    {
+        if (string.IsNullOrWhiteSpace(title))
+        {
+            return BadRequest();
+        }
+
+        var item = new Models.{{EntityName}}
+        {
+            Title = title,
+            IsComplete = false
+        };
+
+        _context.{{EntityNamePlural}}.Add(item);
+        _context.SaveChanges();
+
+        // Return the updated list
+        return PartialView("_{{EntityName}}List", _context.{{EntityNamePlural}}.ToList());
+    }
+
+    [HttpPost]
+    public IActionResult Toggle(int id)
+    {
+        var item = _context.{{EntityNamePlural}}.Find(id);
+        if (item == null)
+        {
+            return NotFound();
+        }
+
+        item.IsComplete = !item.IsComplete;
+        _context.SaveChanges();
+
+        return PartialView("_{{EntityName}}List", _context.{{EntityNamePlural}}.ToList());
+    }
+
+    [HttpDelete]
+    public IActionResult Delete(int id)
+    {
+        var item = _context.{{EntityNamePlural}}.Find(id);
+        if (item == null)
+        {
+            return NotFound();
+        }
+
+        _context.{{EntityNamePlural}}.Remove(item);
+        _context.SaveChanges();
+
+        return PartialView("_{{EntityName}}List", _context.{{EntityNamePlural}}.ToList());
+    }
+}

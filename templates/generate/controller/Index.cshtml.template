@@ -1,0 +1,47 @@
+@model List<{{ProjectName}}.Models.{{EntityName}}>
+
+@{
+    ViewData["Title"] = "{{EntityNamePlural}}";
+}
+
+<div class="hero bg-base-200 py-8">
+    <div class="hero-content text-center">
+        <div class="max-w-md">
+            <h1 class="text-5xl font-bold">{{EntityNamePlural}}</h1>
+            <p class="py-6">Manage your {{EntityNameLower}} items with HTMX-powered interactions</p>
+        </div>
+    </div>
+</div>
+
+<div class="container mx-auto px-4 py-8">
+    <div class="card bg-base-100 shadow-xl">
+        <div class="card-body">
+            <h2 class="card-title mb-4">{{EntityName}} List</h2>
+            
+            <!-- Add New Form -->
+            <form hx-post="/{{EntityName}}/Create" 
+                  hx-target="#{{EntityNameLower}}-list" 
+                  hx-swap="outerHTML"
+                  class="mb-6">
+                <div class="join w-full">
+                    <input type="text" 
+                           name="title" 
+                           placeholder="Add a new {{EntityNameLower}}..." 
+                           class="input input-bordered join-item flex-1"
+                           required />
+                    <button type="submit" class="btn btn-primary join-item">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
+                        </svg>
+                        Add
+                    </button>
+                </div>
+            </form>
+
+            <!-- List Container -->
+            <div id="{{EntityNameLower}}-list">
+                @await Html.PartialAsync("_{{EntityName}}List", Model)
+            </div>
+        </div>
+    </div>
+</div>
