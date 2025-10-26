@@ -184,42 +184,42 @@ public static class GenerateControllerCommand
                 Directory.CreateDirectory(Path.Combine("Views", "Shared"));
                 
                 await GenerateFileFromTemplateAsync(
-                    Path.Combine(templatePath, "Index.cshtml.template"),
+                    Path.Combine(templatePath, "Views", "Index.cshtml.template"),
                     Path.Combine("Views", entityName, "Index.cshtml"),
                     variables,
                     ctx
                 );
                 
                 await GenerateFileFromTemplateAsync(
-                    Path.Combine(templatePath, "_EntityList.cshtml.template"),
+                    Path.Combine(templatePath, "Views", "_EntityList.cshtml.template"),
                     Path.Combine("Views", entityName, $"_{entityName}List.cshtml"),
                     variables,
                     ctx
                 );
                 
                 await GenerateFileFromTemplateAsync(
-                    Path.Combine(templatePath, "_EntityCreateModal.cshtml.template"),
+                    Path.Combine(templatePath, "Views", "_EntityCreateModal.cshtml.template"),
                     Path.Combine("Views", entityName, $"_{entityName}CreateModal.cshtml"),
                     variables,
                     ctx
                 );
                 
                 await GenerateFileFromTemplateAsync(
-                    Path.Combine(templatePath, "_EntityEditModal.cshtml.template"),
+                    Path.Combine(templatePath, "Views", "_EntityEditModal.cshtml.template"),
                     Path.Combine("Views", entityName, $"_{entityName}EditModal.cshtml"),
                     variables,
                     ctx
                 );
                 
                 await GenerateFileFromTemplateAsync(
-                    Path.Combine(templatePath, "_EntityDetails.cshtml.template"),
+                    Path.Combine(templatePath, "Views", "_EntityDetails.cshtml.template"),
                     Path.Combine("Views", entityName, $"_{entityName}Details.cshtml"),
                     variables,
                     ctx
                 );
                 
                 await GenerateFileFromTemplateAsync(
-                    Path.Combine(templatePath, "_EntityForm.cshtml.template"),
+                    Path.Combine(templatePath, "Views", "_EntityForm.cshtml.template"),
                     Path.Combine("Views", entityName, $"_{entityName}Form.cshtml"),
                     variables,
                     ctx
@@ -230,7 +230,7 @@ public static class GenerateControllerCommand
                 if (!File.Exists(paginationPath))
                 {
                     await GenerateFileFromTemplateAsync(
-                        Path.Combine(templatePath, "_PaginationControls.cshtml.template"),
+                        Path.Combine(templatePath, "Views", "_PaginationControls.cshtml.template"),
                         paginationPath,
                         variables,
                         ctx
@@ -305,10 +305,12 @@ public class {entityName}
         
         var content = await File.ReadAllTextAsync(dbContextPath);
         
-        // Check if DbSet already exists
-        if (content.Contains($"DbSet<{entityName}>"))
+        // Check if DbSet already exists (check for both simple and fully qualified names)
+        if (content.Contains($"DbSet<{entityName}>") || 
+            content.Contains($"DbSet<{projectName}.Models.{entityName}>") ||
+            content.Contains($"{entityName}s {{ get; set; }}"))
         {
-            AnsiConsole.MarkupLine($"[yellow]Warning:[/] DbSet<{entityName}> already exists in DbContext");
+            AnsiConsole.MarkupLine($"[yellow]Warning:[/] DbSet for {entityName} already exists in DbContext");
             return;
         }
         
