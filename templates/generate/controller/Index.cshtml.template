@@ -57,34 +57,8 @@
 <!-- Modal Container -->
 <div id="modal-container"></div>
 
-<!-- Toast Container -->
-<div id="toast-container" class="toast toast-end"></div>
-
 @section Scripts {
     <script>
-        // HTMX event listener for toast notifications
-        document.body.addEventListener('htmx:trigger', function(event) {
-            if (event.detail.showToast) {
-                const toastData = event.detail.showToast;
-                const toastContainer = document.getElementById('toast-container');
-                
-                const toast = document.createElement('div');
-                toast.className = `alert alert-${toastData.type === 'success' ? 'success' : 'error'} shadow-lg`;
-                toast.innerHTML = `
-                    <div>
-                        <span>${toastData.message}</span>
-                    </div>
-                `;
-                
-                toastContainer.appendChild(toast);
-                
-                // Auto-remove after 3 seconds
-                setTimeout(() => {
-                    toast.remove();
-                }, 3000);
-            }
-        });
-        
         // Close modal on list refresh
         document.body.addEventListener('refresh{{EntityName}}List', function() {
             document.getElementById('modal-container').innerHTML = '';

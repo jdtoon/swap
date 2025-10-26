@@ -33,6 +33,34 @@
         </aside>
     </footer>
 
+    <!-- Global Toast Container -->
+    <div id="toast-container" class="toast toast-end"></div>
+
+    <script>
+        // Global Toast notification handler - HTMX fires custom events from HX-Trigger header
+        document.addEventListener('DOMContentLoaded', function() {
+            document.body.addEventListener('showToast', function(event) {
+                const toastData = event.detail.value;
+                const toastContainer = document.getElementById('toast-container');
+                
+                const toast = document.createElement('div');
+                toast.className = `alert alert-${toastData.type === 'success' ? 'success' : 'error'} shadow-lg`;
+                toast.innerHTML = `
+                    <div>
+                        <span>${toastData.message}</span>
+                    </div>
+                `;
+                
+                toastContainer.appendChild(toast);
+                
+                // Auto-remove after 3 seconds
+                setTimeout(() => {
+                    toast.remove();
+                }, 3000);
+            });
+        });
+    </script>
+
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>
