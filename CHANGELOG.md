@@ -9,7 +9,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added - Phase 4: Advanced List Management (Sorting & Filtering) ✅
+### Added - Phase 4: Advanced List Management (Sorting, Filtering & Bulk Operations) ✅
+
+#### Phase 4.4: Bulk Operations (2025-10-26)
+- **Selection Checkboxes**: Checkbox column added to all generated tables
+- **Select All Functionality**: Header checkbox to select/deselect all items on page
+- **Bulk Action Bar**: Alert bar appears when items selected, showing count
+- **Bulk Delete**: Delete multiple items at once with confirmation dialog
+- **Transaction Support**: BulkDelete uses database transactions for atomicity
+- **Component-Level Updates**: Each checkbox targets itself for independent updates
+- **JavaScript Functions**: toggleSelectAll(), updateBulkActions(), getSelectedIds(), clearSelection()
+- **Confirmation Dialog**: Native confirm() with item count before deletion
+- **Toast Notifications**: Success/error feedback after bulk operations
+- **List Refresh**: Automatic table refresh after successful bulk delete
+- **Clear Selection**: Button to deselect all items and hide action bar
+- **Fetch API Integration**: POST to /BulkDelete with JSON array of IDs
+- **Error Handling**: Try-catch with rollback, returns 500 on failure
+- **HTMX Trigger**: Custom event to refresh list after deletion
+- **DaisyUI Styling**: Consistent checkbox and alert styling
+- **Template Updates**: _EntityList.cshtml.template with bulk operations UI
+- **Controller Updates**: EntityController.cs.template with BulkDelete action
+- **FieldHelper Methods**: 5 new generation methods for bulk operations
+  - GenerateBulkSelectHeader(): Checkbox column header with select-all
+  - GenerateBulkSelectCell(): Row checkbox with entity-specific class
+  - GenerateBulkSelectionScript(): JavaScript for selection management
+  - GenerateBulkActionsBar(): Alert bar with delete/clear buttons
+  - GenerateBulkDeleteScript(): Bulk delete fetch logic with notifications
+- **GenerateControllerCommand Updates**: Variables for bulk operation tokens
+- **Example Usage**: Select items → "Delete Selected" → Confirm → Toast → Refresh
 
 #### Phase 4.3: Field-Level Flags (2025-10-26)
 - **Field Control Flags**: Developer control over sortable/filterable behavior per field
@@ -99,6 +126,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Complete Generation**: Controller, Model, Views, ViewModels in one command
 
 ### Fixed
+
+#### Phase 4.4 Bug Fixes (2025-10-26)
+- **Monolith Template HTMX**: Fixed component-level targeting for todo items
+  - Created _TodoItem.cshtml.template for single-item rendering
+  - Each item has unique ID (todo-item-{id})
+  - Checkbox targets itself with hx-target="#todo-item-{id}"
+  - Controller has ToggleItem action returning single item
+  - Prevents HTMX target errors on subsequent clicks
+- **CLI Error Handling**: Improved setup command error reporting
+  - Added try-catch around npm install, libman restore, npm build:css
+  - Shows warnings instead of silent failures
+  - Provides helpful tips for manual setup
+  - Updated "Next steps" with manual commands
+- **Missing HTMX Library**: Documented libman restore requirement
+  - Monolith template requires libman restore for HTMX
+  - Added to setup instructions in NewCommand
+  - Users warned if setup commands fail
+
+#### Earlier Bug Fixes
 - **Duplicate DbSet Bug**: Now checks fully qualified names (DbSet<Project.Models.Entity>)
 - **Template Paths**: Fixed {{entityNameLower}} token in hx-target attributes
 - **Razor Syntax**: Removed inline C# from HTML attributes to fix compilation errors
@@ -119,8 +165,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Filtering Guide**: Document boolean filtering usage
 
 ### Planned - Phase 4: Remaining Features
-- **Phase 4.3**: Bulk Operations (select multiple, bulk delete)
-- **Phase 4.4**: Export (CSV/Excel)
+- **Phase 4.5**: Export (CSV/Excel) - Generate downloadable data exports
+- **Phase 4.6**: Advanced Search - Multi-field search with operators
+- **Phase 4.7**: Audit Trail - Track all entity changes with timestamps
 - **Phase 4.5**: Advanced Search (multi-field with operators)
 - **Phase 4.6**: Audit Trail (CreatedBy, ModifiedBy, timestamps)
 - **Field Flags**: --sortable and --filterable flags for field-level control

@@ -124,6 +124,7 @@ Control sorting and filtering behavior per field:
 - `Edit(id, entity)` [POST] - Updates entity, returns HTMX trigger for list refresh
 - `Details(id)` [GET] - Returns read-only details partial view
 - `Delete(id)` [POST] - Deletes entity, returns HTMX trigger for list refresh
+- **`BulkDelete(ids)` [POST]** - Deletes multiple entities in transaction, returns JSON with count
 - `ApplySorting(query, sortBy, sortOrder)` - Private method applying column sorting (only for sortable fields)
 - `ApplyFilters(query, ...filters)` - Private method applying boolean filters (only for filterable fields)
 
@@ -204,12 +205,16 @@ public class ProductListViewModel
 - Modal container div for HTMX-loaded modals
 
 #### `_EntityList.cshtml` - Table Partial
+- **Bulk selection checkbox column** with select-all in header
+- **Bulk actions bar** (appears when items selected)
 - Table with sortable/non-sortable headers based on field flags
 - Sortable headers: clickable buttons with HTMX, sort indicators (↑/↓)
 - Non-sortable headers: plain `<th>` text
+- **Row checkboxes** for bulk selection
 - Action buttons (Details, Edit, Delete) with HTMX
 - Empty state with helpful message
 - Pagination controls at bottom
+- **JavaScript functions** for selection management and bulk delete
 
 #### `_EntityCreateModal.cshtml` - Create Modal
 - DaisyUI modal dialog
@@ -565,6 +570,7 @@ After generating your controller:
 - [Features: Search](../features/search.md)
 - [Features: Sorting](../features/sorting.md)
 - [Features: Filtering](../features/filtering.md)
+- [Features: Bulk Operations](../features/bulk-operations.md)
 - [Concepts: HTMX Integration](../concepts/htmx-integration.md)
 - [Reference: Field Types](../reference/field-types.md)
 {
