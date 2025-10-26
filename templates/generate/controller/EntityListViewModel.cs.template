@@ -1,0 +1,22 @@
+namespace {{Namespace}}.ViewModels;
+
+/// <summary>
+/// View model for {{EntityName}} list with pagination and search
+/// </summary>
+public class {{EntityName}}ListViewModel
+{
+    /// <summary>
+    /// List of {{EntityName}} items for current page
+    /// </summary>
+    public List<{{EntityName}}> Items { get; set; } = new();
+    
+    /// <summary>
+    /// Pagination information
+    /// </summary>
+    public PaginationDto Pagination { get; set; } = new();
+    
+    /// <summary>
+    /// Current search term (if any)
+    /// </summary>
+    public string? SearchTerm { get; set; }
+}

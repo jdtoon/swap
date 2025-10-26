@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using {{ProjectName}}.Data;
 using {{ProjectName}}.Models;
+using {{ProjectName}}.ViewModels;
 
 namespace {{ProjectName}}.Controllers;
 
@@ -13,68 +15,181 @@ public class {{EntityName}}Controller : Controller
         _context = context;
     }
 
-    public IActionResult Index()
+    /// <summary>
+    /// Index action with pagination and search support
+    /// </summary>
+    public async Task<IActionResult> Index(int pageNumber = 1, int pageSize = 25, string? searchTerm = null)
     {
-        var isHtmxRequest = HttpContext.Items["IsHtmxRequest"] as bool? ?? false;
+        var isHtmxRequest = Request.Headers.ContainsKey("HX-Request");
+
+        // Build query with search filter
+        var query = _context.{{EntityNamePlural}}.AsQueryable();
+        
+        if (!string.IsNullOrWhiteSpace(searchTerm))
+        {
+            {{SearchLogic}}
+        }
+
+        // Get total count for pagination
+        var totalItems = await query.CountAsync();
+        
+        // Apply pagination
+        var items = await query
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+
+        // Build view model with pagination
+        var viewModel = new {{EntityName}}ListViewModel
+        {
+            Items = items,
+            SearchTerm = searchTerm,
+            Pagination = new PaginationDto
+            {
+                CurrentPage = pageNumber,
+                PageSize = pageSize,
+                TotalItems = totalItems,
+                TotalPages = (int)Math.Ceiling(totalItems / (double)pageSize),
+                HxGetUrl = Url.Action("Index"),
+                HxTarget = "#{{EntityNameLower}}-list",
+                HxSwap = "innerHTML"
+            }
+        };
 
         if (isHtmxRequest)
         {
             // Return partial view for HTMX requests
-            return PartialView("_{{EntityName}}List", _context.{{EntityNamePlural}}.ToList());
+            return PartialView("_{{EntityName}}List", viewModel);
         }
 
         // Return full page for initial load
-        return View(_context.{{EntityNamePlural}}.ToList());
+        return View(viewModel);
     }
 
-    [HttpPost]
-    public IActionResult Create(string title)
+    /// <summary>
+    /// GET: Display create modal
+    /// </summary>
+    [HttpGet]
+    public IActionResult Create()
     {
-        if (string.IsNullOrWhiteSpace(title))
+        return PartialView("_{{EntityName}}CreateModal", new {{EntityName}}());
+    }
+
+    /// <summary>
+    /// POST: Create new entity
+    /// </summary>
+    [HttpPost]
+    public async Task<IActionResult> Create({{EntityName}} model)
+    {
+        if (!ModelState.IsValid)
+        {
+            // Return form with validation errors
+            Response.Headers.Append("HX-Retarget", "#modal-container");
+            Response.Headers.Append("HX-Reswap", "innerHTML");
+            return PartialView("_{{EntityName}}CreateModal", model);
+        }
+
+        _context.{{EntityNamePlural}}.Add(model);
+        await _context.SaveChangesAsync();
+
+        // Trigger list refresh and success toast
+        Response.Headers.Append("HX-Trigger", "{\"refresh{{EntityName}}List\": null, \"showToast\": {\"type\": \"success\", \"message\": \"{{EntityName}} created successfully!\"}}");
+        
+        return Content("");
+    }
+
+    /// <summary>
+    /// GET: Display edit modal
+    /// </summary>
+    [HttpGet]
+    public async Task<IActionResult> Edit(int id)
+    {
+        var entity = await _context.{{EntityNamePlural}}.FindAsync(id);
+        if (entity == null)
+        {
+            return NotFound();
+        }
+
+        return PartialView("_{{EntityName}}EditModal", entity);
+    }
+
+    /// <summary>
+    /// POST: Update existing entity
+    /// </summary>
+    [HttpPost]
+    public async Task<IActionResult> Edit(int id, {{EntityName}} model)
+    {
+        if (id != model.Id)
         {
             return BadRequest();
         }
 
-        var item = new Models.{{EntityName}}
+        if (!ModelState.IsValid)
         {
-            Title = title,
-            IsComplete = false
-        };
+            // Return form with validation errors
+            Response.Headers.Append("HX-Retarget", "#modal-container");
+            Response.Headers.Append("HX-Reswap", "innerHTML");
+            return PartialView("_{{EntityName}}EditModal", model);
+        }
 
-        _context.{{EntityNamePlural}}.Add(item);
-        _context.SaveChanges();
+        try
+        {
+            _context.Update(model);
+            await _context.SaveChangesAsync();
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            if (!{{EntityName}}Exists(model.Id))
+            {
+                return NotFound();
+            }
+            throw;
+        }
 
-        // Return the updated list
-        return PartialView("_{{EntityName}}List", _context.{{EntityNamePlural}}.ToList());
+        // Trigger list refresh and success toast
+        Response.Headers.Append("HX-Trigger", "{\"refresh{{EntityName}}List\": null, \"showToast\": {\"type\": \"success\", \"message\": \"{{EntityName}} updated successfully!\"}}");
+        
+        return Content("");
     }
 
-    [HttpPost]
-    public IActionResult Toggle(int id)
+    /// <summary>
+    /// GET: Display details modal
+    /// </summary>
+    [HttpGet]
+    public async Task<IActionResult> Details(int id)
     {
-        var item = _context.{{EntityNamePlural}}.Find(id);
-        if (item == null)
+        var entity = await _context.{{EntityNamePlural}}.FindAsync(id);
+        if (entity == null)
         {
             return NotFound();
         }
 
-        item.IsComplete = !item.IsComplete;
-        _context.SaveChanges();
-
-        return PartialView("_{{EntityName}}List", _context.{{EntityNamePlural}}.ToList());
+        return PartialView("_{{EntityName}}Details", entity);
     }
 
+    /// <summary>
+    /// DELETE: Remove entity
+    /// </summary>
     [HttpDelete]
-    public IActionResult Delete(int id)
+    public async Task<IActionResult> Delete(int id)
     {
-        var item = _context.{{EntityNamePlural}}.Find(id);
-        if (item == null)
+        var entity = await _context.{{EntityNamePlural}}.FindAsync(id);
+        if (entity == null)
         {
             return NotFound();
         }
 
-        _context.{{EntityNamePlural}}.Remove(item);
-        _context.SaveChanges();
+        _context.{{EntityNamePlural}}.Remove(entity);
+        await _context.SaveChangesAsync();
 
-        return PartialView("_{{EntityName}}List", _context.{{EntityNamePlural}}.ToList());
+        // Trigger list refresh and success toast
+        Response.Headers.Append("HX-Trigger", "{\"refresh{{EntityName}}List\": null, \"showToast\": {\"type\": \"success\", \"message\": \"{{EntityName}} deleted successfully!\"}}");
+        
+        return Content("");
+    }
+
+    private bool {{EntityName}}Exists(int id)
+    {
+        return _context.{{EntityNamePlural}}.Any(e => e.Id == id);
     }
 }

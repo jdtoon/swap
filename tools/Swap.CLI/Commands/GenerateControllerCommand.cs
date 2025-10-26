@@ -14,16 +14,22 @@ public static class GenerateControllerCommand
         var nameArg = new Argument<string>("name", "The name of the entity (e.g., Task, Product)");
         command.AddArgument(nameArg);
         
+        var fieldsOption = new Option<string?>(
+            aliases: new[] { "--fields", "-f" },
+            description: "Field definitions (e.g., 'Title:string Description:string? Priority:int')");
+        command.AddOption(fieldsOption);
+        
         command.SetHandler(async (InvocationContext context) =>
         {
             var name = context.ParseResult.GetValueForArgument(nameArg);
-            context.ExitCode = await ExecuteAsync(name);
+            var fields = context.ParseResult.GetValueForOption(fieldsOption);
+            context.ExitCode = await ExecuteAsync(name, fields);
         });
         
         return command;
     }
     
-    private static async Task<int> ExecuteAsync(string entityName)
+    private static async Task<int> ExecuteAsync(string entityName, string? fieldsSpec)
     {
         // Validate entity name
         if (string.IsNullOrWhiteSpace(entityName))
@@ -45,6 +51,18 @@ public static class GenerateControllerCommand
             AnsiConsole.MarkupLine($"[dim]Using:[/] {entityName}");
         }
         
+        // Parse fields
+        List<FieldDefinition> fields;
+        try
+        {
+            fields = FieldHelper.ParseFields(fieldsSpec);
+        }
+        catch (ArgumentException ex)
+        {
+            AnsiConsole.MarkupLine($"[red]Error:[/] {ex.Message}");
+            return 1;
+        }
+        
         // Check if we're in a project directory
         var projectFiles = Directory.GetFiles(Directory.GetCurrentDirectory(), "*.csproj");
         if (projectFiles.Length == 0)
@@ -58,20 +76,33 @@ public static class GenerateControllerCommand
         
         AnsiConsole.MarkupLine($"[bold cyan]Generating CRUD controller:[/] {entityName}");
         AnsiConsole.MarkupLine($"[dim]Project:[/] {projectName}");
+        if (fields.Any())
+        {
+            AnsiConsole.MarkupLine($"[dim]Fields:[/] {fields.Count}");
+        }
         AnsiConsole.WriteLine();
         
         try
         {
-            await GenerateControllerAsync(entityName, projectName);
+            await GenerateControllerAsync(entityName, projectName, fields);
             
             AnsiConsole.WriteLine();
             AnsiConsole.MarkupLine("[green]✓[/] Controller generated successfully!");
             AnsiConsole.WriteLine();
             AnsiConsole.MarkupLine("[bold]Generated files:[/]");
             AnsiConsole.MarkupLine($"  Controllers/{entityName}Controller.cs");
-            AnsiConsole.MarkupLine($"  Models/{entityName}.cs");
+            if (fields.Any())
+            {
+                AnsiConsole.MarkupLine($"  Models/{entityName}.cs");
+            }
+            AnsiConsole.MarkupLine($"  ViewModels/{entityName}ListViewModel.cs");
             AnsiConsole.MarkupLine($"  Views/{entityName}/Index.cshtml");
             AnsiConsole.MarkupLine($"  Views/{entityName}/_{entityName}List.cshtml");
+            AnsiConsole.MarkupLine($"  Views/{entityName}/_{entityName}CreateModal.cshtml");
+            AnsiConsole.MarkupLine($"  Views/{entityName}/_{entityName}EditModal.cshtml");
+            AnsiConsole.MarkupLine($"  Views/{entityName}/_{entityName}Details.cshtml");
+            AnsiConsole.MarkupLine($"  Views/{entityName}/_{entityName}Form.cshtml");
+            AnsiConsole.MarkupLine($"  Views/Shared/_PaginationControls.cshtml");
             AnsiConsole.WriteLine();
             AnsiConsole.MarkupLine("[bold]Next steps:[/]");
             AnsiConsole.MarkupLine($"  dotnet ef migrations add Add{entityName}");
@@ -87,7 +118,7 @@ public static class GenerateControllerCommand
         }
     }
     
-    private static async Task GenerateControllerAsync(string entityName, string projectName)
+    private static async Task GenerateControllerAsync(string entityName, string projectName, List<FieldDefinition> fields)
     {
         var templatePath = Path.Combine(AppContext.BaseDirectory, "templates", "generate", "controller");
         
@@ -96,13 +127,26 @@ public static class GenerateControllerCommand
             throw new DirectoryNotFoundException($"Template directory not found: {templatePath}");
         }
         
+        // Generate field-specific content
+        var searchLogic = FieldHelper.GenerateSearchLogic(fields);
+        var formFields = string.Join("\n\n", fields.Select(f => FieldHelper.GenerateFormField(f)));
+        var tableHeaders = string.Join("\n                    ", fields.Select(f => FieldHelper.GenerateTableHeader(f)));
+        var tableCells = string.Join("\n                        ", fields.Select(f => FieldHelper.GenerateTableCell(f)));
+        var detailsFields = string.Join("\n            ", fields.Select(f => FieldHelper.GenerateDetailsField(f)));
+        
         // Setup template variables
         var variables = new Dictionary<string, string>
         {
             { "EntityName", entityName },
             { "EntityNamePlural", entityName + "s" }, // Simple pluralization for now
             { "EntityNameLower", char.ToLower(entityName[0]) + entityName.Substring(1) },
-            { "ProjectName", projectName }
+            { "ProjectName", projectName },
+            { "Namespace", projectName },
+            { "SearchLogic", searchLogic },
+            { "FormFields", formFields },
+            { "TableHeaders", tableHeaders },
+            { "TableCells", tableCells },
+            { "DetailsFields", detailsFields }
         };
         
         await AnsiConsole.Status()
@@ -116,16 +160,26 @@ public static class GenerateControllerCommand
                     ctx
                 );
                 
-                // Generate Model
+                // Generate ViewModel
                 await GenerateFileFromTemplateAsync(
-                    Path.Combine(templatePath, "Entity.cs.template"),
-                    Path.Combine("Models", $"{entityName}.cs"),
+                    Path.Combine(templatePath, "EntityListViewModel.cs.template"),
+                    Path.Combine("ViewModels", $"{entityName}ListViewModel.cs"),
                     variables,
                     ctx
                 );
                 
+                // Generate Model (if fields specified)
+                if (fields.Any())
+                {
+                    var modelContent = GenerateModelFromFields(entityName, projectName, fields);
+                    var modelPath = Path.Combine("Models", $"{entityName}.cs");
+                    Directory.CreateDirectory(Path.GetDirectoryName(modelPath) ?? "Models");
+                    await File.WriteAllTextAsync(modelPath, modelContent);
+                }
+                
                 // Generate Views
                 Directory.CreateDirectory(Path.Combine("Views", entityName));
+                Directory.CreateDirectory(Path.Combine("Views", "Shared"));
                 
                 await GenerateFileFromTemplateAsync(
                     Path.Combine(templatePath, "Index.cshtml.template"),
@@ -141,10 +195,80 @@ public static class GenerateControllerCommand
                     ctx
                 );
                 
+                await GenerateFileFromTemplateAsync(
+                    Path.Combine(templatePath, "_EntityCreateModal.cshtml.template"),
+                    Path.Combine("Views", entityName, $"_{entityName}CreateModal.cshtml"),
+                    variables,
+                    ctx
+                );
+                
+                await GenerateFileFromTemplateAsync(
+                    Path.Combine(templatePath, "_EntityEditModal.cshtml.template"),
+                    Path.Combine("Views", entityName, $"_{entityName}EditModal.cshtml"),
+                    variables,
+                    ctx
+                );
+                
+                await GenerateFileFromTemplateAsync(
+                    Path.Combine(templatePath, "_EntityDetails.cshtml.template"),
+                    Path.Combine("Views", entityName, $"_{entityName}Details.cshtml"),
+                    variables,
+                    ctx
+                );
+                
+                await GenerateFileFromTemplateAsync(
+                    Path.Combine(templatePath, "_EntityForm.cshtml.template"),
+                    Path.Combine("Views", entityName, $"_{entityName}Form.cshtml"),
+                    variables,
+                    ctx
+                );
+                
+                // Generate shared pagination controls (only once)
+                var paginationPath = Path.Combine("Views", "Shared", "_PaginationControls.cshtml");
+                if (!File.Exists(paginationPath))
+                {
+                    await GenerateFileFromTemplateAsync(
+                        Path.Combine(templatePath, "_PaginationControls.cshtml.template"),
+                        paginationPath,
+                        variables,
+                        ctx
+                    );
+                }
+                
                 // Update DbContext
                 ctx.Status("Updating DbContext...");
                 await UpdateDbContextAsync(entityName, projectName);
             });
+    }
+    
+    private static string GenerateModelFromFields(string entityName, string projectName, List<FieldDefinition> fields)
+    {
+        var properties = new List<string>();
+        
+        foreach (var field in fields)
+        {
+            var nullability = field.IsNullable ? "?" : "";
+            var required = field.IsRequired ? "[Required]" : "";
+            
+            if (!string.IsNullOrEmpty(required))
+            {
+                properties.Add($"    {required}");
+            }
+            
+            properties.Add($"    public {field.Type}{nullability} {field.Name} {{ get; set; }}");
+        }
+        
+        return $@"using System.ComponentModel.DataAnnotations;
+
+namespace {projectName}.Models;
+
+public class {entityName}
+{{
+    public int Id {{ get; set; }}
+    
+{string.Join("\n    \n", properties)}
+}}
+";
     }
     
     private static async Task GenerateFileFromTemplateAsync(

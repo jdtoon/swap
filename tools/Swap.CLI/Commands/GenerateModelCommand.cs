@@ -115,58 +115,13 @@ public static class GenerateModelCommand
     
     private static List<FieldDefinition> ParseFields(string? fieldsSpec)
     {
-        var fields = new List<FieldDefinition>();
-        
-        if (string.IsNullOrWhiteSpace(fieldsSpec))
-        {
-            return fields; // Return empty list for default behavior
-        }
-        
-        var fieldParts = fieldsSpec.Split(',', StringSplitOptions.RemoveEmptyEntries);
-        
-        foreach (var fieldPart in fieldParts)
-        {
-            var parts = fieldPart.Trim().Split(':', StringSplitOptions.RemoveEmptyEntries);
-            
-            if (parts.Length != 2)
-            {
-                throw new ArgumentException($"Invalid field definition: '{fieldPart}'. Expected format: 'FieldName:Type' (e.g., 'Name:string')");
-            }
-            
-            var fieldName = parts[0].Trim();
-            var typeSpec = parts[1].Trim();
-            
-            // Validate field name
-            if (!char.IsUpper(fieldName[0]))
-            {
-                fieldName = char.ToUpper(fieldName[0]) + fieldName.Substring(1);
-            }
-            
-            if (!fieldName.All(c => char.IsLetterOrDigit(c)))
-            {
-                throw new ArgumentException($"Invalid field name: '{fieldName}'. Must contain only letters and digits.");
-            }
-            
-            // Parse type and nullability
-            var isNullable = typeSpec.EndsWith("?");
-            var typeName = isNullable ? typeSpec.TrimEnd('?') : typeSpec;
-            
-            var csharpType = MapToCSharpType(typeName);
-            
-            fields.Add(new FieldDefinition
-            {
-                Name = fieldName,
-                Type = csharpType,
-                IsNullable = isNullable,
-                IsRequired = csharpType == "string" && !isNullable // Strings are required unless nullable
-            });
-        }
-        
-        return fields;
+        return FieldHelper.ParseFields(fieldsSpec);
     }
     
     private static string MapToCSharpType(string typeName)
     {
+        // This method is now deprecated - FieldHelper handles type mapping
+        // Keeping for backward compatibility
         return typeName.ToLower() switch
         {
             "string" or "str" => "string",
@@ -333,10 +288,4 @@ public static class GenerateModelCommand
     }
 }
 
-public class FieldDefinition
-{
-    public required string Name { get; set; }
-    public required string Type { get; set; }
-    public bool IsNullable { get; set; }
-    public bool IsRequired { get; set; }
-}
+

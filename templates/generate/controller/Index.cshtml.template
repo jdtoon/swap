@@ -1,4 +1,4 @@
-@model List<{{ProjectName}}.Models.{{EntityName}}>
+@model {{ProjectName}}.ViewModels.{{EntityName}}ListViewModel
 
 @{
     ViewData["Title"] = "{{EntityNamePlural}}";
@@ -16,32 +16,76 @@
 <div class="container mx-auto px-4 py-8">
     <div class="card bg-base-100 shadow-xl">
         <div class="card-body">
-            <h2 class="card-title mb-4">{{EntityName}} List</h2>
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="card-title">{{EntityName}} List</h2>
+                <button class="btn btn-primary"
+                        hx-get="@Url.Action("Create")"
+                        hx-target="#modal-container"
+                        hx-swap="innerHTML">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
+                    </svg>
+                    Create {{EntityName}}
+                </button>
+            </div>
             
-            <!-- Add New Form -->
-            <form hx-post="/{{EntityName}}/Create" 
-                  hx-target="#{{EntityNameLower}}-list" 
-                  hx-swap="outerHTML"
-                  class="mb-6">
-                <div class="join w-full">
-                    <input type="text" 
-                           name="title" 
-                           placeholder="Add a new {{EntityNameLower}}..." 
-                           class="input input-bordered join-item flex-1"
-                           required />
-                    <button type="submit" class="btn btn-primary join-item">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
-                        </svg>
-                        Add
-                    </button>
-                </div>
-            </form>
+            <!-- Search Bar -->
+            <div class="mb-4">
+                <input type="text" 
+                       name="searchTerm"
+                       value="@Model.SearchTerm"
+                       placeholder="Search {{EntityNameLower}}..." 
+                       class="input input-bordered w-full"
+                       hx-get="@Url.Action("Index")"
+                       hx-trigger="input changed delay:500ms, search"
+                       hx-target="#{{EntityNameLower}}-list"
+                       hx-swap="innerHTML"
+                       hx-include="[name='pageSize']" />
+            </div>
 
             <!-- List Container -->
-            <div id="{{EntityNameLower}}-list">
+            <div id="{{EntityNameLower}}-list"
+                 hx-get="@Url.Action("Index")"
+                 hx-trigger="refresh{{EntityName}}List from:body"
+                 hx-swap="innerHTML">
                 @await Html.PartialAsync("_{{EntityName}}List", Model)
             </div>
         </div>
     </div>
 </div>
+
+<!-- Modal Container -->
+<div id="modal-container"></div>
+
+<!-- Toast Container -->
+<div id="toast-container" class="toast toast-end"></div>
+
+@section Scripts {
+    <script>
+        // Toast notification handler
+        document.body.addEventListener('showToast', function(event) {
+            const detail = event.detail;
+            const toastContainer = document.getElementById('toast-container');
+            
+            const toast = document.createElement('div');
+            toast.className = `alert alert-${detail.type === 'success' ? 'success' : 'error'} shadow-lg`;
+            toast.innerHTML = `
+                <div>
+                    <span>${detail.message}</span>
+                </div>
+            `;
+            
+            toastContainer.appendChild(toast);
+            
+            // Auto-remove after 3 seconds
+            setTimeout(() => {
+                toast.remove();
+            }, 3000);
+        });
+        
+        // Close modal on success
+        document.body.addEventListener('refresh{{EntityName}}List', function() {
+            document.getElementById('modal-container').innerHTML = '';
+        });
+    </script>
+}

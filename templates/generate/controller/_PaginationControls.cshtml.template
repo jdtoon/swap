@@ -1,0 +1,93 @@
+@model PaginationDto
+
+@if (Model.TotalPages > 1)
+{
+    <div class="flex justify-between items-center mt-4">
+        <div class="text-sm text-base-content/70">
+            Showing @((Model.CurrentPage - 1) * Model.PageSize + 1) to @(Math.Min(Model.CurrentPage * Model.PageSize, Model.TotalItems)) of @Model.TotalItems items
+        </div>
+        
+        <div class="join">
+            @if (Model.HasPreviousPage)
+            {
+                <button class="join-item btn btn-sm"
+                        hx-get="@Model.HxGetUrl?pageNumber=@(Model.CurrentPage - 1)&pageSize=@Model.PageSize"
+                        hx-target="@Model.HxTarget"
+                        hx-swap="@Model.HxSwap">
+                    «
+                </button>
+            }
+            else
+            {
+                <button class="join-item btn btn-sm btn-disabled">«</button>
+            }
+            
+            @{
+                var startPage = Math.Max(1, Model.CurrentPage - 2);
+                var endPage = Math.Min(Model.TotalPages, Model.CurrentPage + 2);
+                
+                // Always show first page
+                if (startPage > 1)
+                {
+                    <button class="join-item btn btn-sm"
+                            hx-get="@Model.HxGetUrl?pageNumber=1&pageSize=@Model.PageSize"
+                            hx-target="@Model.HxTarget"
+                            hx-swap="@Model.HxSwap">
+                        1
+                    </button>
+                    if (startPage > 2)
+                    {
+                        <button class="join-item btn btn-sm btn-disabled">...</button>
+                    }
+                }
+                
+                // Show page range
+                for (int i = startPage; i <= endPage; i++)
+                {
+                    if (i == Model.CurrentPage)
+                    {
+                        <button class="join-item btn btn-sm btn-active">@i</button>
+                    }
+                    else
+                    {
+                        <button class="join-item btn btn-sm"
+                                hx-get="@Model.HxGetUrl?pageNumber=@i&pageSize=@Model.PageSize"
+                                hx-target="@Model.HxTarget"
+                                hx-swap="@Model.HxSwap">
+                            @i
+                        </button>
+                    }
+                }
+                
+                // Always show last page
+                if (endPage < Model.TotalPages)
+                {
+                    if (endPage < Model.TotalPages - 1)
+                    {
+                        <button class="join-item btn btn-sm btn-disabled">...</button>
+                    }
+                    <button class="join-item btn btn-sm"
+                            hx-get="@Model.HxGetUrl?pageNumber=@Model.TotalPages&pageSize=@Model.PageSize"
+                            hx-target="@Model.HxTarget"
+                            hx-swap="@Model.HxSwap">
+                        @Model.TotalPages
+                    </button>
+                }
+            }
+            
+            @if (Model.HasNextPage)
+            {
+                <button class="join-item btn btn-sm"
+                        hx-get="@Model.HxGetUrl?pageNumber=@(Model.CurrentPage + 1)&pageSize=@Model.PageSize"
+                        hx-target="@Model.HxTarget"
+                        hx-swap="@Model.HxSwap">
+                    »
+                </button>
+            }
+            else
+            {
+                <button class="join-item btn btn-sm btn-disabled">»</button>
+            }
+        </div>
+    </div>
+}
