@@ -278,9 +278,13 @@ public class {{EntityName}}Controller : Controller
         
         HttpContext.Session.SetObject("{{EntityName}}_Selection", selectedIds);
         
-        // Return updated checkbox cell and bulk actions bar
+        // Return updated checkbox cell with event to update bulk actions bar
         ViewBag.SelectedIds = selectedIds;
         ViewBag.EntityId = id;
+        
+        // Trigger event to update bulk actions bar
+        Response.Headers.Append("HX-Trigger", "selectionChanged");
+        
         return PartialView("_{{EntityName}}CheckboxCell", id);
     }
 
@@ -332,6 +336,18 @@ public class {{EntityName}}Controller : Controller
 
         // Return updated list with selection state
         return await Index(pageNumber, pageSize, searchTerm, sortBy, sortOrder{{FilterArguments}});
+    }
+
+    /// <summary>
+    /// GET: Get bulk actions bar
+    /// </summary>
+    [HttpGet]
+    public IActionResult BulkActionsBar()
+    {
+        var selectedIds = HttpContext.Session.GetObject<HashSet<int>>("{{EntityName}}_Selection") ?? new HashSet<int>();
+        ViewBag.SelectedIds = selectedIds;
+        
+        return PartialView("_BulkActionsBar");
     }
 
     /// <summary>

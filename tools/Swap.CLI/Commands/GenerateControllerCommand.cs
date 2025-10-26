@@ -259,6 +259,13 @@ public static class GenerateControllerCommand
                     ctx
                 );
                 
+                await GenerateFileFromTemplateAsync(
+                    Path.Combine(templatePath, "Views", "_BulkActionsBar.cshtml.template"),
+                    Path.Combine("Views", entityName, "_BulkActionsBar.cshtml"),
+                    variables,
+                    ctx
+                );
+                
                 // Generate shared pagination controls (only once)
                 var paginationPath = Path.Combine("Views", "Shared", "_PaginationControls.cshtml");
                 if (!File.Exists(paginationPath))
