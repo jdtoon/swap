@@ -11,6 +11,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added - Phase 4: Advanced List Management (Sorting, Filtering & Bulk Operations) ✅
 
+#### Toast Notification System (2025-10-26)
+- **Toastify.js Integration**: Replaced custom toast with battle-tested Toastify library (1.12.0)
+- **LibMan Configuration**: Added toastify-js to libman.json for CDN delivery
+- **Professional Styling**: Clean slide-in animations with close button
+- **Server-Driven**: Server sends HX-Trigger, HTMX fires event, Toastify renders
+- **Color-Coded Types**: Success (green), Error (red), Warning (orange), Info (blue)
+- **Multiple Event Patterns**: showToast, showToastSuccess, showToastError, showToastWarning, showToastInfo
+- **Auto-Dismiss**: 3.5 second duration with manual close option
+- **Top-Right Position**: Non-intrusive placement with gravity/position config
+- **Event Listener Fix**: Removed DOMContentLoaded wrapper for HTMX compatibility
+- **Global Scope**: Toast handler in _Layout.cshtml available to all pages
+- **CRUD Integration**: All Create/Update/Delete operations trigger toast notifications
+- **Bulk Operations**: Bulk delete shows count in toast message
+- **Consistent UX**: Matches CareStream implementation pattern
+
 #### Phase 4.4: Bulk Operations (2025-10-26)
 - **Selection Checkboxes**: Checkbox column added to all generated tables
 - **Select All Functionality**: Header checkbox to select/deselect all items on page
