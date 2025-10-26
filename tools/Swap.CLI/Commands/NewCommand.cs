@@ -82,24 +82,58 @@ public static class NewCommand
             AnsiConsole.WriteLine();
             
             // Run setup commands automatically
-            await AnsiConsole.Status()
-                .StartAsync("Running setup commands...", async ctx =>
-                {
-                    ctx.Status("Running npm install...");
-                    await RunCommandAsync("npm", "install", projectPath);
-                    
-                    ctx.Status("Running libman restore...");
-                    await RunCommandAsync("libman", "restore", projectPath);
-                    
-                    ctx.Status("Building CSS...");
-                    await RunCommandAsync("npm", "run build:css", projectPath);
-                });
-            
-            AnsiConsole.WriteLine();
-            AnsiConsole.MarkupLine("[green]✓[/] Setup completed successfully!");
+            try
+            {
+                await AnsiConsole.Status()
+                    .StartAsync("Running setup commands...", async ctx =>
+                    {
+                        try
+                        {
+                            ctx.Status("Running npm install...");
+                            await RunCommandAsync("npm", "install", projectPath);
+                        }
+                        catch (Exception ex)
+                        {
+                            AnsiConsole.MarkupLine($"[yellow]Warning:[/] npm install failed: {ex.Message}");
+                        }
+                        
+                        try
+                        {
+                            ctx.Status("Running libman restore...");
+                            await RunCommandAsync("libman", "restore", projectPath);
+                        }
+                        catch (Exception ex)
+                        {
+                            AnsiConsole.MarkupLine($"[yellow]Warning:[/] libman restore failed: {ex.Message}");
+                            AnsiConsole.MarkupLine("[yellow]Tip:[/] Run 'libman restore' manually in the project directory");
+                        }
+                        
+                        try
+                        {
+                            ctx.Status("Building CSS...");
+                            await RunCommandAsync("npm", "run build:css", projectPath);
+                        }
+                        catch (Exception ex)
+                        {
+                            AnsiConsole.MarkupLine($"[yellow]Warning:[/] CSS build failed: {ex.Message}");
+                        }
+                    });
+                
+                AnsiConsole.WriteLine();
+                AnsiConsole.MarkupLine("[green]✓[/] Setup completed!");
+            }
+            catch (Exception ex)
+            {
+                AnsiConsole.MarkupLine($"[yellow]Warning:[/] Some setup steps failed: {ex.Message}");
+            }
             AnsiConsole.WriteLine();
             AnsiConsole.MarkupLine("[bold]Next steps:[/]");
             AnsiConsole.MarkupLine($"  cd {name}");
+            AnsiConsole.MarkupLine("[dim]  # If setup steps failed, run these manually:[/]");
+            AnsiConsole.MarkupLine("[dim]  npm install[/]");
+            AnsiConsole.MarkupLine("[dim]  libman restore[/]");
+            AnsiConsole.MarkupLine("[dim]  npm run build:css[/]");
+            AnsiConsole.MarkupLine("[dim]  # Then continue with:[/]");
             AnsiConsole.MarkupLine("  dotnet ef migrations add InitialCreate");
             AnsiConsole.MarkupLine("  dotnet ef database update");
             AnsiConsole.MarkupLine("  dotnet run");
