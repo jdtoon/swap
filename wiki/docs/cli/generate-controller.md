@@ -9,8 +9,8 @@ Generate complete CRUD controllers with HTMX-powered views, pagination, search, 
 ## Synopsis
 
 ```bash
-swap generate controller <name> --fields <field-definitions> [options]
-swap g c <name> --fields <field-definitions> [options]  # Short alias
+swap generate controller <name> --fields <field-definitions>
+swap g c <name> --fields <field-definitions>  # Short alias
 ```
 
 ## Description
@@ -20,8 +20,9 @@ The `generate controller` command creates a modern, full-featured MVC controller
 - **Complete CRUD operations** (Create, Read, Update, Delete) via HTMX modals
 - **Pagination** with configurable page sizes (10, 25, 50, 100)
 - **Search** with real-time filtering (500ms debounce)
-- **Column Sorting** with ascending/descending toggle
-- **Boolean Filtering** with dropdown filters (All/Yes/No)
+- **Column Sorting** with ascending/descending toggle and field-level control
+- **Boolean Filtering** with dropdown filters (All/Yes/No) and field-level control
+- **Field-Level Flags** to control sortable/filterable behavior per field
 - **HTMX Integration** for zero-page-reload user experience
 - **DaisyUI Styling** for modern, accessible UI components
 - **Async/await patterns** for all database operations
@@ -48,31 +49,65 @@ swap g c BlogPost --fields "Title:string Content:string"
 
 ### `--fields <field-definitions>`
 
-**Required.** Comma or space-separated list of field definitions.
+**Required.** Space-separated list of field definitions.
 
 **Format:** `FieldName:Type[:Flags]`
 
-**Supported Types:**
-- `string` - Text data (nullable with `?`)
-- `int`, `long`, `short`, `byte` - Integer numbers
-- `decimal`, `float`, `double` - Decimal numbers
-- `bool` - True/false values (filterable)
+**Supported Types (11 total):**
+- `string` - Text data
+- `int` - 32-bit integer
+- `long` - 64-bit integer
+- `short` - 16-bit integer
+- `byte` - 8-bit unsigned integer
+- `decimal` - High-precision decimal numbers (financial data)
+- `float` - Single-precision floating point
+- `double` - Double-precision floating point
+- `bool` - Boolean true/false values
 - `DateTime` - Date and time values
-- `Guid` - Unique identifiers
+- `Guid` - Globally unique identifiers
+
+**Nullable Types:**
+Add `?` after the type name to make it nullable:
+```bash
+--fields "Description:string? Notes:string?"
+```
+
+**Field Flags:**
+Control sorting and filtering behavior per field:
+
+- `:sortable` or `:s` - Enable sorting (default for all fields)
+- `:nosort` or `:ns` - Disable sorting
+- `:filterable` or `:f` - Enable filtering (for bool fields only)
+
+**Default Behavior:**
+- All fields are sortable by default
+- Bool fields are NOT filterable by default
 
 **Examples:**
 ```bash
-# Simple fields
+# Simple fields (all sortable by default)
 --fields "Name:string Price:decimal Quantity:int"
 
 # Nullable fields
 --fields "Name:string Description:string? Price:decimal"
 
-# Date and boolean fields
---fields "Name:string InStock:bool CreatedDate:DateTime"
+# Disable sorting on specific fields
+--fields "Name:string SKU:string:ns Price:decimal:nosort"
 
-# Complex example
---fields "Name:string Description:string? Price:decimal Quantity:int InStock:bool CreatedDate:DateTime"
+# Enable filtering on bool fields
+--fields "Name:string InStock:bool:f Active:bool:filterable"
+
+# Combine flags (not sortable but filterable)
+--fields "Name:string InStock:bool:ns,f"
+
+# Real-world example: Product with control flags
+--fields "Name:string Price:decimal:ns SKU:string:ns InStock:bool:f CreatedDate:DateTime"
+# Result:
+# - Name: sortable (default), no filter
+# - Price: not sortable, no filter
+# - SKU: not sortable, no filter
+# - InStock: sortable (default), has filter dropdown
+# - CreatedDate: sortable (default), no filter
 ```
 
 ## Generated Files
@@ -82,767 +117,457 @@ swap g c BlogPost --fields "Title:string Content:string"
 **Location:** `Controllers/{Name}Controller.cs`
 
 **Contains:**
-- `Index(pageNumber, pageSize, searchTerm, sortBy, sortOrder, filters)` - Paginated, searchable, sortable, filterable list
-- `Create()` - GET returns create modal partial view
-- `Create(entity)` - POST saves new entity, returns HTMX trigger
-- `Edit(id)` - GET returns edit modal partial view
-- `Edit(id, entity)` - POST updates entity, returns HTMX trigger
-- `Details(id)` - Returns details partial view for modal
-- `Delete(id)` - POST deletes entity, returns HTMX trigger
-- `ApplySorting(query, sortBy, sortOrder)` - Private method for column sorting
-- `ApplyFilters(query, filters)` - Private method for boolean filtering
+- `Index(pageNumber, pageSize, searchTerm, sortBy, sortOrder, ...filters)` - Paginated, searchable, sortable, filterable list with HTMX support
+- `Create()` [GET] - Returns create modal partial view
+- `Create(entity)` [POST] - Saves new entity, returns HTMX trigger for list refresh
+- `Edit(id)` [GET] - Returns edit modal partial view with entity data
+- `Edit(id, entity)` [POST] - Updates entity, returns HTMX trigger for list refresh
+- `Details(id)` [GET] - Returns read-only details partial view
+- `Delete(id)` [POST] - Deletes entity, returns HTMX trigger for list refresh
+- `ApplySorting(query, sortBy, sortOrder)` - Private method applying column sorting (only for sortable fields)
+- `ApplyFilters(query, ...filters)` - Private method applying boolean filters (only for filterable fields)
+
+**Key Features:**
+- HTMX-first design with `HX-Request` detection
+- Returns partial views for HTMX, full views for initial load
+- Uses `HX-Trigger` header for client-side events (list refresh, toast notifications)
+- Uses `HX-Retarget` and `HX-Reswap` for validation errors
+- Async/await for all database operations
 
 ### Model
 
 **Location:** `Models/{Name}.cs`
 
 **Contains:**
-- Entity class with specified fields
+- Entity class with all specified fields
+- Auto-generated `Id` property (int, primary key)
 - Data annotations for validation
-- Primary key `Id` property (auto-generated)
+- Nullable reference/value type support
+- DateTime fields default to `DateTime.Now` in create modal
+
+**Example:**
+```csharp
+public class Product
+{
+    public int Id { get; set; }
+    
+    [Required]
+    public string Name { get; set; } = string.Empty;
+    
+    public string? Description { get; set; }
+    
+    [Required]
+    public decimal Price { get; set; }
+    
+    public bool InStock { get; set; }
+    
+    public DateTime CreatedDate { get; set; }
+}
+```
 
 ### View Model
 
 **Location:** `ViewModels/{Name}ListViewModel.cs`
 
 **Contains:**
-- `Items` - List of entities for current page
-- `Pagination` - Pagination metadata (page, size, total, etc.)
-- `SearchTerm` - Current search query
-- `SortBy` - Current sort column
-- `SortOrder` - Current sort direction (asc/desc)
-- `Filters` - Dictionary of active filters
+- `Items` - List<{Name}> for current page
+- `Pagination` - PaginationDto with page metadata
+- `SearchTerm` - string? for current search query
+- `SortBy` - string? for current sort column
+- `SortOrder` - string? for current sort direction
+- `Filters` - Dictionary<string, string?> for active filters
+
+**Example:**
+```csharp
+public class ProductListViewModel
+{
+    public List<Product> Items { get; set; } = new();
+    public PaginationDto Pagination { get; set; } = new();
+    public string? SearchTerm { get; set; }
+    public string? SortBy { get; set; }
+    public string? SortOrder { get; set; }
+    public Dictionary<string, string?> Filters { get; set; } = new();
+}
+```
 
 ### Views
 
 **Location:** `Views/{Name}/`
 
-- `Index.cshtml` - Main container with search, filters, and list container
-- `_EntityList.cshtml` - Table with sortable headers, actions, and pagination
-- `_EntityCreateModal.cshtml` - Modal dialog for creating entities
-- `_EntityEditModal.cshtml` - Modal dialog for editing entities
-- `_EntityDetails.cshtml` - Read-only details view in modal
-- `_EntityForm.cshtml` - Shared form partial for create/edit
+#### `Index.cshtml` - Main Container
+- Hero section with title
+- "Create {Entity}" button (opens modal via HTMX)
+- Search input with 500ms debounce
+- Filter section with dropdowns (only for filterable bool fields)
+- `#entity-list` div container for partial updates
+- Hidden inputs for sort state preservation
+- Modal container div for HTMX-loaded modals
+
+#### `_EntityList.cshtml` - Table Partial
+- Table with sortable/non-sortable headers based on field flags
+- Sortable headers: clickable buttons with HTMX, sort indicators (↑/↓)
+- Non-sortable headers: plain `<th>` text
+- Action buttons (Details, Edit, Delete) with HTMX
+- Empty state with helpful message
+- Pagination controls at bottom
+
+#### `_EntityCreateModal.cshtml` - Create Modal
+- DaisyUI modal dialog
+- Form with validation
+- DateTime fields pre-populated with DateTime.Now
+- HTMX post with validation support
+- Cancel button closes modal
+
+#### `_EntityEditModal.cshtml` - Edit Modal
+- Similar to create modal
+- Pre-populated with entity data
+- HTMX post with validation support
+
+#### `_EntityDetails.cshtml` - Details View
+- Read-only display of entity
+- Formatted values (dates, decimals, booleans as badges)
+- Close button
+
+#### `_EntityForm.cshtml` - Shared Form Partial
+- Used by both create and edit modals
+- All field types with proper inputs:
+  - `string`: text input
+  - `int/long/short/byte`: number input
+  - `decimal/float/double`: number input with step="any"
+  - `bool`: checkbox
+  - `DateTime`: datetime-local input
+  - `Guid`: text input
+- Validation spans for each field
+- Nullable field support
 
 **Location:** `Views/Shared/`
 
-- `_PaginationControls.cshtml` - Reusable pagination component with HTMX
-
-## Generated Controller Code
-
-### Full CRUD Controller
-
-```csharp
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using MyApp.Data;
-using MyApp.Models;
-
-namespace MyApp.Controllers;
-
-public class ProductController : Controller
-{
-    private readonly AppDbContext _context;
-
-    public ProductController(AppDbContext context)
-    {
-        _context = context;
-    }
-
-    // GET: Product
-    public async Task<IActionResult> Index()
-    {
-        var products = await _context.Products.ToListAsync();
-        return View(products);
-    }
-
-    // GET: Product/Details/5
-    public async Task<IActionResult> Details(int? id)
-    {
-        if (id == null)
-        {
-            return NotFound();
-        }
-
-        var product = await _context.Products
-            .FirstOrDefaultAsync(m => m.Id == id);
-            
-        if (product == null)
-        {
-            return NotFound();
-        }
-
-        return View(product);
-    }
-
-    // GET: Product/Create
-    public IActionResult Create()
-    {
-        return View();
-    }
-
-    // POST: Product/Create
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Create(Product product)
-    {
-        if (ModelState.IsValid)
-        {
-            _context.Add(product);
-            await _context.SaveChangesAsync();
-            return RedirectToAction(nameof(Index));
-        }
-        return View(product);
-    }
-
-    // GET: Product/Edit/5
-    public async Task<IActionResult> Edit(int? id)
-    {
-        if (id == null)
-        {
-            return NotFound();
-        }
-
-        var product = await _context.Products.FindAsync(id);
-        if (product == null)
-        {
-            return NotFound();
-        }
-        return View(product);
-    }
-
-    // POST: Product/Edit/5
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Edit(int id, Product product)
-    {
-        if (id != product.Id)
-        {
-            return NotFound();
-        }
-
-        if (ModelState.IsValid)
-        {
-            try
-            {
-                _context.Update(product);
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!ProductExists(product.Id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
-            return RedirectToAction(nameof(Index));
-        }
-        return View(product);
-    }
-
-    // GET: Product/Delete/5
-    public async Task<IActionResult> Delete(int? id)
-    {
-        if (id == null)
-        {
-            return NotFound();
-        }
-
-        var product = await _context.Products
-            .FirstOrDefaultAsync(m => m.Id == id);
-            
-        if (product == null)
-        {
-            return NotFound();
-        }
-
-        return View(product);
-    }
-
-    // POST: Product/Delete/5
-    [HttpPost, ActionName("Delete")]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> DeleteConfirmed(int id)
-    {
-        var product = await _context.Products.FindAsync(id);
-        if (product != null)
-        {
-            _context.Products.Remove(product);
-            await _context.SaveChangesAsync();
-        }
-        return RedirectToAction(nameof(Index));
-    }
-
-    private bool ProductExists(int id)
-    {
-        return _context.Products.Any(e => e.Id == id);
-    }
-}
-```
-
-## Generated Views
-
-### Index.cshtml
-
-Lists all entities in a table:
-
-```cshtml
-@model IEnumerable<MyApp.Models.Product>
-
-@{
-    ViewData["Title"] = "Products";
-}
-
-<h1>Products</h1>
-
-<p>
-    <a asp-action="Create" class="btn btn-primary">Create New</a>
-</p>
-
-<table class="table table-striped">
-    <thead>
-        <tr>
-            <th>@Html.DisplayNameFor(model => model.Name)</th>
-            <th>@Html.DisplayNameFor(model => model.Price)</th>
-            <th>@Html.DisplayNameFor(model => model.Stock)</th>
-            <th></th>
-        </tr>
-    </thead>
-    <tbody>
-@foreach (var item in Model) {
-        <tr>
-            <td>@Html.DisplayFor(modelItem => item.Name)</td>
-            <td>@Html.DisplayFor(modelItem => item.Price)</td>
-            <td>@Html.DisplayFor(modelItem => item.Stock)</td>
-            <td>
-                <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-primary">Edit</a>
-                <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-info">Details</a>
-                <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-sm btn-danger">Delete</a>
-            </td>
-        </tr>
-}
-    </tbody>
-</table>
-```
-
-### Create.cshtml
-
-Form for creating new entities:
-
-```cshtml
-@model MyApp.Models.Product
-
-@{
-    ViewData["Title"] = "Create Product";
-}
-
-<h1>Create Product</h1>
-
-<hr />
-<div class="row">
-    <div class="col-md-6">
-        <form asp-action="Create">
-            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-            
-            <div class="mb-3">
-                <label asp-for="Name" class="form-label"></label>
-                <input asp-for="Name" class="form-control" />
-                <span asp-validation-for="Name" class="text-danger"></span>
-            </div>
-            
-            <div class="mb-3">
-                <label asp-for="Price" class="form-label"></label>
-                <input asp-for="Price" class="form-control" />
-                <span asp-validation-for="Price" class="text-danger"></span>
-            </div>
-            
-            <div class="mb-3">
-                <label asp-for="Stock" class="form-label"></label>
-                <input asp-for="Stock" class="form-control" />
-                <span asp-validation-for="Stock" class="text-danger"></span>
-            </div>
-            
-            <div class="mb-3">
-                <button type="submit" class="btn btn-primary">Create</button>
-                <a asp-action="Index" class="btn btn-secondary">Back to List</a>
-            </div>
-        </form>
-    </div>
-</div>
-
-@section Scripts {
-    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
-}
-```
-
-### Edit.cshtml
-
-Form for updating entities (similar structure to Create).
-
-### Details.cshtml
-
-Display entity properties in a formatted view.
-
-### Delete.cshtml
-
-Confirmation page before deletion.
+#### `_PaginationControls.cshtml`
+- Reusable pagination component
+- Page size dropdown (10, 25, 50, 100)
+- First/Previous/Next/Last buttons
+- Page info display ("Showing X-Y of Z items")
+- HTMX-powered for partial updates
+- Preserves search, sort, and filter state
 
 ## Examples
 
-### Basic Controller Generation
-
-Generate controller for existing model:
+### Basic Product Controller
 
 ```bash
-# First create the model
-swap g m Product --fields Name:string,Price:decimal,Stock:int
-
-# Then generate controller
-swap g c Product
+swap g c Product --fields "Name:string Price:decimal InStock:bool CreatedDate:DateTime"
 ```
 
-### E-Commerce CRUD
+**Generated Index Action:**
+```csharp
+public async Task<IActionResult> Index(
+    int pageNumber = 1, 
+    int pageSize = 10, 
+    string? searchTerm = null, 
+    string? sortBy = null, 
+    string? sortOrder = "asc",
+    bool? inStock = null)  // Filter parameter (InStock marked :f)
+{
+    var isHtmxRequest = Request.Headers.ContainsKey("HX-Request");
+    
+    var query = _context.Products.AsQueryable();
+    
+    // Search across string fields
+    if (!string.IsNullOrWhiteSpace(searchTerm))
+    {
+        query = query.Where(x => x.Name.ToLower().Contains(searchTerm.ToLower()));
+    }
+    
+    // Apply filters
+    query = ApplyFilters(query, inStock);
+    
+    // Apply sorting
+    if (!string.IsNullOrWhiteSpace(sortBy))
+    {
+        query = ApplySorting(query, sortBy, sortOrder ?? "asc");
+    }
+    
+    var totalItems = await query.CountAsync();
+    var items = await query.Skip((pageNumber - 1) * pageSize).Take(pageSize).ToListAsync();
+    
+    // Build view model
+    var viewModel = new ProductListViewModel
+    {
+        Items = items,
+        SearchTerm = searchTerm,
+        SortBy = sortBy,
+        SortOrder = sortOrder,
+        Filters = new Dictionary<string, string?> { { "inStock", inStock?.ToString().ToLower() } },
+        Pagination = new PaginationDto { /* ... */ }
+    };
+    
+    return isHtmxRequest 
+        ? PartialView("_ProductList", viewModel)  // HTMX partial
+        : View(viewModel);  // Full page
+}
+```
+
+### Field Flags in Action
 
 ```bash
-# Products
-swap g m Product --fields Name:string,Description:string?,Price:decimal,Stock:int,SKU:string
-swap g c Product
+# E-Commerce Product with controlled sorting/filtering
+swap g c Product --fields "Name:string SKU:string:ns Price:decimal:ns Description:string? InStock:bool:f FeaturedProduct:bool:f CreatedDate:DateTime"
+```
 
-# Customers
-swap g m Customer --fields Name:string,Email:string,Phone:string?,Address:string?
-swap g c Customer
+**Result:**
+- **Name**: Sortable header with ↑/↓ indicators
+- **SKU**: Plain text header (`:ns` = not sortable)
+- **Price**: Plain text header (`:ns` = not sortable)
+- **Description**: Sortable header (default)
+- **InStock**: Sortable header + filter dropdown (`:f` = filterable)
+- **FeaturedProduct**: Sortable header + filter dropdown (`:f`)
+- **CreatedDate**: Sortable header (default)
 
-# Orders
-swap g m Order --fields CustomerId:int,OrderDate:datetime,Total:decimal,Status:string
-swap g c Order
+**Generated ApplySorting Method:**
+```csharp
+private IQueryable<Product> ApplySorting(IQueryable<Product> query, string sortBy, string sortOrder)
+{
+    var isDescending = sortOrder?.ToLower() == "desc";
+    
+    return sortBy?.ToLower() switch
+    {
+        "name" => isDescending ? query.OrderByDescending(x => x.Name) : query.OrderBy(x => x.Name),
+        "description" => isDescending ? query.OrderByDescending(x => x.Description) : query.OrderBy(x => x.Description),
+        "instock" => isDescending ? query.OrderByDescending(x => x.InStock) : query.OrderBy(x => x.InStock),
+        "featuredproduct" => isDescending ? query.OrderByDescending(x => x.FeaturedProduct) : query.OrderBy(x => x.FeaturedProduct),
+        "createddate" => isDescending ? query.OrderByDescending(x => x.CreatedDate) : query.OrderBy(x => x.CreatedDate),
+        // Note: SKU and Price are NOT included (marked :ns)
+        _ => query
+    };
+}
+```
+
+**Generated ApplyFilters Method:**
+```csharp
+private IQueryable<Product> ApplyFilters(IQueryable<Product> query, bool? inStock = null, bool? featuredProduct = null)
+{
+    if (inStock.HasValue)
+    {
+        query = query.Where(x => x.InStock == inStock.Value);
+    }
+    
+    if (featuredProduct.HasValue)
+    {
+        query = query.Where(x => x.FeaturedProduct == featuredProduct.Value);
+    }
+    
+    return query;
+}
 ```
 
 ### Blog System
 
 ```bash
-# Posts
-swap g m Post --fields Title:string,Content:string,AuthorId:int,PublishedAt:datetime?
-swap g c Post
-
-# Comments
-swap g m Comment --fields PostId:int,AuthorName:string,Content:string,CreatedAt:datetime
-swap g c Comment
-
-# Categories
-swap g m Category --fields Name:string,Description:string?
-swap g c Category
+# Blog posts with rich content
+swap g c Post --fields "Title:string Slug:string:ns Content:string? AuthorName:string Published:bool:f PublishedDate:DateTime? ViewCount:int:ns"
 ```
+
+**Features:**
+- Title: sortable
+- Slug: NOT sortable (`:ns` - don't want to sort by URL slug)
+- Content: sortable (though unlikely to use)
+- AuthorName: sortable
+- Published: sortable + filterable (`:f` - filter published/draft posts)
+- PublishedDate: sortable
+- ViewCount: NOT sortable (`:ns` - popularity metric, not sort field)
+
+### Inventory Management
+
+```bash
+# Warehouse items with detailed tracking
+swap g c InventoryItem --fields "SKU:string:ns ProductName:string Quantity:int LowStockThreshold:int:ns InStock:bool:f Location:string ReorderRequired:bool:f LastRestocked:DateTime"
+```
+
+**Strategic Flags:**
+- SKU: Not sortable (identifier, not sort field)
+- ProductName: Sortable (main sort field)
+- Quantity: Sortable (sort by stock level)
+- LowStockThreshold: Not sortable (configuration value)
+- InStock: Filterable (quick filter for out-of-stock)
+- Location: Sortable (sort by warehouse location)
+- ReorderRequired: Filterable (flag items needing reorder)
+- LastRestocked: Sortable (sort by freshness)
 
 ## Workflow
 
-### Complete CRUD Setup
+### Complete CRUD Setup with Migrations
 
 ```bash
-# 1. Generate model
-swap g m Product --fields Name:string,Price:decimal,Stock:int
+# 1. Generate controller (creates model, views, controller automatically)
+swap g c Product --fields "Name:string Price:decimal InStock:bool:f"
 
-# 2. Generate controller
-swap g c Product
-
-# 3. Create migration
+# 2. Create migration
 dotnet ef migrations add AddProduct
 
-# 4. Apply migration
+# 3. Apply to database
 dotnet ef database update
 
-# 5. Run application
+# 4. Run application
 dotnet run
 
-# 6. Navigate to http://localhost:5000/Product
+# 5. Navigate to http://localhost:5000/Product
+#    - See paginated list
+#    - Click "Create Product" button (opens modal)
+#    - Fill form and submit (HTMX updates list)
+#    - Click column headers to sort
+#    - Use InStock filter dropdown
+#    - Search by name
 ```
 
-## Customizing Generated Controllers
+### Multiple Related Controllers
 
-### Add Authorization
+```bash
+# E-commerce system
+swap g c Category --fields "Name:string Description:string?"
+swap g c Product --fields "Name:string CategoryId:int Price:decimal InStock:bool:f"
+swap g c Customer --fields "Name:string Email:string Phone:string?"
+swap g c Order --fields "CustomerId:int OrderDate:DateTime Total:decimal Status:string"
 
-```csharp
-using Microsoft.AspNetCore.Authorization;
-
-[Authorize]  // Require authentication for all actions
-public class ProductController : Controller
-{
-    // ... existing code
-
-    [AllowAnonymous]  // Allow anonymous access to Index
-    public async Task<IActionResult> Index()
-    {
-        var products = await _context.Products.ToListAsync();
-        return View(products);
-    }
-
-    [Authorize(Roles = "Admin")]  // Only admins can delete
-    [HttpPost, ActionName("Delete")]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> DeleteConfirmed(int id)
-    {
-        // ... delete logic
-    }
-}
+# Run migrations
+dotnet ef migrations add InitialEcommerce
+dotnet ef database update
 ```
 
-### Add Search and Filtering
+## HTMX Features
 
-```csharp
-public async Task<IActionResult> Index(string searchString, string sortOrder)
-{
-    ViewData["CurrentFilter"] = searchString;
-    ViewData["NameSortParm"] = String.IsNullOrEmpty(sortOrder) ? "name_desc" : "";
-    ViewData["PriceSortParm"] = sortOrder == "Price" ? "price_desc" : "Price";
+### Modal CRUD Operations
 
-    var products = from p in _context.Products
-                   select p;
-
-    if (!String.IsNullOrEmpty(searchString))
-    {
-        products = products.Where(p => p.Name.Contains(searchString));
-    }
-
-    switch (sortOrder)
-    {
-        case "name_desc":
-            products = products.OrderByDescending(p => p.Name);
-            break;
-        case "Price":
-            products = products.OrderBy(p => p.Price);
-            break;
-        case "price_desc":
-            products = products.OrderByDescending(p => p.Price);
-            break;
-        default:
-            products = products.OrderBy(p => p.Name);
-            break;
-    }
-
-    return View(await products.ToListAsync());
-}
+**Create Button:**
+```html
+<button class="btn btn-primary"
+        hx-get="@Url.Action("Create")"
+        hx-target="#modal-container"
+        hx-swap="innerHTML">
+    Create Product
+</button>
 ```
 
-### Add Pagination
-
-```csharp
-using X.PagedList;
-
-public async Task<IActionResult> Index(int? page)
-{
-    int pageSize = 10;
-    int pageNumber = (page ?? 1);
-    
-    var products = await _context.Products
-        .OrderBy(p => p.Name)
-        .ToPagedListAsync(pageNumber, pageSize);
-        
-    return View(products);
-}
+**Edit Button:**
+```html
+<button hx-get="@Url.Action("Edit", new { id = item.Id })"
+        hx-target="#modal-container"
+        hx-swap="innerHTML"
+        class="btn btn-sm btn-primary">
+    Edit
+</button>
 ```
 
-### Add Logging
+**Form Submission:**
+```html
+<form hx-post="@Url.Action("Create")"
+      hx-target="#modal-container"
+      hx-swap="innerHTML">
+    <!-- form fields -->
+</form>
+```
 
-```csharp
-public class ProductController : Controller
-{
-    private readonly AppDbContext _context;
-    private readonly ILogger<ProductController> _logger;
+### Search with Debouncing
 
-    public ProductController(AppDbContext context, ILogger<ProductController> logger)
-    {
-        _context = context;
-        _logger = logger;
-    }
+```html
+<input type="text" 
+       name="searchTerm"
+       placeholder="Search products..." 
+       hx-get="@Url.Action("Index")"
+       hx-trigger="input changed delay:500ms, search"
+       hx-target="#product-list"
+       hx-swap="innerHTML"
+       hx-include="[name='pageSize'], [name='sortBy'], [name='sortOrder']" />
+```
 
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Create(Product product)
-    {
-        if (ModelState.IsValid)
+### Sortable Column Headers
+
+```html
+<th>
+    <button hx-get="@Url.Action("Index")"
+            hx-target="#product-list"
+            hx-swap="innerHTML"
+            hx-vals='{"sortBy": "name", "sortOrder": "@(Model.SortOrder == "asc" ? "desc" : "asc")"}'
+            class="flex items-center gap-1">
+        Name
+        @if (Model.SortBy == "name")
         {
-            _context.Add(product);
-            await _context.SaveChangesAsync();
-            
-            _logger.LogInformation("Product created: {ProductId} - {ProductName}", 
-                product.Id, product.Name);
-                
-            return RedirectToAction(nameof(Index));
+            <span>@(Model.SortOrder == "desc" ? "↓" : "↑")</span>
         }
-        return View(product);
-    }
-}
+    </button>
+</th>
 ```
 
-### Add Related Data
+### Filter Dropdowns
+
+```html
+<select name="inStock" 
+        hx-get="@Url.Action("Index")"
+        hx-target="#product-list"
+        hx-swap="innerHTML"
+        hx-include="[name='searchTerm'], [name='sortBy'], [name='sortOrder']">
+    <option value="">All</option>
+    <option value="true">Yes</option>
+    <option value="false">No</option>
+</select>
+```
+
+### Success Notifications
 
 ```csharp
-// Include related entities
-public async Task<IActionResult> Details(int? id)
-{
-    if (id == null)
-    {
-        return NotFound();
-    }
-
-    var order = await _context.Orders
-        .Include(o => o.Customer)        // Include customer
-        .Include(o => o.OrderItems)      // Include order items
-            .ThenInclude(oi => oi.Product)  // Include products
-        .FirstOrDefaultAsync(m => m.Id == id);
-        
-    if (order == null)
-    {
-        return NotFound();
-    }
-
-    return View(order);
-}
+// In controller after successful create
+Response.Headers.Append("HX-Trigger", 
+    "{\"refreshProductList\": null, \"showToast\": {\"type\": \"success\", \"message\": \"Product created!\"}}");
 ```
 
-## Customizing Views
+## Customization Tips
 
-### Add Custom Styling
+### Disable Sorting on Identifier Fields
 
-```cshtml
-@* Index.cshtml *@
-<div class="container my-5">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1 class="display-4">Products</h1>
-        <a asp-action="Create" class="btn btn-success btn-lg">
-            <i class="bi bi-plus-circle"></i> Add Product
-        </a>
-    </div>
-
-    <div class="card shadow-sm">
-        <div class="card-body">
-            <table class="table table-hover">
-                @* ... table content *@
-            </table>
-        </div>
-    </div>
-</div>
+```bash
+# Don't allow sorting by SKU, GUID, or internal IDs
+swap g c Product --fields "Id:Guid:ns Name:string SKU:string:ns"
 ```
 
-### Add Client-Side Validation
+### Enable Filtering Only on Key Status Fields
 
-The generated views include validation scripts:
-
-```cshtml
-@section Scripts {
-    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
-}
+```bash
+# Only filter by important boolean flags
+swap g c Task --fields "Title:string IsComplete:bool:f IsPriority:bool:f IsArchived:bool:f CreatedDate:DateTime"
 ```
 
-Customize validation:
+### Combine Flags for Special Cases
 
-```cshtml
-<div class="mb-3">
-    <label asp-for="Email" class="form-label"></label>
-    <input asp-for="Email" class="form-control" type="email" />
-    <span asp-validation-for="Email" class="text-danger"></span>
-    <div class="form-text">We'll never share your email.</div>
-</div>
+```bash
+# Field that's filterable but not sortable
+swap g c Product --fields "Name:string InStock:bool:ns,f"
+# InStock will have a filter dropdown but plain text header (not sortable)
 ```
 
-### Add Confirmation Dialogs
+## Related Commands
 
-```cshtml
-@* Index.cshtml *@
-<a asp-action="Delete" 
-   asp-route-id="@item.Id" 
-   class="btn btn-sm btn-danger"
-   onclick="return confirm('Are you sure you want to delete this product?')">
-    Delete
-</a>
-```
+- [`swap generate model`](./generate-model.md) - Generate model class only
+- [`swap new`](./new.md) - Create new Swap project
 
-## Advanced Patterns
+## Next Steps
 
-### API Controller
+After generating your controller:
 
-Modify for API endpoints:
+1. **Review Generated Code** - Check controller, model, views
+2. **Run Migrations** - `dotnet ef migrations add` and `dotnet ef database update`
+3. **Customize Views** - Adjust DaisyUI styling, add custom fields
+4. **Add Business Logic** - Implement validation, authorization, custom methods
+5. **Test HTMX Features** - Verify modals, sorting, filtering, pagination
+6. **Add Related Controllers** - Generate controllers for related entities
 
-```csharp
-[ApiController]
-[Route("api/[controller]")]
-public class ProductController : ControllerBase
+## See Also
+
+- [Features: Pagination](../features/pagination.md)
+- [Features: Search](../features/search.md)
+- [Features: Sorting](../features/sorting.md)
+- [Features: Filtering](../features/filtering.md)
+- [Concepts: HTMX Integration](../concepts/htmx-integration.md)
+- [Reference: Field Types](../reference/field-types.md)
 {
     private readonly AppDbContext _context;
 
     public ProductController(AppDbContext context)
-    {
-        _context = context;
-    }
-
-    // GET: api/Product
-    [HttpGet]
-    public async Task<ActionResult<IEnumerable<Product>>> GetProducts()
-    {
-        return await _context.Products.ToListAsync();
-    }
-
-    // GET: api/Product/5
-    [HttpGet("{id}")]
-    public async Task<ActionResult<Product>> GetProduct(int id)
-    {
-        var product = await _context.Products.FindAsync(id);
-
-        if (product == null)
-        {
-            return NotFound();
-        }
-
-        return product;
-    }
-
-    // POST: api/Product
-    [HttpPost]
-    public async Task<ActionResult<Product>> PostProduct(Product product)
-    {
-        _context.Products.Add(product);
-        await _context.SaveChangesAsync();
-
-        return CreatedAtAction(nameof(GetProduct), new { id = product.Id }, product);
-    }
-
-    // PUT: api/Product/5
-    [HttpPut("{id}")]
-    public async Task<IActionResult> PutProduct(int id, Product product)
-    {
-        if (id != product.Id)
-        {
-            return BadRequest();
-        }
-
-        _context.Entry(product).State = EntityState.Modified;
-
-        try
-        {
-            await _context.SaveChangesAsync();
-        }
-        catch (DbUpdateConcurrencyException)
-        {
-            if (!ProductExists(id))
-            {
-                return NotFound();
-            }
-            else
-            {
-                throw;
-            }
-        }
-
-        return NoContent();
-    }
-
-    // DELETE: api/Product/5
-    [HttpDelete("{id}")]
-    public async Task<IActionResult> DeleteProduct(int id)
-    {
-        var product = await _context.Products.FindAsync(id);
-        if (product == null)
-        {
-            return NotFound();
-        }
-
-        _context.Products.Remove(product);
-        await _context.SaveChangesAsync();
-
-        return NoContent();
-    }
-
-    private bool ProductExists(int id)
-    {
-        return _context.Products.Any(e => e.Id == id);
-    }
-}
-```
-
-## Troubleshooting
-
-### "No .csproj file found"
-
-Run from project root:
-
-```bash
-cd MyApp
-swap g c Product
-```
-
-### "Model not found"
-
-The controller is generated even if the model doesn't exist (uses Todo model as template). Generate the model first for best results:
-
-```bash
-swap g m Product --fields Name:string,Price:decimal
-swap g c Product
-```
-
-### Views Not Rendering
-
-Ensure your `_Layout.cshtml` exists and includes:
-
-```cshtml
-<!DOCTYPE html>
-<html>
-<head>
-    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-</head>
-<body>
-    @RenderBody()
-    <script src="~/lib/jquery/dist/jquery.min.js"></script>
-    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    @await RenderSectionAsync("Scripts", required: false)
-</body>
-</html>
-```
-
-## Best Practices
-
-### 1. Generate Model First
-
-```bash
-# Right order
-swap g m Product --fields Name:string,Price:decimal
-swap g c Product
-
-# Wrong order (works but less ideal)
-swap g c Product  # Uses generic Todo template
-```
-
-### 2. Commit Before Generating
-
-```bash
-git add .
-git commit -m "Before generating Product controller"
-swap g c Product
-```
-
-### 3. Review and Customize
-
-Generated code is a starting point. Add:
-- Authorization
-- Business logic validation
-- Logging
-- Error handling
-- Related data loading
-
-### 4. Use Routing Conventions
-
-The generated controllers follow ASP.NET Core conventions:
-
-- `/Product` → Index (list)
-- `/Product/Details/5` → Details for ID 5
-- `/Product/Create` → Create form
-- `/Product/Edit/5` → Edit form for ID 5
-
-## Next Steps
-
-- [Model Generation](./generate-model) - Create models with custom fields
-- [Resource Generation](./generate-resource) - Generate model + controller together
-- [Authorization](../security/authorization) - Add role-based access control
-- [Validation](../database/validation) - Add data validation
