@@ -105,8 +105,9 @@ public static class FieldHelper
             "bool" => $@"<div class=""form-control"">
                 <label class=""label cursor-pointer"">
                     <span class=""label-text"">{field.Name}</span>
-                    <input type=""checkbox"" name=""{field.Name}"" class=""checkbox checkbox-primary"" />
+                    <input type=""checkbox"" name=""{field.Name}"" value=""true"" class=""checkbox checkbox-primary"" @(Model.{field.Name} ? ""checked"" : """") />
                 </label>
+                <input type=""hidden"" name=""{field.Name}"" value=""false"" />
             </div>",
             
             _ => $@"<div class=""form-control"">
@@ -199,8 +200,9 @@ public static class FieldHelper
             return "// No searchable fields";
         }
         
+        // Use ToLower() for case-insensitive search - works with all EF providers
         var conditions = stringFields.Select(f => 
-            $"x.{f.Name}{(f.IsNullable ? "!" : "")}.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)");
+            $"x.{f.Name}{(f.IsNullable ? "!" : "")}.ToLower().Contains(searchTerm.ToLower())");
         
         return $"query = query.Where(x => {string.Join(" || ", conditions)});";
     }

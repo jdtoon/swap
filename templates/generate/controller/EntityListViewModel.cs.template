@@ -1,3 +1,5 @@
+using {{Namespace}}.Models;
+
 namespace {{Namespace}}.ViewModels;
 
 /// <summary>

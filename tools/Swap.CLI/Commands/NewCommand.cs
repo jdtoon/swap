@@ -80,11 +80,26 @@ public static class NewCommand
             AnsiConsole.WriteLine();
             AnsiConsole.MarkupLine("[green]✓[/] Project created successfully!");
             AnsiConsole.WriteLine();
+            
+            // Run setup commands automatically
+            await AnsiConsole.Status()
+                .StartAsync("Running setup commands...", async ctx =>
+                {
+                    ctx.Status("Running npm install...");
+                    await RunCommandAsync("npm", "install", projectPath);
+                    
+                    ctx.Status("Running libman restore...");
+                    await RunCommandAsync("libman", "restore", projectPath);
+                    
+                    ctx.Status("Building CSS...");
+                    await RunCommandAsync("npm", "run build:css", projectPath);
+                });
+            
+            AnsiConsole.WriteLine();
+            AnsiConsole.MarkupLine("[green]✓[/] Setup completed successfully!");
+            AnsiConsole.WriteLine();
             AnsiConsole.MarkupLine("[bold]Next steps:[/]");
             AnsiConsole.MarkupLine($"  cd {name}");
-            AnsiConsole.MarkupLine("  npm install");
-            AnsiConsole.MarkupLine("  libman restore");
-            AnsiConsole.MarkupLine("  npm run build:css");
             AnsiConsole.MarkupLine("  dotnet ef migrations add InitialCreate");
             AnsiConsole.MarkupLine("  dotnet ef database update");
             AnsiConsole.MarkupLine("  dotnet run");
@@ -157,6 +172,34 @@ public static class NewCommand
             await File.WriteAllTextAsync(targetFile, processedContent);
             
             await Task.Delay(50); // Small delay for visual feedback
+        }
+    }
+    
+    private static async Task RunCommandAsync(string command, string arguments, string workingDirectory)
+    {
+        var processStartInfo = new System.Diagnostics.ProcessStartInfo
+        {
+            FileName = command,
+            Arguments = arguments,
+            WorkingDirectory = workingDirectory,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            UseShellExecute = false,
+            CreateNoWindow = true
+        };
+        
+        using var process = System.Diagnostics.Process.Start(processStartInfo);
+        if (process == null)
+        {
+            throw new InvalidOperationException($"Failed to start {command}");
+        }
+        
+        await process.WaitForExitAsync();
+        
+        if (process.ExitCode != 0)
+        {
+            var error = await process.StandardError.ReadToEndAsync();
+            throw new InvalidOperationException($"{command} failed: {error}");
         }
     }
 }
