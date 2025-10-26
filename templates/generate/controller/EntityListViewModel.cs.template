@@ -31,4 +31,9 @@ public class {{EntityName}}ListViewModel
     /// Current sort order (asc/desc)
     /// </summary>
     public string? SortOrder { get; set; }
+    
+    /// <summary>
+    /// Active filters (field name -> value)
+    /// </summary>
+    public Dictionary<string, string?> Filters { get; set; } = new();
 }

@@ -131,6 +131,12 @@ public static class GenerateControllerCommand
         var entityNameLower = char.ToLower(entityName[0]) + entityName.Substring(1);
         var searchLogic = FieldHelper.GenerateSearchLogic(fields);
         var sortCases = FieldHelper.GenerateSortCases(fields);
+        var filterParameters = FieldHelper.GenerateFilterParameters(fields);
+        var filterParameterValues = FieldHelper.GenerateFilterParameterValues(fields);
+        var filterCases = FieldHelper.GenerateFilterCases(fields);
+        var filterDictionary = FieldHelper.GenerateFilterDictionary(fields);
+        var filterIncludes = FieldHelper.GenerateFilterIncludes(fields);
+        var filterSection = FieldHelper.GenerateFilterSection(fields, entityNameLower);
         var formFields = string.Join("\n\n", fields.Select(f => FieldHelper.GenerateFormField(f)));
         var tableHeaders = string.Join("\n                    ", fields.Select(f => FieldHelper.GenerateTableHeader(f, entityNameLower)));
         var tableCells = string.Join("\n                        ", fields.Select(f => FieldHelper.GenerateTableCell(f)));
@@ -147,6 +153,12 @@ public static class GenerateControllerCommand
             { "Namespace", projectName },
             { "SearchLogic", searchLogic },
             { "SortCases", sortCases },
+            { "FilterParameters", filterParameters },
+            { "FilterParameterValues", filterParameterValues },
+            { "FilterCases", filterCases },
+            { "FilterDictionary", filterDictionary },
+            { "FilterIncludes", filterIncludes },
+            { "FilterSection", filterSection },
             { "FormFields", formFields },
             { "TableHeaders", tableHeaders },
             { "TableCells", tableCells },

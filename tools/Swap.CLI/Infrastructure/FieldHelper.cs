@@ -309,4 +309,138 @@ public static class FieldHelper
             _ => "text"
         };
     }
+    
+    /// <summary>
+    /// Generate filter parameters for controller Index action
+    /// </summary>
+    public static string GenerateFilterParameters(List<FieldDefinition> fields)
+    {
+        var boolFields = fields.Where(f => f.Type == "bool").ToList();
+        if (!boolFields.Any())
+            return string.Empty;
+            
+        var parameters = boolFields.Select(f => 
+            $"bool? {char.ToLower(f.Name[0]) + f.Name.Substring(1)} = null");
+        return ", " + string.Join(", ", parameters);
+    }
+    
+    /// <summary>
+    /// Generate filter logic for ApplyFilters method
+    /// </summary>
+    public static string GenerateFilterCases(List<FieldDefinition> fields)
+    {
+        var boolFields = fields.Where(f => f.Type == "bool").ToList();
+        if (!boolFields.Any())
+            return "// No filterable fields";
+            
+        var cases = boolFields.Select(f =>
+        {
+            var paramName = char.ToLower(f.Name[0]) + f.Name.Substring(1);
+            return $@"if ({paramName}.HasValue)
+        {{
+            query = query.Where(x => x.{f.Name} == {paramName}.Value);
+        }}";
+        });
+        
+        return string.Join("\n        ", cases);
+    }
+    
+    /// <summary>
+    /// Generate filter controls UI for bool fields
+    /// </summary>
+    public static string GenerateFilterControls(List<FieldDefinition> fields, string entityNameLower)
+    {
+        var boolFields = fields.Where(f => f.Type == "bool").ToList();
+        if (!boolFields.Any())
+            return string.Empty;
+            
+        var controls = boolFields.Select(f =>
+        {
+            var paramName = char.ToLower(f.Name[0]) + f.Name.Substring(1);
+            return $@"<div class=""form-control"">
+                        <label class=""label"">
+                            <span class=""label-text"">{f.Name}</span>
+                        </label>
+                        <select name=""{paramName}"" 
+                                class=""select select-bordered w-full""
+                                hx-get=""@Url.Action(""Index"")""
+                                hx-target=""#{entityNameLower}-list""
+                                hx-swap=""innerHTML""
+                                hx-include=""[name='searchTerm'], [name='pageSize'], [name='sortBy'], [name='sortOrder'], [name='{paramName}']""
+                                hx-trigger=""change"">
+                            <option value="""">All</option>
+                            <option value=""true"">Yes</option>
+                            <option value=""false"">No</option>
+                        </select>
+                    </div>";
+        });
+        
+        return string.Join("\n                    ", controls);
+    }
+    
+    /// <summary>
+    /// Generate parameter values for passing to ApplyFilters method
+    /// </summary>
+    public static string GenerateFilterParameterValues(List<FieldDefinition> fields)
+    {
+        var boolFields = fields.Where(f => f.Type == "bool").ToList();
+        if (!boolFields.Any())
+            return string.Empty;
+            
+        var parameters = boolFields.Select(f => 
+            char.ToLower(f.Name[0]) + f.Name.Substring(1));
+        return ", " + string.Join(", ", parameters);
+    }
+    
+    /// <summary>
+    /// Generate filter dictionary entries for view model
+    /// </summary>
+    public static string GenerateFilterDictionary(List<FieldDefinition> fields)
+    {
+        var boolFields = fields.Where(f => f.Type == "bool").ToList();
+        if (!boolFields.Any())
+            return string.Empty;
+            
+        var entries = boolFields.Select(f =>
+        {
+            var paramName = char.ToLower(f.Name[0]) + f.Name.Substring(1);
+            return $@"{{ ""{paramName}"", {paramName}?.ToString().ToLower() }}";
+        });
+        
+        return string.Join(",\n                ", entries);
+    }
+    
+    /// <summary>
+    /// Generate hx-include additions for filter fields
+    /// </summary>
+    public static string GenerateFilterIncludes(List<FieldDefinition> fields)
+    {
+        var boolFields = fields.Where(f => f.Type == "bool").ToList();
+        if (!boolFields.Any())
+            return string.Empty;
+            
+        var includes = boolFields.Select(f =>
+        {
+            var paramName = char.ToLower(f.Name[0]) + f.Name.Substring(1);
+            return $"[name='{paramName}']";
+        });
+        
+        return ", " + string.Join(", ", includes);
+    }
+    
+    /// <summary>
+    /// Generate complete filter section HTML
+    /// </summary>
+    public static string GenerateFilterSection(List<FieldDefinition> fields, string entityNameLower)
+    {
+        var controls = GenerateFilterControls(fields, entityNameLower);
+        if (string.IsNullOrEmpty(controls))
+            return string.Empty;
+            
+        return $@"<div class=""mb-4"">
+                <div class=""grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"">
+                    {controls}
+                </div>
+            </div>";
+    }
 }

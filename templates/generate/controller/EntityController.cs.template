@@ -16,9 +16,9 @@ public class {{EntityName}}Controller : Controller
     }
 
     /// <summary>
-    /// Index action with pagination, search, and sorting support
+    /// Index action with pagination, search, sorting, and filtering support
     /// </summary>
-    public async Task<IActionResult> Index(int pageNumber = 1, int pageSize = 10, string? searchTerm = null, string? sortBy = null, string? sortOrder = "asc")
+    public async Task<IActionResult> Index(int pageNumber = 1, int pageSize = 10, string? searchTerm = null, string? sortBy = null, string? sortOrder = "asc"{{FilterParameters}})
     {
         var isHtmxRequest = Request.Headers.ContainsKey("HX-Request");
 
@@ -29,6 +29,9 @@ public class {{EntityName}}Controller : Controller
         {
             {{SearchLogic}}
         }
+
+        // Apply filters
+        query = ApplyFilters(query{{FilterParameterValues}});
 
         // Apply sorting
         if (!string.IsNullOrWhiteSpace(sortBy))
@@ -52,6 +55,10 @@ public class {{EntityName}}Controller : Controller
             SearchTerm = searchTerm,
             SortBy = sortBy,
             SortOrder = sortOrder,
+            Filters = new Dictionary<string, string?>
+            {
+                {{FilterDictionary}}
+            },
             Pagination = new PaginationDto
             {
                 CurrentPage = pageNumber,
@@ -215,5 +222,12 @@ public class {{EntityName}}Controller : Controller
             {{SortCases}}
             _ => query
         };
+    }
+
+    private IQueryable<{{EntityName}}> ApplyFilters(IQueryable<{{EntityName}}> query{{FilterParameters}})
+    {
+        {{FilterCases}}
+        
+        return query;
     }
 }
