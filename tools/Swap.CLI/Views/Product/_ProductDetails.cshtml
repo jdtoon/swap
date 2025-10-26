@@ -1,0 +1,53 @@
+@model Product
+
+<div class="modal modal-open">
+    <div class="modal-box">
+        <h3 class="font-bold text-lg mb-4">Product Details</h3>
+        
+        <div class="space-y-3">
+            <div>
+                <span class="font-semibold">Name:</span>
+                <span>@Model.Name</span>
+            </div>
+            <div>
+                <span class="font-semibold">Price:</span>
+                <span>@Model.Price</span>
+            </div>
+            <div>
+                <span class="font-semibold">SKU:</span>
+                <span>@Model.SKU</span>
+            </div>
+            <div>
+                <span class="font-semibold">InStock:</span>
+                @if (Model.InStock)
+                {
+                    <span class="badge badge-success">Yes</span>
+                }
+                else
+                {
+                    <span class="badge badge-ghost">No</span>
+                }
+            </div>
+            <div>
+                <span class="font-semibold">CreatedDate:</span>
+                <span>@Model.CreatedDate.ToString("yyyy-MM-dd HH:mm")</span>
+            </div>
+        </div>
+        
+        <div class="modal-action">
+            <button type="button" 
+                    class="btn" 
+                    onclick="document.getElementById('modal-container').innerHTML = ''">
+                Close
+            </button>
+            <button type="button"
+                    class="btn btn-primary"
+                    hx-get="@Url.Action("Edit", new { id = Model.Id })"
+                    hx-target="#modal-container"
+                    hx-swap="innerHTML">
+                Edit
+            </button>
+        </div>
+    </div>
+    <div class="modal-backdrop" onclick="document.getElementById('modal-container').innerHTML = ''"></div>
+</div>

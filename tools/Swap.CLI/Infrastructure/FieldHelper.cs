@@ -6,14 +6,27 @@ public class FieldDefinition
     public required string Type { get; set; }
     public bool IsNullable { get; set; }
     public bool IsRequired { get; set; }
+    
+    /// <summary>
+    /// Whether this field should be sortable in list views. Default: true
+    /// </summary>
+    public bool IsSortable { get; set; } = true;
+    
+    /// <summary>
+    /// Whether this field should have a filter control. Default: false
+    /// Only applies to bool fields currently.
+    /// </summary>
+    public bool IsFilterable { get; set; } = false;
 }
 
 public static class FieldHelper
 {
     /// <summary>
-    /// Parse field specifications like "Name:string Title:string? Age:int" or "Name:string,Title:string?,Age:int"
+    /// Parse field specifications like "Name:string:s Title:string?:ns,f Age:int:sortable,filterable"
+    /// Supports flags: :sortable/:s (sortable), :nosort/:ns (not sortable), :filterable/:f (filterable)
+    /// Defaults: sortable=true, filterable=false
     /// </summary>
-    public static List<FieldDefinition> ParseFields(string? fieldsSpec)
+    public static List<FieldDefinition> ParseFields(string fieldsSpec)
     {
         var fields = new List<FieldDefinition>();
         
@@ -22,20 +35,26 @@ public static class FieldHelper
             return fields;
         }
         
-        // Split by both comma and space to handle both formats
-        var separators = new[] { ',', ' ' };
-        var fieldSpecs = fieldsSpec.Split(separators, StringSplitOptions.RemoveEmptyEntries);
+        // Split by space only to handle field specs
+        // Don't split by comma since commas are used within flag specifications
+        var fieldSpecs = fieldsSpec.Split(' ', StringSplitOptions.RemoveEmptyEntries);
         
         foreach (var spec in fieldSpecs)
         {
-            var parts = spec.Split(':', 2);
-            if (parts.Length != 2)
+            // Split by colon: FieldName:Type:Flags
+            var parts = spec.Split(':');
+            if (parts.Length < 2)
             {
-                throw new ArgumentException($"Invalid field specification: {spec}. Expected format: 'FieldName:type'");
+                throw new ArgumentException($"Invalid field specification: {spec}. Expected format: 'FieldName:type[:flags]'");
             }
             
             var fieldName = parts[0].Trim();
             var typeSpec = parts[1].Trim();
+            
+            // Parse flags (everything after the type)
+            var flags = parts.Length > 2 
+                ? string.Join(":", parts.Skip(2)).ToLower().Split(',', StringSplitOptions.RemoveEmptyEntries).Select(f => f.Trim()).ToList()
+                : new List<string>();
             
             // Validate field name
             if (string.IsNullOrWhiteSpace(fieldName))
@@ -59,12 +78,39 @@ public static class FieldHelper
             // Map type names
             var mappedType = MapType(typeSpec);
             
+            // Parse flags
+            bool isSortable = true; // Default
+            bool isFilterable = false; // Default
+            
+            foreach (var flag in flags)
+            {
+                switch (flag)
+                {
+                    case "sortable":
+                    case "s":
+                        isSortable = true;
+                        break;
+                    case "nosort":
+                    case "ns":
+                        isSortable = false;
+                        break;
+                    case "filterable":
+                    case "f":
+                        isFilterable = true;
+                        break;
+                    default:
+                        throw new ArgumentException($"Unknown flag '{flag}' in field specification: {spec}. Valid flags: sortable/s, nosort/ns, filterable/f");
+                }
+            }
+            
             fields.Add(new FieldDefinition
             {
                 Name = fieldName,
                 Type = mappedType,
                 IsNullable = isNullable,
-                IsRequired = mappedType == "string" ? !isNullable : !isNullable
+                IsRequired = mappedType == "string" ? !isNullable : !isNullable,
+                IsSortable = isSortable,
+                IsFilterable = isFilterable
             });
         }
         
@@ -176,11 +222,21 @@ public static class FieldHelper
     }
     
     /// <summary>
-    /// Generate sortable table header for list view
+    /// Generate table header for list view
+    /// Sortable fields get clickable button with sort indicators
+    /// Non-sortable fields get plain text header
     /// </summary>
     public static string GenerateTableHeader(FieldDefinition field, string entityNameLower)
     {
         var fieldNameLower = field.Name.ToLower();
+        
+        if (!field.IsSortable)
+        {
+            // Non-sortable: just plain text
+            return $@"<th>{field.Name}</th>";
+        }
+        
+        // Sortable: button with HTMX and sort indicators
         return $@"<th>
                         <button class=""flex items-center gap-1 hover:text-primary""
                                 hx-get=""@Url.Action(""Index"")""
@@ -281,15 +337,18 @@ public static class FieldHelper
     
     /// <summary>
     /// Generate sort cases for ApplySorting method
+    /// Only includes fields where IsSortable = true
     /// </summary>
     public static string GenerateSortCases(List<FieldDefinition> fields)
     {
-        if (!fields.Any())
+        var sortableFields = fields.Where(f => f.IsSortable).ToList();
+        
+        if (!sortableFields.Any())
         {
-            return "";
+            return "// No sortable fields";
         }
         
-        var cases = fields.Select(f => 
+        var cases = sortableFields.Select(f => 
             $@"""{f.Name.ToLower()}"" => isDescending ? query.OrderByDescending(x => x.{f.Name}) : query.OrderBy(x => x.{f.Name}),"
         );
         
@@ -312,28 +371,30 @@ public static class FieldHelper
     
     /// <summary>
     /// Generate filter parameters for controller Index action
+    /// Only includes bool fields where IsFilterable = true
     /// </summary>
     public static string GenerateFilterParameters(List<FieldDefinition> fields)
     {
-        var boolFields = fields.Where(f => f.Type == "bool").ToList();
-        if (!boolFields.Any())
+        var filterableFields = fields.Where(f => f.Type == "bool" && f.IsFilterable).ToList();
+        if (!filterableFields.Any())
             return string.Empty;
             
-        var parameters = boolFields.Select(f => 
+        var parameters = filterableFields.Select(f => 
             $"bool? {char.ToLower(f.Name[0]) + f.Name.Substring(1)} = null");
         return ", " + string.Join(", ", parameters);
     }
     
     /// <summary>
     /// Generate filter logic for ApplyFilters method
+    /// Only includes bool fields where IsFilterable = true
     /// </summary>
     public static string GenerateFilterCases(List<FieldDefinition> fields)
     {
-        var boolFields = fields.Where(f => f.Type == "bool").ToList();
-        if (!boolFields.Any())
+        var filterableFields = fields.Where(f => f.Type == "bool" && f.IsFilterable).ToList();
+        if (!filterableFields.Any())
             return "// No filterable fields";
             
-        var cases = boolFields.Select(f =>
+        var cases = filterableFields.Select(f =>
         {
             var paramName = char.ToLower(f.Name[0]) + f.Name.Substring(1);
             return $@"if ({paramName}.HasValue)
@@ -347,14 +408,15 @@ public static class FieldHelper
     
     /// <summary>
     /// Generate filter controls UI for bool fields
+    /// Only includes bool fields where IsFilterable = true
     /// </summary>
     public static string GenerateFilterControls(List<FieldDefinition> fields, string entityNameLower)
     {
-        var boolFields = fields.Where(f => f.Type == "bool").ToList();
-        if (!boolFields.Any())
+        var filterableFields = fields.Where(f => f.Type == "bool" && f.IsFilterable).ToList();
+        if (!filterableFields.Any())
             return string.Empty;
             
-        var controls = boolFields.Select(f =>
+        var controls = filterableFields.Select(f =>
         {
             var paramName = char.ToLower(f.Name[0]) + f.Name.Substring(1);
             return $@"<div class=""form-control"">
@@ -380,28 +442,30 @@ public static class FieldHelper
     
     /// <summary>
     /// Generate parameter values for passing to ApplyFilters method
+    /// Only includes bool fields where IsFilterable = true
     /// </summary>
     public static string GenerateFilterParameterValues(List<FieldDefinition> fields)
     {
-        var boolFields = fields.Where(f => f.Type == "bool").ToList();
-        if (!boolFields.Any())
+        var filterableFields = fields.Where(f => f.Type == "bool" && f.IsFilterable).ToList();
+        if (!filterableFields.Any())
             return string.Empty;
             
-        var parameters = boolFields.Select(f => 
+        var parameters = filterableFields.Select(f => 
             char.ToLower(f.Name[0]) + f.Name.Substring(1));
         return ", " + string.Join(", ", parameters);
     }
     
     /// <summary>
     /// Generate filter dictionary entries for view model
+    /// Only includes bool fields where IsFilterable = true
     /// </summary>
     public static string GenerateFilterDictionary(List<FieldDefinition> fields)
     {
-        var boolFields = fields.Where(f => f.Type == "bool").ToList();
-        if (!boolFields.Any())
+        var filterableFields = fields.Where(f => f.Type == "bool" && f.IsFilterable).ToList();
+        if (!filterableFields.Any())
             return string.Empty;
             
-        var entries = boolFields.Select(f =>
+        var entries = filterableFields.Select(f =>
         {
             var paramName = char.ToLower(f.Name[0]) + f.Name.Substring(1);
             return $@"{{ ""{paramName}"", {paramName}?.ToString().ToLower() }}";
@@ -412,14 +476,15 @@ public static class FieldHelper
     
     /// <summary>
     /// Generate hx-include additions for filter fields
+    /// Only includes bool fields where IsFilterable = true
     /// </summary>
     public static string GenerateFilterIncludes(List<FieldDefinition> fields)
     {
-        var boolFields = fields.Where(f => f.Type == "bool").ToList();
-        if (!boolFields.Any())
+        var filterableFields = fields.Where(f => f.Type == "bool" && f.IsFilterable).ToList();
+        if (!filterableFields.Any())
             return string.Empty;
             
-        var includes = boolFields.Select(f =>
+        var includes = filterableFields.Select(f =>
         {
             var paramName = char.ToLower(f.Name[0]) + f.Name.Substring(1);
             return $"[name='{paramName}']";

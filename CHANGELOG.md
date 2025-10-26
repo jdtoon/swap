@@ -9,10 +9,121 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added
-- Phase 3: Custom property definitions via --props flag (planned)
-- Phase 4: Template system for code customization (planned)
-- Phase 5: AI-assisted feature generation (planned)
+### Added - Phase 4: Advanced List Management (Sorting & Filtering) ✅
+
+#### Phase 4.3: Field-Level Flags (2025-10-26)
+- **Field Control Flags**: Developer control over sortable/filterable behavior per field
+- **Sortable Flags**: `:sortable`/`:s` (enable), `:nosort`/`:ns` (disable)
+- **Filterable Flag**: `:filterable`/`:f` (enable filtering for bool fields)
+- **Smart Defaults**: Fields sortable by default, not filterable by default
+- **Flag Syntax**: `FieldName:Type:Flags` (e.g., `SKU:string:ns`, `InStock:bool:f`)
+- **Multiple Flags**: Support for comma-separated flags (e.g., `:ns,f`)
+- **Conditional Generation**: Only sortable fields get clickable headers
+- **Clean UI**: Non-sortable fields render as plain text headers
+- **Filter Control**: Only filterable bool fields get dropdown filters
+- **FieldDefinition Properties**: IsSortable (default true), IsFilterable (default false)
+- **ParseFields Enhancement**: Flag parsing with validation and error messages
+- **GenerateSortCases Update**: Filters fields by IsSortable before generating
+- **GenerateTableHeader Update**: Conditional rendering based on IsSortable
+- **Filter Methods Update**: All 6 filter helpers respect IsFilterable flag
+- **Short Form Support**: `:s` = `:sortable`, `:ns` = `:nosort`, `:f` = `:filterable`
+- **Example Usage**: `--fields "Name:string Price:decimal:ns InStock:bool:f CreatedDate:DateTime"`
+- **Benefits**: Cleaner UIs, better UX, developer control, future-proof architecture
+
+#### Phase 4.2: Boolean Filtering (2025-10-26)
+- **Filter Parameters**: Controller Index action accepts bool? parameters for filtering
+- **Filter Logic**: ApplyFilters method applies bool field filters to queries
+- **Filter UI**: DaisyUI dropdowns with All/Yes/No options
+- **HTMX Integration**: Filter changes update table without page reload
+- **State Preservation**: Filter state tracked in view model and HTMX requests
+- **Automatic Generation**: Filters generated for all bool fields automatically
+- **FieldHelper Methods**: GenerateFilterParameters, GenerateFilterCases, GenerateFilterControls, GenerateFilterSection
+- **View Model Updates**: Added Filters dictionary property
+- **Index View Updates**: Filter section with responsive grid layout
+
+#### Phase 4.1: Column Sorting (2025-10-26)
+- **Sortable Headers**: All table columns now clickable for sorting
+- **Sort Indicators**: Visual arrows (↑ ascending, ↓ descending)
+- **Toggle Behavior**: Click same column to reverse sort order
+- **HTMX Integration**: Sorting updates table without page reload
+- **State Preservation**: Sort persists during search, filter, and pagination
+- **All Field Types**: Support for string, int, decimal, bool, DateTime sorting
+- **ApplySorting Method**: Dynamic sorting with switch expression
+- **FieldHelper.GenerateSortCases**: Generates sort switch cases
+- **FieldHelper.GenerateTableHeader**: Creates sortable headers with HTMX
+
+### Added - Phase 3: HTMX-Powered CRUD with Pagination & Search ✅
+
+#### Phase 3.5: Complete CRUD with Pagination (2025-10-25)
+- **Pagination System**: Configurable page sizes (10, 25, 50, 100)
+- **Page Navigation**: Previous, Next, First, Last buttons
+- **Page Info Display**: "Showing X-Y of Z items"
+- **PaginationDto**: Comprehensive pagination model with HTMX support
+- **State Preservation**: Maintains pagination across operations
+- **Search Integration**: Real-time search with 500ms debounce
+- **Multiple Field Search**: Searches across all string fields
+- **HTMX Partial Updates**: Zero page reloads for all operations
+
+#### Phase 3.4: HTMX Modal CRUD (2025-10-25)
+- **Modal-Based Create**: HTMX-powered create modal
+- **Modal-Based Edit**: HTMX-powered edit modal with prefill
+- **Modal-Based Details**: Read-only details view in modal
+- **Delete Confirmation**: In-list delete with HTMX confirmation
+- **Toast Notifications**: Success/error feedback system
+- **Validation**: Client and server-side with inline errors
+- **Partial Views**: Modular view structure (_Create, _Edit, _Details, _Form)
+
+#### Phase 3.3: Field Type Support (2025-10-25)
+- **11 Field Types**: string, int, long, short, byte, bool, float, double, decimal, DateTime, Guid
+- **Nullable Fields**: Support for nullable reference and value types
+- **DateTime Defaults**: Auto-populated with DateTime.Now
+- **Decimal Precision**: step="any" for decimal inputs
+- **Boolean Badges**: Visual Yes/No badges in lists
+- **Formatted Display**: Proper formatting for dates and decimals
+- **FieldHelper Class**: Centralized field generation logic
+
+#### Phase 3.2: Template System (2025-10-25)
+- **Template-Based Generation**: Moved from inline strings to .template files
+- **Modular Templates**: Separate templates for controller, views, models
+- **Token Replacement**: {{EntityName}}, {{Fields}}, {{TableHeaders}}, etc.
+- **Views Subfolder**: Organized template structure
+- **PreserveNewest**: Templates copied to output directory
+- **Reusable Partials**: _PaginationControls, _Form shared components
+
+#### Phase 3.1: CLI Field Parser (2025-10-25)
+- **FieldDefinition Model**: Name, Type, IsNullable properties
+- **Field Parsing**: Parse "Name:Type?" format from command line
+- **GenerateControllerCommand**: New command with --fields option
+- **Automatic DbSet Update**: Adds entity to DbContext if not exists
+- **Duplicate Detection**: Warns if DbSet already exists
+- **Complete Generation**: Controller, Model, Views, ViewModels in one command
+
+### Fixed
+- **Duplicate DbSet Bug**: Now checks fully qualified names (DbSet<Project.Models.Entity>)
+- **Template Paths**: Fixed {{entityNameLower}} token in hx-target attributes
+- **Razor Syntax**: Removed inline C# from HTML attributes to fix compilation errors
+
+### Changed
+- **UI Framework**: Migrated from Bootstrap to DaisyUI/Tailwind CSS
+- **Architecture**: HTMX-first approach for all interactions
+- **View Structure**: Partial views for better modularity
+- **Controller Pattern**: Async/await with HTMX headers
+- **Response Pattern**: HTMX triggers instead of redirects
+
+### Documentation Needed
+- **CLI Documentation**: Update generate-controller.md with new features
+- **Field Types Guide**: Document all 11 supported field types
+- **HTMX Patterns**: Document HTMX integration patterns
+- **Pagination Guide**: Document pagination implementation
+- **Sorting Guide**: Document column sorting usage
+- **Filtering Guide**: Document boolean filtering usage
+
+### Planned - Phase 4: Remaining Features
+- **Phase 4.3**: Bulk Operations (select multiple, bulk delete)
+- **Phase 4.4**: Export (CSV/Excel)
+- **Phase 4.5**: Advanced Search (multi-field with operators)
+- **Phase 4.6**: Audit Trail (CreatedBy, ModifiedBy, timestamps)
+- **Field Flags**: --sortable and --filterable flags for field-level control
 
 ---
 
