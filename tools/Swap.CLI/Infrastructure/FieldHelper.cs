@@ -176,11 +176,33 @@ public static class FieldHelper
     }
     
     /// <summary>
-    /// Generate table header for list view
+    /// Generate sortable table header for list view
     /// </summary>
-    public static string GenerateTableHeader(FieldDefinition field)
+    public static string GenerateTableHeader(FieldDefinition field, string entityNameLower)
     {
-        return $"<th>{field.Name}</th>";
+        var fieldNameLower = field.Name.ToLower();
+        return $@"<th>
+                        <button class=""flex items-center gap-1 hover:text-primary""
+                                hx-get=""@Url.Action(""Index"")""
+                                hx-target=""#{entityNameLower}-list""
+                                hx-swap=""innerHTML""
+                                hx-include=""[name='searchTerm'], [name='pageSize']""
+                                hx-vals='{{""sortBy"": ""{fieldNameLower}"", ""sortOrder"": ""@(Model.SortBy?.ToLower() == ""{fieldNameLower}"" && Model.SortOrder == ""asc"" ? ""desc"" : ""asc"")""}}'
+                                type=""button"">
+                            {field.Name}
+                            @if (Model.SortBy?.ToLower() == ""{fieldNameLower}"")
+                            {{
+                                @if (Model.SortOrder == ""desc"")
+                                {{
+                                    <span>↓</span>
+                                }}
+                                else
+                                {{
+                                    <span>↑</span>
+                                }}
+                            }}
+                        </button>
+                    </th>";
     }
     
     /// <summary>
@@ -255,6 +277,23 @@ public static class FieldHelper
             $"x.{f.Name}{(f.IsNullable ? "!" : "")}.ToLower().Contains(searchTerm.ToLower())");
         
         return $"query = query.Where(x => {string.Join(" || ", conditions)});";
+    }
+    
+    /// <summary>
+    /// Generate sort cases for ApplySorting method
+    /// </summary>
+    public static string GenerateSortCases(List<FieldDefinition> fields)
+    {
+        if (!fields.Any())
+        {
+            return "";
+        }
+        
+        var cases = fields.Select(f => 
+            $@"""{f.Name.ToLower()}"" => isDescending ? query.OrderByDescending(x => x.{f.Name}) : query.OrderBy(x => x.{f.Name}),"
+        );
+        
+        return string.Join("\n            ", cases);
     }
     
     private static string GetHtmlInputType(string csharpType)

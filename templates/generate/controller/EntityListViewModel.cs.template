@@ -21,4 +21,14 @@ public class {{EntityName}}ListViewModel
     /// Current search term (if any)
     /// </summary>
     public string? SearchTerm { get; set; }
+    
+    /// <summary>
+    /// Current sort column
+    /// </summary>
+    public string? SortBy { get; set; }
+    
+    /// <summary>
+    /// Current sort order (asc/desc)
+    /// </summary>
+    public string? SortOrder { get; set; }
 }

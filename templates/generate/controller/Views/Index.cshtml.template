@@ -40,7 +40,11 @@
                        hx-trigger="input changed delay:500ms, search"
                        hx-target="#{{EntityNameLower}}-list"
                        hx-swap="innerHTML"
-                       hx-include="[name='pageSize']" />
+                       hx-include="[name='pageSize'], [name='sortBy'], [name='sortOrder']" />
+                
+                <!-- Hidden inputs to preserve sort state -->
+                <input type="hidden" name="sortBy" value="@Model.SortBy" />
+                <input type="hidden" name="sortOrder" value="@Model.SortOrder" />
             </div>
 
             <!-- List Container -->

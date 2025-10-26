@@ -128,9 +128,11 @@ public static class GenerateControllerCommand
         }
         
         // Generate field-specific content
+        var entityNameLower = char.ToLower(entityName[0]) + entityName.Substring(1);
         var searchLogic = FieldHelper.GenerateSearchLogic(fields);
+        var sortCases = FieldHelper.GenerateSortCases(fields);
         var formFields = string.Join("\n\n", fields.Select(f => FieldHelper.GenerateFormField(f)));
-        var tableHeaders = string.Join("\n                    ", fields.Select(f => FieldHelper.GenerateTableHeader(f)));
+        var tableHeaders = string.Join("\n                    ", fields.Select(f => FieldHelper.GenerateTableHeader(f, entityNameLower)));
         var tableCells = string.Join("\n                        ", fields.Select(f => FieldHelper.GenerateTableCell(f)));
         var detailsFields = string.Join("\n            ", fields.Select(f => FieldHelper.GenerateDetailsField(f)));
         var defaultInitialization = FieldHelper.GenerateDefaultInitialization(fields);
@@ -140,10 +142,11 @@ public static class GenerateControllerCommand
         {
             { "EntityName", entityName },
             { "EntityNamePlural", entityName + "s" }, // Simple pluralization for now
-            { "EntityNameLower", char.ToLower(entityName[0]) + entityName.Substring(1) },
+            { "EntityNameLower", entityNameLower },
             { "ProjectName", projectName },
             { "Namespace", projectName },
             { "SearchLogic", searchLogic },
+            { "SortCases", sortCases },
             { "FormFields", formFields },
             { "TableHeaders", tableHeaders },
             { "TableCells", tableCells },
