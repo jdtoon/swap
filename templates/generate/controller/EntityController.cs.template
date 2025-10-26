@@ -72,7 +72,12 @@ public class {{EntityName}}Controller : Controller
     [HttpGet]
     public IActionResult Create()
     {
-        return PartialView("_{{EntityName}}CreateModal", new {{EntityName}}());
+        var model = new {{EntityName}}
+        {
+{{DefaultInitialization}}
+        };
+        
+        return PartialView("_{{EntityName}}CreateModal", model);
     }
 
     /// <summary>

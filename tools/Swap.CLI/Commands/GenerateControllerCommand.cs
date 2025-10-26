@@ -133,6 +133,7 @@ public static class GenerateControllerCommand
         var tableHeaders = string.Join("\n                    ", fields.Select(f => FieldHelper.GenerateTableHeader(f)));
         var tableCells = string.Join("\n                        ", fields.Select(f => FieldHelper.GenerateTableCell(f)));
         var detailsFields = string.Join("\n            ", fields.Select(f => FieldHelper.GenerateDetailsField(f)));
+        var defaultInitialization = FieldHelper.GenerateDefaultInitialization(fields);
         
         // Setup template variables
         var variables = new Dictionary<string, string>
@@ -146,7 +147,8 @@ public static class GenerateControllerCommand
             { "FormFields", formFields },
             { "TableHeaders", tableHeaders },
             { "TableCells", tableCells },
-            { "DetailsFields", detailsFields }
+            { "DetailsFields", detailsFields },
+            { "DefaultInitialization", defaultInitialization }
         };
         
         await AnsiConsole.Status()

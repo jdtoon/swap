@@ -71,6 +71,29 @@ public static class FieldHelper
         return fields;
     }
     
+    /// <summary>
+    /// Generate initialization code for Create action (sets default values like DateTime.Now)
+    /// </summary>
+    public static string GenerateDefaultInitialization(List<FieldDefinition> fields)
+    {
+        var initializations = new List<string>();
+        
+        foreach (var field in fields)
+        {
+            if (field.Type == "DateTime" && !field.IsNullable)
+            {
+                initializations.Add($"            {field.Name} = DateTime.Now");
+            }
+        }
+        
+        if (!initializations.Any())
+        {
+            return "";
+        }
+        
+        return string.Join(",\n", initializations);
+    }
+    
     private static string MapType(string typeSpec)
     {
         return typeSpec.ToLower() switch
@@ -108,6 +131,19 @@ public static class FieldHelper
                     <input type=""checkbox"" name=""{field.Name}"" value=""true"" class=""checkbox checkbox-primary"" @(Model.{field.Name} ? ""checked"" : """") />
                 </label>
                 <input type=""hidden"" name=""{field.Name}"" value=""false"" />
+            </div>",
+            
+            "DateTime" => $@"<div class=""form-control"">
+                <label class=""label"">
+                    <span class=""label-text"">{field.Name}</span>
+                </label>
+                <input type=""datetime-local"" 
+                       name=""{field.Name}"" 
+                       placeholder=""{field.Name}""
+                       value=""@Model.{field.Name}.ToString(""yyyy-MM-ddTHH:mm"")""
+                       class=""input input-bordered"" 
+                       {required} />
+                <span asp-validation-for=""{field.Name}"" class=""text-error text-sm""></span>
             </div>",
             
             _ => $@"<div class=""form-control"">
