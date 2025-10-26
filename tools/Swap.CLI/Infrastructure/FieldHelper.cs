@@ -632,29 +632,31 @@ public static class FieldHelper
         }})
         .then(response => {{
             if (response.ok) {{
-                // Trigger list refresh
-                htmx.trigger('#{entityNameLower}-list', 'refresh{entityName}List');
-                clearSelection();
-                
-                // Show success toast
-                showToast('success', `Successfully deleted ${{ids.length}} {entityNameLower}(s)`);
+                return response.json().then(data => {{
+                    // Trigger list refresh
+                    htmx.trigger('#{entityNameLower}-list', 'refresh{entityName}List');
+                    clearSelection();
+                    
+                    // Trigger toast event (server-driven pattern)
+                    htmx.trigger(document.body, 'showToast', {{
+                        type: 'success',
+                        message: `Successfully deleted ${{data.deleted}} {entityNameLower}(s)`
+                    }});
+                }});
             }} else {{
-                showToast('error', 'Failed to delete items');
+                htmx.trigger(document.body, 'showToast', {{
+                    type: 'error',
+                    message: 'Failed to delete items'
+                }});
             }}
         }})
         .catch(error => {{
             console.error('Error:', error);
-            showToast('error', 'An error occurred while deleting items');
+            htmx.trigger(document.body, 'showToast', {{
+                type: 'error',
+                message: 'An error occurred while deleting items'
+            }});
         }});
-    }}
-    
-    function showToast(type, message) {{
-        // Simple toast notification
-        const toast = document.createElement('div');
-        toast.className = `alert alert-${{type}} fixed top-4 right-4 w-auto z-50 shadow-lg`;
-        toast.innerHTML = `<span>${{message}}</span>`;
-        document.body.appendChild(toast);
-        setTimeout(() => toast.remove(), 3000);
     }}
 </script>";
     }
