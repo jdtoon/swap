@@ -1,0 +1,16 @@
+@model int
+
+@{
+    var entityNameLower = ViewContext.RouteData.Values["controller"]?.ToString()?.ToLower() ?? "entity";
+    var entityId = Model;
+    var isSelected = ViewBag.SelectedIds != null && ((HashSet<int>)ViewBag.SelectedIds).Contains(entityId);
+}
+
+<td id="@(entityNameLower)-checkbox-@entityId">
+    <input type="checkbox" 
+           class="checkbox checkbox-sm"
+           hx-post="@Url.Action("ToggleSelection", new { id = entityId })"
+           hx-target="#@(entityNameLower)-checkbox-@entityId"
+           hx-swap="outerHTML"
+           @(isSelected ? "checked" : "") />
+</td>

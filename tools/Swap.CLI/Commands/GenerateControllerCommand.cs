@@ -143,10 +143,10 @@ public static class GenerateControllerCommand
         var detailsFields = string.Join("\n            ", fields.Select(f => FieldHelper.GenerateDetailsField(f)));
         var defaultInitialization = FieldHelper.GenerateDefaultInitialization(fields);
         
-        // Generate bulk operations content
-        var bulkSelectHeader = FieldHelper.GenerateBulkSelectHeader();
-        var bulkSelectCell = FieldHelper.GenerateBulkSelectCell(entityNameLower);
-        var bulkSelectionScript = FieldHelper.GenerateBulkSelectionScript(entityNameLower);
+        // Generate bulk operations content (server-driven with session)
+        var bulkSelectHeader = FieldHelper.GenerateBulkSelectHeader(entityName);
+        var bulkSelectCell = FieldHelper.GenerateBulkSelectCell(entityName, entityNameLower);
+        var bulkSelectionScript = FieldHelper.GenerateBulkSelectionScript(entityName, entityNameLower);
         var bulkActionsBar = FieldHelper.GenerateBulkActionsBar(entityName, entityNameLower);
         var bulkDeleteScript = FieldHelper.GenerateBulkDeleteScript(entityName, entityNameLower);
         
@@ -248,6 +248,13 @@ public static class GenerateControllerCommand
                 await GenerateFileFromTemplateAsync(
                     Path.Combine(templatePath, "Views", "_EntityForm.cshtml.template"),
                     Path.Combine("Views", entityName, $"_{entityName}Form.cshtml"),
+                    variables,
+                    ctx
+                );
+                
+                await GenerateFileFromTemplateAsync(
+                    Path.Combine(templatePath, "Views", "_EntityCheckboxCell.cshtml.template"),
+                    Path.Combine("Views", entityName, $"_{entityName}CheckboxCell.cshtml"),
                     variables,
                     ctx
                 );

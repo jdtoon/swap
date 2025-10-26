@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using {{ProjectName}}.Data;
 using {{ProjectName}}.Models;
 using {{ProjectName}}.ViewModels;
+using {{ProjectName}}.Extensions;
 
 namespace {{ProjectName}}.Controllers;
 
@@ -70,6 +71,9 @@ public class {{EntityName}}Controller : Controller
                 HxSwap = "innerHTML"
             }
         };
+
+        // Pass selection state to view
+        ViewBag.SelectedIds = HttpContext.Session.GetObject<HashSet<int>>("{{EntityName}}_Selection") ?? new HashSet<int>();
 
         if (isHtmxRequest)
         {
@@ -212,11 +216,14 @@ public class {{EntityName}}Controller : Controller
     /// POST: Bulk delete entities
     /// </summary>
     [HttpPost]
-    public async Task<IActionResult> BulkDelete([FromBody] List<int> ids)
+    public async Task<IActionResult> BulkDelete()
     {
-        if (ids == null || !ids.Any())
+        // Read selected IDs from session
+        var selectedIds = HttpContext.Session.GetObject<HashSet<int>>("{{EntityName}}_Selection") ?? new HashSet<int>();
+        
+        if (!selectedIds.Any())
         {
-            return BadRequest("No IDs provided");
+            return BadRequest("No items selected");
         }
 
         using var transaction = await _context.Database.BeginTransactionAsync();
@@ -224,7 +231,7 @@ public class {{EntityName}}Controller : Controller
         try
         {
             var entitiesToDelete = await _context.{{EntityNamePlural}}
-                .Where(e => ids.Contains(e.Id))
+                .Where(e => selectedIds.Contains(e.Id))
                 .ToListAsync();
 
             if (!entitiesToDelete.Any())
@@ -236,13 +243,108 @@ public class {{EntityName}}Controller : Controller
             await _context.SaveChangesAsync();
             await transaction.CommitAsync();
 
+            // Clear selection from session
+            HttpContext.Session.Remove("{{EntityName}}_Selection");
+
+            // Trigger list refresh and show toast
+            Response.Headers.Append("HX-Trigger", "{\"refresh{{EntityName}}List\": null, \"showToast\": {\"type\": \"success\", \"message\": \"Successfully deleted " + entitiesToDelete.Count + " {{EntityNameLower}}(s)\"}}");
+            
             return Ok(new { deleted = entitiesToDelete.Count });
         }
         catch (Exception ex)
         {
             await transaction.RollbackAsync();
+            Response.Headers.Append("HX-Trigger", "{\"showToast\": {\"type\": \"error\", \"message\": \"Failed to delete items\"}}");
             return StatusCode(500, new { error = ex.Message });
         }
+    }
+
+    /// <summary>
+    /// POST: Toggle selection of an entity
+    /// </summary>
+    [HttpPost]
+    public IActionResult ToggleSelection(int id)
+    {
+        var selectedIds = HttpContext.Session.GetObject<HashSet<int>>("{{EntityName}}_Selection") ?? new HashSet<int>();
+        
+        if (selectedIds.Contains(id))
+        {
+            selectedIds.Remove(id);
+        }
+        else
+        {
+            selectedIds.Add(id);
+        }
+        
+        HttpContext.Session.SetObject("{{EntityName}}_Selection", selectedIds);
+        
+        // Return updated checkbox cell and bulk actions bar
+        ViewBag.SelectedIds = selectedIds;
+        ViewBag.EntityId = id;
+        return PartialView("_{{EntityName}}CheckboxCell", id);
+    }
+
+    /// <summary>
+    /// POST: Toggle all selections on current page
+    /// </summary>
+    [HttpPost]
+    public async Task<IActionResult> ToggleSelectAll(int pageNumber = 1, int pageSize = 10, string? searchTerm = null, string? sortBy = null, string? sortOrder = "asc"{{FilterParameters}})
+    {
+        var selectedIds = HttpContext.Session.GetObject<HashSet<int>>("{{EntityName}}_Selection") ?? new HashSet<int>();
+        
+        // Get current page IDs
+        var query = _context.{{EntityNamePlural}}.AsQueryable();
+        
+        if (!string.IsNullOrWhiteSpace(searchTerm))
+        {
+            query = query.Where(x => x.Name.ToLower().Contains(searchTerm.ToLower()));
+        }
+
+        query = ApplyFilters(query{{FilterArguments}});
+
+        var currentPageIds = await query
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .Select(e => e.Id)
+            .ToListAsync();
+
+        // Check if all current page items are selected
+        bool allSelected = currentPageIds.All(id => selectedIds.Contains(id));
+
+        if (allSelected)
+        {
+            // Deselect all on this page
+            foreach (var id in currentPageIds)
+            {
+                selectedIds.Remove(id);
+            }
+        }
+        else
+        {
+            // Select all on this page
+            foreach (var id in currentPageIds)
+            {
+                selectedIds.Add(id);
+            }
+        }
+
+        HttpContext.Session.SetObject("{{EntityName}}_Selection", selectedIds);
+
+        // Return updated list with selection state
+        return await Index(pageNumber, pageSize, searchTerm, sortBy, sortOrder{{FilterArguments}});
+    }
+
+    /// <summary>
+    /// POST: Clear all selections
+    /// </summary>
+    [HttpPost]
+    public IActionResult ClearSelection()
+    {
+        HttpContext.Session.Remove("{{EntityName}}_Selection");
+        
+        // Trigger list refresh to update UI
+        Response.Headers.Append("HX-Trigger", "refresh{{EntityName}}List");
+        return Ok();
     }
 
     private bool {{EntityName}}Exists(int id)

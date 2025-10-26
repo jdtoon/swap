@@ -512,152 +512,87 @@ public static class FieldHelper
     /// <summary>
     /// Generate checkbox column header for bulk selection (Select All)
     /// </summary>
-    public static string GenerateBulkSelectHeader()
+    public static string GenerateBulkSelectHeader(string entityName)
     {
-        return @"<th>
+        return $@"<th>
                         <input type=""checkbox"" 
                                id=""select-all"" 
                                class=""checkbox checkbox-sm""
-                               onclick=""toggleSelectAll(this)"" />
+                               hx-post=""@Url.Action(""ToggleSelectAll"", ""{entityName}"")?pageNumber=@Model.Pagination.CurrentPage&pageSize=@Model.Pagination.PageSize&searchTerm=@Model.SearchTerm&sortBy=@Model.SortBy&sortOrder=@Model.SortOrder@(string.Join("""", Model.Filters.Where(f => !string.IsNullOrEmpty(f.Value)).Select(f => $""&{{f.Key}}={{f.Value}}"")))""
+                               hx-target=""#{entityName.ToLower()}-list""
+                               hx-swap=""innerHTML""
+                               @(ViewBag.SelectedIds != null && Model.Items.All(i => ((HashSet<int>)ViewBag.SelectedIds).Contains(i.Id)) ? ""checked"" : """") />
                     </th>";
     }
     
     /// <summary>
-    /// Generate checkbox cell for bulk selection
+    /// Generate checkbox cell for bulk selection (server-driven with HTMX)
     /// </summary>
-    public static string GenerateBulkSelectCell(string entityNameLower)
+    public static string GenerateBulkSelectCell(string entityName, string entityNameLower)
     {
-        return $@"<td>
+        return $@"<td id=""{entityNameLower}-checkbox-@item.Id"">
                             <input type=""checkbox"" 
-                                   class=""checkbox checkbox-sm {entityNameLower}-checkbox"" 
-                                   value=""@item.Id""
-                                   onclick=""updateBulkActions()"" />
+                                   class=""checkbox checkbox-sm""
+                                   hx-post=""@Url.Action(""ToggleSelection"", ""{entityName}"", new {{ id = item.Id }})""
+                                   hx-target=""#{entityNameLower}-checkbox-@item.Id""
+                                   hx-swap=""outerHTML""
+                                   @(ViewBag.SelectedIds != null && ((HashSet<int>)ViewBag.SelectedIds).Contains(item.Id) ? ""checked"" : """") />
                         </td>";
     }
     
     /// <summary>
-    /// Generate JavaScript for bulk selection management
+    /// Generate JavaScript for bulk selection management (minimal, server-driven)
     /// </summary>
-    public static string GenerateBulkSelectionScript(string entityNameLower)
+    public static string GenerateBulkSelectionScript(string entityName, string entityNameLower)
     {
         return $@"<script>
-    function toggleSelectAll(checkbox) {{
-        const checkboxes = document.querySelectorAll('.{entityNameLower}-checkbox');
-        checkboxes.forEach(cb => cb.checked = checkbox.checked);
-        updateBulkActions();
-    }}
-    
-    function updateBulkActions() {{
-        const checkboxes = document.querySelectorAll('.{entityNameLower}-checkbox:checked');
-        const bulkActions = document.getElementById('bulk-actions');
-        const selectedCount = document.getElementById('selected-count');
-        
-        if (checkboxes.length > 0) {{
-            bulkActions.classList.remove('hidden');
-            selectedCount.textContent = checkboxes.length;
-        }} else {{
-            bulkActions.classList.add('hidden');
-        }}
-        
-        // Update select-all checkbox state
-        const allCheckboxes = document.querySelectorAll('.{entityNameLower}-checkbox');
-        const selectAllCheckbox = document.getElementById('select-all');
-        if (selectAllCheckbox) {{
-            selectAllCheckbox.checked = allCheckboxes.length > 0 && checkboxes.length === allCheckboxes.length;
-            selectAllCheckbox.indeterminate = checkboxes.length > 0 && checkboxes.length < allCheckboxes.length;
-        }}
-    }}
-    
-    function getSelectedIds() {{
-        const checkboxes = document.querySelectorAll('.{entityNameLower}-checkbox:checked');
-        return Array.from(checkboxes).map(cb => parseInt(cb.value));
-    }}
-    
-    function clearSelection() {{
-        const checkboxes = document.querySelectorAll('.{entityNameLower}-checkbox');
-        checkboxes.forEach(cb => cb.checked = false);
-        document.getElementById('select-all').checked = false;
-        updateBulkActions();
-    }}
+    // No client-side selection tracking needed - server manages state via session
+    // This placeholder ensures template compatibility
 </script>";
     }
     
     /// <summary>
-    /// Generate bulk actions bar UI
+    /// Generate bulk actions bar UI (server-driven with session state)
     /// </summary>
     public static string GenerateBulkActionsBar(string entityName, string entityNameLower)
     {
-        return $@"<!-- Bulk Actions Bar -->
-            <div id=""bulk-actions"" class=""hidden alert alert-info mb-4"">
-                <div class=""flex justify-between items-center w-full"">
-                    <span><strong id=""selected-count"">0</strong> item(s) selected</span>
-                    <div class=""flex gap-2"">
-                        <button onclick=""confirmBulkDelete()"" class=""btn btn-sm btn-error"">
-                            <svg xmlns=""http://www.w3.org/2000/svg"" class=""h-4 w-4"" viewBox=""0 0 20 20"" fill=""currentColor"">
-                                <path fill-rule=""evenodd"" d=""M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"" clip-rule=""evenodd"" />
-                            </svg>
-                            Delete Selected
-                        </button>
-                        <button onclick=""clearSelection()"" class=""btn btn-sm btn-ghost"">
-                            Clear Selection
-                        </button>
+        return $@"<!-- Bulk Actions Bar (Server-Driven) -->
+            @{{
+                var selectedCount = ViewBag.SelectedIds != null ? ((HashSet<int>)ViewBag.SelectedIds).Count : 0;
+            }}
+            @if (selectedCount > 0)
+            {{
+                <div id=""bulk-actions"" class=""alert alert-info mb-4"">
+                    <div class=""flex justify-between items-center w-full"">
+                        <span><strong>@selectedCount</strong> item(s) selected</span>
+                        <div class=""flex gap-2"">
+                            <button hx-post=""@Url.Action(""BulkDelete"", ""{entityName}"")""
+                                    hx-confirm=""Are you sure you want to delete @selectedCount {entityNameLower}(s)? This action cannot be undone.""
+                                    class=""btn btn-sm btn-error"">
+                                <svg xmlns=""http://www.w3.org/2000/svg"" class=""h-4 w-4"" viewBox=""0 0 20 20"" fill=""currentColor"">
+                                    <path fill-rule=""evenodd"" d=""M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"" clip-rule=""evenodd"" />
+                                </svg>
+                                Delete Selected
+                            </button>
+                            <button hx-post=""@Url.Action(""ClearSelection"", ""{entityName}"")""
+                                    class=""btn btn-sm btn-ghost"">
+                                Clear Selection
+                            </button>
+                        </div>
                     </div>
                 </div>
-            </div>";
+            }}";
     }
     
     /// <summary>
-    /// Generate bulk delete confirmation and HTMX script
+    /// Generate bulk delete script (server-driven, no client logic needed)
     /// </summary>
     public static string GenerateBulkDeleteScript(string entityName, string entityNameLower)
     {
         return $@"<script>
-    function confirmBulkDelete() {{
-        const ids = getSelectedIds();
-        if (ids.length === 0) return;
-        
-        if (confirm(`Are you sure you want to delete ${{ids.length}} {entityNameLower}(s)? This action cannot be undone.`)) {{
-            bulkDelete(ids);
-        }}
-    }}
-    
-    function bulkDelete(ids) {{
-        fetch('@Url.Action(""BulkDelete"")', {{
-            method: 'POST',
-            headers: {{
-                'Content-Type': 'application/json',
-                'RequestVerificationToken': document.querySelector('input[name=""__RequestVerificationToken""]')?.value || ''
-            }},
-            body: JSON.stringify(ids)
-        }})
-        .then(response => {{
-            if (response.ok) {{
-                return response.json().then(data => {{
-                    // Trigger list refresh
-                    htmx.trigger('#{entityNameLower}-list', 'refresh{entityName}List');
-                    clearSelection();
-                    
-                    // Trigger toast event (server-driven pattern)
-                    htmx.trigger(document.body, 'showToast', {{
-                        type: 'success',
-                        message: `Successfully deleted ${{data.deleted}} {entityNameLower}(s)`
-                    }});
-                }});
-            }} else {{
-                htmx.trigger(document.body, 'showToast', {{
-                    type: 'error',
-                    message: 'Failed to delete items'
-                }});
-            }}
-        }})
-        .catch(error => {{
-            console.error('Error:', error);
-            htmx.trigger(document.body, 'showToast', {{
-                type: 'error',
-                message: 'An error occurred while deleting items'
-            }});
-        }});
-    }}
+    // Bulk delete is now fully server-driven via HTMX
+    // Server reads selected IDs from session
+    // No client-side ID collection needed
 </script>";
     }
 }

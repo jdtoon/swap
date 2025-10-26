@@ -6,6 +6,15 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services
 builder.Services.AddControllersWithViews();
 
+// Add session support for server-side bulk operations
+builder.Services.AddDistributedMemoryCache();
+builder.Services.AddSession(options =>
+{
+    options.IdleTimeout = TimeSpan.FromMinutes(30);
+    options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true;
+});
+
 // Configure EF Core with {{DatabaseProvider}}
 {{#if_sqlite}}
 builder.Services.AddDbContext<AppDbContext>(options =>
@@ -33,6 +42,8 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 
 app.UseRouting();
+
+app.UseSession(); // Enable session middleware
 
 app.UseAuthorization();
 
