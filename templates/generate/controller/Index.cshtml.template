@@ -62,28 +62,30 @@
 
 @section Scripts {
     <script>
-        // Toast notification handler
-        document.body.addEventListener('showToast', function(event) {
-            const detail = event.detail;
-            const toastContainer = document.getElementById('toast-container');
-            
-            const toast = document.createElement('div');
-            toast.className = `alert alert-${detail.type === 'success' ? 'success' : 'error'} shadow-lg`;
-            toast.innerHTML = `
-                <div>
-                    <span>${detail.message}</span>
-                </div>
-            `;
-            
-            toastContainer.appendChild(toast);
-            
-            // Auto-remove after 3 seconds
-            setTimeout(() => {
-                toast.remove();
-            }, 3000);
+        // HTMX event listener for toast notifications
+        document.body.addEventListener('htmx:trigger', function(event) {
+            if (event.detail.showToast) {
+                const toastData = event.detail.showToast;
+                const toastContainer = document.getElementById('toast-container');
+                
+                const toast = document.createElement('div');
+                toast.className = `alert alert-${toastData.type === 'success' ? 'success' : 'error'} shadow-lg`;
+                toast.innerHTML = `
+                    <div>
+                        <span>${toastData.message}</span>
+                    </div>
+                `;
+                
+                toastContainer.appendChild(toast);
+                
+                // Auto-remove after 3 seconds
+                setTimeout(() => {
+                    toast.remove();
+                }, 3000);
+            }
         });
         
-        // Close modal on success
+        // Close modal on list refresh
         document.body.addEventListener('refresh{{EntityName}}List', function() {
             document.getElementById('modal-container').innerHTML = '';
         });

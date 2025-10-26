@@ -18,7 +18,7 @@ public class {{EntityName}}Controller : Controller
     /// <summary>
     /// Index action with pagination and search support
     /// </summary>
-    public async Task<IActionResult> Index(int pageNumber = 1, int pageSize = 25, string? searchTerm = null)
+    public async Task<IActionResult> Index(int pageNumber = 1, int pageSize = 10, string? searchTerm = null)
     {
         var isHtmxRequest = Request.Headers.ContainsKey("HX-Request");
 

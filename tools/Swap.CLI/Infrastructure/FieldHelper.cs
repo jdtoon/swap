@@ -146,6 +146,20 @@ public static class FieldHelper
                 <span asp-validation-for=""{field.Name}"" class=""text-error text-sm""></span>
             </div>",
             
+            "decimal" or "float" or "double" => $@"<div class=""form-control"">
+                <label class=""label"">
+                    <span class=""label-text"">{field.Name}</span>
+                </label>
+                <input type=""{inputType}"" 
+                       name=""{field.Name}"" 
+                       placeholder=""{field.Name}""
+                       value=""@Model.{field.Name}""
+                       step=""any""
+                       class=""input input-bordered"" 
+                       {required} />
+                <span asp-validation-for=""{field.Name}"" class=""text-error text-sm""></span>
+            </div>",
+            
             _ => $@"<div class=""form-control"">
                 <label class=""label"">
                     <span class=""label-text"">{field.Name}</span>
