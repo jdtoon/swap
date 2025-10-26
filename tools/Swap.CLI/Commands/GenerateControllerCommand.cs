@@ -143,6 +143,13 @@ public static class GenerateControllerCommand
         var detailsFields = string.Join("\n            ", fields.Select(f => FieldHelper.GenerateDetailsField(f)));
         var defaultInitialization = FieldHelper.GenerateDefaultInitialization(fields);
         
+        // Generate bulk operations content
+        var bulkSelectHeader = FieldHelper.GenerateBulkSelectHeader();
+        var bulkSelectCell = FieldHelper.GenerateBulkSelectCell(entityNameLower);
+        var bulkSelectionScript = FieldHelper.GenerateBulkSelectionScript(entityNameLower);
+        var bulkActionsBar = FieldHelper.GenerateBulkActionsBar(entityName, entityNameLower);
+        var bulkDeleteScript = FieldHelper.GenerateBulkDeleteScript(entityName, entityNameLower);
+        
         // Setup template variables
         var variables = new Dictionary<string, string>
         {
@@ -163,7 +170,12 @@ public static class GenerateControllerCommand
             { "TableHeaders", tableHeaders },
             { "TableCells", tableCells },
             { "DetailsFields", detailsFields },
-            { "DefaultInitialization", defaultInitialization }
+            { "DefaultInitialization", defaultInitialization },
+            { "BulkSelectHeader", bulkSelectHeader },
+            { "BulkSelectCell", bulkSelectCell },
+            { "BulkSelectionScript", bulkSelectionScript },
+            { "BulkActionsBar", bulkActionsBar },
+            { "BulkDeleteScript", bulkDeleteScript }
         };
         
         await AnsiConsole.Status()

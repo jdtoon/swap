@@ -508,4 +508,154 @@ public static class FieldHelper
                 </div>
             </div>";
     }
+    
+    /// <summary>
+    /// Generate checkbox column header for bulk selection (Select All)
+    /// </summary>
+    public static string GenerateBulkSelectHeader()
+    {
+        return @"<th>
+                        <input type=""checkbox"" 
+                               id=""select-all"" 
+                               class=""checkbox checkbox-sm""
+                               onclick=""toggleSelectAll(this)"" />
+                    </th>";
+    }
+    
+    /// <summary>
+    /// Generate checkbox cell for bulk selection
+    /// </summary>
+    public static string GenerateBulkSelectCell(string entityNameLower)
+    {
+        return $@"<td>
+                            <input type=""checkbox"" 
+                                   class=""checkbox checkbox-sm {entityNameLower}-checkbox"" 
+                                   value=""@item.Id""
+                                   onclick=""updateBulkActions()"" />
+                        </td>";
+    }
+    
+    /// <summary>
+    /// Generate JavaScript for bulk selection management
+    /// </summary>
+    public static string GenerateBulkSelectionScript(string entityNameLower)
+    {
+        return $@"<script>
+    function toggleSelectAll(checkbox) {{
+        const checkboxes = document.querySelectorAll('.{entityNameLower}-checkbox');
+        checkboxes.forEach(cb => cb.checked = checkbox.checked);
+        updateBulkActions();
+    }}
+    
+    function updateBulkActions() {{
+        const checkboxes = document.querySelectorAll('.{entityNameLower}-checkbox:checked');
+        const bulkActions = document.getElementById('bulk-actions');
+        const selectedCount = document.getElementById('selected-count');
+        
+        if (checkboxes.length > 0) {{
+            bulkActions.classList.remove('hidden');
+            selectedCount.textContent = checkboxes.length;
+        }} else {{
+            bulkActions.classList.add('hidden');
+        }}
+        
+        // Update select-all checkbox state
+        const allCheckboxes = document.querySelectorAll('.{entityNameLower}-checkbox');
+        const selectAllCheckbox = document.getElementById('select-all');
+        if (selectAllCheckbox) {{
+            selectAllCheckbox.checked = allCheckboxes.length > 0 && checkboxes.length === allCheckboxes.length;
+            selectAllCheckbox.indeterminate = checkboxes.length > 0 && checkboxes.length < allCheckboxes.length;
+        }}
+    }}
+    
+    function getSelectedIds() {{
+        const checkboxes = document.querySelectorAll('.{entityNameLower}-checkbox:checked');
+        return Array.from(checkboxes).map(cb => parseInt(cb.value));
+    }}
+    
+    function clearSelection() {{
+        const checkboxes = document.querySelectorAll('.{entityNameLower}-checkbox');
+        checkboxes.forEach(cb => cb.checked = false);
+        document.getElementById('select-all').checked = false;
+        updateBulkActions();
+    }}
+</script>";
+    }
+    
+    /// <summary>
+    /// Generate bulk actions bar UI
+    /// </summary>
+    public static string GenerateBulkActionsBar(string entityName, string entityNameLower)
+    {
+        return $@"<!-- Bulk Actions Bar -->
+            <div id=""bulk-actions"" class=""hidden alert alert-info mb-4"">
+                <div class=""flex justify-between items-center w-full"">
+                    <span><strong id=""selected-count"">0</strong> item(s) selected</span>
+                    <div class=""flex gap-2"">
+                        <button onclick=""confirmBulkDelete()"" class=""btn btn-sm btn-error"">
+                            <svg xmlns=""http://www.w3.org/2000/svg"" class=""h-4 w-4"" viewBox=""0 0 20 20"" fill=""currentColor"">
+                                <path fill-rule=""evenodd"" d=""M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"" clip-rule=""evenodd"" />
+                            </svg>
+                            Delete Selected
+                        </button>
+                        <button onclick=""clearSelection()"" class=""btn btn-sm btn-ghost"">
+                            Clear Selection
+                        </button>
+                    </div>
+                </div>
+            </div>";
+    }
+    
+    /// <summary>
+    /// Generate bulk delete confirmation and HTMX script
+    /// </summary>
+    public static string GenerateBulkDeleteScript(string entityName, string entityNameLower)
+    {
+        return $@"<script>
+    function confirmBulkDelete() {{
+        const ids = getSelectedIds();
+        if (ids.length === 0) return;
+        
+        if (confirm(`Are you sure you want to delete ${{ids.length}} {entityNameLower}(s)? This action cannot be undone.`)) {{
+            bulkDelete(ids);
+        }}
+    }}
+    
+    function bulkDelete(ids) {{
+        fetch('@Url.Action(""BulkDelete"")', {{
+            method: 'POST',
+            headers: {{
+                'Content-Type': 'application/json',
+                'RequestVerificationToken': document.querySelector('input[name=""__RequestVerificationToken""]')?.value || ''
+            }},
+            body: JSON.stringify(ids)
+        }})
+        .then(response => {{
+            if (response.ok) {{
+                // Trigger list refresh
+                htmx.trigger('#{entityNameLower}-list', 'refresh{entityName}List');
+                clearSelection();
+                
+                // Show success toast
+                showToast('success', `Successfully deleted ${{ids.length}} {entityNameLower}(s)`);
+            }} else {{
+                showToast('error', 'Failed to delete items');
+            }}
+        }})
+        .catch(error => {{
+            console.error('Error:', error);
+            showToast('error', 'An error occurred while deleting items');
+        }});
+    }}
+    
+    function showToast(type, message) {{
+        // Simple toast notification
+        const toast = document.createElement('div');
+        toast.className = `alert alert-${{type}} fixed top-4 right-4 w-auto z-50 shadow-lg`;
+        toast.innerHTML = `<span>${{message}}</span>`;
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 3000);
+    }}
+</script>";
+    }
 }

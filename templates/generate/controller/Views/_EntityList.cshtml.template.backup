@@ -11,13 +11,10 @@
 }
 else
 {
-    {{BulkActionsBar}}
-    
     <div class="overflow-x-auto">
         <table class="table table-zebra w-full">
             <thead>
                 <tr>
-                    {{BulkSelectHeader}}
                     {{TableHeaders}}
                     <th class="text-right">Actions</th>
                 </tr>
@@ -26,7 +23,6 @@ else
                 @foreach (var item in Model.Items)
                 {
                     <tr>
-                        {{BulkSelectCell}}
                         {{TableCells}}
                         <td class="text-right">
                             <div class="join">
@@ -66,7 +62,4 @@ else
     </div>
     
     @await Html.PartialAsync("_PaginationControls", Model.Pagination)
-    
-    {{BulkSelectionScript}}
-    {{BulkDeleteScript}}
 }

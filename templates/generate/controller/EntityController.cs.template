@@ -208,6 +208,43 @@ public class {{EntityName}}Controller : Controller
         return Content("");
     }
 
+    /// <summary>
+    /// POST: Bulk delete entities
+    /// </summary>
+    [HttpPost]
+    public async Task<IActionResult> BulkDelete([FromBody] List<int> ids)
+    {
+        if (ids == null || !ids.Any())
+        {
+            return BadRequest("No IDs provided");
+        }
+
+        using var transaction = await _context.Database.BeginTransactionAsync();
+        
+        try
+        {
+            var entitiesToDelete = await _context.{{EntityNamePlural}}
+                .Where(e => ids.Contains(e.Id))
+                .ToListAsync();
+
+            if (!entitiesToDelete.Any())
+            {
+                return NotFound();
+            }
+
+            _context.{{EntityNamePlural}}.RemoveRange(entitiesToDelete);
+            await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
+
+            return Ok(new { deleted = entitiesToDelete.Count });
+        }
+        catch (Exception ex)
+        {
+            await transaction.RollbackAsync();
+            return StatusCode(500, new { error = ex.Message });
+        }
+    }
+
     private bool {{EntityName}}Exists(int id)
     {
         return _context.{{EntityNamePlural}}.Any(e => e.Id == id);

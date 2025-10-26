@@ -63,6 +63,22 @@ public class HomeController : Controller
         return PartialView("_TodoList", _context.TodoItems.ToList());
     }
 
+    [HttpPost]
+    public IActionResult ToggleItem(int id)
+    {
+        var todo = _context.TodoItems.Find(id);
+        if (todo == null)
+        {
+            return NotFound();
+        }
+
+        todo.IsComplete = !todo.IsComplete;
+        _context.SaveChanges();
+
+        // Return just this single item
+        return PartialView("_TodoItem", todo);
+    }
+
     [HttpDelete]
     public IActionResult DeleteTodo(int id)
     {

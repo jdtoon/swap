@@ -1,0 +1,22 @@
+@model TodoItem
+
+<li id="todo-item-@Model.Id" class="flex items-center gap-2 p-3 bg-base-200 rounded-lg">
+    <input type="checkbox" 
+           class="checkbox checkbox-primary"
+           @(Model.IsComplete ? "checked" : "")
+           hx-post="@Url.Action("ToggleItem", new { id = Model.Id })"
+           hx-target="#todo-item-@Model.Id"
+           hx-swap="outerHTML" />
+    
+    <span class="flex-1 @(Model.IsComplete ? "line-through text-gray-500" : "")">
+        @Model.Title
+    </span>
+    
+    <button class="btn btn-sm btn-error"
+            hx-delete="@Url.Action("DeleteTodo", new { id = Model.Id })"
+            hx-target="#todo-list"
+            hx-swap="outerHTML"
+            hx-confirm="Are you sure?">
+        Delete
+    </button>
+</li>
