@@ -537,5 +537,4 @@ swap g m Product --fields Name:string,Price:decimal
 
 - [Generate Controllers](./generate-controller) - Create CRUD controllers for your models
 - [Generate Resources](./generate-resource) - Generate model + controller together
-- [Entity Framework Core](../database/ef-core) - Learn about EF Core configuration
-- [Data Annotations](../database/validation) - Add validation and constraints
+- [CLI Overview](./overview) - All CLI commands and options

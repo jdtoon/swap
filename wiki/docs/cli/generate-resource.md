@@ -415,5 +415,4 @@ swap g r Category --fields Name:string
 
 - [Model Documentation](./generate-model) - Advanced model features
 - [Controller Documentation](./generate-controller) - Controller customization
-- [Database Migrations](../database/migrations) - Working with EF Core migrations
-- [Validation](../database/validation) - Add data validation
+- [CLI Overview](./overview) - All CLI commands
