@@ -7,8 +7,10 @@ services:
       dockerfile: Dockerfile
     ports:
       - "5000:8080"
-      - "5001:8081"
 {{#if_sqlite}}
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:8080
     volumes:
       # Persist SQLite database
       - ./data:/app/data
@@ -16,6 +18,7 @@ services:
 {{#if_sqlserver}}
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:8080
       - ConnectionStrings__DefaultConnection=Server=sqlserver;Database={{ProjectName}};User=sa;Password=YourStrong@Password123;TrustServerCertificate=True
     depends_on:
       - sqlserver
@@ -38,6 +41,7 @@ services:
 {{#if_postgres}}
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:8080
       - ConnectionStrings__DefaultConnection=Host=postgres;Database={{ProjectName}};Username=postgres;Password=YourStrong@Password123
     depends_on:
       - postgres

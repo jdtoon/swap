@@ -182,30 +182,26 @@ public static class NewCommand
             AnsiConsole.WriteLine();
             AnsiConsole.MarkupLine("[green]✓[/] Setup completed!");
             
-            // Run database migrations
+            // Create initial migration (but don't run database update - let the app do it on startup)
             AnsiConsole.WriteLine();
             await AnsiConsole.Status()
-                .StartAsync("Setting up database...", async ctx =>
+                .StartAsync("Creating initial migration...", async ctx =>
                 {
                     try
                     {
                         ctx.Status("Creating initial migration...");
                         await RunCommandAsync("dotnet", "ef migrations add InitialCreate", projectPath);
                         AnsiConsole.MarkupLine("[green]✓[/] Migration created");
-                        
-                        ctx.Status("Updating database...");
-                        await RunCommandAsync("dotnet", "ef database update", projectPath);
-                        AnsiConsole.MarkupLine("[green]✓[/] Database updated");
                     }
                     catch (Exception ex)
                     {
-                        AnsiConsole.MarkupLine($"[red]✗[/] Database setup failed: {ex.Message}");
+                        AnsiConsole.MarkupLine($"[red]✗[/] Migration creation failed: {ex.Message}");
                         throw;
                     }
                 });
                 
             AnsiConsole.WriteLine();
-            AnsiConsole.MarkupLine("[green]✓[/] Database setup completed!");
+            AnsiConsole.MarkupLine("[green]✓[/] Migration ready!");
         }
         catch (Exception)
         {
@@ -216,7 +212,6 @@ public static class NewCommand
             AnsiConsole.MarkupLine("  libman restore");
             AnsiConsole.MarkupLine("  npm run build:css");
             AnsiConsole.MarkupLine("  dotnet ef migrations add InitialCreate");
-            AnsiConsole.MarkupLine("  dotnet ef database update");
             return 1;
         }
             

@@ -30,9 +30,8 @@ RUN dotnet publish "{{ProjectName}}.csproj" -c Release -o /app/publish /p:UseApp
 FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS runtime
 WORKDIR /app
 
-# Expose ports
+# Expose port (HTTP only)
 EXPOSE 8080
-EXPOSE 8081
 
 # Copy published application from build stage
 COPY --from=build /app/publish .
@@ -56,6 +55,5 @@ ENV ConnectionStrings__DefaultConnection="Data Source=/app/data/{{ProjectName}}.
 # Set ASP.NET Core environment
 ENV ASPNETCORE_ENVIRONMENT=Production
 ENV ASPNETCORE_HTTP_PORTS=8080
-ENV ASPNETCORE_HTTPS_PORTS=8081
 
 ENTRYPOINT ["dotnet", "{{ProjectName}}.dll"]

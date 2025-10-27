@@ -13,6 +13,5 @@
 **/*.db
 **/*.db-shm
 **/*.db-wal
-**/Migrations
 README.md
 .editorconfig
