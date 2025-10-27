@@ -68,8 +68,11 @@ node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-package-lock.json
 yarn.lock
+
+# Ignore package-lock.json except in wiki folder (needed for CI/CD)
+package-lock.json
+!wiki/package-lock.json
 
 # Compiled CSS (generated from Tailwind)
 **/wwwroot/css/*.min.css
