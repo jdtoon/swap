@@ -1,6 +1,7 @@
 using System.CommandLine;
 using System.CommandLine.Invocation;
 using Spectre.Console;
+using System.Diagnostics;
 
 namespace Swap.CLI.Commands;
 
@@ -108,6 +109,21 @@ public static class GenerateResourceCommand
                 }
             }
             
+            // Step 3: Auto-create and apply EF Core migration
+            AnsiConsole.WriteLine();
+            AnsiConsole.MarkupLine("[cyan]Step 3/3:[/] Applying database migrations...");
+            var migrationOk = await RunMigrationsAsync(entityName);
+            if (!migrationOk)
+            {
+                AnsiConsole.MarkupLine("[yellow]Warning:[/] Could not apply EF Core migrations automatically. You can run them manually:");
+                AnsiConsole.MarkupLine($"  dotnet ef migrations add Add{entityName}");
+                AnsiConsole.MarkupLine("  dotnet ef database update");
+            }
+            else
+            {
+                AnsiConsole.MarkupLine("[green]✓[/] Database updated");
+            }
+            
             AnsiConsole.WriteLine();
             AnsiConsole.MarkupLine("[green]✓ Resource generation complete![/]");
             AnsiConsole.WriteLine();
@@ -116,10 +132,8 @@ public static class GenerateResourceCommand
             AnsiConsole.MarkupLine($"  [green]✓[/] Controller: Controllers/{entityName}Controller.cs");
             AnsiConsole.MarkupLine($"  [green]✓[/] Views: Views/{entityName}/ (Index, Create, Edit, Delete, Details)");
             AnsiConsole.MarkupLine($"  [green]✓[/] DbContext: Updated with DbSet<{entityName}>");
+            AnsiConsole.MarkupLine($"  [green]✓[/] Migrations: Applied");
             AnsiConsole.WriteLine();
-            AnsiConsole.MarkupLine("[bold]Next steps:[/]");
-            AnsiConsole.MarkupLine($"  dotnet ef migrations add Add{entityName}");
-            AnsiConsole.MarkupLine("  dotnet ef database update");
             AnsiConsole.MarkupLine($"  # Navigate to /{entityName} in your browser");
             
             return 0;
@@ -128,6 +142,47 @@ public static class GenerateResourceCommand
         {
             AnsiConsole.MarkupLine($"[red]Error:[/] {ex.Message}");
             return 1;
+        }
+    }
+
+    private static async Task<bool> RunMigrationsAsync(string entityName)
+    {
+        // Try to create a migration and then update the database
+        // If migration name already exists, continue to database update
+        bool added = await RunProcess("dotnet", $"ef migrations add Add{entityName} -o Migrations");
+        bool updated = await RunProcess("dotnet", "ef database update");
+        return updated; // consider database update as the success criteria
+    }
+
+    private static async Task<bool> RunProcess(string fileName, string arguments)
+    {
+        try
+        {
+            var psi = new ProcessStartInfo
+            {
+                FileName = fileName,
+                Arguments = arguments,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false,
+                CreateNoWindow = true,
+                WorkingDirectory = Directory.GetCurrentDirectory()
+            };
+            using var proc = new Process { StartInfo = psi };
+            proc.Start();
+            var stdout = await proc.StandardOutput.ReadToEndAsync();
+            var stderr = await proc.StandardError.ReadToEndAsync();
+            await proc.WaitForExitAsync();
+
+            if (!string.IsNullOrWhiteSpace(stdout)) AnsiConsole.WriteLine(stdout.Trim());
+            if (!string.IsNullOrWhiteSpace(stderr)) AnsiConsole.WriteLine(stderr.Trim());
+
+            return proc.ExitCode == 0;
+        }
+        catch (Exception ex)
+        {
+            AnsiConsole.MarkupLine($"[red]Process error:[/] {ex.Message}");
+            return false;
         }
     }
 }

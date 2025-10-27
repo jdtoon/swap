@@ -301,7 +301,7 @@ public class {{EntityName}}Controller : Controller
         
         if (!string.IsNullOrWhiteSpace(searchTerm))
         {
-            query = query.Where(x => x.Name.ToLower().Contains(searchTerm.ToLower()));
+            {{SearchLogic}}
         }
 
         query = ApplyFilters(query{{FilterParameterValues}});

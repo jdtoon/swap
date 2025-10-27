@@ -199,7 +199,7 @@ public static class FieldHelper
                 <input type=""{inputType}"" 
                        name=""{field.Name}"" 
                        placeholder=""{field.Name}""
-                       value=""@Model.{field.Name}""
+                       value=""@Model.{field.Name}.ToString(""G29"", System.Globalization.CultureInfo.InvariantCulture)""
                        step=""any""
                        class=""input input-bordered"" 
                        {required} />
@@ -423,6 +423,9 @@ public static class FieldHelper
                         <label class=""label"">
                             <span class=""label-text"">{f.Name}</span>
                         </label>
+                        @{{
+                            var {paramName}Value = Model.Filters.TryGetValue(""{paramName}"", out var filterVal) ? filterVal : """";
+                        }}
                         <select name=""{paramName}"" 
                                 class=""select select-bordered w-full""
                                 hx-get=""@Url.Action(""Index"")""
@@ -430,9 +433,9 @@ public static class FieldHelper
                                 hx-swap=""innerHTML""
                                 hx-include=""[name='searchTerm'], [name='pageSize'], [name='sortBy'], [name='sortOrder'], [name='{paramName}']""
                                 hx-trigger=""change"">
-                            <option value="""">All</option>
-                            <option value=""true"">Yes</option>
-                            <option value=""false"">No</option>
+                            <option value="""" selected=""@(string.IsNullOrEmpty({paramName}Value) ? """"selected"""" : null)"">All</option>
+                            <option value=""true"" selected=""@({paramName}Value == """"true"""" ? """"selected"""" : null)"">Yes</option>
+                            <option value=""false"" selected=""@({paramName}Value == """"false"""" ? """"selected"""" : null)"">No</option>
                         </select>
                     </div>";
         });
