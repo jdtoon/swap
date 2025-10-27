@@ -199,7 +199,7 @@ public static class FieldHelper
                 <input type=""{inputType}"" 
                        name=""{field.Name}"" 
                        placeholder=""{field.Name}""
-                       value=""@Model.{field.Name}""
+                       value=""@Model.{field.Name}.ToString(""G29"", System.Globalization.CultureInfo.InvariantCulture)""
                        step=""any""
                        class=""input input-bordered"" 
                        {required} />
