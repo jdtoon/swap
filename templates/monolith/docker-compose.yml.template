@@ -11,9 +11,16 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_URLS=http://+:8080
+      - DOTNET_RUNNING_IN_CONTAINER=true
     volumes:
       # Persist SQLite database
-      - ./data:/app/data
+      - sqlite-data:/app/data
+      # Persist data protection keys
+      - key-storage:/app/keys
+
+volumes:
+  sqlite-data:
+  key-storage:
 {{/if_sqlite}}
 {{#if_sqlserver}}
     environment:
