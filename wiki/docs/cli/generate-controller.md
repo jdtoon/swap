@@ -72,7 +72,8 @@ Add `?` after the type name to make it nullable:
 --fields "Description:string? Notes:string?"
 ```
 
-**Field Flags:**
+### Field Flags
+
 Control sorting and filtering behavior per field:
 
 - `:sortable` or `:s` - Enable sorting (default for all fields)
