@@ -12,8 +12,10 @@
             
             <div class="modal-action">
                 <button type="button" 
-                        class="btn" 
-                        onclick="document.getElementById('modal-container').innerHTML = ''">
+                        class="btn"
+                        hx-post="@Url.Action("CloseModal")"
+                        hx-target="#modal-container"
+                        hx-swap="innerHTML">
                     Cancel
                 </button>
                 <button type="submit" class="btn btn-primary">
@@ -22,5 +24,8 @@
             </div>
         </form>
     </div>
-    <div class="modal-backdrop" onclick="document.getElementById('modal-container').innerHTML = ''"></div>
+    <div class="modal-backdrop" 
+         hx-post="@Url.Action("CloseModal")"
+         hx-target="#modal-container"
+         hx-swap="innerHTML"></div>
 </div>

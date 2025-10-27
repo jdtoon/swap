@@ -363,6 +363,15 @@ public class {{EntityName}}Controller : Controller
         return Ok();
     }
 
+    /// <summary>
+    /// POST: Close modal
+    /// </summary>
+    [HttpPost]
+    public IActionResult CloseModal()
+    {
+        return Content(""); // Return empty string to clear modal container
+    }
+
     private bool {{EntityName}}Exists(int id)
     {
         return _context.{{EntityNamePlural}}.Any(e => e.Id == id);

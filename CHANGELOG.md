@@ -9,6 +9,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added - Week 1 Day 2: Server-Driven Bulk Operations Architecture (2025-10-27)
+- **Session-Based State**: Selections stored in server session, not client-side
+- **Session Middleware**: Added AddSession() + UseSession() to Program.cs template
+- **SessionExtensions Helper**: JSON serialization helpers for session storage (SetObject/GetObject)
+- **ToggleSelection Action**: Individual checkbox POST handler with session toggle
+- **BulkActionsBar Action**: GET endpoint to render fresh bulk actions UI
+- **Event-Based Coordination**: HX-Trigger: selectionChanged for automatic UI sync
+- **Zero Client JavaScript**: Removed all bulk operation JavaScript (getSelectedIds, updateBulkActions, etc.)
+- **Checkbox Partial View**: _EntityCheckboxCell.cshtml.template for OOB swaps
+- **Bulk Actions Partial**: _BulkActionsBar.cshtml.template with event listener
+- **HTMX Event Listeners**: hx-trigger="selectionChanged from:body" for reactive updates
+- **Session Persistence**: Selections survive page refresh, navigation, and back button
+- **BulkDelete Update**: Reads selected IDs from session instead of request body
+- **FieldHelper Updates**: GenerateBulkActionsBar() now includes event attributes
+- **Template Controller Updates**: EntityController.cs.template with new actions
+- **GenerateControllerCommand Update**: Generates _BulkActionsBar.cshtml file
+- **Documentation**: Comprehensive server-driven architecture section in bulk-operations.md
+- **Architecture Benefits**: 
+  - Session persistence (selections survive navigation)
+  - No client-side state management needed
+  - Automatic UI synchronization via HTMX events
+  - Server-side validation and authorization
+  - Simplified testing (no browser automation)
+  - Declarative behavior via HTML attributes
+- **Migration Path**: Documented upgrade guide for existing projects
+- **Network Pattern**: Individual POST per checkbox + GET for bulk bar (event-driven)
+- **CLI Rebuild**: Version 0.0.1 updated and reinstalled globally
+
 ### Added - Phase 4: Advanced List Management (Sorting, Filtering & Bulk Operations) ✅
 
 #### Toast Notification System (2025-10-26)
@@ -52,6 +80,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - GenerateBulkDeleteScript(): Bulk delete fetch logic with notifications
 - **GenerateControllerCommand Updates**: Variables for bulk operation tokens
 - **Example Usage**: Select items → "Delete Selected" → Confirm → Toast → Refresh
+- **Note**: Refactored to server-driven architecture on 2025-10-27 (see above)
 
 #### Phase 4.3: Field-Level Flags (2025-10-26)
 - **Field Control Flags**: Developer control over sortable/filterable behavior per field

@@ -156,6 +156,535 @@ Generates a Product list with:
 
 ---
 
+## Server-Driven Architecture
+
+**Feature Status**: ✅ Available (Week 1 Day 2 - October 27, 2025)
+
+As of Week 1 Day 2, bulk operations have been refactored to use a **server-driven architecture** with session-based state management. This provides better reliability, session persistence, and eliminates client-side state synchronization issues.
+
+### Architecture Overview
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    USER INTERACTION                              │
+└───────────────────────────┬─────────────────────────────────────┘
+                            │
+                    Click Checkbox
+                            │
+                            ▼
+┌─────────────────────────────────────────────────────────────────┐
+│              POST /Product/ToggleSelection/4                     │
+│                      (HTMX Request)                              │
+└───────────────────────────┬─────────────────────────────────────┘
+                            │
+                            ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                  CONTROLLER ACTION                               │
+│  1. Get HashSet<int> from Session["Product_Selection"]         │
+│  2. Toggle ID (add if absent, remove if present)                │
+│  3. Save HashSet back to Session                                │
+│  4. Set ViewBag.SelectedIds for view rendering                  │
+│  5. Return PartialView("_ProductCheckboxCell", id)              │
+│  6. Add Header: HX-Trigger: selectionChanged                    │
+└───────────────────────────┬─────────────────────────────────────┘
+                            │
+              ┌─────────────┴─────────────┐
+              │                           │
+              ▼                           ▼
+┌──────────────────────────┐  ┌──────────────────────────┐
+│  Updated Checkbox HTML   │  │  HX-Trigger Event        │
+│  (checked/unchecked)     │  │  "selectionChanged"      │
+│  → Swaps in table cell   │  │  → Broadcast to page     │
+└──────────────────────────┘  └────────┬─────────────────┘
+                                       │
+                                       ▼
+                    ┌─────────────────────────────────┐
+                    │  #bulk-actions div listening    │
+                    │  hx-trigger="selectionChanged   │
+                    │              from:body"         │
+                    └────────┬────────────────────────┘
+                             │
+                             ▼
+              ┌──────────────────────────────────────┐
+              │  GET /Product/BulkActionsBar         │
+              │         (HTMX Request)               │
+              └────────┬─────────────────────────────┘
+                       │
+                       ▼
+              ┌──────────────────────────────────────┐
+              │  CONTROLLER ACTION                   │
+              │  1. Get HashSet from Session         │
+              │  2. Set ViewBag.SelectedIds          │
+              │  3. Return PartialView               │
+              │     ("_BulkActionsBar")              │
+              └────────┬─────────────────────────────┘
+                       │
+                       ▼
+              ┌──────────────────────────────────────┐
+              │  Fresh Bulk Actions Bar HTML         │
+              │  - Shows count if > 0                │
+              │  - Shows Delete/Clear buttons        │
+              │  - Hidden if count = 0               │
+              │  → Swaps entire #bulk-actions div    │
+              └──────────────────────────────────────┘
+```
+
+### Key Components
+
+#### 1. Session Storage
+
+**SessionExtensions.cs** provides JSON serialization helpers:
+```csharp
+public static class SessionExtensions
+{
+    public static void SetObject<T>(this ISession session, string key, T value)
+    {
+        session.SetString(key, JsonSerializer.Serialize(value));
+    }
+    
+    public static T? GetObject<T>(this ISession session, string key)
+    {
+        var value = session.GetString(key);
+        return value == null ? default : JsonSerializer.Deserialize<T>(value);
+    }
+}
+```
+
+**Program.cs** configures session middleware:
+```csharp
+// Add services
+builder.Services.AddDistributedMemoryCache();
+builder.Services.AddSession(options =>
+{
+    options.IdleTimeout = TimeSpan.FromMinutes(30);
+    options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true;
+});
+
+// Use middleware (BEFORE UseAuthorization)
+app.UseSession();
+```
+
+#### 2. Controller Actions
+
+**ToggleSelection** - Handles individual checkbox clicks:
+```csharp
+[HttpPost]
+public IActionResult ToggleSelection(int id)
+{
+    // Get or create selection set
+    var selectedIds = HttpContext.Session.GetObject<HashSet<int>>("Product_Selection") 
+        ?? new HashSet<int>();
+    
+    // Toggle the ID
+    if (selectedIds.Contains(id))
+        selectedIds.Remove(id);
+    else
+        selectedIds.Add(id);
+    
+    // Save back to session
+    HttpContext.Session.SetObject("Product_Selection", selectedIds);
+    
+    // Prepare view data
+    ViewBag.SelectedIds = selectedIds;
+    ViewBag.EntityId = id;
+    
+    // Trigger bulk actions bar update
+    Response.Headers.Append("HX-Trigger", "selectionChanged");
+    
+    return PartialView("_ProductCheckboxCell", id);
+}
+```
+
+**BulkActionsBar** - Returns fresh bulk actions UI:
+```csharp
+[HttpGet]
+public IActionResult BulkActionsBar()
+{
+    var selectedIds = HttpContext.Session.GetObject<HashSet<int>>("Product_Selection") 
+        ?? new HashSet<int>();
+    ViewBag.SelectedIds = selectedIds;
+    
+    return PartialView("_BulkActionsBar");
+}
+```
+
+**BulkDelete** - Reads from session (not request body):
+```csharp
+[HttpPost]
+public async Task<IActionResult> BulkDelete()
+{
+    // Read selected IDs from session
+    var selectedIds = HttpContext.Session.GetObject<HashSet<int>>("Product_Selection");
+    
+    if (selectedIds == null || !selectedIds.Any())
+        return BadRequest("No items selected");
+    
+    using var transaction = await _context.Database.BeginTransactionAsync();
+    try
+    {
+        var entitiesToDelete = await _context.Products
+            .Where(e => selectedIds.Contains(e.Id))
+            .ToListAsync();
+        
+        _context.Products.RemoveRange(entitiesToDelete);
+        await _context.SaveChangesAsync();
+        await transaction.CommitAsync();
+        
+        // Clear selection after successful deletion
+        HttpContext.Session.Remove("Product_Selection");
+        
+        // Trigger refresh and toast
+        Response.Headers.Append("HX-Trigger", JsonSerializer.Serialize(new
+        {
+            refreshProductList = new { },
+            showToast = new
+            {
+                type = "success",
+                message = $"Successfully deleted {entitiesToDelete.Count} product(s)"
+            }
+        }));
+        
+        return Ok();
+    }
+    catch (Exception ex)
+    {
+        await transaction.RollbackAsync();
+        Response.Headers.Append("HX-Trigger", JsonSerializer.Serialize(new
+        {
+            showToast = new { type = "error", message = "Failed to delete items" }
+        }));
+        return StatusCode(500);
+    }
+}
+```
+
+#### 3. View Components
+
+**_ProductCheckboxCell.cshtml** - Individual checkbox partial:
+```html
+@model int
+
+@{
+    var entityNameLower = ViewContext.RouteData.Values["controller"]?.ToString()?.ToLower() ?? "entity";
+    var entityId = Model;
+    var isSelected = ViewBag.SelectedIds != null && 
+                     ((HashSet<int>)ViewBag.SelectedIds).Contains(entityId);
+}
+
+<td id="@(entityNameLower)-checkbox-@entityId">
+    <input type="checkbox" 
+           class="checkbox checkbox-sm"
+           hx-post="@Url.Action("ToggleSelection", new { id = entityId })"
+           hx-target="#@(entityNameLower)-checkbox-@entityId"
+           hx-swap="outerHTML"
+           @(isSelected ? "checked" : "") />
+</td>
+```
+
+**_BulkActionsBar.cshtml** - Bulk actions UI with event listener:
+```html
+@{
+    var selectedCount = ViewBag.SelectedIds != null ? 
+                       ((HashSet<int>)ViewBag.SelectedIds).Count : 0;
+}
+
+<div id="bulk-actions" 
+     hx-get="@Url.Action("BulkActionsBar", "Product")" 
+     hx-trigger="selectionChanged from:body" 
+     hx-swap="outerHTML">
+    @if (selectedCount > 0)
+    {
+        <div class="alert alert-info mb-4">
+            <div class="flex justify-between items-center w-full">
+                <span><strong>@selectedCount</strong> item(s) selected</span>
+                <div class="flex gap-2">
+                    <button hx-post="@Url.Action("BulkDelete", "Product")"
+                            hx-confirm="Are you sure you want to delete @selectedCount product(s)?"
+                            class="btn btn-sm btn-error">
+                        Delete Selected
+                    </button>
+                    <button hx-post="@Url.Action("ClearSelection", "Product")"
+                            class="btn btn-sm btn-ghost">
+                        Clear Selection
+                    </button>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+```
+
+### Benefits of Server-Driven Architecture
+
+#### 1. **Session Persistence**
+- Selections survive page refreshes (F5)
+- Selections persist across navigation (e.g., edit → back to list)
+- Server is single source of truth
+- No client-side localStorage needed
+
+**Example:**
+```
+User checks items 1, 2, 3
+User navigates to edit item 4
+User clicks back button
+Items 1, 2, 3 still checked! ✅
+```
+
+#### 2. **No Client-Side State Management**
+- Zero JavaScript for state synchronization
+- No `getSelectedIds()` function needed
+- No DOM queries for checked checkboxes
+- HTMX handles all coordination
+
+**Before (Client-Side):**
+```javascript
+function getSelectedIds() {
+    const checkboxes = document.querySelectorAll('.product-checkbox:checked');
+    return Array.from(checkboxes).map(cb => parseInt(cb.value));
+}
+
+function updateBulkActions() {
+    const ids = getSelectedIds();
+    const count = ids.length;
+    // ... update UI
+}
+```
+
+**After (Server-Driven):**
+```javascript
+// No JavaScript needed! 🎉
+// Server manages state, HTMX handles updates
+```
+
+#### 3. **Automatic UI Synchronization**
+- Event-based coordination via `HX-Trigger: selectionChanged`
+- Bulk actions bar automatically updates on any checkbox change
+- No manual DOM manipulation
+- Declarative HTML attributes handle behavior
+
+**HTMX Attributes:**
+```html
+<!-- Checkbox triggers event -->
+hx-post="@Url.Action("ToggleSelection", new { id = entityId })"
+Response.Headers.Append("HX-Trigger", "selectionChanged");
+
+<!-- Bulk actions listens for event -->
+hx-trigger="selectionChanged from:body"
+hx-get="@Url.Action("BulkActionsBar")"
+```
+
+#### 4. **Server Control & Validation**
+- Server validates all operations
+- Authorization checks centralized
+- Audit logging easier (single source)
+- Business rules enforced server-side
+
+**Example Authorization:**
+```csharp
+[Authorize(Roles = "Admin")]
+[HttpPost]
+public IActionResult ToggleSelection(int id)
+{
+    // Only admins can select items
+    // Enforced on every click
+}
+```
+
+#### 5. **Simplified Testing**
+- Test controller actions directly
+- No browser automation needed
+- Mock session for unit tests
+- Integration tests verify full flow
+
+**Example Test:**
+```csharp
+[Fact]
+public async Task ToggleSelection_AddsIdToSession()
+{
+    // Arrange
+    var session = new MockSession();
+    var controller = new ProductController(context) { Session = session };
+    
+    // Act
+    var result = controller.ToggleSelection(5);
+    
+    // Assert
+    var selectedIds = session.GetObject<HashSet<int>>("Product_Selection");
+    Assert.Contains(5, selectedIds);
+}
+```
+
+### Comparison: Client-Side vs Server-Driven
+
+| Aspect | Client-Side (Old) | Server-Driven (New) |
+|--------|-------------------|---------------------|
+| **State Storage** | Browser DOM / localStorage | Server session |
+| **Persistence** | Lost on page refresh | Survives navigation & refresh |
+| **JavaScript Required** | ~100 lines | ~0 lines |
+| **Synchronization** | Manual DOM queries | Automatic via HTMX events |
+| **Authorization** | Client-side only | Server enforces |
+| **Testing** | Browser automation | Unit/integration tests |
+| **Network Requests** | Bulk POST with IDs | Individual POST + GET |
+| **Session Timeout** | N/A | 30 minutes (configurable) |
+| **Multi-Tab Support** | Independent per tab | Shared across tabs (same session) |
+
+### Event Flow Diagram
+
+```
+USER CLICKS CHECKBOX
+        │
+        ▼
+  ┌──────────────────────┐
+  │  HTMX POST Request   │
+  │  /ToggleSelection/4  │
+  └──────────┬───────────┘
+             │
+             ▼
+  ┌─────────────────────────────┐
+  │  Controller Action          │
+  │  - Read session             │
+  │  - Toggle ID in HashSet     │
+  │  - Save session             │
+  │  - Return checkbox HTML     │
+  │  - Send HX-Trigger header   │
+  └──────────┬──────────────────┘
+             │
+     ┌───────┴────────┐
+     │                │
+     ▼                ▼
+┌─────────┐    ┌──────────────┐
+│Checkbox │    │  HTMX Event  │
+│  HTML   │    │  Broadcast   │
+│ Updates │    │"selectionChgd"│
+└─────────┘    └──────┬───────┘
+                      │
+                      ▼
+            ┌──────────────────────┐
+            │ Bulk Actions Div     │
+            │ Hears Event          │
+            │ hx-trigger listening │
+            └──────┬───────────────┘
+                   │
+                   ▼
+            ┌──────────────────────┐
+            │ HTMX GET Request     │
+            │ /BulkActionsBar      │
+            └──────┬───────────────┘
+                   │
+                   ▼
+            ┌──────────────────────┐
+            │ Controller Action    │
+            │ - Read session       │
+            │ - Count selections   │
+            │ - Render bar HTML    │
+            └──────┬───────────────┘
+                   │
+                   ▼
+            ┌──────────────────────┐
+            │ Fresh Bar HTML       │
+            │ - Show/hide based    │
+            │   on count           │
+            │ - Swap entire div    │
+            └──────────────────────┘
+```
+
+### Migration Guide
+
+If you have existing bulk operations using the client-side approach, here's how to migrate:
+
+#### 1. Update Program.cs
+```csharp
+// Add session services
+builder.Services.AddDistributedMemoryCache();
+builder.Services.AddSession(options =>
+{
+    options.IdleTimeout = TimeSpan.FromMinutes(30);
+    options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true;
+});
+
+// Add middleware (before UseAuthorization)
+app.UseSession();
+```
+
+#### 2. Create SessionExtensions.cs
+```csharp
+using System.Text.Json;
+
+namespace YourProject.Extensions
+{
+    public static class SessionExtensions
+    {
+        public static void SetObject<T>(this ISession session, string key, T value)
+        {
+            session.SetString(key, JsonSerializer.Serialize(value));
+        }
+        
+        public static T? GetObject<T>(this ISession session, string key)
+        {
+            var value = session.GetString(key);
+            return value == null ? default : JsonSerializer.Deserialize<T>(value);
+        }
+    }
+}
+```
+
+#### 3. Update Controller Actions
+- Add `ToggleSelection(int id)` action
+- Add `BulkActionsBar()` action
+- Update `BulkDelete()` to read from session instead of `[FromBody]`
+- Update `Index` to pass `ViewBag.SelectedIds` to view
+
+#### 4. Create Partial Views
+- Create `_EntityCheckboxCell.cshtml` for individual checkboxes
+- Create `_BulkActionsBar.cshtml` for bulk actions UI
+
+#### 5. Update List View
+- Replace inline bulk actions with `_BulkActionsBar` partial
+- Update checkboxes to use HTMX POST
+
+#### 6. Remove Client JavaScript
+- Delete `getSelectedIds()` function
+- Delete `updateBulkActions()` function
+- Delete `toggleSelectAll()` function (if using server-driven select-all)
+- Keep only toast notification handlers
+
+### Configuration Options
+
+#### Session Timeout
+```csharp
+builder.Services.AddSession(options =>
+{
+    options.IdleTimeout = TimeSpan.FromMinutes(60); // Default: 30
+});
+```
+
+#### Session Storage Provider
+```csharp
+// In-memory (default, dev only)
+builder.Services.AddDistributedMemoryCache();
+
+// Redis (production recommended)
+builder.Services.AddStackExchangeRedisCache(options =>
+{
+    options.Configuration = "localhost:6379";
+});
+
+// SQL Server
+builder.Services.AddDistributedSqlServerCache(options =>
+{
+    options.ConnectionString = "...";
+    options.SchemaName = "dbo";
+    options.TableName = "Sessions";
+});
+```
+
+#### Multi-Server Considerations
+For load-balanced environments, use a shared session store (Redis/SQL Server) so selections persist across server instances.
+
+---
+
 ## User Experience
 
 ### Visual States
