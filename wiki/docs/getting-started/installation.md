@@ -56,7 +56,7 @@ For contributors or local builds:
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/toonjd/swap.git
+git clone https://github.com/jdtoon/swap.git
 cd swap
 ```
 
@@ -145,3 +145,4 @@ dotnet tool install -g Swap.CLI
 
 - [Your First Project](./first-project) - Build a simple CRUD app
 - [CLI Reference](../cli/overview) - Complete command documentation
+

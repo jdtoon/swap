@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed - Repository Rebrand & Documentation Update (2025-10-27)
 - **Repository Rename**: netmx → swap across all files and URLs
-- **Git Remote**: Updated to https://github.com/toonjd/swap.git
+- **Git Remote**: Updated to https://github.com/jdtoon/swap.git
 - **Solution File**: Renamed netmx.sln → swap.sln
 - **Product Vision**: Removed all framework comparisons (Rails, Laravel, ABP)
   - Shifted messaging from "Rails of .NET" to unique HTMX + DaisyUI value
@@ -587,12 +587,13 @@ MIT License - See [LICENSE](../LICENSE) for details.
 ---
 
 **Maintained By**: Swap Team  
-**Repository**: https://github.com/toonjd/Swap  
+**Repository**: https://github.com/jdtoon/Swap  
 **Documentation**: https://Swap.dev/docs/cli (planned)  
-**Issues**: https://github.com/toonjd/Swap/issues
+**Issues**: https://github.com/jdtoon/Swap/issues
 
 ---
 
 **Last Updated**: October 21, 2025  
 **Current Version**: 0.1.0-dev  
 **Status**: Phase 2C Complete ✅
+

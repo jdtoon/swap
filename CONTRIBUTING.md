@@ -265,7 +265,7 @@ When updating docs:
 
 ## ❓ Questions?
 
-- Open an [issue](https://github.com/toonjd/swap/issues) with the `question` label
+- Open an [issue](https://github.com/jdtoon/swap/issues) with the `question` label
 - Check existing issues and discussions first
 
 ## 📄 License
@@ -275,3 +275,4 @@ By contributing, you agree that your contributions will be licensed under the MI
 ---
 
 Thank you for contributing to Swap CLI! 🙏
+

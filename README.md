@@ -1,6 +1,6 @@
 # Swap CLI
 
-[![Build Status](https://github.com/toonjd/swap/actions/workflows/ci-build.yml/badge.svg)](https://github.com/toonjd/swap/actions)
+[![Build Status](https://github.com/jdtoon/swap/actions/workflows/ci-build.yml/badge.svg)](https://github.com/jdtoon/swap/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![.NET 9.0](https://img.shields.io/badge/.NET-9.0-purple.svg)](https://dotnet.microsoft.com/download)
 
@@ -172,9 +172,9 @@ swap g r BlogPost --fields "Title:string Content:string PublishedDate:DateTime"
 
 ## 📚 Documentation
 
-- **[Getting Started](https://toonjd.github.io/swap/)** - Complete setup guide
-- **[CLI Reference](https://toonjd.github.io/swap/docs/cli/overview)** - All commands and options
-- **[Features Guide](https://toonjd.github.io/swap/docs/features/pagination)** - Pagination, search, sorting, filtering
+- **[Getting Started](https://jdtoon.github.io/swap/)** - Complete setup guide
+- **[CLI Reference](https://jdtoon.github.io/swap/docs/cli/overview)** - All commands and options
+- **[Features Guide](https://jdtoon.github.io/swap/docs/features/pagination)** - Pagination, search, sorting, filtering
 - **[Pattern Library](docs/PATTERNS-LIBRARY.md)** - 30+ proven HTMX patterns
 - **[The Product Vision](docs/THE-PRODUCT.md)** - Philosophy and approach
 
@@ -188,7 +188,7 @@ swap g r BlogPost --fields "Title:string Content:string PublishedDate:DateTime"
 
 ```bash
 # Clone the repository
-git clone https://github.com/toonjd/swap.git
+git clone https://github.com/jdtoon/swap.git
 cd swap
 
 # Build the CLI tool
@@ -285,17 +285,17 @@ See the complete [roadmap](docs/ROADMAP.md) for details.
 
 ## 💬 Community
 
-- **Documentation**: https://toonjd.github.io/swap/
-- **GitHub Issues**: https://github.com/toonjd/swap/issues
+- **Documentation**: https://jdtoon.github.io/swap/
+- **GitHub Issues**: https://github.com/jdtoon/swap/issues
 - **GitHub Discussions**: Coming soon
 
-For questions or feedback, open an [issue](https://github.com/toonjd/swap/issues)!
+For questions or feedback, open an [issue](https://github.com/jdtoon/swap/issues)!
 
 ## 🔗 Links
 
-- **Documentation**: https://toonjd.github.io/swap/
-- **GitHub**: https://github.com/toonjd/swap
-- **Issues**: https://github.com/toonjd/swap/issues
+- **Documentation**: https://jdtoon.github.io/swap/
+- **GitHub**: https://github.com/jdtoon/swap
+- **Issues**: https://github.com/jdtoon/swap/issues
 - **NuGet** (coming soon): https://www.nuget.org/packages/Swap.CLI
 
 ---
@@ -303,4 +303,5 @@ For questions or feedback, open an [issue](https://github.com/toonjd/swap/issues
 **Built with ❤️ for the .NET community**
 
 *Swap CLI - Generate production-ready ASP.NET + HTMX applications in seconds.*
+
 

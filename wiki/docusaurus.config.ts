@@ -15,14 +15,14 @@ const config: Config = {
   },
 
   // Set the production url of your site here
-  url: 'https://toonjd.github.io',
+  url: 'https://jdtoon.github.io',
   // Set the /<baseUrl>/ pathname under which your site is served
   // For GitHub pages deployment, it is often '/<projectName>/'
   baseUrl: '/swap/',
 
   // GitHub pages deployment config.
   // If you aren't using GitHub pages, you don't need these.
-  organizationName: 'toonjd', // Usually your GitHub org/user name.
+  organizationName: 'jdtoon', // Usually your GitHub org/user name.
   projectName: 'swap', // Usually your repo name.
 
   onBrokenLinks: 'throw',
@@ -42,7 +42,7 @@ const config: Config = {
         docs: {
           sidebarPath: './sidebars.ts',
           editUrl:
-            'https://github.com/toonjd/swap/tree/develop/wiki/',
+            'https://github.com/jdtoon/swap/tree/develop/wiki/',
         },
         blog: false,
         theme: {
@@ -72,7 +72,7 @@ const config: Config = {
           label: 'Documentation',
         },
         {
-          href: 'https://github.com/toonjd/swap-cli',
+          href: 'https://github.com/jdtoon/swap-cli',
           label: 'GitHub',
           position: 'right',
         },
@@ -99,7 +99,7 @@ const config: Config = {
           items: [
             {
               label: 'GitHub',
-              href: 'https://github.com/toonjd/swap-cli',
+              href: 'https://github.com/jdtoon/swap-cli',
             },
             {
               label: 'ASP.NET Core',
@@ -122,3 +122,4 @@ const config: Config = {
 };
 
 export default config;
+
