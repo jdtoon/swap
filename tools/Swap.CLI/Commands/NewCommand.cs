@@ -174,33 +174,61 @@ public static class NewCommand
                         }
                         catch (Exception ex)
                         {
-                            AnsiConsole.MarkupLine($"[red]✗[/] CSS build failed: {ex.Message}");
-                            throw;
-                        }
-                    });
-                
-                AnsiConsole.WriteLine();
-                AnsiConsole.MarkupLine("[green]✓[/] Setup completed!");
-            }
-            catch (Exception)
-            {
-                AnsiConsole.WriteLine();
-                AnsiConsole.MarkupLine("[red]✗ Setup failed. Please run the setup commands manually:[/]");
-                AnsiConsole.MarkupLine($"  cd {name}");
-                AnsiConsole.MarkupLine("  npm install");
-                AnsiConsole.MarkupLine("  libman restore");
-                AnsiConsole.MarkupLine("  npm run build:css");
-                return 1;
-            }
+                    AnsiConsole.MarkupLine($"[red]✗[/] CSS build failed: {ex.Message}");
+                    throw;
+                }
+            });
             
             AnsiConsole.WriteLine();
-            AnsiConsole.MarkupLine("[bold]Next steps:[/]");
+            AnsiConsole.MarkupLine("[green]✓[/] Setup completed!");
+            
+            // Run database migrations
+            AnsiConsole.WriteLine();
+            await AnsiConsole.Status()
+                .StartAsync("Setting up database...", async ctx =>
+                {
+                    try
+                    {
+                        ctx.Status("Creating initial migration...");
+                        await RunCommandAsync("dotnet", "ef migrations add InitialCreate", projectPath);
+                        AnsiConsole.MarkupLine("[green]✓[/] Migration created");
+                        
+                        ctx.Status("Updating database...");
+                        await RunCommandAsync("dotnet", "ef database update", projectPath);
+                        AnsiConsole.MarkupLine("[green]✓[/] Database updated");
+                    }
+                    catch (Exception ex)
+                    {
+                        AnsiConsole.MarkupLine($"[red]✗[/] Database setup failed: {ex.Message}");
+                        throw;
+                    }
+                });
+                
+            AnsiConsole.WriteLine();
+            AnsiConsole.MarkupLine("[green]✓[/] Database setup completed!");
+        }
+        catch (Exception)
+        {
+            AnsiConsole.WriteLine();
+            AnsiConsole.MarkupLine("[red]✗ Setup failed. Please run the setup commands manually:[/]");
             AnsiConsole.MarkupLine($"  cd {name}");
+            AnsiConsole.MarkupLine("  npm install");
+            AnsiConsole.MarkupLine("  libman restore");
+            AnsiConsole.MarkupLine("  npm run build:css");
             AnsiConsole.MarkupLine("  dotnet ef migrations add InitialCreate");
             AnsiConsole.MarkupLine("  dotnet ef database update");
-            AnsiConsole.MarkupLine("  dotnet run");
+            return 1;
+        }
             
-            return 0;
+            AnsiConsole.WriteLine();
+            AnsiConsole.MarkupLine("[bold green]🎉 Project ready![/]");
+            AnsiConsole.WriteLine();
+            AnsiConsole.MarkupLine("[bold]Run your application:[/]");
+            AnsiConsole.MarkupLine($"  cd {name}");
+            AnsiConsole.MarkupLine("  dotnet run");
+            AnsiConsole.WriteLine();
+            AnsiConsole.MarkupLine("[dim]Then visit: http://localhost:5000[/]");
+                        return 0;
         }
         catch (Exception ex)
         {
@@ -275,10 +303,15 @@ public static class NewCommand
     {
         try
         {
+            // On Windows, npm is a PowerShell script, so we need to use cmd or pwsh to run it
+            var isWindows = OperatingSystem.IsWindows();
+            var fileName = isWindows ? "cmd.exe" : command;
+            var arguments = isWindows ? $"/c {command} --version" : "--version";
+            
             var processStartInfo = new System.Diagnostics.ProcessStartInfo
             {
-                FileName = command,
-                Arguments = "--version",
+                FileName = fileName,
+                Arguments = arguments,
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
                 UseShellExecute = false,
@@ -299,10 +332,21 @@ public static class NewCommand
     
     private static async Task RunCommandAsync(string command, string arguments, string workingDirectory)
     {
+        // On Windows, npm/npx are PowerShell scripts, so we need to use cmd to run them
+        var isWindows = OperatingSystem.IsWindows();
+        var fileName = command;
+        var args = arguments;
+        
+        if (isWindows && (command == "npm" || command == "npx"))
+        {
+            fileName = "cmd.exe";
+            args = $"/c {command} {arguments}";
+        }
+        
         var processStartInfo = new System.Diagnostics.ProcessStartInfo
         {
-            FileName = command,
-            Arguments = arguments,
+            FileName = fileName,
+            Arguments = args,
             WorkingDirectory = workingDirectory,
             RedirectStandardOutput = true,
             RedirectStandardError = true,
