@@ -304,7 +304,7 @@ public class {{EntityName}}Controller : Controller
             query = query.Where(x => x.Name.ToLower().Contains(searchTerm.ToLower()));
         }
 
-        query = ApplyFilters(query{{FilterArguments}});
+        query = ApplyFilters(query{{FilterParameterValues}});
 
         var currentPageIds = await query
             .Skip((pageNumber - 1) * pageSize)
@@ -335,7 +335,7 @@ public class {{EntityName}}Controller : Controller
         HttpContext.Session.SetObject("{{EntityName}}_Selection", selectedIds);
 
         // Return updated list with selection state
-        return await Index(pageNumber, pageSize, searchTerm, sortBy, sortOrder{{FilterArguments}});
+        return await Index(pageNumber, pageSize, searchTerm, sortBy, sortOrder{{FilterParameterValues}});
     }
 
     /// <summary>
