@@ -1,15 +1,17 @@
 @model List<TodoItem>
 
-<ul class="space-y-2">
-    @if (!Model.Any())
-    {
-        <li class="text-gray-500 italic">No todos yet. Add one above!</li>
-    }
-    else
-    {
-        @foreach (var item in Model)
+<div id="todo-list">
+    <ul class="space-y-2">
+        @if (!Model.Any())
         {
-            @await Html.PartialAsync("_TodoItem", item)
+            <li class="text-gray-500 italic">No todos yet. Add one above!</li>
         }
-    }
-</ul>
+        else
+        {
+            @foreach (var item in Model)
+            {
+                @await Html.PartialAsync("_TodoItem", item)
+            }
+        }
+    </ul>
+</div>
