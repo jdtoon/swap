@@ -9,6 +9,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.4] - 2025-10-27
+
+### Added - Docker Support
+- Docker-ready templates for generated apps with multi-stage Dockerfile
+  - Build: .NET SDK 9.0 + Node 20 + libman CLI; automatic libman restore and Tailwind build
+  - Runtime: ASP.NET minimal runtime; HTTP-only for Development
+  - Preserves wwwroot assets across stages
+- docker-compose templates with health checks and proper startup ordering
+  - SQL Server: sqlcmd-based health check; service_healthy depends_on
+  - PostgreSQL: pg_isready health check; service_healthy depends_on
+  - SQLite: named volume for DB; shared named volume for DataProtection keys
+- Data Protection keys persisted in containers (Program.cs template persists to /app/keys when running in Docker)
+- .dockerignore template includes Migrations to enable auto-migration
+
+### Fixed - HTMX Todo List Bug
+- Views template: ensured the HTMX target element remains stable across swaps
+  - Moved `<div id="todo-list">` wrapper into `_TodoList.cshtml.template`
+  - Removed duplicate wrapper from `Index.cshtml.template`
+
+### Changed
+- New command no longer applies `dotnet ef database update` during scaffolding; migrations are created and applied at runtime in Development
+
+### Docs
+- README and wiki updated to reflect Docker-ready status, health checks, auto-migrations, and libman usage
+
+### CI
+- Added PR workflow to build the Docusaurus wiki on changes under `wiki/**`
+
 ### Fixed - HTMX Todo List Bug (2025-10-27)
 - **_TodoList.cshtml.template**: Fixed HTMX target element disappearing
   - Moved `<div id="todo-list">` wrapper into partial view
