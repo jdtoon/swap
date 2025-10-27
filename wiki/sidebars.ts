@@ -35,6 +35,13 @@ const sidebars: SidebarsConfig = {
         'cli/generate-resource',
       ],
     },
+    {
+      type: 'category',
+      label: 'Deployment',
+      items: [
+        'deployment/docker',
+      ],
+    },
   ],
 };
 

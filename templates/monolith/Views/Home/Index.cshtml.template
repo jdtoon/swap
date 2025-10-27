@@ -35,9 +35,7 @@
         </form>
 
         <!-- Todo List -->
-        <div id="todo-list">
-            @await Html.PartialAsync("_TodoList", Model)
-        </div>
+        @await Html.PartialAsync("_TodoList", Model)
     </div>
 </div>
 

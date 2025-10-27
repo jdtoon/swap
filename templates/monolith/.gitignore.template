@@ -43,3 +43,8 @@ wwwroot/lib/
 *.swp
 *.swo
 *~
+
+# Docker
+{{#if_sqlite}}
+data/
+{{/if_sqlite}}

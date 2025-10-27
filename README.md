@@ -13,8 +13,9 @@ Swap CLI is a code generator that creates complete, modern web applications usin
 
 - **⚡ Production-Ready Code** - Generate complete CRUD with modals, pagination, sorting, filtering, and search
 - **🎯 HTMX Simplicity** - Modern, interactive web apps without JavaScript frameworks
-- **� DaisyUI + Tailwind** - Beautiful, accessible components out of the box
+- **🎨 DaisyUI + Tailwind** - Beautiful, accessible components out of the box
 - **🗄️ Entity Framework Core** - Full database integration with migrations support
+- **🐳 Docker Ready** - Every project includes Dockerfile and docker-compose.yml with multi-stage builds
 - **💻 Developer Experience** - CLI-driven workflow, no manual boilerplate
 - **📦 Proven Patterns** - Every pattern extracted from real production applications
 
@@ -85,6 +86,82 @@ Visit `http://localhost:5000/Product` - Full CRUD with pagination, search, sorti
 
 **No manual file creation. No boilerplate. Just CLI commands and business logic.**
 
+## 🐳 Docker Support
+
+Every generated project is Docker-ready with production-optimized configurations.
+
+### Quick Start with Docker
+
+```bash
+# Create a new project
+swap new MyApp --database postgres
+
+# Build and run with Docker Compose
+cd MyApp
+docker-compose up --build
+
+# Visit http://localhost:5000
+```
+
+### What's Included
+
+Each project generates:
+
+**Dockerfile:**
+- Multi-stage build (Build stage: .NET SDK 9.0 + Node.js 20.x, Runtime stage: ASP.NET 9.0)
+- Automatic `libman restore` for HTMX/DaisyUI libraries
+- Tailwind CSS compilation with `npm run build:css`
+- Optimized layer caching for faster rebuilds
+- HTTP-only configuration for Development environment
+- Production-ready runtime image
+
+**docker-compose.yml:**
+- App service with environment-specific configuration
+- Database service (SQL Server, PostgreSQL, or SQLite with volumes)
+- Health checks ensuring database readiness before app starts
+- Persistent volumes for data and data protection keys
+- Network isolation for security
+- Port mappings (app: 5000, database: default port)
+
+**Features:**
+- ✅ Auto-apply migrations on container startup
+- ✅ Database health checks (SQL Server: 30s, PostgreSQL: 10s)
+- ✅ Data protection keys persist across container restarts
+- ✅ SQLite with persistent volume mount
+- ✅ Environment variable configuration
+- ✅ Production-ready Dockerfile optimizations
+
+### Database-Specific Configurations
+
+**SQL Server:**
+```bash
+swap new MyApp --database sqlserver
+cd MyApp
+docker-compose up --build
+# App: http://localhost:5000
+# SQL Server: localhost:1433
+```
+
+**PostgreSQL:**
+```bash
+swap new MyApp --database postgres
+cd MyApp
+docker-compose up --build
+# App: http://localhost:5000
+# PostgreSQL: localhost:5432
+```
+
+**SQLite:**
+```bash
+swap new MyApp --database sqlite
+cd MyApp
+docker-compose up --build
+# App: http://localhost:5000
+# Database: Persistent volume at /app/data
+```
+
+All database credentials are pre-configured in docker-compose.yml (change for production!).
+
 ## 🎯 What You Get
 
 ### Complete Feature Set
@@ -109,6 +186,7 @@ Every generated controller includes:
 - **Database:** Entity Framework Core (SQLite, SQL Server, PostgreSQL)
 - **UI Library:** DaisyUI 4.x components
 - **Styling:** Tailwind CSS 3.x utilities
+- **Containerization:** Docker with multi-stage builds and health checks
 
 ## 📋 CLI Commands
 
@@ -117,16 +195,34 @@ Every generated controller includes:
 Create a new ASP.NET Core + HTMX application with DaisyUI components.
 
 ```bash
+# Create with SQLite (default)
 swap new MyApp
+
+# Create with SQL Server
+swap new MyApp --database sqlserver
+
+# Create with PostgreSQL
+swap new MyApp --database postgres
 ```
 
 **Generates:**
 - Complete ASP.NET Core MVC project structure
-- Entity Framework Core with SQLite (configurable)
+- Entity Framework Core with your chosen database
 - DaisyUI + Tailwind CSS configuration
 - Sample TodoItem model and CRUD
-- Database migrations
-- Ready to run immediately
+- Database migrations with auto-apply on startup
+- **Dockerfile** with multi-stage build (Node.js + .NET SDK → ASP.NET runtime)
+- **docker-compose.yml** with database service and health checks
+- **.dockerignore** optimized for ASP.NET Core
+- Ready to run with `dotnet run` or `docker-compose up`
+
+**Docker Features:**
+- Multi-stage build optimized for production
+- libman restore for HTMX/DaisyUI dependencies
+- Automatic migration on container startup
+- Health checks for database readiness
+- Persistent volumes for data storage
+- Data protection keys configured for containers
 
 ### `swap generate controller <name> --fields <fields>`
 

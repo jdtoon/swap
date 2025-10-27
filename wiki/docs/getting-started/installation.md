@@ -12,6 +12,11 @@ Install Swap CLI and set up your development environment.
 - **Git** - For version control
 - **Visual Studio 2022**, **VS Code**, or **Rider** - Recommended IDEs
 
+### Optional but Recommended
+
+- **Node.js** - Required for Tailwind CSS compilation ([Download](https://nodejs.org/))
+- **Docker** - For containerized deployment ([Download](https://www.docker.com/products/docker-desktop))
+
 ### Verify .NET Installation
 
 ```bash
