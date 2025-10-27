@@ -1,0 +1,27 @@
+using {{ProjectName}}.Data;
+using {{ProjectName}}.Models;
+using Bogus;
+using Microsoft.EntityFrameworkCore;
+
+namespace {{ProjectName}}.Data.Seeders;
+
+public static class {{EntityName}}Seeder
+{
+    public static async Task SeedAsync(AppDbContext db, IServiceProvider services, int count = {{SeedCount}}, string locale = "{{SeedLocale}}", bool ifEmpty = {{SeedIfEmpty}})
+    {
+        if (ifEmpty && await db.{{EntityNamePlural}}.AnyAsync())
+        {
+            return; // already seeded
+        }
+
+        // Preload foreign key id lists
+{{ForeignKeyPrelude}}
+
+        var faker = new Faker<{{ProjectName}}.Models.{{EntityName}}>(locale)
+{{FakerRules}};
+
+        var items = faker.Generate(count);
+        await db.{{EntityNamePlural}}.AddRangeAsync(items);
+        await db.SaveChangesAsync();
+    }
+}

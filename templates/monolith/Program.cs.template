@@ -1,4 +1,5 @@
 using {{ProjectName}}.Data;
+using {{ProjectName}}.Data.Seeders;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.DataProtection;
 
@@ -54,6 +55,26 @@ if (app.Environment.IsDevelopment())
     {
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         db.Database.Migrate();
+
+        // Development seeding (controlled via env/config)
+        try
+        {
+            var services = scope.ServiceProvider;
+            var seedCountEnv = Environment.GetEnvironmentVariable("SEED_COUNT");
+            var seedLocaleEnv = Environment.GetEnvironmentVariable("SEED_LOCALE");
+            var seedIfEmptyEnv = Environment.GetEnvironmentVariable("SEED_IFEMPTY");
+
+            var seedCount = int.TryParse(seedCountEnv, out var c) ? c : 50;
+            var seedLocale = string.IsNullOrWhiteSpace(seedLocaleEnv) ? "en" : seedLocaleEnv;
+            var seedIfEmpty = string.IsNullOrWhiteSpace(seedIfEmptyEnv) ? true :
+                seedIfEmptyEnv.Equals("true", StringComparison.OrdinalIgnoreCase) || seedIfEmptyEnv == "1";
+
+            await SeedRunner.RunAsync(db, services, seedCount, seedLocale, seedIfEmpty);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Seeding error: {ex.Message}");
+        }
     }
 }
 
