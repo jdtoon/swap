@@ -1,0 +1,76 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "5000:8080"
+      - "5001:8081"
+{{#if_sqlite}}
+    volumes:
+      # Persist SQLite database
+      - ./data:/app/data
+{{/if_sqlite}}
+{{#if_sqlserver}}
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database={{ProjectName}};User=sa;Password=YourStrong@Password123;TrustServerCertificate=True
+    depends_on:
+      - sqlserver
+    networks:
+      - {{ProjectNameLower}}-network
+
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=YourStrong@Password123
+      - MSSQL_PID=Developer
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqlserver-data:/var/opt/mssql
+    networks:
+      - {{ProjectNameLower}}-network
+{{/if_sqlserver}}
+{{#if_postgres}}
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Host=postgres;Database={{ProjectName}};Username=postgres;Password=YourStrong@Password123
+    depends_on:
+      - postgres
+    networks:
+      - {{ProjectNameLower}}-network
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      - POSTGRES_DB={{ProjectName}}
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=YourStrong@Password123
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - {{ProjectNameLower}}-network
+{{/if_postgres}}
+
+{{#if_sqlserver}}
+networks:
+  {{ProjectNameLower}}-network:
+    driver: bridge
+
+volumes:
+  sqlserver-data:
+{{/if_sqlserver}}
+{{#if_postgres}}
+networks:
+  {{ProjectNameLower}}-network:
+    driver: bridge
+
+volumes:
+  postgres-data:
+{{/if_postgres}}

@@ -18,6 +18,7 @@ Swap generates ASP.NET Core projects with HTMX-powered views using proven patter
 - **Create CRUD controllers** with modals, pagination, sorting, and filtering
 - **DaisyUI + Tailwind CSS** for modern, accessible UI components
 - **Entity Framework Core** integration included
+- **Docker-ready** - Every project includes Dockerfile and docker-compose.yml
 - **Pattern-driven** - Every generated file uses battle-tested patterns
 
 ## Quick Start

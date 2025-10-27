@@ -135,6 +135,25 @@ The Index view uses HTMX for zero-reload interactions:
 </div>
 ```
 
+## Docker Support
+
+Every project is **Docker-ready** out of the box! The following files are automatically generated:
+
+- **Dockerfile** - Multi-stage build optimized for production
+- **docker-compose.yml** - Complete development environment with database
+- **.dockerignore** - Optimized build context
+
+```bash
+# Run with Docker Compose (includes database)
+docker-compose up -d
+
+# Or build and run manually
+docker build -t myapp .
+docker run -d -p 5000:8080 myapp
+```
+
+See the [Docker Deployment Guide](/docs/deployment/docker) for details.
+
 ## Next Steps
 
 After creating your project:

@@ -9,6 +9,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added - Docker Support (2025-10-27)
+- **Dockerfile Template**: Multi-stage build with Node.js for Tailwind CSS compilation
+  - Build stage: .NET SDK 9.0 + Node.js 20.x for CSS builds
+  - Runtime stage: Minimal ASP.NET runtime image
+  - Database-specific environment variable handling
+- **docker-compose.yml Template**: Complete development environment
+  - SQLite: Volume mounting for persistent database
+  - SQL Server: Dedicated SQL Server 2022 container with network
+  - PostgreSQL: PostgreSQL 16 Alpine container with network
+- **.dockerignore Template**: Optimized build context (excludes bin/, obj/, node_modules/, etc.)
+- **README.md Template**: Docker usage instructions with database-specific examples
+  - Quick start commands for Docker and Docker Compose
+  - Migration execution instructions for containers
+  - Security warnings for default passwords
+  - Production deployment guidance
+- **Wiki Documentation**: New deployment section
+  - Comprehensive Docker deployment guide
+  - Cloud deployment examples (Azure, AWS, Google Cloud)
+  - Troubleshooting and best practices
+  - Performance optimization tips
+- **Sidebar Update**: Added Deployment category to wiki navigation
+
 ### Changed - Repository Rebrand & Documentation Update (2025-10-27)
 - **Repository Rename**: netmx → swap across all files and URLs
 - **Git Remote**: Updated to https://github.com/jdtoon/swap.git

@@ -1,0 +1,61 @@
+# Build stage
+FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
+
+# Install Node.js for Tailwind CSS build
+RUN apt-get update && apt-get install -y curl && \
+    curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
+    apt-get install -y nodejs && \
+    rm -rf /var/lib/apt/lists/*
+
+WORKDIR /src
+
+# Copy project file and restore dependencies
+COPY ["{{ProjectName}}.csproj", "./"]
+RUN dotnet restore "{{ProjectName}}.csproj"
+
+# Copy package.json and install npm dependencies
+COPY ["package.json", "./"]
+RUN npm install
+
+# Copy the rest of the application
+COPY . .
+
+# Build CSS (Tailwind)
+RUN npm run build:css
+
+# Build and publish the application
+RUN dotnet publish "{{ProjectName}}.csproj" -c Release -o /app/publish /p:UseAppHost=false
+
+# Runtime stage
+FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS runtime
+WORKDIR /app
+
+# Expose ports
+EXPOSE 8080
+EXPOSE 8081
+
+# Copy published application from build stage
+COPY --from=build /app/publish .
+
+{{#if_sqlite}}
+# For SQLite: Create directory for database file
+RUN mkdir -p /app/data
+ENV ConnectionStrings__DefaultConnection="Data Source=/app/data/{{ProjectName}}.db"
+
+{{/if_sqlite}}
+{{#if_sqlserver}}
+# For SQL Server: Connection string should be passed via environment variable
+# Example: docker run -e "ConnectionStrings__DefaultConnection=Server=sqlserver;Database={{ProjectName}};User=sa;Password=YourPassword"
+
+{{/if_sqlserver}}
+{{#if_postgres}}
+# For PostgreSQL: Connection string should be passed via environment variable
+# Example: docker run -e "ConnectionStrings__DefaultConnection=Host=postgres;Database={{ProjectName}};Username=postgres;Password=YourPassword"
+
+{{/if_postgres}}
+# Set ASP.NET Core environment
+ENV ASPNETCORE_ENVIRONMENT=Production
+ENV ASPNETCORE_HTTP_PORTS=8080
+ENV ASPNETCORE_HTTPS_PORTS=8081
+
+ENTRYPOINT ["dotnet", "{{ProjectName}}.dll"]
