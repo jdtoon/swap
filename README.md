@@ -1,304 +1,283 @@
-# Swap Framework
+# Swap CLI
 
-[![Build Status](https://github.com/toonjd/Swap/actions/workflows/ci-build.yml/badge.svg)](https://github.com/toonjd/Swap/actions)
+[![Build Status](https://github.com/toonjd/swap/actions/workflows/ci-build.yml/badge.svg)](https://github.com/toonjd/swap/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![.NET 9.0](https://img.shields.io/badge/.NET-9.0-purple.svg)](https://dotnet.microsoft.com/download)
 
-**A pure, modular, HTMX-first framework for building web applications with ASP.NET Core.**
+**Generate production-ready ASP.NET Core + HTMX applications with beautiful DaisyUI components.**
 
-Swap is designed around a simple principle: **framework first, features optional**. It provides the infrastructure you need without forcing features you don't want, letting you build exactly the application you need.
+Swap CLI is a code generator that creates complete, modern web applications using ASP.NET Core MVC, HTMX for interactivity, DaisyUI for UI components, and Entity Framework Core for data access. Generate full CRUD operations with pagination, search, sorting, filtering, and modal-based editing in seconds.
 
 ## 🌟 Why Swap?
 
-- **🎯 Zero JavaScript Frameworks** - Pure server-rendered HTML with HTMX for interactivity
-- **🧩 True Modularity** - Every feature is an optional module you can add or remove
-- **🏗️ DDD-First** - Built on Domain-Driven Design principles with clean architecture
-- **⚡ Event-Driven** - Loosely coupled components via HTMX events (monolith-first, scalable to distributed)
-- **💻 Developer Experience** - Strong typing, IntelliSense, CLI scaffolding, and excellent tooling
+- **⚡ Production-Ready Code** - Generate complete CRUD with modals, pagination, sorting, filtering, and search
+- **🎯 HTMX Simplicity** - Modern, interactive web apps without JavaScript frameworks
+- **� DaisyUI + Tailwind** - Beautiful, accessible components out of the box
+- **🗄️ Entity Framework Core** - Full database integration with migrations support
+- **💻 Developer Experience** - CLI-driven workflow, no manual boilerplate
+- **📦 Proven Patterns** - Every pattern extracted from real production applications
 
 ## 🚀 Quick Start
 
-**From zero to HTMX app in 5 minutes!** See [QUICK-START.md](docs/QUICK-START.md) for detailed guide.
-
-### 1. Install CLI
+### Installation
 
 ```bash
-# Install Swap CLI globally
-dotnet tool install --global Swap.CLI
+# Install the Swap CLI tool
+dotnet tool install --global Swap.CLI --prerelease
 
 # Verify installation
-Swap --help
+swap --version
 ```
 
-### 2. Create Project
+### Create Your First Project
 
 ```bash
-# Clone template (dotnet templates coming soon)
-git clone https://github.com/Swap-framework/template-modular.git MyApp
+# Create a new ASP.NET Core + HTMX application
+swap new MyApp
 cd MyApp
+
+# Apply migrations and run
+dotnet ef database update
+dotnet run
 ```
 
-### 3. Start Database
+Visit `http://localhost:5000` - Your HTMX-powered application is running! 🎉
+
+### Generate Your First CRUD
 
 ```bash
-# Using Docker (recommended)
-docker-compose up -d db
-```
+# Generate a complete CRUD controller with all features
+swap generate controller Product --fields "Name:string Price:decimal InStock:bool:f"
 
-### 4. Generate Your First Feature
+# Short alias
+swap g c Product --fields "Name:string Price:decimal InStock:bool:f"
 
-```bash
-cd src/MyApp.Web
-
-# Generate complete CRUD with HTMX patterns
-Swap generate feature Product
-
-# Add DbSet to AppDbContext, then migrate
+# Update database
 dotnet ef migrations add AddProduct
 dotnet ef database update
 ```
 
-### 5. Run!
-
-```bash
-dotnet run
-```
-
-Visit `http://localhost:5263/Product` - Your HTMX-powered CRUD is ready! 🎉
+Visit `http://localhost:5000/Product` - Full CRUD with pagination, search, sorting, and filtering! 🚀
 
 **No manual file creation. No boilerplate. Just CLI commands and business logic.**
 
-## 📦 Framework Packages
+## 🎯 What You Get
 
-Swap consists of 10 core packages, all available on [NuGet.org](https://www.nuget.org/packages?q=Swap):
+### Complete Feature Set
 
-| Package | Description | Version |
-|---------|-------------|---------|
-| **Swap.Core** | Core abstractions and DI patterns | [![NuGet](https://img.shields.io/nuget/v/Swap.Core.svg)](https://www.nuget.org/packages/Swap.Core) |
-| **Swap.Events** | Type-safe event names for HTMX communication | [![NuGet](https://img.shields.io/nuget/v/Swap.Events.svg)](https://www.nuget.org/packages/Swap.Events) |
-| **Swap.Ddd.Domain** | DDD building blocks (entities, aggregates, repositories) | [![NuGet](https://img.shields.io/nuget/v/Swap.Ddd.Domain.svg)](https://www.nuget.org/packages/Swap.Ddd.Domain) |
-| **Swap.Ddd.Application.Contracts** | DTOs and service interfaces | [![NuGet](https://img.shields.io/nuget/v/Swap.Ddd.Application.Contracts.svg)](https://www.nuget.org/packages/Swap.Ddd.Application.Contracts) |
-| **Swap.Ddd.Application** | Application services and use cases | [![NuGet](https://img.shields.io/nuget/v/Swap.Ddd.Application.svg)](https://www.nuget.org/packages/Swap.Ddd.Application) |
-| **Swap.Data** | Data access abstractions | [![NuGet](https://img.shields.io/nuget/v/Swap.Data.svg)](https://www.nuget.org/packages/Swap.Data) |
-| **Swap.EntityFrameworkCore** | EF Core integration with DDD support | [![NuGet](https://img.shields.io/nuget/v/Swap.EntityFrameworkCore.svg)](https://www.nuget.org/packages/Swap.EntityFrameworkCore) |
-| **Swap.AspNetCore.Core** | ASP.NET Core middleware and extensions | [![NuGet](https://img.shields.io/nuget/v/Swap.AspNetCore.Core.svg)](https://www.nuget.org/packages/Swap.AspNetCore.Core) |
-| **Swap.AspNetCore.Mvc** | MVC extensions and HTMX helpers | [![NuGet](https://img.shields.io/nuget/v/Swap.AspNetCore.Mvc.svg)](https://www.nuget.org/packages/Swap.AspNetCore.Mvc) |
-| **Swap.Htmx** | Strongly-typed HTMX helpers | [![NuGet](https://img.shields.io/nuget/v/Swap.Htmx.svg)](https://www.nuget.org/packages/Swap.Htmx) |
+Every generated controller includes:
 
-## 🎨 HTMX-First Philosophy
+- ✅ **CRUD Operations** - Create, Read, Update, Delete via HTMX modals
+- ✅ **Pagination** - Configurable page sizes (10, 25, 50, 100)
+- ✅ **Real-Time Search** - 500ms debounced search across fields
+- ✅ **Column Sorting** - Ascending/descending toggle per field
+- ✅ **Boolean Filtering** - Dropdown filters (All/Yes/No) for bool fields
+- ✅ **Bulk Operations** - Select multiple items and bulk delete
+- ✅ **Toast Notifications** - Success/error messages with DaisyUI alerts
+- ✅ **Modal Editing** - No page reloads, smooth UX
+- ✅ **Validation** - Client and server-side with clear error messages
+- ✅ **Responsive Design** - Works perfectly on mobile and desktop
 
-Swap embraces [HTMX](https://htmx.org) for building interactive UIs without heavy JavaScript frameworks:
+### Generated Stack
 
-```html
-<!-- View: Clean, declarative HTMX attributes -->
-<button hx-delete="/api/users/@user.Id" 
-        hx-target="#user-row-@user.Id"
-        hx-swap="outerHTML"
-        hx-confirm="Are you sure?">
-    Delete
-</button>
+- **Backend:** ASP.NET Core 9.0 MVC
+- **Frontend:** HTMX + DaisyUI + Tailwind CSS
+- **Database:** Entity Framework Core (SQLite, SQL Server, PostgreSQL)
+- **UI Library:** DaisyUI 4.x components
+- **Styling:** Tailwind CSS 3.x utilities
+
+## 📋 CLI Commands
+
+### `swap new <name>`
+
+Create a new ASP.NET Core + HTMX application with DaisyUI components.
+
+```bash
+swap new MyApp
 ```
 
-```csharp
-// Controller: Type-safe event names
-using Swap.AspNetCore.Mvc.Htmx;
-using Swap.Events;
+**Generates:**
+- Complete ASP.NET Core MVC project structure
+- Entity Framework Core with SQLite (configurable)
+- DaisyUI + Tailwind CSS configuration
+- Sample TodoItem model and CRUD
+- Database migrations
+- Ready to run immediately
 
-[HttpDelete("/api/users/{id}")]
-public IActionResult Delete(Guid id)
-{
-    _userService.Delete(id);
-    
-    // No magic strings! IntelliSense-supported event names
-    this.HxTrigger(DomainEvents.User.Deleted, new { userId = id });
-    this.HxReswap(HtmxSwap.Delete);
-    
-    return Ok();
-}
+### `swap generate controller <name> --fields <fields>`
+
+Generate a complete CRUD controller with all features.
+
+```bash
+# Generate Product controller with fields
+swap g c Product --fields "Name:string Price:decimal InStock:bool:f"
+
+# With nullable fields
+swap g c Customer --fields "Name:string Email:string Notes:string?"
+
+# Control sorting and filtering per field
+swap g c Order --fields "OrderNumber:string:ns Total:decimal Date:DateTime Status:bool:f"
 ```
 
-```html
-<!-- View: Type-safe event listening -->
-@using Swap.Events
+**Field Flags:**
+- `:sortable` or `:s` - Enable sorting (default for all fields)
+- `:nosort` or `:ns` - Disable sorting
+- `:filterable` or `:f` - Enable filtering (bool fields only)
 
-<div hx-get="/api/stats" 
-     hx-trigger="@DomainEvents.User.Deleted from:body">
-    <!-- Auto-refreshes when user deleted -->
-</div>
+**Generates:**
+- Controller with full CRUD operations
+- Model class with validation
+- View model for list operations
+- Views (Index, _List, _CreateModal, _EditModal, _DetailsModal)
+- Automatic DbContext updates
+
+### `swap generate model <name> --fields <fields>`
+
+Generate just a model class (no controller or views).
+
+```bash
+swap g m Category --fields "Name:string Description:string?"
 ```
 
-**Benefits:**
-- ✅ Server-rendered HTML (SEO-friendly, fast initial load)
-- ✅ Progressive enhancement (works without JavaScript)
-- ✅ Type-safe server-side code (compile-time errors, IntelliSense)
-- ✅ **Type-safe events** (no magic strings, refactoring-safe)
-- ✅ Simple mental model (HTML over the wire)
-- ✅ Excellent performance (minimal client-side overhead)
+### `swap generate resource <name> --fields <fields>`
 
-## 🧩 Optional Modules
+Generate model + controller together (alias for backward compatibility).
 
-All features are packaged as optional modules you can mix and match:
-
-### Available Now
-- **Identity** - User management, authentication, roles
-
-### Coming Soon (Phase 2)
-- **Audit Logging** - Entity change tracking and user actions
-- **Background Jobs** - Task scheduling with Hangfire/Quartz
-- **File Storage** - Local, Azure Blob, AWS S3
-- **Email/Notifications** - SMTP, SendGrid, templating
-- **CMS** - Content management with inline editing
-
-### Future (Phase 3+)
-- **Multi-Tenancy** - Tenant isolation and management
-- **Workflow Engine** - Visual designer, approvals
-- **Reporting** - Report designer, scheduled reports
-- **API Gateway** - Rate limiting, authentication
-
-See the complete [roadmap](docs/ROADMAP.md) for details.
-
-## 🏗️ Architecture
-
-Swap follows a clean, 4-layer architecture for each module:
-
+```bash
+swap g r BlogPost --fields "Title:string Content:string PublishedDate:DateTime"
 ```
-modules/
-└── Identity/                    # Example module
-    ├── Identity.Core/           # Domain layer (entities, value objects)
-    ├── Identity.Contracts/      # Application contracts (DTOs, interfaces)
-    ├── Identity.Application/    # Application layer (services, use cases)
-    └── Identity.Web/            # Presentation layer (controllers, views)
-```
-
-**Key Principles:**
-- 🎯 **Domain-Driven Design** - Rich domain models, not anemic entities
-- 🔌 **Dependency Inversion** - Depend on abstractions, not implementations
-- 📦 **Separation of Concerns** - Clear boundaries between layers
-- 🔄 **Event-Driven** - Loose coupling via domain events
 
 ## 📚 Documentation
 
-- **[Getting Started](docs/QUICK-START-SETUP.md)** - Complete setup guide
-- **[Roadmap](docs/ROADMAP.md)** - Project vision and progress tracking
-- **[GitHub Setup](docs/GITHUB-SETUP.md)** - CI/CD and deployment guide
-- **[Architecture Guidelines](.github/copilot-instructions.md)** - Development standards
-- **[Contributing](CONTRIBUTING.md)** - How to contribute
+- **[Getting Started](https://toonjd.github.io/swap/)** - Complete setup guide
+- **[CLI Reference](https://toonjd.github.io/swap/docs/cli/overview)** - All commands and options
+- **[Features Guide](https://toonjd.github.io/swap/docs/features/pagination)** - Pagination, search, sorting, filtering
+- **[Pattern Library](docs/PATTERNS-LIBRARY.md)** - 30+ proven HTMX patterns
+- **[The Product Vision](docs/THE-PRODUCT.md)** - Philosophy and approach
 
 ## 🛠️ Development
 
 ### Prerequisites
-- .NET 9.0 SDK
-- PostgreSQL 16+ (or use Docker)
-- Your favorite IDE (VS 2022, VS Code, Rider)
+- .NET 9.0 SDK or later
+- Your favorite IDE (Visual Studio 2022, VS Code, Rider)
 
-### Building from Source
+### Building the CLI from Source
 
 ```bash
 # Clone the repository
-git clone https://github.com/toonjd/Swap.git
-cd Swap
+git clone https://github.com/toonjd/swap.git
+cd swap
 
-# Build the framework
-dotnet build framework/Swap.sln
+# Build the CLI tool
+cd tools/Swap.CLI
+dotnet build
 
-# Run tests (when available)
+# Run tests
+cd ../Swap.CLI.Tests
 dotnet test
 
-# Build and run the template
-cd templates/modular
-dotnet build SwapApp.sln
-cd src/SwapApp.Web
-dotnet run
+# Install locally for testing
+cd ../Swap.CLI
+dotnet pack
+dotnet tool install --global --add-source ./nupkg Swap.CLI
 ```
 
 ### Project Structure
 
 ```
-Swap/
-├── framework/           # Core framework packages (10 packages)
-├── modules/             # Optional feature modules (Identity, etc.)
-├── templates/           # Starter templates
-│   └── modular/         # Modular monolith template (minimal)
-├── tools/               # CLI tool for scaffolding
-├── docs/                # Documentation
-├── .github/             # GitHub Actions workflows
-└── scripts/             # Automation scripts
+swap/
+├── tools/
+│   ├── Swap.CLI/              # CLI tool source code
+│   │   ├── Commands/          # Command implementations
+│   │   ├── Infrastructure/    # Template engine, helpers
+│   │   └── Program.cs         # CLI entry point
+│   └── Swap.CLI.Tests/        # 136 passing tests
+│       ├── Commands/          # Command tests
+│       └── Infrastructure/    # Template engine tests
+├── templates/                 # Code generation templates
+│   ├── monolith/             # New project template
+│   └── generate/             # CRUD generation templates
+│       ├── controller/       # Controller, views, view model
+│       └── model/            # Model class
+├── docs/                     # Documentation
+│   ├── THE-PRODUCT.md        # Product vision
+│   └── PATTERNS-LIBRARY.md   # HTMX patterns
+├── wiki/                     # Docusaurus documentation site
+└── README.md                 # This file
 ```
 
 ## 🤝 Contributing
 
-We welcome contributions! Swap is open source and community-driven.
+Contributions are welcome! Whether it's bug reports, feature requests, or code contributions.
 
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'feat: Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+3. Make your changes and add tests
+4. Ensure all tests pass (`dotnet test`)
+5. Commit your changes (`git commit -m 'feat: Add amazing feature'`)
+6. Push to the branch (`git push origin feature/amazing-feature`)
+7. Open a Pull Request
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
 
 ## 📄 License
 
-Swap is [MIT licensed](LICENSE). Use it freely in your projects, commercial or otherwise.
+Swap CLI is [MIT licensed](LICENSE). Use it freely in your projects, commercial or otherwise.
 
-## 🙏 Acknowledgments
-
-Swap is inspired by and builds upon the excellent work of:
-- [ABP Framework](https://abp.io) - Modular architecture patterns
-- [HTMX](https://htmx.org) - Hypermedia-driven interactivity
-- [ASP.NET Core](https://dotnet.microsoft.com/apps/aspnet) - World-class web framework
-- The DDD community for timeless design principles
-
-## 📊 Project Status
+## � Project Status
 
 **Current Version:** `0.1.0-dev` (Active Development)
 
-### Phase 1: MVP Complete! 🎉 (100%)
+### ✅ Phase 2C Complete (Current)
 
-- ✅ Framework SDK (10 packages) - **Complete**
-- ✅ Zero-warning builds - **Complete**
-- ✅ Type-safe events (Swap.Events) - **Complete**
-- ✅ CLI versioning (`Swap --version`) - **Complete**
-- ✅ Module creation (`Swap create module`) - **Complete**
-- ✅ Feature generation (`Swap generate feature`) - **Complete**
-- ✅ DDD patterns (Entity<Guid>, repository) - **Complete**
-- ✅ Dogfooding validated (Audit module) - **Complete**
-- ✅ NuGet publishing (pre-release) - **Complete**
+- ✅ **New Project Generation** - `swap new` command with full ASP.NET Core setup
+- ✅ **Controller Generation** - `swap g c` with all CRUD operations
+- ✅ **Model Generation** - `swap g m` for entity classes
+- ✅ **Pagination** - Configurable page sizes (10, 25, 50, 100)
+- ✅ **Search** - Real-time search with 500ms debounce
+- ✅ **Sorting** - Column sorting with field-level control
+- ✅ **Filtering** - Boolean filters with dropdown UI
+- ✅ **Modal Editing** - Create, Edit, Details modals via HTMX
+- ✅ **Bulk Delete** - Select multiple items and delete
+- ✅ **Toast Notifications** - DaisyUI alerts for success/error
+- ✅ **DaisyUI Components** - Modern, accessible UI library
+- ✅ **Tailwind CSS** - Utility-first styling
+- ✅ **136 Passing Tests** - Comprehensive test coverage
+- ✅ **Documentation** - Complete wiki with examples
 
-**What's Working:**
-- Create modules: `Swap create module Audit` ✅
-- Generate features: `Swap generate feature AuditLog -m Audit` ✅
-- DDD patterns: Entity<Guid>, IQueryableRepository ✅
-- Type-safe events: DomainEvents.AuditLog.Created ✅
+### 🔄 Phase 2D: Seeders (Next)
 
-### Next: Phase 2 Enhancements
+- ⏳ **Database Seeding** - Generate seed data for testing
+- ⏳ **Faker Integration** - Realistic fake data generation
+- ⏳ **Seeder Commands** - `swap g seeder` CLI command
 
-- 🔄 Terminology polish (`crud` → `feature`)
-- ⏳ Additional Modules (CMS, Email, Jobs)
-- ⏳ Visual Studio templates
-- ⏳ Production release (1.0.0) - **Q1 2026**
+### 🎯 Phase 3: Polish & Release
 
-See the [roadmap](docs/ROADMAP.md) for detailed progress and timeline.
+- ⏳ **NuGet Package** - Publish to NuGet.org
+- ⏳ **VS Code Extension** - Integrated CLI experience
+- ⏳ **Video Tutorials** - Getting started screencasts
+- ⏳ **Production Release** (v1.0.0) - Q1 2026
+
+See the complete [roadmap](docs/ROADMAP.md) for details.
 
 ## 💬 Community
 
-- **GitHub Discussions** - Coming soon
-- **Discord** - Coming soon
-- **Twitter** - Coming soon
+- **Documentation**: https://toonjd.github.io/swap/
+- **GitHub Issues**: https://github.com/toonjd/swap/issues
+- **GitHub Discussions**: Coming soon
 
-For now, open an [issue](https://github.com/toonjd/Swap/issues) for questions or feedback!
+For questions or feedback, open an [issue](https://github.com/toonjd/swap/issues)!
 
 ## 🔗 Links
 
-- **Website**: Coming soon
-- **Documentation**: [docs/](docs/)
-- **NuGet Packages**: https://www.nuget.org/packages?q=Swap
-- **GitHub**: https://github.com/toonjd/Swap
-- **Issues**: https://github.com/toonjd/Swap/issues
+- **Documentation**: https://toonjd.github.io/swap/
+- **GitHub**: https://github.com/toonjd/swap
+- **Issues**: https://github.com/toonjd/swap/issues
+- **NuGet** (coming soon): https://www.nuget.org/packages/Swap.CLI
 
 ---
 
 **Built with ❤️ for the .NET community**
 
-*Swap - Build better web applications, faster.*
+*Swap CLI - Generate production-ready ASP.NET + HTMX applications in seconds.*
 

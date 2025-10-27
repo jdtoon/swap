@@ -9,6 +9,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed - Repository Rebrand & Documentation Update (2025-10-27)
+- **Repository Rename**: netmx → swap across all files and URLs
+- **Git Remote**: Updated to https://github.com/toonjd/swap.git
+- **Solution File**: Renamed netmx.sln → swap.sln
+- **Product Vision**: Removed all framework comparisons (Rails, Laravel, ABP)
+  - Shifted messaging from "Rails of .NET" to unique HTMX + DaisyUI value
+  - Added "Why HTMX?" section comparing SPA vs HTMX architecture
+  - Added "How Swap Works" 5-step meta-development process
+- **Documentation Restructure**: 
+  - Renamed HTMX-PATTERNS-LEARNED.md → PATTERNS-LIBRARY.md
+  - Removed redundant philosophy content, kept pattern catalog
+  - Enhanced THE-PRODUCT.md with new sections
+- **Wiki Documentation**: Comprehensive Bootstrap → DaisyUI migration
+  - Updated 9 documentation files with accurate DaisyUI examples
+  - Fixed all repository URLs in Docusaurus config
+  - Updated homepage features with new messaging
+  - Fixed MDX compilation errors (JSX syntax in markdown)
+  - Replaced placeholder SVG images with emoji icons (⚡🎯🎨)
+- **README.md**: Complete rewrite to match actual CLI project
+  - Removed incorrect framework/modular architecture content
+  - Added accurate CLI commands and examples
+  - Updated tech stack (ASP.NET Core MVC + HTMX + DaisyUI)
+  - Fixed quick start guide and installation instructions
+- **Test Suite**: All 136 tests passing after changes
+- **Breaking**: None - purely documentation and branding changes
+
 ### Added - Week 1 Day 2: Server-Driven Bulk Operations Architecture (2025-10-27)
 - **Session-Based State**: Selections stored in server session, not client-side
 - **Session Middleware**: Added AddSession() + UseSession() to Program.cs template
