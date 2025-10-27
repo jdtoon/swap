@@ -1,14 +1,12 @@
 # Swap - The Product
 
-**Last Updated**: October 25, 2025  
-**Status**: Active Development - Learning from Real Apps  
-**Vision**: "The Rails of .NET" - but better
+**Last Updated**: October 27, 2025  
+**Status**: Active Development - Phase 2C Complete  
+**Version**: 0.1.0-dev
 
 ---
 
 ## 🎯 What Is Swap?
-
-> **"The Rails of .NET" - but better**
 
 **Swap is a CLI-driven web framework that generates production-ready code from patterns learned from real applications.**
 
@@ -20,13 +18,12 @@ It's not a collection of base classes or abstractions—it's a **code generator*
 
 Swap generates code based on patterns extracted from real production apps. No magic base classes. No hidden abstractions. Just concrete, readable code that you own and control.
 
-**What makes it "Rails-like"**:
-- ✅ **Convention over configuration** - Sensible defaults everywhere
-- ✅ **Powerful CLI** - `Swap generate feature Product` creates everything
-- ✅ **Rails-level productivity** - Generate features in seconds, not hours
-- ✅ **Full-stack** - Backend + Frontend generated together
+### What Makes Swap Productive
 
-**What makes it "better than Rails"**:
+- ✅ **Convention over configuration** - Sensible defaults everywhere
+- ✅ **Powerful CLI** - `swap generate resource Product` creates everything
+- ✅ **Instant productivity** - Generate features in seconds, not hours
+- ✅ **Full-stack generation** - Backend + Frontend generated together
 - ✅ **.NET type safety** - Compile-time errors, IntelliSense everywhere
 - ✅ **HTMX simplicity** - No JavaScript framework complexity
 - ✅ **You own the code** - No hidden magic, full control
@@ -34,32 +31,33 @@ Swap generates code based on patterns extracted from real production apps. No ma
 
 ---
 
-## 🌐 Our Place in the Web Space
+## 🌐 The Problem We Solve
 
-### The Problem We Solve
+### Web Development Today
 
-Web development is either too complex or too rigid:
-- **React/Angular**: Steep learning curve, complex state management, over-engineering
-- **Rails**: Amazing DX, but Ruby limits enterprise adoption
-- **Laravel**: PHP ecosystem, not .NET
-- **ASP.NET MVC**: Manual boilerplate, no modern patterns out of the box
-- **ABP Framework**: Over-abstracted, subscription pricing, heavy
+Modern web development presents developers with difficult tradeoffs:
 
-### Our Solution
+- **SPA Frameworks** require steep learning curves, complex state management, and often over-engineer simple problems
+- **Traditional MVC** means writing the same boilerplate repeatedly, with no modern patterns included
+- **Enterprise frameworks** often abstract away too much, hiding what's actually happening in your application
+- **Most scaffolding tools** generate basic CRUD that you'll immediately need to rewrite for production
 
-**Server-Rendered HTML + HTMX + CLI Code Generation + .NET**
+### Swap's Approach
+
+**Server-Rendered HTML + HTMX + Pattern-Driven Code Generation + .NET**
 
 Swap combines the best ideas from multiple ecosystems:
+Swap combines the best ideas from multiple ecosystems:
 
-**From Rails**:
-- ✅ Powerful CLI (`rails generate` → `Swap generate`)
+**From powerful CLI tools**:
+- ✅ Powerful code generation commands
 - ✅ Convention over configuration
-- ✅ Migrations (`rails db:migrate` → `Swap db migrate`)
-- ✅ Scaffolding that actually works
+- ✅ Database migrations
+- ✅ Scaffolding that produces production-ready code
 
-**From Laravel**:
-- ✅ Artisan-style commands
-- ✅ Beautiful error pages
+**From modern web approaches**:
+- ✅ Beautiful developer experience
+- ✅ Clear error messages
 - ✅ Developer-friendly APIs
 
 **From .NET**:
@@ -79,6 +77,71 @@ Swap combines the best ideas from multiple ecosystems:
 - ✅ **Smart Generation**: Not just scaffolding, but production-ready code
 - ✅ **Learn from Code**: Generated code teaches best practices
 - ✅ **Customizable**: Generated code is yours to modify
+
+---
+
+## 🌊 Why HTMX?
+
+**HTMX enables interactive web applications without the complexity of JavaScript frameworks.**
+
+### The Problem with SPAs
+
+Modern Single-Page Applications (React, Angular, Vue) require:
+- Complex build toolchains (webpack, vite, etc.)
+- State management libraries (Redux, Vuex, etc.)
+- API layer for every interaction
+- Duplicate validation logic (client + server)
+- Large bundle sizes and slow initial loads
+- Steep learning curves for new developers
+
+### The HTMX Approach
+
+HTMX extends HTML with attributes that enable:
+- **Server-Rendered Partials**: Server sends HTML, not JSON
+- **Progressive Enhancement**: Works without JavaScript
+- **No Build Step**: Write HTML, deploy immediately
+- **Simple State**: Server holds state, no client synchronization
+- **Tiny Footprint**: ~14KB minified, vs 100KB+ for frameworks
+
+### Real-World Benefits
+
+**Development Speed**:
+- No API layer needed for UI updates
+- Single validation logic (server-side)
+- Simpler debugging (view source shows real HTML)
+- Faster onboarding for new developers
+
+**Performance**:
+- Smaller payloads (HTML vs JSON + rendering code)
+- Server-side rendering is fast
+- No hydration delays
+- Better caching at every level
+
+**Maintainability**:
+- Less code to maintain (no separate frontend app)
+- One language/stack (.NET)
+- Simpler deployment (single application)
+- Easier testing (server-side unit tests)
+
+### When HTMX Shines
+
+✅ **Line-of-business applications**  
+✅ **Admin panels and dashboards**  
+✅ **Form-heavy applications**  
+✅ **CRUD-focused systems**  
+✅ **Internal tools**  
+✅ **MVP and prototype development**
+
+### When to Consider SPAs
+
+Consider a JavaScript framework when you need:
+- ❌ Offline-first functionality
+- ❌ Real-time collaborative editing
+- ❌ Complex client-side state machines
+- ❌ Heavy animation/visualization requirements
+- ❌ Mobile app with shared codebase (React Native, etc.)
+
+**For 80% of web applications, HTMX is the simpler, faster choice.**
 
 ---
 
@@ -238,7 +301,7 @@ var filters = HttpContext.Session.GetObject<FilterDto>("Filters");
 
 ## 🛠️ The CLI - Your Productivity Superpower
 
-Swap CLI is **Rails-inspired** but **better for .NET developers**.
+Swap CLI provides powerful code generation commands that make building web applications effortless.
 
 ### Project Commands
 
@@ -270,49 +333,49 @@ Swap generate component UserMenu
 Swap generate api ProductApi
 
 # Generate background job
-Swap generate job SendWelcomeEmail
+swap generate job SendWelcomeEmail
 ```
 
-### Database Commands (Rails-Inspired)
+### Database Commands
 
 ```bash
 # Create migration
-Swap db migrate AddProductsTable
+swap db migrate AddProductsTable
 
 # Run pending migrations
-Swap db update
+swap db update
 
 # Rollback last migration
-Swap db rollback
+swap db rollback
 
 # Reset database
-Swap db reset
+swap db reset
 
 # Seed database
-Swap db seed
+swap db seed
 ```
 
 ### Enhancement Commands
 
 ```bash
 # Add toast notification system
-Swap add toasts
+swap add toasts
 
 # Add pagination helpers
-Swap add pagination
+swap add pagination
 
 # Add global search
-Swap add search
+swap add search
 
 # Add sortable lists (drag-drop)
-Swap add sortable
+swap add sortable
 ```
 
-### Scaffolding vs Generation
+### Code Generation Philosophy
 
-**Traditional scaffolding** (like ASP.NET): Empty templates with TODOs
+**Traditional scaffolding**: Empty templates with TODOs that need extensive modification
 
-**Swap generation**: Production-ready code with proven patterns:
+**Swap generation**: Production-ready code with proven patterns baked in:
 - ✅ HX-Request detection
 - ✅ Partial view returns
 - ✅ Modal CRUD
@@ -440,102 +503,64 @@ Swap generate feature Product --service MyProductService --dto MyProductDto
 - Controllers in `Controllers/`
 - Views in `Views/{ControllerName}/`
 
-**Configuration**: Override via `Swap.config.json` if needed
+
+**Configuration**: Override via `swap.config.json` if needed
 
 ---
 
-## 🚀 What Makes Swap Different?
+## 🎯 Current Status (October 27, 2025)
 
-### vs Rails
+**Version**: 0.1.0-dev  
+**Phase**: 2C Complete  
+**Test Coverage**: 136 passing unit tests
 
-| Feature | Swap | Rails |
-|---------|-------|-------|
-| **Language** | C# (.NET) | Ruby |
-| **Type Safety** | ✅ Compile-time | ❌ Runtime |
-| **Performance** | ✅ High | ⚠️ Medium |
-| **CLI** | Rails-inspired | ✅ Excellent |
-| **Productivity** | ✅ High | ✅ High |
-| **Enterprise Adoption** | ✅ Common | ⚠️ Niche |
-| **Frontend** | HTMX (simple) | Hotwire (similar) |
+### ✅ What's Working Now
 
-**Swap = Rails DX + .NET type safety**
+### ✅ What's Working Now
 
-### vs ABP Framework
-
-| Feature | Swap | ABP |
-|---------|-------|-----|
-| **Approach** | Code generation | Base classes |
-| **Magic** | ❌ None | ✅ Heavy |
-| **Customization** | ✅ Full control | ⚠️ Limited |
-| **Learning Curve** | Low | High |
-| **Frontend** | HTMX | Angular/Blazor |
-| **Pricing** | TBD | Subscription |
-| **Patterns** | From real apps | Pre-supposed |
-
-**Swap = Simpler, more transparent**
-
-### vs ASP.NET Core MVC
-
-| Feature | Swap | ASP.NET MVC |
-|---------|-------|-------------|
-| **CLI** | ✅ Powerful | ⚠️ Basic |
-| **Generation** | Production-ready | Empty templates |
-| **Patterns** | Built-in | Manual |
-| **HTMX** | First-class | Manual |
-| **Productivity** | ✅✅✅ | ⚠️ |
-
-**Swap = ASP.NET MVC + Rails CLI + HTMX patterns**
-
----
-
-## 🎯 Current Status (October 25, 2025)
-
-### ✅ Phase 1-2A Complete (73 tests)
-
-**Basic CLI Infrastructure**:
-- ✅ `swap new` - Project scaffolding with ASP.NET Core + HTMX
-- ✅ `swap generate controller` - CRUD controllers with HTMX views
-- ✅ Bootstrap 5 UI integration
-- ✅ Entity Framework Core setup
-- ✅ 73 passing unit tests
-
-### ✅ Phase 2B Complete (122 tests)
-
-**Model Generation & Documentation**:
-- ✅ `swap generate model` - Entity models with custom fields
-- ✅ `swap generate resource` - Combined model + controller generation
-- ✅ Support for 11 C# data types (int, string, decimal, datetime, etc.)
-- ✅ Nullable field syntax (`Name:string?`)
-- ✅ Automatic DbContext registration
-- ✅ 49 new unit tests (122 total passing)
-- ✅ Complete Docusaurus documentation wiki
-- ✅ HTMX-focused tutorials and guides
-
-**Commands Available**:
+**Core CLI Commands**:
 ```bash
-swap new MyApp                        # Create project
-swap g m Product --fields Name:string,Price:decimal   # Generate model
-swap g c Product                      # Generate controller
-swap g r Product --fields Name:string,Price:decimal   # Generate both
+swap new MyApp                                        # Create new project
+swap g m Product --fields Name:string,Price:decimal  # Generate model
+swap g c Product                                      # Generate controller
+swap g r Product --fields Name:string,Price:decimal  # Generate resource (model + controller)
 ```
 
-### 🔄 Phase 3 Options
+**Generated Stack**:
+- ✅ ASP.NET Core MVC
+- ✅ HTMX for interactivity
+- ✅ DaisyUI + Tailwind CSS
+- ✅ Entity Framework Core
+- ✅ Modal-based CRUD
+- ✅ Pagination with sorting
+- ✅ Boolean filters
+- ✅ Toast notifications
 
-Choose next direction:
-1. **Relationships** - Foreign keys, navigation properties
-2. **API Controllers** - Generate REST APIs alongside HTMX
+**Code Quality**:
+- ✅ 136 passing unit tests
+- ✅ 11 C# data types supported
+- ✅ Nullable field syntax (`Name:string?`)
+- ✅ Production-ready patterns from 4 real apps
+
+**Documentation**:
+- ✅ Complete Docusaurus wiki
+- ✅ CLI command reference
+- ✅ Getting started guides
+- ✅ HTMX pattern examples
+
+### 🔜 Phase 2D (Next Up)
+
+**Database Seeders** - Generate seed data for testing and development
+
+### � Phase 3 (Choose Direction)
+
+Options to explore next:
+1. **Relationships** - Foreign keys, navigation properties (`Product belongsTo Category`)
+2. **API Generation** - REST endpoints alongside HTMX views
 3. **Test Generation** - Unit tests for generated code
-4. **Validation** - Data annotations and validation
-5. **Authentication** - User authentication scaffolding
+4. **Validation** - Data annotations scaffolding
+5. **Authentication** - User auth system
 6. **Module System** - Multi-module applications
-
-### 📚 Documentation
-
-- ✅ Comprehensive wiki at `/wiki`
-- ✅ Command reference for all CLI commands
-- ✅ Getting started tutorial
-- ✅ HTMX patterns and examples
-- ✅ Field type reference
 
 ---
 
@@ -565,79 +590,138 @@ Choose next direction:
 
 ### Developer Experience
 
-- ✅ **"Wow" moment**: First `Swap generate` command
+- ✅ **"Wow" moment**: First `swap generate` command
 - ✅ **Fast answers**: Generated code shows you how
 - ✅ **Learning**: Code teaches best practices
 - ✅ **Control**: You own and modify everything
 
 ---
 
+## 🏗️ How Swap Works
+
+Swap follows a unique **meta-development process** that ensures every generated pattern is proven and practical:
+
+### 1. We Build Real Applications
+
+We don't start with theory. We build actual production applications:
+- **TTW** (Travel management system)
+- **Kanban** (Task tracking)
+- **Habits** (Family habit tracker)
+- **Carestream** (Healthcare application)
+
+These aren't toys—they're real apps solving real problems with real users.
+
+### 2. We Extract Patterns
+
+After building, we analyze the code to find:
+- **What patterns appear in every app?** (HX-Request detection, modals, pagination)
+- **What code gets copy-pasted?** (Toast notifications, form handling)
+- **What takes the most time?** (CRUD operations, list views)
+- **What causes bugs?** (Validation, error handling)
+
+We document these patterns in our [Pattern Library](PATTERNS-LIBRARY.md).
+
+### 3. We Generate Code
+
+The CLI generates these proven patterns automatically:
+
+```bash
+# One command creates everything
+swap g r Product --fields Name:string,Price:decimal
+
+# Generated files use patterns from real apps:
+# - Modal CRUD (from Habits app)
+# - Pagination (from Carestream app)
+# - Toast notifications (from TTW app)
+# - HX-Request detection (from all 4 apps)
+```
+
+### 4. You Own the Result
+
+The generated code is **yours**:
+- No hidden framework code
+- No magic base classes
+- Full control to modify
+- Easy to understand and debug
+
+### 5. We Iterate
+
+As we build more apps, we discover new patterns and improve existing ones. The CLI evolves based on real-world usage.
+
+**This cycle (Build → Extract → Generate → Own) is what makes Swap different from traditional frameworks.**
+
+---
+
 ## 💡 Core Philosophy
 
-> **"The Rails of .NET" - but better**
-
-**What this means**:
-
-1. **Rails-Level Productivity**
-   - Generate features in seconds
-   - Convention over configuration
-   - Powerful CLI commands
-   - Database migrations
-
-2. **.NET Advantages**
-   - Compile-time type safety
-   - IntelliSense everywhere
-   - Performance and scalability
-   - Enterprise-grade ecosystem
-
-3. **Better Than Both**
-   - No magic base classes (vs traditional frameworks)
-   - Generated code you own (vs scaffolding)
-   - HTMX simplicity (vs JavaScript frameworks)
-   - Proven patterns (vs theoretical abstractions)
+**Swap** is built on a foundation of practical, battle-tested principles:
 
 ### Our Principles
 
-- **Patterns Over Packages**: Generate concrete code, not abstract frameworks
-- **Real Apps Over Theory**: Learn from production, not whiteboards
-- **Generate Over Abstract**: Concrete implementations beat magical base classes
-- **Convention Over Configuration**: Sensible defaults, override when needed
-- **Type Safety Over Runtime Errors**: Catch bugs at compile-time
-- **Transparency Over Magic**: You see exactly what your code does
+**Patterns Over Packages**  
+Generate concrete code, not abstract frameworks. Every line of generated code is readable, modifiable, and yours to own.
+
+**Generate Over Abstract**  
+Rather than building layers of abstraction, we generate the code you need. No magic base classes, no hidden behavior.
+
+**Real Apps Over Theory**  
+Learn from production applications, not theoretical frameworks. Every pattern in Swap comes from analyzing real, working code.
+
+**Simplicity Over Complexity**  
+HTMX over heavyweight JavaScript frameworks. Server-rendered partials over complex state management. The web's native capabilities over unnecessary abstractions.
+
+**Developer Experience**  
+Fast feedback loops, clear error messages, and generated code that teaches best practices as you work.
+
+### What This Means in Practice
+
+**Instant Productivity**
+- Generate complete features in seconds
+- Convention over configuration everywhere
+- Powerful CLI that understands your intent
+- Production-ready patterns from day one
+
+**True Ownership**
+- Generated code is yours to modify
+- No hidden magic or framework lock-in
+- Full IntelliSense and compile-time safety
+- Readable code that teaches as you learn
+
+**Proven Patterns**
+- Extracted from 4+ production applications
+- Battle-tested in real-world scenarios
+- HTMX-first interactivity patterns
+- Server-rendered simplicity
 
 ---
 
 ## 🎯 The Vision
 
-**Short-Term (3 months)**:
-- Swap CLI generates production-ready CRUD with all patterns
-- Monolithic template ready for real projects
-- 10+ patterns automated (pagination, modals, toasts, search, etc.)
-- **Goal**: Developers save 20+ hours per feature
+**3-Month Horizon**:
+- Complete CRUD generation with 10+ automated patterns
+- Pagination, modals, toasts, search, filtering, sorting
+- Production-ready code from `swap generate` commands
+- **Target**: Save developers 20+ hours per feature
 
-**Mid-Term (6-12 months)**:
-- Modular template for larger apps
-- 20+ patterns automated
-- Visual Studio extension
-- Community of 1000+ developers
-- **Goal**: "Rails of .NET" reputation established
+**6-12 Month Horizon**:
+- Modular architecture support
+- 20+ automated patterns
+- Visual Studio extension for IDE integration
+- Growing community of contributors
+- **Target**: 1000+ developers building with Swap
 
-**Long-Term (12-24 months)**:
-- Swap Studio (VS Code fork) launched
-- Visual designers for non-coders
-- 30+ patterns automated
-- 10,000+ developers using Swap
-- **Goal**: Go-to framework for .NET + HTMX apps
+**12-24 Month Horizon**:
+- Swap Studio (enhanced VS Code experience)
+- Visual designers for rapid prototyping
+- 30+ comprehensive patterns
+- Thriving ecosystem and plugin system
+- **Target**: 10,000+ developers, established framework
 
 ---
 
 ## 🎯 Summary
 
-**Swap is "The Rails of .NET" - but better:**
-
-**Like Rails**:
-- ✅ Amazing CLI (`Swap generate`, `Swap db`, etc.)
-- ✅ Convention over configuration
+**Swap** generates production-ready web applications using proven patterns from real-world projects.
 - ✅ Rapid development (seconds, not hours)
 - ✅ Developer happiness is a feature
 
@@ -645,16 +729,21 @@ Choose next direction:
 - ✅ .NET type safety (compile-time errors)
 - ✅ HTMX simplicity (simpler than Hotwire)
 - ✅ You own the code (no magic)
-- ✅ Proven patterns (from real apps)
 
-**Our Mission**: Make .NET + HTMX the most productive, enjoyable way to build web applications.
+**Core Values**:
+- ✅ Patterns extracted from real production applications
+- ✅ Code generation over framework abstractions
+- ✅ HTMX simplicity over JavaScript complexity
+- ✅ .NET type safety and performance
+- ✅ Developer ownership and transparency
 
-**Our Approach**: Learn from real apps → Extract patterns → Generate code → Ship fast
+**Our Mission**: Make building web applications with .NET + HTMX productive, enjoyable, and pattern-driven.
+
+**Our Process**: Build real apps → Extract patterns → Generate code → Ship features fast
 
 ---
 
 **Next Steps**:
-1. Read [HTMX-PATTERNS-LEARNED.md](HTMX-PATTERNS-LEARNED.md) for deep pattern analysis
-2. Check out sample apps in `sampleApps/` to see the patterns in action
-3. Stay tuned for CLI updates as we implement generators
-
+1. Read [PATTERNS-LIBRARY.md](PATTERNS-LIBRARY.md) for comprehensive pattern analysis
+2. Explore the `/wiki` documentation for CLI usage guides
+3. Check [CHANGELOG.md](../CHANGELOG.md) for recent updates and completed features

@@ -1,22 +1,16 @@
-# Swap HTMX Pattern Analysis & Recommendations
+# Swap Pattern Library
 
-**Date**: October 25, 2025  
+**Last Updated**: October 27, 2025  
 **Source**: Analysis of 4 production ASP.NET Core + HTMX applications  
 **Apps Analyzed**: TTW (Travel), Kanban (Task Management), Habits (Family Tracking), Carestream (Healthcare)
 
 ---
 
-## 📊 Executive Summary
+## Overview
 
-After analyzing **4 production ASP.NET Core + HTMX applications** and reviewing the official HTMX documentation, we've identified **30+ reusable patterns** that form the foundation for Swap's approach to web development.
+This document catalogs **30+ proven HTMX patterns** extracted from real production applications. Each pattern includes implementation details, code examples, and usage guidance.
 
-**Key Insights:**
-- **Common Foundation**: All apps share 5-7 core patterns (HX-Request detection, partial views, modal CRUD)
-- **Advanced Patterns**: Enterprise apps use sophisticated patterns (dynamic retargeting, custom events, pagination helpers)
-- **Architecture Flexibility**: Both monolithic (Habits) and Clean Architecture (Carestream) work well with HTMX
-- **HTMX is Feature-Rich**: 40+ attributes, 20+ events, 10+ response headers available
-
-**Swap Philosophy**: Learn from real apps, not theoretical frameworks. Generate what developers actually use.
+These patterns form the foundation of Swap's code generation capabilities. When you run `swap generate controller`, you're getting these battle-tested patterns automatically.
 
 ---
 
@@ -705,289 +699,61 @@ var result = _service.RegisterPatient(dto, userId);
 
 ---
 
-## 💡 The Swap Way
+## Pattern Index
 
-### Philosophy
+### Foundation Patterns (Used in all apps)
+1. **HX-Request Detection** - Serve full pages or partials from same endpoint
+2. **Component-Based Partials** - Small, focused reusable UI components
+3. **Load-on-Page-Load** - Progressive enhancement pattern
 
-> **"Learn from real apps, not theoretical frameworks."**
+### CRUD Patterns
+4. **Modal CRUD** - Add/Edit/Delete in modals
+5. **Dynamic Retargeting** - Change target based on validation
 
-We analyzed 4 production apps and found:
-- **30+ patterns** that work in the real world
-- **10 patterns** that appear in every app
-- **5 patterns** that provide massive value (pagination, modals, toasts)
+### Data Display Patterns
+6. **Pagination** ⭐ - Reusable DTO with HTMX properties
+7. **Sorting** - Column-based sorting with visual indicators
+8. **Filtering** - Boolean and search filters
 
-### What This Means
+### Interaction Patterns
+9. **Toast Notifications** - Success/error feedback via HX-Trigger
+10. **Drag & Drop** - SortableJS integration for list reordering
+11. **Search** - Global search with debouncing
 
-**Traditional Approach** (what we deleted):
-- Build framework packages first
-- Pre-suppose what developers need
-- Create abstractions before implementations
-- Build infrastructure, hope features fit
-
-**Swap Approach** (what we learned):
-- Analyze real apps first
-- Generate what developers actually use
-- Provide implementations, not abstractions
-- Build patterns, not infrastructure
-
-### Core Principles
-
-1. **Patterns over Packages** - Generate proven patterns, not framework code
-2. **Sample Apps are Truth** - If it's not in a sample app, we don't need it
-3. **Generate, Don't Abstract** - CLI generates concrete code, not base classes
-4. **HTMX-First** - HTML over the wire, minimal JavaScript
-5. **Server-Side Logic** - Validation, state, coordination all on server
-6. **Productivity over Purity** - Ship fast, refactor later
+### State Management
+12. **Session Storage** - Persist filter state across requests
+13. **Multi-Event Coordination** - Complex UI interactions
 
 ---
 
-## 🎯 Implementation Priorities
+## Using These Patterns
 
-### Phase 1: Foundation (Week 1)
+All patterns in this library are automatically generated when you use Swap CLI:
 
-**Goal**: Generate the 10 essential patterns
+```bash
+# Generate a controller with these patterns built-in
+swap g c Product
 
-1. **HX-Request Detection**
-   ```csharp
-   // Generate in every controller action
-   if (Request.IsHtmx())
-       return PartialView("_ProductList", products);
-   return View(products);
-   ```
-
-2. **Response Header Helpers**
-   ```csharp
-   // Extension methods for common headers
-   Response.HxTrigger("showToast", "Saved!");
-   Response.HxRetarget("#error-container");
-   Response.HxReswap("outerHTML");
-   Response.HxRedirect("/products");
-   ```
-
-3. **Component Partials**
-   - Generate `_UserDisplay.cshtml`, `_SearchBar.cshtml`, etc.
-   - Generate controller actions: `GetUserDisplay()`, `GetSearchBar()`
-
-### Phase 2: High-Value Patterns (Week 2)
-
-**Goal**: Implement the 5 patterns that save the most time
-
-1. **Pagination System** ⭐ **HIGHEST PRIORITY**
-   - `PaginationDto` class
-   - `FilterAndPaginationOptions` class
-   - `_PaginationControls.cshtml` partial
-   - Generate paginated list views
-
-2. **Modal CRUD System**
-   - `_AddModal.cshtml`, `_EditModal.cshtml` templates
-   - Controller actions: `Add()`, `Edit(id)`, `Delete(id)`
-   - Auto-wire modal triggers in list views
-
-3. **Toast Notification System**
-   - `toasts.js` JavaScript
-   - `_ToastContainer.cshtml` partial
-   - Auto-add toast triggers to POST actions
-
-4. **Inline Delete Pattern**
-   - Generate delete confirmation dialogs
-   - Generate `[HttpDelete]` actions
-   - Auto-wire delete buttons in list views
-
-5. **Global Search**
-   - Generate search bar partial
-   - Generate search controller action
-   - Generate search results partial
-
-### Phase 3: Advanced Patterns (Week 3)
-
-**Goal**: Support sophisticated apps
-
-1. **Multi-Event Coordination**
-   - Generate event trigger helpers
-   - Document event listener patterns
-
-2. **Session State Management**
-   - Extension methods: `SetObject<T>()`, `GetObject<T>()`
-
-3. **Dynamic Retargeting**
-   - Auto-generate error retargeting in POST actions
-
-4. **Sortable Lists**
-   - Generate SortableJS integration
-   - Generate order update controller action
-
-5. **Claims-Based Identity**
-   - Generate claims helper extension methods
-   - Document claims patterns
-
----
-
-## 📖 Sample Code Patterns
-
-### Complete CRUD Feature Example
-
-**What Swap Should Generate**:
-
-```csharp
-// ProductController.cs
-public class ProductController : Controller
-{
-    private readonly IProductService _productService;
-    
-    public ProductController(IProductService productService)
-    {
-        _productService = productService;
-    }
-    
-    // LIST
-    public IActionResult Index(FilterAndPaginationOptions options)
-    {
-        var (products, totalCount) = _productService.GetPaginated(options);
-        
-        var viewModel = new ProductListViewModel
-        {
-            Products = products,
-            Pagination = new PaginationDto
-            {
-                CurrentPage = options.PageNumber,
-                PageSize = options.PageSize,
-                TotalItems = totalCount,
-                TotalPages = (int)Math.Ceiling(totalCount / (double)options.PageSize),
-                HxGetUrl = Url.Action("Index"),
-                HxTarget = "#product-list-container",
-                HxSwap = "innerHTML"
-            }
-        };
-        
-        if (Request.IsHtmx())
-            return PartialView("_ProductList", viewModel);
-        
-        return View(viewModel);
-    }
-    
-    // ADD MODAL
-    public IActionResult Add()
-    {
-        return PartialView("_AddProductModal", new ProductCreateDto());
-    }
-    
-    // CREATE
-    [HttpPost]
-    public IActionResult Create(ProductCreateDto dto)
-    {
-        if (!ModelState.IsValid)
-        {
-            Response.HxRetarget("#product-form-container");
-            Response.HxReswap("innerHTML");
-            Response.HxTrigger("showToastError", "Validation failed");
-            return PartialView("_ProductForm", dto);
-        }
-        
-        _productService.Create(dto);
-        Response.HxTrigger("showToastSuccess", "Product created!");
-        Response.HxRedirect("/Product");
-        return Ok();
-    }
-    
-    // EDIT MODAL
-    public IActionResult Edit(int id)
-    {
-        var product = _productService.GetById(id);
-        var dto = new ProductUpdateDto { /* map from product */ };
-        return PartialView("_EditProductModal", dto);
-    }
-    
-    // UPDATE
-    [HttpPost]
-    public IActionResult Update(int id, ProductUpdateDto dto)
-    {
-        if (!ModelState.IsValid)
-        {
-            Response.HxRetarget("#product-form-container");
-            Response.HxReswap("innerHTML");
-            Response.HxTrigger("showToastError", "Validation failed");
-            return PartialView("_ProductForm", dto);
-        }
-        
-        _productService.Update(id, dto);
-        Response.HxTrigger("showToastSuccess", "Product updated!");
-        Response.HxTrigger("refreshProductList", new { productId = id });
-        return Ok();
-    }
-    
-    // DELETE
-    [HttpDelete]
-    public IActionResult Delete(int id)
-    {
-        _productService.Delete(id);
-        Response.HxTrigger("showToastSuccess", "Product deleted!");
-        return Ok();
-    }
-}
+# Full CRUD with all patterns
+swap g r Product --fields Name:string,Price:decimal
 ```
 
----
-
-## 🚀 Next Steps
-
-1. **Delete Pre-Supposed Infrastructure** ✅ (Today)
-   - Remove framework packages
-   - Remove theoretical modules
-   - Remove unused templates
-
-2. **Build Pattern Library** (Week 1)
-   - Extract patterns into templates
-   - Create pattern documentation
-   - Test with sample apps
-
-3. **Implement CLI Generation** (Week 2-3)
-   - Generate pagination system
-   - Generate modal CRUD
-   - Generate toast notifications
-   - Generate component partials
-
-4. **Validate with Real Apps** (Week 4)
-   - Rebuild Kanban with new patterns
-   - Build new app from scratch
-   - Measure time savings
+The generated code is yours to modify and extend. These patterns serve as a starting point, not a framework limitation.
 
 ---
 
-## 📊 Success Metrics
+## Contributing Patterns
 
-**Time Savings per Feature**:
-- Manual CRUD: 2-4 hours
-- With Swap patterns: 15-30 minutes
-- **Reduction: 85-90%**
+Found a useful pattern in your own application? Consider contributing it back to Swap:
 
-**Code Quality**:
-- Consistent patterns across app
-- Best practices built-in
-- No boilerplate duplication
-
-**Developer Experience**:
-- Generate, don't write boilerplate
-- Learn from generated code
-- Customize after generation
+1. Document the pattern with examples
+2. Show where it's used in production
+3. Explain why it's valuable
+4. Submit a PR to add it to this library
 
 ---
 
-## 🎓 Conclusion
-
-After analyzing 4 production apps, we learned:
-
-1. **Patterns are consistent** - Same 10 patterns in every app
-2. **Pagination is valuable** - Saves hours per feature
-3. **Modals are predictable** - Always the same structure
-4. **HTMX is powerful** - 40+ attributes, we use 10
-5. **Simple beats complex** - Monolithic > Clean Architecture for most apps
-
-**The Swap Way**:
-- Learn from real apps
-- Generate proven patterns
-- Ship fast, refactor later
-- HTMX-first, server-side logic
-- Productivity over purity
-
-**Next**: Build CLI to generate these patterns automatically. 🚀
-
+**Related Documentation**:
+- [THE-PRODUCT.md](THE-PRODUCT.md) - Product vision and philosophy
+- [CLI Documentation](../wiki/docs/cli/) - Command reference
+- [Getting Started Guide](../wiki/docs/getting-started/) - Your first Swap project

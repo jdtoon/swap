@@ -1,12 +1,12 @@
-# Swap CLI Documentation# Swap CLI Documentation# NetMX Documentation Wiki# Website
+# Swap CLI Documentation# Swap CLI Documentation
 
 
 
-This directory contains the complete documentation for Swap CLI, built with [Docusaurus](https://docusaurus.io/).
+This directory contains the complete documentation for Swap CLI, built with [Docusaurus](https://docusaurus.io/).This directory contains the complete documentation for Swap CLI, built with [Docusaurus](https://docusaurus.io/).
 
 
 
-## StructureThis directory contains the complete documentation for Swap CLI, built with [Docusaurus](https://docusaurus.io/).
+## Structure## Structure
 
 
 
@@ -14,87 +14,87 @@ This directory contains the complete documentation for Swap CLI, built with [Doc
 
 wiki/
 
-├── docs/                       # Documentation content## StructureThis directory contains the complete documentation for NetMX CLI, built with [Docusaurus](https://docusaurus.io/).This website is built using [Docusaurus](https://docusaurus.io/), a modern static website generator.
+├── docs/                       # Documentation content```
 
 │   ├── intro.md               # Homepage
 
-│   ├── getting-started/       # Installation and first project guides
+│   ├── getting-started/       # Installation and first project guideswiki/
 
 │   │   ├── installation.md
 
-│   │   └── first-project.md```
+│   │   └── first-project.md├── docs/                       # Documentation content## StructureThis directory contains the complete documentation for NetMX CLI, built with [Docusaurus](https://docusaurus.io/).This website is built using [Docusaurus](https://docusaurus.io/), a modern static website generator.
 
 │   └── cli/                   # CLI command reference
 
-│       ├── overview.mdwiki/
+│       ├── overview.md│   ├── intro.md               # Homepage
 
 │       ├── new.md
 
-│       ├── generate-model.md├── docs/                       # Documentation content## Structure## Installation
+│       ├── generate-model.md│   ├── getting-started/       # Installation and first project guides
 
 │       ├── generate-controller.md
 
-│       └── generate-resource.md│   ├── intro.md               # Homepage
+│       └── generate-resource.md│   │   ├── installation.md
 
 ├── src/                       # React components and pages
 
-├── static/                    # Static assets│   ├── getting-started/       # Installation and first project guides
+├── static/                    # Static assets│   │   └── first-project.md```
 
 ├── docusaurus.config.ts       # Site configuration
 
-├── sidebars.ts                # Sidebar navigation│   │   ├── installation.md
+├── sidebars.ts                # Sidebar navigation│   └── cli/                   # CLI command reference
 
 └── package.json
 
-```│   │   └── first-project.md``````bash
+```│       ├── overview.mdwiki/
 
 
 
-## Development│   └── cli/                   # CLI command reference
+## Development│       ├── new.md
 
 
 
-### Prerequisites│       ├── overview.mdwiki/yarn
+### Prerequisites│       ├── generate-model.md├── docs/                       # Documentation content## Structure## Installation
 
 
 
-- Node.js 18+│       ├── new.md
+- Node.js 18+│       ├── generate-controller.md
 
 - npm or yarn
 
-│       ├── generate-model.md├── docs/                       # Documentation content```
+│       └── generate-resource.md│   ├── intro.md               # Homepage
 
 ### Install Dependencies
 
-│       ├── generate-controller.md
+├── src/                       # React components and pages
 
 ```bash
 
-npm install│       └── generate-resource.md│   ├── intro.md               # Homepage
+npm install├── static/                    # Static assets│   ├── getting-started/       # Installation and first project guides
 
 ```
 
-├── src/                       # React components and pages
+├── docusaurus.config.ts       # Site configuration
 
 ### Start Development Server
 
-├── static/                    # Static assets│   ├── getting-started/       # Installation and first project guides## Local Development
+├── sidebars.ts                # Sidebar navigation│   │   ├── installation.md
 
 ```bash
 
-npm start├── docusaurus.config.ts       # Site configuration
+npm start└── package.json
 
 ```
 
-├── sidebars.ts                # Sidebar navigation│   │   ├── installation.md
+```│   │   └── first-project.md``````bash
 
 The site will be available at `http://localhost:3000/swap-cli/`
 
-└── package.json
+
 
 ### Build for Production
 
-```│   │   └── first-project.md```bash
+## Development│   └── cli/                   # CLI command reference
 
 ```bash
 
@@ -102,7 +102,7 @@ npm run build
 
 ```
 
-## Development│   └── cli/                   # CLI command referenceyarn start
+### Prerequisites│       ├── overview.mdwiki/yarn
 
 This generates static content into the `build` directory.
 
@@ -110,35 +110,169 @@ This generates static content into the `build` directory.
 
 ### Serve Production Build Locally
 
-### Prerequisites│       ├── overview.md```
+- Node.js 18+│       ├── new.md
 
 ```bash
 
+npm run serve- npm or yarn
+
+```
+
+│       ├── generate-model.md├── docs/                       # Documentation content```
+
+## Documentation Guidelines
+
+### Install Dependencies
+
+### Writing Documentation
+
+│       ├── generate-controller.md
+
+- Use clear, concise language
+
+- Include code examples with proper syntax highlighting```bash
+
+- Add command examples for CLI commands
+
+- Focus on HTMX patterns and integrationnpm install│       └── generate-resource.md│   ├── intro.md               # Homepage
+
+
+
+### File Organization```
+
+
+
+- `intro.md` - Main landing page for documentation├── src/                       # React components and pages
+
+- `getting-started/` - Installation and tutorials
+
+- `cli/` - Command reference documentation### Start Development Server
+
+
+
+### Links├── static/                    # Static assets│   ├── getting-started/       # Installation and first project guides## Local Development
+
+
+
+- Use relative links: `[Installation](./getting-started/installation)````bash
+
+- For same directory: `[Overview](./overview)`
+
+- For parent directory: `[Home](../intro)`npm start├── docusaurus.config.ts       # Site configuration
+
+
+
+## Deployment```
+
+
+
+The site is configured to deploy to GitHub Pages:├── sidebars.ts                # Sidebar navigation│   │   ├── installation.md
+
+
+
+```bashThe site will be available at `http://localhost:3000/swap-cli/`
+
+npm run deploy
+
+```└── package.json
+
+
+
+This builds and deploys to the `gh-pages` branch.### Build for Production
+
+
+
+## Content Updates```│   │   └── first-project.md```bash
+
+
+
+### Adding New Pages```bash
+
+
+
+1. Create markdown file in `docs/`npm run build
+
+2. Add front matter with `id`, `title`, `sidebar_position`
+
+3. Update `sidebars.ts` if needed```
+
+4. Test locally with `npm start`
+
+## Development│   └── cli/                   # CLI command referenceyarn start
+
+### Updating Navigation
+
+This generates static content into the `build` directory.
+
+Edit `sidebars.ts` to change sidebar structure.
+
+
+
+### Changing Site Config
+
+### Serve Production Build Locally
+
+Edit `docusaurus.config.ts` for site-wide settings.
+
+### Prerequisites│       ├── overview.md```
+
+## Versioning
+
+```bash
+
+To create a new version:
+
 npm run serve
+
+```bash
+
+npm run docusaurus docs:version 1.0.0```
 
 ```
 
 - Node.js 18+│       ├── new.md
 
+This creates a snapshot in `versioned_docs/`.
+
 ## Documentation Guidelines
+
+## Search
 
 - npm or yarn
 
+Docusaurus includes built-in search. For production, consider integrating Algolia DocSearch.
+
 ### Writing Documentation
+
+## Contributing
 
 │       ├── generate-model.mdThis command starts a local development server and opens up a browser window. Most changes are reflected live without having to restart the server.
 
+When adding features to Swap CLI:
+
 - Use clear, concise language
 
-- Include code examples with proper syntax highlighting### Install Dependencies
+1. Update relevant documentation pages
 
-- Add command examples for CLI commands
+2. Add examples and code samples- Include code examples with proper syntax highlighting### Install Dependencies
+
+3. Update sidebar navigation if adding new pages
+
+4. Test documentation locally- Add command examples for CLI commands
+
+5. Include documentation updates in PRs
 
 - Focus on HTMX patterns and integration│       └── generate-controller.md
 
+## Resources
 
 
-### File Organization```bash
+
+- [Docusaurus Documentation](https://docusaurus.io/docs)
+
+- [Markdown Guide](https://www.markdownguide.org/)### File Organization```bash
+
+- [MDX Documentation](https://mdxjs.com/)
 
 
 
