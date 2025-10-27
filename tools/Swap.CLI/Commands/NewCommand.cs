@@ -82,58 +82,106 @@ public static class NewCommand
             AnsiConsole.WriteLine();
             
             // Run setup commands automatically
-            try
+            var hasNpm = await IsCommandAvailableAsync("npm");
+            var hasLibman = await IsCommandAvailableAsync("libman");
+            
+            if (!hasNpm && !hasLibman)
             {
-                await AnsiConsole.Status()
-                    .StartAsync("Running setup commands...", async ctx =>
-                    {
-                        try
-                        {
-                            ctx.Status("Running npm install...");
-                            await RunCommandAsync("npm", "install", projectPath);
-                        }
-                        catch (Exception ex)
-                        {
-                            AnsiConsole.MarkupLine($"[yellow]Warning:[/] npm install failed: {ex.Message}");
-                        }
-                        
-                        try
-                        {
-                            ctx.Status("Running libman restore...");
-                            await RunCommandAsync("libman", "restore", projectPath);
-                        }
-                        catch (Exception ex)
-                        {
-                            AnsiConsole.MarkupLine($"[yellow]Warning:[/] libman restore failed: {ex.Message}");
-                            AnsiConsole.MarkupLine("[yellow]Tip:[/] Run 'libman restore' manually in the project directory");
-                        }
-                        
-                        try
-                        {
-                            ctx.Status("Building CSS...");
-                            await RunCommandAsync("npm", "run build:css", projectPath);
-                        }
-                        catch (Exception ex)
-                        {
-                            AnsiConsole.MarkupLine($"[yellow]Warning:[/] CSS build failed: {ex.Message}");
-                        }
-                    });
-                
                 AnsiConsole.WriteLine();
-                AnsiConsole.MarkupLine("[green]✓[/] Setup completed!");
+                AnsiConsole.MarkupLine("[yellow]Note:[/] npm and libman not found in PATH. Skipping automatic setup.");
+                AnsiConsole.MarkupLine("[dim]You'll need to run setup commands manually (see instructions below).[/]");
             }
-            catch (Exception ex)
+            else
             {
-                AnsiConsole.MarkupLine($"[yellow]Warning:[/] Some setup steps failed: {ex.Message}");
+                try
+                {
+                    await AnsiConsole.Status()
+                        .StartAsync("Running setup commands...", async ctx =>
+                        {
+                            if (hasNpm)
+                            {
+                                try
+                                {
+                                    ctx.Status("Running npm install...");
+                                    await RunCommandAsync("npm", "install", projectPath);
+                                    AnsiConsole.MarkupLine("[green]✓[/] npm install completed");
+                                }
+                                catch (Exception ex)
+                                {
+                                    AnsiConsole.MarkupLine($"[yellow]Warning:[/] npm install failed: {ex.Message}");
+                                }
+                            }
+                            else
+                            {
+                                AnsiConsole.MarkupLine("[yellow]⊘[/] npm not found - skipping npm install");
+                            }
+                            
+                            if (hasLibman)
+                            {
+                                try
+                                {
+                                    ctx.Status("Running libman restore...");
+                                    await RunCommandAsync("libman", "restore", projectPath);
+                                    AnsiConsole.MarkupLine("[green]✓[/] libman restore completed");
+                                }
+                                catch (Exception ex)
+                                {
+                                    AnsiConsole.MarkupLine($"[yellow]Warning:[/] libman restore failed: {ex.Message}");
+                                }
+                            }
+                            else
+                            {
+                                AnsiConsole.MarkupLine("[yellow]⊘[/] libman not found - skipping libman restore");
+                            }
+                            
+                            if (hasNpm)
+                            {
+                                try
+                                {
+                                    ctx.Status("Building CSS...");
+                                    await RunCommandAsync("npm", "run build:css", projectPath);
+                                    AnsiConsole.MarkupLine("[green]✓[/] CSS build completed");
+                                }
+                                catch (Exception ex)
+                                {
+                                    AnsiConsole.MarkupLine($"[yellow]Warning:[/] CSS build failed: {ex.Message}");
+                                }
+                            }
+                            else
+                            {
+                                AnsiConsole.MarkupLine("[yellow]⊘[/] npm not found - skipping CSS build");
+                            }
+                        });
+                    
+                    AnsiConsole.WriteLine();
+                    AnsiConsole.MarkupLine("[green]✓[/] Setup completed!");
+                }
+                catch (Exception ex)
+                {
+                    AnsiConsole.MarkupLine($"[yellow]Warning:[/] Some setup steps failed: {ex.Message}");
+                }
             }
             AnsiConsole.WriteLine();
             AnsiConsole.MarkupLine("[bold]Next steps:[/]");
             AnsiConsole.MarkupLine($"  cd {name}");
-            AnsiConsole.MarkupLine("[dim]  # If setup steps failed, run these manually:[/]");
-            AnsiConsole.MarkupLine("[dim]  npm install[/]");
-            AnsiConsole.MarkupLine("[dim]  libman restore[/]");
-            AnsiConsole.MarkupLine("[dim]  npm run build:css[/]");
-            AnsiConsole.MarkupLine("[dim]  # Then continue with:[/]");
+            
+            if (!hasNpm || !hasLibman)
+            {
+                AnsiConsole.WriteLine();
+                AnsiConsole.MarkupLine("[yellow]⚠ Manual setup required:[/]");
+                if (!hasNpm)
+                {
+                    AnsiConsole.MarkupLine("[yellow]  npm install[/]          [dim]# Install Node.js packages[/]");
+                    AnsiConsole.MarkupLine("[yellow]  npm run build:css[/]    [dim]# Build Tailwind CSS[/]");
+                }
+                if (!hasLibman)
+                {
+                    AnsiConsole.MarkupLine("[yellow]  libman restore[/]       [dim]# Restore client libraries (HTMX, DaisyUI)[/]");
+                }
+                AnsiConsole.WriteLine();
+                AnsiConsole.MarkupLine("[dim]Then continue with:[/]");
+            }
+            
             AnsiConsole.MarkupLine("  dotnet ef migrations add InitialCreate");
             AnsiConsole.MarkupLine("  dotnet ef database update");
             AnsiConsole.MarkupLine("  dotnet run");
@@ -206,6 +254,32 @@ public static class NewCommand
             await File.WriteAllTextAsync(targetFile, processedContent);
             
             await Task.Delay(50); // Small delay for visual feedback
+        }
+    }
+    
+    private static async Task<bool> IsCommandAvailableAsync(string command)
+    {
+        try
+        {
+            var processStartInfo = new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = command,
+                Arguments = "--version",
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+            
+            using var process = System.Diagnostics.Process.Start(processStartInfo);
+            if (process == null) return false;
+            
+            await process.WaitForExitAsync();
+            return process.ExitCode == 0;
+        }
+        catch
+        {
+            return false;
         }
     }
     
