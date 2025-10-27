@@ -504,9 +504,9 @@ docker-compose logs app | grep libman
 
 ## Next Steps
 
-- [Deploy to Azure App Service](/docs/deployment/azure)
-- [Deploy to AWS Elastic Beanstalk](/docs/deployment/aws)
-- [Configure CI/CD Pipelines](/docs/deployment/cicd)
+- [Deploy to Azure App Service](./azure)
+- [Deploy to AWS Elastic Beanstalk](./aws)
+- [Configure CI/CD Pipelines](./cicd)
 
 ---
 
