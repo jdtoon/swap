@@ -5,48 +5,48 @@ import styles from './styles.module.css';
 
 type FeatureItem = {
   title: string;
-  Svg: React.ComponentType<React.ComponentProps<'svg'>>;
+  icon: string;
   description: ReactNode;
 };
 
 const FeatureList: FeatureItem[] = [
   {
-    title: 'Rapid Scaffolding',
-    Svg: require('@site/static/img/undraw_docusaurus_mountain.svg').default,
+    title: 'Production-Ready Code',
+    icon: '⚡',
     description: (
       <>
-        Generate complete projects, models, controllers, and views with a single command.
-        Focus on your business logic, not boilerplate code.
+        Generate complete CRUD with modals, pagination, sorting, filtering, and search.
+        Every pattern is extracted from real production applications.
       </>
     ),
   },
   {
-    title: 'HTMX Integration',
-    Svg: require('@site/static/img/undraw_docusaurus_tree.svg').default,
+    title: 'HTMX Simplicity',
+    icon: '🎯',
     description: (
       <>
-        Build modern, interactive web applications without writing JavaScript.
-        HTMX views are generated automatically for all CRUD operations.
+        Build modern, interactive web applications without JavaScript frameworks.
+        Server-rendered HTML with HTMX for dynamic updates.
       </>
     ),
   },
   {
-    title: 'ASP.NET Core',
-    Svg: require('@site/static/img/undraw_docusaurus_react.svg').default,
+    title: 'DaisyUI + Tailwind',
+    icon: '🎨',
     description: (
       <>
-        Built on ASP.NET Core with Entity Framework Core integration.
-        Supports SQLite, SQL Server, and PostgreSQL out of the box.
+        Beautiful, accessible components out of the box. Built on ASP.NET Core
+        with Entity Framework Core. Supports SQLite, SQL Server, and PostgreSQL.
       </>
     ),
   },
 ];
 
-function Feature({title, Svg, description}: FeatureItem) {
+function Feature({title, icon, description}: FeatureItem) {
   return (
     <div className={clsx('col col--4')}>
       <div className="text--center">
-        <Svg className={styles.featureSvg} role="img" />
+        <div className={styles.featureIcon}>{icon}</div>
       </div>
       <div className="text--center padding-horiz--md">
         <Heading as="h3">{title}</Heading>

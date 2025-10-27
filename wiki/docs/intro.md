@@ -5,18 +5,20 @@ slug: /
 
 # Swap CLI
 
-A command-line tool for scaffolding ASP.NET Core applications with HTMX.
+A command-line tool for generating production-ready ASP.NET Core applications with HTMX.
 
 ## What is Swap?
 
-Swap generates ASP.NET Core projects with HTMX-powered views. It handles the project setup and boilerplate so you can focus on building features.
+Swap generates ASP.NET Core projects with HTMX-powered views using proven patterns from real production applications. It handles the project setup and boilerplate so you can focus on building features.
 
 **Core Features:**
 
-- Generate complete projects with `swap new`
-- Scaffold models with custom fields
-- Create CRUD controllers with HTMX views
-- Entity Framework Core integration included
+- **Generate complete projects** with `swap new` - Full ASP.NET Core + HTMX stack
+- **Scaffold models** with custom fields and 11 data types
+- **Create CRUD controllers** with modals, pagination, sorting, and filtering
+- **DaisyUI + Tailwind CSS** for modern, accessible UI components
+- **Entity Framework Core** integration included
+- **Pattern-driven** - Every generated file uses battle-tested patterns
 
 ## Quick Start
 
@@ -46,12 +48,21 @@ Navigate to `http://localhost:5000/Product` to see your working CRUD interface.
 
 ## Why HTMX?
 
-HTMX lets you build modern, interactive web applications without writing JavaScript. The CLI generates views with:
+HTMX lets you build modern, interactive web applications without complex JavaScript frameworks. The CLI generates views with:
 
-- Server-rendered HTML
-- HTMX attributes for dynamic updates
-- Partial views for AJAX responses
-- Bootstrap 5 styling
+- **Server-rendered HTML** - No JSON APIs, just HTML over the wire
+- **HTMX attributes** for dynamic updates without page reloads
+- **Partial views** for AJAX responses
+- **DaisyUI components** for beautiful, accessible UI
+- **Tailwind CSS** utilities for rapid styling
+
+**Generated patterns include:**
+- Modal CRUD operations
+- Real-time search with debouncing
+- Pagination with page size selection
+- Sortable columns with visual indicators
+- Boolean filtering with dropdowns
+- Toast notifications for user feedback
 
 Example generated view:
 

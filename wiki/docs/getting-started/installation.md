@@ -56,8 +56,8 @@ For contributors or local builds:
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/yourusername/swap-cli.git
-cd swap-cli
+git clone https://github.com/toonjd/swap.git
+cd swap
 ```
 
 ### 2. Build the CLI

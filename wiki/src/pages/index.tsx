@@ -34,7 +34,7 @@ export default function Home(): ReactNode {
   return (
     <Layout
       title={siteConfig.title}
-      description="Scaffold ASP.NET Core applications with HTMX">
+      description="Generate production-ready ASP.NET Core applications with HTMX">
       <HomepageHeader />
       <main>
         <HomepageFeatures />

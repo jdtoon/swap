@@ -502,7 +502,6 @@ if (!string.IsNullOrWhiteSpace(searchTerm))
 - [Pagination](./pagination.md) - Search with pagination
 - [Sorting](./sorting.md) - Sort search results
 - [Filtering](./filtering.md) - Combine search with filters
-- [HTMX Integration](../concepts/htmx-integration.md) - HTMX patterns
 
 ## See Also
 

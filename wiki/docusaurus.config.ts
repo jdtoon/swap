@@ -6,7 +6,7 @@ import type * as Preset from '@docusaurus/preset-classic';
 
 const config: Config = {
   title: 'Swap CLI',
-  tagline: 'Scaffold ASP.NET Core apps with HTMX',
+  tagline: 'Generate production-ready ASP.NET Core apps with HTMX',
   favicon: 'img/favicon.ico',
 
   // Future flags, see https://docusaurus.io/docs/api/docusaurus-config#future
@@ -18,12 +18,12 @@ const config: Config = {
   url: 'https://toonjd.github.io',
   // Set the /<baseUrl>/ pathname under which your site is served
   // For GitHub pages deployment, it is often '/<projectName>/'
-  baseUrl: '/swap-cli/',
+  baseUrl: '/swap/',
 
   // GitHub pages deployment config.
   // If you aren't using GitHub pages, you don't need these.
   organizationName: 'toonjd', // Usually your GitHub org/user name.
-  projectName: 'swap-cli', // Usually your repo name.
+  projectName: 'swap', // Usually your repo name.
 
   onBrokenLinks: 'throw',
 
@@ -42,7 +42,7 @@ const config: Config = {
         docs: {
           sidebarPath: './sidebars.ts',
           editUrl:
-            'https://github.com/toonjd/swap-cli/tree/develop/wiki/',
+            'https://github.com/toonjd/swap/tree/develop/wiki/',
         },
         blog: false,
         theme: {

@@ -15,11 +15,13 @@ swap new <name>
 ## Description
 
 Generates an ASP.NET Core MVC project with:
-- Entity Framework Core (SQLite)
-- HTMX library included
-- Bootstrap 5 UI
-- Sample Todo CRUD with HTMX views
-- Ready to run
+- **Entity Framework Core** with SQLite (or your choice)
+- **HTMX** for interactive UI without JavaScript
+- **DaisyUI + Tailwind CSS** for modern, accessible components
+- **Sample TodoItem CRUD** with modals, pagination, and search
+- **Toast notifications** for user feedback
+- **Production-ready patterns** from real applications
+- Ready to run immediately
 
 ## Example
 
@@ -37,53 +39,99 @@ Navigate to `http://localhost:5000` to see the Todo CRUD interface.
 MyApp/
 ├── Controllers/
 │   ├── HomeController.cs
-│   └── TodoController.cs        # Sample CRUD controller
+│   └── TodoItemController.cs    # Sample CRUD with all features
 ├── Models/
-│   └── TodoItem.cs              # Sample entity
+│   ├── TodoItem.cs              # Sample entity
+│   └── TodoItemListViewModel.cs # View model with pagination
 ├── Views/
-│   ├── Todo/
-│   │   ├── Index.cshtml         # Main view with HTMX
-│   │   ├── _TodoList.cshtml     # HTMX partial
-│   │   ├── Create.cshtml
-│   │   ├── Edit.cshtml
-│   │   └── Delete.cshtml
+│   ├── TodoItem/
+│   │   ├── Index.cshtml         # Main view with search and filters
+│   │   ├── _List.cshtml         # HTMX partial with table
+│   │   ├── _AddModal.cshtml     # Create form in modal
+│   │   └── _EditModal.cshtml    # Edit form in modal
+│   ├── Home/
+│   │   └── Index.cshtml         # Welcome page
 │   └── Shared/
-│       └── _Layout.cshtml       # Includes HTMX script
+│       ├── _Layout.cshtml       # DaisyUI layout with navbar
+│       └── _Pagination.cshtml   # Reusable pagination component
 ├── Data/
 │   ├── AppDbContext.cs
 │   └── Migrations/
 ├── wwwroot/
-│   └── lib/
-│       ├── bootstrap/
-│       └── htmx/                # HTMX library
-├── Program.cs
+│   ├── lib/
+│   │   ├── htmx/                # HTMX library
+│   │   └── toastify-js/         # Toast notifications
+│   └── css/
+│       ├── tailwind.css         # Generated Tailwind CSS
+│       └── site.css             # Custom styles
+├── tailwind.config.js           # Tailwind + DaisyUI configuration
+├── appsettings.json             # Connection strings
+├── Program.cs                   # App configuration
 └── MyApp.csproj
 ```
 
 ## Sample Code
 
-The generated Todo controller demonstrates HTMX patterns:
+The generated TodoItem controller demonstrates all patterns:
 
 ```csharp
-public async Task<IActionResult> Index()
+public async Task<IActionResult> Index(
+    int pageNumber = 1, 
+    int pageSize = 10,
+    string? searchTerm = null,
+    string? sortBy = null,
+    string? sortOrder = "asc")
 {
-    return View();
-}
-
-public async Task<IActionResult> List()
-{
-    var todos = await _context.TodoItems.ToListAsync();
-    return PartialView("_TodoList", todos);
+    var query = _context.TodoItems.AsQueryable();
+    
+    // Search
+    if (!string.IsNullOrWhiteSpace(searchTerm))
+        query = query.Where(t => t.Title.Contains(searchTerm));
+    
+    // Sort
+    query = sortBy switch {
+        "Title" => sortOrder == "desc" ? query.OrderByDescending(t => t.Title) : query.OrderBy(t => t.Title),
+        "IsComplete" => sortOrder == "desc" ? query.OrderByDescending(t => t.IsComplete) : query.OrderBy(t => t.IsComplete),
+        _ => query.OrderBy(t => t.Id)
+    };
+    
+    // Pagination
+    var totalItems = await query.CountAsync();
+    var items = await query
+        .Skip((pageNumber - 1) * pageSize)
+        .Take(pageSize)
+        .ToListAsync();
+    
+    var viewModel = new TodoItemListViewModel {
+        Items = items,
+        Pagination = new PaginationDto { /* ... */ }
+    };
+    
+    return Request.Headers.ContainsKey("HX-Request")
+        ? PartialView("_List", viewModel)
+        : View(viewModel);
 }
 ```
 
-The Index view loads data via HTMX:
+The Index view uses HTMX for zero-reload interactions:
 
 ```html
-<div hx-get="@Url.Action("List")" 
-     hx-trigger="load" 
-     hx-target="#todo-list">
-    <div id="todo-list">Loading...</div>
+<!-- Search bar -->
+<input type="text" 
+       class="input input-bordered"
+       hx-get="@Url.Action("Index")" 
+       hx-trigger="keyup changed delay:500ms"
+       hx-target="#todo-list"
+       placeholder="Search..." />
+
+<!-- Todo list container -->
+<div id="todo-list" 
+     hx-get="@Url.Action("Index")" 
+     hx-trigger="load"
+     hx-include="[name='searchTerm']">
+    <div class="flex justify-center p-8">
+        <span class="loading loading-spinner loading-lg"></span>
+    </div>
 </div>
 ```
 

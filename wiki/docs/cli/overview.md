@@ -139,21 +139,24 @@ MyApp/
 │   └── Product.cs
 ├── Views/
 │   ├── Product/
-│   │   ├── Index.cshtml
-│   │   ├── _ProductList.cshtml  # HTMX partial
-│   │   ├── Create.cshtml
-│   │   ├── Edit.cshtml
-│   │   └── Delete.cshtml
+│   │   ├── Index.cshtml          # Main view
+│   │   ├── _List.cshtml          # HTMX partial for table
+│   │   ├── _AddModal.cshtml      # Create form modal
+│   │   └── _EditModal.cshtml     # Edit form modal
 │   └── Shared/
-│       └── _Layout.cshtml
+│       ├── _Layout.cshtml        # DaisyUI layout
+│       └── _Pagination.cshtml    # Pagination component
 ├── Data/
 │   ├── AppDbContext.cs
 │   └── Migrations/
 ├── wwwroot/
 │   ├── lib/
-│   │   ├── bootstrap/
-│   │   └── htmx/              # HTMX library
+│   │   ├── htmx/                 # HTMX library
+│   │   └── toastify-js/          # Toast notifications
 │   └── css/
+│       ├── tailwind.css          # Tailwind output
+│       └── site.css              # Custom styles
+├── tailwind.config.js            # Tailwind + DaisyUI config
 ├── Program.cs
 └── MyApp.csproj
 ```

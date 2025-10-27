@@ -254,22 +254,39 @@ public async Task<IActionResult> Index(bool showAll = false)
 
 ### Custom Pagination Styling
 
-Modify `_PaginationControls.cshtml` for custom styling:
+The generated `_Pagination.cshtml` uses DaisyUI components. You can customize it:
 
 ```cshtml
-<!-- Bootstrap styling -->
-<nav>
-    <ul class="pagination">
-        <li class="page-item @(!Model.HasPreviousPage ? "disabled" : "")">
-            <a class="page-link" hx-get="@Model.HxGetUrl" hx-vals='{"pageNumber": 1}'>First</a>
-        </li>
-        <!-- ... more buttons -->
-    </ul>
-</nav>
+<!-- Default DaisyUI styling (generated) -->
+<div class="join">
+    <button class="join-item btn btn-sm @(!Model.HasPreviousPage ? "btn-disabled" : "")"
+            hx-get="@Model.HxGetUrl" 
+            hx-vals='{"pageNumber": 1}'>
+        First
+    </button>
+    <button class="join-item btn btn-sm @(!Model.HasPreviousPage ? "btn-disabled" : "")"
+            hx-get="@Model.HxGetUrl" 
+            hx-vals='{"pageNumber": @(Model.CurrentPage - 1)}'>
+        «
+    </button>
+    <button class="join-item btn btn-sm btn-active">
+        Page @Model.CurrentPage of @Model.TotalPages
+    </button>
+    <button class="join-item btn btn-sm @(!Model.HasNextPage ? "btn-disabled" : "")"
+            hx-get="@Model.HxGetUrl" 
+            hx-vals='{"pageNumber": @(Model.CurrentPage + 1)}'>
+        »
+    </button>
+    <button class="join-item btn btn-sm @(!Model.HasNextPage ? "btn-disabled" : "")"
+            hx-get="@Model.HxGetUrl" 
+            hx-vals='{"pageNumber": @Model.TotalPages}'>
+        Last
+    </button>
+</div>
 
-<!-- Tailwind styling -->
+<!-- Alternative: Custom Tailwind styling -->
 <div class="flex gap-2">
-    <button class="px-4 py-2 bg-blue-500 text-white rounded disabled:opacity-50"
+    <button class="px-4 py-2 bg-primary text-white rounded disabled:opacity-50 hover:bg-primary-focus"
             hx-get="@Model.HxGetUrl"
             hx-vals='{"pageNumber": 1}'
             disabled="@(!Model.HasPreviousPage)">
@@ -293,12 +310,19 @@ int pageSize = 1000  // ❌ May cause performance issues
 
 ### 2. Add Loading Indicators
 
+DaisyUI provides built-in loading spinners:
+
 ```html
 <div id="product-list" 
      hx-get="@Url.Action("Index")"
-     hx-indicator=".htmx-indicator">
-    @await Html.PartialAsync("_ProductList", Model)
+     hx-indicator="#loading">
+    @await Html.PartialAsync("_List", Model)
 </div>
+
+<div id="loading" class="htmx-indicator">
+    <span class="loading loading-spinner loading-lg"></span>
+</div>
+```
 
 <div class="htmx-indicator">
     <span class="loading loading-spinner"></span> Loading...
@@ -390,7 +414,6 @@ var items = await query
 - [Search](./search.md) - Real-time search integration
 - [Sorting](./sorting.md) - Column sorting with pagination
 - [Filtering](./filtering.md) - Filters with pagination
-- [HTMX Integration](../concepts/htmx-integration.md) - HTMX patterns
 
 ## See Also
 

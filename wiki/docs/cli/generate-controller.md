@@ -114,7 +114,7 @@ Control sorting and filtering behavior per field:
 
 ### Controller
 
-**Location:** `Controllers/{Name}Controller.cs`
+**Location:** `Controllers/[Name]Controller.cs`
 
 **Contains:**
 - `Index(pageNumber, pageSize, searchTerm, sortBy, sortOrder, ...filters)` - Paginated, searchable, sortable, filterable list with HTMX support
@@ -137,7 +137,7 @@ Control sorting and filtering behavior per field:
 
 ### Model
 
-**Location:** `Models/{Name}.cs`
+**Location:** `Models/[Name].cs`
 
 **Contains:**
 - Entity class with all specified fields
@@ -168,15 +168,15 @@ public class Product
 
 ### View Model
 
-**Location:** `ViewModels/{Name}ListViewModel.cs`
+**Location:** `ViewModels/[Name]ListViewModel.cs`
 
 **Contains:**
-- `Items` - List<{Name}> for current page
+- `Items` - List of entities for current page
 - `Pagination` - PaginationDto with page metadata
 - `SearchTerm` - string? for current search query
 - `SortBy` - string? for current sort column
 - `SortOrder` - string? for current sort direction
-- `Filters` - Dictionary<string, string?> for active filters
+- `Filters` - Dictionary with string keys and nullable string values for active filters
 
 **Example:**
 ```csharp
@@ -187,17 +187,17 @@ public class ProductListViewModel
     public string? SearchTerm { get; set; }
     public string? SortBy { get; set; }
     public string? SortOrder { get; set; }
-    public Dictionary<string, string?> Filters { get; set; } = new();
+    public Dictionary<string, string> Filters { get; set; } = new();
 }
 ```
 
 ### Views
 
-**Location:** `Views/{Name}/`
+**Location:** `Views/[Name]/`
 
 #### `Index.cshtml` - Main Container
 - Hero section with title
-- "Create {Entity}" button (opens modal via HTMX)
+- "Create Entity" button (opens modal via HTMX)
 - Search input with 500ms debounce
 - Filter section with dropdowns (only for filterable bool fields)
 - `#entity-list` div container for partial updates
@@ -302,7 +302,7 @@ public async Task<IActionResult> Index(
         SearchTerm = searchTerm,
         SortBy = sortBy,
         SortOrder = sortOrder,
-        Filters = new Dictionary<string, string?> { { "inStock", inStock?.ToString().ToLower() } },
+        Filters = new Dictionary<string, string> { { "inStock", inStock?.ToString().ToLower() } },
         Pagination = new PaginationDto { /* ... */ }
     };
     
@@ -571,9 +571,4 @@ After generating your controller:
 - [Features: Sorting](../features/sorting.md)
 - [Features: Filtering](../features/filtering.md)
 - [Features: Bulk Operations](../features/bulk-operations.md)
-- [Concepts: HTMX Integration](../concepts/htmx-integration.md)
-- [Reference: Field Types](../reference/field-types.md)
-{
-    private readonly AppDbContext _context;
 
-    public ProductController(AppDbContext context)

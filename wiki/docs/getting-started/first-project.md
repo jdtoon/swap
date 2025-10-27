@@ -16,8 +16,10 @@ cd BlogApp
 This generates:
 - ASP.NET Core MVC application
 - Entity Framework Core with SQLite
-- Sample Todo entity with HTMX views
-- Bootstrap 5 UI
+- Sample TodoItem entity with HTMX views
+- DaisyUI components with Tailwind CSS
+- Modal-based CRUD operations
+- Toast notifications for feedback
 
 ## Run the Application
 
@@ -36,10 +38,21 @@ swap g r Post --fields Title:string,Content:string,PublishedAt:datetime?
 ```
 
 This creates:
-- `Models/Post.cs` - Entity model
-- `Controllers/PostController.cs` - CRUD controller
-- `Views/Post/` - HTMX views (Index, Create, Edit, Delete, Details)
+- `Models/Post.cs` - Entity model with properties
+- `Controllers/PostController.cs` - Full CRUD controller with HTMX support
+- `Views/Post/Index.cshtml` - Main list view
+- `Views/Post/_List.cshtml` - Partial for HTMX updates
+- `Views/Post/_AddModal.cshtml` - Add form in modal
+- `Views/Post/_EditModal.cshtml` - Edit form in modal
 - Updates `AppDbContext` with `DbSet<Post>`
+
+**Features included:**
+- ✅ Modal-based Create/Edit
+- ✅ Inline Delete with confirmation
+- ✅ Pagination (10, 25, 50, 100 items per page)
+- ✅ Real-time search (500ms debounce)
+- ✅ Column sorting
+- ✅ Toast notifications
 
 ## Apply Database Changes
 
@@ -48,14 +61,17 @@ dotnet ef migrations add AddPost
 dotnet ef database update
 ```
 
-## Test Your CRUD
+## Test Your Features
 
 Restart the app and navigate to `http://localhost:5000/Post`:
 
-- **Create** - Add new posts
-- **List** - View all posts (HTMX-powered table)
-- **Edit** - Update posts inline
-- **Delete** - Remove posts with confirmation
+- **Create** - Click "Add New Post" to open a modal form
+- **List** - View paginated posts with sorting
+- **Search** - Type in the search box (auto-searches after 500ms)
+- **Edit** - Click edit button to open modal
+- **Delete** - Click delete with confirmation dialog
+- **Sort** - Click column headers to sort
+- **Pagination** - Choose page size and navigate pages
 - **Details** - View single post
 
 ## How HTMX Works
@@ -77,53 +93,97 @@ When the page loads, HTMX:
 
 ## Customize Your Views
 
-Edit `Views/Post/Index.cshtml` to change the layout:
+The generated views use DaisyUI components. Edit `Views/Post/Index.cshtml` to customize:
 
 ```cshtml
-@model IEnumerable<BlogApp.Models.Post>
+@model PostListViewModel
 
-<h1>Blog Posts</h1>
+<div class="flex justify-between items-center mb-6">
+    <h1 class="text-3xl font-bold">Blog Posts</h1>
+    <button class="btn btn-primary" 
+            hx-get="@Url.Action("Add")" 
+            hx-target="#modal-container">
+        Add New Post
+    </button>
+</div>
 
-<a asp-action="Create" class="btn btn-primary mb-3">New Post</a>
-
-<div hx-get="@Url.Action("List")" hx-trigger="load" hx-target="#post-list">
+<div hx-get="@Url.Action("List")" 
+     hx-trigger="load" 
+     hx-target="#post-list">
     <div id="post-list">
-        <p>Loading posts...</p>
+        <span class="loading loading-spinner loading-lg"></span>
     </div>
 </div>
 ```
 
-Edit `Views/Post/_PostList.cshtml` for the table:
+Edit `Views/Post/_List.cshtml` for the table:
 
 ```cshtml
-@model IEnumerable<BlogApp.Models.Post>
+@model PostListViewModel
 
-<table class="table table-striped">
-    <thead>
-        <tr>
-            <th>Title</th>
-            <th>Published</th>
-            <th></th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var post in Model)
-        {
+<div class="overflow-x-auto">
+    <table class="table table-zebra">
+        <thead>
             <tr>
-                <td>@post.Title</td>
-                <td>@post.PublishedAt?.ToString("MMM dd, yyyy")</td>
-                <td>
-                    <a asp-action="Edit" asp-route-id="@post.Id">Edit</a>
-                    <a asp-action="Delete" asp-route-id="@post.Id">Delete</a>
-                </td>
+                <th>Title</th>
+                <th>Content</th>
+                <th>Published</th>
+                <th class="text-right">Actions</th>
             </tr>
-        }
-    </tbody>
-</table>
+        </thead>
+        <tbody>
+            @foreach (var post in Model.Items)
+            {
+                <tr>
+                    <td>@post.Title</td>
+                    <td>@post.Content?.Substring(0, Math.Min(50, post.Content.Length ?? 0))...</td>
+                    <td>@post.PublishedAt?.ToString("MMM dd, yyyy")</td>
+                    <td class="text-right">
+                        <button class="btn btn-sm btn-ghost" 
+                                hx-get="@Url.Action("Edit", new { id = post.Id })"
+                                hx-target="#modal-container">
+                            Edit
+                        </button>
+                        <button class="btn btn-sm btn-error" 
+                                hx-delete="@Url.Action("Delete", new { id = post.Id })"
+                                hx-confirm="Delete this post?">
+                            Delete
+                        </button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
 ```
+
+## What You Get
+
+Every generated controller includes:
+
+**UI Components:**
+- ✅ DaisyUI buttons, forms, tables, modals
+- ✅ Tailwind utilities for layout and spacing
+- ✅ Loading spinners and animations
+- ✅ Responsive design out of the box
+
+**Interactive Features:**
+- ✅ Modal CRUD (no page reloads)
+- ✅ Toast notifications (success/error)
+- ✅ Search with debouncing
+- ✅ Sortable columns
+- ✅ Pagination controls
+
+**Developer Experience:**
+- ✅ Server-side validation
+- ✅ Async/await patterns
+- ✅ Type-safe models
+- ✅ Clean, readable code
 
 ## Next Steps
 
-- [swap generate model](../cli/generate-model) - Learn about field types and options
-- [swap generate controller](../cli/generate-controller) - Understand generated controllers
-- [HTMX Patterns](../cli/overview) - See common HTMX patterns in generated views
+- [CLI Overview](../cli/overview) - Complete command reference
+- [Generate Controller](../cli/generate-controller) - Deep dive into controller generation
+- [Pagination](../features/pagination) - Learn about pagination features
+- [Sorting](../features/sorting) - Configure sortable columns
+- [Filtering](../features/filtering) - Add filters to your views
