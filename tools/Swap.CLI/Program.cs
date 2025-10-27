@@ -11,11 +11,12 @@ Examples:
                                           Generate a controller
   swap g r Product --fields ""Name:string Price:decimal InStock:bool""
                                           Generate full CRUD resource
+  swap g seed all --count 100             Generate seeders for all entities
 
 Field Flags:
   :sortable, :s       Enable sorting on this column
   :filterable, :f     Enable filtering on this column
-  :ns                 Disable sorting (not sortable)");
+  :nosort, :ns        Disable sorting (not sortable)");
 
 // Add commands
 rootCommand.AddCommand(NewCommand.Create());

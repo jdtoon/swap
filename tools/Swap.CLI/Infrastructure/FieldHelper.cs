@@ -22,11 +22,12 @@ public class FieldDefinition
 public static class FieldHelper
 {
     /// <summary>
-    /// Parse field specifications like "Name:string:s Title:string?:ns,f Age:int:sortable,filterable"
+    /// Parse field specifications like "Name:string:s Title:string?:ns,f Age:int:sortable,filterable".
+    /// Accepts either space-separated or comma-separated entries.
     /// Supports flags: :sortable/:s (sortable), :nosort/:ns (not sortable), :filterable/:f (filterable)
     /// Defaults: sortable=true, filterable=false
     /// </summary>
-    public static List<FieldDefinition> ParseFields(string fieldsSpec)
+    public static List<FieldDefinition> ParseFields(string? fieldsSpec)
     {
         var fields = new List<FieldDefinition>();
         
@@ -35,9 +36,46 @@ public static class FieldHelper
             return fields;
         }
         
-        // Split by space only to handle field specs
-        // Don't split by comma since commas are used within flag specifications
-        var fieldSpecs = fieldsSpec.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        // Primary split on whitespace between field specs (most common)
+        var roughSpecs = fieldsSpec.Split(' ', StringSplitOptions.RemoveEmptyEntries).ToList();
+
+        // Post-process any tokens that still contain commas to support comma-separated field specs
+        // without breaking commas used for flag lists (e.g., :ns,f)
+        var fieldSpecs = new List<string>();
+        foreach (var tok in roughSpecs)
+        {
+            if (!tok.Contains(','))
+            {
+                fieldSpecs.Add(tok);
+                continue;
+            }
+
+            // Split this token on commas, but only start a new field when the part looks like a field (contains ":")
+            var parts = tok.Split(',', StringSplitOptions.RemoveEmptyEntries);
+            string? acc = null;
+            foreach (var part in parts)
+            {
+                if (acc is null)
+                {
+                    acc = part;
+                }
+                else if (part.Contains(':'))
+                {
+                    // Previous accumulator was a full field; emit it and start new
+                    fieldSpecs.Add(acc);
+                    acc = part;
+                }
+                else
+                {
+                    // This is likely an additional flag (e.g., ",f"), keep it with current field
+                    acc += "," + part;
+                }
+            }
+            if (!string.IsNullOrWhiteSpace(acc))
+            {
+                fieldSpecs.Add(acc);
+            }
+        }
         
         foreach (var spec in fieldSpecs)
         {

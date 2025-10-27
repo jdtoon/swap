@@ -255,7 +255,7 @@ swap/
 │   │   ├── Commands/          # Command implementations
 │   │   ├── Infrastructure/    # Template engine, helpers
 │   │   └── Program.cs         # CLI entry point
-│   └── Swap.CLI.Tests/        # 136 passing tests
+│   └── Swap.CLI.Tests/        # 145 passing tests
 │       ├── Commands/          # Command tests
 │       └── Infrastructure/    # Template engine tests
 ├── templates/                 # Code generation templates

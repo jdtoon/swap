@@ -11,6 +11,7 @@ public static class GenerateSeedCommand
     public static Command Create()
     {
         var command = new Command("seed", "Generate database seeders using Bogus");
+        command.AddAlias("s");
 
         var nameArg = new Argument<string>(
             name: "name",

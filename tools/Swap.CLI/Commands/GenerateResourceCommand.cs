@@ -15,7 +15,7 @@ public static class GenerateResourceCommand
         var nameArg = new Argument<string>("name", "The name of the entity (e.g., Product, Customer)");
         var fieldsOption = new Option<string?>(
             "--fields",
-            "Comma-separated list of field definitions (e.g., Name:string,Email:string,Age:int)");
+            "Space- or comma-separated field definitions (e.g., Name:string Email:string Age:int)");
         
         command.AddArgument(nameArg);
         command.AddOption(fieldsOption);
