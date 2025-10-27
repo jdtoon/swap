@@ -16,6 +16,12 @@
     <Version>0.0.1</Version>
     <Description>Command-Line Interface for the Swap Framework. Scaffold modules, generate CRUD features, and more.</Description>
     <PackageTags>swap;cli;scaffolding;code-generation;htmx</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageProjectUrl>https://github.com/jdtoon/swap</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/jdtoon/swap</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <Authors>jdtoon</Authors>
     
     <!-- Assembly Information -->
     <AssemblyVersion>0.0.1.0</AssemblyVersion>
@@ -42,6 +48,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- Include README in NuGet package -->
+    <None Include="README.md" Pack="true" PackagePath="/" />
+    
     <!-- Include templates in the NuGet package -->
     <Content Include="..\..\templates\**\*.*">
       <PackagePath>templates/%(RecursiveDir)%(Filename)%(Extension)</PackagePath>
