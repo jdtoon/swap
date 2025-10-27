@@ -10,7 +10,8 @@ Generate a complete resource (model + controller + views) in a single command. T
 
 ```bash
 swap generate resource <name> [options]
-swap g r <name> [options]  # Short alias
+swap g r <name> [options]              # Short alias
+swap generate r <name> [options]       # Also works
 ```
 
 ## Description
@@ -50,23 +51,36 @@ swap g r OrderItem
 
 ### `--fields <specification>`
 
-Define custom fields for the model.
+Define custom fields for the model with optional flags.
 
 **Format:**
 ```
-FieldName:Type[,FieldName:Type...]
+"FieldName:Type[:flags] [FieldName:Type[:flags]...]"
 ```
+
+**Flags** (comma-separated):
+- `:sortable` or `:s` - Enable column sorting (default for most fields)
+- `:nosort` or `:ns` - Disable column sorting
+- `:filterable` or `:f` - Add filter dropdown (bool fields only)
 
 **Examples:**
 ```bash
-swap g r Product --fields Name:string,Price:decimal,Stock:int
-swap g r User --fields Email:string,Age:int,IsActive:bool,Bio:string?
-swap g r Order --fields CustomerId:int,Total:decimal,OrderDate:datetime
+# Basic fields (space-separated)
+swap g r Product --fields "Name:string Price:decimal Stock:int"
+
+# With flags
+swap g r Product --fields "Name:string:s,f Price:decimal:s Stock:int:ns"
+
+# Nullable field
+swap g r User --fields "Email:string Age:int IsActive:bool Bio:string?"
+
+# With DateTime
+swap g r Order --fields "CustomerId:int Total:decimal OrderDate:datetime"
 ```
 
 **Default:** If omitted, generates a model with `Id`, `Title`, and `IsComplete` fields.
 
-See [swap generate model](./generate-model) for complete field type documentation.
+See [swap generate model](./generate-model) for complete field type and flag documentation.
 
 ## Examples
 

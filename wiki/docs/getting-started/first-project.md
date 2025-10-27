@@ -34,7 +34,7 @@ Open `http://localhost:5000` in your browser. You'll see the Todo CRUD interface
 Generate a blog post resource:
 
 ```bash
-swap g r Post --fields Title:string,Content:string,PublishedAt:datetime?
+swap g r Post --fields "Title:string Content:string PublishedAt:datetime?"
 ```
 
 This creates:

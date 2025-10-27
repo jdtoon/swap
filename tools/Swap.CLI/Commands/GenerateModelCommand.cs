@@ -10,6 +10,7 @@ public static class GenerateModelCommand
     public static Command Create()
     {
         var command = new Command("model", "Generate an entity model with custom fields");
+        command.AddAlias("m");
         
         var nameArg = new Argument<string>("name", "The name of the entity (e.g., Customer, Product)");
         var fieldsOption = new Option<string?>(

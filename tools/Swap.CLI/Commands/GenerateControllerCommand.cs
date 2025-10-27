@@ -10,6 +10,7 @@ public static class GenerateControllerCommand
     public static Command Create()
     {
         var command = new Command("controller", "Generate a CRUD controller with HTMX views");
+        command.AddAlias("c");
         
         var nameArg = new Argument<string>("name", "The name of the entity (e.g., Task, Product)");
         command.AddArgument(nameArg);

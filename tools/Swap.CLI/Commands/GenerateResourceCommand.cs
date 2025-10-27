@@ -9,6 +9,7 @@ public static class GenerateResourceCommand
     public static Command Create()
     {
         var command = new Command("resource", "Generate a complete resource (model + controller + views)");
+        command.AddAlias("r");
         
         var nameArg = new Argument<string>("name", "The name of the entity (e.g., Product, Customer)");
         var fieldsOption = new Option<string?>(
@@ -98,7 +99,7 @@ public static class GenerateResourceCommand
             
             if (executeMethod != null)
             {
-                var task = (Task<int>)executeMethod.Invoke(null, new object[] { entityName })!;
+                var task = (Task<int>)executeMethod.Invoke(null, new object?[] { entityName, fieldsSpec })!;
                 var controllerResult = await task;
                 
                 if (controllerResult != 0)

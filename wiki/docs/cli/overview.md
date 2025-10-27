@@ -14,12 +14,12 @@ swap <command> [subcommand] [arguments] [options]
 
 ## Available Commands
 
-| Command | Description | Alias |
-|---------|-------------|-------|
+| Command | Description | Aliases |
+|---------|-------------|---------|
 | `swap new` | Create a new project | - |
-| `swap generate model` | Generate an entity model | `g m` |
-| `swap generate controller` | Generate a CRUD controller | `g c` |
-| `swap generate resource` | Generate model + controller | `g r` |
+| `swap generate model` | Generate an entity model | `g m`, `generate m` |
+| `swap generate controller` | Generate a CRUD controller | `g c`, `generate c` |
+| `swap generate resource` | Generate model + controller + views | `g r`, `generate r` |
 
 ## Quick Examples
 
@@ -32,19 +32,19 @@ swap new MyApp
 ### Generate Model
 
 ```bash
-swap g m Product --fields Name:string,Price:decimal,Stock:int
+swap g m Product --fields "Name:string Price:decimal Stock:int"
 ```
 
 ### Generate Controller
 
 ```bash
-swap g c Product
+swap g c Product --fields "Name:string Price:decimal Stock:int"
 ```
 
 ### Generate Complete Resource
 
 ```bash
-swap g r Order --fields CustomerId:int,Total:decimal,OrderDate:datetime
+swap g r Order --fields "CustomerId:int Total:decimal OrderDate:datetime"
 ```
 
 ## HTMX Integration
@@ -88,6 +88,43 @@ Supported types in `--fields`:
 | `double` | `Rating:double` | `double` |
 | `float` | `Score:float` | `float` |
 | `guid` | `UniqueId:guid` | `Guid` |
+
+## Field Flags
+
+You can add flags to fields to control sorting and filtering behavior:
+
+| Flag | Short | Description | Applies To |
+|------|-------|-------------|------------|
+| `:sortable` | `:s` | Enable sorting on this column (default for most fields) | All fields |
+| `:nosort` | `:ns` | Disable sorting on this column | All fields |
+| `:filterable` | `:f` | Add a filter dropdown | `bool` fields only |
+
+### Flag Syntax
+
+Use comma-separated flags after the type:
+
+```bash
+swap g r Product --fields "Name:string:s,f Price:decimal:s Stock:int:ns IsActive:bool:f"
+```
+
+This creates:
+- **Name** - Sortable column with filter (note: string filters not yet implemented)
+- **Price** - Sortable column (has sort arrows)
+- **Stock** - Non-sortable column (plain text header)
+- **IsActive** - Filterable boolean (dropdown with Yes/No/All options)
+
+### Examples
+
+```bash
+# All fields sortable except Description
+swap g r Post --fields "Title:string:s Content:string:ns PublishedAt:datetime:s"
+
+# Status filter for bool
+swap g r Task --fields "Title:string Done:bool:f Priority:int:s"
+
+# Combine multiple flags
+swap g r Product --fields "Name:string:s,f Price:decimal:s InStock:bool:f"
+```
 
 ## Common Workflows
 
