@@ -4,31 +4,49 @@ sidebar_position: 2
 
 # swap new
 
-Create a new ASP.NET Core project with HTMX.
+Create a new ASP.NET Core project with HTMX and Docker support.
 
 ## Synopsis
 
 ```bash
-swap new <name>
+swap new <name> [--database <provider>]
 ```
+
+## Options
+
+- `<name>` - Project name (required)
+- `--database <provider>` - Database provider: `sqlite` (default), `sqlserver`, or `postgres`
+- `--db <provider>` - Short alias for `--database`
 
 ## Description
 
-Generates an ASP.NET Core MVC project with:
-- **Entity Framework Core** with SQLite (or your choice)
+Generates a production-ready ASP.NET Core MVC project with:
+- **Entity Framework Core** with your chosen database
 - **HTMX** for interactive UI without JavaScript
 - **DaisyUI + Tailwind CSS** for modern, accessible components
+- **Docker support** with Dockerfile and docker-compose.yml
 - **Sample TodoItem CRUD** with modals, pagination, and search
 - **Toast notifications** for user feedback
+- **Auto-migrations** that run on startup
 - **Production-ready patterns** from real applications
-- Ready to run immediately
 
-## Example
+## Examples
 
 ```bash
+# Create with SQLite (default)
 swap new MyApp
 cd MyApp
 dotnet run
+
+# Create with SQL Server
+swap new MyApp --database sqlserver
+cd MyApp
+docker-compose up --build
+
+# Create with PostgreSQL
+swap new MyApp --db postgres
+cd MyApp
+docker-compose up --build
 ```
 
 Navigate to `http://localhost:5000` to see the Todo CRUD interface.
@@ -137,30 +155,64 @@ The Index view uses HTMX for zero-reload interactions:
 
 ## Docker Support
 
-Every project is **Docker-ready** out of the box! The following files are automatically generated:
+Every project is **Docker-ready** out of the box! Generated Docker files include:
 
-- **Dockerfile** - Multi-stage build optimized for production
-- **docker-compose.yml** - Complete development environment with database
-- **.dockerignore** - Optimized build context
+**Dockerfile:**
+- Multi-stage build (Build: .NET SDK 9.0 + Node.js, Runtime: ASP.NET 9.0)
+- Automatic `libman restore` for HTMX/DaisyUI
+- Tailwind CSS compilation with `npm run build:css`
+- Optimized layer caching for fast rebuilds
+- Production-ready configuration
+
+**docker-compose.yml:**
+- App service with your chosen database
+- Health checks ensuring database readiness
+- Persistent volumes for data storage
+- Auto-migrations on container startup
+- Pre-configured ports (app: 5000, database: default)
+
+**Run with Docker:**
 
 ```bash
-# Run with Docker Compose (includes database)
-docker-compose up -d
+# SQLite - Single container
+swap new MyApp --database sqlite
+cd MyApp
+docker-compose up --build
+# Visit http://localhost:5000
 
-# Or build and run manually
-docker build -t myapp .
-docker run -d -p 5000:8080 myapp
+# SQL Server - App + SQL Server 2022 containers
+swap new MyApp --database sqlserver
+cd MyApp
+docker-compose up --build
+# Visit http://localhost:5000
+# SQL Server: localhost:1433
+
+# PostgreSQL - App + PostgreSQL 16 containers
+swap new MyApp --database postgres
+cd MyApp
+docker-compose up --build
+# Visit http://localhost:5000
+# PostgreSQL: localhost:5432
 ```
 
-See the [Docker Deployment Guide](/docs/deployment/docker) for details.
+**Key Features:**
+- ✅ Database health checks (SQL Server: 30s, PostgreSQL: 10s)
+- ✅ Migrations auto-apply on startup (no manual steps!)
+- ✅ Data persists across container restarts
+- ✅ HTMX/DaisyUI libraries included via libman
+- ✅ Data protection keys configured for sessions/cookies
+
+See the [Docker Deployment Guide](/docs/deployment/docker) for production configuration.
 
 ## Next Steps
 
 After creating your project:
 
+### Running Locally (without Docker)
+
 ```bash
-# Create initial migration
-dotnet ef migrations add InitialCreate
+# Create initial migration (already done by CLI)
+# dotnet ef migrations add InitialCreate
 
 # Apply migration
 dotnet ef database update
@@ -169,10 +221,33 @@ dotnet ef database update
 dotnet run
 ```
 
-Then start generating your own resources:
+### Running with Docker (recommended)
 
 ```bash
-swap g r Product --fields Name:string,Price:decimal
+# Start everything (builds, runs DB, runs app, applies migrations)
+docker-compose up --build
+
+# View logs
+docker-compose logs -f app
+
+# Stop
+docker-compose down
+```
+
+**Note:** With Docker, migrations run automatically on startup - no manual steps needed!
+
+### Generate More Resources
+
+```bash
+# Generate a new CRUD feature
+swap g r Product --fields "Name:string Price:decimal InStock:bool:f"
+
+# Without Docker: Create and apply migration
+dotnet ef migrations add AddProduct
+dotnet ef database update
+
+# With Docker: Just rebuild
+docker-compose up --build
 ```
 
 ## See Also

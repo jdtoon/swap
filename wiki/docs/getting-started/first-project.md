@@ -9,25 +9,55 @@ Create a simple CRUD application with HTMX in under 5 minutes.
 ## Create a New Project
 
 ```bash
+# Create with SQLite (default)
 swap new BlogApp
+cd BlogApp
+
+# Or create with SQL Server
+swap new BlogApp --database sqlserver
+cd BlogApp
+
+# Or create with PostgreSQL
+swap new BlogApp --database postgres
 cd BlogApp
 ```
 
 This generates:
 - ASP.NET Core MVC application
-- Entity Framework Core with SQLite
+- Entity Framework Core with your chosen database
 - Sample TodoItem entity with HTMX views
 - DaisyUI components with Tailwind CSS
 - Modal-based CRUD operations
 - Toast notifications for feedback
+- **Docker support** with Dockerfile and docker-compose.yml
 
 ## Run the Application
+
+### Option 1: Run Locally
 
 ```bash
 dotnet run
 ```
 
-Open `http://localhost:5000` in your browser. You'll see the Todo CRUD interface powered by HTMX.
+Open `http://localhost:5000` in your browser.
+
+### Option 2: Run with Docker (Recommended)
+
+```bash
+docker-compose up --build
+```
+
+Docker will:
+- Build your app with all dependencies
+- Start the database (if SQL Server or PostgreSQL)
+- Apply migrations automatically
+- Start your app on http://localhost:5000
+
+**Benefits of Docker:**
+- ✅ No manual database setup
+- ✅ Migrations run automatically
+- ✅ Consistent environment across team
+- ✅ Production-ready configuration
 
 ## Add a New Resource
 
@@ -56,10 +86,21 @@ This creates:
 
 ## Apply Database Changes
 
+### Running Locally
+
 ```bash
 dotnet ef migrations add AddPost
 dotnet ef database update
 ```
+
+### Running with Docker
+
+```bash
+# Just rebuild - migrations apply automatically!
+docker-compose up --build
+```
+
+**Note:** Docker containers auto-apply migrations on startup, so you only need to create the migration file with `dotnet ef migrations add AddPost` on your host machine. The update happens automatically in the container.
 
 ## Test Your Features
 

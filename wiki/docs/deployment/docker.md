@@ -11,112 +11,162 @@ Every Swap project is **Docker-ready** out of the box. The `swap new` command au
 When you create a new Swap project, you get:
 
 - ✅ **Dockerfile** - Multi-stage build optimized for production
-- ✅ **docker-compose.yml** - Complete development environment
+- ✅ **docker-compose.yml** - Complete development environment with database
 - ✅ **.dockerignore** - Optimized build context
 - ✅ **Database configuration** - Pre-configured for SQLite, SQL Server, or PostgreSQL
+- ✅ **Health checks** - Database readiness checks before app starts
+- ✅ **Auto-migrations** - Migrations run automatically on container startup
+- ✅ **libman restore** - HTMX and DaisyUI libraries installed during build
+- ✅ **Data protection** - Keys persisted across container restarts
 
 ## Quick Start
 
-### Build and Run
+### Build and Run with Docker Compose (Recommended)
+
+The simplest way to run your Swap project in Docker:
 
 ```bash
-# Build the Docker image
-docker build -t myapp .
+# Create a new project
+swap new MyApp --database postgres
+cd MyApp
 
-# Run the container
-docker run -d -p 5000:8080 -p 5001:8081 --name myapp myapp
+# Start all services (builds automatically)
+docker-compose up --build
+
+# Visit http://localhost:5000
 ```
 
-Your app will be available at `http://localhost:5000`
+That's it! Docker Compose will:
+1. Build your app with multi-stage Dockerfile
+2. Start the database container with health checks
+3. Wait for database to be healthy
+4. Start your app container
+5. Auto-apply migrations on startup
+6. Your app is ready at http://localhost:5000
 
-### Using Docker Compose (Recommended)
-
-Docker Compose provides a complete environment with database included:
+### View Logs
 
 ```bash
-# Start all services
-docker-compose up -d
-
-# View logs
+# Follow app logs
 docker-compose logs -f app
 
-# Stop services
+# View all logs
+docker-compose logs -f
+```
+
+### Stop Services
+
+```bash
+# Stop and remove containers
 docker-compose down
+
+# Stop and remove containers + volumes (deletes database!)
+docker-compose down -v
 ```
 
 ## Database-Specific Configurations
 
 ### SQLite (Default)
 
-SQLite projects include volume mounting for database persistence:
+SQLite projects include volume mounting for database persistence and data protection keys:
 
 ```yaml
 # docker-compose.yml (excerpt)
+services:
+  app:
+    environment:
+      - DOTNET_RUNNING_IN_CONTAINER=true
+    volumes:
+      - sqlite-data:/app/data      # Database persistence
+      - key-storage:/app/keys      # Data protection keys
+
 volumes:
-  - ./data:/app/data
+  sqlite-data:
+  key-storage:
 ```
 
-The database file is stored in `./data/` and persists across container restarts.
+**Key Features:**
+- ✅ Database persists across container restarts
+- ✅ Data protection keys stored in separate volume
+- ✅ Migrations auto-apply on startup
+- ✅ No separate database container needed
+- ✅ Perfect for development and small deployments
 
-**Run migrations:**
-
-```bash
-docker-compose exec app dotnet ef database update
-```
+**No manual migration needed!** Migrations run automatically when the container starts.
 
 ### SQL Server
 
-SQL Server projects include a complete SQL Server container:
+SQL Server projects include a complete SQL Server container with health checks:
 
 ```yaml
 # docker-compose.yml includes:
 services:
   app:
     depends_on:
-      - sqlserver
+      sqlserver:
+        condition: service_healthy
   
   sqlserver:
     image: mcr.microsoft.com/mssql/server:2022-latest
     environment:
       - SA_PASSWORD=YourStrong@Password123
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P YourStrong@Password123 -C -Q 'SELECT 1' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 ```
+
+**Key Features:**
+- ✅ Health check ensures SQL Server is ready before app starts
+- ✅ App waits up to 30s for SQL Server to initialize
+- ✅ Migrations auto-apply on startup
+- ✅ Persistent volume for database data
+- ✅ Exposed on localhost:1433 for external tools
 
 **⚠️ Security:** Change the default password before production!
 
-**Run migrations:**
-
-```bash
-docker-compose exec app dotnet ef database update
-```
+**No manual migration needed!** Migrations run automatically after SQL Server is healthy.
 
 ### PostgreSQL
 
-PostgreSQL projects include a PostgreSQL container:
+PostgreSQL projects include a PostgreSQL container with health checks:
 
 ```yaml
 # docker-compose.yml includes:
 services:
   app:
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
   
   postgres:
     image: postgres:16-alpine
     environment:
       - POSTGRES_PASSWORD=YourStrong@Password123
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 ```
+
+**Key Features:**
+- ✅ Health check ensures PostgreSQL is ready before app starts
+- ✅ Fast startup with Alpine Linux (10s start period)
+- ✅ Migrations auto-apply on startup
+- ✅ Persistent volume for database data
+- ✅ Exposed on localhost:5432 for external tools
 
 **⚠️ Security:** Change the default password before production!
 
-**Run migrations:**
-
-```bash
-docker-compose exec app dotnet ef database update
-```
+**No manual migration needed!** Migrations run automatically after PostgreSQL is healthy.
 
 ## Dockerfile Deep Dive
 
-Swap generates a **multi-stage Dockerfile** optimized for ASP.NET Core:
+Swap generates a **multi-stage Dockerfile** optimized for ASP.NET Core with all dependencies:
 
 ### Build Stage
 
@@ -124,33 +174,52 @@ Swap generates a **multi-stage Dockerfile** optimized for ASP.NET Core:
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 
 # Install Node.js for Tailwind CSS
-RUN apt-get update && apt-get install -y nodejs npm
+RUN apt-get update && apt-get install -y curl && \
+    curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
+    apt-get install -y nodejs
 
-# Restore dependencies
+# Install libman CLI for client libraries
+RUN dotnet tool install -g Microsoft.Web.LibraryManager.Cli
+ENV PATH="$PATH:/root/.dotnet/tools"
+
+WORKDIR /src
+
+# Restore .NET dependencies
 COPY ["MyApp.csproj", "./"]
 RUN dotnet restore
 
-# Install npm packages
+# Restore client libraries (HTMX, DaisyUI)
+COPY ["libman.json", "./"]
+RUN libman restore
+
+# Copy and prepare wwwroot
+COPY ["wwwroot/", "/app/wwwroot/"]
+RUN chmod -R 755 /app/wwwroot
+
+# Install npm packages and build CSS
 COPY ["package.json", "./"]
 RUN npm install
 
-# Build CSS with Tailwind
+# Copy source and build
+COPY . .
 RUN npm run build:css
-
-# Publish application
-RUN dotnet publish -c Release -o /app/publish
+RUN dotnet publish "MyApp.csproj" -c Release -o /app/publish /p:UseAppHost=false
 ```
 
 ### Runtime Stage
 
 ```dockerfile
 FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS runtime
+WORKDIR /app
 
 # Copy published app
 COPY --from=build /app/publish .
 
-# Configure ports and environment
-EXPOSE 8080 8081
+# Copy wwwroot with libman libraries
+COPY --from=build /app/wwwroot ./wwwroot
+
+# Configure HTTP-only for Development
+EXPOSE 8080
 ENV ASPNETCORE_HTTP_PORTS=8080
 
 ENTRYPOINT ["dotnet", "MyApp.dll"]
@@ -158,9 +227,11 @@ ENTRYPOINT ["dotnet", "MyApp.dll"]
 
 **Key Features:**
 - ✅ Separate build and runtime stages (smaller final image)
-- ✅ Node.js installed for Tailwind CSS compilation
-- ✅ Multi-platform support (Linux, Windows containers)
-- ✅ Production-optimized configuration
+- ✅ Node.js for Tailwind CSS compilation
+- ✅ libman CLI for HTMX/DaisyUI dependencies
+- ✅ wwwroot preserved with all client libraries
+- ✅ HTTP-only configuration for Development
+- ✅ Layer caching optimized for fast rebuilds
 
 ## Production Deployment
 
@@ -235,7 +306,9 @@ docker-compose exec app /bin/bash
 docker exec -it myapp /bin/bash
 ```
 
-### Run Database Migrations
+### Manually Run Database Migrations
+
+Migrations run automatically on startup, but you can run them manually:
 
 ```bash
 # Docker Compose
@@ -245,16 +318,30 @@ docker-compose exec app dotnet ef database update
 docker exec myapp dotnet ef database update
 ```
 
+### Add New Migrations
+
+After changing your models:
+
+```bash
+# 1. Stop the containers
+docker-compose down
+
+# 2. Create migration (on host machine)
+dotnet ef migrations add YourMigrationName
+
+# 3. Rebuild and start (migration auto-applies)
+docker-compose up --build
+```
+
 ### Rebuild After Code Changes
 
 ```bash
-# Docker Compose
-docker-compose up -d --build
+# Docker Compose (recommended)
+docker-compose up --build
 
-# Docker
-docker build -t myapp .
-docker stop myapp && docker rm myapp
-docker run -d -p 5000:8080 --name myapp myapp
+# Or stop, rebuild, and restart
+docker-compose down
+docker-compose up --build -d
 ```
 
 ## Cloud Deployment
@@ -346,31 +433,63 @@ services:
 Check logs:
 ```bash
 docker logs myapp
+# or
+docker-compose logs app
 ```
 
 Common issues:
-- Database connection string incorrect
-- Port already in use (change host port)
-- Missing environment variables
+- **Database not ready** - Health checks should handle this, but check database logs
+- **Port already in use** - Change host port in docker-compose.yml
+- **Missing environment variables** - Check docker-compose.yml environment section
+- **HTMX libraries missing** - Ensure libman restore ran during build
 
 ### Database Connection Fails
 
 **SQLite:** Ensure volume is mounted correctly
 ```bash
-docker run -v $(pwd)/data:/app/data myapp
+# Check volume exists
+docker volume ls | grep sqlite
 ```
 
-**SQL Server/PostgreSQL:** Check network connectivity
+**SQL Server/PostgreSQL:** Check network connectivity and health status
 ```bash
-# Test from inside container
-docker exec myapp ping sqlserver
+# Check service health
+docker-compose ps
+
+# Test from inside app container
+docker-compose exec app ping sqlserver
+# or
+docker-compose exec app ping postgres
 ```
 
-### CSS Not Building
+### Migrations Don't Run Automatically
 
-Ensure Node.js is installed in build stage:
-```dockerfile
-RUN apt-get update && apt-get install -y nodejs npm
+Check that your `Program.cs` includes auto-migration code:
+
+```csharp
+if (app.Environment.IsDevelopment())
+{
+    using var scope = app.Services.CreateScope();
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    db.Database.Migrate();
+}
+```
+
+This is included by default in all Swap projects.
+
+### HTMX/DaisyUI Not Loading
+
+Ensure libman restore ran during build:
+
+```bash
+# Check Dockerfile includes:
+RUN dotnet tool install -g Microsoft.Web.LibraryManager.Cli
+RUN libman restore
+```
+
+Check container logs for libman errors:
+```bash
+docker-compose logs app | grep libman
 ```
 
 ## Best Practices

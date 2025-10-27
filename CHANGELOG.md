@@ -9,27 +9,56 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed - HTMX Todo List Bug (2025-10-27)
+- **_TodoList.cshtml.template**: Fixed HTMX target element disappearing
+  - Moved `<div id="todo-list">` wrapper into partial view
+  - Ensures target element persists after HTMX swaps
+  - Resolves issue where add/delete operations would stop working after first use
+- **Index.cshtml.template**: Removed duplicate wrapper div
+  - Prevents nested target elements
+  - Cleaner markup structure
+
 ### Added - Docker Support (2025-10-27)
-- **Dockerfile Template**: Multi-stage build with Node.js for Tailwind CSS compilation
-  - Build stage: .NET SDK 9.0 + Node.js 20.x for CSS builds
+- **Dockerfile Template**: Multi-stage build with libman and Node.js
+  - Build stage: .NET SDK 9.0 + Node.js 20.x + libman CLI
+  - Automatic `libman restore` for HTMX/DaisyUI libraries
+  - Tailwind CSS compilation with `npm run build:css`
+  - wwwroot preservation across build stages
   - Runtime stage: Minimal ASP.NET runtime image
-  - Database-specific environment variable handling
-- **docker-compose.yml Template**: Complete development environment
-  - SQLite: Volume mounting for persistent database
-  - SQL Server: Dedicated SQL Server 2022 container with network
-  - PostgreSQL: PostgreSQL 16 Alpine container with network
-- **.dockerignore Template**: Optimized build context (excludes bin/, obj/, node_modules/, etc.)
-- **README.md Template**: Docker usage instructions with database-specific examples
-  - Quick start commands for Docker and Docker Compose
-  - Migration execution instructions for containers
+  - HTTP-only configuration for Development environment
+  - Optimized layer caching for faster rebuilds
+- **docker-compose.yml Template**: Complete environment with health checks
+  - SQLite: Named volumes for database and data protection keys
+  - SQL Server: Health check with 30s start period, sqlcmd validation
+  - PostgreSQL: Health check with 10s start period, pg_isready validation
+  - App waits for database health before starting
+  - Persistent volumes for all database providers
+  - Network isolation for security
+- **.dockerignore Template**: Optimized build context
+  - Excludes bin/, obj/, node_modules/, etc.
+  - Includes Migrations folder (required for auto-migration)
+- **Auto-Migration**: Migrations apply automatically on container startup
+  - Added to Program.cs template for Development environment
+  - Eliminates manual `dotnet ef database update` steps
+  - Works with all three database providers
+- **Data Protection Keys**: Configured for Docker environments
+  - Detects Docker via DOTNET_RUNNING_IN_CONTAINER environment variable
+  - Persists keys to /app/keys volume
+  - Prevents session/cookie issues across container restarts
+- **README.md Template**: Docker usage instructions
+  - Quick start commands for each database provider
+  - Port mappings and connection information
   - Security warnings for default passwords
-  - Production deployment guidance
-- **Wiki Documentation**: New deployment section
-  - Comprehensive Docker deployment guide
-  - Cloud deployment examples (Azure, AWS, Google Cloud)
-  - Troubleshooting and best practices
-  - Performance optimization tips
-- **Sidebar Update**: Added Deployment category to wiki navigation
+- **Wiki Documentation**: Comprehensive Docker deployment guide
+  - Updated with health check configurations
+  - Auto-migration documentation
+  - libman restore instructions
+  - Database-specific setup guides
+  - Troubleshooting section
+  - Production deployment examples
+- **CLI new Command**: Database provider option
+  - `--database` or `--db` flag for sqlite/sqlserver/postgres
+  - Default: SQLite for simplicity
 
 ### Changed - Repository Rebrand & Documentation Update (2025-10-27)
 - **Repository Rename**: netmx → swap across all files and URLs
