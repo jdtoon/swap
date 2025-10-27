@@ -19,6 +19,27 @@ Swap CLI is a code generator that creates complete, modern web applications usin
 
 ## 🚀 Quick Start
 
+### Prerequisites
+
+Before installing Swap CLI, ensure you have:
+
+- **.NET 9.0 SDK** or later - [Download](https://dotnet.microsoft.com/download)
+- **Node.js (LTS)** - Includes npm for Tailwind CSS compilation
+  - Windows: `winget install OpenJS.NodeJS.LTS` or download from [nodejs.org](https://nodejs.org/)
+  - macOS: `brew install node`
+  - Linux: Use your package manager
+- **libman CLI** - Manages client libraries (HTMX, DaisyUI)
+  ```bash
+  dotnet tool install -g Microsoft.Web.LibraryManager.Cli
+  ```
+
+Verify installations:
+```bash
+dotnet --version   # Should be 9.0 or higher
+npm --version      # Any recent version
+libman --version   # Any version
+```
+
 ### Installation
 
 ```bash
@@ -42,6 +63,8 @@ dotnet run
 ```
 
 Visit `http://localhost:5000` - Your HTMX-powered application is running! 🎉
+
+**Note:** The CLI automatically runs `npm install`, `libman restore`, and `npm run build:css` during project creation.
 
 ### Generate Your First CRUD
 

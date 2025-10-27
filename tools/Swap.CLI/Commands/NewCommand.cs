@@ -66,6 +66,61 @@ public static class NewCommand
         AnsiConsole.MarkupLine($"[dim]Location:[/] {projectPath}");
         AnsiConsole.WriteLine();
         
+        // Check prerequisites upfront
+        AnsiConsole.Status()
+            .Start("Checking prerequisites...", ctx =>
+            {
+                // Visual indicator
+            });
+        
+        var hasNpm = await IsCommandAvailableAsync("npm");
+        var hasLibman = await IsCommandAvailableAsync("libman");
+        
+        if (!hasNpm || !hasLibman)
+        {
+            AnsiConsole.WriteLine();
+            AnsiConsole.MarkupLine("[red]✗ Prerequisites check failed[/]");
+            AnsiConsole.WriteLine();
+            
+            if (!hasNpm)
+            {
+                AnsiConsole.MarkupLine("[red]  ✗ npm not found[/]");
+                AnsiConsole.MarkupLine("    [dim]npm is required for Tailwind CSS and frontend dependencies[/]");
+                AnsiConsole.WriteLine();
+                AnsiConsole.MarkupLine("    [bold]Install Node.js (includes npm):[/]");
+                AnsiConsole.MarkupLine("      • Download: [link]https://nodejs.org/[/] (LTS version recommended)");
+                AnsiConsole.MarkupLine("      • Windows (winget): [cyan]winget install OpenJS.NodeJS.LTS[/]");
+                AnsiConsole.MarkupLine("      • Windows (chocolatey): [cyan]choco install nodejs-lts[/]");
+                AnsiConsole.MarkupLine("      • macOS (homebrew): [cyan]brew install node[/]");
+                AnsiConsole.MarkupLine("      • Linux: Use your package manager (apt, yum, etc.)");
+            }
+            
+            if (!hasLibman)
+            {
+                AnsiConsole.MarkupLine("[red]  ✗ libman not found[/]");
+                AnsiConsole.MarkupLine("    [dim]libman manages client libraries (HTMX, DaisyUI)[/]");
+                AnsiConsole.WriteLine();
+                AnsiConsole.MarkupLine("    [bold]Install libman:[/]");
+                AnsiConsole.MarkupLine("      [cyan]dotnet tool install -g Microsoft.Web.LibraryManager.Cli[/]");
+            }
+            
+            AnsiConsole.WriteLine();
+            AnsiConsole.MarkupLine("[yellow]After installing the above tools:[/]");
+            AnsiConsole.MarkupLine("  1. [bold]Restart your terminal[/] (to refresh PATH)");
+            AnsiConsole.MarkupLine("  2. Verify installations:");
+            if (!hasNpm)
+                AnsiConsole.MarkupLine("     [cyan]npm --version[/]");
+            if (!hasLibman)
+                AnsiConsole.MarkupLine("     [cyan]libman --version[/]");
+            AnsiConsole.MarkupLine($"  3. Run [cyan]swap new {name}[/] again");
+            AnsiConsole.WriteLine();
+            
+            return 1;
+        }
+        
+        AnsiConsole.MarkupLine("[green]✓[/] Prerequisites check passed");
+        AnsiConsole.WriteLine();
+        
         // Check if directory exists
         if (Directory.Exists(projectPath))
         {
@@ -81,107 +136,66 @@ public static class NewCommand
             AnsiConsole.MarkupLine("[green]✓[/] Project created successfully!");
             AnsiConsole.WriteLine();
             
-            // Run setup commands automatically
-            var hasNpm = await IsCommandAvailableAsync("npm");
-            var hasLibman = await IsCommandAvailableAsync("libman");
-            
-            if (!hasNpm && !hasLibman)
+            // Run setup commands automatically (prerequisites already checked)
+            try
+            {
+                await AnsiConsole.Status()
+                    .StartAsync("Running setup commands...", async ctx =>
+                    {
+                        try
+                        {
+                            ctx.Status("Running npm install...");
+                            await RunCommandAsync("npm", "install", projectPath);
+                            AnsiConsole.MarkupLine("[green]✓[/] npm install completed");
+                        }
+                        catch (Exception ex)
+                        {
+                            AnsiConsole.MarkupLine($"[red]✗[/] npm install failed: {ex.Message}");
+                            throw;
+                        }
+                        
+                        try
+                        {
+                            ctx.Status("Running libman restore...");
+                            await RunCommandAsync("libman", "restore", projectPath);
+                            AnsiConsole.MarkupLine("[green]✓[/] libman restore completed");
+                        }
+                        catch (Exception ex)
+                        {
+                            AnsiConsole.MarkupLine($"[red]✗[/] libman restore failed: {ex.Message}");
+                            throw;
+                        }
+                        
+                        try
+                        {
+                            ctx.Status("Building CSS...");
+                            await RunCommandAsync("npm", "run build:css", projectPath);
+                            AnsiConsole.MarkupLine("[green]✓[/] CSS build completed");
+                        }
+                        catch (Exception ex)
+                        {
+                            AnsiConsole.MarkupLine($"[red]✗[/] CSS build failed: {ex.Message}");
+                            throw;
+                        }
+                    });
+                
+                AnsiConsole.WriteLine();
+                AnsiConsole.MarkupLine("[green]✓[/] Setup completed!");
+            }
+            catch (Exception)
             {
                 AnsiConsole.WriteLine();
-                AnsiConsole.MarkupLine("[yellow]Note:[/] npm and libman not found in PATH. Skipping automatic setup.");
-                AnsiConsole.MarkupLine("[dim]You'll need to run setup commands manually (see instructions below).[/]");
+                AnsiConsole.MarkupLine("[red]✗ Setup failed. Please run the setup commands manually:[/]");
+                AnsiConsole.MarkupLine($"  cd {name}");
+                AnsiConsole.MarkupLine("  npm install");
+                AnsiConsole.MarkupLine("  libman restore");
+                AnsiConsole.MarkupLine("  npm run build:css");
+                return 1;
             }
-            else
-            {
-                try
-                {
-                    await AnsiConsole.Status()
-                        .StartAsync("Running setup commands...", async ctx =>
-                        {
-                            if (hasNpm)
-                            {
-                                try
-                                {
-                                    ctx.Status("Running npm install...");
-                                    await RunCommandAsync("npm", "install", projectPath);
-                                    AnsiConsole.MarkupLine("[green]✓[/] npm install completed");
-                                }
-                                catch (Exception ex)
-                                {
-                                    AnsiConsole.MarkupLine($"[yellow]Warning:[/] npm install failed: {ex.Message}");
-                                }
-                            }
-                            else
-                            {
-                                AnsiConsole.MarkupLine("[yellow]⊘[/] npm not found - skipping npm install");
-                            }
-                            
-                            if (hasLibman)
-                            {
-                                try
-                                {
-                                    ctx.Status("Running libman restore...");
-                                    await RunCommandAsync("libman", "restore", projectPath);
-                                    AnsiConsole.MarkupLine("[green]✓[/] libman restore completed");
-                                }
-                                catch (Exception ex)
-                                {
-                                    AnsiConsole.MarkupLine($"[yellow]Warning:[/] libman restore failed: {ex.Message}");
-                                }
-                            }
-                            else
-                            {
-                                AnsiConsole.MarkupLine("[yellow]⊘[/] libman not found - skipping libman restore");
-                            }
-                            
-                            if (hasNpm)
-                            {
-                                try
-                                {
-                                    ctx.Status("Building CSS...");
-                                    await RunCommandAsync("npm", "run build:css", projectPath);
-                                    AnsiConsole.MarkupLine("[green]✓[/] CSS build completed");
-                                }
-                                catch (Exception ex)
-                                {
-                                    AnsiConsole.MarkupLine($"[yellow]Warning:[/] CSS build failed: {ex.Message}");
-                                }
-                            }
-                            else
-                            {
-                                AnsiConsole.MarkupLine("[yellow]⊘[/] npm not found - skipping CSS build");
-                            }
-                        });
-                    
-                    AnsiConsole.WriteLine();
-                    AnsiConsole.MarkupLine("[green]✓[/] Setup completed!");
-                }
-                catch (Exception ex)
-                {
-                    AnsiConsole.MarkupLine($"[yellow]Warning:[/] Some setup steps failed: {ex.Message}");
-                }
-            }
+            
             AnsiConsole.WriteLine();
             AnsiConsole.MarkupLine("[bold]Next steps:[/]");
             AnsiConsole.MarkupLine($"  cd {name}");
-            
-            if (!hasNpm || !hasLibman)
-            {
-                AnsiConsole.WriteLine();
-                AnsiConsole.MarkupLine("[yellow]⚠ Manual setup required:[/]");
-                if (!hasNpm)
-                {
-                    AnsiConsole.MarkupLine("[yellow]  npm install[/]          [dim]# Install Node.js packages[/]");
-                    AnsiConsole.MarkupLine("[yellow]  npm run build:css[/]    [dim]# Build Tailwind CSS[/]");
-                }
-                if (!hasLibman)
-                {
-                    AnsiConsole.MarkupLine("[yellow]  libman restore[/]       [dim]# Restore client libraries (HTMX, DaisyUI)[/]");
-                }
-                AnsiConsole.WriteLine();
-                AnsiConsole.MarkupLine("[dim]Then continue with:[/]");
-            }
-            
             AnsiConsole.MarkupLine("  dotnet ef migrations add InitialCreate");
             AnsiConsole.MarkupLine("  dotnet ef database update");
             AnsiConsole.MarkupLine("  dotnet run");
