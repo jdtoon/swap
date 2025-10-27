@@ -145,7 +145,7 @@ public static class SeedHelper
     }
 
     private static string WrapNullable(FieldDefinition field, string expr)
-        => field.IsNullable ? $"f => f.Random.Bool(1,5) == 1 ? null : ({expr.Replace("f => ", string.Empty)})" : expr;
+        => field.IsNullable ? $"f => f.Random.Bool(0.2f) ? null : ({expr.Replace("f => ", string.Empty)})" : expr;
 
     private static string ToCamelCase(string name) => char.ToLowerInvariant(name[0]) + name.Substring(1);
 

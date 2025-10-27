@@ -33,6 +33,7 @@ const sidebars: SidebarsConfig = {
         'cli/generate-model',
         'cli/generate-controller',
         'cli/generate-resource',
+        'cli/seeders',
       ],
     },
     {
