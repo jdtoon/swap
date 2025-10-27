@@ -267,6 +267,46 @@ Generate model + controller together (alias for backward compatibility).
 swap g r BlogPost --fields "Title:string Content:string PublishedDate:DateTime"
 ```
 
+### `swap generate seed <name>`
+
+Generate database seeders with realistic fake data using Bogus.
+
+```bash
+# Generate a seeder for a single entity
+swap g seed Product --count 100 --locale en --if-empty
+
+# Generate seeders for all entities in your DbContext
+swap g seed all --count 50 --locale en --if-empty
+```
+
+**Options:**
+- `--count` (default: 50) - Number of records to generate
+- `--locale` (default: "en") - Bogus locale (en, en_GB, de, fr, etc.)
+- `--if-empty` - Only seed when the table is empty (idempotent)
+- `--append` - Append without clearing existing records (default)
+
+**What it generates:**
+- `Data/Seeders/<Entity>Seeder.cs` with smart Bogus rules based on field names
+- `Data/Seeders/SeedRunner.cs` orchestrator (auto-registered)
+- Adds `Bogus` package reference if missing
+- Hooks into `Program.cs` for Development environment seeding
+
+**Field intelligence:**
+- Strings: emails, URLs, names, titles, descriptions, phone numbers, addresses
+- Numbers: realistic ranges based on field names (age, price, quantity)
+- Booleans: weighted probabilities (e.g., IsActive ~70% true)
+- Dates: distributed over the last 3 years
+- Foreign keys: picks from existing related entities
+
+**Environment control:**
+```bash
+# Control seeding via environment variables
+$env:SEED_COUNT = "200"
+$env:SEED_LOCALE = "en_GB"
+$env:SEED_IFEMPTY = "true"
+dotnet run
+```
+
 ## 📚 Documentation
 
 - **[Getting Started](https://jdtoon.github.io/swap/)** - Complete setup guide
@@ -311,7 +351,7 @@ swap/
 │   │   ├── Commands/          # Command implementations
 │   │   ├── Infrastructure/    # Template engine, helpers
 │   │   └── Program.cs         # CLI entry point
-│   └── Swap.CLI.Tests/        # 136 passing tests
+│   └── Swap.CLI.Tests/        # 145 passing tests
 │       ├── Commands/          # Command tests
 │       └── Infrastructure/    # Template engine tests
 ├── templates/                 # Code generation templates
@@ -348,7 +388,7 @@ Swap CLI is [MIT licensed](LICENSE). Use it freely in your projects, commercial 
 
 **Current Version:** `0.1.0-dev` (Active Development)
 
-### ✅ Phase 2C Complete (Current)
+### ✅ Phase 2C Complete
 
 - ✅ **New Project Generation** - `swap new` command with full ASP.NET Core setup
 - ✅ **Controller Generation** - `swap g c` with all CRUD operations
@@ -362,14 +402,18 @@ Swap CLI is [MIT licensed](LICENSE). Use it freely in your projects, commercial 
 - ✅ **Toast Notifications** - DaisyUI alerts for success/error
 - ✅ **DaisyUI Components** - Modern, accessible UI library
 - ✅ **Tailwind CSS** - Utility-first styling
-- ✅ **136 Passing Tests** - Comprehensive test coverage
+- ✅ **145 Passing Tests** - Comprehensive test coverage
 - ✅ **Documentation** - Complete wiki with examples
+- ✅ **Docker Support** - Multi-stage builds, health checks, all databases
 
-### 🔄 Phase 2D: Seeders (Next)
+### ✅ Phase 2D Complete: Database Seeders (Current)
 
-- ⏳ **Database Seeding** - Generate seed data for testing
-- ⏳ **Faker Integration** - Realistic fake data generation
-- ⏳ **Seeder Commands** - `swap g seeder` CLI command
+- ✅ **Seeder Generation** - `swap g seed <entity>` and `swap g seed all`
+- ✅ **Bogus Integration** - Realistic fake data with smart field heuristics
+- ✅ **Environment Control** - SEED_COUNT, SEED_LOCALE, SEED_IFEMPTY
+- ✅ **Foreign Key Support** - Automatic relationship handling
+- ✅ **Development Startup** - Auto-seed on app launch in Development mode
+- ✅ **Idempotent Seeding** - `--if-empty` flag for safe repeated runs
 
 ### 🎯 Phase 3: Polish & Release
 

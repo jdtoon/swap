@@ -13,6 +13,7 @@ public static class GenerateCommand
         command.AddCommand(GenerateControllerCommand.Create());
         command.AddCommand(GenerateModelCommand.Create());
         command.AddCommand(GenerateResourceCommand.Create());
+        command.AddCommand(GenerateSeedCommand.Create());
         
         return command;
     }

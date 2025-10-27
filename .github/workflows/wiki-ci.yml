@@ -1,6 +1,10 @@
 name: Wiki - Build (PR)
 
 on:
+  push:
+    branches: [ develop, main ]
+    paths:
+      - 'wiki/**'
   pull_request:
     branches: [ develop, main ]
     paths:

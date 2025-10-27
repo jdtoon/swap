@@ -14,24 +14,27 @@ public static class NewCommand
         var nameArg = new Argument<string>("name", "The name of the project (e.g., MyApp)");
         var dbOption = new Option<string>("--database", () => "sqlite", "Database provider (sqlite|sqlserver|postgres)");
         var outOption = new Option<string?>("--output", "Output directory (default: ./{name})");
+        var skipSetupOption = new Option<bool>("--skip-setup", description: "Skip prerequisites check, npm/libman steps, and initial migration (useful for CI/tests)");
         
         command.AddArgument(nameArg);
         command.AddOption(dbOption);
         command.AddOption(outOption);
+        command.AddOption(skipSetupOption);
         
         command.SetHandler(async (InvocationContext context) =>
         {
             var name = context.ParseResult.GetValueForArgument(nameArg);
             var database = context.ParseResult.GetValueForOption(dbOption);
             var output = context.ParseResult.GetValueForOption(outOption);
+            var skipSetup = context.ParseResult.GetValueForOption(skipSetupOption);
             
-            context.ExitCode = await ExecuteAsync(name, database!, output);
+            context.ExitCode = await ExecuteAsync(name, database!, output, skipSetup);
         });
         
         return command;
     }
     
-    private static async Task<int> ExecuteAsync(string name, string database, string? output)
+    private static async Task<int> ExecuteAsync(string name, string database, string? output, bool skipSetup)
     {
         // Validate project name
         if (string.IsNullOrWhiteSpace(name))
@@ -66,60 +69,60 @@ public static class NewCommand
         AnsiConsole.MarkupLine($"[dim]Location:[/] {projectPath}");
         AnsiConsole.WriteLine();
         
-        // Check prerequisites upfront
-        AnsiConsole.Status()
-            .Start("Checking prerequisites...", ctx =>
-            {
-                // Visual indicator
-            });
-        
-        var hasNpm = await IsCommandAvailableAsync("npm");
-        var hasLibman = await IsCommandAvailableAsync("libman");
-        
-        if (!hasNpm || !hasLibman)
+        if (!skipSetup)
         {
-            AnsiConsole.WriteLine();
-            AnsiConsole.MarkupLine("[red]✗ Prerequisites check failed[/]");
-            AnsiConsole.WriteLine();
+            // Check prerequisites upfront
+            AnsiConsole.Status()
+                .Start("Checking prerequisites...", ctx => { });
             
-            if (!hasNpm)
+            var hasNpm = await IsCommandAvailableAsync("npm");
+            var hasLibman = await IsCommandAvailableAsync("libman");
+            
+            if (!hasNpm || !hasLibman)
             {
-                AnsiConsole.MarkupLine("[red]  ✗ npm not found[/]");
-                AnsiConsole.MarkupLine("    [dim]npm is required for Tailwind CSS and frontend dependencies[/]");
                 AnsiConsole.WriteLine();
-                AnsiConsole.MarkupLine("    [bold]Install Node.js (includes npm):[/]");
-                AnsiConsole.MarkupLine("      • Download: [link]https://nodejs.org/[/] (LTS version recommended)");
-                AnsiConsole.MarkupLine("      • Windows (winget): [cyan]winget install OpenJS.NodeJS.LTS[/]");
-                AnsiConsole.MarkupLine("      • Windows (chocolatey): [cyan]choco install nodejs-lts[/]");
-                AnsiConsole.MarkupLine("      • macOS (homebrew): [cyan]brew install node[/]");
-                AnsiConsole.MarkupLine("      • Linux: Use your package manager (apt, yum, etc.)");
+                AnsiConsole.MarkupLine("[red]✗ Prerequisites check failed[/]");
+                AnsiConsole.WriteLine();
+                
+                if (!hasNpm)
+                {
+                    AnsiConsole.MarkupLine("[red]  ✗ npm not found[/]");
+                    AnsiConsole.MarkupLine("    [dim]npm is required for Tailwind CSS and frontend dependencies[/]");
+                    AnsiConsole.WriteLine();
+                    AnsiConsole.MarkupLine("    [bold]Install Node.js (includes npm):[/]");
+                    AnsiConsole.MarkupLine("      • Download: [link]https://nodejs.org/[/] (LTS version recommended)");
+                    AnsiConsole.MarkupLine("      • Windows (winget): [cyan]winget install OpenJS.NodeJS.LTS[/]");
+                    AnsiConsole.MarkupLine("      • Windows (chocolatey): [cyan]choco install nodejs-lts[/]");
+                    AnsiConsole.MarkupLine("      • macOS (homebrew): [cyan]brew install node[/]");
+                    AnsiConsole.MarkupLine("      • Linux: Use your package manager (apt, yum, etc.)");
+                }
+                
+                if (!hasLibman)
+                {
+                    AnsiConsole.MarkupLine("[red]  ✗ libman not found[/]");
+                    AnsiConsole.MarkupLine("    [dim]libman manages client libraries (HTMX, DaisyUI)[/]");
+                    AnsiConsole.WriteLine();
+                    AnsiConsole.MarkupLine("    [bold]Install libman:[/]");
+                    AnsiConsole.MarkupLine("      [cyan]dotnet tool install -g Microsoft.Web.LibraryManager.Cli[/]");
+                }
+                
+                AnsiConsole.WriteLine();
+                AnsiConsole.MarkupLine("[yellow]After installing the above tools:[/]");
+                AnsiConsole.MarkupLine("  1. [bold]Restart your terminal[/] (to refresh PATH)");
+                AnsiConsole.MarkupLine("  2. Verify installations:");
+                if (!hasNpm)
+                    AnsiConsole.MarkupLine("     [cyan]npm --version[/]");
+                if (!hasLibman)
+                    AnsiConsole.MarkupLine("     [cyan]libman --version[/]");
+                AnsiConsole.MarkupLine($"  3. Run [cyan]swap new {name}[/] again");
+                AnsiConsole.WriteLine();
+                
+                return 1;
             }
             
-            if (!hasLibman)
-            {
-                AnsiConsole.MarkupLine("[red]  ✗ libman not found[/]");
-                AnsiConsole.MarkupLine("    [dim]libman manages client libraries (HTMX, DaisyUI)[/]");
-                AnsiConsole.WriteLine();
-                AnsiConsole.MarkupLine("    [bold]Install libman:[/]");
-                AnsiConsole.MarkupLine("      [cyan]dotnet tool install -g Microsoft.Web.LibraryManager.Cli[/]");
-            }
-            
+            AnsiConsole.MarkupLine("[green]✓[/] Prerequisites check passed");
             AnsiConsole.WriteLine();
-            AnsiConsole.MarkupLine("[yellow]After installing the above tools:[/]");
-            AnsiConsole.MarkupLine("  1. [bold]Restart your terminal[/] (to refresh PATH)");
-            AnsiConsole.MarkupLine("  2. Verify installations:");
-            if (!hasNpm)
-                AnsiConsole.MarkupLine("     [cyan]npm --version[/]");
-            if (!hasLibman)
-                AnsiConsole.MarkupLine("     [cyan]libman --version[/]");
-            AnsiConsole.MarkupLine($"  3. Run [cyan]swap new {name}[/] again");
-            AnsiConsole.WriteLine();
-            
-            return 1;
         }
-        
-        AnsiConsole.MarkupLine("[green]✓[/] Prerequisites check passed");
-        AnsiConsole.WriteLine();
         
         // Check if directory exists
         if (Directory.Exists(projectPath))
@@ -136,100 +139,109 @@ public static class NewCommand
             AnsiConsole.MarkupLine("[green]✓[/] Project created successfully!");
             AnsiConsole.WriteLine();
             
-            // Run setup commands automatically (prerequisites already checked)
-            try
+            if (!skipSetup)
             {
-                await AnsiConsole.Status()
-                    .StartAsync("Running setup commands...", async ctx =>
-                    {
-                        try
-                        {
-                            ctx.Status("Running npm install...");
-                            await RunCommandAsync("npm", "install", projectPath);
-                            AnsiConsole.MarkupLine("[green]✓[/] npm install completed");
-                        }
-                        catch (Exception ex)
-                        {
-                            AnsiConsole.MarkupLine($"[red]✗[/] npm install failed: {ex.Message}");
-                            throw;
-                        }
-                        
-                        try
-                        {
-                            ctx.Status("Running libman restore...");
-                            await RunCommandAsync("libman", "restore", projectPath);
-                            AnsiConsole.MarkupLine("[green]✓[/] libman restore completed");
-                        }
-                        catch (Exception ex)
-                        {
-                            AnsiConsole.MarkupLine($"[red]✗[/] libman restore failed: {ex.Message}");
-                            throw;
-                        }
-                        
-                        try
-                        {
-                            ctx.Status("Building CSS...");
-                            await RunCommandAsync("npm", "run build:css", projectPath);
-                            AnsiConsole.MarkupLine("[green]✓[/] CSS build completed");
-                        }
-                        catch (Exception ex)
-                        {
-                    AnsiConsole.MarkupLine($"[red]✗[/] CSS build failed: {ex.Message}");
-                    throw;
-                }
-            });
-            
-            AnsiConsole.WriteLine();
-            AnsiConsole.MarkupLine("[green]✓[/] Setup completed!");
-            
-            // Create initial migration (but don't run database update - let the app do it on startup)
-            AnsiConsole.WriteLine();
-            await AnsiConsole.Status()
-                .StartAsync("Creating initial migration...", async ctx =>
+                // Run setup commands automatically (prerequisites already checked)
+                try
                 {
-                    try
-                    {
-                        ctx.Status("Creating initial migration...");
-                        await RunCommandAsync("dotnet", "ef migrations add InitialCreate", projectPath);
-                        AnsiConsole.MarkupLine("[green]✓[/] Migration created");
-                    }
-                    catch (Exception ex)
-                    {
-                        AnsiConsole.MarkupLine($"[red]✗[/] Migration creation failed: {ex.Message}");
+                    await AnsiConsole.Status()
+                        .StartAsync("Running setup commands...", async ctx =>
+                        {
+                            try
+                            {
+                                ctx.Status("Running npm install...");
+                                await RunCommandAsync("npm", "install", projectPath);
+                                AnsiConsole.MarkupLine("[green]✓[/] npm install completed");
+                            }
+                            catch (Exception ex)
+                            {
+                                AnsiConsole.MarkupLine($"[red]✗[/] npm install failed: {ex.Message}");
+                                throw;
+                            }
+                            
+                            try
+                            {
+                                ctx.Status("Running libman restore...");
+                                await RunCommandAsync("libman", "restore", projectPath);
+                                AnsiConsole.MarkupLine("[green]✓[/] libman restore completed");
+                            }
+                            catch (Exception ex)
+                            {
+                                AnsiConsole.MarkupLine($"[red]✗[/] libman restore failed: {ex.Message}");
+                                throw;
+                            }
+                            
+                            try
+                            {
+                                ctx.Status("Building CSS...");
+                                await RunCommandAsync("npm", "run build:css", projectPath);
+                                AnsiConsole.MarkupLine("[green]✓[/] CSS build completed");
+                            }
+                            catch (Exception ex)
+                            {
+                        AnsiConsole.MarkupLine($"[red]✗[/] CSS build failed: {ex.Message}");
                         throw;
                     }
                 });
                 
-            AnsiConsole.WriteLine();
-            AnsiConsole.MarkupLine("[green]✓[/] Migration ready!");
-        }
-        catch (Exception)
-        {
-            AnsiConsole.WriteLine();
-            AnsiConsole.MarkupLine("[red]✗ Setup failed. Please run the setup commands manually:[/]");
-            AnsiConsole.MarkupLine($"  cd {name}");
-            AnsiConsole.MarkupLine("  npm install");
-            AnsiConsole.MarkupLine("  libman restore");
-            AnsiConsole.MarkupLine("  npm run build:css");
-            AnsiConsole.MarkupLine("  dotnet ef migrations add InitialCreate");
-            return 1;
-        }
-            
-            AnsiConsole.WriteLine();
-            AnsiConsole.MarkupLine("[bold green]🎉 Project ready![/]");
-            AnsiConsole.WriteLine();
-            AnsiConsole.MarkupLine("[bold]Run your application:[/]");
-            AnsiConsole.MarkupLine($"  cd {name}");
-            AnsiConsole.MarkupLine("  dotnet run");
-            AnsiConsole.WriteLine();
-            AnsiConsole.MarkupLine("[dim]Then visit: http://localhost:5000[/]");
-                        return 0;
-        }
-        catch (Exception ex)
-        {
-            AnsiConsole.MarkupLine($"[red]Error:[/] {ex.Message}");
-            return 1;
-        }
+                AnsiConsole.WriteLine();
+                AnsiConsole.MarkupLine("[green]✓[/] Setup completed!");
+                
+                // Create initial migration (but don't run database update - let the app do it on startup)
+                AnsiConsole.WriteLine();
+                await AnsiConsole.Status()
+                    .StartAsync("Creating initial migration...", async ctx =>
+                    {
+                        try
+                        {
+                            ctx.Status("Creating initial migration...");
+                            await RunCommandAsync("dotnet", "ef migrations add InitialCreate", projectPath);
+                            AnsiConsole.MarkupLine("[green]✓[/] Migration created");
+                        }
+                        catch (Exception ex)
+                        {
+                            AnsiConsole.MarkupLine($"[red]✗[/] Migration creation failed: {ex.Message}");
+                            throw;
+                        }
+                    });
+                    
+                AnsiConsole.WriteLine();
+                AnsiConsole.MarkupLine("[green]✓[/] Migration ready!");
+                }
+                catch (Exception)
+                {
+                    AnsiConsole.WriteLine();
+                    AnsiConsole.MarkupLine("[red]✗ Setup failed. Please run the setup commands manually:[/]");
+                    AnsiConsole.MarkupLine($"  cd {name}");
+                    AnsiConsole.MarkupLine("  npm install");
+                    AnsiConsole.MarkupLine("  libman restore");
+                    AnsiConsole.MarkupLine("  npm run build:css");
+                    AnsiConsole.MarkupLine("  dotnet ef migrations add InitialCreate");
+                    return 1;
+                }
+            }
+
+        AnsiConsole.WriteLine();
+        AnsiConsole.MarkupLine("[bold green]🎉 Project ready![/]");
+        AnsiConsole.WriteLine();
+        AnsiConsole.MarkupLine("[bold]Run your application:[/]");
+        AnsiConsole.MarkupLine($"  cd {name}");
+        AnsiConsole.MarkupLine("  dotnet run");
+        AnsiConsole.WriteLine();
+        AnsiConsole.MarkupLine("[dim]Then visit: http://localhost:5000[/]");
+        return 0;
+    }
+    catch (Exception)
+    {
+        AnsiConsole.WriteLine();
+        AnsiConsole.MarkupLine("[red]✗ Setup failed. Please run the setup commands manually:[/]");
+        AnsiConsole.MarkupLine($"  cd {name}");
+        AnsiConsole.MarkupLine("  npm install");
+        AnsiConsole.MarkupLine("  libman restore");
+        AnsiConsole.MarkupLine("  npm run build:css");
+        AnsiConsole.MarkupLine("  dotnet ef migrations add InitialCreate");
+        return 1;
+    }
     }
     
     private static async Task GenerateProjectAsync(string projectName, string database, string projectPath)
