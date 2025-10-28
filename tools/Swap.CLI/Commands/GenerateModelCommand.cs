@@ -14,24 +14,50 @@ public static class GenerateModelCommand
         
         var nameArg = new Argument<string>("name", "The name of the entity (e.g., Customer, Product)");
         var fieldsOption = new Option<string?>(
-            "--fields",
-            "Space- or comma-separated field definitions (e.g., Name:string Email:string Age:int)");
+            aliases: new[] { "--fields", "-f" },
+            description: "Space- or comma-separated field definitions (e.g., Name:string Email:string Age:int)");
+        var dryRunOption = new Option<bool>(
+            "--dry-run",
+            description: "Preview what would be generated without writing files");
+        var forceOption = new Option<bool>(
+            "--force",
+            description: "Overwrite existing files without prompting");
+        var projectOption = new Option<string?>(
+            aliases: new[] { "--project", "-p" },
+            description: "Path to project directory (default: current directory)");
         
         command.AddArgument(nameArg);
         command.AddOption(fieldsOption);
+        command.AddOption(dryRunOption);
+        command.AddOption(forceOption);
+        command.AddOption(projectOption);
         
         command.SetHandler(async (InvocationContext context) =>
         {
             var name = context.ParseResult.GetValueForArgument(nameArg);
             var fields = context.ParseResult.GetValueForOption(fieldsOption);
-            context.ExitCode = await ExecuteAsync(name, fields);
+            var dryRun = context.ParseResult.GetValueForOption(dryRunOption);
+            var force = context.ParseResult.GetValueForOption(forceOption);
+            var project = context.ParseResult.GetValueForOption(projectOption);
+            context.ExitCode = await ExecuteAsync(name, fields, dryRun, force, project);
         });
         
         return command;
     }
     
-    private static async Task<int> ExecuteAsync(string entityName, string? fieldsSpec)
+    private static async Task<int> ExecuteAsync(string entityName, string? fieldsSpec, bool dryRun, bool force, string? projectPath)
     {
+        // Resolve project directory
+        var workingDir = string.IsNullOrWhiteSpace(projectPath) 
+            ? Directory.GetCurrentDirectory() 
+            : Path.GetFullPath(projectPath);
+        
+        if (!Directory.Exists(workingDir))
+        {
+            AnsiConsole.MarkupLine($"[red]Error:[/] Project directory not found: {workingDir}");
+            return 1;
+        }
+        
         // Validate entity name
         if (string.IsNullOrWhiteSpace(entityName))
         {
@@ -53,10 +79,10 @@ public static class GenerateModelCommand
         }
         
         // Check if we're in a project directory
-        var projectFiles = Directory.GetFiles(Directory.GetCurrentDirectory(), "*.csproj");
+        var projectFiles = Directory.GetFiles(workingDir, "*.csproj");
         if (projectFiles.Length == 0)
         {
-            AnsiConsole.MarkupLine($"[red]Error:[/] No .csproj file found in current directory. Run this command from your project root.");
+            AnsiConsole.MarkupLine($"[red]Error:[/] No .csproj file found in {workingDir}. Run this command from your project root.");
             return 1;
         }
         
@@ -75,7 +101,7 @@ public static class GenerateModelCommand
             return 1;
         }
         
-        AnsiConsole.MarkupLine($"[bold cyan]Generating entity model:[/] {entityName}");
+        AnsiConsole.MarkupLine($"[bold cyan]{(dryRun ? "Preview" : "Generating")} entity model:[/] {entityName}");
         AnsiConsole.MarkupLine($"[dim]Project:[/] {projectName}");
         if (fields.Any())
         {
@@ -93,7 +119,27 @@ public static class GenerateModelCommand
         
         try
         {
-            await GenerateModelAsync(entityName, projectName, fields);
+            // Handle dry-run mode
+            if (dryRun)
+            {
+                var previewContent = fields.Any() 
+                    ? GenerateCustomFieldsModel(entityName, projectName, fields)
+                    : await GetDefaultModelContent(entityName, projectName);
+                
+                var panel = new Panel(previewContent)
+                {
+                    Header = new PanelHeader($"[yellow]Preview:[/] Models/{entityName}.cs"),
+                    Border = BoxBorder.Rounded,
+                    BorderStyle = new Style(Color.Yellow)
+                };
+                
+                AnsiConsole.Write(panel);
+                AnsiConsole.WriteLine();
+                AnsiConsole.MarkupLine("[yellow]ℹ[/] Dry-run mode - no files were modified");
+                return 0;
+            }
+            
+            await GenerateModelAsync(entityName, projectName, fields, force);
             
             AnsiConsole.WriteLine();
             AnsiConsole.MarkupLine("[green]✓[/] Model generated successfully!");
@@ -119,6 +165,21 @@ public static class GenerateModelCommand
         return FieldHelper.ParseFields(fieldsSpec);
     }
     
+    private static async Task<string> GetDefaultModelContent(string entityName, string projectName)
+    {
+        var templatePath = Path.Combine(AppContext.BaseDirectory, "templates", "generate", "model");
+        var templateFile = Path.Combine(templatePath, "Entity.cs.template");
+        var templateContent = await File.ReadAllTextAsync(templateFile);
+        
+        var variables = new Dictionary<string, string>
+        {
+            { "EntityName", entityName },
+            { "ProjectName", projectName }
+        };
+        
+        return TemplateEngine.Process(templateContent, variables);
+    }
+    
     private static string MapToCSharpType(string typeName)
     {
         // This method is now deprecated - FieldHelper handles type mapping
@@ -140,7 +201,7 @@ public static class GenerateModelCommand
         };
     }
     
-    private static async Task GenerateModelAsync(string entityName, string projectName, List<FieldDefinition> fields)
+    private static async Task GenerateModelAsync(string entityName, string projectName, List<FieldDefinition> fields, bool force)
     {
         var templatePath = Path.Combine(AppContext.BaseDirectory, "templates", "generate", "model");
         
@@ -174,9 +235,20 @@ public static class GenerateModelCommand
                     modelContent = TemplateEngine.Process(templateContent, variables);
                 }
                 
-                // Write model file
+                // Check if model file already exists
                 Directory.CreateDirectory("Models");
                 var modelFile = Path.Combine("Models", $"{entityName}.cs");
+                
+                if (File.Exists(modelFile) && !force)
+                {
+                    var overwrite = AnsiConsole.Confirm($"[yellow]File already exists:[/] {modelFile}\nOverwrite?", false);
+                    if (!overwrite)
+                    {
+                        throw new OperationCanceledException("File generation cancelled by user");
+                    }
+                }
+                
+                // Write model file
                 await File.WriteAllTextAsync(modelFile, modelContent);
                 
                 // Update DbContext

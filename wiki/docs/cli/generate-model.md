@@ -45,7 +45,7 @@ swap g m TodoItem
 
 ## Options
 
-### `--fields <specification>`
+### `--fields <specification>` or `-f`
 
 Define custom fields for the entity.
 
@@ -60,6 +60,8 @@ FieldName:Type[:flags],FieldName:Type[:flags],...
 ```bash
 # Space-separated
 swap g m Product --fields "Name:string Price:decimal Stock:int"
+# Short alias
+swap g m Product -f "Name:string Price:decimal Stock:int"
 # Comma-separated
 swap g m Product --fields Name:string,Price:decimal,Stock:int
 # With flags
@@ -68,6 +70,54 @@ swap g m Product --fields Name:string:s,f,Price:decimal:s,Stock:int:ns
 ```
 
 **Default:** If omitted, generates a model with `Id`, `Title`, and `IsComplete` fields (Todo pattern).
+
+### `--dry-run`
+
+Preview the generated model without writing files.
+
+**Examples:**
+```bash
+# See what would be generated
+swap g m Product -f "Name:string Price:decimal" --dry-run
+
+# Check the output before committing
+swap g m Category -f "Name:string" --dry-run
+```
+
+Displays the generated model code in a formatted panel without modifying any files.
+
+### `--force`
+
+Overwrite existing model file without prompting.
+
+**Examples:**
+```bash
+# Regenerate model without confirmation
+swap g m Product -f "Name:string Price:decimal Stock:int" --force
+
+# Useful in automation scripts
+swap g m Category -f "Name:string" --force
+```
+
+Without `--force`, you'll be prompted to confirm before overwriting an existing file.
+
+### `--project <path>` or `-p`
+
+Generate the model in a different project directory.
+
+**Examples:**
+```bash
+# Generate in specific project
+swap g m Product -f "Name:string" --project path/to/project
+
+# Work from repo root
+swap g m Category -f "Name:string" -p src/MyApp
+
+# Combine with other options
+swap g m Order -f "Total:decimal" --project ../OtherProject --dry-run
+```
+
+Default behavior uses the current directory.
 
 ## Supported Data Types
 

@@ -20,13 +20,24 @@ public static class GenerateSeedCommand
         var countOption = new Option<int>("--count", () => 50, "Default number of records to seed");
         var localeOption = new Option<string>("--locale", () => "en", "Bogus locale (e.g., en, en_GB, de, fr)");
         var ifEmptyOption = new Option<bool>("--if-empty", description: "Only seed when table is empty");
-        var appendOption = new Option<bool>("--append", description: "Append without clearing existing records (default)");
+        var appendOption = new Option<bool>("--append", description: "Append without clearing existing records (default; not yet implemented)");
+        appendOption.IsHidden = true; // Hide until implemented
+        
+        var forceOption = new Option<bool>(
+            aliases: new[] { "--force" },
+            description: "Overwrite existing seeder files without prompting");
+        
+        var projectOption = new Option<string?>(
+            aliases: new[] { "--project", "-p" },
+            description: "Path to project directory (default: current directory)");
 
         command.AddArgument(nameArg);
         command.AddOption(countOption);
         command.AddOption(localeOption);
         command.AddOption(ifEmptyOption);
         command.AddOption(appendOption);
+        command.AddOption(forceOption);
+        command.AddOption(projectOption);
 
         command.SetHandler(async (InvocationContext ctx) =>
         {
@@ -35,20 +46,27 @@ public static class GenerateSeedCommand
             var locale = ctx.ParseResult.GetValueForOption(localeOption)!;
             var ifEmpty = ctx.ParseResult.GetValueForOption(ifEmptyOption);
             var append = ctx.ParseResult.GetValueForOption(appendOption);
+            var force = ctx.ParseResult.GetValueForOption(forceOption);
+            var projectPath = ctx.ParseResult.GetValueForOption(projectOption);
 
-            ctx.ExitCode = await ExecuteAsync(name, count, locale, ifEmpty, append);
+            ctx.ExitCode = await ExecuteAsync(name, count, locale, ifEmpty, append, force, projectPath);
         });
 
         return command;
     }
 
-    private static async Task<int> ExecuteAsync(string name, int count, string locale, bool ifEmpty, bool append)
+    private static async Task<int> ExecuteAsync(string name, int count, string locale, bool ifEmpty, bool append, bool force, string? projectPath)
     {
+        // Resolve working directory
+        var workingDir = !string.IsNullOrEmpty(projectPath)
+            ? Path.GetFullPath(projectPath)
+            : Directory.GetCurrentDirectory();
+        
         // Validate cwd
-        var projectFiles = Directory.GetFiles(Directory.GetCurrentDirectory(), "*.csproj");
+        var projectFiles = Directory.GetFiles(workingDir, "*.csproj");
         if (projectFiles.Length == 0)
         {
-            AnsiConsole.MarkupLine("[red]Error:[/] No .csproj file found. Run from your project root.");
+            AnsiConsole.MarkupLine($"[red]Error:[/] No .csproj file found in {workingDir}. Run from your project root.");
             return 1;
         }
 
@@ -72,7 +90,7 @@ public static class GenerateSeedCommand
                 AnsiConsole.MarkupLine($"[bold cyan]Generating seeders for:[/] {string.Join(", ", entities)}");
                 foreach (var entity in entities)
                 {
-                    await GenerateSeederForEntityAsync(projectName, entity, count, locale, ifEmpty, append);
+                    await GenerateSeederForEntityAsync(projectName, entity, count, locale, ifEmpty, append, force);
                 }
             }
             else
@@ -84,7 +102,7 @@ public static class GenerateSeedCommand
                     name = char.ToUpper(name[0]) + name.Substring(1);
                 }
 
-                await GenerateSeederForEntityAsync(projectName, name, count, locale, ifEmpty, append);
+                await GenerateSeederForEntityAsync(projectName, name, count, locale, ifEmpty, append, force);
             }
 
             AnsiConsole.MarkupLine("[green]✓[/] Seeder generation complete");
@@ -98,7 +116,7 @@ public static class GenerateSeedCommand
         }
     }
 
-    private static async Task GenerateSeederForEntityAsync(string projectName, string entityName, int count, string locale, bool ifEmpty, bool append)
+    private static async Task GenerateSeederForEntityAsync(string projectName, string entityName, int count, string locale, bool ifEmpty, bool append, bool force)
     {
         // Read model file to infer fields
         var modelPath = Path.Combine("Models", $"{entityName}.cs");
@@ -134,6 +152,18 @@ public static class GenerateSeedCommand
         var outPath = Path.Combine("Data", "Seeders");
         Directory.CreateDirectory(outPath);
         var seederFile = Path.Combine(outPath, $"{entityName}Seeder.cs");
+        
+        // Check for existing file if not forcing
+        if (File.Exists(seederFile) && !force)
+        {
+            var overwrite = AnsiConsole.Confirm($"[yellow]File already exists:[/] {seederFile}\nOverwrite?", false);
+            if (!overwrite)
+            {
+                AnsiConsole.MarkupLine($"[yellow]Skipped:[/] {entityName}Seeder");
+                return;
+            }
+        }
+        
         await File.WriteAllTextAsync(seederFile, processed);
 
         // Ensure SeedRunner exists and register
