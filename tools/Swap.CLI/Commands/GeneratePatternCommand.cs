@@ -107,7 +107,7 @@ public static class GeneratePatternCommand
         var tree = CSharpSyntaxTree.ParseText(modelContent);
         var root = await tree.GetRootAsync();
 
-        // Check if already implements ISoftDeletable
+        // Find the class
         var classDecl = root.DescendantNodes()
             .OfType<ClassDeclarationSyntax>()
             .FirstOrDefault(c => c.Identifier.Text == entity);
@@ -124,12 +124,12 @@ public static class GeneratePatternCommand
             return 0;
         }
 
-        // Add using statement
+        // Add using Swap.Patterns.SoftDelete
         var hasUsing = root.DescendantNodes()
             .OfType<UsingDirectiveSyntax>()
             .Any(u => u.Name?.ToString() == "Swap.Patterns.SoftDelete");
 
-        CompilationUnitSyntax compilationUnit = (CompilationUnitSyntax)root;
+        var compilationUnit = (CompilationUnitSyntax)root;
         if (!hasUsing)
         {
             var usingDirective = SyntaxFactory.UsingDirective(
@@ -139,77 +139,62 @@ public static class GeneratePatternCommand
             root = compilationUnit;
         }
 
-        // Add ISoftDeletable interface with proper formatting
-        var newBaseList = classDecl.BaseList ?? SyntaxFactory.BaseList();
-        newBaseList = newBaseList.AddTypes(
+        // Add ISoftDeletable interface
+        var baseList = classDecl.BaseList ?? SyntaxFactory.BaseList();
+        baseList = baseList.AddTypes(
             SyntaxFactory.SimpleBaseType(
                 SyntaxFactory.ParseTypeName(" ISoftDeletable")));
+        classDecl = classDecl.WithBaseList(baseList);
 
-        classDecl = classDecl.WithBaseList(newBaseList);
-
-        // Add properties if they don't exist with a comment
-        var hasIsDeleted = classDecl.Members
-            .OfType<PropertyDeclarationSyntax>()
-            .Any(p => p.Identifier.Text == "IsDeleted");
-
-        if (!hasIsDeleted)
+        // Add properties if missing
+        var existingProps = classDecl.Members.OfType<PropertyDeclarationSyntax>().Select(p => p.Identifier.Text).ToHashSet();
+        var toAdd = new List<MemberDeclarationSyntax>();
+        var softProps = new (string Name, string Type)[]
         {
-            var properties = new[]
-            {
-                ("IsDeleted", "bool"),
-                ("DeletedAt", "DateTime?"),
-                ("DeletedBy", "string?")
-            };
+            ("IsDeleted", "bool"),
+            ("DeletedAt", "DateTime?")
+        };
 
-            var newMembers = new List<MemberDeclarationSyntax>();
-            for (int i = 0; i < properties.Length; i++)
+        for (int i = 0; i < softProps.Length; i++)
+        {
+            var (name, type) = softProps[i];
+            if (!existingProps.Contains(name))
             {
-                var (name, type) = properties[i];
-                var hasProperty = classDecl.Members
-                    .OfType<PropertyDeclarationSyntax>()
-                    .Any(p => p.Identifier.Text == name);
+                var prop = SyntaxFactory.PropertyDeclaration(
+                    SyntaxFactory.ParseTypeName(type),
+                    name)
+                    .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword))
+                    .AddAccessorListAccessors(
+                        SyntaxFactory.AccessorDeclaration(SyntaxKind.GetAccessorDeclaration)
+                            .WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken)),
+                        SyntaxFactory.AccessorDeclaration(SyntaxKind.SetAccessorDeclaration)
+                            .WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken))
+                    );
 
-                if (!hasProperty)
+                if (i == 0)
                 {
-                    var prop = SyntaxFactory.PropertyDeclaration(
-                        SyntaxFactory.ParseTypeName(type),
-                        name)
-                        .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword))
-                        .AddAccessorListAccessors(
-                            SyntaxFactory.AccessorDeclaration(SyntaxKind.GetAccessorDeclaration)
-                                .WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken)),
-                            SyntaxFactory.AccessorDeclaration(SyntaxKind.SetAccessorDeclaration)
-                                .WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken))
-                        );
-
-                    // Add comment before first property
-                    if (insertAt > 0)
-                    {
-                        prop = prop.WithLeadingTrivia(
-                            SyntaxFactory.CarriageReturnLineFeed,
-                            SyntaxFactory.Comment("    // ISoftDeletable properties"),
-                            SyntaxFactory.CarriageReturnLineFeed
-                        );
-                    }
-
-                    newMembers.Add(prop);
+                    prop = prop.WithLeadingTrivia(
+                        SyntaxFactory.CarriageReturnLineFeed,
+                        SyntaxFactory.Comment("    // Soft delete properties"),
+                        SyntaxFactory.CarriageReturnLineFeed
+                    );
                 }
+
+                toAdd.Add(prop);
             }
-
-            classDecl = classDecl.AddMembers(newMembers.ToArray());
-
         }
 
-        // Replace the class in the tree
+        if (toAdd.Count > 0)
+        {
+            classDecl = classDecl.AddMembers(toAdd.ToArray());
+        }
+
+        // Replace and write back
         root = root.ReplaceNode(root.DescendantNodes().OfType<ClassDeclarationSyntax>().First(c => c.Identifier.Text == entity), classDecl);
+        var formatted = root.NormalizeWhitespace().ToFullString();
+        await File.WriteAllTextAsync(modelPath, formatted);
 
-        // Write back with normalization
-        var formattedCode = root.NormalizeWhitespace().ToFullString();
-        await File.WriteAllTextAsync(modelPath, formattedCode);
-
-        AnsiConsole.MarkupLine($"[green]✓[/] Added ISoftDeletable to {entity}");
-
-        // Run dotnet format on the file to ensure proper formatting
+        // Optional format
         try
         {
             var formatProcess = new System.Diagnostics.Process
@@ -228,12 +213,9 @@ public static class GeneratePatternCommand
             formatProcess.Start();
             await formatProcess.WaitForExitAsync();
         }
-        catch
-        {
-            // Formatting is optional, continue if it fails
-        }
+        catch { }
 
-        // Check DbContext and offer to add query filter
+        // Guidance
         var dbContextPath = Path.Combine(workingDir, "Data", "AppDbContext.cs");
         if (File.Exists(dbContextPath))
         {
@@ -349,16 +331,30 @@ public static class GeneratePatternCommand
                                 .WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken))
                         );
 
-                    // Add comment before first property
                     if (i == 0)
                     {
                         prop = prop.WithLeadingTrivia(
                             SyntaxFactory.CarriageReturnLineFeed,
-                            SyntaxFactory.Comment("    // ISoftDeletable properties"),
+                            SyntaxFactory.Comment("    // IAuditable properties"),
                             SyntaxFactory.CarriageReturnLineFeed
                         );
                     }
+
                     newMembers.Add(prop);
+                }
+            }
+
+            classDecl = classDecl.AddMembers(newMembers.ToArray());
+        }
+
+        // Replace class in tree and write back
+        root = root.ReplaceNode(root.DescendantNodes().OfType<ClassDeclarationSyntax>().First(c => c.Identifier.Text == entity), classDecl);
+        var outCode = root.NormalizeWhitespace().ToFullString();
+        await File.WriteAllTextAsync(modelPath, outCode);
+
+        // Optional format
+        try
+        {
             var formatProcess = new System.Diagnostics.Process
             {
                 StartInfo = new System.Diagnostics.ProcessStartInfo
@@ -375,10 +371,7 @@ public static class GeneratePatternCommand
             formatProcess.Start();
             await formatProcess.WaitForExitAsync();
         }
-        catch
-        {
-            // Formatting is optional
-        }
+        catch { }
 
         // Provide configuration guidance
         AnsiConsole.MarkupLine($"[yellow]Note:[/] Configure the audit interceptor in your DbContext:");
@@ -683,22 +676,22 @@ public static class GeneratePatternCommand
         if (insertAt < 0) insertAt = content.LastIndexOf('}');
         if (insertAt > 0)
         {
-            var helper = $@"
+            var helper = """
 
     private async Task<string> GenerateUniqueSlugAsync(string value)
-    {{
+    {
         var baseSlug = Slugify(value);
         var slug = baseSlug;
         var counter = 2;
-        while (await _context.{entity}s.AnyAsync(x => x.Slug == slug))
-        {{
-            slug = $""{{baseSlug}}-{{counter++}}"";
-        }}
+        while (await _context.__ENTITY__s.AnyAsync(x => x.Slug == slug))
+        {
+            slug = $"{baseSlug}-{counter++}";
+        }
         return slug;
     }
 
     private static string Slugify(string phrase)
-    {{
+    {
         if (string.IsNullOrWhiteSpace(phrase)) return string.Empty;
         var s = phrase.ToLowerInvariant();
         s = System.Text.RegularExpressions.Regex.Replace(s, @"[^a-z0-9\s-]", "");
@@ -706,7 +699,8 @@ public static class GeneratePatternCommand
         s = s.Replace(" ", "-");
         return s;
     }
-";
+""";
+            helper = helper.Replace("__ENTITY__", entity);
             content = content.Insert(insertAt, helper);
         }
 
