@@ -21,5 +21,6 @@ Field Flags:
 // Add commands
 rootCommand.AddCommand(NewCommand.Create());
 rootCommand.AddCommand(GenerateCommand.Create());
+rootCommand.AddCommand(DatabaseCommand.Create());
 
 return await rootCommand.InvokeAsync(args);

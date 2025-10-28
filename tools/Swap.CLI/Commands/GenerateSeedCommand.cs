@@ -20,7 +20,8 @@ public static class GenerateSeedCommand
         var countOption = new Option<int>("--count", () => 50, "Default number of records to seed");
         var localeOption = new Option<string>("--locale", () => "en", "Bogus locale (e.g., en, en_GB, de, fr)");
         var ifEmptyOption = new Option<bool>("--if-empty", description: "Only seed when table is empty");
-        var appendOption = new Option<bool>("--append", description: "Append without clearing existing records (default)");
+        var appendOption = new Option<bool>("--append", description: "Append without clearing existing records (default; not yet implemented)");
+        appendOption.IsHidden = true; // Hide until implemented
 
         command.AddArgument(nameArg);
         command.AddOption(countOption);
