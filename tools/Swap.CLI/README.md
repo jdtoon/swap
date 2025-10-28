@@ -195,6 +195,148 @@ swap g m Category --fields "Name:string" --project path/to/project
 - `--force` - Overwrite existing files without prompting
 - `--project` or `-p` - Path to project directory (default: current directory)
 
+### `swap generate auth`
+
+Generate a complete authentication system with ASP.NET Core Identity, including login, registration, and password reset functionality.
+
+```bash
+# Generate authentication system
+swap generate auth
+
+# Short alias
+swap g auth
+
+# Preview what would be generated
+swap g auth --dry-run
+
+# Force overwrite existing files
+swap g auth --force
+
+# Generate in a different project
+swap g auth --project path/to/project
+```
+
+**Options:**
+- `--dry-run` - Preview what would be generated without writing files
+- `--force` - Overwrite existing files without prompting
+- `--project` or `-p` - Path to project directory (default: current directory)
+
+**What it generates:**
+- `Models/ApplicationUser.cs` - Extended Identity user with DisplayName, CreatedAt, LastLoginAt
+- `ViewModels/` - LoginViewModel, RegisterViewModel, ForgotPasswordViewModel, ResetPasswordViewModel
+- `Controllers/AuthController.cs` - Complete auth controller with all operations
+- `Views/Auth/` - Login, Register, ForgotPassword, ResetPassword, AccessDenied, and confirmation pages
+- `Views/Shared/_LoginPartial.cshtml` - Reusable login/logout navigation component
+- Adds `Microsoft.AspNetCore.Identity.EntityFrameworkCore` package reference
+
+**Features included:**
+- ✅ User registration with email validation
+- ✅ Login with "Remember Me" functionality
+- ✅ Password reset with token-based flow
+- ✅ Account lockout after failed attempts
+- ✅ Last login tracking
+- ✅ Access denied page
+- ✅ Tailwind CSS styled views
+- ✅ HTMX-compatible markup
+
+**After generation - Manual configuration required:**
+
+1. **Update your DbContext** to inherit from `IdentityDbContext<ApplicationUser>`:
+```csharp
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
+using YourApp.Models;
+
+namespace YourApp.Data;
+
+public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
+{
+    public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
+        : base(options) { }
+    
+    // Your existing DbSets here
+}
+```
+
+2. **Configure Identity in Program.cs** (add after service configuration):
+```csharp
+using Microsoft.AspNetCore.Identity;
+using YourApp.Models;
+
+// Add Identity
+builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
+{
+    // Password settings
+    options.Password.RequireDigit = true;
+    options.Password.RequireLowercase = true;
+    options.Password.RequireNonAlphanumeric = false;
+    options.Password.RequireUppercase = true;
+    options.Password.RequiredLength = 6;
+    
+    // Lockout settings
+    options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
+    options.Lockout.MaxFailedAccessAttempts = 5;
+    
+    // User settings
+    options.User.RequireUniqueEmail = true;
+})
+.AddEntityFrameworkStores<ApplicationDbContext>()
+.AddDefaultTokenProviders();
+
+// Configure application cookie
+builder.Services.ConfigureApplicationCookie(options =>
+{
+    options.Cookie.HttpOnly = true;
+    options.ExpireTimeSpan = TimeSpan.FromDays(30);
+    options.LoginPath = "/auth/login";
+    options.AccessDeniedPath = "/auth/access-denied";
+    options.SlidingExpiration = true;
+});
+
+// ... existing code ...
+
+// Add authentication/authorization middleware (BEFORE app.MapControllerRoute())
+app.UseAuthentication();
+app.UseAuthorization();
+```
+
+3. **Add the login partial to your layout** (`Views/Shared/_Layout.cshtml`):
+```html
+<!-- In your navigation or header -->
+<partial name="_LoginPartial" />
+```
+
+4. **Create and apply Identity migration**:
+```bash
+dotnet ef migrations add AddIdentity
+dotnet ef database update
+```
+
+5. **(Optional) Configure email service** for password reset:
+   - Currently, password reset tokens are logged to the console
+   - For production, implement an email service and update `AuthController.ForgotPassword`
+
+**Usage:**
+- Visit `/auth/register` to create a new account
+- Visit `/auth/login` to sign in
+- Use `[Authorize]` attribute to protect controllers/actions
+- Access user info via `User.Identity.Name` in controllers and views
+
+**Protecting routes:**
+```csharp
+[Authorize]  // Requires authentication
+public class AdminController : Controller
+{
+    // ...
+}
+
+[Authorize(Roles = "Admin")]  // Requires specific role
+public IActionResult ManageUsers()
+{
+    // ...
+}
+```
+
 ### `swap generate resource <name> --fields <fields>`
 
 Generate model + controller together (alias for backward compatibility).

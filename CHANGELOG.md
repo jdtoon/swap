@@ -9,6 +9,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added - Authentication Scaffolding
+- **Authentication System**: Complete ASP.NET Core Identity integration with `swap generate auth`
+  - Generates ApplicationUser model extending IdentityUser with DisplayName, CreatedAt, LastLoginAt
+  - Creates 4 ViewModels: LoginViewModel, RegisterViewModel, ForgotPasswordViewModel, ResetPasswordViewModel
+  - Generates AuthController with full auth flow: register, login, logout, password reset, access denied
+  - Creates 7 views: Login, Register, ForgotPassword, ForgotPasswordConfirmation, ResetPassword, ResetPasswordConfirmation, AccessDenied
+  - Includes _LoginPartial.cshtml for layout integration
+  - All views styled with Tailwind CSS and HTMX-compatible markup
+  - Automatically adds Microsoft.AspNetCore.Identity.EntityFrameworkCore package reference
+  - Comprehensive setup instructions with code snippets for Program.cs and DbContext configuration
+- **New Tests**: Added 4 tests for auth command structure (name, aliases, options)
+- **CLI Options**: `--dry-run`, `--force`, `--project` support
+- **Documentation**: Updated CLI README with complete auth scaffolding guide and usage examples
+
 ## [0.0.14] - 2025-10-28
 
 ### Added - Seeder Enhancements
