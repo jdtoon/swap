@@ -21,6 +21,12 @@ swap <command> [subcommand] [arguments] [options]
 | `swap generate controller` | Generate a CRUD controller | `g c`, `generate c` |
 | `swap generate resource` | Generate model + controller + views | `g r`, `generate r` |
 | `swap generate seed` | Generate database seeders | `g s`, `generate s`, `g seed` |
+| `swap database info` | Show database configuration and status | `db info` |
+| `swap database migrate` | Create and apply EF migrations | `db migrate` |
+| `swap database seed` | Run database seeders | `db seed` |
+| `swap database reset` | Drop and recreate database | `db reset` |
+| `swap doctor` | Check development environment | - |
+| `swap list` | List all resources in project | - |
 
 ## Quick Examples
 
@@ -35,6 +41,12 @@ swap new MyApp
 ```bash
 swap g m Product --fields "Name:string Price:decimal Stock:int"
 swap g m Product --fields Name:string,Price:decimal,Stock:int
+
+# Preview without writing files
+swap g m Product --fields "Name:string Price:decimal" --dry-run
+
+# Overwrite existing file
+swap g m Product --fields "Name:string Price:decimal" --force
 ```
 
 ### Generate Controller
@@ -42,6 +54,15 @@ swap g m Product --fields Name:string,Price:decimal,Stock:int
 ```bash
 swap g c Product --fields "Name:string Price:decimal Stock:int"
 swap g c Product --fields Name:string,Price:decimal,Stock:int
+
+# Preview what would be generated
+swap g c Product --fields "Name:string" --dry-run
+
+# Overwrite without prompting
+swap g c Product --fields "Name:string" --force
+
+# Generate in different directory
+swap g c Product --fields "Name:string" --project path/to/project
 ```
 
 ### Generate Complete Resource
@@ -49,6 +70,9 @@ swap g c Product --fields Name:string,Price:decimal,Stock:int
 ```bash
 swap g r Order --fields "CustomerId:int Total:decimal OrderDate:datetime"
 swap g r Order --fields CustomerId:int,Total:decimal,OrderDate:datetime
+
+# With generator options
+swap g r Order --fields "Total:decimal" --dry-run --project path/to/project
 ```
 
 ### Generate Seeders
@@ -60,6 +84,46 @@ swap g seed Product --count 100 --locale en --if-empty
 swap g seed all --count 50 --locale en --if-empty
 # Short alias
 swap g s all --count 50 --locale en --if-empty
+# Overwrite existing seeder
+swap g s Product --force
+```
+
+### Database Commands
+
+```bash
+# Show database info
+swap db info
+
+# Create migration
+swap db migrate AddProductTable
+
+# Create and apply migration
+swap db migrate AddProductTable --apply
+
+# Apply pending migrations
+swap db migrate --apply
+
+# Reset database (with confirmation)
+swap db reset
+
+# Reset database (skip confirmation)
+swap db reset --force
+
+# Run seeders
+swap db seed --count 100 --locale en_GB --if-empty
+```
+
+### Developer Utilities
+
+```bash
+# Check environment and dependencies
+swap doctor
+
+# List all resources in project
+swap list
+
+# List resources in another project
+swap list --project path/to/project
 ```
 
 ## HTMX Integration

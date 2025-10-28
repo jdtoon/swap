@@ -238,7 +238,22 @@ swap g c Customer --fields "Name:string Email:string Notes:string?"
 # Control sorting and filtering per field (space or comma separated)
 swap g c Order --fields "OrderNumber:string:ns Total:decimal Date:DateTime Status:bool:f"
 swap g c Order --fields OrderNumber:string:ns,Total:decimal,Date:DateTime,Status:bool:f
+
+# Preview without writing files (dry-run)
+swap g c Product --fields "Name:string Price:decimal" --dry-run
+
+# Overwrite existing files without prompting
+swap g c Product --fields "Name:string Price:decimal" --force
+
+# Generate in a different project directory
+swap g c Product --fields "Name:string" --project path/to/project
 ```
+
+**Options:**
+- `--fields` or `-f` - Field definitions (space or comma separated)
+- `--dry-run` - Preview what would be generated without writing files
+- `--force` - Overwrite existing files without prompting
+- `--project` or `-p` - Path to project directory (default: current directory)
 
 **Field Flags:**
 - `:sortable` or `:s` - Enable sorting (default for all fields)
@@ -259,7 +274,22 @@ Generate just a model class (no controller or views).
 ```bash
 swap g m Category --fields "Name:string Description:string?"
 swap g m Category --fields Name:string,Description:string?
+
+# Preview the generated model
+swap g m Product --fields "Name:string Price:decimal" --dry-run
+
+# Overwrite without prompting
+swap g m Category --fields "Name:string" --force
+
+# Generate in a different project
+swap g m Category --fields "Name:string" --project path/to/project
 ```
+
+**Options:**
+- `--fields` or `-f` - Field definitions (space or comma separated)
+- `--dry-run` - Preview what would be generated without writing files
+- `--force` - Overwrite existing files without prompting
+- `--project` or `-p` - Path to project directory (default: current directory)
 
 ### `swap generate resource <name> --fields <fields>`
 
@@ -268,7 +298,17 @@ Generate model + controller together (alias for backward compatibility).
 ```bash
 swap g r BlogPost --fields "Title:string Content:string PublishedDate:DateTime"
 swap g r BlogPost --fields Title:string,Content:string,PublishedDate:DateTime
+
+# With generator ergonomics options
+swap g r Order --fields "Total:decimal Status:string" --dry-run
+swap g r Order --fields "Total:decimal Status:string" --force --project path/to/project
 ```
+
+**Options:**
+- `--fields` or `-f` - Field definitions (space or comma separated)
+- `--dry-run` - Preview what would be generated without writing files
+- `--force` - Overwrite existing files without prompting
+- `--project` or `-p` - Path to project directory (default: current directory)
 
 ### `swap generate seed <name>`
 
@@ -283,13 +323,20 @@ swap g seed all --count 50 --locale en --if-empty
 
 # Short alias
 swap g s all --count 50 --locale en --if-empty
+
+# Overwrite without prompting
+swap g s Product --force
+
+# Generate in a different project
+swap g s all --project path/to/project
 ```
 
 **Options:**
 - `--count` (default: 50) - Number of records to generate
 - `--locale` (default: "en") - Bogus locale (en, en_GB, de, fr, etc.)
 - `--if-empty` - Only seed when the table is empty (idempotent)
-- `--append` - Append without clearing existing records (default; not yet implemented)
+- `--force` - Overwrite existing seeder files without prompting
+- `--project` or `-p` - Path to project directory (default: current directory)
 
 **What it generates:**
 - `Data/Seeders/<Entity>Seeder.cs` with smart Bogus rules based on field names
@@ -312,6 +359,119 @@ $env:SEED_LOCALE = "en_GB"
 $env:SEED_IFEMPTY = "true"
 dotnet run
 ```
+
+### `swap database` / `swap db`
+
+Database workflow commands for easier development.
+
+#### `swap db info`
+
+Display database configuration and migration status.
+
+```bash
+swap db info
+```
+
+Shows:
+- Project name
+- Database provider (SQLite, SQL Server, PostgreSQL)
+- Connection string (masked)
+- Number of migrations
+- Last applied migration
+- Seeder status
+
+#### `swap db migrate [name] [--apply]`
+
+Create and/or apply Entity Framework Core migrations.
+
+```bash
+# Create a new migration
+swap db migrate AddProductTable
+
+# Create and apply immediately
+swap db migrate AddProductTable --apply
+
+# Apply pending migrations (no name argument)
+swap db migrate --apply
+```
+
+**Options:**
+- `name` - Optional migration name (if omitted with --apply, applies pending migrations)
+- `--apply` or `-a` - Apply the migration after creating it
+
+#### `swap db reset [--force]`
+
+Drop and recreate the database for a fresh start.
+
+```bash
+# With confirmation prompt
+swap db reset
+
+# Skip confirmation
+swap db reset --force
+```
+
+**Options:**
+- `--force` or `-f` - Skip confirmation prompt
+
+**Warning:** This command drops all data!
+
+#### `swap db seed [--count] [--locale] [--if-empty]`
+
+Run database seeders via application startup.
+
+```bash
+# Run seeders with default settings
+swap db seed
+
+# Customize seeding
+swap db seed --count 100 --locale en_GB --if-empty
+```
+
+**Options:**
+- `--count` or `-c` - Number of records per seeder (default: 50)
+- `--locale` or `-l` - Bogus locale (default: "en")
+- `--if-empty` - Only seed empty tables
+
+**Note:** This runs `dotnet run` with environment variables set.
+
+### `swap doctor`
+
+Check your development environment and dependencies.
+
+```bash
+swap doctor
+```
+
+Checks:
+- ✅ .NET SDK installation and version
+- ✅ dotnet-ef tool installation
+- ⚠️ Node.js (optional, for Tailwind CSS)
+- ⚠️ npm (optional, comes with Node.js)
+- ⚠️ libman (optional, for client libraries)
+
+Displays a table with status, versions, and installation instructions for missing tools.
+
+### `swap list [--project]`
+
+List all resources (entities) in your project with their completeness status.
+
+```bash
+# List resources in current project
+swap list
+
+# List resources in another project
+swap list --project path/to/project
+```
+
+Shows a table with:
+- Entity names from DbContext
+- ✓/✗ Model file exists
+- ✓/✗ Controller file exists
+- ✓/✗ Seeder file exists
+
+**Options:**
+- `--project` or `-p` - Path to project directory (default: current directory)
 
 ## 📚 Documentation
 
@@ -412,7 +572,7 @@ Swap CLI is [MIT licensed](LICENSE). Use it freely in your projects, commercial 
 - ✅ **Documentation** - Complete wiki with examples
 - ✅ **Docker Support** - Multi-stage builds, health checks, all databases
 
-### ✅ Phase 2D Complete: Database Seeders (Current)
+### ✅ Phase 2D Complete: Database Seeders
 
 - ✅ **Seeder Generation** - `swap g seed <entity>` and `swap g seed all`
 - ✅ **Bogus Integration** - Realistic fake data with smart field heuristics
@@ -421,8 +581,20 @@ Swap CLI is [MIT licensed](LICENSE). Use it freely in your projects, commercial 
 - ✅ **Development Startup** - Auto-seed on app launch in Development mode
 - ✅ **Idempotent Seeding** - `--if-empty` flag for safe repeated runs
 
+### ✅ Phase 2E Complete: Developer Experience (Current)
+
+- ✅ **Generator Ergonomics** - `--dry-run`, `--force`, `--project` options on all generators
+- ✅ **Database Commands** - `swap db info`, `db migrate`, `db seed`, `db reset`
+- ✅ **DX Utilities** - `swap doctor` for environment checks, `swap list` for resource inventory
+- ✅ **Field Delimiter Flexibility** - Support both space and comma-separated field definitions
+- ✅ **Consistent Aliases** - `-f` for fields, `-p` for project, `-a` for apply, `-c` for count
+- ✅ **Smart DbSet Scanning** - Handles both simple and fully-qualified entity types
+
 ### 🎯 Phase 3: Polish & Release
 
+- ⏳ **HTMX Testing Framework** - Dev-focused E2E testing for HTMX partials
+- ⏳ **Test Factories** - Bogus-based test data builders
+- ⏳ **Pattern Add-ons** - Soft delete, audit trails, slug generation
 - ⏳ **NuGet Package** - Publish to NuGet.org
 - ⏳ **VS Code Extension** - Integrated CLI experience
 - ⏳ **Video Tutorials** - Getting started screencasts

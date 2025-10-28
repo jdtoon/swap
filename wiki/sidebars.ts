@@ -34,6 +34,8 @@ const sidebars: SidebarsConfig = {
         'cli/generate-controller',
         'cli/generate-resource',
         'cli/seeders',
+        'cli/database',
+        'cli/utilities',
       ],
     },
     {
