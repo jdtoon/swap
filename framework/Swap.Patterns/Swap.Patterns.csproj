@@ -21,6 +21,8 @@
   <ItemGroup>
     <!-- EF Core for query filters and interceptors -->
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.10" />
+    <!-- HTTP context accessor for auditable pattern -->
+    <PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.2.0" />
   </ItemGroup>
 
 </Project>

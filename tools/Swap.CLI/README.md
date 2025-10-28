@@ -393,8 +393,195 @@ var active = await db.Posts.ToListAsync();
 
 **See also:**
 - [Swap.Patterns Library Guide](../framework/Swap.Patterns/README.md)
-- [Soft Delete Pattern Wiki](https://jdtoon.github.io/swap/docs/features/patterns)
+- [Entity Patterns Wiki](https://jdtoon.github.io/swap/docs/features/patterns)
 
+---
+
+### `swap generate pattern auditable <entity>`
+
+Add automatic timestamp and user tracking to any entity. Records who created and modified each record and when.
+
+```bash
+# Add auditable to Post entity
+swap g pattern auditable Post
+
+# Short aliases
+swap g p audit Post
+```
+
+**What it does:**
+1. Adds `IAuditable` interface to your entity
+2. Adds four properties: `CreatedAt`, `CreatedBy`, `UpdatedAt`, `UpdatedBy`
+3. Adds using statement for `Swap.Patterns.Auditable`
+4. Ensures `Swap.Patterns` package reference
+
+**After generation:**
+```csharp
+public class Post : IAuditable
+{
+    public int Id { get; set; }
+    public string Title { get; set; }
+    
+    // IAuditable properties
+    public DateTime CreatedAt { get; set; }
+    public string? CreatedBy { get; set; }
+    public DateTime? UpdatedAt { get; set; }
+    public string? UpdatedBy { get; set; }
+}
+```
+
+**Next steps:**
+1. Add HTTP context accessor in `Program.cs`:
+```csharp
+builder.Services.AddHttpContextAccessor();
+```
+
+2. Configure audit interceptor in your `DbContext`:
+```csharp
+private readonly IHttpContextAccessor _httpContextAccessor;
+
+public AppDbContext(
+    DbContextOptions<AppDbContext> options,
+    IHttpContextAccessor httpContextAccessor) : base(options)
+{
+    _httpContextAccessor = httpContextAccessor;
+}
+
+protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+{
+    optionsBuilder.AddInterceptors(_httpContextAccessor.CreateAuditInterceptor());
+}
+```
+
+3. Create and apply migration:
+```bash
+dotnet ef migrations add AddAuditableToPost
+dotnet ef database update
+```
+
+**How it works:**
+- Timestamps and user IDs are set automatically on `SaveChanges()`
+- `CreatedAt` and `CreatedBy` are set once when entity is added
+- `UpdatedAt` and `UpdatedBy` are updated on every modification
+- User ID comes from Claims (`NameIdentifier`, `Name`, or `Email`)
+
+---
+
+### `swap generate pattern sluggable <entity>`
+
+Add SEO-friendly URL slugs to any entity. Perfect for blog posts, products, and content pages.
+
+```bash
+# Add sluggable to BlogPost entity
+swap g pattern sluggable BlogPost
+
+# Short aliases
+swap g p slug BlogPost
+```
+
+**What it does:**
+1. Adds `ISluggable` interface to your entity
+2. Adds `Slug` property
+3. Adds using statement for `Swap.Patterns.Sluggable`
+4. Ensures `Swap.Patterns` package reference
+
+**After generation:**
+```csharp
+public class BlogPost : ISluggable
+{
+    public int Id { get; set; }
+    public string Title { get; set; }
+    
+    // ISluggable property
+    public string Slug { get; set; } = "";
+}
+```
+
+**Next steps:**
+1. Add unique index in your `DbContext`:
+```csharp
+protected override void OnModelCreating(ModelBuilder modelBuilder)
+{
+    modelBuilder.ConfigureSlugIndexes();
+    
+    // OR manually for specific entity:
+    modelBuilder.Entity<BlogPost>()
+        .HasIndex(e => e.Slug)
+        .IsUnique();
+}
+```
+
+2. Generate slug before saving (in controller or service):
+```csharp
+var post = new BlogPost { Title = "Hello World!" };
+await post.GenerateSlugAsync(post.Title, _db);
+_db.BlogPosts.Add(post);
+await _db.SaveChangesAsync();
+// post.Slug is now "hello-world"
+```
+
+3. Create and apply migration:
+```bash
+dotnet ef migrations add AddSlugToBlogPost
+dotnet ef database update
+```
+
+**Features:**
+- Converts text to URL-safe slugs: "Hello World!" → "hello-world"
+- Handles international characters: "Café München" → "cafe-munchen"
+- Automatic collision handling: "post" → "post-2" → "post-3"
+- Configurable max length (default: 80 characters)
+
+**Usage in routes:**
+```csharp
+// Find by slug instead of ID
+var post = await _db.BlogPosts
+    .FirstOrDefaultAsync(p => p.Slug == slug);
+    
+// Pretty URLs
+// Before: /blog/123
+// After:  /blog/hello-world
+```
+
+---
+
+### Combining Patterns
+
+All three patterns can be used together on the same entity:
+
+```csharp
+public class Product : ISoftDeletable, IAuditable, ISluggable
+{
+    public int Id { get; set; }
+    public string Name { get; set; }
+    public decimal Price { get; set; }
+    
+    // Soft Delete (3 properties)
+    public bool IsDeleted { get; set; }
+    public DateTime? DeletedAt { get; set; }
+    public string? DeletedBy { get; set; }
+    
+    // Auditable (4 properties)
+    public DateTime CreatedAt { get; set; }
+    public string? CreatedBy { get; set; }
+    public DateTime? UpdatedAt { get; set; }
+    public string? UpdatedBy { get; set; }
+    
+    // Sluggable (1 property)
+    public string Slug { get; set; } = "";
+}
+```
+
+Apply all patterns in sequence:
+```bash
+swap g pattern softdelete Product
+swap g pattern auditable Product
+swap g pattern sluggable Product
+```
+
+---
+
+## 📦 Generate Resource
 
 ```bash
 swap g r BlogPost --fields "Title:string Content:string PublishedDate:DateTime"
