@@ -9,6 +9,9 @@ A fluent testing framework for ASP.NET Core applications using HTMX, designed to
 - 🔍 **HTML Parsing** - Query and assert on HTML structure using CSS selectors
 - ⚡ **Partial View Testing** - Verify your HTMX endpoints return proper partials
 - 🧪 **Integration Testing** - Built on ASP.NET Core's WebApplicationFactory
+- 📝 **Form Submission Helper** - Submit forms from a prior response via `SubmitFormAsync`
+- 🔁 **Follow Redirects** - One-liner to follow `HX-Redirect` via `FollowHxRedirectAsync`
+- ✅ **Validation Assertions** - Assert summary or field-level validation errors
 
 ## Installation
 
@@ -130,6 +133,10 @@ Task<HtmxTestResponse> HtmxGetAsync(string path, string? target = null, string? 
 Task<HtmxTestResponse> HtmxPostAsync(string path, Dictionary<string, string>? formData = null, string? target = null, string? trigger = null)
 Task<HtmxTestResponse> HtmxPutAsync(string path, Dictionary<string, string>? formData = null, string? target = null, string? trigger = null)
 Task<HtmxTestResponse> HtmxDeleteAsync(string path, string? target = null, string? trigger = null)
+
+// Helpers
+Task<HtmxTestResponse> SubmitFormAsync(HtmxTestResponse response, string formSelector, Dictionary<string,string>? overrides = null, string? target = null, string? trigger = null)
+Task<HtmxTestResponse> FollowHxRedirectAsync(HtmxTestResponse response, string? target = null, string? trigger = null)
 ```
 
 #### Configuration
@@ -213,6 +220,18 @@ HtmxTestResponse AssertHxLocationContains(string substring)     // hx-location J
 ```
 
 #### Snapshot Testing
+#### Validation Assertions
+
+```csharp
+Task<HtmxTestResponse> AssertHasValidationErrorsAsync()
+Task<HtmxTestResponse> AssertFieldValidationErrorAsync(string fieldName, string? messageContains = null)
+```
+
+#### OOB Convenience
+
+```csharp
+Task<HtmxTestResponse> AssertOutOfBandAsync(string cssSelector, string? expectedContains = null)
+```
 
 ```csharp
 Task<HtmxTestResponse> AssertMatchesSnapshotAsync(string snapshotName, string? snapshotDirectory = null, bool? updateSnapshots = null)
@@ -287,6 +306,55 @@ public async Task TodoList_HasCorrectStructure()
 ```
 
 ### Snapshot Testing
+### Submitting forms from a prior response
+
+```csharp
+// GET the form as an HTMX partial
+var getResponse = await _client.HtmxGetAsync("/posts/create");
+getResponse.AssertSuccess();
+await getResponse.AssertPartialViewAsync();
+
+// Submit the form with overrides
+var postResponse = await _client.SubmitFormAsync(getResponse, "form", new Dictionary<string, string>
+{
+    ["Title"] = "Hello",
+    ["Body"] = "World",
+    ["PublishedAt"] = DateTime.UtcNow.ToString("O"),
+    ["AuthorId"] = "1"
+});
+
+postResponse.AssertSuccess();
+postResponse.AssertHxTriggerHeaderContains("refreshPostList");
+```
+
+### Following HX-Redirect
+
+```csharp
+var resp = await _client.HtmxPostAsync("/account/login", credentials);
+resp.AssertSuccess();
+
+// If server sets HX-Redirect: /dashboard, follow it
+var redirectResp = await _client.FollowHxRedirectAsync(resp);
+redirectResp.AssertSuccess();
+```
+
+### Asserting validation errors
+
+```csharp
+var invalid = await _client.HtmxPostAsync("/posts/create", new Dictionary<string,string>
+{
+    ["Title"] = "", // required
+    ["AuthorId"] = "1",
+    ["PublishedAt"] = DateTime.UtcNow.ToString("O")
+});
+
+invalid.AssertSuccess()
+    .AssertHxRetarget("#modal-container")
+    .AssertHxReswap("innerHTML");
+
+await invalid.AssertHasValidationErrorsAsync();
+await invalid.AssertFieldValidationErrorAsync("Title");
+```
 
 Snapshot testing captures the HTML output and compares it on future runs to detect unintended changes.
 

@@ -13,6 +13,9 @@ Swap.Testing is a fluent testing library for ASP.NET Core + HTMX apps.
 - Partial view detection: `AssertPartialViewAsync()`
 - Snapshot testing: `AssertMatchesSnapshotAsync()` with `UPDATE_SNAPSHOTS=true`
 - Header assertions: `AssertHxRedirect`, `AssertHxPushUrl`, `AssertHxReswap`, `AssertHxRetarget`, `AssertHxTriggerHeaderContains`, `AssertHxLocationContains`
+- Form helper: `SubmitFormAsync(response, selector, overrides)`
+- Follow redirects: `FollowHxRedirectAsync(response)`
+- Validation assertions: `AssertHasValidationErrorsAsync`, `AssertFieldValidationErrorAsync`
 
 ## Quick Start
 
@@ -48,6 +51,41 @@ Update snapshots:
 
 ```bash
 UPDATE_SNAPSHOTS=true dotnet test
+```
+
+## Submitting forms and following redirects
+
+```csharp
+// Get create form
+var getResp = await _client.HtmxGetAsync("/posts/create");
+getResp.AssertSuccess();
+await getResp.AssertPartialViewAsync();
+
+// Submit with overrides
+var postResp = await _client.SubmitFormAsync(getResp, "form", new()
+{
+    ["Title"] = "Hello",
+    ["PublishedAt"] = DateTime.UtcNow.ToString("O"),
+    ["AuthorId"] = "1"
+});
+
+postResp.AssertSuccess();
+
+// If server set HX-Redirect, follow it
+var maybeRedirect = await _client.FollowHxRedirectAsync(postResp);
+maybeRedirect.AssertSuccess();
+```
+
+## Validation helpers
+
+```csharp
+var invalid = await _client.HtmxPostAsync("/posts/create", new()
+{
+    ["Title"] = "" // required
+});
+
+await invalid.AssertHasValidationErrorsAsync();
+await invalid.AssertFieldValidationErrorAsync("Title");
 ```
 
 ## Setup tips

@@ -459,4 +459,69 @@ public class HtmxTestResponse
         
         return content.Substring(0, maxLength) + "... (truncated)";
     }
+
+    // ---------------------
+    // Validation helpers
+    // ---------------------
+
+    /// <summary>
+    /// Assert that the response contains any validation errors (summary or field-level).
+    /// </summary>
+    public async Task<HtmxTestResponse> AssertHasValidationErrorsAsync()
+    {
+        var doc = await GetDocumentAsync();
+        // Common ASP.NET Core patterns: validation summary div with content, or spans with data-valmsg-for having text
+        var summary = doc.QuerySelector(".validation-summary-errors, .alert.alert-error");
+        if (summary != null && !string.IsNullOrWhiteSpace(summary.TextContent?.Trim()))
+        {
+            return this;
+        }
+
+        var anyField = doc.QuerySelectorAll("[data-valmsg-for], .field-validation-error, span.text-error")
+            .Any(el => !string.IsNullOrWhiteSpace(el.TextContent?.Trim()));
+        if (anyField)
+            return this;
+
+        throw new HtmxTestException("Expected validation errors, but none were found in summary or field messages.");
+    }
+
+    /// <summary>
+    /// Assert that a specific field has a validation error. Looks for an element with data-valmsg-for="fieldName" and non-empty text.
+    /// </summary>
+    public async Task<HtmxTestResponse> AssertFieldValidationErrorAsync(string fieldName, string? messageContains = null)
+    {
+        if (string.IsNullOrWhiteSpace(fieldName))
+            throw new ArgumentException("Field name is required", nameof(fieldName));
+
+        var doc = await GetDocumentAsync();
+        var el = doc.QuerySelector($"[data-valmsg-for='{fieldName}']");
+        if (el == null)
+            throw new HtmxTestException($"No validation message element found for field '{fieldName}'.");
+
+        var text = (el.TextContent ?? string.Empty).Trim();
+        if (string.IsNullOrEmpty(text))
+            throw new HtmxTestException($"Expected a validation message for field '{fieldName}', but it was empty.");
+
+        if (messageContains != null && !text.Contains(messageContains, StringComparison.OrdinalIgnoreCase))
+            throw new HtmxTestException($"Expected validation message for '{fieldName}' to contain '{messageContains}', but was '{text}'.");
+
+        return this;
+    }
+
+    /// <summary>
+    /// Assert that there is an out-of-band (hx-swap-oob) update for the element matching the selector, optionally verifying content contains a substring.
+    /// </summary>
+    public async Task<HtmxTestResponse> AssertOutOfBandAsync(string cssSelector, string? expectedContains = null)
+    {
+        await AssertHxSwapOobAsync(cssSelector);
+        if (expectedContains != null)
+        {
+            var doc = await GetDocumentAsync();
+            var el = doc.QuerySelector(cssSelector) ?? throw new HtmxTestException($"Element '{cssSelector}' not found for OOB assertion.");
+            var content = el.InnerHtml ?? string.Empty;
+            if (!content.Contains(expectedContains))
+                throw new HtmxTestException($"Expected OOB content for '{cssSelector}' to contain '{expectedContains}'.");
+        }
+        return this;
+    }
 }
