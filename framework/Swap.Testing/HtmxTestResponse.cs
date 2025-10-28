@@ -1,5 +1,6 @@
 using AngleSharp;
 using AngleSharp.Html.Dom;
+using System.Text.Json;
 using System.Net;
 
 namespace Swap.Testing;
@@ -416,6 +417,187 @@ public class HtmxTestResponse
         return this;
     }
 
+    // Typed helpers around HX-Push-Url
+    public HtmxTestResponse AssertHxPushUrlTrue() => AssertHxPushUrl("true");
+    public HtmxTestResponse AssertHxPushUrlFalse() => AssertHxPushUrl("false");
+    public HtmxTestResponse AssertHxPushUrlUrl(string expectedUrl) => AssertHxPushUrl(expectedUrl);
+
+    public bool? GetHxPushUrlBool()
+    {
+        var v = GetHeaderValue("HX-Push-Url");
+        if (v == null) return null;
+        if (string.Equals(v, "true", StringComparison.OrdinalIgnoreCase)) return true;
+        if (string.Equals(v, "false", StringComparison.OrdinalIgnoreCase)) return false;
+        return null; // it's a URL, not a boolean
+    }
+
+    // HX-Location JSON helpers
+    public string? GetHxLocationRaw() => GetHeaderValue("HX-Location");
+
+    public JsonDocument? GetHxLocationJson()
+    {
+        var raw = GetHxLocationRaw();
+        if (string.IsNullOrWhiteSpace(raw)) return null;
+        raw = raw.Trim();
+        if (!raw.StartsWith("{")) return null; // not JSON
+        try
+        {
+            return JsonDocument.Parse(raw);
+        }
+        catch (JsonException)
+        {
+            throw new HtmxTestException("HX-Location header is not valid JSON.");
+        }
+    }
+
+    public HtmxTestResponse AssertHxLocationFieldEquals(string fieldName, string expected)
+    {
+        using var json = GetHxLocationJson() ?? throw new HtmxTestException("HX-Location JSON not present.");
+        if (!json.RootElement.TryGetProperty(fieldName, out var prop))
+            throw new HtmxTestException($"HX-Location JSON is missing field '{fieldName}'.");
+        var actual = prop.GetString();
+        if (!string.Equals(actual, expected, StringComparison.Ordinal))
+            throw new HtmxTestException($"Expected HX-Location['{fieldName}'] == '{expected}', got '{actual}'.");
+        return this;
+    }
+
+    public HtmxTestResponse AssertHxLocationFieldContains(string fieldName, string expectedSubstring)
+    {
+        using var json = GetHxLocationJson() ?? throw new HtmxTestException("HX-Location JSON not present.");
+        if (!json.RootElement.TryGetProperty(fieldName, out var prop))
+            throw new HtmxTestException($"HX-Location JSON is missing field '{fieldName}'.");
+        var actual = prop.GetString() ?? string.Empty;
+        if (!actual.Contains(expectedSubstring))
+            throw new HtmxTestException($"Expected HX-Location['{fieldName}'] to contain '{expectedSubstring}', got '{actual}'.");
+        return this;
+    }
+
+    // ---------------------
+    // HX-Trigger typed helpers (HX-Trigger, HX-Trigger-After-Swap, HX-Trigger-After-Settle)
+    // ---------------------
+
+    /// <summary>
+    /// Get the raw HX-Trigger header value (or other trigger header via <paramref name="headerName"/>).
+    /// </summary>
+    public string? GetHxTriggerRaw(string headerName = "HX-Trigger") => GetHeaderValue(headerName);
+
+    /// <summary>
+    /// If the trigger header contains JSON, returns it as a JsonDocument; otherwise null.
+    /// </summary>
+    public JsonDocument? GetHxTriggerJson(string headerName = "HX-Trigger")
+    {
+        var raw = GetHxTriggerRaw(headerName);
+        if (string.IsNullOrWhiteSpace(raw)) return null;
+        var trimmed = raw.Trim();
+        if (!trimmed.StartsWith("{")) return null;
+        try
+        {
+            return JsonDocument.Parse(trimmed);
+        }
+        catch (JsonException)
+        {
+            throw new HtmxTestException($"{headerName} header is not valid JSON.");
+        }
+    }
+
+    /// <summary>
+    /// Returns the list of event names in the trigger header. Supports either JSON (keys) or plain string values
+    /// using comma and/or whitespace separators.
+    /// </summary>
+    public IEnumerable<string> GetHxTriggerEventNames(string headerName = "HX-Trigger")
+    {
+        var raw = GetHxTriggerRaw(headerName);
+        if (string.IsNullOrWhiteSpace(raw)) return Array.Empty<string>();
+        var trimmed = raw.Trim();
+        if (trimmed.StartsWith("{"))
+        {
+            using var json = GetHxTriggerJson(headerName);
+            if (json == null) return Array.Empty<string>();
+            return json.RootElement.EnumerateObject().Select(p => p.Name).ToArray();
+        }
+
+        // split by comma and whitespace
+        var tokens = trimmed
+            .Split(new[] { ',', ' ', '\t', '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)
+            .Select(s => s.Trim())
+            .Where(s => s.Length > 0)
+            .ToArray();
+        return tokens;
+    }
+
+    /// <summary>
+    /// Assert that a specific event name is present in the trigger header.
+    /// </summary>
+    public HtmxTestResponse AssertHxTriggered(string eventName, string headerName = "HX-Trigger")
+    {
+        if (string.IsNullOrWhiteSpace(eventName)) throw new ArgumentException("Event name required", nameof(eventName));
+        var names = GetHxTriggerEventNames(headerName).ToArray();
+        if (!names.Contains(eventName))
+        {
+            var available = names.Length == 0 ? "<none>" : string.Join(", ", names);
+            throw new HtmxTestException($"Expected {headerName} to include event '{eventName}', but available events were: {available}.");
+        }
+        return this;
+    }
+
+    /// <summary>
+    /// Assert that an event payload field equals the expected value. Only valid for JSON trigger headers.
+    /// </summary>
+    public HtmxTestResponse AssertHxTriggerFieldEquals(string eventName, string fieldName, string expected, string headerName = "HX-Trigger")
+    {
+        using var json = GetHxTriggerJson(headerName) ?? throw new HtmxTestException($"{headerName} JSON not present.");
+        if (!json.RootElement.TryGetProperty(eventName, out var ev))
+            throw new HtmxTestException($"{headerName} JSON missing event '{eventName}'.");
+        if (ev.ValueKind == JsonValueKind.Object)
+        {
+            if (!ev.TryGetProperty(fieldName, out var field))
+                throw new HtmxTestException($"{headerName}['{eventName}'] missing field '{fieldName}'.");
+            var actual = field.GetString();
+            if (!string.Equals(actual, expected, StringComparison.Ordinal))
+                throw new HtmxTestException($"Expected {headerName}['{eventName}']['{fieldName}'] == '{expected}', got '{actual}'.");
+        }
+        else
+        {
+            throw new HtmxTestException($"{headerName}['{eventName}'] is not an object; cannot read field '{fieldName}'.");
+        }
+        return this;
+    }
+
+    /// <summary>
+    /// Assert that an event payload field contains a substring. Only valid for JSON trigger headers.
+    /// </summary>
+    public HtmxTestResponse AssertHxTriggerFieldContains(string eventName, string fieldName, string expectedSubstring, string headerName = "HX-Trigger")
+    {
+        using var json = GetHxTriggerJson(headerName) ?? throw new HtmxTestException($"{headerName} JSON not present.");
+        if (!json.RootElement.TryGetProperty(eventName, out var ev))
+            throw new HtmxTestException($"{headerName} JSON missing event '{eventName}'.");
+        if (ev.ValueKind == JsonValueKind.Object)
+        {
+            if (!ev.TryGetProperty(fieldName, out var field))
+                throw new HtmxTestException($"{headerName}['{eventName}'] missing field '{fieldName}'.");
+            var actual = field.GetString() ?? string.Empty;
+            if (!actual.Contains(expectedSubstring))
+                throw new HtmxTestException($"Expected {headerName}['{eventName}']['{fieldName}'] to contain '{expectedSubstring}', got '{actual}'.");
+        }
+        else
+        {
+            throw new HtmxTestException($"{headerName}['{eventName}'] is not an object; cannot read field '{fieldName}'.");
+        }
+        return this;
+    }
+
+    // Convenience wrappers for After-Swap and After-Settle
+    public HtmxTestResponse AssertHxTriggeredAfterSwap(string eventName) => AssertHxTriggered(eventName, "HX-Trigger-After-Swap");
+    public HtmxTestResponse AssertHxTriggeredAfterSettle(string eventName) => AssertHxTriggered(eventName, "HX-Trigger-After-Settle");
+    public HtmxTestResponse AssertHxTriggerAfterSwapFieldEquals(string eventName, string fieldName, string expected)
+        => AssertHxTriggerFieldEquals(eventName, fieldName, expected, "HX-Trigger-After-Swap");
+    public HtmxTestResponse AssertHxTriggerAfterSettleFieldEquals(string eventName, string fieldName, string expected)
+        => AssertHxTriggerFieldEquals(eventName, fieldName, expected, "HX-Trigger-After-Settle");
+    public HtmxTestResponse AssertHxTriggerAfterSwapFieldContains(string eventName, string fieldName, string expectedSubstring)
+        => AssertHxTriggerFieldContains(eventName, fieldName, expectedSubstring, "HX-Trigger-After-Swap");
+    public HtmxTestResponse AssertHxTriggerAfterSettleFieldContains(string eventName, string fieldName, string expectedSubstring)
+        => AssertHxTriggerFieldContains(eventName, fieldName, expectedSubstring, "HX-Trigger-After-Settle");
+
     /// <summary>
     /// Get a response header value (first value) or null if missing.
     /// </summary>
@@ -532,7 +714,8 @@ public class HtmxTestResponse
     {
         if (string.IsNullOrWhiteSpace(expectedId)) throw new ArgumentException("Expected id required", nameof(expectedId));
         var doc = await GetDocumentAsync();
-        var rootChildren = doc.Body.Children;
+    var body = doc.Body ?? throw new HtmxTestException("Document body not available.");
+    var rootChildren = body.Children;
         if (rootChildren.Length == 0)
             throw new HtmxTestException("Partial root assertion failed: no root elements found.");
 
@@ -553,7 +736,8 @@ public class HtmxTestResponse
     public async Task<HtmxTestResponse> AssertPartialRootMatchesAsync(string cssSelector)
     {
         var doc = await GetDocumentAsync();
-        var rootChildren = doc.Body.Children;
+    var body2 = doc.Body ?? throw new HtmxTestException("Document body not available.");
+    var rootChildren = body2.Children;
         if (rootChildren.Length == 0)
             throw new HtmxTestException("Partial root assertion failed: no root elements found.");
 

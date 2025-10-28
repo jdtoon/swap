@@ -11,6 +11,19 @@ public static class SnapshotManager
     private static readonly List<Func<string, string>> _scrubbers = new();
     private static bool _useDefaultScrubbers = true;
 
+    static SnapshotManager()
+    {
+        // Optional env toggle to disable default scrubbers: SNAPSHOT_SCRUBBERS_DEFAULT=false
+        var env = Environment.GetEnvironmentVariable("SNAPSHOT_SCRUBBERS_DEFAULT");
+        if (!string.IsNullOrWhiteSpace(env))
+        {
+            if (env.Equals("false", StringComparison.OrdinalIgnoreCase) || env == "0")
+            {
+                _useDefaultScrubbers = false;
+            }
+        }
+    }
+
     /// <summary>
     /// Add a custom scrubber that transforms the content before normalization and comparison.
     /// </summary>

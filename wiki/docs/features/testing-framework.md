@@ -13,6 +13,8 @@ Swap.Testing is a fluent testing library for ASP.NET Core + HTMX apps.
 - Partial view detection: `AssertPartialViewAsync()`
 - Snapshot testing: `AssertMatchesSnapshotAsync()` with `UPDATE_SNAPSHOTS=true`
 - Header assertions: `AssertHxRedirect`, `AssertHxPushUrl`, `AssertHxReswap`, `AssertHxRetarget`, `AssertHxTriggerHeaderContains`, `AssertHxLocationContains`
+- Header assertions: `AssertHxRedirect`, `AssertHxPushUrl`, `AssertHxReswap`, `AssertHxRetarget`, `AssertHxTriggerHeaderContains`, `AssertHxLocationContains`
+- Typed HX header helpers: HX-Location JSON (`GetHxLocationJson` + field checks) and HX-Trigger parsing (event lists and JSON payloads)
 - Form helper: `SubmitFormAsync(response, selector, overrides)`
 - Follow redirects: `FollowHxRedirectAsync(response)`
 - Validation assertions: `AssertHasValidationErrorsAsync`, `AssertFieldValidationErrorAsync`
@@ -130,6 +132,8 @@ public partial class Program { }
 - `AssertElementExistsAsync`, `AssertElementNotExistsAsync`, `AssertElementCountAsync`, `AssertElementTextAsync`
 - `AssertHasCssClassAsync`, `AssertAttributeContainsAsync`
 - `AssertHxGetAsync`, `AssertHxPostAsync`, `AssertHxPutAsync`, `AssertHxTargetAsync`, `AssertHxSwapAsync`, `AssertHxSwapOobAsync`, `AssertHxTriggerAsync`
-- `AssertHxRedirect`, `AssertHxPushUrl`, `AssertHxReswap`, `AssertHxRetarget`, `AssertHxRefresh`, `AssertHxTriggerHeaderContains`, `AssertHxLocationContains`
+- `AssertHxRedirect`, `AssertHxPushUrl`, `AssertHxPushUrlTrue`, `AssertHxPushUrlFalse`, `AssertHxPushUrlUrl`, `AssertHxReswap`, `AssertHxRetarget`, `AssertHxRefresh`, `AssertHxTriggerHeaderContains`, `AssertHxLocationContains`
+- HX-Location JSON: `GetHxLocationJson`, `AssertHxLocationFieldEquals`, `AssertHxLocationFieldContains`
+- HX-Trigger typed: `GetHxTriggerRaw`, `GetHxTriggerJson`, `GetHxTriggerEventNames`, `AssertHxTriggered`, `AssertHxTriggeredAfterSwap`, `AssertHxTriggeredAfterSettle`, `AssertHxTriggerFieldEquals`, `AssertHxTriggerFieldContains`, `AssertHxTriggerAfterSwapFieldEquals`, `AssertHxTriggerAfterSettleFieldEquals`, `AssertHxTriggerAfterSwapFieldContains`, `AssertHxTriggerAfterSettleFieldContains`
 
 See the repository at `framework/Swap.Testing/README.md` for full API and examples.

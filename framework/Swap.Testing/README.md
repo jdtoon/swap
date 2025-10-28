@@ -215,11 +215,31 @@ Task<HtmxTestResponse> AssertAsync(Func<IHtmlDocument, Task> assertion)
 ```csharp
 HtmxTestResponse AssertHxRedirect(string expectedUrl)
 HtmxTestResponse AssertHxPushUrl(string? expectedValue = null) // true or URL
+HtmxTestResponse AssertHxPushUrlTrue()
+HtmxTestResponse AssertHxPushUrlFalse()
+HtmxTestResponse AssertHxPushUrlUrl(string expectedUrl)
 HtmxTestResponse AssertHxReswap(string? expectedValue = null)
 HtmxTestResponse AssertHxRetarget(string? expectedValue = null)
 HtmxTestResponse AssertHxRefresh(bool? expected = null)        // presence or explicit
 HtmxTestResponse AssertHxTriggerHeaderContains(string substring)
 HtmxTestResponse AssertHxLocationContains(string substring)     // hx-location JSON contains
+// HX-Location JSON helpers
+JsonDocument? GetHxLocationJson()
+HtmxTestResponse AssertHxLocationFieldEquals(string fieldName, string expected)
+HtmxTestResponse AssertHxLocationFieldContains(string fieldName, string expectedSubstring)
+// HX-Trigger typed helpers (also support HX-Trigger-After-Swap / HX-Trigger-After-Settle via headerName)
+string? GetHxTriggerRaw(string headerName = "HX-Trigger")
+JsonDocument? GetHxTriggerJson(string headerName = "HX-Trigger")
+IEnumerable<string> GetHxTriggerEventNames(string headerName = "HX-Trigger")
+HtmxTestResponse AssertHxTriggered(string eventName, string headerName = "HX-Trigger")
+HtmxTestResponse AssertHxTriggeredAfterSwap(string eventName)
+HtmxTestResponse AssertHxTriggeredAfterSettle(string eventName)
+HtmxTestResponse AssertHxTriggerFieldEquals(string eventName, string fieldName, string expected, string headerName = "HX-Trigger")
+HtmxTestResponse AssertHxTriggerFieldContains(string eventName, string fieldName, string expectedSubstring, string headerName = "HX-Trigger")
+HtmxTestResponse AssertHxTriggerAfterSwapFieldEquals(string eventName, string fieldName, string expected)
+HtmxTestResponse AssertHxTriggerAfterSettleFieldEquals(string eventName, string fieldName, string expected)
+HtmxTestResponse AssertHxTriggerAfterSwapFieldContains(string eventName, string fieldName, string expectedSubstring)
+HtmxTestResponse AssertHxTriggerAfterSettleFieldContains(string eventName, string fieldName, string expectedSubstring)
 ```
 
 #### Snapshot Testing
@@ -344,6 +364,15 @@ redirectResp.AssertSuccess();
 
 ### Asserting validation errors
 ### Snapshot scrubbers
+### HX-Location JSON example
+
+```csharp
+var response = await _client.HtmxPostAsync("/posts/apply-filter", new(){ ["authorId"] = "1" });
+// Server returns: HX-Location: {"path":"/posts","target":"#post-list","swap":"innerHTML"}
+
+response.AssertHxLocationFieldEquals("path", "/posts");
+response.AssertHxLocationFieldContains("target", "#post-list");
+```
 
 Built-in scrubbers make snapshots stable by replacing volatile values:
 - GUIDs → [GUID]
