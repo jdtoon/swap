@@ -12,6 +12,7 @@ A fluent testing framework for ASP.NET Core applications using HTMX, designed to
 - 📝 **Form Submission Helper** - Submit forms from a prior response via `SubmitFormAsync`
 - 🔁 **Follow Redirects** - One-liner to follow `HX-Redirect` via `FollowHxRedirectAsync`
 - ✅ **Validation Assertions** - Assert summary or field-level validation errors
+- 🧽 **Snapshot Scrubbers** - Replace GUIDs/timestamps/anti-forgery tokens for stable snapshots
 
 ## Installation
 
@@ -198,6 +199,8 @@ Task<HtmxTestResponse> AssertHxAttributeAsync(string cssSelector, string attribu
 ```csharp
 Task<HtmxTestResponse> AssertPartialViewAsync() // Verifies no <html> or <body> tags in raw content
 Task<HtmxTestResponse> AssertAntiForgeryTokenAsync(string formSelector = "form")
+Task<HtmxTestResponse> AssertPartialRootIdAsync(string expectedId)
+Task<HtmxTestResponse> AssertPartialRootMatchesAsync(string cssSelector)
 ```
 
 #### Custom Assertions
@@ -225,6 +228,7 @@ HtmxTestResponse AssertHxLocationContains(string substring)     // hx-location J
 ```csharp
 Task<HtmxTestResponse> AssertHasValidationErrorsAsync()
 Task<HtmxTestResponse> AssertFieldValidationErrorAsync(string fieldName, string? messageContains = null)
+Task<HtmxTestResponse> AssertNoValidationErrorsAsync()
 ```
 
 #### OOB Convenience
@@ -339,6 +343,25 @@ redirectResp.AssertSuccess();
 ```
 
 ### Asserting validation errors
+### Snapshot scrubbers
+
+Built-in scrubbers make snapshots stable by replacing volatile values:
+- GUIDs → [GUID]
+- ISO date/time strings → [DATETIME]
+- Anti-forgery token values → [TOKEN]
+
+They are enabled by default. You can customize:
+
+```csharp
+// Disable defaults
+SnapshotManager.UseDefaultScrubbers(false);
+
+// Add your own scrubber
+SnapshotManager.AddScrubber(content => content.Replace("8.99", "[PRICE]"));
+
+// Remove custom scrubbers
+SnapshotManager.ClearScrubbers();
+```
 
 ```csharp
 var invalid = await _client.HtmxPostAsync("/posts/create", new Dictionary<string,string>

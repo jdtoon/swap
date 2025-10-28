@@ -16,6 +16,8 @@ Swap.Testing is a fluent testing library for ASP.NET Core + HTMX apps.
 - Form helper: `SubmitFormAsync(response, selector, overrides)`
 - Follow redirects: `FollowHxRedirectAsync(response)`
 - Validation assertions: `AssertHasValidationErrorsAsync`, `AssertFieldValidationErrorAsync`
+- Partial root helpers: `AssertPartialRootIdAsync`, `AssertPartialRootMatchesAsync`
+- Snapshot scrubbers: enable by default; customize via `SnapshotManager`
 
 ## Quick Start
 
@@ -86,6 +88,21 @@ var invalid = await _client.HtmxPostAsync("/posts/create", new()
 
 await invalid.AssertHasValidationErrorsAsync();
 await invalid.AssertFieldValidationErrorAsync("Title");
+```
+
+## Snapshot scrubbers
+
+Default scrubbers replace GUIDs, ISO timestamps, and anti-forgery tokens for stable snapshots.
+
+```csharp
+// Turn off defaults
+SnapshotManager.UseDefaultScrubbers(false);
+
+// Add a custom scrubber
+SnapshotManager.AddScrubber(html => html.Replace("123.45", "[PRICE]"));
+
+// Clear custom scrubbers
+SnapshotManager.ClearScrubbers();
 ```
 
 ## Setup tips

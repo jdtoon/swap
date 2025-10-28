@@ -1,3 +1,5 @@
+using System.Text.RegularExpressions;
+
 namespace Swap.Testing;
 
 /// <summary>
@@ -6,6 +8,27 @@ namespace Swap.Testing;
 public static class SnapshotManager
 {
     private static readonly string DefaultSnapshotDirectory = "__snapshots__";
+    private static readonly List<Func<string, string>> _scrubbers = new();
+    private static bool _useDefaultScrubbers = true;
+
+    /// <summary>
+    /// Add a custom scrubber that transforms the content before normalization and comparison.
+    /// </summary>
+    public static void AddScrubber(Func<string, string> scrubber)
+    {
+        if (scrubber == null) throw new ArgumentNullException(nameof(scrubber));
+        _scrubbers.Add(scrubber);
+    }
+
+    /// <summary>
+    /// Remove all custom scrubbers.
+    /// </summary>
+    public static void ClearScrubbers() => _scrubbers.Clear();
+
+    /// <summary>
+    /// Enable or disable built-in default scrubbers (on by default).
+    /// </summary>
+    public static void UseDefaultScrubbers(bool enabled) => _useDefaultScrubbers = enabled;
 
     /// <summary>
     /// Compare HTML content against a saved snapshot.
@@ -25,7 +48,7 @@ public static class SnapshotManager
         Directory.CreateDirectory(snapshotDir);
 
         var snapshotPath = Path.Combine(snapshotDir, $"{snapshotName}.html");
-        var normalizedActual = NormalizeHtml(actualContent);
+    var normalizedActual = NormalizeHtml(ApplyScrubbers(actualContent));
 
         // Update mode - save snapshot and return true
         if (updateSnapshots || !File.Exists(snapshotPath))
@@ -36,7 +59,7 @@ public static class SnapshotManager
 
         // Compare mode
         var expectedContent = await File.ReadAllTextAsync(snapshotPath);
-        var normalizedExpected = NormalizeHtml(expectedContent);
+    var normalizedExpected = NormalizeHtml(ApplyScrubbers(expectedContent));
 
         if (normalizedActual == normalizedExpected)
             return true;
@@ -108,5 +131,50 @@ public static class SnapshotManager
             .Where(line => !string.IsNullOrWhiteSpace(line));
 
         return string.Join('\n', lines);
+    }
+
+    /// <summary>
+    /// Apply default and custom scrubbers to remove or normalize unstable content.
+    /// </summary>
+    private static string ApplyScrubbers(string content)
+    {
+        if (_useDefaultScrubbers)
+        {
+            content = DefaultScrub_Guids(content);
+            content = DefaultScrub_IsoDateTimes(content);
+            content = DefaultScrub_AntiForgeryToken(content);
+        }
+
+        foreach (var scrub in _scrubbers)
+        {
+            content = scrub(content);
+        }
+
+        return content;
+    }
+
+    // ----- Default scrubbers -----
+
+    private static string DefaultScrub_Guids(string input)
+    {
+        // Replace GUIDs with [GUID]
+        var guidRegex = new Regex(@"\b[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\b", RegexOptions.Compiled);
+        return guidRegex.Replace(input, "[GUID]");
+    }
+
+    private static string DefaultScrub_IsoDateTimes(string input)
+    {
+        // Replace common ISO 8601 date/time strings with [DATETIME]
+        // Examples: 2025-10-28, 2025-10-28T09:02:30, 2025-10-28T09:02:30.123Z, 2025-10-28 09:02:30
+        var isoRegex = new Regex(@"\b\d{4}-\d{2}-\d{2}(?:[T\s]\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+\-]\d{2}:?\d{2})?)?\b", RegexOptions.Compiled);
+        return isoRegex.Replace(input, "[DATETIME]");
+    }
+
+    private static string DefaultScrub_AntiForgeryToken(string input)
+    {
+        // Replace ASP.NET Core anti-forgery token values with [TOKEN]
+        // Matches: <input name="__RequestVerificationToken" value="...">
+        var tokenRegex = new Regex("(<input[^>]*name=\"__RequestVerificationToken\"[^>]*value=\")(.*?)(\")", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        return tokenRegex.Replace(input, "$1[TOKEN]$3");
     }
 }

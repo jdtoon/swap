@@ -524,4 +524,63 @@ public class HtmxTestResponse
         }
         return this;
     }
+
+    /// <summary>
+    /// Assert that the first top-level element in the partial has the expected id value, or that an element at the root level matches the id.
+    /// </summary>
+    public async Task<HtmxTestResponse> AssertPartialRootIdAsync(string expectedId)
+    {
+        if (string.IsNullOrWhiteSpace(expectedId)) throw new ArgumentException("Expected id required", nameof(expectedId));
+        var doc = await GetDocumentAsync();
+        var rootChildren = doc.Body.Children;
+        if (rootChildren.Length == 0)
+            throw new HtmxTestException("Partial root assertion failed: no root elements found.");
+
+        // Satisfy if any root child has the id
+        foreach (var el in rootChildren)
+        {
+            var id = el.Id;
+            if (!string.IsNullOrEmpty(id) && id.Equals(expectedId, StringComparison.Ordinal))
+                return this;
+        }
+
+        throw new HtmxTestException($"Expected a root-level element with id '{expectedId}', but none was found.");
+    }
+
+    /// <summary>
+    /// Assert that a root-level element matches the given selector (scope is document body immediate children).
+    /// </summary>
+    public async Task<HtmxTestResponse> AssertPartialRootMatchesAsync(string cssSelector)
+    {
+        var doc = await GetDocumentAsync();
+        var rootChildren = doc.Body.Children;
+        if (rootChildren.Length == 0)
+            throw new HtmxTestException("Partial root assertion failed: no root elements found.");
+
+        // Check if any root child matches the selector
+        foreach (var el in rootChildren)
+        {
+            if (el.Matches(cssSelector))
+                return this;
+        }
+
+        throw new HtmxTestException($"Expected a root-level element matching selector '{cssSelector}', but none matched.");
+    }
+
+    /// <summary>
+    /// Assert that the response has no validation errors.
+    /// </summary>
+    public async Task<HtmxTestResponse> AssertNoValidationErrorsAsync()
+    {
+        var doc = await GetDocumentAsync();
+        var summary = doc.QuerySelector(".validation-summary-errors, .alert.alert-error");
+        var summaryHasText = summary != null && !string.IsNullOrWhiteSpace(summary.TextContent?.Trim());
+        var anyField = doc.QuerySelectorAll("[data-valmsg-for], .field-validation-error, span.text-error")
+            .Any(el => !string.IsNullOrWhiteSpace(el.TextContent?.Trim()));
+
+        if (summaryHasText || anyField)
+            throw new HtmxTestException("Expected no validation errors, but some were found.");
+
+        return this;
+    }
 }
