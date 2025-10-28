@@ -247,10 +247,10 @@ public static class GenerateAuthCommand
                     root.Add(itemGroup);
                 }
                 
-                // Add package reference
+                // Add package reference (pin to 9.0.10)
                 itemGroup.Add(new XElement("PackageReference",
                     new XAttribute("Include", "Microsoft.AspNetCore.Identity.EntityFrameworkCore"),
-                    new XAttribute("Version", "9.0.0")));
+                    new XAttribute("Version", "9.0.10")));
                 
                 doc.Save(projectFile);
                 AnsiConsole.MarkupLine("[green]✓[/] Added Identity package reference");
@@ -462,6 +462,17 @@ builder.Services.ConfigureApplicationCookie(options =>
 
         await File.WriteAllTextAsync(layoutPath, content);
         AnsiConsole.MarkupLine("[green]✓[/] Added login partial to layout");
+
+        // Ensure _ValidationScriptsPartial exists to prevent runtime errors in auth views
+        var validationPartialPath = Path.Combine(workingDir, "Views", "Shared", "_ValidationScriptsPartial.cshtml");
+        if (!File.Exists(validationPartialPath))
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(validationPartialPath)!);
+            // Minimal placeholder partial; projects may add scripts as needed
+            var partialContent = "@* Validation scripts partial (optional). Add client-side validation scripts here if used). *@\n";
+            await File.WriteAllTextAsync(validationPartialPath, partialContent);
+            AnsiConsole.MarkupLine("[green]✓[/] Added missing [grey]_ValidationScriptsPartial.cshtml[/] to Views/Shared");
+        }
     }
 
     private static void ShowNextSteps(string workingDir)

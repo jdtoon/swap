@@ -183,7 +183,7 @@ public static class GeneratePatternCommand
                         );
 
                     // Add comment before first property
-                    if (i == 0)
+                    if (insertAt > 0)
                     {
                         prop = prop.WithLeadingTrivia(
                             SyntaxFactory.CarriageReturnLineFeed,
@@ -197,6 +197,7 @@ public static class GeneratePatternCommand
             }
 
             classDecl = classDecl.AddMembers(newMembers.ToArray());
+
         }
 
         // Replace the class in the tree
@@ -353,30 +354,11 @@ public static class GeneratePatternCommand
                     {
                         prop = prop.WithLeadingTrivia(
                             SyntaxFactory.CarriageReturnLineFeed,
-                            SyntaxFactory.Comment("    // IAuditable properties"),
+                            SyntaxFactory.Comment("    // ISoftDeletable properties"),
                             SyntaxFactory.CarriageReturnLineFeed
                         );
                     }
-
                     newMembers.Add(prop);
-                }
-            }
-
-            classDecl = classDecl.AddMembers(newMembers.ToArray());
-        }
-
-        // Replace the class in the tree
-        root = root.ReplaceNode(root.DescendantNodes().OfType<ClassDeclarationSyntax>().First(c => c.Identifier.Text == entity), classDecl);
-
-        // Write back with normalization
-        var formattedCode = root.NormalizeWhitespace().ToFullString();
-        await File.WriteAllTextAsync(modelPath, formattedCode);
-
-        AnsiConsole.MarkupLine($"[green]✓[/] Added IAuditable to {entity}");
-
-        // Run dotnet format
-        try
-        {
             var formatProcess = new System.Diagnostics.Process
             {
                 StartInfo = new System.Diagnostics.ProcessStartInfo
@@ -552,35 +534,190 @@ public static class GeneratePatternCommand
             // Formatting is optional, continue even if it fails
         }
 
-        // Output configuration guidance
-        AnsiConsole.WriteLine();
-        AnsiConsole.MarkupLine("[bold cyan]Configuration Steps:[/]");
-        AnsiConsole.WriteLine();
-        AnsiConsole.MarkupLine("[bold]1. Add unique index in your DbContext OnModelCreating:[/]");
-        AnsiConsole.MarkupLine("[grey]   protected override void OnModelCreating(ModelBuilder modelBuilder)[/]");
-        AnsiConsole.MarkupLine("[grey]   {[/]");
-        AnsiConsole.MarkupLine("[grey]       modelBuilder.ConfigureSlugIndexes();[/]");
-        AnsiConsole.MarkupLine("[grey]       // OR manually for specific entity:[/]");
-        AnsiConsole.MarkupLine($"[grey]       modelBuilder.Entity<{entity}>()[/]");
-        AnsiConsole.MarkupLine("[grey]           .HasIndex(e => e.Slug)[/]");
-        AnsiConsole.MarkupLine("[grey]           .IsUnique();[/]");
-        AnsiConsole.MarkupLine("[grey]   }[/]");
-        AnsiConsole.WriteLine();
-        AnsiConsole.MarkupLine("[bold]2. Generate slug before saving (in your controller or service):[/]");
-        AnsiConsole.MarkupLine($"[grey]   var {entity.ToLower()} = new {entity} {{ /* properties */ }};[/]");
-        AnsiConsole.MarkupLine($"[grey]   await {entity.ToLower()}.GenerateSlugAsync({entity.ToLower()}.Title, _db);[/]");
-        AnsiConsole.MarkupLine($"[grey]   _db.{entity}s.Add({entity.ToLower()});[/]");
-        AnsiConsole.MarkupLine("[grey]   await _db.SaveChangesAsync();[/]");
-        AnsiConsole.WriteLine();
-        AnsiConsole.MarkupLine("[bold]3. Add a migration:[/]");
-        AnsiConsole.MarkupLine($"[grey]   dotnet ef migrations add Add{entity}Slug[/]");
-        AnsiConsole.MarkupLine("[grey]   dotnet ef database update[/]");
-        AnsiConsole.WriteLine();
+        // Auto-configure DbContext unique index for Slug
+        await UpdateDbContextForSluggableAsync(workingDir, entity);
 
-        // Ensure Swap.Patterns package
-        await EnsureSwapPatternsPackageAsync(projectFile);
+        // Auto-inject slug generation into controller actions (Create/Edit)
+        await UpdateControllerForSluggableAsync(workingDir, entity);
+
+        // Inform about migration creation
+        AnsiConsole.MarkupLine("[cyan]Next steps:[/]");
+        AnsiConsole.MarkupLine($"  1. Add migration: [grey]dotnet ef migrations add Add{entity}Slug[/]");
+        AnsiConsole.MarkupLine("  2. (Optional) Update DB: [grey]dotnet ef database update[/]");
 
         return 0;
+    }
+
+    private static async Task UpdateDbContextForSluggableAsync(string workingDir, string entity)
+    {
+        // Find DbContext candidates
+        var dataDir = Path.Combine(workingDir, "Data");
+        if (!Directory.Exists(dataDir)) return;
+
+        var candidates = Directory.GetFiles(dataDir, "*.cs", SearchOption.AllDirectories)
+            .Where(f => File.ReadAllText(f).Contains(": DbContext") || File.ReadAllText(f).Contains("IdentityDbContext"))
+            .ToList();
+
+        if (!candidates.Any())
+        {
+            AnsiConsole.MarkupLine("[yellow]ℹ[/] No DbContext found. Skipping DbContext configuration for Sluggable.");
+            return;
+        }
+
+        string targetDbContextPath;
+        if (candidates.Count == 1)
+        {
+            targetDbContextPath = candidates[0];
+        }
+        else
+        {
+            var choices = candidates.Select(p => Path.GetRelativePath(workingDir, p)).ToList();
+            var selected = AnsiConsole.Prompt(
+                new Spectre.Console.SelectionPrompt<string>()
+                    .Title("Multiple DbContexts found. Select one to configure Slug index:")
+                    .AddChoices(choices)
+            );
+            targetDbContextPath = Path.GetFullPath(Path.Combine(workingDir, selected));
+        }
+
+        var dbText = await File.ReadAllTextAsync(targetDbContextPath);
+        if (dbText.Contains($"modelBuilder.Entity<{entity}>().HasIndex(e => e.Slug)"))
+        {
+            AnsiConsole.MarkupLine("[dim]Slug index already configured in DbContext[/]");
+            return;
+        }
+
+        // Ensure OnModelCreating exists; if not, create it near the end of class
+        if (!dbText.Contains("OnModelCreating(ModelBuilder modelBuilder)"))
+        {
+            var insertIdx = dbText.LastIndexOf('}');
+            if (insertIdx > 0)
+            {
+                var snippet = $@"
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {{
+        base.OnModelCreating(modelBuilder);
+        modelBuilder.Entity<{entity}>().HasIndex(e => e.Slug).IsUnique();
+    }}
+";
+                dbText = dbText.Insert(insertIdx, snippet);
+            }
+        }
+        else
+        {
+            // Insert inside existing OnModelCreating, before closing brace
+            var marker = "OnModelCreating(ModelBuilder modelBuilder)";
+            var start = dbText.IndexOf(marker);
+            if (start >= 0)
+            {
+                // Find the block end
+                var braceCount = 0;
+                var blockStart = dbText.IndexOf('{', start);
+                var i = blockStart + 1;
+                for (; i < dbText.Length; i++)
+                {
+                    if (dbText[i] == '{') braceCount++;
+                    else if (dbText[i] == '}')
+                    {
+                        if (braceCount == 0) break;
+                        braceCount--;
+                    }
+                }
+                if (i < dbText.Length)
+                {
+                    dbText = dbText.Insert(i, $"\n        modelBuilder.Entity<{entity}>().HasIndex(e => e.Slug).IsUnique();\n");
+                }
+            }
+        }
+
+        await File.WriteAllTextAsync(targetDbContextPath, dbText);
+        AnsiConsole.MarkupLine("[green]✓[/] Configured unique Slug index in DbContext");
+    }
+
+    private static async Task UpdateControllerForSluggableAsync(string workingDir, string entity)
+    {
+        var controllerPath = Path.Combine(workingDir, "Controllers", $"{entity}Controller.cs");
+        if (!File.Exists(controllerPath))
+        {
+            AnsiConsole.MarkupLine("[yellow]ℹ[/] Controller not found to inject slug logic. Skipping.");
+            return;
+        }
+
+        var content = await File.ReadAllTextAsync(controllerPath);
+
+        // Check if helper already exists
+        if (content.Contains("GenerateUniqueSlugAsync(") || content.Contains("Slugify(") || content.Contains("model.Slug ="))
+        {
+            AnsiConsole.MarkupLine("[dim]Slug generation already present in controller[/]");
+            return;
+        }
+
+        // Try to detect a title property from the model
+        var modelPath = Path.Combine(workingDir, "Models", $"{entity}.cs");
+        var titleProp = "Title";
+        if (File.Exists(modelPath))
+        {
+            var modelCode = await File.ReadAllTextAsync(modelPath);
+            if (!modelCode.Contains(" Title ") && !modelCode.Contains(" Title{"))
+            {
+                titleProp = null;
+            }
+        }
+
+        // Inject slug set before adding to context in Create action
+        var addLine = $"_context.{entity}s.Add(model);";
+        if (content.Contains(addLine) && titleProp != null)
+        {
+            content = content.Replace(addLine, $"model.Slug = await GenerateUniqueSlugAsync(model.{titleProp});\n        " + addLine);
+        }
+
+        // Inject slug regeneration before update in Edit action
+        var updateLine = "_context.Update(model);";
+        if (content.Contains(updateLine) && titleProp != null)
+        {
+            content = content.Replace(updateLine, $"model.Slug = await GenerateUniqueSlugAsync(model.{titleProp});\n            " + updateLine);
+        }
+
+        // Append helper methods at end of class
+        var insertAt = content.LastIndexOf("}\n}"); // before class closing
+        if (insertAt < 0) insertAt = content.LastIndexOf('}');
+        if (insertAt > 0)
+        {
+            var helper = $@"
+
+    private async Task<string> GenerateUniqueSlugAsync(string value)
+    {{
+        var baseSlug = Slugify(value);
+        var slug = baseSlug;
+        var counter = 2;
+        while (await _context.{entity}s.AnyAsync(x => x.Slug == slug))
+        {{
+            slug = $""{{baseSlug}}-{{counter++}}"";
+        }}
+        return slug;
+    }
+
+    private static string Slugify(string phrase)
+    {{
+        if (string.IsNullOrWhiteSpace(phrase)) return string.Empty;
+        var s = phrase.ToLowerInvariant();
+        s = System.Text.RegularExpressions.Regex.Replace(s, @"[^a-z0-9\s-]", "");
+        s = System.Text.RegularExpressions.Regex.Replace(s, @"\s+", " ").Trim();
+        s = s.Replace(" ", "-");
+        return s;
+    }
+";
+            content = content.Insert(insertAt, helper);
+        }
+
+        // Ensure required using
+        if (!content.Contains("using Microsoft.EntityFrameworkCore;"))
+        {
+            content = "using Microsoft.EntityFrameworkCore;\n" + content;
+        }
+
+        await File.WriteAllTextAsync(controllerPath, content);
+        AnsiConsole.MarkupLine("[green]✓[/] Injected slug generation into controller (Create/Edit)");
     }
     private static async Task<int> ApplyTimestampableAsync(string workingDir, string projectFile, string entity, bool force)
     {
@@ -842,89 +979,33 @@ public static class GeneratePatternCommand
         }
 
         var projectDir = Path.GetDirectoryName(projectFile)!;
-        
-        // Check if Swap.Patterns is available locally (for development)
-        var localPatternsPath = Path.Combine(projectDir, "..", "..", "framework", "Swap.Patterns", "Swap.Patterns.csproj");
-        var normalizedLocalPath = Path.GetFullPath(localPatternsPath);
-        
-        if (File.Exists(normalizedLocalPath))
-        {
-            // Local development - add project reference
-            AnsiConsole.MarkupLine($"[cyan]Adding Swap.Patterns project reference...[/]");
-            
-            try
-            {
-                var csproj = XDocument.Load(projectFile);
-                var project = csproj.Root;
-                
-                if (project == null)
-                {
-                    AnsiConsole.MarkupLine($"[red]Error:[/] Invalid project file format");
-                    return;
-                }
-                
-                // Check if reference already exists
-                var existingRef = project.Descendants("ProjectReference")
-                    .FirstOrDefault(e => e.Attribute("Include")?.Value.Contains("Swap.Patterns.csproj") == true);
-                
-                if (existingRef == null)
-                {
-                    // Create new ItemGroup or use existing one
-                    var itemGroup = project.Elements("ItemGroup")
-                        .FirstOrDefault(ig => ig.Elements("ProjectReference").Any()) 
-                        ?? new XElement("ItemGroup");
-                    
-                    if (!project.Elements("ItemGroup").Contains(itemGroup))
-                    {
-                        project.Add(itemGroup);
-                    }
-                    
-                    // Add ProjectReference with relative path
-                    var relativePath = @"..\..\framework\Swap.Patterns\Swap.Patterns.csproj";
-                    itemGroup.Add(new XElement("ProjectReference", new XAttribute("Include", relativePath)));
-                    
-                    csproj.Save(projectFile);
-                    AnsiConsole.MarkupLine($"[green]✓[/] Swap.Patterns project reference added");
-                }
-                else
-                {
-                    AnsiConsole.MarkupLine($"[yellow]→[/] Swap.Patterns reference already exists");
-                }
-            }
-            catch (Exception ex)
-            {
-                AnsiConsole.MarkupLine($"[red]Error:[/] Failed to add project reference: {ex.Message}");
-            }
-        }
-        else
-        {
-            // Production - try to add NuGet package
-            AnsiConsole.MarkupLine($"[cyan]Installing Swap.Patterns package...[/]");
-            
-            var processInfo = new System.Diagnostics.ProcessStartInfo
-            {
-                FileName = "dotnet",
-                Arguments = "add package Swap.Patterns --prerelease",
-                WorkingDirectory = projectDir,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                UseShellExecute = false,
-                CreateNoWindow = true
-            };
 
-            using var process = System.Diagnostics.Process.Start(processInfo);
-            if (process != null)
+        // Always prefer NuGet package for external developers
+        AnsiConsole.MarkupLine($"[cyan]Installing Swap.Patterns package...[/]");
+
+        var processInfo = new System.Diagnostics.ProcessStartInfo
+        {
+            FileName = "dotnet",
+            Arguments = "add package Swap.Patterns --prerelease",
+            WorkingDirectory = projectDir,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            UseShellExecute = false,
+            CreateNoWindow = true
+        };
+
+        using var process = System.Diagnostics.Process.Start(processInfo);
+        if (process != null)
+        {
+            await process.WaitForExitAsync();
+            if (process.ExitCode != 0)
             {
-                await process.WaitForExitAsync();
-                if (process.ExitCode != 0)
-                {
-                    AnsiConsole.MarkupLine($"[yellow]Warning:[/] Failed to add Swap.Patterns package automatically.");
-                    AnsiConsole.MarkupLine($"[yellow]Run manually:[/] [grey]dotnet add package Swap.Patterns --prerelease[/]");
-                }
-                else
-                {
-                    AnsiConsole.MarkupLine($"[green]✓[/] Swap.Patterns package added");
-                }
+                AnsiConsole.MarkupLine($"[yellow]Warning:[/] Failed to add Swap.Patterns package automatically.");
+                AnsiConsole.MarkupLine($"[yellow]Run manually:[/] [grey]dotnet add package Swap.Patterns --prerelease[/]");
+            }
+            else
+            {
+                AnsiConsole.MarkupLine($"[green]✓[/] Swap.Patterns package added");
             }
         }
     }
