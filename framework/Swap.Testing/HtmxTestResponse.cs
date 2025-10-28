@@ -304,18 +304,17 @@ public class HtmxTestResponse
     /// </summary>
     public async Task<HtmxTestResponse> AssertPartialViewAsync()
     {
-        var doc = await GetDocumentAsync();
-        
-        // Check if response has full HTML structure (html, head, body tags)
-        var hasHtmlTag = doc.QuerySelector("html") != null;
-        var hasBodyTag = doc.QuerySelector("body") != null;
-        
-        if (hasHtmlTag || hasBodyTag)
+        // Detect partial vs full by checking raw content for html/body tags. AngleSharp always creates a full
+        // document tree (with <html>/<body>) even for fragments, so DOM-based checks would be misleading.
+        var content = await GetContentAsync();
+        var lowered = content.ToLowerInvariant();
+
+        if (lowered.Contains("<html") || lowered.Contains("<body"))
         {
             throw new HtmxTestException(
                 "Expected a partial view, but response contains full HTML structure (html/body tags).");
         }
-        
+
         return this;
     }
 

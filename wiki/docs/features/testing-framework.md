@@ -26,13 +26,12 @@ public class TodosTests : IClassFixture<HtmxTestFixture<Program>>
     public async Task EditForm_IsPartial_WithHtmxAttributes()
     {
         var response = await _client.HtmxGetAsync("/todos/1/edit");
-        await response
-            .AssertSuccess()
-            .AssertPartialViewAsync()
-            .AssertElementExistsAsync("form")
-            .AssertHxPostAsync("form", "/todos/1")
-            .AssertHxTargetAsync("form", "#todo-1")
-            .AssertHxSwapAsync("form", "outerHTML");
+        response.AssertSuccess();
+        await response.AssertPartialViewAsync();
+        await response.AssertElementExistsAsync("form");
+        await response.AssertHxPostAsync("form", "/todos/1");
+        await response.AssertHxTargetAsync("form", "#todo-1");
+        await response.AssertHxSwapAsync("form", "outerHTML");
     }
 }
 ```
@@ -41,15 +40,32 @@ public class TodosTests : IClassFixture<HtmxTestFixture<Program>>
 
 ```csharp
 var response = await _client.HtmxGetAsync("/todos");
-await response
-    .AssertSuccess()
-    .AssertMatchesSnapshotAsync("todo-list");
+response.AssertSuccess();
+await response.AssertMatchesSnapshotAsync("todo-list");
 ```
 
 Update snapshots:
 
 ```bash
 UPDATE_SNAPSHOTS=true dotnet test
+```
+
+## Setup tips
+
+- In your web app's Program.cs, add:
+
+```csharp
+public partial class Program { }
+```
+
+- Keep tests in a separate project (e.g., MyApp.Tests). If you keep a Tests folder under your app for scaffolds, exclude it from compilation in the app csproj:
+
+```xml
+<ItemGroup>
+    <Compile Remove="Tests\**\*.cs" />
+    <None Include="Tests\**\*.cs" />
+    <!-- Exclude demo-only seeders or code not present in your model as needed -->
+</ItemGroup>
 ```
 
 ## Available Assertions (Selected)

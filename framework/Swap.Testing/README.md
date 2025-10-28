@@ -42,9 +42,8 @@ public class HomeControllerTests : IClassFixture<HtmxTestFixture<Program>>
         var response = await _client.GetAsync("/");
 
         // Assert
-        response
-            .AssertSuccess()
-            .await AssertContainsAsync("Welcome to My App");
+        response.AssertSuccess();
+        await response.AssertContainsAsync("Welcome to My App");
     }
 }
 ```
@@ -59,12 +58,11 @@ public async Task GetTodoPartial_ReturnsPartialWithHtmxAttributes()
     var response = await _client.HtmxGetAsync("/todos/1/edit");
 
     // Assert - Verify it's a partial and has HTMX attributes
-    await response
-        .AssertSuccess()
-        .AssertPartialViewAsync()
-        .AssertHxPostAsync("form", "/todos/1")
-        .AssertHxTargetAsync("form", "#todo-1")
-        .AssertHxSwapAsync("form", "outerHTML");
+    response.AssertSuccess();
+    await response.AssertPartialViewAsync();
+    await response.AssertHxPostAsync("form", "/todos/1");
+    await response.AssertHxTargetAsync("form", "#todo-1");
+    await response.AssertHxSwapAsync("form", "outerHTML");
 }
 ```
 
@@ -78,11 +76,10 @@ public async Task TodoList_DisplaysAllTodos()
     var response = await _client.GetAsync("/todos");
 
     // Assert - Query HTML structure
-    await response
-        .AssertSuccess()
-        .AssertElementCountAsync(".todo-item", 3)
-        .AssertElementTextAsync("h1", "My Todos")
-        .AssertElementExistsAsync("#add-todo-button");
+    response.AssertSuccess();
+    await response.AssertElementCountAsync(".todo-item", 3);
+    await response.AssertElementTextAsync("h1", "My Todos");
+    await response.AssertElementExistsAsync("#add-todo-button");
 }
 ```
 
@@ -103,11 +100,10 @@ public async Task CreateTodo_WithHtmx_ReturnsNewTodoPartial()
     var response = await _client.HtmxPostAsync("/todos", formData);
 
     // Assert
-    await response
-        .AssertStatus(HttpStatusCode.Created)
-        .AssertPartialViewAsync()
-        .AssertContainsAsync("Buy groceries")
-        .AssertHxGetAsync(".edit-button", "/todos/");
+    response.AssertStatus(HttpStatusCode.Created);
+    await response.AssertPartialViewAsync();
+    await response.AssertContainsAsync("Buy groceries");
+    await response.AssertHxGetAsync(".edit-button", "/todos/");
 }
 ```
 
@@ -193,7 +189,7 @@ Task<HtmxTestResponse> AssertHxAttributeAsync(string cssSelector, string attribu
 #### Partial View Assertions
 
 ```csharp
-Task<HtmxTestResponse> AssertPartialViewAsync() // Verifies no <html> or <body> tags
+Task<HtmxTestResponse> AssertPartialViewAsync() // Verifies no <html> or <body> tags in raw content
 Task<HtmxTestResponse> AssertAntiForgeryTokenAsync(string formSelector = "form")
 ```
 
@@ -262,10 +258,9 @@ public async Task DeleteTodo_ReturnsEmptyWithSwapOutOfBand()
         .WithHeader("HX-Target", "#todo-5")
         .DeleteAsync("/todos/5");
 
-    await response
-        .AssertSuccess()
-        .AssertHeader("HX-Trigger", "todoDeleted")
-        .AssertContainsAsync("<div id=\"todo-5\"></div>");
+    response.AssertSuccess();
+    response.AssertHeader("HX-Trigger", "todoDeleted");
+    await response.AssertContainsAsync("<div id=\"todo-5\"></div>");
 }
 ```
 
@@ -303,9 +298,8 @@ public async Task TodoList_MatchesSnapshot()
     var response = await _client.HtmxGetAsync("/todos");
 
     // Assert - Compare against saved snapshot
-    await response
-        .AssertSuccess()
-        .AssertMatchesSnapshotAsync("todo-list");
+    response.AssertSuccess();
+    await response.AssertMatchesSnapshotAsync("todo-list");
 }
 ```
 
@@ -336,18 +330,39 @@ await response.AssertMatchesSnapshotAsync(
 ```
 
 
-    await response.AssertAsync(async doc =>
-    {
-        var todos = doc.QuerySelectorAll(".todo-item");
-        Assert.Equal(5, todos.Length);
+await response.AssertAsync(async doc =>
+{
+    var todos = doc.QuerySelectorAll(".todo-item");
+    Assert.Equal(5, todos.Length);
 
-        foreach (var todo in todos)
-        {
-            Assert.NotNull(todo.QuerySelector(".todo-title"));
-            Assert.NotNull(todo.QuerySelector("button[hx-delete]"));
-        }
-    });
-}
+    foreach (var todo in todos)
+    {
+        Assert.NotNull(todo.QuerySelector(".todo-title"));
+        Assert.NotNull(todo.QuerySelector("button[hx-delete]"));
+    }
+});
+```
+
+## Test Project Setup Tips
+
+- Expose your Program class so WebApplicationFactory can find it:
+
+```csharp
+// At the end of Program.cs in your web app
+public partial class Program { }
+```
+
+- Keep your test files in a separate test project (e.g., MyApp.Tests) and exclude any Tests/** from your web app csproj:
+
+```xml
+<ItemGroup>
+  <Compile Remove="Tests\**\*.cs" />
+  <None Include="Tests\**\*.cs" />
+  <!-- exclude any demo-only seeders not present in your model -->
+  <!-- <Compile Remove="Data\Seeders\SomeDemoSeeder.cs" /> -->
+  <!-- <None Include="Data\Seeders\SomeDemoSeeder.cs" /> -->
+  
+</ItemGroup>
 ```
 
 ## Best Practices
