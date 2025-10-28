@@ -545,12 +545,119 @@ var post = await _db.BlogPosts
 
 ---
 
+### `swap generate pattern timestampable <entity>`
+
+Track creation and update timestamps automatically without user attribution. A lightweight alternative to Auditable when you only need dates.
+
+```bash
+# Add timestampable to Post entity
+swap g pattern timestampable Post
+
+# Short aliases
+swap g p ts Post
+```
+
+**What it does:**
+1. Adds `ITimestampable` interface to your entity
+2. Adds two properties: `CreatedAt`, `UpdatedAt`
+3. Adds using statement for `Swap.Patterns.Timestampable`
+4. Ensures `Swap.Patterns` package reference
+
+**After generation:**
+```csharp
+public class Post : ITimestampable
+{
+    public int Id { get; set; }
+    public string Title { get; set; }
+    
+    // ITimestampable properties
+    public DateTime CreatedAt { get; set; }
+    public DateTime UpdatedAt { get; set; }
+}
+```
+
+**Next steps:**
+1. Configure timestamp interceptor in your `DbContext`:
+```csharp
+using Swap.Patterns.Timestampable;
+
+protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+{
+    optionsBuilder.AddInterceptors(new TimestampInterceptor());
+}
+```
+
+2. Create and apply migration:
+```bash
+dotnet ef migrations add AddTimestampsToPost
+dotnet ef database update
+```
+
+**How it works:**
+- `CreatedAt` set on insert; `UpdatedAt` set on every modification
+- Requires no `IHttpContextAccessor`
+- Safe to combine with most patterns (but not with Auditable)
+
+---
+
+### `swap generate pattern orderable <entity>`
+
+Add a stable `Position` property and helpers for ordering lists and drag-and-drop UIs.
+
+```bash
+# Add orderable to Category entity
+swap g pattern orderable Category
+
+# Short aliases
+swap g p order Category
+```
+
+**What it does:**
+1. Adds `IOrderable` interface to your entity
+2. Adds `Position` property
+3. Adds using statement for `Swap.Patterns.Orderable`
+4. Ensures `Swap.Patterns` package reference
+
+**After generation:**
+```csharp
+public class Category : IOrderable
+{
+    public int Id { get; set; }
+    public string Name { get; set; }
+    
+    // IOrderable property
+    public int Position { get; set; }
+}
+```
+
+**Usage:**
+```csharp
+// Get next position for a new item
+var next = await _db.Categories.GetNextPositionAsync();
+db.Categories.Add(new Category { Name = "New", Position = next });
+
+// Reorder an item (1-based index)
+var item = await _db.Categories.FindAsync(id);
+await _db.Categories.ReorderAsync(item!, newPosition: 1);
+await _db.SaveChangesAsync();
+
+// Normalize positions after deletes/bulk ops
+await _db.Categories.NormalizePositionsAsync();
+await _db.SaveChangesAsync();
+
+// Convenient ordering for queries
+var ordered = await _db.Categories.OrderByPosition().ToListAsync();
+```
+
+---
+
 ### Combining Patterns
 
-All three patterns can be used together on the same entity:
+You can mix and match compatible patterns on the same entity. Do not combine Auditable and Timestampable together (both define CreatedAt/UpdatedAt).
 
 ```csharp
-public class Product : ISoftDeletable, IAuditable, ISluggable
+// Example with Auditable
+public class Product : ISoftDeletable, IAuditable, ISluggable, IOrderable
 {
     public int Id { get; set; }
     public string Name { get; set; }
@@ -569,6 +676,9 @@ public class Product : ISoftDeletable, IAuditable, ISluggable
     
     // Sluggable (1 property)
     public string Slug { get; set; } = "";
+
+    // Orderable (1 property)
+    public int Position { get; set; }
 }
 ```
 
@@ -577,6 +687,15 @@ Apply all patterns in sequence:
 swap g pattern softdelete Product
 swap g pattern auditable Product
 swap g pattern sluggable Product
+swap g pattern orderable Product
+```
+
+Alternatively, replace Auditable with Timestampable when you don't need user attribution:
+```bash
+swap g pattern softdelete Product
+swap g pattern timestampable Product
+swap g pattern sluggable Product
+swap g pattern orderable Product
 ```
 
 ---

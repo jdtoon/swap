@@ -4,7 +4,7 @@ Common, battle-tested patterns for your entities that solve real production prob
 
 ## Overview
 
-Swap.Patterns provides opt-in entity patterns that handle common requirements like soft deletion, audit trails, and SEO-friendly URLs. These patterns are extracted from production applications and designed for maximum developer experience.
+Swap.Patterns provides opt-in entity patterns that handle common requirements like soft deletion, audit trails, timestamps, ordering, and SEO-friendly URLs. These patterns are extracted from production applications and designed for maximum developer experience.
 
 **Key principles:**
 - ✅ **Opt-in by design** - Only add patterns where you need them
@@ -218,12 +218,109 @@ var found = await db.Articles
 
 ---
 
+### Timestampable
+
+Automatically track creation and update timestamps without user attribution. Use this when you only need dates, not who performed the action.
+
+```bash
+swap g pattern timestampable Product
+```
+
+**When to use:**
+- Entities where user attribution isn't needed
+- Lightweight alternative to Auditable
+- Background jobs, system-generated records
+
+**Quick start:**
+
+1. Apply pattern:
+```bash
+swap g p timestampable Product
+```
+
+2. Configure timestamp interceptor in DbContext:
+```csharp
+using Swap.Patterns.Timestampable;
+
+protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+{
+    optionsBuilder.AddInterceptors(new TimestampInterceptor());
+}
+```
+
+3. Use in code (automatic!):
+```csharp
+var product = new Product { Name = "Widget" };
+db.Products.Add(product);
+await db.SaveChangesAsync();
+// product.CreatedAt set automatically
+
+product.Name = "Widget+";
+await db.SaveChangesAsync();
+// product.UpdatedAt updated automatically
+```
+
+**What you get:**
+- `ITimestampable` with `CreatedAt`, `UpdatedAt`
+- EF Core `SaveChangesInterceptor` for automatic population
+- No dependency on `IHttpContextAccessor`
+
+> Note: Do NOT combine Timestampable with Auditable on the same entity (both define `CreatedAt`/`UpdatedAt`). Choose one based on your needs.
+
+---
+
+### Orderable
+
+Add a stable `Position` property and helpers for ordering lists, sortable tables, and drag-and-drop UIs.
+
+```bash
+swap g pattern orderable Category
+```
+
+**When to use:**
+- Manually ordered lists (menus, categories, steps)
+- Drag-and-drop reordering UIs
+- Maintaining deterministic order without relying on creation dates
+
+**Quick start:**
+
+1. Apply pattern:
+```bash
+swap g p orderable Category
+```
+
+2. Use helpers in code:
+```csharp
+// Get next position for a new item
+var next = await db.Categories.GetNextPositionAsync();
+db.Categories.Add(new Category { Name = "New", Position = next });
+
+// Move an item to a new position (1-based)
+var item = await db.Categories.FindAsync(id);
+await db.Categories.ReorderAsync(item!, 1);
+await db.SaveChangesAsync();
+
+// Normalize after deletes/bulk operations
+await db.Categories.NormalizePositionsAsync();
+await db.SaveChangesAsync();
+
+// Order queries by position
+var ordered = await db.Categories.OrderByPosition().ToListAsync();
+```
+
+**What you get:**
+- `IOrderable` interface with `Position` property
+- Extensions: `OrderByPosition()`, `OrderByPositionDescending()`, `GetNextPositionAsync()`, `ReorderAsync()`, `NormalizePositionsAsync()`
+
+---
+
 ### Combining Patterns
 
-All three patterns work together seamlessly:
+You can mix and match compatible patterns. Do not combine Auditable and Timestampable together (both define `CreatedAt`/`UpdatedAt`).
 
 ```csharp
-public class Article : ISoftDeletable, IAuditable, ISluggable
+// Example with Auditable + Orderable + Sluggable
+public class Article : ISoftDeletable, IAuditable, ISluggable, IOrderable
 {
     public int Id { get; set; }
     public string Title { get; set; }
@@ -242,6 +339,9 @@ public class Article : ISoftDeletable, IAuditable, ISluggable
     
     // Sluggable (1 property)
     public string Slug { get; set; } = "";
+    
+    // Orderable (1 property)
+    public int Position { get; set; }
 }
 ```
 
@@ -250,6 +350,7 @@ Apply patterns in sequence:
 swap g pattern softdelete Article
 swap g pattern auditable Article  
 swap g pattern sluggable Article
+swap g pattern orderable Article
 ```
 
 Complete usage example:

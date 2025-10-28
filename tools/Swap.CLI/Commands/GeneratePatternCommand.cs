@@ -12,12 +12,12 @@ public static class GeneratePatternCommand
 {
     public static Command Create()
     {
-        var command = new Command("pattern", "Add common patterns to entities (softdelete, auditable, sluggable, timestampable)");
+    var command = new Command("pattern", "Add common patterns to entities (softdelete, auditable, sluggable, timestampable, orderable)");
         command.AddAlias("p");
 
         var typeArg = new Argument<string>(
             name: "type",
-            description: "Pattern type: softdelete, auditable, sluggable, or timestampable");
+            description: "Pattern type: softdelete, auditable, sluggable, timestampable, or orderable");
 
         var entityArg = new Argument<string>(
             name: "entity",
@@ -72,7 +72,8 @@ public static class GeneratePatternCommand
                 "auditable" or "audit" => await ApplyAuditableAsync(workingDir, projectFile, entity, force),
                 "sluggable" or "slug" => await ApplySluggableAsync(workingDir, projectFile, entity, force),
                 "timestampable" or "timestamp" => await ApplyTimestampableAsync(workingDir, projectFile, entity, force),
-                _ => throw new Exception($"Unknown pattern type: {type}. Use softdelete, auditable, sluggable, or timestampable")
+                "orderable" or "order" => await ApplyOrderableAsync(workingDir, projectFile, entity, force),
+                _ => throw new Exception($"Unknown pattern type: {type}. Use softdelete, auditable, sluggable, timestampable, or orderable")
             };
         }
         catch (Exception ex)
@@ -720,6 +721,109 @@ public static class GeneratePatternCommand
         AnsiConsole.MarkupLine($"   [grey]}}[/]");
         AnsiConsole.MarkupLine($"\n2. Create and run migration:");
         AnsiConsole.MarkupLine($"   [grey]dotnet ef migrations add AddTimestampableTo{entity}[/]");
+        AnsiConsole.MarkupLine($"   [grey]dotnet ef database update[/]");
+
+        return 0;
+    }
+
+    private static async Task<int> ApplyOrderableAsync(string workingDir, string projectFile, string entity, bool force)
+    {
+        AnsiConsole.MarkupLine($"[cyan]Adding orderable pattern to {entity}...[/]");
+
+        // Find entity model
+        var modelPath = Path.Combine(workingDir, "Models", $"{entity}.cs");
+        if (!File.Exists(modelPath))
+        {
+            AnsiConsole.MarkupLine($"[red]Error:[/] Model file not found: {modelPath}");
+            return 1;
+        }
+
+        // Ensure Swap.Patterns package reference
+        await EnsureSwapPatternsPackageAsync(projectFile);
+
+        // Modify the entity model
+        var modelContent = await File.ReadAllTextAsync(modelPath);
+        var tree = CSharpSyntaxTree.ParseText(modelContent);
+        var root = await tree.GetRootAsync() as CompilationUnitSyntax ?? throw new InvalidOperationException();
+
+        // Check if class exists
+        var classDeclaration = root.DescendantNodes()
+            .OfType<ClassDeclarationSyntax>()
+            .FirstOrDefault(c => c.Identifier.Text == entity);
+
+        if (classDeclaration == null)
+        {
+            AnsiConsole.MarkupLine($"[red]Error:[/] Could not find class {entity} in {modelPath}");
+            return 1;
+        }
+
+        // Add using Swap.Patterns.Orderable
+        var hasUsing = root.DescendantNodes()
+            .OfType<UsingDirectiveSyntax>()
+            .Any(u => u.Name?.ToString() == "Swap.Patterns.Orderable");
+        if (!hasUsing)
+        {
+            root = root.AddUsings(
+                SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("Swap.Patterns.Orderable"))
+                    .WithTrailingTrivia(SyntaxFactory.CarriageReturnLineFeed)
+            );
+            // Refresh class reference
+            classDeclaration = root.DescendantNodes().OfType<ClassDeclarationSyntax>().First(c => c.Identifier.Text == entity);
+        }
+
+        // Check interface
+        if (classDeclaration.BaseList?.Types.Any(t => t.ToString().Contains("IOrderable")) ?? false)
+        {
+            AnsiConsole.MarkupLine($"[yellow]Warning:[/] {entity} already implements IOrderable");
+            return 0;
+        }
+
+        // Add interface to base list
+        var baseList = classDeclaration.BaseList ?? SyntaxFactory.BaseList();
+        var orderableType = SyntaxFactory.SimpleBaseType(SyntaxFactory.ParseTypeName("IOrderable"));
+        var newBaseList = baseList.Types.Count == 0
+            ? SyntaxFactory.BaseList(SyntaxFactory.SingletonSeparatedList<BaseTypeSyntax>(orderableType))
+            : baseList.AddTypes(orderableType);
+        var newClassDeclaration = classDeclaration.WithBaseList(newBaseList);
+
+        // Add Position property if missing
+        var hasPosition = classDeclaration.Members
+            .OfType<PropertyDeclarationSyntax>()
+            .Any(p => p.Identifier.Text == "Position");
+        if (!hasPosition)
+        {
+            var prop = SyntaxFactory.PropertyDeclaration(
+                    SyntaxFactory.ParseTypeName("int"),
+                    "Position")
+                .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword))
+                .AddAccessorListAccessors(
+                    SyntaxFactory.AccessorDeclaration(SyntaxKind.GetAccessorDeclaration)
+                        .WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken)),
+                    SyntaxFactory.AccessorDeclaration(SyntaxKind.SetAccessorDeclaration)
+                        .WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken))
+                )
+                .WithLeadingTrivia(
+                    SyntaxFactory.CarriageReturnLineFeed,
+                    SyntaxFactory.Comment("    // IOrderable properties"),
+                    SyntaxFactory.CarriageReturnLineFeed
+                );
+
+            newClassDeclaration = newClassDeclaration.AddMembers(prop);
+        }
+
+        // Replace and write
+        var newRoot = root.ReplaceNode(classDeclaration, newClassDeclaration);
+        var formattedCode = newRoot.NormalizeWhitespace().ToFullString();
+        await File.WriteAllTextAsync(modelPath, formattedCode);
+
+        AnsiConsole.MarkupLine($"[green]✓[/] Added IOrderable to {entity}");
+        AnsiConsole.MarkupLine($"\n[yellow]Tips:[/]");
+        AnsiConsole.MarkupLine($"- Use OrderByPosition() to sort lists by Position");
+        AnsiConsole.MarkupLine($"- Use GetNextPositionAsync() for assigning a Position on create");
+        AnsiConsole.MarkupLine($"- Use ReorderAsync() to move items and NormalizePositionsAsync() after deletes");
+
+        AnsiConsole.MarkupLine($"\n2. Create and run migration if new property added:");
+        AnsiConsole.MarkupLine($"   [grey]dotnet ef migrations add AddOrderableTo{entity}[/]");
         AnsiConsole.MarkupLine($"   [grey]dotnet ef database update[/]");
 
         return 0;

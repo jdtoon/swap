@@ -9,6 +9,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.10] - 2025-10-28
+
+### Added - Timestampable & Orderable Patterns
+- **Timestampable Pattern**: Lightweight automatic timestamps
+  - `ITimestampable` interface with `CreatedAt`, `UpdatedAt`
+  - `TimestampInterceptor` sets timestamps on insert/update
+  - CLI command: `swap generate pattern timestampable <entity>`
+  - No `IHttpContextAccessor` required
+- **Orderable Pattern**: Stable manual ordering support
+  - `IOrderable` interface with `Position`
+  - Extensions: `OrderByPosition()`, `OrderByPositionDescending()`, `GetNextPositionAsync()`, `ReorderAsync()`, `NormalizePositionsAsync()`
+  - CLI command: `swap generate pattern orderable <entity>`
+- **New Tests**: `Swap.Patterns.Tests` project with 5 passing tests
+  - Verifies timestamp behavior and ordering helpers
+  - In-memory database isolation to avoid cross-test contamination
+- **Docs**:
+  - CLI README: added Timestampable and Orderable sections with setup and examples
+  - Wiki `features/patterns.md`: Timestampable and Orderable guides; updated Combining Patterns (don’t mix Auditable and Timestampable)
+
+### Changed
+- CLI pattern help updated to include `timestampable` and `orderable`
+- Improved code-generation formatting via NormalizeWhitespace (earlier change validated)
+
 ## [0.0.9] - 2025-10-28
 
 ### Added - Auditable & Sluggable Patterns
