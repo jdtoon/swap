@@ -9,6 +9,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.14] - 2025-10-28
+
+### Added - Seeder Enhancements
+- **Pattern Integration**: `swap generate seed` now auto-excludes pattern properties managed by interceptors
+  - Skips: `CreatedAt`, `CreatedBy`, `UpdatedAt`, `UpdatedBy` (IAuditable)
+  - Skips: `IsDeleted`, `DeletedAt`, `DeletedBy` (ISoftDeletable)
+  - Skips: `Version` (IVersionable)
+  - Skips: `IsVisible`, `VisibleFrom`, `VisibleUntil` (IVisibility)
+  - Skips: `Position` (IOrderable)
+- **Improved Slug Generation**: Unique slugs with random suffix for collision avoidance
+- **Enhanced Documentation**: Seeder template now includes inline comments about pattern property handling
+- **Better Relationship Handling**: Foreign key preloading with null safety guards
+
+### Changed
+- Seeder template adds XML doc comments and improved code comments
+- README updated with pattern integration details and field intelligence improvements
+
 ## [0.0.13] - 2025-10-28
 
 ### Added - Visibility Pattern

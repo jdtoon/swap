@@ -913,11 +913,22 @@ swap g s all --project path/to/project
 - Hooks into `Program.cs` for Development environment seeding
 
 **Field intelligence:**
-- Strings: emails, URLs, names, titles, descriptions, phone numbers, addresses
-- Numbers: realistic ranges based on field names (age, price, quantity)
-- Booleans: weighted probabilities (e.g., IsActive ~70% true)
-- Dates: distributed over the last 3 years
-- Foreign keys: picks from existing related entities
+- **Strings**: emails, URLs, names, titles, descriptions, phone numbers, addresses
+- **Numbers**: realistic ranges based on field names (age, price, quantity)
+- **Booleans**: weighted probabilities (e.g., IsActive ~70% true)
+- **Dates**: distributed over the last 3 years
+- **Foreign keys**: picks from existing related entities with null safety
+- **Slugs**: unique slugs with random suffix for collision avoidance
+
+**Pattern integration (v0.0.14+):**
+- **Auto-excludes** pattern properties managed by EF Core interceptors:
+  - `CreatedAt`, `CreatedBy`, `UpdatedAt`, `UpdatedBy` (IAuditable)
+  - `IsDeleted`, `DeletedAt`, `DeletedBy` (ISoftDeletable)
+  - `Version` (IVersionable)
+  - `IsVisible`, `VisibleFrom`, `VisibleUntil` (IVisibility)
+  - `Position` (IOrderable)
+- **Smart defaults**: Generates appropriate rules for application-managed properties like `PublishedAt`, `Slug`, etc.
+- **Relationship handling**: Preloads foreign key IDs and safely handles empty tables
 
 **Environment control:**
 ```bash
