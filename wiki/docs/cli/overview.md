@@ -21,8 +21,8 @@ swap <command> [subcommand] [arguments] [options]
 | `swap generate controller` | Generate a CRUD controller | `g c`, `generate c` |
 | `swap generate resource` | Generate model + controller + views | `g r`, `generate r` |
 | `swap generate seed` | Generate database seeders | `g s`, `generate s`, `g seed` |
-| `swap generate test` | Generate test class scaffold for a controller | `g test`, `g t` |
-| `swap generate factory` | Generate Bogus-based test data factory | `g factory`, `g f` |
+| `swap generate test` | Generate integration test scaffold | `g test`, `g t` |
+| `swap generate factory` | Generate Bogus test data factory | `g factory`, `g f` |
 | `swap database info` | Show database configuration and status | `db info` |
 | `swap database migrate` | Create and apply EF migrations | `db migrate` |
 | `swap database seed` | Run database seeders | `db seed` |
@@ -88,6 +88,22 @@ swap g seed all --count 50 --locale en --if-empty
 swap g s all --count 50 --locale en --if-empty
 # Overwrite existing seeder
 swap g s Product --force
+```
+
+### Generate Tests and Factories
+
+```bash
+# Generate integration test scaffold
+swap g test TodoItem
+swap g t TodoItem  # short alias
+
+# Generate Bogus test data factory
+swap g factory Post
+swap g f Post  # short alias
+
+# In different project
+swap g test TodoItem --project testApps/MyApp --output Tests
+swap g factory Post --project testApps/MyApp --output Tests/Factories
 ```
 
 ### Database Commands

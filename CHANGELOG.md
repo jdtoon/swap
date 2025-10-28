@@ -9,6 +9,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.7] - 2025-10-28
+
+### Added - HTMX Testing Framework
+- **Swap.Testing Library**: Fluent testing framework for ASP.NET Core + HTMX applications
+  - HTMX-aware client with automatic HX-Request headers
+  - Rich HTML and HTMX attribute assertions
+  - Snapshot testing with normalization and scrubbers
+  - Validation helpers and form submission utilities
+  - Typed HX header parsing (HX-Location JSON, HX-Trigger events, HX-Push-Url)
+- **CLI Commands**: `swap generate test` and `swap generate factory`
+  - `swap g test <controller>` generates integration test scaffolds with common HTMX scenarios
+  - `swap g factory <entity>` generates Bogus-based test data factories with intelligent property mappings
+- **Demo App**: HtmxTestingDemo showcasing end-to-end testing patterns
+  - 5 passing integration tests covering partial forms, validation, triggers, and HX-Location
+- **Documentation**: Complete testing framework guide with examples and API reference
+  - Framework README with setup tips and best practices
+  - Wiki documentation for testing features
+  - CLI docs for test and factory generators
+
+### Changed
+- Enhanced CLI README with prominent testing framework section and examples
+- Updated wiki CLI overview with testing command quick references
+
 ## [0.0.4] - 2025-10-27
 
 ### Added - Docker Support
