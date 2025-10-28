@@ -196,10 +196,35 @@ public static class GeneratePatternCommand
         // Replace the class in the tree
         root = root.ReplaceNode(root.DescendantNodes().OfType<ClassDeclarationSyntax>().First(c => c.Identifier.Text == entity), classDecl);
 
-        // Write back
-        await File.WriteAllTextAsync(modelPath, root.ToFullString());
+        // Write back with normalization
+        var formattedCode = root.NormalizeWhitespace().ToFullString();
+        await File.WriteAllTextAsync(modelPath, formattedCode);
 
         AnsiConsole.MarkupLine($"[green]✓[/] Added ISoftDeletable to {entity}");
+
+        // Run dotnet format on the file to ensure proper formatting
+        try
+        {
+            var formatProcess = new System.Diagnostics.Process
+            {
+                StartInfo = new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = "dotnet",
+                    Arguments = $"format \"{projectFile}\" --include \"{modelPath}\"",
+                    WorkingDirectory = workingDir,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true
+                }
+            };
+            formatProcess.Start();
+            await formatProcess.WaitForExitAsync();
+        }
+        catch
+        {
+            // Formatting is optional, continue if it fails
+        }
 
         // Check DbContext and offer to add query filter
         var dbContextPath = Path.Combine(workingDir, "Data", "AppDbContext.cs");

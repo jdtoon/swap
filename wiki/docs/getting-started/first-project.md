@@ -102,6 +102,52 @@ docker-compose up --build
 
 **Note:** Docker containers auto-apply migrations on startup, so you only need to create the migration file with `dotnet ef migrations add AddPost` on your host machine. The update happens automatically in the container.
 
+## Add Entity Patterns (Optional)
+
+Swap provides battle-tested entity patterns you can apply to any model:
+
+### Soft Delete Pattern
+
+Keep deleted records in the database for audit trails:
+
+```bash
+# Apply soft delete to Post entity
+swap g pattern softdelete Post
+
+# Configure DbContext (add to OnModelCreating)
+# modelBuilder.ConfigureSoftDeleteFilter();
+
+# Generate migration
+dotnet ef migrations add AddSoftDeleteToPost
+dotnet ef database update
+```
+
+Now your posts can be soft-deleted:
+
+```csharp
+// In controller
+post.SoftDelete("user@example.com");
+await _db.SaveChangesAsync();
+
+// Restore if needed
+post.Restore();
+await _db.SaveChangesAsync();
+
+// Normal queries automatically exclude deleted
+var posts = await _db.Posts.ToListAsync();
+
+// Query deleted posts explicitly
+var deleted = await _db.Posts.OnlyDeleted().ToListAsync();
+```
+
+**When to use:**
+- Compliance requirements (GDPR, HIPAA)
+- Audit trails for deleted data
+- Ability to undo deletions
+- Data recovery scenarios
+
+[Learn more about Entity Patterns →](../features/patterns)
+
 ## Test Your Features
 
 Restart the app and navigate to `http://localhost:5000/Post`:
