@@ -135,6 +135,85 @@ public class HtmxTestClient<TProgram> where TProgram : class
         return new HtmxTestResponse(response);
     }
 
+    /// <summary>
+    /// Convenience overload for HTMX POST with form data.
+    /// </summary>
+    public Task<HtmxTestResponse> HtmxPostAsync(string url, Dictionary<string, string>? formData, string? target = null, string? trigger = null)
+    {
+        HttpContent? content = formData != null ? new FormUrlEncodedContent(formData) : null;
+        return HtmxPostAsync(url, content, target, trigger);
+    }
+
+    /// <summary>
+    /// Perform an HTMX PUT request with HX-Request header.
+    /// </summary>
+    public async Task<HtmxTestResponse> HtmxPutAsync(string url, HttpContent? content = null, string? target = null, string? trigger = null)
+    {
+        var request = new HttpRequestMessage(HttpMethod.Put, url)
+        {
+            Content = content
+        };
+        request.Headers.Add("HX-Request", "true");
+
+        if (target != null)
+            request.Headers.Add("HX-Target", target);
+
+        if (trigger != null)
+            request.Headers.Add("HX-Trigger", trigger);
+
+        ApplyDefaultHeaders(request);
+
+        var response = await _client.SendAsync(request);
+        return new HtmxTestResponse(response);
+    }
+
+    /// <summary>
+    /// Convenience overload for HTMX PUT with form data.
+    /// </summary>
+    public Task<HtmxTestResponse> HtmxPutAsync(string url, Dictionary<string, string>? formData, string? target = null, string? trigger = null)
+    {
+        HttpContent? content = formData != null ? new FormUrlEncodedContent(formData) : null;
+        return HtmxPutAsync(url, content, target, trigger);
+    }
+
+    /// <summary>
+    /// Perform an HTMX DELETE request with HX-Request header.
+    /// </summary>
+    public async Task<HtmxTestResponse> HtmxDeleteAsync(string url, string? target = null, string? trigger = null)
+    {
+        var request = new HttpRequestMessage(HttpMethod.Delete, url);
+        request.Headers.Add("HX-Request", "true");
+
+        if (target != null)
+            request.Headers.Add("HX-Target", target);
+
+        if (trigger != null)
+            request.Headers.Add("HX-Trigger", trigger);
+
+        ApplyDefaultHeaders(request);
+
+        var response = await _client.SendAsync(request);
+        return new HtmxTestResponse(response);
+    }
+
+    /// <summary>
+    /// Convenience overload for POST with form data.
+    /// </summary>
+    public Task<HtmxTestResponse> PostAsync(string url, Dictionary<string, string>? formData)
+    {
+        HttpContent? content = formData != null ? new FormUrlEncodedContent(formData) : null;
+        return PostAsync(url, content);
+    }
+
+    /// <summary>
+    /// Convenience overload for PUT with form data.
+    /// </summary>
+    public Task<HtmxTestResponse> PutAsync(string url, Dictionary<string, string>? formData)
+    {
+        HttpContent? content = formData != null ? new FormUrlEncodedContent(formData) : null;
+        return PutAsync(url, content);
+    }
+
     private void ApplyDefaultHeaders(HttpRequestMessage request)
     {
         foreach (var (key, value) in _defaultHeaders)

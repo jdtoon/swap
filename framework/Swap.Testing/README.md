@@ -132,6 +132,8 @@ Task<HtmxTestResponse> DeleteAsync(string path)
 // Automatically adds HX-Request: true header
 Task<HtmxTestResponse> HtmxGetAsync(string path, string? target = null, string? trigger = null)
 Task<HtmxTestResponse> HtmxPostAsync(string path, Dictionary<string, string>? formData = null, string? target = null, string? trigger = null)
+Task<HtmxTestResponse> HtmxPutAsync(string path, Dictionary<string, string>? formData = null, string? target = null, string? trigger = null)
+Task<HtmxTestResponse> HtmxDeleteAsync(string path, string? target = null, string? trigger = null)
 ```
 
 #### Configuration
@@ -169,8 +171,11 @@ HtmxTestResponse AssertHeader(string headerName, string? expectedValue = null)
 
 ```csharp
 Task<HtmxTestResponse> AssertElementExistsAsync(string cssSelector)
+Task<HtmxTestResponse> AssertElementNotExistsAsync(string cssSelector)
 Task<HtmxTestResponse> AssertElementCountAsync(string cssSelector, int expectedCount)
 Task<HtmxTestResponse> AssertElementTextAsync(string cssSelector, string expectedText)
+Task<HtmxTestResponse> AssertHasCssClassAsync(string cssSelector, string className)
+Task<HtmxTestResponse> AssertAttributeContainsAsync(string cssSelector, string attribute, string expectedSubstring)
 ```
 
 #### HTMX Attribute Assertions
@@ -181,6 +186,7 @@ Task<HtmxTestResponse> AssertHxPostAsync(string cssSelector, string? expectedUrl
 Task<HtmxTestResponse> AssertHxTargetAsync(string cssSelector, string? expectedTarget = null)
 Task<HtmxTestResponse> AssertHxSwapAsync(string cssSelector, string? expectedSwap = null)
 Task<HtmxTestResponse> AssertHxTriggerAsync(string cssSelector, string? expectedTrigger = null)
+Task<HtmxTestResponse> AssertHxSwapOobAsync(string cssSelector, string? expectedValue = null)
 Task<HtmxTestResponse> AssertHxAttributeAsync(string cssSelector, string attribute, string? expectedValue = null)
 ```
 
@@ -188,6 +194,7 @@ Task<HtmxTestResponse> AssertHxAttributeAsync(string cssSelector, string attribu
 
 ```csharp
 Task<HtmxTestResponse> AssertPartialViewAsync() // Verifies no <html> or <body> tags
+Task<HtmxTestResponse> AssertAntiForgeryTokenAsync(string formSelector = "form")
 ```
 
 #### Custom Assertions
@@ -195,6 +202,18 @@ Task<HtmxTestResponse> AssertPartialViewAsync() // Verifies no <html> or <body> 
 ```csharp
 Task<HtmxTestResponse> AssertAsync(Action<IHtmlDocument> assertion)
 Task<HtmxTestResponse> AssertAsync(Func<IHtmlDocument, Task> assertion)
+```
+
+#### HTMX Header Assertions
+
+```csharp
+HtmxTestResponse AssertHxRedirect(string expectedUrl)
+HtmxTestResponse AssertHxPushUrl(string? expectedValue = null) // true or URL
+HtmxTestResponse AssertHxReswap(string? expectedValue = null)
+HtmxTestResponse AssertHxRetarget(string? expectedValue = null)
+HtmxTestResponse AssertHxRefresh(bool? expected = null)        // presence or explicit
+HtmxTestResponse AssertHxTriggerHeaderContains(string substring)
+HtmxTestResponse AssertHxLocationContains(string substring)     // hx-location JSON contains
 ```
 
 #### Snapshot Testing

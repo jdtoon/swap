@@ -145,6 +145,20 @@ public class HtmxTestResponse
     }
 
     /// <summary>
+    /// Assert that an element does NOT exist for the selector.
+    /// </summary>
+    public async Task<HtmxTestResponse> AssertElementNotExistsAsync(string cssSelector)
+    {
+        var doc = await GetDocumentAsync();
+        var element = doc.QuerySelector(cssSelector);
+        if (element != null)
+        {
+            throw new HtmxTestException($"Did not expect element for selector '{cssSelector}' but one was found.");
+        }
+        return this;
+    }
+
+    /// <summary>
     /// Assert that the response contains an element with the specified HTMX attribute.
     /// </summary>
     public async Task<HtmxTestResponse> AssertHxAttributeAsync(string cssSelector, string attribute, string? expectedValue = null)
@@ -259,7 +273,34 @@ public class HtmxTestResponse
     }
 
     /// <summary>
+    /// Assert that the element has a CSS class.
+    /// </summary>
+    public async Task<HtmxTestResponse> AssertHasCssClassAsync(string cssSelector, string className)
+    {
+        var doc = await GetDocumentAsync();
+        var element = doc.QuerySelector(cssSelector);
+        if (element == null)
+            throw new HtmxTestException($"Element '{cssSelector}' not found.");
+
+        var classes = element.ClassList;
+        if (!classes.Contains(className))
+        {
+            throw new HtmxTestException($"Expected element '{cssSelector}' to have CSS class '{className}', but it was not present.");
+        }
+
+        return this;
+    }
+
+    /// <summary>
     /// Assert that the response is a partial view (not a full page with html/body tags).
+
+    /// <summary>
+    /// Assert that the response contains an element with hx-swap-oob attribute.
+    /// </summary>
+    public async Task<HtmxTestResponse> AssertHxSwapOobAsync(string cssSelector, string? expectedValue = null)
+    {
+        return await AssertHxAttributeAsync(cssSelector, "hx-swap-oob", expectedValue);
+    }
     /// </summary>
     public async Task<HtmxTestResponse> AssertPartialViewAsync()
     {
@@ -275,6 +316,39 @@ public class HtmxTestResponse
                 "Expected a partial view, but response contains full HTML structure (html/body tags).");
         }
         
+        return this;
+    }
+
+    /// <summary>
+    /// Assert that an anti-forgery token is present in a form (ASP.NET Core default).
+    /// </summary>
+    public async Task<HtmxTestResponse> AssertAntiForgeryTokenAsync(string formSelector = "form")
+    {
+        var doc = await GetDocumentAsync();
+        var form = doc.QuerySelector(formSelector);
+        if (form == null)
+            throw new HtmxTestException($"Form '{formSelector}' not found.");
+
+        var token = form.QuerySelector("input[name='__RequestVerificationToken']");
+        if (token == null)
+            throw new HtmxTestException("Anti-forgery token input '__RequestVerificationToken' not found in form.");
+
+        return this;
+    }
+
+    /// <summary>
+    /// Assert that the element contains an attribute whose value contains the expected substring.
+    /// </summary>
+    public async Task<HtmxTestResponse> AssertAttributeContainsAsync(string cssSelector, string attribute, string expectedSubstring)
+    {
+        var doc = await GetDocumentAsync();
+        var element = doc.QuerySelector(cssSelector) ?? throw new HtmxTestException($"Element '{cssSelector}' not found.");
+
+        var actualValue = element.GetAttribute(attribute);
+        if (string.IsNullOrEmpty(actualValue) || !actualValue.Contains(expectedSubstring))
+        {
+            throw new HtmxTestException($"Expected attribute '{attribute}' on '{cssSelector}' to contain '{expectedSubstring}', but got '{actualValue}'.");
+        }
         return this;
     }
 
@@ -297,6 +371,64 @@ public class HtmxTestResponse
         assertion(doc);
         return this;
     }
+
+    // ---------------------
+    // HTMX header assertions
+    // ---------------------
+
+    public HtmxTestResponse AssertHxRedirect(string expectedUrl)
+        => AssertHeader("HX-Redirect", expectedUrl);
+
+    public HtmxTestResponse AssertHxPushUrl(string? expectedValue = null)
+        => AssertHeader("HX-Push-Url", expectedValue);
+
+    public HtmxTestResponse AssertHxReswap(string? expectedValue = null)
+        => AssertHeader("HX-Reswap", expectedValue);
+
+    public HtmxTestResponse AssertHxRetarget(string? expectedValue = null)
+        => AssertHeader("HX-Retarget", expectedValue);
+
+    public HtmxTestResponse AssertHxRefresh(bool? expected = null)
+    {
+        if (expected == null)
+            return AssertHeader("HX-Refresh");
+        return AssertHeader("HX-Refresh", expected.Value ? "true" : "false");
+    }
+
+    public HtmxTestResponse AssertHxTriggerHeaderContains(string substring)
+    {
+        if (!_response.Headers.TryGetValues("HX-Trigger", out var values))
+            throw new HtmxTestException("Expected header 'HX-Trigger' not found in response.");
+
+        var actual = values.FirstOrDefault() ?? string.Empty;
+        if (!actual.Contains(substring))
+            throw new HtmxTestException($"Expected HX-Trigger header to contain '{substring}', but got '{actual}'.");
+        return this;
+    }
+
+    public HtmxTestResponse AssertHxLocationContains(string substring)
+    {
+        if (!_response.Headers.TryGetValues("HX-Location", out var values))
+            throw new HtmxTestException("Expected header 'HX-Location' not found in response.");
+
+        var actual = values.FirstOrDefault() ?? string.Empty;
+        if (!actual.Contains(substring))
+            throw new HtmxTestException($"Expected HX-Location header to contain '{substring}', but got '{actual}'.");
+        return this;
+    }
+
+    /// <summary>
+    /// Get a response header value (first value) or null if missing.
+    /// </summary>
+    public string? GetHeaderValue(string name)
+    {
+        return _response.Headers.TryGetValues(name, out var values) ? values.FirstOrDefault() : null;
+    }
+
+    /// <summary>
+    /// Get the HX-Redirect URL if present.
+    /// </summary>
+    public string? GetHxRedirectUrl() => GetHeaderValue("HX-Redirect");
 
     /// <summary>
     /// Assert that the response content matches a saved snapshot.

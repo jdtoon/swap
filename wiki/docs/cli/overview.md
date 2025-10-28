@@ -21,6 +21,8 @@ swap <command> [subcommand] [arguments] [options]
 | `swap generate controller` | Generate a CRUD controller | `g c`, `generate c` |
 | `swap generate resource` | Generate model + controller + views | `g r`, `generate r` |
 | `swap generate seed` | Generate database seeders | `g s`, `generate s`, `g seed` |
+| `swap generate test` | Generate test class scaffold for a controller | `g test`, `g t` |
+| `swap generate factory` | Generate Bogus-based test data factory | `g factory`, `g f` |
 | `swap database info` | Show database configuration and status | `db info` |
 | `swap database migrate` | Create and apply EF migrations | `db migrate` |
 | `swap database seed` | Run database seeders | `db seed` |
