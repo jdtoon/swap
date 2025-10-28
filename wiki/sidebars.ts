@@ -33,6 +33,7 @@ const sidebars: SidebarsConfig = {
         'cli/generate-model',
         'cli/generate-controller',
         'cli/generate-resource',
+        'cli/generate-pattern',
         'cli/generate-test',
         'cli/generate-factory',
         'cli/seeders',
@@ -44,6 +45,7 @@ const sidebars: SidebarsConfig = {
       type: 'category',
       label: 'Features',
       items: [
+        'features/patterns',
         'features/testing-framework',
       ],
     },

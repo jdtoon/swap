@@ -23,6 +23,7 @@ swap <command> [subcommand] [arguments] [options]
 | `swap generate seed` | Generate database seeders | `g s`, `generate s`, `g seed` |
 | `swap generate test` | Generate integration test scaffold | `g test`, `g t` |
 | `swap generate factory` | Generate Bogus test data factory | `g factory`, `g f` |
+| `swap generate pattern` | Apply entity patterns (soft delete, etc.) | `g pattern`, `g p` |
 | `swap database info` | Show database configuration and status | `db info` |
 | `swap database migrate` | Create and apply EF migrations | `db migrate` |
 | `swap database seed` | Run database seeders | `db seed` |
@@ -104,6 +105,20 @@ swap g f Post  # short alias
 # In different project
 swap g test TodoItem --project testApps/MyApp --output Tests
 swap g factory Post --project testApps/MyApp --output Tests/Factories
+```
+
+### Apply Entity Patterns
+
+```bash
+# Add soft delete pattern to entity
+swap g pattern softdelete Post
+swap g p soft Post  # aliases
+
+# Apply to specific project
+swap g pattern softdelete Product --project path/to/project
+
+# Force overwrite
+swap g pattern softdelete Order --force
 ```
 
 ### Database Commands
