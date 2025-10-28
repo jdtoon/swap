@@ -379,7 +379,7 @@ Built-in scrubbers make snapshots stable by replacing volatile values:
 - ISO date/time strings → [DATETIME]
 - Anti-forgery token values → [TOKEN]
 
-They are enabled by default. You can customize:
+They are enabled by default. Toggle with environment variable SNAPSHOT_SCRUBBERS_DEFAULT (true/false). You can also customize programmatically:
 
 ```csharp
 // Disable defaults

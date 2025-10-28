@@ -94,7 +94,7 @@ await invalid.AssertFieldValidationErrorAsync("Title");
 
 ## Snapshot scrubbers
 
-Default scrubbers replace GUIDs, ISO timestamps, and anti-forgery tokens for stable snapshots.
+Default scrubbers replace GUIDs, ISO timestamps, and anti-forgery tokens for stable snapshots. Control defaults with environment variable `SNAPSHOT_SCRUBBERS_DEFAULT` (true/false).
 
 ```csharp
 // Turn off defaults
