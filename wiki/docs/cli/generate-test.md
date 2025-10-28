@@ -48,4 +48,4 @@ swap g test Post -p testApps/SeedersDemo -o Tests
 
 ## See also
 
-- [Swap.Testing: API and examples](../../features/testing-framework)
+- [Swap.Testing: API and examples](../features/testing-framework)
