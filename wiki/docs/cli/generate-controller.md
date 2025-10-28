@@ -49,9 +49,14 @@ swap g c BlogPost --fields "Title:string Content:string"
 
 ### `--fields <field-definitions>`
 
-**Required.** Space-separated list of field definitions.
+**Required.** Space- or comma-separated list of field definitions.
 
-**Format:** `FieldName:Type[:Flags]`
+**Format:**
+```
+FieldName:Type[:flags] [FieldName:Type[:flags]...]
+or
+FieldName:Type[:flags],FieldName:Type[:flags],...
+```
 
 **Supported Types (11 total):**
 - `string` - Text data
@@ -70,6 +75,7 @@ swap g c BlogPost --fields "Title:string Content:string"
 Add `?` after the type name to make it nullable:
 ```bash
 --fields "Description:string? Notes:string?"
+--fields Description:string?,Notes:string?
 ```
 
 ### Field Flags
@@ -86,23 +92,29 @@ Control sorting and filtering behavior per field:
 
 **Examples:**
 ```bash
-# Simple fields (all sortable by default)
+# Simple fields (all sortable by default) - space or comma separated
 --fields "Name:string Price:decimal Quantity:int"
+--fields Name:string,Price:decimal,Quantity:int
 
 # Nullable fields
 --fields "Name:string Description:string? Price:decimal"
+--fields Name:string,Description:string?,Price:decimal
 
 # Disable sorting on specific fields
 --fields "Name:string SKU:string:ns Price:decimal:nosort"
+--fields Name:string,SKU:string:ns,Price:decimal:nosort
 
 # Enable filtering on bool fields
 --fields "Name:string InStock:bool:f Active:bool:filterable"
+--fields Name:string,InStock:bool:f,Active:bool:filterable
 
 # Combine flags (not sortable but filterable)
 --fields "Name:string InStock:bool:ns,f"
+--fields Name:string,InStock:bool:ns,f
 
 # Real-world example: Product with control flags
 --fields "Name:string Price:decimal:ns SKU:string:ns InStock:bool:f CreatedDate:DateTime"
+--fields Name:string,Price:decimal:ns,SKU:string:ns,InStock:bool:f,CreatedDate:DateTime
 # Result:
 # - Name: sortable (default), no filter
 # - Price: not sortable, no filter

@@ -2,12 +2,22 @@
 
 Generate realistic database seeders using Bogus.
 
+## Synopsis
+
+```bash
+swap generate seed <name> [options]
+swap g seed <name> [options]  # Short alias
+swap g s <name> [options]     # Even shorter alias
+```
+
 ## Usage
 
 - Single entity:
-  - `swap g seed <entity> [--count 50] [--locale en] [--if-empty] [--append]`
+  - `swap g seed <entity> [--count 50] [--locale en] [--if-empty]`
+  - `swap g s <entity> [--count 50] [--locale en] [--if-empty]`
 - All entities declared in your `AppDbContext`:
-  - `swap g seed all [--count 50] [--locale en] [--if-empty] [--append]`
+  - `swap g seed all [--count 50] [--locale en] [--if-empty]`
+  - `swap g s all [--count 50] [--locale en] [--if-empty]`
 
 Examples:
 
@@ -17,6 +27,9 @@ swap g seed Post --count 100 --locale en --if-empty
 
 # Generate seeders for all DbSets in AppDbContext
 swap g seed all --count 200 --locale en_GB --if-empty
+
+# Short alias
+swap g s all --count 50 --locale en --if-empty
 ```
 
 ## What it generates
@@ -31,7 +44,7 @@ swap g seed all --count 200 --locale en_GB --if-empty
 - `--count` (default: 50): Number of records to generate
 - `--locale` (default: `en`): Bogus locale (e.g., `en`, `en_GB`, `de`)
 - `--if-empty`: Only seed when the table is empty (idempotent)
-- `--append`: Append without clearing existing records (default behavior)
+- `--append`: Append without clearing existing records (default behavior; not yet implemented)
 
 ## Development startup seeding
 

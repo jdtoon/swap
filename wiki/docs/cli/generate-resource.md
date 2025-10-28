@@ -56,6 +56,8 @@ Define custom fields for the model with optional flags.
 **Format:**
 ```
 "FieldName:Type[:flags] [FieldName:Type[:flags]...]"
+or
+FieldName:Type[:flags],FieldName:Type[:flags],...
 ```
 
 **Flags** (comma-separated):
@@ -68,14 +70,20 @@ Define custom fields for the model with optional flags.
 # Basic fields (space-separated)
 swap g r Product --fields "Name:string Price:decimal Stock:int"
 
+# Basic fields (comma-separated)
+swap g r Product --fields Name:string,Price:decimal,Stock:int
+
 # With flags
 swap g r Product --fields "Name:string:s,f Price:decimal:s Stock:int:ns"
+swap g r Product --fields Name:string:s,f,Price:decimal:s,Stock:int:ns
 
 # Nullable field
 swap g r User --fields "Email:string Age:int IsActive:bool Bio:string?"
+swap g r User --fields Email:string,Age:int,IsActive:bool,Bio:string?
 
 # With DateTime
 swap g r Order --fields "CustomerId:int Total:decimal OrderDate:datetime"
+swap g r Order --fields CustomerId:int,Total:decimal,OrderDate:datetime
 ```
 
 **Default:** If omitted, generates a model with `Id`, `Title`, and `IsComplete` fields.
