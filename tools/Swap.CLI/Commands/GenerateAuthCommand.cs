@@ -139,9 +139,14 @@ public static class GenerateAuthCommand
             // Add package reference
             await AddIdentityPackageAsync(projectFile);
             
-            // Show success and instructions
+            // Auto-configure the application
+            await ConfigureDbContextAsync(workingDir, projectName);
+            await ConfigureProgramCsAsync(workingDir, projectName);
+            await ConfigureLayoutAsync(workingDir);
+            
+            // Show success and next steps
             AnsiConsole.WriteLine();
-            AnsiConsole.MarkupLine("[green]✓[/] Authentication system generated successfully!");
+            AnsiConsole.MarkupLine("[green]✓[/] Authentication system generated and configured successfully!");
             AnsiConsole.WriteLine();
             
             AnsiConsole.MarkupLine("[bold]Generated files:[/]");
@@ -151,7 +156,13 @@ public static class GenerateAuthCommand
             }
             AnsiConsole.WriteLine();
             
-            ShowManualSteps(workingDir, projectName);
+            AnsiConsole.MarkupLine("[bold]Configured files:[/]");
+            AnsiConsole.MarkupLine("  [yellow]~[/] Data/AppDbContext.cs (now inherits IdentityDbContext)");
+            AnsiConsole.MarkupLine("  [yellow]~[/] Program.cs (added Identity configuration)");
+            AnsiConsole.MarkupLine("  [yellow]~[/] Views/Shared/_Layout.cshtml (added login partial)");
+            AnsiConsole.WriteLine();
+            
+            ShowNextSteps(workingDir);
             
             return 0;
         }
@@ -246,45 +257,110 @@ public static class GenerateAuthCommand
             });
     }
     
-    private static void ShowManualSteps(string workingDir, string projectName)
+    private static async Task ConfigureDbContextAsync(string workingDir, string projectName)
     {
-        AnsiConsole.MarkupLine("[bold yellow]⚠ Manual configuration required:[/]");
-        AnsiConsole.WriteLine();
-        
-        // Step 1: Update DbContext
-        AnsiConsole.MarkupLine("[bold]1. Update your DbContext:[/]");
-        AnsiConsole.MarkupLine("   Change your ApplicationDbContext to inherit from IdentityDbContext:");
-        AnsiConsole.WriteLine();
-        
-        var dbContextCode = $@"using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore;
-using {projectName}.Models;
-
-namespace {projectName}.Data;
-
-public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
-{{
-    public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
-        : base(options) {{ }}
-    
-    // Your existing DbSets here
-}}";
-        
-        var dbContextPanel = new Panel(Markup.Escape(dbContextCode))
+        var dbContextPath = Path.Combine(workingDir, "Data", "AppDbContext.cs");
+        if (!File.Exists(dbContextPath))
         {
-            Header = new PanelHeader("Data/ApplicationDbContext.cs"),
-            Border = BoxBorder.Rounded,
-            BorderStyle = new Style(Color.Blue)
-        };
-        AnsiConsole.Write(dbContextPanel);
-        AnsiConsole.WriteLine();
+            AnsiConsole.MarkupLine("[yellow]⚠[/] AppDbContext.cs not found, skipping auto-configuration");
+            return;
+        }
+
+        var content = await File.ReadAllTextAsync(dbContextPath);
         
-        // Step 2: Update Program.cs
-        AnsiConsole.MarkupLine("[bold]2. Configure Identity in Program.cs:[/]");
-        AnsiConsole.MarkupLine("   Add Identity services and configure options:");
-        AnsiConsole.WriteLine();
+        // Check if already configured
+        if (content.Contains("IdentityDbContext<ApplicationUser>"))
+        {
+            AnsiConsole.MarkupLine("[dim]DbContext already configured for Identity[/]");
+            return;
+        }
+
+        // Add using statements if not present
+        if (!content.Contains("using Microsoft.AspNetCore.Identity.EntityFrameworkCore;"))
+        {
+            var usingIndex = content.IndexOf("using Microsoft.EntityFrameworkCore;");
+            if (usingIndex >= 0)
+            {
+                content = content.Insert(usingIndex, "using Microsoft.AspNetCore.Identity.EntityFrameworkCore;\n");
+            }
+        }
+
+        // Replace DbContext with IdentityDbContext<ApplicationUser>
+        content = content.Replace(
+            "public class AppDbContext : DbContext",
+            "public class AppDbContext : IdentityDbContext<ApplicationUser>");
+
+        await File.WriteAllTextAsync(dbContextPath, content);
+        AnsiConsole.MarkupLine("[green]✓[/] Updated AppDbContext to inherit from IdentityDbContext");
+    }
+
+    private static async Task ConfigureProgramCsAsync(string workingDir, string projectName)
+    {
+        var programPath = Path.Combine(workingDir, "Program.cs");
+        if (!File.Exists(programPath))
+        {
+            AnsiConsole.MarkupLine("[yellow]⚠[/] Program.cs not found, skipping auto-configuration");
+            return;
+        }
+
+        var content = await File.ReadAllTextAsync(programPath);
         
-        var programCode = $@"// Add Identity
+        // Check if already configured
+        if (content.Contains("AddIdentity<ApplicationUser"))
+        {
+            AnsiConsole.MarkupLine("[dim]Program.cs already configured for Identity[/]");
+            return;
+        }
+
+        // Add using statements
+        if (!content.Contains("using Microsoft.AspNetCore.Identity;"))
+        {
+            var usingIndex = content.IndexOf("using Microsoft.EntityFrameworkCore;");
+            if (usingIndex >= 0)
+            {
+                var insertPoint = content.IndexOf('\n', usingIndex) + 1;
+                content = content.Insert(insertPoint, $"using Microsoft.AspNetCore.Identity;\nusing {projectName}.Models;\n");
+            }
+        }
+
+        // Find where to insert Identity configuration (after AddDbContext)
+        var dbContextIndex = content.IndexOf("builder.Services.AddDbContext");
+        if (dbContextIndex >= 0)
+        {
+            // Find the end of AddDbContext statement (look for the closing );)
+            var searchStart = dbContextIndex;
+            var parenCount = 0;
+            var foundStart = false;
+            var insertPoint = -1;
+
+            for (int i = searchStart; i < content.Length; i++)
+            {
+                if (content[i] == '(')
+                {
+                    parenCount++;
+                    foundStart = true;
+                }
+                else if (content[i] == ')')
+                {
+                    parenCount--;
+                    if (foundStart && parenCount == 0)
+                    {
+                        // Find the semicolon after this closing paren
+                        insertPoint = content.IndexOf(';', i) + 1;
+                        break;
+                    }
+                }
+            }
+
+            if (insertPoint > 0)
+            {
+                // Find the end of the line
+                var lineEnd = content.IndexOf('\n', insertPoint);
+                if (lineEnd > 0)
+                {
+                    var identityConfig = $@"
+
+// Add Identity
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
 {{
     // Password settings
@@ -303,7 +379,7 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
     // User settings
     options.User.RequireUniqueEmail = true;
 }})
-.AddEntityFrameworkStores<ApplicationDbContext>()
+.AddEntityFrameworkStores<AppDbContext>()
 .AddDefaultTokenProviders();
 
 // Configure application cookie
@@ -316,41 +392,85 @@ builder.Services.ConfigureApplicationCookie(options =>
     options.AccessDeniedPath = ""/auth/access-denied"";
     options.SlidingExpiration = true;
 }});
+";
+                    content = content.Insert(lineEnd + 1, identityConfig);
+                }
+            }
+        }
 
-// ... existing code ...
+        // Add UseAuthentication() before UseAuthorization()
+        var useAuthzIndex = content.IndexOf("app.UseAuthorization();");
+        if (useAuthzIndex >= 0 && !content.Contains("app.UseAuthentication();"))
+        {
+            content = content.Insert(useAuthzIndex, "app.UseAuthentication();\n");
+        }
 
-// Add these BEFORE app.MapControllerRoute()
-app.UseAuthentication();
-app.UseAuthorization();";
-        
-        var programPanel = new Panel(Markup.Escape(programCode))
+        await File.WriteAllTextAsync(programPath, content);
+        AnsiConsole.MarkupLine("[green]✓[/] Configured Identity in Program.cs");
+    }
+
+    private static async Task ConfigureLayoutAsync(string workingDir)
+    {
+        var layoutPath = Path.Combine(workingDir, "Views", "Shared", "_Layout.cshtml");
+        if (!File.Exists(layoutPath))
         {
-            Header = new PanelHeader("Program.cs"),
-            Border = BoxBorder.Rounded,
-            BorderStyle = new Style(Color.Blue)
-        };
-        AnsiConsole.Write(programPanel);
-        AnsiConsole.WriteLine();
+            AnsiConsole.MarkupLine("[yellow]⚠[/] _Layout.cshtml not found, skipping auto-configuration");
+            return;
+        }
+
+        var content = await File.ReadAllTextAsync(layoutPath);
         
-        // Step 3: Add login partial to layout
-        AnsiConsole.MarkupLine("[bold]3. Add login partial to your layout:[/]");
-        AnsiConsole.MarkupLine("   In Views/Shared/_Layout.cshtml, add the partial view:");
-        AnsiConsole.WriteLine();
-        
-        var layoutCode = @"<!-- In your navigation or header -->
-<partial name=""_LoginPartial"" />";
-        
-        var layoutPanel = new Panel(Markup.Escape(layoutCode))
+        // Check if already configured
+        if (content.Contains("_LoginPartial"))
         {
-            Header = new PanelHeader("Views/Shared/_Layout.cshtml"),
-            Border = BoxBorder.Rounded,
-            BorderStyle = new Style(Color.Blue)
-        };
-        AnsiConsole.Write(layoutPanel);
+            AnsiConsole.MarkupLine("[dim]Layout already includes login partial[/]");
+            return;
+        }
+
+        // Find the navbar div and add the login partial
+        var navbarIndex = content.IndexOf("<div class=\"flex-none\">");
+        if (navbarIndex >= 0)
+        {
+            // Find the closing </div> of flex-none
+            var searchStart = navbarIndex;
+            var divCount = 1;
+            var insertPoint = -1;
+
+            for (int i = searchStart + "<div class=\"flex-none\">".Length; i < content.Length - 6; i++)
+            {
+                if (content.Substring(i, 5) == "<div ")
+                {
+                    divCount++;
+                }
+                else if (content.Substring(i, 6) == "</div>")
+                {
+                    divCount--;
+                    if (divCount == 0)
+                    {
+                        insertPoint = i;
+                        break;
+                    }
+                }
+            }
+
+            if (insertPoint > 0)
+            {
+                var loginPartial = "\n                    <div class=\"ml-4\">\n                        <partial name=\"_LoginPartial\" />\n                    </div>\n                ";
+                content = content.Insert(insertPoint, loginPartial);
+            }
+        }
+
+        await File.WriteAllTextAsync(layoutPath, content);
+        AnsiConsole.MarkupLine("[green]✓[/] Added login partial to layout");
+    }
+
+    private static void ShowNextSteps(string workingDir)
+    {
+        AnsiConsole.MarkupLine("[bold cyan]Next steps:[/]");
         AnsiConsole.WriteLine();
         
-        // Step 4: Create migration
-        AnsiConsole.MarkupLine("[bold]4. Create and apply Identity migration:[/]");
+        // Step 1: Create and apply migration
+        AnsiConsole.MarkupLine("[bold]1. Create and apply Identity migration:[/]");
         AnsiConsole.WriteLine();
         var migrationDir = Path.Combine(workingDir, "Migrations");
         var migrationCommand = Directory.Exists(migrationDir)
@@ -361,13 +481,18 @@ app.UseAuthorization();";
         AnsiConsole.MarkupLine("   [cyan]dotnet ef database update[/]");
         AnsiConsole.WriteLine();
         
-        // Step 5: Optional email service
-        AnsiConsole.MarkupLine("[bold]5. (Optional) Configure email service for password reset:[/]");
-        AnsiConsole.MarkupLine("   Currently, password reset tokens are logged to console.");
-        AnsiConsole.MarkupLine("   For production, implement an email service and update AuthController.");
+        // Step 2: Test the auth system
+        AnsiConsole.MarkupLine("[bold]2. Run your application:[/]");
+        AnsiConsole.WriteLine();
+        AnsiConsole.MarkupLine("   [cyan]dotnet run[/]");
+        AnsiConsole.WriteLine();
+        AnsiConsole.MarkupLine("   Then visit [cyan]/auth/register[/] to create your first account.");
         AnsiConsole.WriteLine();
         
-        AnsiConsole.MarkupLine("[bold green]✓[/] Authentication system is ready to use!");
-        AnsiConsole.MarkupLine("   Visit [cyan]/auth/register[/] to create your first account.");
+        // Optional: Email service
+        AnsiConsole.MarkupLine("[bold]3. (Optional) Configure email service:[/]");
+        AnsiConsole.MarkupLine("   Password reset tokens are currently logged to console.");
+        AnsiConsole.MarkupLine("   For production, implement an email service and update AuthController.");
     }
 }
+

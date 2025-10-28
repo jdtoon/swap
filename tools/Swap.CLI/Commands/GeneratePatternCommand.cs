@@ -1,5 +1,6 @@
 using System.CommandLine;
 using System.CommandLine.Invocation;
+using System.Xml.Linq;
 using Spectre.Console;
 using Swap.CLI.Infrastructure;
 using Microsoft.CodeAnalysis;
@@ -840,32 +841,90 @@ public static class GeneratePatternCommand
             return;
         }
 
-        AnsiConsole.MarkupLine($"[cyan]Installing Swap.Patterns package...[/]");
         var projectDir = Path.GetDirectoryName(projectFile)!;
-
-        var processInfo = new System.Diagnostics.ProcessStartInfo
+        
+        // Check if Swap.Patterns is available locally (for development)
+        var localPatternsPath = Path.Combine(projectDir, "..", "..", "framework", "Swap.Patterns", "Swap.Patterns.csproj");
+        var normalizedLocalPath = Path.GetFullPath(localPatternsPath);
+        
+        if (File.Exists(normalizedLocalPath))
         {
-            FileName = "dotnet",
-            Arguments = "add package Swap.Patterns --prerelease",
-            WorkingDirectory = projectDir,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            UseShellExecute = false,
-            CreateNoWindow = true
-        };
-
-        using var process = System.Diagnostics.Process.Start(processInfo);
-        if (process != null)
-        {
-            await process.WaitForExitAsync();
-            if (process.ExitCode != 0)
+            // Local development - add project reference
+            AnsiConsole.MarkupLine($"[cyan]Adding Swap.Patterns project reference...[/]");
+            
+            try
             {
-                AnsiConsole.MarkupLine($"[yellow]Warning:[/] Failed to add Swap.Patterns package automatically.");
-                AnsiConsole.MarkupLine($"[yellow]Run manually:[/] [grey]dotnet add package Swap.Patterns --prerelease[/]");
+                var csproj = XDocument.Load(projectFile);
+                var project = csproj.Root;
+                
+                if (project == null)
+                {
+                    AnsiConsole.MarkupLine($"[red]Error:[/] Invalid project file format");
+                    return;
+                }
+                
+                // Check if reference already exists
+                var existingRef = project.Descendants("ProjectReference")
+                    .FirstOrDefault(e => e.Attribute("Include")?.Value.Contains("Swap.Patterns.csproj") == true);
+                
+                if (existingRef == null)
+                {
+                    // Create new ItemGroup or use existing one
+                    var itemGroup = project.Elements("ItemGroup")
+                        .FirstOrDefault(ig => ig.Elements("ProjectReference").Any()) 
+                        ?? new XElement("ItemGroup");
+                    
+                    if (!project.Elements("ItemGroup").Contains(itemGroup))
+                    {
+                        project.Add(itemGroup);
+                    }
+                    
+                    // Add ProjectReference with relative path
+                    var relativePath = @"..\..\framework\Swap.Patterns\Swap.Patterns.csproj";
+                    itemGroup.Add(new XElement("ProjectReference", new XAttribute("Include", relativePath)));
+                    
+                    csproj.Save(projectFile);
+                    AnsiConsole.MarkupLine($"[green]✓[/] Swap.Patterns project reference added");
+                }
+                else
+                {
+                    AnsiConsole.MarkupLine($"[yellow]→[/] Swap.Patterns reference already exists");
+                }
             }
-            else
+            catch (Exception ex)
             {
-                AnsiConsole.MarkupLine($"[green]✓[/] Swap.Patterns package added");
+                AnsiConsole.MarkupLine($"[red]Error:[/] Failed to add project reference: {ex.Message}");
+            }
+        }
+        else
+        {
+            // Production - try to add NuGet package
+            AnsiConsole.MarkupLine($"[cyan]Installing Swap.Patterns package...[/]");
+            
+            var processInfo = new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = "dotnet",
+                Arguments = "add package Swap.Patterns --prerelease",
+                WorkingDirectory = projectDir,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+
+            using var process = System.Diagnostics.Process.Start(processInfo);
+            if (process != null)
+            {
+                await process.WaitForExitAsync();
+                if (process.ExitCode != 0)
+                {
+                    AnsiConsole.MarkupLine($"[yellow]Warning:[/] Failed to add Swap.Patterns package automatically.");
+                    AnsiConsole.MarkupLine($"[yellow]Run manually:[/] [grey]dotnet add package Swap.Patterns --prerelease[/]");
+                }
+                else
+                {
+                    AnsiConsole.MarkupLine($"[green]✓[/] Swap.Patterns package added");
+                }
             }
         }
     }
