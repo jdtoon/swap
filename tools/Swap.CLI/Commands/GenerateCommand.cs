@@ -14,6 +14,8 @@ public static class GenerateCommand
         command.AddCommand(GenerateModelCommand.Create());
         command.AddCommand(GenerateResourceCommand.Create());
         command.AddCommand(GenerateSeedCommand.Create());
+        command.AddCommand(GenerateTestCommand.Create());
+        command.AddCommand(GenerateFactoryCommand.Create());
         
         return command;
     }

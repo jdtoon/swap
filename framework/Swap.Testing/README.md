@@ -1,0 +1,357 @@
+# Swap.Testing
+
+A fluent testing framework for ASP.NET Core applications using HTMX, designed to make testing partial views and HTMX interactions delightful.
+
+## Features
+
+- 🚀 **Fluent API** - Chainable assertion methods for readable tests
+- 🎯 **HTMX-Aware** - Built-in support for HX-Request headers and HTMX attributes
+- 🔍 **HTML Parsing** - Query and assert on HTML structure using CSS selectors
+- ⚡ **Partial View Testing** - Verify your HTMX endpoints return proper partials
+- 🧪 **Integration Testing** - Built on ASP.NET Core's WebApplicationFactory
+
+## Installation
+
+```bash
+dotnet add package Swap.Testing
+```
+
+## Quick Start
+
+### 1. Create a Test Fixture
+
+```csharp
+using Swap.Testing;
+using Xunit;
+
+namespace MyApp.Tests;
+
+public class HomeControllerTests : IClassFixture<HtmxTestFixture<Program>>
+{
+    private readonly HtmxTestClient<Program> _client;
+
+    public HomeControllerTests(HtmxTestFixture<Program> fixture)
+    {
+        _client = fixture.Client;
+    }
+
+    [Fact]
+    public async Task Index_ReturnsSuccessAndCorrectContent()
+    {
+        // Act
+        var response = await _client.GetAsync("/");
+
+        // Assert
+        response
+            .AssertSuccess()
+            .await AssertContainsAsync("Welcome to My App");
+    }
+}
+```
+
+### 2. Test HTMX Partials
+
+```csharp
+[Fact]
+public async Task GetTodoPartial_ReturnsPartialWithHtmxAttributes()
+{
+    // Act - Make an HTMX request
+    var response = await _client.HtmxGetAsync("/todos/1/edit");
+
+    // Assert - Verify it's a partial and has HTMX attributes
+    await response
+        .AssertSuccess()
+        .AssertPartialViewAsync()
+        .AssertHxPostAsync("form", "/todos/1")
+        .AssertHxTargetAsync("form", "#todo-1")
+        .AssertHxSwapAsync("form", "outerHTML");
+}
+```
+
+### 3. Test HTML Structure
+
+```csharp
+[Fact]
+public async Task TodoList_DisplaysAllTodos()
+{
+    // Act
+    var response = await _client.GetAsync("/todos");
+
+    // Assert - Query HTML structure
+    await response
+        .AssertSuccess()
+        .AssertElementCountAsync(".todo-item", 3)
+        .AssertElementTextAsync("h1", "My Todos")
+        .AssertElementExistsAsync("#add-todo-button");
+}
+```
+
+### 4. Test POST Requests
+
+```csharp
+[Fact]
+public async Task CreateTodo_WithHtmx_ReturnsNewTodoPartial()
+{
+    // Arrange
+    var formData = new Dictionary<string, string>
+    {
+        ["title"] = "Buy groceries",
+        ["completed"] = "false"
+    };
+
+    // Act - POST as HTMX request
+    var response = await _client.HtmxPostAsync("/todos", formData);
+
+    // Assert
+    await response
+        .AssertStatus(HttpStatusCode.Created)
+        .AssertPartialViewAsync()
+        .AssertContainsAsync("Buy groceries")
+        .AssertHxGetAsync(".edit-button", "/todos/");
+}
+```
+
+## API Reference
+
+### HtmxTestClient<TProgram>
+
+The main client for making requests to your application.
+
+#### HTTP Methods
+
+```csharp
+Task<HtmxTestResponse> GetAsync(string path)
+Task<HtmxTestResponse> PostAsync(string path, Dictionary<string, string>? formData = null)
+Task<HtmxTestResponse> PutAsync(string path, Dictionary<string, string>? formData = null)
+Task<HtmxTestResponse> DeleteAsync(string path)
+```
+
+#### HTMX Methods
+
+```csharp
+// Automatically adds HX-Request: true header
+Task<HtmxTestResponse> HtmxGetAsync(string path, string? target = null, string? trigger = null)
+Task<HtmxTestResponse> HtmxPostAsync(string path, Dictionary<string, string>? formData = null, string? target = null, string? trigger = null)
+```
+
+#### Configuration
+
+```csharp
+HtmxTestClient<TProgram> WithHeader(string name, string value)
+HtmxTestClient<TProgram> AsHtmxRequest()
+```
+
+### HtmxTestResponse
+
+Fluent assertion methods for HTTP responses.
+
+#### Status Assertions
+
+```csharp
+HtmxTestResponse AssertStatus(HttpStatusCode expectedStatus)
+HtmxTestResponse AssertSuccess() // 2xx status codes
+```
+
+#### Content Assertions
+
+```csharp
+Task<HtmxTestResponse> AssertContainsAsync(string expectedText)
+Task<HtmxTestResponse> AssertDoesNotContainAsync(string unexpectedText)
+```
+
+#### Header Assertions
+
+```csharp
+HtmxTestResponse AssertHeader(string headerName, string? expectedValue = null)
+```
+
+#### HTML Element Assertions
+
+```csharp
+Task<HtmxTestResponse> AssertElementExistsAsync(string cssSelector)
+Task<HtmxTestResponse> AssertElementCountAsync(string cssSelector, int expectedCount)
+Task<HtmxTestResponse> AssertElementTextAsync(string cssSelector, string expectedText)
+```
+
+#### HTMX Attribute Assertions
+
+```csharp
+Task<HtmxTestResponse> AssertHxGetAsync(string cssSelector, string? expectedUrl = null)
+Task<HtmxTestResponse> AssertHxPostAsync(string cssSelector, string? expectedUrl = null)
+Task<HtmxTestResponse> AssertHxTargetAsync(string cssSelector, string? expectedTarget = null)
+Task<HtmxTestResponse> AssertHxSwapAsync(string cssSelector, string? expectedSwap = null)
+Task<HtmxTestResponse> AssertHxTriggerAsync(string cssSelector, string? expectedTrigger = null)
+Task<HtmxTestResponse> AssertHxAttributeAsync(string cssSelector, string attribute, string? expectedValue = null)
+```
+
+#### Partial View Assertions
+
+```csharp
+Task<HtmxTestResponse> AssertPartialViewAsync() // Verifies no <html> or <body> tags
+```
+
+#### Custom Assertions
+
+```csharp
+Task<HtmxTestResponse> AssertAsync(Action<IHtmlDocument> assertion)
+Task<HtmxTestResponse> AssertAsync(Func<IHtmlDocument, Task> assertion)
+```
+
+#### Snapshot Testing
+
+```csharp
+Task<HtmxTestResponse> AssertMatchesSnapshotAsync(string snapshotName, string? snapshotDirectory = null, bool? updateSnapshots = null)
+```
+
+## Advanced Usage
+
+### Custom WebApplicationFactory Configuration
+
+```csharp
+public class CustomTestFixture : IDisposable
+{
+    public HtmxTestClient<Program> Client { get; }
+    private readonly WebApplicationFactory<Program> _factory;
+
+    public CustomTestFixture()
+    {
+        _factory = new WebApplicationFactory<Program>()
+            .WithWebHostBuilder(builder =>
+            {
+                builder.ConfigureServices(services =>
+                {
+                    // Override services for testing
+                    services.AddScoped<IMyService, MockMyService>();
+                });
+            });
+
+        Client = new HtmxTestClient<Program>(_factory);
+    }
+
+    public void Dispose() => _factory?.Dispose();
+}
+```
+
+### Testing HTMX Triggers and Targets
+
+```csharp
+[Fact]
+public async Task DeleteTodo_ReturnsEmptyWithSwapOutOfBand()
+{
+    var response = await _client
+        .AsHtmxRequest()
+        .WithHeader("HX-Target", "#todo-5")
+        .DeleteAsync("/todos/5");
+
+    await response
+        .AssertSuccess()
+        .AssertHeader("HX-Trigger", "todoDeleted")
+        .AssertContainsAsync("<div id=\"todo-5\"></div>");
+}
+```
+
+### Complex HTML Assertions
+
+```csharp
+[Fact]
+public async Task TodoList_HasCorrectStructure()
+{
+    var response = await _client.GetAsync("/todos");
+
+    await response.AssertAsync(async doc =>
+    {
+        var todos = doc.QuerySelectorAll(".todo-item");
+        Assert.Equal(5, todos.Length);
+
+        foreach (var todo in todos)
+        {
+            Assert.NotNull(todo.QuerySelector(".todo-title"));
+            Assert.NotNull(todo.QuerySelector("button[hx-delete]"));
+        }
+    });
+}
+```
+
+### Snapshot Testing
+
+Snapshot testing captures the HTML output and compares it on future runs to detect unintended changes.
+
+```csharp
+[Fact]
+public async Task TodoList_MatchesSnapshot()
+{
+    // Act
+    var response = await _client.HtmxGetAsync("/todos");
+
+    // Assert - Compare against saved snapshot
+    await response
+        .AssertSuccess()
+        .AssertMatchesSnapshotAsync("todo-list");
+}
+```
+
+**Update snapshots** when you intentionally change HTML:
+
+```bash
+# Set environment variable to update all snapshots
+UPDATE_SNAPSHOTS=true dotnet test
+
+# Or update specific test
+UPDATE_SNAPSHOTS=true dotnet test --filter TodoList_MatchesSnapshot
+```
+
+**Snapshot files** are saved in `__snapshots__/` directory:
+- `todo-list.html` - Expected snapshot
+- `todo-list.diff.html` - Created when mismatch occurs (actual content)
+
+```csharp
+// Custom snapshot directory
+await response.AssertMatchesSnapshotAsync(
+    "todo-list",
+    snapshotDirectory: "Tests/__snapshots__");
+
+// Force update in code (not recommended)
+await response.AssertMatchesSnapshotAsync(
+    "todo-list",
+    updateSnapshots: true);
+```
+
+
+    await response.AssertAsync(async doc =>
+    {
+        var todos = doc.QuerySelectorAll(".todo-item");
+        Assert.Equal(5, todos.Length);
+
+        foreach (var todo in todos)
+        {
+            Assert.NotNull(todo.QuerySelector(".todo-title"));
+            Assert.NotNull(todo.QuerySelector("button[hx-delete]"));
+        }
+    });
+}
+```
+
+## Best Practices
+
+1. **Use Test Fixtures** - Reuse `HtmxTestFixture<TProgram>` across tests with `IClassFixture<T>`
+2. **Test HTMX Attributes** - Verify your partials have correct hx-get, hx-post, hx-target, etc.
+3. **Assert Partial Views** - Use `AssertPartialViewAsync()` to ensure HTMX endpoints don't return full pages
+4. **Chain Assertions** - Leverage the fluent API for readable, maintainable tests
+5. **Use CSS Selectors** - Query HTML with specific, stable selectors
+
+## Philosophy
+
+Swap.Testing is built with minimal external dependencies, focusing on:
+
+- **Quality over quantity** - Every feature is well-crafted
+- **Developer experience** - Fluent, intuitive API that reads like documentation
+- **HTMX-first** - Designed specifically for testing hypermedia-driven applications
+- **Zero magic** - Clear, explicit behavior
+
+## License
+
+MIT
+
+## Contributing
+
+Contributions welcome! Please ensure tests pass and maintain the coding style.
