@@ -402,6 +402,72 @@ await db.SaveChangesAsync();
 
 ---
 
+### Visibility
+
+Control visibility of entities with optional time-based scheduling. Perfect for feature flags, scheduled content releases, or time-bound campaigns.
+
+```bash
+swap g pattern visibility Banner
+```
+
+**When to use:**
+- Feature flags (enable/disable features without deployments)
+- Scheduled content releases (blog posts, announcements)
+- Time-bound offers, promotions, or events
+- A/B testing toggles
+- Preview/staging content that should become visible later
+
+**Quick start:**
+
+1. Apply pattern:
+```bash
+swap g p visibility Banner
+```
+
+2. Use in code:
+```csharp
+// Manual toggle
+banner.Show();
+banner.Hide();
+
+// Schedule for future (UTC)
+banner.ScheduleVisibility(DateTime.UtcNow.AddDays(7));
+
+// Schedule within a window
+banner.ScheduleVisibilityWindow(
+    DateTime.UtcNow.AddDays(7),
+    DateTime.UtcNow.AddDays(14)
+);
+
+// Check if currently visible (respects time window)
+if (banner.IsCurrentlyVisible())
+{
+    // render banner
+}
+
+// Query visible items (checks IsVisible + time window)
+var visible = await _db.Banners.Visible().ToListAsync();
+
+// Query scheduled (future start date)
+var scheduled = await _db.Banners.Scheduled().ToListAsync();
+
+// Query expired (past end date)
+var expired = await _db.Banners.Expired().ToListAsync();
+```
+
+**What you get:**
+- `IVisibility` interface with `IsVisible`, `VisibleFrom`, `VisibleUntil`
+- Extensions: `Show()`, `Hide()`, `ShowNow()`, `ScheduleVisibility()`, `ScheduleVisibilityWindow()`, `IsCurrentlyVisible()`
+- Query helpers: `.Visible()`, `.Hidden()`, `.Scheduled()`, `.Expired()`
+
+**Migration:**
+```bash
+dotnet ef migrations add AddVisibilityToBanner
+dotnet ef database update
+```
+
+---
+
 ### Combining Patterns
 
 You can mix and match compatible patterns. Do not combine Auditable and Timestampable together (both define `CreatedAt`/`UpdatedAt`).

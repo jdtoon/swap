@@ -751,6 +751,67 @@ dotnet ef database update
 
 ---
 
+### `swap generate pattern visibility <entity>`
+
+Add controllable visibility with optional time-based scheduling for features, content releases, or time-bound offers.
+
+```bash
+# Add visibility to Banner entity
+swap g pattern visibility Banner
+
+# Short aliases
+swap g p visible Banner
+```
+
+**What it does:**
+1. Adds `IVisibility` interface to your entity
+2. Adds three properties: `IsVisible`, `VisibleFrom`, `VisibleUntil`
+3. Adds using statement for `Swap.Patterns.Visibility`
+4. Ensures `Swap.Patterns` package reference
+
+**After generation:**
+```csharp
+public class Banner : IVisibility
+{
+    public int Id { get; set; }
+    public string Title { get; set; }
+    
+    // IVisibility properties
+    public bool IsVisible { get; set; }
+    public DateTime? VisibleFrom { get; set; }
+    public DateTime? VisibleUntil { get; set; }
+}
+```
+
+**Usage:**
+```csharp
+// Show/hide manually
+banner.Show();
+banner.Hide();
+
+// Schedule for future (UTC)
+banner.ScheduleVisibility(DateTime.UtcNow.AddDays(7));
+
+// Schedule within a window
+banner.ScheduleVisibilityWindow(
+    DateTime.UtcNow.AddDays(7),
+    DateTime.UtcNow.AddDays(14)
+);
+
+// Check if currently visible (considering time window)
+if (banner.IsCurrentlyVisible())
+{
+    // show banner
+}
+
+// Query helpers
+var visible = await _db.Banners.Visible().ToListAsync();
+var scheduled = await _db.Banners.Scheduled().ToListAsync();
+var expired = await _db.Banners.Expired().ToListAsync();
+```
+
+---
+
 ### Combining Patterns
 
 You can mix and match compatible patterns on the same entity. Do not combine Auditable and Timestampable together (both define CreatedAt/UpdatedAt).

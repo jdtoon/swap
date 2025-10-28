@@ -9,6 +9,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.13] - 2025-10-28
+
+### Added - Visibility Pattern
+- **Visibility Pattern**: Controllable visibility with optional time-based scheduling
+  - `IVisibility` interface with `IsVisible`, `VisibleFrom`, `VisibleUntil`
+  - Extensions: `Show()`, `Hide()`, `ShowNow()`, `ScheduleVisibility()`, `ScheduleVisibilityWindow()`, `IsCurrentlyVisible()`
+  - Query helpers: `Visible()`, `Hidden()`, `Scheduled()`, `Expired()`
+  - CLI command: `swap generate pattern visibility <entity>` with aliases
+- **New Tests**: Added 6 tests covering manual toggle, scheduling, time window logic, and query filters
+- **Docs**:
+  - CLI README: added Visibility section with full examples
+  - Wiki `features/patterns.md`: added Visibility guide with when-to-use and quick start
+
+### Changed
+- Pattern command help now mentions `visibility`
+
 ## [0.0.12] - 2025-10-28
 
 ### Added - Versionable Pattern

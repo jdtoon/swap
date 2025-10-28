@@ -12,12 +12,12 @@ public static class GeneratePatternCommand
 {
     public static Command Create()
     {
-    var command = new Command("pattern", "Add common patterns to entities (softdelete, auditable, sluggable, timestampable, orderable, publishable, versionable)");
+    var command = new Command("pattern", "Add common patterns to entities (softdelete, auditable, sluggable, timestampable, orderable, publishable, versionable, visibility)");
         command.AddAlias("p");
 
         var typeArg = new Argument<string>(
             name: "type",
-            description: "Pattern type: softdelete, auditable, sluggable, timestampable, orderable, publishable, or versionable");
+            description: "Pattern type: softdelete, auditable, sluggable, timestampable, orderable, publishable, versionable, or visibility");
 
         var entityArg = new Argument<string>(
             name: "entity",
@@ -75,7 +75,8 @@ public static class GeneratePatternCommand
                 "orderable" or "order" => await ApplyOrderableAsync(workingDir, projectFile, entity, force),
                 "publishable" or "publish" or "pub" => await ApplyPublishableAsync(workingDir, projectFile, entity, force),
                 "versionable" or "version" or "ver" => await ApplyVersionableAsync(workingDir, projectFile, entity, force),
-                _ => throw new Exception($"Unknown pattern type: {type}. Use softdelete, auditable, sluggable, timestampable, orderable, publishable, or versionable")
+                "visibility" or "visible" or "vis" => await ApplyVisibilityAsync(workingDir, projectFile, entity, force),
+                _ => throw new Exception($"Unknown pattern type: {type}. Use softdelete, auditable, sluggable, timestampable, orderable, publishable, versionable, or visibility")
             };
         }
         catch (Exception ex)
@@ -1053,6 +1054,121 @@ public static class GeneratePatternCommand
         AnsiConsole.MarkupLine($"   [grey]}}[/]");
         AnsiConsole.MarkupLine($"\n2. Create and run migration:");
         AnsiConsole.MarkupLine($"   [grey]dotnet ef migrations add AddVersionableTo{entity}[/]");
+        AnsiConsole.MarkupLine($"   [grey]dotnet ef database update[/]");
+
+        return 0;
+    }
+
+    private static async Task<int> ApplyVisibilityAsync(string workingDir, string projectFile, string entity, bool force)
+    {
+        AnsiConsole.MarkupLine($"[cyan]Adding visibility pattern to {entity}...[/]");
+
+        // Find entity model
+        var modelPath = Path.Combine(workingDir, "Models", $"{entity}.cs");
+        if (!File.Exists(modelPath))
+        {
+            AnsiConsole.MarkupLine($"[red]Error:[/] Model file not found: {modelPath}");
+            return 1;
+        }
+
+        // Ensure Swap.Patterns package reference
+        await EnsureSwapPatternsPackageAsync(projectFile);
+
+        // Modify the entity model
+        var code = await File.ReadAllTextAsync(modelPath);
+        var tree = CSharpSyntaxTree.ParseText(code);
+        var root = await tree.GetRootAsync() as CompilationUnitSyntax ?? throw new InvalidOperationException();
+
+        // Locate class
+        var classDecl = root.DescendantNodes().OfType<ClassDeclarationSyntax>().FirstOrDefault(c => c.Identifier.Text == entity);
+        if (classDecl == null)
+        {
+            AnsiConsole.MarkupLine($"[red]Error:[/] Class {entity} not found in {modelPath}");
+            return 1;
+        }
+
+        // Add using Swap.Patterns.Visibility
+        var hasUsing = root.DescendantNodes().OfType<UsingDirectiveSyntax>().Any(u => u.Name?.ToString() == "Swap.Patterns.Visibility");
+        if (!hasUsing)
+        {
+            root = root.AddUsings(
+                SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("Swap.Patterns.Visibility"))
+                    .WithTrailingTrivia(SyntaxFactory.CarriageReturnLineFeed)
+            );
+            classDecl = root.DescendantNodes().OfType<ClassDeclarationSyntax>().First(c => c.Identifier.Text == entity);
+        }
+
+        // Ensure it implements IVisibility
+        if (!(classDecl.BaseList?.Types.Any(t => t.ToString().Contains("IVisibility")) ?? false))
+        {
+            var baseList = classDecl.BaseList ?? SyntaxFactory.BaseList();
+            var visibilityType = SyntaxFactory.SimpleBaseType(SyntaxFactory.ParseTypeName("IVisibility"));
+            var newBaseList = baseList.Types.Count == 0
+                ? SyntaxFactory.BaseList(SyntaxFactory.SingletonSeparatedList<BaseTypeSyntax>(visibilityType))
+                : baseList.AddTypes(visibilityType);
+            classDecl = classDecl.WithBaseList(newBaseList);
+        }
+
+        // Add properties if missing
+        bool hasIsVisible = classDecl.Members.OfType<PropertyDeclarationSyntax>().Any(p => p.Identifier.Text == "IsVisible");
+        bool hasVisibleFrom = classDecl.Members.OfType<PropertyDeclarationSyntax>().Any(p => p.Identifier.Text == "VisibleFrom");
+        bool hasVisibleUntil = classDecl.Members.OfType<PropertyDeclarationSyntax>().Any(p => p.Identifier.Text == "VisibleUntil");
+
+        var newMembers = new List<MemberDeclarationSyntax>();
+        if (!hasIsVisible)
+        {
+            var prop = SyntaxFactory.PropertyDeclaration(SyntaxFactory.ParseTypeName("bool"), "IsVisible")
+                .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword))
+                .AddAccessorListAccessors(
+                    SyntaxFactory.AccessorDeclaration(SyntaxKind.GetAccessorDeclaration).WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken)),
+                    SyntaxFactory.AccessorDeclaration(SyntaxKind.SetAccessorDeclaration).WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken))
+                )
+                .WithLeadingTrivia(
+                    SyntaxFactory.CarriageReturnLineFeed,
+                    SyntaxFactory.Comment("    // IVisibility properties"),
+                    SyntaxFactory.CarriageReturnLineFeed
+                );
+            newMembers.Add(prop);
+        }
+        if (!hasVisibleFrom)
+        {
+            var prop = SyntaxFactory.PropertyDeclaration(SyntaxFactory.ParseTypeName("DateTime?"), "VisibleFrom")
+                .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword))
+                .AddAccessorListAccessors(
+                    SyntaxFactory.AccessorDeclaration(SyntaxKind.GetAccessorDeclaration).WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken)),
+                    SyntaxFactory.AccessorDeclaration(SyntaxKind.SetAccessorDeclaration).WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken))
+                );
+            newMembers.Add(prop);
+        }
+        if (!hasVisibleUntil)
+        {
+            var prop = SyntaxFactory.PropertyDeclaration(SyntaxFactory.ParseTypeName("DateTime?"), "VisibleUntil")
+                .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword))
+                .AddAccessorListAccessors(
+                    SyntaxFactory.AccessorDeclaration(SyntaxKind.GetAccessorDeclaration).WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken)),
+                    SyntaxFactory.AccessorDeclaration(SyntaxKind.SetAccessorDeclaration).WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken))
+                );
+            newMembers.Add(prop);
+        }
+        if (newMembers.Count > 0)
+        {
+            classDecl = classDecl.AddMembers(newMembers.ToArray());
+        }
+
+        // Replace node and write back
+        root = root.ReplaceNode(root.DescendantNodes().OfType<ClassDeclarationSyntax>().First(c => c.Identifier.Text == entity), classDecl);
+        var formatted = root.NormalizeWhitespace().ToFullString();
+        await File.WriteAllTextAsync(modelPath, formatted);
+
+        AnsiConsole.MarkupLine($"[green]✓[/] Added IVisibility to {entity}");
+        AnsiConsole.MarkupLine($"\n[yellow]Tips:[/]");
+        AnsiConsole.MarkupLine($"- Use .Show() / .Hide() to toggle visibility manually");
+        AnsiConsole.MarkupLine($"- Use .ScheduleVisibility(dateUtc) for future visibility");
+        AnsiConsole.MarkupLine($"- Use .ScheduleVisibilityWindow(from, until) for time-bound content");
+        AnsiConsole.MarkupLine($"- Use .IsCurrentlyVisible() or .Visible() query helper to filter visible items");
+        AnsiConsole.MarkupLine($"\n[yellow]Next steps:[/]");
+        AnsiConsole.MarkupLine($"1. Add migration if new properties were added:");
+        AnsiConsole.MarkupLine($"   [grey]dotnet ef migrations add AddVisibilityTo{entity}[/]");
         AnsiConsole.MarkupLine($"   [grey]dotnet ef database update[/]");
 
         return 0;
