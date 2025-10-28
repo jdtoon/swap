@@ -9,6 +9,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.8] - 2025-10-28
+
+### Added - Entity Patterns
+- **Swap.Patterns Library**: Battle-tested entity patterns for common scenarios
+  - Soft Delete pattern with `ISoftDeletable` interface
+  - Extension methods: `SoftDelete()`, `Restore()`, `IncludeDeleted()`, `OnlyDeleted()`
+  - EF Core query filter configuration helper
+  - Automatic exclusion of deleted records from queries
+- **CLI Command**: `swap generate pattern softdelete <entity>`
+  - Applies soft delete pattern to existing entities
+  - Adds interface, properties, and using statements via Roslyn
+  - Ensures Swap.Patterns package reference
+  - Provides DbContext configuration guidance
+- **Integration Tests**: 5 comprehensive tests for soft delete behavior
+  - Query filter exclusion, property setting, restore functionality
+  - `IncludeDeleted()` and `OnlyDeleted()` query extensions
+- **Documentation**: Complete pattern library documentation
+  - CLI wiki page for `generate pattern` command
+  - Features wiki page with soft delete deep dive
+  - Updated getting-started guide with pattern workflow
+  - API reference and best practices
+
 ## [0.0.7] - 2025-10-28
 
 ### Added - HTMX Testing Framework
