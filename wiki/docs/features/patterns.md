@@ -73,9 +73,11 @@ var all = await db.Articles.IncludeDeleted().ToListAsync();
 
 [Learn more about Soft Delete →](#soft-delete-pattern)
 
-### Auditable *(Coming Soon)*
+---
 
-Automatically track creation and modification timestamps with user attribution.
+### Auditable
+
+Automatically track creation and modification timestamps with user attribution. Never manually set `CreatedAt` or `UpdatedAt` again.
 
 ```bash
 swap g pattern auditable Product
@@ -86,15 +88,66 @@ swap g pattern auditable Product
 - Debugging "who changed what when"
 - Audit log generation
 - Change history tracking
+- Any entity where knowing creation/modification details matters
 
-**What you'll get:**
+**Quick start:**
+
+1. Apply pattern:
+```bash
+swap g p auditable Product
+```
+
+2. Add HTTP context accessor in `Program.cs`:
+```csharp
+builder.Services.AddHttpContextAccessor();
+```
+
+3. Configure audit interceptor in DbContext:
+```csharp
+private readonly IHttpContextAccessor _httpContextAccessor;
+
+public AppDbContext(
+    DbContextOptions<AppDbContext> options,
+    IHttpContextAccessor httpContextAccessor) : base(options)
+{
+    _httpContextAccessor = httpContextAccessor;
+}
+
+protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+{
+    optionsBuilder.AddInterceptors(_httpContextAccessor.CreateAuditInterceptor());
+}
+```
+
+4. Use in code (automatic!):
+```csharp
+// Just save - timestamps set automatically
+var product = new Product { Name = "Widget", Price = 19.99m };
+db.Products.Add(product);
+await db.SaveChangesAsync();
+// product.CreatedAt and product.CreatedBy are now set
+
+// Updates also tracked automatically
+product.Price = 24.99m;
+await db.SaveChangesAsync();
+// product.UpdatedAt and product.UpdatedBy are now set
+```
+
+**What you get:**
 - `IAuditable` interface with `CreatedAt`, `CreatedBy`, `UpdatedAt`, `UpdatedBy`
-- EF Core interceptor for automatic population
+- EF Core `SaveChangesInterceptor` for automatic population
+- User identification from Claims (NameIdentifier, Name, or Email)
+- `CreatedAt`/`CreatedBy` set once on insert, protected from updates
+- `UpdatedAt`/`UpdatedBy` set on every modification
 - No manual timestamp management needed
 
-### Sluggable *(Coming Soon)*
+[Learn more about Auditable →](#auditable-pattern)
 
-Generate SEO-friendly URL slugs with automatic collision handling.
+---
+
+### Sluggable
+
+Generate SEO-friendly URL slugs with automatic collision handling. Perfect for content-heavy applications.
 
 ```bash
 swap g pattern sluggable BlogPost
@@ -102,14 +155,146 @@ swap g pattern sluggable BlogPost
 
 **When to use:**
 - Blog posts, articles, products needing pretty URLs
-- SEO optimization
-- User-friendly URLs instead of IDs
+- SEO optimization with readable URLs
+- User-friendly URLs instead of numeric IDs
+- Content management systems
+- E-commerce product pages
 
-**What you'll get:**
+**Quick start:**
+
+1. Apply pattern:
+```bash
+swap g p sluggable Article
+```
+
+2. Configure unique index in DbContext:
+```csharp
+protected override void OnModelCreating(ModelBuilder modelBuilder)
+{
+    modelBuilder.ConfigureSlugIndexes();
+    
+    // OR manually:
+    modelBuilder.Entity<Article>()
+        .HasIndex(e => e.Slug)
+        .IsUnique();
+}
+```
+
+3. Use in code:
+```csharp
+// Generate slug from title
+var article = new Article { Title = "Hello World!" };
+await article.GenerateSlugAsync(article.Title, db);
+await db.SaveChangesAsync();
+// article.Slug is now "hello-world"
+
+// Handles collisions automatically
+var duplicate = new Article { Title = "Hello World!" };
+await duplicate.GenerateSlugAsync(duplicate.Title, db);
+await db.SaveChangesAsync();
+// duplicate.Slug is now "hello-world-2"
+
+// Find by slug
+var found = await db.Articles
+    .FirstOrDefaultAsync(a => a.Slug == "hello-world");
+```
+
+**What you get:**
 - `ISluggable` interface with `Slug` property
-- Automatic slug generation from title/name
-- Collision detection (e.g., `my-post`, `my-post-2`)
-- Unique constraint configuration
+- `SlugGenerator` with text normalization and URL-safe conversion
+- International character support (café → cafe, München → munchen)
+- Automatic collision detection with counter suffixes
+- Configurable max length (default: 80 characters)
+- Unique constraint configuration helpers
+
+**Features:**
+- Converts "Hello World!" → "hello-world"
+- Removes diacritics: "Café München" → "cafe-munchen"
+- Removes special characters: "C# & .NET Guide (2024)" → "c-net-guide-2024"
+- Handles collisions: "post" → "post-2" → "post-3"
+- Respects max length while preserving whole words
+
+[Learn more about Sluggable →](#sluggable-pattern)
+
+---
+
+### Combining Patterns
+
+All three patterns work together seamlessly:
+
+```csharp
+public class Article : ISoftDeletable, IAuditable, ISluggable
+{
+    public int Id { get; set; }
+    public string Title { get; set; }
+    public string Content { get; set; }
+    
+    // Soft Delete (3 properties)
+    public bool IsDeleted { get; set; }
+    public DateTime? DeletedAt { get; set; }
+    public string? DeletedBy { get; set; }
+    
+    // Auditable (4 properties)
+    public DateTime CreatedAt { get; set; }
+    public string? CreatedBy { get; set; }
+    public DateTime? UpdatedAt { get; set; }
+    public string? UpdatedBy { get; set; }
+    
+    // Sluggable (1 property)
+    public string Slug { get; set; } = "";
+}
+```
+
+Apply patterns in sequence:
+```bash
+swap g pattern softdelete Article
+swap g pattern auditable Article  
+swap g pattern sluggable Article
+```
+
+Complete usage example:
+```csharp
+// Create article - auditable sets timestamps automatically
+var article = new Article 
+{ 
+    Title = "Getting Started with ASP.NET Core",
+    Content = "..."
+};
+
+// Generate SEO-friendly slug
+await article.GenerateSlugAsync(article.Title, db);
+
+// Save - CreatedAt and CreatedBy set automatically
+db.Articles.Add(article);
+await db.SaveChangesAsync();
+// article.Slug: "getting-started-with-asp-net-core"
+// article.CreatedAt: 2024-10-28 14:30:00
+// article.CreatedBy: "user@example.com"
+
+// Update - UpdatedAt and UpdatedBy set automatically
+article.Title = "Updated Title";
+await db.SaveChangesAsync();
+// article.UpdatedAt: 2024-10-28 15:45:00
+// article.UpdatedBy: "user@example.com"
+
+// Soft delete - preserve audit trail
+article.SoftDelete("admin@example.com");
+await db.SaveChangesAsync();
+// article.IsDeleted: true
+// article.DeletedAt: 2024-10-28 16:00:00
+// article.DeletedBy: "admin@example.com"
+
+// Normal queries exclude deleted
+var active = await db.Articles.ToListAsync();
+
+// Can still access for audit/recovery
+var deleted = await db.Articles
+    .IncludeDeleted()
+    .Where(a => a.IsDeleted)
+    .ToListAsync();
+```
+
+---
 
 ## Soft Delete Pattern
 

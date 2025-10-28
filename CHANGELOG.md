@@ -9,6 +9,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.9] - 2025-10-28
+
+### Added - Auditable & Sluggable Patterns
+- **Auditable Pattern**: Track entity creation and modification
+  - `IAuditable` interface with CreatedAt, CreatedBy, UpdatedAt, UpdatedBy
+  - `AuditInterceptor` for automatic timestamp/user tracking
+  - CLI command: `swap generate pattern auditable <entity>`
+  - Integration with HttpContextAccessor for user tracking
+  - Comprehensive documentation and setup guidance
+- **Sluggable Pattern**: Generate SEO-friendly URL slugs
+  - `ISluggable` interface with Slug property
+  - `SlugGenerator` utility with collision detection
+  - CLI command: `swap generate pattern sluggable <entity>`
+  - Unicode normalization and automatic slug generation
+  - Unique index configuration helpers
+- **Pattern Composition**: All three patterns (soft delete, auditable, sluggable) can be combined on the same entity
+- **Enhanced Documentation**:
+  - Updated CLI README with auditable and sluggable sections
+  - Updated wiki patterns.md with complete documentation
+  - Added "Combining Patterns" sections with examples
+  - Configuration guides for Program.cs, DbContext, interceptors
+
+### Changed
+- Expanded Swap.Patterns library from 1 to 3 production-ready patterns
+- CLI pattern command now supports: `softdelete`, `auditable`, `sluggable`
+
 ## [0.0.8] - 2025-10-28
 
 ### Added - Entity Patterns
