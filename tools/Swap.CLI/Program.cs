@@ -12,6 +12,10 @@ Examples:
   swap g r Product --fields ""Name:string Price:decimal InStock:bool""
                                           Generate full CRUD resource
   swap g seed all --count 100             Generate seeders for all entities
+  swap doctor                             Check development environment
+  swap list                               List all resources in project
+  swap db info                            Show database information
+  swap db migrate AddFeature --apply      Create and apply migration
 
 Field Flags:
   :sortable, :s       Enable sorting on this column
@@ -22,5 +26,7 @@ Field Flags:
 rootCommand.AddCommand(NewCommand.Create());
 rootCommand.AddCommand(GenerateCommand.Create());
 rootCommand.AddCommand(DatabaseCommand.Create());
+rootCommand.AddCommand(DoctorCommand.Create());
+rootCommand.AddCommand(ListCommand.Create());
 
 return await rootCommand.InvokeAsync(args);
