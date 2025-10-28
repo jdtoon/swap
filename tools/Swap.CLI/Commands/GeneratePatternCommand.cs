@@ -12,12 +12,12 @@ public static class GeneratePatternCommand
 {
     public static Command Create()
     {
-        var command = new Command("pattern", "Add common patterns to entities (softdelete, auditable, sluggable)");
+        var command = new Command("pattern", "Add common patterns to entities (softdelete, auditable, sluggable, timestampable)");
         command.AddAlias("p");
 
         var typeArg = new Argument<string>(
             name: "type",
-            description: "Pattern type: softdelete, auditable, or sluggable");
+            description: "Pattern type: softdelete, auditable, sluggable, or timestampable");
 
         var entityArg = new Argument<string>(
             name: "entity",
@@ -71,7 +71,8 @@ public static class GeneratePatternCommand
                 "softdelete" or "soft" => await ApplySoftDeleteAsync(workingDir, projectFile, entity, force),
                 "auditable" or "audit" => await ApplyAuditableAsync(workingDir, projectFile, entity, force),
                 "sluggable" or "slug" => await ApplySluggableAsync(workingDir, projectFile, entity, force),
-                _ => throw new Exception($"Unknown pattern type: {type}. Use softdelete, auditable, or sluggable")
+                "timestampable" or "timestamp" => await ApplyTimestampableAsync(workingDir, projectFile, entity, force),
+                _ => throw new Exception($"Unknown pattern type: {type}. Use softdelete, auditable, sluggable, or timestampable")
             };
         }
         catch (Exception ex)
@@ -573,6 +574,153 @@ public static class GeneratePatternCommand
 
         // Ensure Swap.Patterns package
         await EnsureSwapPatternsPackageAsync(projectFile);
+
+        return 0;
+    }
+    private static async Task<int> ApplyTimestampableAsync(string workingDir, string projectFile, string entity, bool force)
+    {
+        AnsiConsole.MarkupLine($"[cyan]Adding timestampable pattern to {entity}...[/]");
+
+        // Find entity model
+        var modelPath = Path.Combine(workingDir, "Models", $"{entity}.cs");
+        if (!File.Exists(modelPath))
+        {
+            AnsiConsole.MarkupLine($"[red]Error:[/] Model file not found: {modelPath}");
+            return 1;
+        }
+
+        // Ensure Swap.Patterns package reference
+        await EnsureSwapPatternsPackageAsync(projectFile);
+
+        // Modify the entity model
+        var modelContent = await File.ReadAllTextAsync(modelPath);
+        
+        var tree = CSharpSyntaxTree.ParseText(modelContent);
+        var root = await tree.GetRootAsync();
+
+        // Check if ITimestampable is already implemented
+        var classDeclaration = root.DescendantNodes()
+            .OfType<ClassDeclarationSyntax>()
+            .FirstOrDefault(c => c.Identifier.Text == entity);
+
+        if (classDeclaration == null)
+        {
+            AnsiConsole.MarkupLine($"[red]Error:[/] Could not find class {entity} in {modelPath}");
+            return 1;
+        }
+
+        if (classDeclaration.BaseList?.Types.Any(t => t.ToString().Contains("ITimestampable")) ?? false)
+        {
+            AnsiConsole.MarkupLine($"[yellow]Warning:[/] {entity} already implements ITimestampable");
+            return 0;
+        }
+
+        // Add using statement
+        var hasUsingDirective = root.DescendantNodes()
+            .OfType<UsingDirectiveSyntax>()
+            .Any(u => u.Name?.ToString() == "Swap.Patterns.Timestampable");
+
+        CompilationUnitSyntax newRoot = root as CompilationUnitSyntax ?? throw new InvalidOperationException();
+
+        if (!hasUsingDirective)
+        {
+            var usingDirective = SyntaxFactory.UsingDirective(
+                SyntaxFactory.ParseName("Swap.Patterns.Timestampable"))
+                .WithTrailingTrivia(SyntaxFactory.CarriageReturnLineFeed);
+
+            newRoot = newRoot.AddUsings(usingDirective);
+        }
+
+        // Find the class again in the new root
+        classDeclaration = newRoot.DescendantNodes()
+            .OfType<ClassDeclarationSyntax>()
+            .FirstOrDefault(c => c.Identifier.Text == entity);
+
+        if (classDeclaration == null) return 1;
+
+        // Add ITimestampable interface
+        var baseList = classDeclaration.BaseList ?? SyntaxFactory.BaseList();
+        var timestampableType = SyntaxFactory.SimpleBaseType(
+            SyntaxFactory.ParseTypeName("ITimestampable"));
+
+        var newBaseList = baseList.Types.Count == 0
+            ? SyntaxFactory.BaseList(SyntaxFactory.SingletonSeparatedList<BaseTypeSyntax>(timestampableType))
+            : baseList.AddTypes(timestampableType);
+
+        var newClassDeclaration = classDeclaration.WithBaseList(newBaseList);
+
+        // Add properties if they don't exist
+        var hasCreatedAt = classDeclaration.Members
+            .OfType<PropertyDeclarationSyntax>()
+            .Any(p => p.Identifier.Text == "CreatedAt");
+
+        var hasUpdatedAt = classDeclaration.Members
+            .OfType<PropertyDeclarationSyntax>()
+            .Any(p => p.Identifier.Text == "UpdatedAt");
+
+        if (!hasCreatedAt || !hasUpdatedAt)
+        {
+            var properties = new[]
+            {
+                ("CreatedAt", "DateTime"),
+                ("UpdatedAt", "DateTime")
+            };
+
+            var newMembers = new List<MemberDeclarationSyntax>();
+            for (int i = 0; i < properties.Length; i++)
+            {
+                var (name, type) = properties[i];
+                var hasProperty = classDeclaration.Members
+                    .OfType<PropertyDeclarationSyntax>()
+                    .Any(p => p.Identifier.Text == name);
+
+                if (!hasProperty)
+                {
+                    var prop = SyntaxFactory.PropertyDeclaration(
+                        SyntaxFactory.ParseTypeName(type),
+                        name)
+                        .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword))
+                        .AddAccessorListAccessors(
+                            SyntaxFactory.AccessorDeclaration(SyntaxKind.GetAccessorDeclaration)
+                                .WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken)),
+                            SyntaxFactory.AccessorDeclaration(SyntaxKind.SetAccessorDeclaration)
+                                .WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken))
+                        );
+
+                    // Add comment before first property
+                    if (i == 0)
+                    {
+                        prop = prop.WithLeadingTrivia(
+                            SyntaxFactory.CarriageReturnLineFeed,
+                            SyntaxFactory.Comment("    // ITimestampable properties"),
+                            SyntaxFactory.CarriageReturnLineFeed
+                        );
+                    }
+
+                    newMembers.Add(prop);
+                }
+            }
+
+            newClassDeclaration = newClassDeclaration.AddMembers(newMembers.ToArray());
+        }
+
+        // Replace the old class with the new one
+        newRoot = newRoot.ReplaceNode(classDeclaration, newClassDeclaration);
+
+        // Write back to file with proper formatting
+        var formattedCode = newRoot.NormalizeWhitespace().ToFullString();
+        await File.WriteAllTextAsync(modelPath, formattedCode);
+
+        AnsiConsole.MarkupLine($"[green]✓[/] Added ITimestampable to {entity}");
+        AnsiConsole.MarkupLine($"\n[yellow]Next steps:[/]");
+        AnsiConsole.MarkupLine($"1. Add the interceptor to your DbContext:");
+        AnsiConsole.MarkupLine($"   [grey]protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)[/]");
+        AnsiConsole.MarkupLine($"   [grey]{{[/]");
+        AnsiConsole.MarkupLine($"   [grey]    optionsBuilder.AddInterceptors(new TimestampInterceptor());[/]");
+        AnsiConsole.MarkupLine($"   [grey]}}[/]");
+        AnsiConsole.MarkupLine($"\n2. Create and run migration:");
+        AnsiConsole.MarkupLine($"   [grey]dotnet ef migrations add AddTimestampableTo{entity}[/]");
+        AnsiConsole.MarkupLine($"   [grey]dotnet ef database update[/]");
 
         return 0;
     }
