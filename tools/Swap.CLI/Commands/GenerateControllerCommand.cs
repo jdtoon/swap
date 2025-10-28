@@ -20,17 +20,35 @@ public static class GenerateControllerCommand
             description: "Field definitions (e.g., 'Title:string Description:string? Priority:int')");
         command.AddOption(fieldsOption);
         
+        var dryRunOption = new Option<bool>(
+            aliases: new[] { "--dry-run" },
+            description: "Preview what would be generated without writing files");
+        command.AddOption(dryRunOption);
+        
+        var forceOption = new Option<bool>(
+            aliases: new[] { "--force" },
+            description: "Overwrite existing files without prompting");
+        command.AddOption(forceOption);
+        
+        var projectOption = new Option<string?>(
+            aliases: new[] { "--project", "-p" },
+            description: "Path to project directory (default: current directory)");
+        command.AddOption(projectOption);
+        
         command.SetHandler(async (InvocationContext context) =>
         {
             var name = context.ParseResult.GetValueForArgument(nameArg);
             var fields = context.ParseResult.GetValueForOption(fieldsOption);
-            context.ExitCode = await ExecuteAsync(name, fields);
+            var dryRun = context.ParseResult.GetValueForOption(dryRunOption);
+            var force = context.ParseResult.GetValueForOption(forceOption);
+            var projectPath = context.ParseResult.GetValueForOption(projectOption);
+            context.ExitCode = await ExecuteAsync(name, fields, dryRun, force, projectPath);
         });
         
         return command;
     }
     
-    private static async Task<int> ExecuteAsync(string entityName, string? fieldsSpec)
+    private static async Task<int> ExecuteAsync(string entityName, string? fieldsSpec, bool dryRun, bool force, string? projectPath)
     {
         // Validate entity name
         if (string.IsNullOrWhiteSpace(entityName))
@@ -64,18 +82,23 @@ public static class GenerateControllerCommand
             return 1;
         }
         
+        // Resolve working directory
+        var workingDir = !string.IsNullOrEmpty(projectPath)
+            ? Path.GetFullPath(projectPath)
+            : Directory.GetCurrentDirectory();
+        
         // Check if we're in a project directory
-        var projectFiles = Directory.GetFiles(Directory.GetCurrentDirectory(), "*.csproj");
+        var projectFiles = Directory.GetFiles(workingDir, "*.csproj");
         if (projectFiles.Length == 0)
         {
-            AnsiConsole.MarkupLine($"[red]Error:[/] No .csproj file found in current directory. Run this command from your project root.");
+            AnsiConsole.MarkupLine($"[red]Error:[/] No .csproj file found in {workingDir}. Run this command from your project root.");
             return 1;
         }
         
         var projectFile = projectFiles[0];
         var projectName = Path.GetFileNameWithoutExtension(projectFile);
         
-        AnsiConsole.MarkupLine($"[bold cyan]Generating CRUD controller:[/] {entityName}");
+        AnsiConsole.MarkupLine($"[bold cyan]{(dryRun ? "Preview" : "Generating")} CRUD controller:[/] {entityName}");
         AnsiConsole.MarkupLine($"[dim]Project:[/] {projectName}");
         if (fields.Any())
         {
@@ -85,7 +108,30 @@ public static class GenerateControllerCommand
         
         try
         {
-            await GenerateControllerAsync(entityName, projectName, fields);
+            // Handle dry-run mode
+            if (dryRun)
+            {
+                AnsiConsole.MarkupLine("[yellow]ℹ[/] Dry-run mode for controllers would generate:");
+                AnsiConsole.MarkupLine($"  • Controllers/{entityName}Controller.cs");
+                if (fields.Any())
+                {
+                    AnsiConsole.MarkupLine($"  • Models/{entityName}.cs");
+                }
+                AnsiConsole.MarkupLine($"  • ViewModels/{entityName}ListViewModel.cs");
+                AnsiConsole.MarkupLine($"  • Views/{entityName}/Index.cshtml");
+                AnsiConsole.MarkupLine($"  • Views/{entityName}/_{entityName}List.cshtml");
+                AnsiConsole.MarkupLine($"  • Views/{entityName}/_{entityName}CreateModal.cshtml");
+                AnsiConsole.MarkupLine($"  • Views/{entityName}/_{entityName}EditModal.cshtml");
+                AnsiConsole.MarkupLine($"  • Views/{entityName}/_{entityName}Details.cshtml");
+                AnsiConsole.MarkupLine($"  • Views/{entityName}/_{entityName}Form.cshtml");
+                AnsiConsole.MarkupLine($"  • Views/Shared/_PaginationControls.cshtml");
+                AnsiConsole.WriteLine();
+                AnsiConsole.MarkupLine("[yellow]ℹ[/] Dry-run mode - no files were modified");
+                AnsiConsole.MarkupLine("[dim]Note:[/] Use [cyan]swap g m {entityName} -f \"...\" --dry-run[/] to preview individual files");
+                return 0;
+            }
+            
+            await GenerateControllerAsync(entityName, projectName, fields, force);
             
             AnsiConsole.WriteLine();
             AnsiConsole.MarkupLine("[green]✓[/] Controller generated successfully!");
@@ -119,13 +165,27 @@ public static class GenerateControllerCommand
         }
     }
     
-    private static async Task GenerateControllerAsync(string entityName, string projectName, List<FieldDefinition> fields)
+    private static async Task GenerateControllerAsync(string entityName, string projectName, List<FieldDefinition> fields, bool force)
     {
         var templatePath = Path.Combine(AppContext.BaseDirectory, "templates", "generate", "controller");
         
         if (!Directory.Exists(templatePath))
         {
             throw new DirectoryNotFoundException($"Template directory not found: {templatePath}");
+        }
+        
+        // Check for existing files if not forcing
+        if (!force)
+        {
+            var controllerFile = Path.Combine("Controllers", $"{entityName}Controller.cs");
+            if (File.Exists(controllerFile))
+            {
+                var overwrite = AnsiConsole.Confirm($"[yellow]File already exists:[/] {controllerFile}\nOverwrite all controller files?", false);
+                if (!overwrite)
+                {
+                    throw new OperationCanceledException("Controller generation cancelled by user");
+                }
+            }
         }
         
         // Generate field-specific content

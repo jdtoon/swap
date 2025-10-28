@@ -17,20 +17,38 @@ public static class GenerateResourceCommand
             aliases: new[] { "--fields", "-f" },
             description: "Space- or comma-separated field definitions (e.g., Name:string Email:string Age:int)");
         
+        var dryRunOption = new Option<bool>(
+            aliases: new[] { "--dry-run" },
+            description: "Preview what would be generated without writing files");
+        
+        var forceOption = new Option<bool>(
+            aliases: new[] { "--force" },
+            description: "Overwrite existing files without prompting");
+        
+        var projectOption = new Option<string?>(
+            aliases: new[] { "--project", "-p" },
+            description: "Path to project directory (default: current directory)");
+        
         command.AddArgument(nameArg);
         command.AddOption(fieldsOption);
+        command.AddOption(dryRunOption);
+        command.AddOption(forceOption);
+        command.AddOption(projectOption);
         
         command.SetHandler(async (InvocationContext context) =>
         {
             var name = context.ParseResult.GetValueForArgument(nameArg);
             var fields = context.ParseResult.GetValueForOption(fieldsOption);
-            context.ExitCode = await ExecuteAsync(name, fields);
+            var dryRun = context.ParseResult.GetValueForOption(dryRunOption);
+            var force = context.ParseResult.GetValueForOption(forceOption);
+            var projectPath = context.ParseResult.GetValueForOption(projectOption);
+            context.ExitCode = await ExecuteAsync(name, fields, dryRun, force, projectPath);
         });
         
         return command;
     }
     
-    private static async Task<int> ExecuteAsync(string entityName, string? fieldsSpec)
+    private static async Task<int> ExecuteAsync(string entityName, string? fieldsSpec, bool dryRun, bool force, string? projectPath)
     {
         // Validate entity name
         if (string.IsNullOrWhiteSpace(entityName))
@@ -52,23 +70,43 @@ public static class GenerateResourceCommand
             AnsiConsole.MarkupLine($"[dim]Using:[/] {entityName}");
         }
         
+        // Resolve working directory
+        var workingDir = !string.IsNullOrEmpty(projectPath)
+            ? Path.GetFullPath(projectPath)
+            : Directory.GetCurrentDirectory();
+        
         // Check if we're in a project directory
-        var projectFiles = Directory.GetFiles(Directory.GetCurrentDirectory(), "*.csproj");
+        var projectFiles = Directory.GetFiles(workingDir, "*.csproj");
         if (projectFiles.Length == 0)
         {
-            AnsiConsole.MarkupLine($"[red]Error:[/] No .csproj file found in current directory. Run this command from your project root.");
+            AnsiConsole.MarkupLine($"[red]Error:[/] No .csproj file found in {workingDir}. Run this command from your project root.");
             return 1;
         }
         
         var projectFile = projectFiles[0];
         var projectName = Path.GetFileNameWithoutExtension(projectFile);
         
-        AnsiConsole.MarkupLine($"[bold cyan]Generating complete resource:[/] {entityName}");
+        AnsiConsole.MarkupLine($"[bold cyan]{(dryRun ? "Preview" : "Generating")} complete resource:[/] {entityName}");
         AnsiConsole.MarkupLine($"[dim]Project:[/] {projectName}");
         AnsiConsole.WriteLine();
         
         try
         {
+            // Handle dry-run mode
+            if (dryRun)
+            {
+                AnsiConsole.MarkupLine("[yellow]ℹ[/] Dry-run mode would generate a complete resource:");
+                AnsiConsole.MarkupLine("  [cyan]Step 1/2:[/] Model generation");
+                AnsiConsole.MarkupLine($"    • Models/{entityName}.cs");
+                AnsiConsole.MarkupLine("  [cyan]Step 2/2:[/] Controller generation");
+                AnsiConsole.MarkupLine($"    • Controllers/{entityName}Controller.cs");
+                AnsiConsole.MarkupLine($"    • ViewModels/{entityName}ListViewModel.cs");
+                AnsiConsole.MarkupLine($"    • Views/{entityName}/ (multiple view files)");
+                AnsiConsole.WriteLine();
+                AnsiConsole.MarkupLine("[yellow]ℹ[/] Dry-run mode - no files were modified");
+                return 0;
+            }
+            
             // Step 1: Generate the model (call directly without spinner to avoid Spectre conflicts)
             AnsiConsole.MarkupLine("[cyan]Step 1/2:[/] Generating model...");
             
@@ -79,7 +117,7 @@ public static class GenerateResourceCommand
             
             if (executeMethod != null)
             {
-                var task = (Task<int>)executeMethod.Invoke(null, new object?[] { entityName, fieldsSpec })!;
+                var task = (Task<int>)executeMethod.Invoke(null, new object?[] { entityName, fieldsSpec, false, force, projectPath })!;
                 var modelResult = await task;
                 
                 if (modelResult != 0)
@@ -100,7 +138,7 @@ public static class GenerateResourceCommand
             
             if (executeMethod != null)
             {
-                var task = (Task<int>)executeMethod.Invoke(null, new object?[] { entityName, fieldsSpec })!;
+                var task = (Task<int>)executeMethod.Invoke(null, new object?[] { entityName, fieldsSpec, false, force, projectPath })!;
                 var controllerResult = await task;
                 
                 if (controllerResult != 0)
