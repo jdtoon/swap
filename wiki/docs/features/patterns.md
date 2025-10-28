@@ -314,6 +314,94 @@ var ordered = await db.Categories.OrderByPosition().ToListAsync();
 
 ---
 
+### Publishable
+
+Add a simple draft/published workflow with a boolean flag and published timestamp.
+
+```bash
+swap g pattern publishable Article
+```
+
+**When to use:**
+- Content that should be hidden until ready (blog posts, docs, products)
+- Scheduled or manual publishing flows
+- Lightweight alternative to complex workflow engines
+
+**Quick start:**
+
+1. Apply pattern:
+```bash
+swap g p publishable Article
+```
+
+2. Use helpers and queries:
+```csharp
+// Publish now (sets IsPublished and PublishedAt = UtcNow)
+article.Publish();
+
+// Unpublish (revert to draft)
+article.Unpublish();
+
+// Query helpers
+var published = await db.Articles.Published().ToListAsync();
+var drafts = await db.Articles.Drafts().ToListAsync();
+```
+
+**What you get:**
+- `IPublishable` interface with `IsPublished`, `PublishedAt`
+- Extensions: `Publish()`, `Unpublish()`, `Published()`, `Drafts()`, `PublishedAfter()`, `PublishedBefore()`
+
+---
+
+### Versionable
+
+Track and increment a simple integer version on every update via an EF Core interceptor.
+
+```bash
+swap g pattern versionable Document
+```
+
+**When to use:**
+- You need optimistic version counters without full change history
+- Displaying revision numbers to users (v1, v2, v3)
+- Lightweight alternative to snapshot/version-history systems
+
+**Quick start:**
+
+1. Apply pattern:
+```bash
+swap g p versionable Document
+```
+
+2. Configure version interceptor in DbContext:
+```csharp
+using Swap.Patterns.Versionable;
+
+protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+{
+    optionsBuilder.AddInterceptors(new VersionInterceptor());
+}
+```
+
+3. Use in code:
+```csharp
+var doc = new Document { Title = "Draft" };
+db.Documents.Add(doc);
+await db.SaveChangesAsync();
+// doc.Version == 1
+
+doc.Title = "Draft (edited)";
+await db.SaveChangesAsync();
+// doc.Version == 2
+```
+
+**What you get:**
+- `IVersionable` interface with `Version` property
+- `VersionInterceptor` to initialize and increment the version
+- Query helpers: `.WithMinVersion(n)`, `.WithVersion(n)`, `.OrderByVersion()`
+
+---
+
 ### Combining Patterns
 
 You can mix and match compatible patterns. Do not combine Auditable and Timestampable together (both define `CreatedAt`/`UpdatedAt`).

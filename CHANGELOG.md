@@ -9,6 +9,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.12] - 2025-10-28
+
+### Added - Versionable Pattern
+- **Versionable Pattern**: Automatic integer versioning on save
+  - `IVersionable` interface with `Version`
+  - `VersionInterceptor` initializes and increments version
+  - Query helpers: `WithMinVersion()`, `WithVersion()`, `OrderByVersion()`
+  - CLI command: `swap generate pattern versionable <entity>` with aliases
+- **New Tests**: Added 3 tests covering initialization, increment, and query helpers
+- **Docs**:
+  - CLI README: added Versionable section
+  - Wiki `features/patterns.md`: added Versionable guide
+
+## [0.0.11] - 2025-10-28
+
+### Added - Publishable Pattern
+- **Publishable Pattern**: Draft/Published workflow
+  - `IPublishable` interface with `IsPublished`, `PublishedAt`
+  - Extensions: `Publish()`, `Unpublish()`, `Published()`, `Drafts()`, `PublishedAfter()`, `PublishedBefore()`
+  - CLI command: `swap generate pattern publishable <entity>`
+- **New Tests**: Added 3 tests for Publishable behavior (publish/unpublish and query helpers)
+- **Docs**:
+  - CLI README: added Publishable section
+  - Wiki `features/patterns.md`: added Publishable guide
+
+### Changed
+- Pattern command help now mentions `publishable`
+
 ## [0.0.10] - 2025-10-28
 
 ### Added - Timestampable & Orderable Patterns

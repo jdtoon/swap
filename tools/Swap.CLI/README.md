@@ -651,6 +651,106 @@ var ordered = await _db.Categories.OrderByPosition().ToListAsync();
 
 ---
 
+### `swap generate pattern publishable <entity>`
+
+Add a draft/published workflow to your entity with a simple boolean flag and timestamp.
+
+```bash
+# Add publishable to Article entity
+swap g pattern publishable Article
+
+# Short aliases
+swap g p publish Article
+```
+
+**What it does:**
+1. Adds `IPublishable` interface to your entity
+2. Adds two properties: `IsPublished`, `PublishedAt`
+3. Adds using statement for `Swap.Patterns.Publishable`
+4. Ensures `Swap.Patterns` package reference
+
+**After generation:**
+```csharp
+public class Article : IPublishable
+{
+    public int Id { get; set; }
+    public string Title { get; set; }
+    
+    // IPublishable properties
+    public bool IsPublished { get; set; }
+    public DateTime? PublishedAt { get; set; }
+}
+```
+
+**Usage:**
+```csharp
+// Publish now (sets IsPublished and PublishedAt = UtcNow)
+article.Publish();
+
+// Unpublish (revert to draft)
+article.Unpublish();
+
+// Query helpers
+var published = await _db.Articles.Published().ToListAsync();
+var drafts = await _db.Articles.Drafts().ToListAsync();
+```
+
+---
+
+### `swap generate pattern versionable <entity>`
+
+Track and increment a simple integer `Version` on every update.
+
+```bash
+# Add versionable to Document entity
+swap g pattern versionable Document
+
+# Short aliases
+swap g p version Document
+```
+
+**What it does:**
+1. Adds `IVersionable` interface to your entity
+2. Adds one property: `Version` (int)
+3. Adds using statement for `Swap.Patterns.Versionable`
+4. Ensures `Swap.Patterns` package reference
+
+**After generation:**
+```csharp
+public class Document : IVersionable
+{
+    public int Id { get; set; }
+    public string Title { get; set; }
+    
+    // IVersionable properties
+    public int Version { get; set; }
+}
+```
+
+**Next steps:**
+1. Configure version interceptor in your `DbContext`:
+```csharp
+using Swap.Patterns.Versionable;
+
+protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+{
+    optionsBuilder.AddInterceptors(new VersionInterceptor());
+}
+```
+
+2. Create and apply migration:
+```bash
+dotnet ef migrations add AddVersionToDocument
+dotnet ef database update
+```
+
+**How it works:**
+- Sets `Version = 1` on insert if not already set
+- Increments `Version` on every update (save)
+- Query helpers: `.WithMinVersion(n)`, `.WithVersion(n)`, `.OrderByVersion()`
+
+---
+
 ### Combining Patterns
 
 You can mix and match compatible patterns on the same entity. Do not combine Auditable and Timestampable together (both define CreatedAt/UpdatedAt).

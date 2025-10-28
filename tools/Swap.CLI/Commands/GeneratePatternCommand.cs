@@ -12,12 +12,12 @@ public static class GeneratePatternCommand
 {
     public static Command Create()
     {
-    var command = new Command("pattern", "Add common patterns to entities (softdelete, auditable, sluggable, timestampable, orderable)");
+    var command = new Command("pattern", "Add common patterns to entities (softdelete, auditable, sluggable, timestampable, orderable, publishable, versionable)");
         command.AddAlias("p");
 
         var typeArg = new Argument<string>(
             name: "type",
-            description: "Pattern type: softdelete, auditable, sluggable, timestampable, or orderable");
+            description: "Pattern type: softdelete, auditable, sluggable, timestampable, orderable, publishable, or versionable");
 
         var entityArg = new Argument<string>(
             name: "entity",
@@ -73,7 +73,9 @@ public static class GeneratePatternCommand
                 "sluggable" or "slug" => await ApplySluggableAsync(workingDir, projectFile, entity, force),
                 "timestampable" or "timestamp" => await ApplyTimestampableAsync(workingDir, projectFile, entity, force),
                 "orderable" or "order" => await ApplyOrderableAsync(workingDir, projectFile, entity, force),
-                _ => throw new Exception($"Unknown pattern type: {type}. Use softdelete, auditable, sluggable, timestampable, or orderable")
+                "publishable" or "publish" or "pub" => await ApplyPublishableAsync(workingDir, projectFile, entity, force),
+                "versionable" or "version" or "ver" => await ApplyVersionableAsync(workingDir, projectFile, entity, force),
+                _ => throw new Exception($"Unknown pattern type: {type}. Use softdelete, auditable, sluggable, timestampable, orderable, publishable, or versionable")
             };
         }
         catch (Exception ex)
@@ -865,5 +867,194 @@ public static class GeneratePatternCommand
                 AnsiConsole.MarkupLine($"[green]✓[/] Swap.Patterns package added");
             }
         }
+    }
+
+    private static async Task<int> ApplyPublishableAsync(string workingDir, string projectFile, string entity, bool force)
+    {
+        AnsiConsole.MarkupLine($"[cyan]Adding publishable pattern to {entity}...[/]");
+
+        // Find entity model
+        var modelPath = Path.Combine(workingDir, "Models", $"{entity}.cs");
+        if (!File.Exists(modelPath))
+        {
+            AnsiConsole.MarkupLine($"[red]Error:[/] Model file not found: {modelPath}");
+            return 1;
+        }
+
+        // Ensure Swap.Patterns package reference
+        await EnsureSwapPatternsPackageAsync(projectFile);
+
+        // Modify the entity model
+        var code = await File.ReadAllTextAsync(modelPath);
+        var tree = CSharpSyntaxTree.ParseText(code);
+        var root = await tree.GetRootAsync() as CompilationUnitSyntax ?? throw new InvalidOperationException();
+
+        // Locate class
+        var classDecl = root.DescendantNodes().OfType<ClassDeclarationSyntax>().FirstOrDefault(c => c.Identifier.Text == entity);
+        if (classDecl == null)
+        {
+            AnsiConsole.MarkupLine($"[red]Error:[/] Class {entity} not found in {modelPath}");
+            return 1;
+        }
+
+        // Add using Swap.Patterns.Publishable
+        var hasUsing = root.DescendantNodes().OfType<UsingDirectiveSyntax>().Any(u => u.Name?.ToString() == "Swap.Patterns.Publishable");
+        if (!hasUsing)
+        {
+            root = root.AddUsings(
+                SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("Swap.Patterns.Publishable"))
+                    .WithTrailingTrivia(SyntaxFactory.CarriageReturnLineFeed)
+            );
+            classDecl = root.DescendantNodes().OfType<ClassDeclarationSyntax>().First(c => c.Identifier.Text == entity);
+        }
+
+        // Ensure it implements IPublishable
+        if (!(classDecl.BaseList?.Types.Any(t => t.ToString().Contains("IPublishable")) ?? false))
+        {
+            var baseList = classDecl.BaseList ?? SyntaxFactory.BaseList();
+            var publishableType = SyntaxFactory.SimpleBaseType(SyntaxFactory.ParseTypeName("IPublishable"));
+            var newBaseList = baseList.Types.Count == 0
+                ? SyntaxFactory.BaseList(SyntaxFactory.SingletonSeparatedList<BaseTypeSyntax>(publishableType))
+                : baseList.AddTypes(publishableType);
+            classDecl = classDecl.WithBaseList(newBaseList);
+        }
+
+        // Add properties if missing
+        bool hasIsPublished = classDecl.Members.OfType<PropertyDeclarationSyntax>().Any(p => p.Identifier.Text == "IsPublished");
+        bool hasPublishedAt = classDecl.Members.OfType<PropertyDeclarationSyntax>().Any(p => p.Identifier.Text == "PublishedAt");
+
+        var newMembers = new List<MemberDeclarationSyntax>();
+        if (!hasIsPublished)
+        {
+            var prop = SyntaxFactory.PropertyDeclaration(SyntaxFactory.ParseTypeName("bool"), "IsPublished")
+                .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword))
+                .AddAccessorListAccessors(
+                    SyntaxFactory.AccessorDeclaration(SyntaxKind.GetAccessorDeclaration).WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken)),
+                    SyntaxFactory.AccessorDeclaration(SyntaxKind.SetAccessorDeclaration).WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken))
+                )
+                .WithLeadingTrivia(
+                    SyntaxFactory.CarriageReturnLineFeed,
+                    SyntaxFactory.Comment("    // IPublishable properties"),
+                    SyntaxFactory.CarriageReturnLineFeed
+                );
+            newMembers.Add(prop);
+        }
+        if (!hasPublishedAt)
+        {
+            var prop = SyntaxFactory.PropertyDeclaration(SyntaxFactory.ParseTypeName("DateTime?"), "PublishedAt")
+                .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword))
+                .AddAccessorListAccessors(
+                    SyntaxFactory.AccessorDeclaration(SyntaxKind.GetAccessorDeclaration).WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken)),
+                    SyntaxFactory.AccessorDeclaration(SyntaxKind.SetAccessorDeclaration).WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken))
+                );
+            newMembers.Add(prop);
+        }
+        if (newMembers.Count > 0)
+        {
+            classDecl = classDecl.AddMembers(newMembers.ToArray());
+        }
+
+        // Replace node and write back
+        root = root.ReplaceNode(root.DescendantNodes().OfType<ClassDeclarationSyntax>().First(c => c.Identifier.Text == entity), classDecl);
+        var formatted = root.NormalizeWhitespace().ToFullString();
+        await File.WriteAllTextAsync(modelPath, formatted);
+
+        AnsiConsole.MarkupLine($"[green]✓[/] Added IPublishable to {entity}");
+        AnsiConsole.MarkupLine($"\n[yellow]Tips:[/]");
+        AnsiConsole.MarkupLine($"- Use .Publish() / .Unpublish() helpers");
+        AnsiConsole.MarkupLine($"- Filter with .Published() / .Drafts() queries");
+        AnsiConsole.MarkupLine($"\n[yellow]Next steps:[/]");
+        AnsiConsole.MarkupLine($"1. Add migration if new properties were added:");
+        AnsiConsole.MarkupLine($"   [grey]dotnet ef migrations add AddPublishableTo{entity}[/]");
+        AnsiConsole.MarkupLine($"   [grey]dotnet ef database update[/]");
+
+        return 0;
+    }
+
+    private static async Task<int> ApplyVersionableAsync(string workingDir, string projectFile, string entity, bool force)
+    {
+        AnsiConsole.MarkupLine($"[cyan]Adding versionable pattern to {entity}...[/]");
+
+        // Find entity model
+        var modelPath = Path.Combine(workingDir, "Models", $"{entity}.cs");
+        if (!File.Exists(modelPath))
+        {
+            AnsiConsole.MarkupLine($"[red]Error:[/] Model file not found: {modelPath}");
+            return 1;
+        }
+
+        // Ensure Swap.Patterns package reference
+        await EnsureSwapPatternsPackageAsync(projectFile);
+
+        // Modify the entity model
+        var code = await File.ReadAllTextAsync(modelPath);
+        var tree = CSharpSyntaxTree.ParseText(code);
+        var root = await tree.GetRootAsync() as CompilationUnitSyntax ?? throw new InvalidOperationException();
+
+        // Locate class
+        var classDecl = root.DescendantNodes().OfType<ClassDeclarationSyntax>().FirstOrDefault(c => c.Identifier.Text == entity);
+        if (classDecl == null)
+        {
+            AnsiConsole.MarkupLine($"[red]Error:[/] Class {entity} not found in {modelPath}");
+            return 1;
+        }
+
+        // Add using Swap.Patterns.Versionable
+        var hasUsing = root.DescendantNodes().OfType<UsingDirectiveSyntax>().Any(u => u.Name?.ToString() == "Swap.Patterns.Versionable");
+        if (!hasUsing)
+        {
+            root = root.AddUsings(
+                SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("Swap.Patterns.Versionable"))
+                    .WithTrailingTrivia(SyntaxFactory.CarriageReturnLineFeed)
+            );
+            classDecl = root.DescendantNodes().OfType<ClassDeclarationSyntax>().First(c => c.Identifier.Text == entity);
+        }
+
+        // Ensure it implements IVersionable
+        if (!(classDecl.BaseList?.Types.Any(t => t.ToString().Contains("IVersionable")) ?? false))
+        {
+            var baseList = classDecl.BaseList ?? SyntaxFactory.BaseList();
+            var versionableType = SyntaxFactory.SimpleBaseType(SyntaxFactory.ParseTypeName("IVersionable"));
+            var newBaseList = baseList.Types.Count == 0
+                ? SyntaxFactory.BaseList(SyntaxFactory.SingletonSeparatedList<BaseTypeSyntax>(versionableType))
+                : baseList.AddTypes(versionableType);
+            classDecl = classDecl.WithBaseList(newBaseList);
+        }
+
+        // Add Version property if missing
+        bool hasVersion = classDecl.Members.OfType<PropertyDeclarationSyntax>().Any(p => p.Identifier.Text == "Version");
+        if (!hasVersion)
+        {
+            var prop = SyntaxFactory.PropertyDeclaration(SyntaxFactory.ParseTypeName("int"), "Version")
+                .AddModifiers(SyntaxFactory.Token(SyntaxKind.PublicKeyword))
+                .AddAccessorListAccessors(
+                    SyntaxFactory.AccessorDeclaration(SyntaxKind.GetAccessorDeclaration).WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken)),
+                    SyntaxFactory.AccessorDeclaration(SyntaxKind.SetAccessorDeclaration).WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken))
+                )
+                .WithLeadingTrivia(
+                    SyntaxFactory.CarriageReturnLineFeed,
+                    SyntaxFactory.Comment("    // IVersionable properties"),
+                    SyntaxFactory.CarriageReturnLineFeed
+                );
+            classDecl = classDecl.AddMembers(prop);
+        }
+
+        // Replace node and write back
+        root = root.ReplaceNode(root.DescendantNodes().OfType<ClassDeclarationSyntax>().First(c => c.Identifier.Text == entity), classDecl);
+        var formatted = root.NormalizeWhitespace().ToFullString();
+        await File.WriteAllTextAsync(modelPath, formatted);
+
+        AnsiConsole.MarkupLine($"[green]✓[/] Added IVersionable to {entity}");
+        AnsiConsole.MarkupLine($"\n[yellow]Next steps:[/]");
+        AnsiConsole.MarkupLine($"1. Add the interceptor to your DbContext:");
+        AnsiConsole.MarkupLine($"   [grey]protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)[/]");
+        AnsiConsole.MarkupLine($"   [grey]{{[/]");
+        AnsiConsole.MarkupLine($"   [grey]    optionsBuilder.AddInterceptors(new VersionInterceptor());[/]");
+        AnsiConsole.MarkupLine($"   [grey]}}[/]");
+        AnsiConsole.MarkupLine($"\n2. Create and run migration:");
+        AnsiConsole.MarkupLine($"   [grey]dotnet ef migrations add AddVersionableTo{entity}[/]");
+        AnsiConsole.MarkupLine($"   [grey]dotnet ef database update[/]");
+
+        return 0;
     }
 }
