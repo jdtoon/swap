@@ -320,6 +320,81 @@ public class PostControllerTests : IClassFixture<HtmxTestFixture<Program>>
 - [Testing Framework Wiki](https://jdtoon.github.io/swap/docs/features/testing-framework)
 - Demo app: `testApps/HtmxTestingDemo/`
 
+## 🧩 Swap.Patterns (Common Entity Patterns)
+
+Add battle-tested patterns to your entities with single commands.
+
+### `swap generate pattern softdelete <entity>`
+
+Add soft delete functionality to any entity. Deleted records are hidden from queries but remain in the database.
+
+```bash
+# Add soft delete to Post entity
+swap g pattern softdelete Post
+
+# Short aliases
+swap g p soft Post
+```
+
+**What it does:**
+1. Adds `ISoftDeletable` interface to your entity
+2. Adds three properties: `IsDeleted`, `DeletedAt`, `DeletedBy`
+3. Adds using statement for `Swap.Patterns.SoftDelete`
+4. Ensures `Swap.Patterns` package reference
+
+**After generation:**
+```csharp
+public class Post : ISoftDeletable
+{
+    public int Id { get; set; }
+    public string Title { get; set; }
+    
+    // ISoftDeletable properties
+    public bool IsDeleted { get; set; }
+    public DateTime? DeletedAt { get; set; }
+    public string? DeletedBy { get; set; }
+}
+```
+
+**Next steps:**
+1. Configure query filter in your `DbContext`:
+```csharp
+protected override void OnModelCreating(ModelBuilder modelBuilder)
+{
+    modelBuilder.ConfigureSoftDeleteFilter();
+}
+```
+
+2. Create and apply migration:
+```bash
+dotnet ef migrations add AddSoftDeleteToPost
+dotnet ef database update
+```
+
+**Usage in code:**
+```csharp
+// Soft delete
+post.SoftDelete("user@example.com");
+await db.SaveChangesAsync();
+
+// Restore
+post.Restore();
+await db.SaveChangesAsync();
+
+// Query only deleted
+var deleted = await db.Posts.OnlyDeleted().ToListAsync();
+
+// Include deleted in results
+var all = await db.Posts.IncludeDeleted().ToListAsync();
+
+// Normal queries automatically exclude deleted
+var active = await db.Posts.ToListAsync();
+```
+
+**See also:**
+- [Swap.Patterns Library Guide](../framework/Swap.Patterns/README.md)
+- [Soft Delete Pattern Wiki](https://jdtoon.github.io/swap/docs/features/patterns)
+
 
 ```bash
 swap g r BlogPost --fields "Title:string Content:string PublishedDate:DateTime"
