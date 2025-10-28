@@ -198,6 +198,128 @@ swap g m Category --fields "Name:string" --project path/to/project
 ### `swap generate resource <name> --fields <fields>`
 
 Generate model + controller together (alias for backward compatibility).
+### `swap generate test <controller>`
+
+Generate an integration test class scaffold for a controller using Swap.Testing.
+
+```bash
+# Generate tests for TodoItemController
+swap g test TodoItem
+
+# Short alias
+swap g t TodoItem
+
+# Force overwrite
+swap g test TodoItem --force
+
+# Specify project/output
+swap g test TodoItem --project path/to/project --output Tests
+```
+
+**Options:**
+- `--force, -f` Overwrite existing file
+- `--project, -p` Path to project (default: current dir)
+- `--output, -o` Output folder (default: `Tests/`)
+
+**What it generates:**
+- `<Output>/<ControllerName>Tests.cs` with HTMX partial assertions
+- Common test scenarios: index partial, create/edit forms, snapshot example
+- References `Swap.Testing` package
+
+**Example test:**
+```csharp
+[Fact]
+public async Task Index_AsHtmx_ReturnsPartial()
+{
+    var resp = await _client.HtmxGetAsync("/todos");
+    resp.AssertSuccess();
+    await resp.AssertPartialViewAsync();
+    await resp.AssertElementCountAsync(".todo-item", 3);
+}
+```
+
+### `swap generate factory <entity>`
+
+Generate a Bogus-powered test data factory for an entity model.
+
+```bash
+# Generate a factory from Models/Post.cs
+swap g factory Post
+
+# Short alias
+swap g f Post
+
+# Force overwrite
+swap g factory Post --force
+
+# Specify project/output
+swap g factory Post --project path/to/project --output Tests/Factories
+```
+
+**Options:**
+- `--force` Overwrite existing file
+- `--project, -p` Path to project (default: current dir)
+- `--output, -o` Output folder (default: `Tests/Factories/`)
+
+**What it generates:**
+- `<Output>/<Entity>Factory.cs` with intelligent property mappings
+- Bogus rules based on property names (Email → f.Internet.Email(), etc.)
+- Navigation properties skipped
+- Nullable type support
+
+**Example factory:**
+```csharp
+public static class PostFactory
+{
+    public static Post Generate()
+    {
+        var faker = new Faker<Post>()
+            .RuleFor(p => p.Title, f => f.Lorem.Sentence())
+            .RuleFor(p => p.Body, f => f.Lorem.Paragraphs(2))
+            .RuleFor(p => p.PublishedAt, f => f.Date.Past());
+        return faker.Generate();
+    }
+}
+```
+
+> If Bogus/Swap.Testing packages are missing, the CLI prints the commands to install them.
+
+## 🧪 Swap.Testing (HTMX Testing Framework)
+
+A fluent testing library purpose-built for HTMX applications, included with Swap.
+
+**Key Features:**
+- 🎯 **HTMX-Aware Client** - `HtmxGetAsync`, `HtmxPostAsync` with automatic HX-Request headers
+- 🔍 **Rich Assertions** - `AssertPartialViewAsync`, `AssertHxGetAsync`, `AssertHxTriggered`
+- 📸 **Snapshot Testing** - `AssertMatchesSnapshotAsync` with `UPDATE_SNAPSHOTS=true`
+- ✅ **Validation Helpers** - `AssertHasValidationErrorsAsync`, `AssertFieldValidationErrorAsync`
+- 🔄 **Form Helpers** - `SubmitFormAsync`, `FollowHxRedirectAsync`
+- 🧹 **Snapshot Scrubbers** - Auto-replace GUIDs/timestamps/tokens for stable snapshots
+
+**Quick Example:**
+```csharp
+public class PostControllerTests : IClassFixture<HtmxTestFixture<Program>>
+{
+    private readonly HtmxTestClient<Program> _client;
+    public PostControllerTests(HtmxTestFixture<Program> fixture) => _client = fixture.Client;
+
+    [Fact]
+    public async Task Create_Form_IsPartial_WithHtmxAttributes()
+    {
+        var resp = await _client.HtmxGetAsync("/posts/create");
+        resp.AssertSuccess();
+        await resp.AssertPartialViewAsync();
+        await resp.AssertHxPostAsync("form", "/posts");
+        await resp.AssertHxTargetAsync("form", "#post-list");
+    }
+}
+```
+
+**See also:**
+- [Swap.Testing Framework Guide](../framework/Swap.Testing/README.md)
+- [Testing Framework Wiki](https://jdtoon.github.io/swap/docs/features/testing-framework)
+- Demo app: `testApps/HtmxTestingDemo/`
+
 
 ```bash
 swap g r BlogPost --fields "Title:string Content:string PublishedDate:DateTime"

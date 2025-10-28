@@ -294,6 +294,55 @@ swap g m Category --fields "Name:string" --project path/to/project
 ### `swap generate resource <name> --fields <fields>`
 
 Generate model + controller together (alias for backward compatibility).
+### `swap generate test <controller>`
+
+Generate an integration test class scaffold for a controller using Swap.Testing.
+
+```bash
+# Generate tests for TodoItemController
+swap g test TodoItem
+
+# Overwrite without prompt
+swap g test TodoItem --force
+
+# Generate into a specific project/output folder
+swap g test TodoItem --project testApps/SeedersDemo --output Tests
+```
+
+**Options:**
+- `--force, -f` Overwrite existing file
+- `--project, -p` Path to project (default: current dir)
+- `--output, -o` Output folder (default: `Tests/`)
+
+Generates: `<Output>/<ControllerName>Tests.cs` with HTMX partial tests and a snapshot example.
+
+### `swap generate factory <entity>`
+
+Generate a Bogus-powered test data factory for an entity model.
+
+```bash
+# Generate a factory from Models/TodoItem.cs
+swap g factory TodoItem
+
+# Force overwrite
+swap g factory TodoItem --force
+```
+
+Generates: `Tests/Factories/<Entity>Factory.cs` with intelligent defaults inferred from property names and types.
+
+> Note: If Bogus/Swap.Testing packages are missing, the CLI will print the commands to add them.
+
+## 🧪 Swap.Testing (HTMX Testing Framework)
+
+Swap.Testing is a fluent testing library for asserting HTMX partials and headers.
+
+Highlights:
+- HTMX-aware client: `HtmxTestClient` with `HtmxGetAsync/PostAsync/PutAsync/DeleteAsync`
+- Fluent assertions: status, elements, attributes, HTMX headers, CSS classes, partial view detection
+- Snapshot testing via `AssertMatchesSnapshotAsync` and `UPDATE_SNAPSHOTS=true`
+
+See `framework/Swap.Testing/README.md` for full API and examples.
+
 
 ```bash
 swap g r BlogPost --fields "Title:string Content:string PublishedDate:DateTime"
