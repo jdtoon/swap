@@ -20,6 +20,7 @@ swap <command> [subcommand] [arguments] [options]
 | `swap generate model` | Generate an entity model | `g m`, `generate m` |
 | `swap generate controller` | Generate a CRUD controller | `g c`, `generate c` |
 | `swap generate resource` | Generate model + controller + views | `g r`, `generate r` |
+| `swap generate seed` | Generate database seeders | `g s`, `generate s`, `g seed` |
 
 ## Quick Examples
 
@@ -33,18 +34,32 @@ swap new MyApp
 
 ```bash
 swap g m Product --fields "Name:string Price:decimal Stock:int"
+swap g m Product --fields Name:string,Price:decimal,Stock:int
 ```
 
 ### Generate Controller
 
 ```bash
 swap g c Product --fields "Name:string Price:decimal Stock:int"
+swap g c Product --fields Name:string,Price:decimal,Stock:int
 ```
 
 ### Generate Complete Resource
 
 ```bash
 swap g r Order --fields "CustomerId:int Total:decimal OrderDate:datetime"
+swap g r Order --fields CustomerId:int,Total:decimal,OrderDate:datetime
+```
+
+### Generate Seeders
+
+```bash
+# Single entity
+swap g seed Product --count 100 --locale en --if-empty
+# All entities
+swap g seed all --count 50 --locale en --if-empty
+# Short alias
+swap g s all --count 50 --locale en --if-empty
 ```
 
 ## HTMX Integration
@@ -96,7 +111,7 @@ You can add flags to fields to control sorting and filtering behavior:
 | Flag | Short | Description | Applies To |
 |------|-------|-------------|------------|
 | `:sortable` | `:s` | Enable sorting on this column (default for most fields) | All fields |
-| `:nosort` | `:ns` | Disable sorting on this column | All fields |
+| `:nosort` or `:ns` | `:nosort`, `:ns` | Disable sorting on this column | All fields |
 | `:filterable` | `:f` | Add a filter dropdown | `bool` fields only |
 
 ### Flag Syntax
@@ -104,7 +119,9 @@ You can add flags to fields to control sorting and filtering behavior:
 Use comma-separated flags after the type:
 
 ```bash
+# Space or comma separated fields, flags after colon
 swap g r Product --fields "Name:string:s,f Price:decimal:s Stock:int:ns IsActive:bool:f"
+swap g r Product --fields Name:string:s,f,Price:decimal:s,Stock:int:ns,IsActive:bool:f
 ```
 
 This creates:
@@ -116,14 +133,14 @@ This creates:
 ### Examples
 
 ```bash
-# All fields sortable except Description
 swap g r Post --fields "Title:string:s Content:string:ns PublishedAt:datetime:s"
+swap g r Post --fields Title:string:s,Content:string:ns,PublishedAt:datetime:s
 
-# Status filter for bool
 swap g r Task --fields "Title:string Done:bool:f Priority:int:s"
+swap g r Task --fields Title:string,Done:bool:f,Priority:int:s
 
-# Combine multiple flags
 swap g r Product --fields "Name:string:s,f Price:decimal:s InStock:bool:f"
+swap g r Product --fields Name:string:s,f,Price:decimal:s,InStock:bool:f
 ```
 
 ## Common Workflows

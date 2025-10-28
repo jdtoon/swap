@@ -51,14 +51,20 @@ Define custom fields for the entity.
 
 **Format:**
 ```
-FieldName:Type[,FieldName:Type...]
+FieldName:Type[:flags] [FieldName:Type[:flags]...]
+or
+FieldName:Type[:flags],FieldName:Type[:flags],...
 ```
 
 **Examples:**
 ```bash
+# Space-separated
+swap g m Product --fields "Name:string Price:decimal Stock:int"
+# Comma-separated
 swap g m Product --fields Name:string,Price:decimal,Stock:int
-swap g m User --fields Email:string,Age:int,IsActive:bool
-swap g m Order --fields Total:decimal,OrderDate:datetime,Notes:string?
+# With flags
+swap g m Product --fields "Name:string:s,f Price:decimal:s Stock:int:ns"
+swap g m Product --fields Name:string:s,f,Price:decimal:s,Stock:int:ns
 ```
 
 **Default:** If omitted, generates a model with `Id`, `Title`, and `IsComplete` fields (Todo pattern).

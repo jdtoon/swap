@@ -139,8 +139,9 @@ swap g c Product --fields "Name:string Price:decimal InStock:bool:f"
 # With nullable fields
 swap g c Customer --fields "Name:string Email:string Notes:string?"
 
-# Control sorting and filtering per field
+# Control sorting and filtering per field (space or comma separated)
 swap g c Order --fields "OrderNumber:string:ns Total:decimal Date:DateTime Status:bool:f"
+swap g c Order --fields OrderNumber:string:ns,Total:decimal,Date:DateTime,Status:bool:f
 ```
 
 **Field Flags:**
@@ -161,6 +162,7 @@ Generate just a model class (no controller or views).
 
 ```bash
 swap g m Category --fields "Name:string Description:string?"
+swap g m Category --fields Name:string,Description:string?
 ```
 
 ### `swap generate resource <name> --fields <fields>`
@@ -169,6 +171,7 @@ Generate model + controller together (alias for backward compatibility).
 
 ```bash
 swap g r BlogPost --fields "Title:string Content:string PublishedDate:DateTime"
+swap g r BlogPost --fields Title:string,Content:string,PublishedDate:DateTime
 ```
 
 ### `swap generate seed <name>`
@@ -181,13 +184,16 @@ swap g seed Product --count 100 --locale en --if-empty
 
 # Generate seeders for all entities in your DbContext
 swap g seed all --count 50 --locale en --if-empty
+
+# Short alias
+swap g s all --count 50 --locale en --if-empty
 ```
 
 **Options:**
 - `--count` (default: 50) - Number of records to generate
 - `--locale` (default: "en") - Bogus locale (en, en_GB, de, fr, etc.)
 - `--if-empty` - Only seed when the table is empty (idempotent)
-- `--append` - Append without clearing existing records (default)
+- `--append` - Append without clearing existing records (default; not yet implemented)
 
 **What it generates:**
 - `Data/Seeders/<Entity>Seeder.cs` with smart Bogus rules based on field names
