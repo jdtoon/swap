@@ -68,4 +68,93 @@ public class PublishableTests
         Assert.Single(drafts);
         Assert.Equal("B", drafts.Single().Title);
     }
+
+    [Fact]
+    public void Publish_WithCustomTimestamp_UsesProvided()
+    {
+        var item = new Item { Title = "Scheduled" };
+        var futureDate = DateTime.UtcNow.AddDays(7);
+
+        item.Publish(futureDate);
+
+        Assert.True(item.IsPublished);
+        Assert.Equal(futureDate, item.PublishedAt);
+    }
+
+    [Fact]
+    public async Task PublishedAfter_FiltersCorrectly()
+    {
+        using var db = new TestDbContext();
+        var now = DateTime.UtcNow;
+
+        var old = new Item { Title = "Old" };
+        old.Publish(now.AddDays(-7));
+
+        var recent = new Item { Title = "Recent" };
+        recent.Publish(now.AddDays(-1));
+
+        db.Items.AddRange(old, recent);
+        await db.SaveChangesAsync();
+
+        var recentItems = await db.Items.PublishedAfter(now.AddDays(-2)).ToListAsync();
+
+        Assert.Single(recentItems);
+        Assert.Equal("Recent", recentItems.Single().Title);
+    }
+
+    [Fact]
+    public async Task PublishedBefore_FiltersCorrectly()
+    {
+        using var db = new TestDbContext();
+        var now = DateTime.UtcNow;
+
+        var old = new Item { Title = "Old" };
+        old.Publish(now.AddDays(-7));
+
+        var recent = new Item { Title = "Recent" };
+        recent.Publish(now.AddDays(-1));
+
+        db.Items.AddRange(old, recent);
+        await db.SaveChangesAsync();
+
+        var oldItems = await db.Items.PublishedBefore(now.AddDays(-2)).ToListAsync();
+
+        Assert.Single(oldItems);
+        Assert.Equal("Old", oldItems.Single().Title);
+    }
+
+    [Fact]
+    public async Task Published_ExcludesDrafts()
+    {
+        using var db = new TestDbContext();
+        var draft = new Item { Title = "Draft", IsPublished = false };
+        var published = new Item { Title = "Published" };
+        published.Publish();
+
+        db.Items.AddRange(draft, published);
+        await db.SaveChangesAsync();
+
+        var publishedItems = await db.Items.Published().ToListAsync();
+
+        Assert.Single(publishedItems);
+        Assert.Equal("Published", publishedItems.Single().Title);
+    }
+
+    [Fact]
+    public async Task Drafts_ExcludesPublished()
+    {
+        using var db = new TestDbContext();
+        var draft1 = new Item { Title = "Draft1", IsPublished = false };
+        var draft2 = new Item { Title = "Draft2", IsPublished = false };
+        var published = new Item { Title = "Published" };
+        published.Publish();
+
+        db.Items.AddRange(draft1, draft2, published);
+        await db.SaveChangesAsync();
+
+        var draftItems = await db.Items.Drafts().ToListAsync();
+
+        Assert.Equal(2, draftItems.Count);
+        Assert.All(draftItems, d => Assert.False(d.IsPublished));
+    }
 }
