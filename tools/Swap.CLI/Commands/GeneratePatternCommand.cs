@@ -459,6 +459,15 @@ public static class GeneratePatternCommand
         await UpdateProgramForHttpContextAccessorAsync(workingDir);
         await UpdateDbContextForAuditableAsync(workingDir);
 
+        // Update swap-config.json
+        try
+        {
+            var (cfg, cfgPath) = Swap.CLI.Infrastructure.SwapConfigManager.LoadOrCreate(workingDir);
+            Swap.CLI.Infrastructure.SwapConfigManager.RecordPattern(cfg, entity, "Auditable", new Dictionary<string, bool>{{"AuditInterceptor", true}, {"HttpContextAccessor", true}});
+            Swap.CLI.Infrastructure.SwapConfigManager.Save(cfg, cfgPath);
+        }
+        catch { }
+
         AnsiConsole.MarkupLine($"[green]✓[/] Auditable pattern applied successfully!");
         AnsiConsole.MarkupLine($"[cyan]Next steps:[/]");
         AnsiConsole.MarkupLine($"  1. (Optional) Update database: [grey]dotnet ef database update[/]");
@@ -868,19 +877,33 @@ public static class GeneratePatternCommand
                 dbText = dbText.Insert(braceIdx + 1, "\n    private readonly IHttpContextAccessor _httpContextAccessor;\n");
             }
 
-            // Ensure constructor overload
-            if (!dbText.Contains($"public {className}(DbContextOptions") || !dbText.Contains("IHttpContextAccessor"))
+            // Ensure constructor overload with IHttpContextAccessor parameter
+            var constructorPattern = $@"public\s+{className}\s*\([^)]*DbContextOptions[^)]*\)";
+            var constructorMatch = System.Text.RegularExpressions.Regex.Match(dbText, constructorPattern);
+            if (constructorMatch.Success && !dbText.Contains("IHttpContextAccessor httpContextAccessor"))
             {
-                var insertIdx = dbText.LastIndexOf('}');
-                if (insertIdx > 0)
+                // Replace existing constructor to add IHttpContextAccessor parameter
+                var originalCtor = constructorMatch.Value;
+                var paramPattern = @"\(([^)]*)\)";
+                var paramMatch = System.Text.RegularExpressions.Regex.Match(originalCtor, paramPattern);
+                if (paramMatch.Success)
                 {
-                    var ctor = $@"
-    public {className}(DbContextOptions options, IHttpContextAccessor httpContextAccessor) : base(options)
-    {{
-        _httpContextAccessor = httpContextAccessor;
-    }}
-";
-                    dbText = dbText.Insert(insertIdx, ctor);
+                    var existingParams = paramMatch.Groups[1].Value;
+                    var newParams = $"{existingParams}, IHttpContextAccessor httpContextAccessor";
+                    var newCtor = originalCtor.Replace(paramMatch.Value, $"({newParams})");
+                    
+                    // Find the constructor body and add assignment
+                    var ctorBodyStart = dbText.IndexOf('{', dbText.IndexOf(originalCtor));
+                    if (ctorBodyStart >= 0)
+                    {
+                        var baseCallEnd = dbText.IndexOf('\n', ctorBodyStart);
+                        if (baseCallEnd >= 0 && !dbText.Substring(ctorBodyStart, baseCallEnd - ctorBodyStart).Contains("_httpContextAccessor"))
+                        {
+                            dbText = dbText.Insert(baseCallEnd, "\n        _httpContextAccessor = httpContextAccessor;");
+                        }
+                    }
+                    
+                    dbText = dbText.Replace(originalCtor, newCtor);
                 }
             }
         }
@@ -927,6 +950,76 @@ public static class GeneratePatternCommand
 
         await File.WriteAllTextAsync(targetDbContextPath, dbText);
         AnsiConsole.MarkupLine("[green]✓[/] Wired audit interceptor in DbContext");
+    }
+
+    private static async Task UpdateDbContextForTimestampableAsync(string workingDir)
+    {
+        var dataDir = Path.Combine(workingDir, "Data");
+        if (!Directory.Exists(dataDir)) return;
+
+        var candidates = Directory.GetFiles(dataDir, "*.cs", SearchOption.AllDirectories)
+            .Where(f => File.ReadAllText(f).Contains(": DbContext") || File.ReadAllText(f).Contains("IdentityDbContext"))
+            .ToList();
+
+        if (!candidates.Any())
+        {
+            AnsiConsole.MarkupLine("[yellow]ℹ[/] No DbContext found. Skipping timestamp interceptor wiring.");
+            return;
+        }
+
+        string targetDbContextPath = candidates.Count == 1
+            ? candidates[0]
+            : Path.GetFullPath(Path.Combine(workingDir,
+                AnsiConsole.Prompt(new Spectre.Console.SelectionPrompt<string>().Title("Multiple DbContexts found. Select one to configure timestamps:").AddChoices(candidates.Select(p => Path.GetRelativePath(workingDir, p))))));
+
+        var dbText = await File.ReadAllTextAsync(targetDbContextPath);
+
+        // Ensure usings
+        if (!dbText.Contains("using Swap.Patterns.Timestampable"))
+            dbText = "using Swap.Patterns.Timestampable;\n" + dbText;
+
+        // Ensure OnConfiguring has interceptor
+        if (!dbText.Contains("OnConfiguring(DbContextOptionsBuilder optionsBuilder)"))
+        {
+            var insertIdx = dbText.LastIndexOf('}');
+            if (insertIdx > 0)
+            {
+                var snippet = @"
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+    {
+        optionsBuilder.AddInterceptors(new TimestampInterceptor());
+    }
+";
+                dbText = dbText.Insert(insertIdx, snippet);
+            }
+        }
+        else if (!dbText.Contains("new TimestampInterceptor()"))
+        {
+            var marker = "OnConfiguring(DbContextOptionsBuilder optionsBuilder)";
+            var start = dbText.IndexOf(marker);
+            if (start >= 0)
+            {
+                var braceCount = 0;
+                var blockStart = dbText.IndexOf('{', start);
+                var i = blockStart + 1;
+                for (; i < dbText.Length; i++)
+                {
+                    if (dbText[i] == '{') braceCount++;
+                    else if (dbText[i] == '}')
+                    {
+                        if (braceCount == 0) break;
+                        braceCount--;
+                    }
+                }
+                if (i < dbText.Length)
+                {
+                    dbText = dbText.Insert(i, "\n        optionsBuilder.AddInterceptors(new TimestampInterceptor());\n");
+                }
+            }
+        }
+
+        await File.WriteAllTextAsync(targetDbContextPath, dbText);
+        AnsiConsole.MarkupLine("[green]✓[/] Wired timestamp interceptor in DbContext");
     }
 
     private static async Task UpdateControllerForSluggableAsync(string workingDir, string entity)
@@ -1285,6 +1378,18 @@ public static class GeneratePatternCommand
         await File.WriteAllTextAsync(modelPath, formattedCode);
 
         AnsiConsole.MarkupLine($"[green]✓[/] Added ITimestampable to {entity}");
+
+        // Auto-wire DbContext for Timestampable interceptor
+        await UpdateDbContextForTimestampableAsync(workingDir);
+
+        // Update swap-config.json
+        try
+        {
+            var (cfg, cfgPath) = Swap.CLI.Infrastructure.SwapConfigManager.LoadOrCreate(workingDir);
+            Swap.CLI.Infrastructure.SwapConfigManager.RecordPattern(cfg, entity, "Timestampable", new Dictionary<string, bool>{{"TimestampInterceptor", true}});
+            Swap.CLI.Infrastructure.SwapConfigManager.Save(cfg, cfgPath);
+        }
+        catch { }
         
         // Create migration unless --no-migrations flag is used
         if (!noMigrations)
@@ -1296,21 +1401,14 @@ public static class GeneratePatternCommand
             AnsiConsole.MarkupLine($"[yellow]Skipping migration creation[/] (--no-migrations flag used)");
             AnsiConsole.MarkupLine($"[grey]Create migration manually:[/] dotnet ef migrations add AddTimestampableTo{entity}");
         }
-        
-        AnsiConsole.MarkupLine($"\n[yellow]Next steps:[/]");
-        AnsiConsole.MarkupLine($"1. Add the interceptor to your DbContext:");
-        AnsiConsole.MarkupLine($"   [grey]protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)[/]");
-        AnsiConsole.MarkupLine($"   [grey]{{[/]");
-        AnsiConsole.MarkupLine($"   [grey]    optionsBuilder.AddInterceptors(new TimestampInterceptor());[/]");
-        AnsiConsole.MarkupLine($"   [grey]}}[/]");
-        
-        if (noMigrations)
-        {
-            AnsiConsole.MarkupLine($"\n2. Create and run migration:");
-            AnsiConsole.MarkupLine($"   [grey]dotnet ef migrations add AddTimestampableTo{entity}[/]");
-            AnsiConsole.MarkupLine($"   [grey]dotnet ef database update[/]");
-        }
 
+        AnsiConsole.MarkupLine($"[green]✓[/] Timestampable pattern applied successfully!");
+        if (!noMigrations)
+        {
+            AnsiConsole.MarkupLine($"[cyan]Next steps:[/]");
+            AnsiConsole.MarkupLine($"  1. (Optional) Update database: [grey]dotnet ef database update[/]");
+        }
+        
         return 0;
     }
 
