@@ -2,7 +2,7 @@
 
 [![GitHub License](https://img.shields.io/github/license/jdtoon/swap)](LICENSE)
 [![.NET Version](https://img.shields.io/badge/.NET-9.0-512BD4?logo=dotnet)](https://dotnet.microsoft.com/download)
-[![NuGet](https://img.shields.io/badge/NuGet-coming_soon-blue?logo=nuget)](https://www.nuget.org/packages/Swap.CLI)
+[![NuGet](https://img.shields.io/badge/NuGet-v0.0.14--prerelease-blue?logo=nuget)](https://www.nuget.org/packages/Swap.CLI)
 [![GitHub Stars](https://img.shields.io/github/stars/jdtoon/swap?style=social)](https://github.com/jdtoon/swap/stargazers)
 
 **Generate production-ready ASP.NET Core + HTMX applications with beautiful DaisyUI components.**
@@ -74,17 +74,69 @@ Visit `http://localhost:5000` - Your HTMX-powered application is running! 🎉
 # Generate a complete CRUD controller with all features
 swap generate controller Product --fields "Name:string Price:decimal InStock:bool:f"
 
-# Short alias
-swap g c Product --fields "Name:string Price:decimal InStock:bool:f"
-
-# Update database
-dotnet ef migrations add AddProduct
-dotnet ef database update
+# Short alias with automatic navigation link
+swap g c Product --fields "Name:string Price:decimal InStock:bool:f" --add-nav
 ```
 
 Visit `http://localhost:5000/Product` - Full CRUD with pagination, search, sorting, and filtering! 🚀
 
 **No manual file creation. No boilerplate. Just CLI commands and business logic.**
+
+> **Note:** Swap automatically creates migrations after generating models or controllers. The CLI builds your project first to verify there are no compilation errors before creating the migration. If the build fails, you'll see the error output and the migration won't be created. This prevents confusing EF Core errors and helps catch issues early.
+
+## 🔒 Build-Before-Migration Safety
+
+Swap CLI uses a **build-first approach** for all migration operations to ensure code quality and prevent cryptic Entity Framework errors.
+
+### How It Works
+
+When you generate:
+- A new project (`swap new`)
+- A controller (`swap g controller`)
+- A pattern (`swap g pattern`)
+- Auth scaffolding (`swap g auth`)
+
+The CLI will:
+1. Generate your model and controller code
+2. **Build the project** (`dotnet build`)
+3. If build succeeds → Create migration (e.g., `AddProduct`, `AddIdentity`)
+4. If build fails → Show compiler errors, stop (no migration created)
+
+### Why This Matters
+
+Without building first, EF Core migrations can fail with cryptic errors like:
+- "The entity type X cannot be mapped to a table because it is derived from Y"
+- "No suitable constructor found for entity type X"
+- "Unable to determine the relationship represented by navigation X"
+
+These errors often mask simple compiler issues like:
+- Nullable reference warnings (`DateTime?` without null-conditional operators)
+- Missing using statements
+- Typos in property names
+
+By building first, you see clear C# compiler messages instead of confusing EF Core errors.
+
+### Migration Workflow
+
+Swap **never** applies migrations automatically (`dotnet ef database update`). You always control when schema changes hit your database:
+
+```bash
+# After generating a controller, Swap creates the migration
+swap g c Product --fields "Name:string Price:decimal"
+# Output: ✓ Migration created: AddProduct
+
+# Review the migration file
+cat Migrations/20250129_AddProduct.cs
+
+# Apply when ready
+dotnet ef database update
+```
+
+This gives you the opportunity to:
+- Review migration code before applying
+- Modify migrations if needed (add indexes, seed data, etc.)
+- Run migrations in your CI/CD pipeline
+- Maintain strict control over schema changes
 
 ## 🐳 Docker Support
 
@@ -195,8 +247,11 @@ Every generated controller includes:
 Create a new ASP.NET Core + HTMX application with DaisyUI components.
 
 ```bash
-# Create with SQLite (default)
+# Create with SQLite (default) - includes HTMX shell middleware
 swap new MyApp
+
+# Create without HTMX shell middleware (opt-out)
+swap new MyApp --no-htmx-shell
 
 # Create with SQL Server
 swap new MyApp --database sqlserver
@@ -205,16 +260,50 @@ swap new MyApp --database sqlserver
 swap new MyApp --database postgres
 ```
 
+**Options:**
+- `--database` or `-d` - Database provider: `sqlite` (default), `sqlserver`, `postgres`
+- `--no-htmx-shell` - Disable HTMX shell middleware (advanced use cases only)
+
 **Generates:**
 - Complete ASP.NET Core MVC project structure
 - Entity Framework Core with your chosen database
 - DaisyUI + Tailwind CSS configuration
 - Sample TodoItem model and CRUD
 - Database migrations with auto-apply on startup
+- **HTMX Shell Middleware** (default) - Enforces partial view responses for HTMX requests
+- **HTMX-First Layout** - `hx-boost="true"` on body, `id="main-content"` on main element
+- **DaisyUI Navbar** - Aligned with `navbar-start`/`navbar-end` components
 - **Dockerfile** with multi-stage build (Node.js + .NET SDK → ASP.NET runtime)
 - **docker-compose.yml** with database service and health checks
 - **.dockerignore** optimized for ASP.NET Core
 - Ready to run with `dotnet run` or `docker-compose up`
+
+**HTMX Shell Middleware:**
+
+By default, new projects include HTMX shell middleware that enforces partial view responses for HTMX requests. This prevents full page reloads when navigating with HTMX and ensures your app behaves like a SPA.
+
+The middleware checks for `HX-Request` headers and verifies responses don't include the `<html>` tag. If detected, it throws an exception with the problematic view name, helping you catch layout rendering bugs during development.
+
+Configure the allowlist in `Middleware/HtmxShellMiddleware.cs`:
+```csharp
+private static readonly HashSet<string> AllowFullPagePaths = new(StringComparer.OrdinalIgnoreCase)
+{
+    "/",           // Home page
+    "/auth/login", // Login page
+    "/auth/register"
+};
+```
+
+To disable the middleware, use `--no-htmx-shell` when creating the project.
+
+**HTMX Navigation:**
+
+All new projects are configured for HTMX-first navigation:
+- `hx-boost="true"` on the `<body>` element enables automatic AJAX navigation
+- Navigation links use `hx-target="#main-content"` to swap only the content area
+- `hx-push-url="true"` maintains browser history and back/forward navigation
+- Partials are returned for HTMX requests (via `HX-Request` header detection)
+- Controllers check `Request.Headers.ContainsKey("HX-Request")` to return partial vs full views
 
 **Docker Features:**
 - Multi-stage build optimized for production
@@ -232,8 +321,12 @@ Generate a complete CRUD controller with all features.
 # Generate Product controller with fields
 swap g c Product --fields "Name:string Price:decimal InStock:bool:f"
 
-# With nullable fields
+# With nullable fields (use ? suffix for DateTime, decimal, etc.)
 swap g c Customer --fields "Name:string Email:string Notes:string?"
+swap g c Article --fields "Title:string Content:string PublishedAt:DateTime?"
+
+# Add navigation link automatically (includes HTMX attributes)
+swap g c Product --fields "Name:string Price:decimal" --add-nav
 
 # Control sorting and filtering per field (space or comma separated)
 swap g c Order --fields "OrderNumber:string:ns Total:decimal Date:DateTime Status:bool:f"
@@ -251,6 +344,7 @@ swap g c Product --fields "Name:string" --project path/to/project
 
 **Options:**
 - `--fields` or `-f` - Field definitions (space or comma separated)
+- `--add-nav` - Automatically inject navigation link into `_Layout.cshtml` with HTMX attributes
 - `--dry-run` - Preview what would be generated without writing files
 - `--force` - Overwrite existing files without prompting
 - `--project` or `-p` - Path to project directory (default: current directory)
@@ -266,6 +360,8 @@ swap g c Product --fields "Name:string" --project path/to/project
 - View model for list operations
 - Views (Index, _List, _CreateModal, _EditModal, _DetailsModal)
 - Automatic DbContext updates
+- Database migration (`Add<Entity>` - auto-created after build verification)
+- Navigation link (when using `--add-nav`)
 
 ### `swap generate model <name> --fields <fields>`
 
@@ -294,6 +390,74 @@ swap g m Category --fields "Name:string" --project path/to/project
 ### `swap generate resource <name> --fields <fields>`
 
 Generate model + controller together (alias for backward compatibility).
+
+### `swap generate auth`
+
+Generate ASP.NET Core Identity authentication scaffolding with login, registration, and user management.
+
+```bash
+# Generate complete auth system
+swap g auth
+```
+
+**Generates:**
+- `Models/AppUser.cs` - Extended IdentityUser with DisplayName, CreatedAt, LastLoginAt
+- `Controllers/AuthController.cs` - Login, Register, Logout actions with HTMX support
+- `Views/Auth/` - Login.cshtml, Register.cshtml with DaisyUI forms
+- `Views/Shared/_LoginPartial.cshtml` - Navigation bar auth state
+- Identity configuration in `Program.cs`
+- Database migration (`AddIdentity` - auto-created after build verification)
+
+**Features:**
+- Cookie-based authentication
+- DisplayName field for personalized UX
+- LastLoginAt tracking
+- HTMX-compatible forms (partial responses for validation errors)
+- DaisyUI styled forms with proper validation messages
+- Auto-wired into `_Layout.cshtml` navigation
+
+> **Note:** After generating auth, apply the migration: `dotnet ef database update`
+
+### `swap generate pattern <pattern> <entity>`
+
+Apply battle-tested entity patterns to your models. Patterns can be embedded (default) or use the Swap.Patterns NuGet package.
+
+```bash
+# Apply sluggable pattern (embedded code)
+swap g pattern sluggable BlogPost
+
+# Apply auditable pattern using Swap.Patterns package
+swap g pattern auditable Article --use-package
+
+# Available patterns
+swap g pattern softdelete <entity>      # Soft delete with IsDeleted flag
+swap g pattern auditable <entity>       # Audit trail (CreatedAt, CreatedBy, etc.)
+swap g pattern sluggable <entity>       # URL-friendly slugs
+swap g pattern timestampable <entity>   # CreatedAt, UpdatedAt timestamps
+swap g pattern publishable <entity>     # Publishing workflow (draft/published)
+swap g pattern orderable <entity>       # Display order sorting
+swap g pattern versionable <entity>     # Version tracking
+swap g pattern visibility <entity>      # Public/private visibility
+```
+
+**Options:**
+- `--use-package` - Use `Swap.Patterns` NuGet package (interface-based) instead of embedding code
+- `--force` - Overwrite existing files without prompting
+- `--project` or `-p` - Path to project directory
+
+**Generates:**
+- Pattern properties added to entity model
+- DbContext configuration (indexes, filters, etc.)
+- Database migration (e.g., `AddArticleSlug` - auto-created after build verification)
+- Controller updates (for slug generation, soft delete queries, etc.)
+
+**Embedded vs Package Mode:**
+
+- **Embedded (default):** Copies pattern code directly into your model (no external dependency)
+- **Package mode (`--use-package`):** Implements interfaces from `Swap.Patterns` NuGet package (v0.0.1)
+
+For full pattern documentation, see [`tools/Swap.CLI/README.md`](tools/Swap.CLI/README.md#-swappatterns-common-entity-patterns).
+
 ### `swap generate test <controller>`
 
 Generate an integration test class scaffold for a controller using Swap.Testing.
@@ -336,12 +500,58 @@ Generates: `Tests/Factories/<Entity>Factory.cs` with intelligent defaults inferr
 
 Swap.Testing is a fluent testing library for asserting HTMX partials and headers.
 
+**NuGet Package:** `Swap.Testing` (v0.0.1)
+
+```bash
+dotnet add package Swap.Testing --prerelease
+```
+
 Highlights:
 - HTMX-aware client: `HtmxTestClient` with `HtmxGetAsync/PostAsync/PutAsync/DeleteAsync`
 - Fluent assertions: status, elements, attributes, HTMX headers, CSS classes, partial view detection
 - Snapshot testing via `AssertMatchesSnapshotAsync` and `UPDATE_SNAPSHOTS=true`
 
 See `framework/Swap.Testing/README.md` for full API and examples.
+
+## 📦 Swap.Patterns (Entity Patterns Library)
+
+Swap.Patterns provides battle-tested interfaces and implementations for common entity patterns.
+
+**NuGet Package:** `Swap.Patterns` (v0.0.1)
+
+```bash
+dotnet add package Swap.Patterns --prerelease
+```
+
+**Available Patterns:**
+- `ISoftDeletable` - Soft delete with `IsDeleted` flag and `DeletedAt` timestamp
+- `IAuditable` - Full audit trail (`CreatedAt`, `CreatedBy`, `UpdatedAt`, `UpdatedBy`)
+- `ITimestampable` - Created and updated timestamps
+- `IPublishable` - Publishing workflow (`PublishedAt`, `IsPublished`)
+- `IOrderable` - Display order with `DisplayOrder` property
+- `IVersionable` - Version tracking with `Version` property
+- `IVisibility` - Public/private visibility with `IsPublic` flag
+
+**Usage:**
+
+Use `swap g pattern <pattern> <entity> --use-package` to apply patterns with the NuGet package:
+
+```bash
+# Install the package
+dotnet add package Swap.Patterns --prerelease
+
+# Apply pattern using interface
+swap g pattern auditable Article --use-package
+```
+
+Or use the default embedded mode (no package dependency):
+
+```bash
+# Apply pattern with embedded code
+swap g pattern auditable Article
+```
+
+See `framework/Swap.Patterns/README.md` for full API, interceptors, and extension methods.
 
 
 ```bash
@@ -599,9 +809,9 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
 
 Swap CLI is [MIT licensed](LICENSE). Use it freely in your projects, commercial or otherwise.
 
-## � Project Status
+## 📊 Project Status
 
-**Current Version:** `0.1.0-dev` (Active Development)
+**Current Version:** `0.0.14` (Active Development)
 
 ### ✅ Phase 2C Complete
 
@@ -630,7 +840,7 @@ Swap CLI is [MIT licensed](LICENSE). Use it freely in your projects, commercial 
 - ✅ **Development Startup** - Auto-seed on app launch in Development mode
 - ✅ **Idempotent Seeding** - `--if-empty` flag for safe repeated runs
 
-### ✅ Phase 2E Complete: Developer Experience (Current)
+### ✅ Phase 2E Complete: Developer Experience
 
 - ✅ **Generator Ergonomics** - `--dry-run`, `--force`, `--project` options on all generators
 - ✅ **Database Commands** - `swap db info`, `db migrate`, `db seed`, `db reset`
@@ -639,12 +849,22 @@ Swap CLI is [MIT licensed](LICENSE). Use it freely in your projects, commercial 
 - ✅ **Consistent Aliases** - `-f` for fields, `-p` for project, `-a` for apply, `-c` for count
 - ✅ **Smart DbSet Scanning** - Handles both simple and fully-qualified entity types
 
+### ✅ Phase 2F Complete: HTMX-First & Safety Features
+
+- ✅ **Build-Before-Migration** - Rigid gates prevent cryptic EF errors, surface compiler issues early
+- ✅ **Auto-Migration Creation** - All generators (auth, controller, pattern) create migrations automatically
+- ✅ **HTMX-First Layout** - `hx-boost="true"`, `id="main-content"` target, `hx-push-url` navigation
+- ✅ **HTMX Shell Middleware** - Default in new projects, enforces partial responses (opt-out with `--no-htmx-shell`)
+- ✅ **DaisyUI Navbar Alignment** - `navbar-start`/`navbar-end` structure for consistent layouts
+- ✅ **Auto-Nav Injection** - `--add-nav` flag injects navigation links with HTMX attributes
+- ✅ **ASP.NET Identity Scaffolding** - `swap g auth` with auto-migration and HTMX support
+- ✅ **Pattern Library** - 8 entity patterns (sluggable, auditable, soft delete, etc.) with `--use-package` option
+- ✅ **NuGet Packages** - Swap.Patterns (v0.0.1), Swap.Testing (v0.0.1) ready for publishing
+- ✅ **DateTime? Nullable Support** - Null-conditional operators in views for clean code
+
 ### 🎯 Phase 3: Polish & Release
 
-- ⏳ **HTMX Testing Framework** - Dev-focused E2E testing for HTMX partials
-- ⏳ **Test Factories** - Bogus-based test data builders
-- ⏳ **Pattern Add-ons** - Soft delete, audit trails, slug generation
-- ⏳ **NuGet Package** - Publish to NuGet.org
+- ⏳ **NuGet Publishing** - Push Swap.CLI (v0.0.14), Swap.Patterns, Swap.Testing to NuGet.org
 - ⏳ **VS Code Extension** - Integrated CLI experience
 - ⏳ **Video Tutorials** - Getting started screencasts
 - ⏳ **Production Release** (v1.0.0) - Q1 2026

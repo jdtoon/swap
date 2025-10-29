@@ -13,6 +13,76 @@ Swap.Patterns provides opt-in entity patterns that handle common requirements li
 - ✅ **Minimal magic** - Simple, understandable code
 - ✅ **Well-tested** - Comprehensive test coverage
 
+## Embedded vs Package Mode
+
+Swap supports two ways to apply patterns:
+
+### Embedded Mode (Default)
+
+```bash
+swap g pattern sluggable Article
+```
+
+**How it works:**
+- Copies pattern code directly into your entity
+- No external package dependency
+- Full control and visibility of pattern code
+
+**When to use:**
+- You want full control over pattern implementation
+- You prefer seeing all code in your project
+- You don't want external NuGet dependencies
+- You plan to customize the pattern
+
+### Package Mode
+
+```bash
+swap g pattern auditable Article --use-package
+```
+
+**How it works:**
+- Implements interfaces from `Swap.Patterns` NuGet package (v0.0.1)
+- Cleaner models (just interface implementation)
+- Pattern logic in reusable package
+- Requires `dotnet add package Swap.Patterns --prerelease`
+
+**When to use:**
+- You want minimal code in your models
+- You prefer reusable package patterns
+- You trust the pattern implementations
+- You want to leverage package updates
+
+**Installation:**
+```bash
+dotnet add package Swap.Patterns --prerelease
+```
+
+**Example comparison:**
+
+Embedded mode (default):
+```csharp
+public class Article
+{
+    public int Id { get; set; }
+    public string Title { get; set; }
+    public string Slug { get; set; } = "";
+}
+```
+
+Package mode (--use-package):
+```csharp
+using Swap.Patterns.Sluggable;
+
+public class Article : ISluggable
+{
+    public int Id { get; set; }
+    public string Title { get; set; }
+    public string Slug { get; set; } = "";
+}
+```
+
+Both generate the same migration and controller code. The difference is whether the pattern interface comes from the package or is embedded.
+
 ## Available Patterns
 
 ### Soft Delete
