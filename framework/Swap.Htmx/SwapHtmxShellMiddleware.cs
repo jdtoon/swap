@@ -49,10 +49,9 @@ public class SwapHtmxShellMiddleware
                     if (hasDocType || (hasHtmlTag && hasHeadTag))
                     {
                         // Full page returned for HTMX request - this is likely a mistake
-                        context.Response.Clear();
-                        context.Response.StatusCode = 500;
-                        context.Response.ContentType = "text/html";
-
+                        responseBody.SetLength(0); // Clear the captured response
+                        responseBody.Seek(0, SeekOrigin.Begin);
+                        
                         var errorHtml = @"
 <div style='padding: 20px; background: #fee; border: 2px solid #c00; border-radius: 8px; margin: 20px; font-family: monospace;'>
     <h2 style='color: #c00; margin-top: 0;'>⚠️ HTMX Shell Middleware Error</h2>
@@ -74,6 +73,13 @@ public class SwapHtmxShellMiddleware
 </div>";
 
                         await context.Response.WriteAsync(errorHtml);
+                        
+                        context.Response.StatusCode = 500;
+                        context.Response.ContentType = "text/html";
+                        
+                        // Copy error response to original stream
+                        responseBody.Seek(0, SeekOrigin.Begin);
+                        await responseBody.CopyToAsync(originalBodyStream);
                         return;
                     }
 
