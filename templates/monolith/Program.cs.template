@@ -2,11 +2,13 @@ using {{ProjectName}}.Data;
 using {{ProjectName}}.Data.Seeders;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.DataProtection;
+using Swap.Htmx;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services
 builder.Services.AddControllersWithViews();
+builder.Services.AddSwapHtmx();
 
 // Add session support for server-side bulk operations
 builder.Services.AddDistributedMemoryCache();
@@ -90,17 +92,11 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
+app.UseSwapHtmxShell(); // Enforce HTMX partial responses
+
 app.UseSession(); // Enable session middleware
 
 app.UseAuthorization();
-
-// HTMX Middleware: Return partial views for HTMX requests
-app.Use(async (context, next) =>
-{
-    var isHtmxRequest = context.Request.Headers.ContainsKey("HX-Request");
-    context.Items["IsHtmxRequest"] = isHtmxRequest;
-    await next();
-});
 
 app.MapControllerRoute(
     name: "default",

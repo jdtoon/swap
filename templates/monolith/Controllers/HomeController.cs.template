@@ -1,10 +1,11 @@
 using Microsoft.AspNetCore.Mvc;
 using {{ProjectName}}.Data;
 using {{ProjectName}}.Models;
+using Swap.Htmx;
 
 namespace {{ProjectName}}.Controllers;
 
-public class HomeController : Controller
+public class HomeController : SwapController
 {
     private readonly AppDbContext _context;
 
@@ -15,16 +16,8 @@ public class HomeController : Controller
 
     public IActionResult Index()
     {
-        var isHtmxRequest = HttpContext.Items["IsHtmxRequest"] as bool? ?? false;
-
-        if (isHtmxRequest)
-        {
-            // Return partial view for HTMX requests
-            return PartialView("_TodoList", _context.TodoItems.ToList());
-        }
-
-        // Return full page for initial load
-        return View(_context.TodoItems.ToList());
+        // SwapView automatically handles page vs partial
+        return SwapView("_TodoList", _context.TodoItems.ToList());
     }
 
     [HttpPost]
