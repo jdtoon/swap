@@ -578,12 +578,19 @@ public static class GenerateControllerCommand
             var nullability = field.IsNullable ? "?" : "";
             var required = field.IsRequired ? "[Required]" : "";
             
+            // Add default value for non-nullable strings to avoid CS8618 warning
+            var defaultValue = "";
+            if (field.Type == "string" && !field.IsNullable)
+            {
+                defaultValue = " = string.Empty";
+            }
+            
             if (!string.IsNullOrEmpty(required))
             {
                 properties.Add($"    {required}");
             }
             
-            properties.Add($"    public {field.Type}{nullability} {field.Name} {{ get; set; }}");
+            properties.Add($"    public {field.Type}{nullability} {field.Name} {{ get; set; }}{defaultValue};");
         }
         
         return $@"using System.ComponentModel.DataAnnotations;

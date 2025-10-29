@@ -16,10 +16,17 @@ public class HomeController : SwapController
 
     public IActionResult Index()
     {
+        // Index page has NO data - just static content
+        // The todo list loads separately via HTMX
+        return SwapView();
+    }
+
+    // Separate endpoint for the todo list component
+    [HttpGet]
+    public IActionResult TodoList()
+    {
         var todos = _context.TodoItems.ToList();
-        
-        // SwapView returns full view on initial load, partial on HTMX request
-        return SwapView(todos);
+        return PartialView("_TodoList", todos);
     }
 
     [HttpPost]

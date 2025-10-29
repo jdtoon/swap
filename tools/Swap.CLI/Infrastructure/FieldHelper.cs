@@ -287,12 +287,13 @@ public static class FieldHelper
             return $@"<th>{field.Name}</th>";
         }
         
-        // Sortable: button with HTMX and sort indicators
+        // Sortable: button with HTMX and sort indicators - calls Get{EntityName}List endpoint
+        var entityName = System.Globalization.CultureInfo.CurrentCulture.TextInfo.ToTitleCase(entityNameLower);
         return $@"<th>
                         <button class=""flex items-center gap-1 hover:text-primary""
-                                hx-get=""@Url.Action(""Index"")""
+                                hx-get=""@Url.Action(""Get{entityName}List"")""
                                 hx-target=""#{entityNameLower}-list""
-                                hx-swap=""innerHTML""
+                                hx-swap=""outerHTML""
                                 hx-include=""[name='searchTerm'], [name='pageSize']""
                                 hx-vals='{{""sortBy"": ""{fieldNameLower}"", ""sortOrder"": ""@(Model.SortBy?.ToLower() == ""{fieldNameLower}"" && Model.SortOrder == ""asc"" ? ""desc"" : ""asc"")""}}'
                                 type=""button"">
@@ -580,7 +581,7 @@ public static class FieldHelper
                                class=""checkbox checkbox-sm""
                                hx-post=""@Url.Action(""ToggleSelectAll"", ""{entityName}"")?pageNumber=@Model.Pagination.CurrentPage&pageSize=@Model.Pagination.PageSize&searchTerm=@Model.SearchTerm&sortBy=@Model.SortBy&sortOrder=@Model.SortOrder@(string.Join("""", Model.Filters.Where(f => !string.IsNullOrEmpty(f.Value)).Select(f => $""&{{f.Key}}={{f.Value}}"")))""
                                hx-target=""#{entityName.ToLower()}-list""
-                               hx-swap=""innerHTML""
+                               hx-swap=""outerHTML""
                                @(ViewBag.SelectedIds != null && Model.Items.All(i => ((HashSet<int>)ViewBag.SelectedIds).Contains(i.Id)) ? ""checked"" : """") />
                     </th>";
     }
@@ -639,6 +640,7 @@ public static class FieldHelper
                                     Delete Selected
                                 </button>
                                 <button hx-post=""@Url.Action(""ClearSelection"", ""{entityName}"")""
+                                        hx-swap=""none""
                                         class=""btn btn-sm btn-ghost"">
                                     Clear Selection
                                 </button>

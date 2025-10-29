@@ -1,5 +1,11 @@
 @model {{ProjectName}}.ViewModels.{{EntityName}}ListViewModel
 
+<div id="{{EntityNameLower}}-list" 
+     hx-get="@Url.Action("Get{{EntityName}}List")" 
+     hx-trigger="refresh{{EntityName}}List from:body"
+     hx-swap="outerHTML"
+     hx-include="[name='searchTerm'], [name='pageSize'], [name='sortBy'], [name='sortOrder']">
+     
 @if (!Model.Items.Any())
 {
     <div class="alert alert-info">
@@ -70,3 +76,5 @@ else
     {{BulkSelectionScript}}
     {{BulkDeleteScript}}
 }
+
+</div>
