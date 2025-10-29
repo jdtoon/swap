@@ -857,98 +857,148 @@ public static class GeneratePatternCommand
             : Path.GetFullPath(Path.Combine(workingDir,
                 AnsiConsole.Prompt(new Spectre.Console.SelectionPrompt<string>().Title("Multiple DbContexts found. Select one to configure auditing:").AddChoices(candidates.Select(p => Path.GetRelativePath(workingDir, p))))));
 
-        var dbText = await File.ReadAllTextAsync(targetDbContextPath);
+        var code = await File.ReadAllTextAsync(targetDbContextPath);
+        var tree = CSharpSyntaxTree.ParseText(code);
+        var root = tree.GetCompilationUnitRoot();
 
-        // Ensure usings
-        if (!dbText.Contains("using Swap.Patterns.Auditable"))
-            dbText = "using Swap.Patterns.Auditable;\n" + dbText;
-        if (!dbText.Contains("using Microsoft.AspNetCore.Http"))
-            dbText = "using Microsoft.AspNetCore.Http;\n" + dbText;
-
-        // Ensure field inside class
-        var classMatch = System.Text.RegularExpressions.Regex.Match(dbText, @"class\s+(\w+)\s*:\s*[^\n{]+");
-        if (classMatch.Success)
+        // 1. Add usings
+        var usingsToAdd = new[] { "Swap.Patterns.Auditable", "Microsoft.AspNetCore.Http" };
+        var existingUsings = root.Usings.Select(u => u.Name!.ToString()).ToHashSet();
+        
+        foreach (var usingName in usingsToAdd)
         {
-            var className = classMatch.Groups[1].Value;
-            var classStart = dbText.IndexOf(classMatch.Value);
-            var braceIdx = dbText.IndexOf('{', classStart);
-            if (braceIdx > 0 && !dbText.Contains("IHttpContextAccessor _httpContextAccessor"))
+            if (!existingUsings.Contains(usingName))
             {
-                dbText = dbText.Insert(braceIdx + 1, "\n    private readonly IHttpContextAccessor _httpContextAccessor;\n");
-            }
-
-            // Ensure constructor overload with IHttpContextAccessor parameter
-            var constructorPattern = $@"public\s+{className}\s*\([^)]*DbContextOptions[^)]*\)";
-            var constructorMatch = System.Text.RegularExpressions.Regex.Match(dbText, constructorPattern);
-            if (constructorMatch.Success && !dbText.Contains("IHttpContextAccessor httpContextAccessor"))
-            {
-                // Replace existing constructor to add IHttpContextAccessor parameter
-                var originalCtor = constructorMatch.Value;
-                var paramPattern = @"\(([^)]*)\)";
-                var paramMatch = System.Text.RegularExpressions.Regex.Match(originalCtor, paramPattern);
-                if (paramMatch.Success)
-                {
-                    var existingParams = paramMatch.Groups[1].Value;
-                    var newParams = $"{existingParams}, IHttpContextAccessor httpContextAccessor";
-                    var newCtor = originalCtor.Replace(paramMatch.Value, $"({newParams})");
-                    
-                    // Find the constructor body and add assignment
-                    var ctorBodyStart = dbText.IndexOf('{', dbText.IndexOf(originalCtor));
-                    if (ctorBodyStart >= 0)
-                    {
-                        var baseCallEnd = dbText.IndexOf('\n', ctorBodyStart);
-                        if (baseCallEnd >= 0 && !dbText.Substring(ctorBodyStart, baseCallEnd - ctorBodyStart).Contains("_httpContextAccessor"))
-                        {
-                            dbText = dbText.Insert(baseCallEnd, "\n        _httpContextAccessor = httpContextAccessor;");
-                        }
-                    }
-                    
-                    dbText = dbText.Replace(originalCtor, newCtor);
-                }
+                var usingDirective = SyntaxFactory.UsingDirective(SyntaxFactory.ParseName(usingName))
+                    .WithTrailingTrivia(SyntaxFactory.CarriageReturnLineFeed);
+                root = root.AddUsings(usingDirective);
             }
         }
 
-        // Ensure OnConfiguring has interceptor
-        if (!dbText.Contains("OnConfiguring(DbContextOptionsBuilder optionsBuilder)"))
+        // 2. Find the DbContext class
+        var classDeclaration = root.DescendantNodes()
+            .OfType<ClassDeclarationSyntax>()
+            .FirstOrDefault(c => c.BaseList?.Types.Any(t => t.ToString().Contains("DbContext")) == true);
+
+        if (classDeclaration == null)
         {
-            var insertIdx = dbText.LastIndexOf('}');
-            if (insertIdx > 0)
+            AnsiConsole.MarkupLine("[yellow]ℹ[/] Could not find DbContext class. Skipping audit interceptor wiring.");
+            return;
+        }
+
+        var updatedClass = classDeclaration;
+
+        // 3. Add field if not present
+        var hasField = classDeclaration.Members
+            .OfType<FieldDeclarationSyntax>()
+            .Any(f => f.Declaration.Variables.Any(v => v.Identifier.Text == "_httpContextAccessor"));
+
+        if (!hasField)
+        {
+            var fieldDeclaration = SyntaxFactory.FieldDeclaration(
+                SyntaxFactory.VariableDeclaration(
+                    SyntaxFactory.ParseTypeName("IHttpContextAccessor"))
+                .WithVariables(SyntaxFactory.SingletonSeparatedList(
+                    SyntaxFactory.VariableDeclarator("_httpContextAccessor"))))
+            .WithModifiers(
+                SyntaxFactory.TokenList(
+                    SyntaxFactory.Token(SyntaxKind.PrivateKeyword),
+                    SyntaxFactory.Token(SyntaxKind.ReadOnlyKeyword)))
+            .WithLeadingTrivia(SyntaxFactory.Whitespace("    "))
+            .WithTrailingTrivia(SyntaxFactory.CarriageReturnLineFeed, SyntaxFactory.CarriageReturnLineFeed);
+
+            updatedClass = updatedClass.WithMembers(
+                updatedClass.Members.Insert(0, fieldDeclaration));
+        }
+
+        // 4. Update constructor
+        var constructor = updatedClass.Members
+            .OfType<ConstructorDeclarationSyntax>()
+            .FirstOrDefault();
+
+        if (constructor != null)
+        {
+            var hasHttpContextParam = constructor.ParameterList.Parameters
+                .Any(p => p.Type?.ToString().Contains("IHttpContextAccessor") == true);
+
+            if (!hasHttpContextParam)
             {
-                var snippet = @"
-    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+                // Add parameter
+                var newParam = SyntaxFactory.Parameter(SyntaxFactory.Identifier("httpContextAccessor"))
+                    .WithType(SyntaxFactory.ParseTypeName("IHttpContextAccessor"));
+
+                var updatedParams = constructor.ParameterList.AddParameters(newParam);
+                var updatedConstructor = constructor.WithParameterList(updatedParams);
+
+                // Add assignment to body
+                if (updatedConstructor.Body != null)
+                {
+                    var hasAssignment = updatedConstructor.Body.Statements
+                        .OfType<ExpressionStatementSyntax>()
+                        .Any(s => s.ToString().Contains("_httpContextAccessor = httpContextAccessor"));
+
+                    if (!hasAssignment)
+                    {
+                        var assignment = SyntaxFactory.ExpressionStatement(
+                            SyntaxFactory.AssignmentExpression(
+                                SyntaxKind.SimpleAssignmentExpression,
+                                SyntaxFactory.IdentifierName("_httpContextAccessor"),
+                                SyntaxFactory.IdentifierName("httpContextAccessor")))
+                        .WithLeadingTrivia(SyntaxFactory.Whitespace("        "))
+                        .WithTrailingTrivia(SyntaxFactory.CarriageReturnLineFeed);
+
+                        updatedConstructor = updatedConstructor.WithBody(
+                            updatedConstructor.Body.WithStatements(
+                                updatedConstructor.Body.Statements.Insert(0, assignment)));
+                    }
+                }
+
+                updatedClass = updatedClass.ReplaceNode(constructor, updatedConstructor);
+            }
+        }
+
+        // 5. Add or update OnConfiguring method
+        var onConfiguring = updatedClass.Members
+            .OfType<MethodDeclarationSyntax>()
+            .FirstOrDefault(m => m.Identifier.Text == "OnConfiguring");
+
+        if (onConfiguring == null)
+        {
+            // Create new OnConfiguring method
+            var methodCode = @"    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
         optionsBuilder.AddInterceptors(_httpContextAccessor.CreateAuditInterceptor());
-    }
-";
-                dbText = dbText.Insert(insertIdx, snippet);
-            }
+    }";
+            var newMethod = SyntaxFactory.ParseMemberDeclaration(methodCode)!
+                .WithTrailingTrivia(SyntaxFactory.CarriageReturnLineFeed);
+
+            updatedClass = updatedClass.WithMembers(updatedClass.Members.Add(newMethod));
         }
-        else if (!dbText.Contains("CreateAuditInterceptor()"))
+        else if (onConfiguring.Body != null)
         {
-            var marker = "OnConfiguring(DbContextOptionsBuilder optionsBuilder)";
-            var start = dbText.IndexOf(marker);
-            if (start >= 0)
+            var hasInterceptor = onConfiguring.Body.Statements
+                .Any(s => s.ToString().Contains("CreateAuditInterceptor"));
+
+            if (!hasInterceptor)
             {
-                var braceCount = 0;
-                var blockStart = dbText.IndexOf('{', start);
-                var i = blockStart + 1;
-                for (; i < dbText.Length; i++)
-                {
-                    if (dbText[i] == '{') braceCount++;
-                    else if (dbText[i] == '}')
-                    {
-                        if (braceCount == 0) break;
-                        braceCount--;
-                    }
-                }
-                if (i < dbText.Length)
-                {
-                    dbText = dbText.Insert(i, "\n        optionsBuilder.AddInterceptors(_httpContextAccessor.CreateAuditInterceptor());\n");
-                }
+                var interceptorCall = SyntaxFactory.ExpressionStatement(
+                    SyntaxFactory.ParseExpression("optionsBuilder.AddInterceptors(_httpContextAccessor.CreateAuditInterceptor())"))
+                .WithLeadingTrivia(SyntaxFactory.Whitespace("        "))
+                .WithTrailingTrivia(SyntaxFactory.CarriageReturnLineFeed);
+
+                var updatedMethod = onConfiguring.WithBody(
+                    onConfiguring.Body.WithStatements(
+                        onConfiguring.Body.Statements.Add(interceptorCall)));
+
+                updatedClass = updatedClass.ReplaceNode(onConfiguring, updatedMethod);
             }
         }
 
-        await File.WriteAllTextAsync(targetDbContextPath, dbText);
+        // Replace the class in the root
+        root = root.ReplaceNode(classDeclaration, updatedClass);
+
+        // Write back
+    await File.WriteAllTextAsync(targetDbContextPath, root.NormalizeWhitespace().ToFullString());
         AnsiConsole.MarkupLine("[green]✓[/] Wired audit interceptor in DbContext");
     }
 
