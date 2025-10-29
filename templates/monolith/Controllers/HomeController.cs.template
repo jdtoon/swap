@@ -16,8 +16,10 @@ public class HomeController : SwapController
 
     public IActionResult Index()
     {
-        // SwapView automatically handles page vs partial
-        return SwapView("_TodoList", _context.TodoItems.ToList());
+        var todos = _context.TodoItems.ToList();
+        
+        // SwapView returns full view on initial load, partial on HTMX request
+        return SwapView(todos);
     }
 
     [HttpPost]

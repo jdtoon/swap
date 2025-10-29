@@ -34,15 +34,8 @@
             </button>
         </form>
 
-        <!-- Todo List with nested loading -->
-        <div hx-get="/Home/Index" 
-             hx-trigger="load" 
-             hx-swap="outerHTML">
-            <div class="flex items-center justify-center py-4">
-                <span class="loading loading-spinner loading-md"></span>
-                <span class="ml-2">Loading todos...</span>
-            </div>
-        </div>
+        <!-- Todo List -->
+        @await Html.PartialAsync("_TodoList", Model)
     </div>
 </div>
 

@@ -50,16 +50,8 @@
             <!-- Filters -->
             {{FilterSection}}
 
-            <!-- List Container with nested loading -->
-            <div id="{{EntityNameLower}}-list"
-                 hx-get="@Url.Action("Index")"
-                 hx-trigger="load, refresh{{EntityName}}List from:body"
-                 hx-swap="innerHTML">
-                <div class="flex items-center justify-center py-8">
-                    <span class="loading loading-spinner loading-lg"></span>
-                    <span class="ml-2">Loading {{EntityNameLower}}...</span>
-                </div>
-            </div>
+            <!-- {{EntityName}} List -->
+            @await Html.PartialAsync("_{{EntityName}}List", Model)
         </div>
     </div>
 </div>

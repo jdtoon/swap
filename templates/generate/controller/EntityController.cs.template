@@ -74,8 +74,8 @@ public class {{EntityName}}Controller : SwapController
         // Pass selection state to view
         ViewBag.SelectedIds = HttpContext.Session.GetObject<HashSet<int>>("{{EntityName}}_Selection") ?? new HashSet<int>();
 
-        // SwapView automatically returns partial for HTMX requests, full view for initial load
-        return SwapView("_{{EntityName}}List", viewModel);
+        // SwapView returns full Index view on initial load, partial on HTMX request
+        return SwapView(viewModel);
     }
 
     /// <summary>
