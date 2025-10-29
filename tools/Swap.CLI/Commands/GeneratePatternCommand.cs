@@ -200,7 +200,8 @@ public static class GeneratePatternCommand
         var softProps = new (string Name, string Type)[]
         {
             ("IsDeleted", "bool"),
-            ("DeletedAt", "DateTime?")
+            ("DeletedAt", "DateTime?"),
+            ("DeletedBy", "string?")
         };
 
         for (int i = 0; i < softProps.Length; i++)
@@ -263,17 +264,8 @@ public static class GeneratePatternCommand
         }
         catch { }
 
-        // Guidance
-        var dbContextPath = Path.Combine(workingDir, "Data", "AppDbContext.cs");
-        if (File.Exists(dbContextPath))
-        {
-            var dbContent = await File.ReadAllTextAsync(dbContextPath);
-            if (!dbContent.Contains("ConfigureSoftDeleteFilter"))
-            {
-                AnsiConsole.MarkupLine($"[yellow]Note:[/] Add the following to your AppDbContext.OnModelCreating:");
-                AnsiConsole.MarkupLine($"[grey]modelBuilder.ConfigureSoftDeleteFilter();[/]");
-            }
-        }
+        // Ensure DbContext has global soft-delete filter
+        await UpdateDbContextForSoftDeleteAsync(workingDir);
 
         // Auto-create migration (no DB update)
         if (!noMigrations)
@@ -285,6 +277,15 @@ public static class GeneratePatternCommand
             AnsiConsole.MarkupLine("[yellow]ℹ[/] Migration creation skipped (--no-migrations flag)");
             AnsiConsole.MarkupLine("[dim]Create migration manually:[/] [cyan]dotnet ef migrations add AddSoftDeleteTo{0}[/]", entity);
         }
+
+        // Update swap-config.json
+        try
+        {
+            var (cfg, cfgPath) = Swap.CLI.Infrastructure.SwapConfigManager.LoadOrCreate(workingDir);
+            Swap.CLI.Infrastructure.SwapConfigManager.RecordPattern(cfg, entity, "SoftDelete", new Dictionary<string, bool>{{"SoftDeleteFilter", true}});
+            Swap.CLI.Infrastructure.SwapConfigManager.Save(cfg, cfgPath);
+        }
+        catch { }
 
         AnsiConsole.MarkupLine($"[green]✓[/] Soft delete pattern applied successfully!");
         if (!noMigrations)
@@ -454,25 +455,9 @@ public static class GeneratePatternCommand
         AnsiConsole.MarkupLine("[dim]Create migration manually:[/] [cyan]dotnet ef migrations add AddAuditableTo{0}[/]", entity);
     }
 
-    // Provide configuration guidance
-        AnsiConsole.MarkupLine($"[yellow]Note:[/] Configure the audit interceptor in your DbContext:");
-        AnsiConsole.MarkupLine($"[grey]// In Program.cs[/]");
-        AnsiConsole.MarkupLine($"[grey]builder.Services.AddHttpContextAccessor();[/]");
-        AnsiConsole.MarkupLine($"");
-        AnsiConsole.MarkupLine($"[grey]// In your DbContext constructor[/]");
-        AnsiConsole.MarkupLine($"[grey]private readonly IHttpContextAccessor _httpContextAccessor;[/]");
-        AnsiConsole.MarkupLine($"");
-        AnsiConsole.MarkupLine($"[grey]public AppDbContext(DbContextOptions options, IHttpContextAccessor httpContextAccessor)[/]");
-        AnsiConsole.MarkupLine($"[grey]    : base(options)[/]");
-        AnsiConsole.MarkupLine($"[grey]{{[/]");
-        AnsiConsole.MarkupLine($"[grey]    _httpContextAccessor = httpContextAccessor;[/]");
-        AnsiConsole.MarkupLine($"[grey]}}[/]");
-        AnsiConsole.MarkupLine($"");
-        AnsiConsole.MarkupLine($"[grey]// In OnConfiguring[/]");
-        AnsiConsole.MarkupLine($"[grey]protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)[/]");
-        AnsiConsole.MarkupLine($"[grey]{{[/]");
-        AnsiConsole.MarkupLine($"[grey]    optionsBuilder.AddInterceptors(_httpContextAccessor.CreateAuditInterceptor());[/]");
-        AnsiConsole.MarkupLine($"[grey]}}[/]");
+    // Auto-wire Program.cs and DbContext for auditing
+        await UpdateProgramForHttpContextAccessorAsync(workingDir);
+        await UpdateDbContextForAuditableAsync(workingDir);
 
         AnsiConsole.MarkupLine($"[green]✓[/] Auditable pattern applied successfully!");
         AnsiConsole.MarkupLine($"[cyan]Next steps:[/]");
@@ -716,6 +701,232 @@ public static class GeneratePatternCommand
 
         await File.WriteAllTextAsync(targetDbContextPath, dbText);
         AnsiConsole.MarkupLine("[green]✓[/] Configured unique Slug index in DbContext");
+    }
+
+    private static async Task UpdateDbContextForSoftDeleteAsync(string workingDir)
+    {
+        var dataDir = Path.Combine(workingDir, "Data");
+        if (!Directory.Exists(dataDir)) return;
+
+        var candidates = Directory.GetFiles(dataDir, "*.cs", SearchOption.AllDirectories)
+            .Where(f => File.ReadAllText(f).Contains(": DbContext") || File.ReadAllText(f).Contains("IdentityDbContext"))
+            .ToList();
+
+        if (!candidates.Any())
+        {
+            AnsiConsole.MarkupLine("[yellow]ℹ[/] No DbContext found. Skipping soft delete filter configuration.");
+            return;
+        }
+
+        string targetDbContextPath;
+        if (candidates.Count == 1)
+        {
+            targetDbContextPath = candidates[0];
+        }
+        else
+        {
+            var choices = candidates.Select(p => Path.GetRelativePath(workingDir, p)).ToList();
+            var selected = AnsiConsole.Prompt(
+                new Spectre.Console.SelectionPrompt<string>()
+                    .Title("Multiple DbContexts found. Select one to configure soft delete filter:")
+                    .AddChoices(choices)
+            );
+            targetDbContextPath = Path.GetFullPath(Path.Combine(workingDir, selected));
+        }
+
+        var dbText = await File.ReadAllTextAsync(targetDbContextPath);
+
+        // Ensure using for extension methods
+        if (!dbText.Contains("using Swap.Patterns.SoftDelete"))
+        {
+            dbText = "using Swap.Patterns.SoftDelete;\n" + dbText;
+        }
+
+        if (dbText.Contains("ConfigureSoftDeleteFilter()"))
+        {
+            AnsiConsole.MarkupLine("[dim]Soft delete global filter already configured in DbContext[/]");
+        }
+        else
+        {
+            // Ensure OnModelCreating exists; if not, create it near the end of class
+            if (!dbText.Contains("OnModelCreating(ModelBuilder modelBuilder)"))
+            {
+                var insertIdx = dbText.LastIndexOf('}');
+                if (insertIdx > 0)
+                {
+                    var snippet = @"
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        base.OnModelCreating(modelBuilder);
+        modelBuilder.ConfigureSoftDeleteFilter();
+    }
+";
+                    dbText = dbText.Insert(insertIdx, snippet);
+                }
+            }
+            else
+            {
+                // Insert inside existing OnModelCreating, before closing brace
+                var marker = "OnModelCreating(ModelBuilder modelBuilder)";
+                var start = dbText.IndexOf(marker);
+                if (start >= 0)
+                {
+                    var braceCount = 0;
+                    var blockStart = dbText.IndexOf('{', start);
+                    var i = blockStart + 1;
+                    for (; i < dbText.Length; i++)
+                    {
+                        if (dbText[i] == '{') braceCount++;
+                        else if (dbText[i] == '}')
+                        {
+                            if (braceCount == 0) break;
+                            braceCount--;
+                        }
+                    }
+                    if (i < dbText.Length)
+                    {
+                        dbText = dbText.Insert(i, "\n        modelBuilder.ConfigureSoftDeleteFilter();\n");
+                    }
+                }
+            }
+        }
+
+        await File.WriteAllTextAsync(targetDbContextPath, dbText);
+        AnsiConsole.MarkupLine("[green]✓[/] Configured soft delete global filter in DbContext");
+    }
+
+    private static async Task UpdateProgramForHttpContextAccessorAsync(string workingDir)
+    {
+        var programPath = Path.Combine(workingDir, "Program.cs");
+        if (!File.Exists(programPath))
+        {
+            AnsiConsole.MarkupLine("[yellow]ℹ[/] Program.cs not found. Skipping IHttpContextAccessor wiring.");
+            return;
+        }
+        var text = await File.ReadAllTextAsync(programPath);
+        if (text.Contains("AddHttpContextAccessor()")) return;
+
+        var insertAfter = "builder.Services";
+        var idx = text.IndexOf(insertAfter);
+        if (idx >= 0)
+        {
+            var insertPos = text.IndexOf(';', idx);
+            if (insertPos > 0)
+            {
+                text = text.Insert(insertPos + 1, "\nbuilder.Services.AddHttpContextAccessor();\n");
+            }
+            else
+            {
+                text += "\nbuilder.Services.AddHttpContextAccessor();\n";
+            }
+        }
+        else
+        {
+            text += "\n// Added by swap\nbuilder.Services.AddHttpContextAccessor();\n";
+        }
+        await File.WriteAllTextAsync(programPath, text);
+        AnsiConsole.MarkupLine("[green]✓[/] Registered IHttpContextAccessor in Program.cs");
+    }
+
+    private static async Task UpdateDbContextForAuditableAsync(string workingDir)
+    {
+        var dataDir = Path.Combine(workingDir, "Data");
+        if (!Directory.Exists(dataDir)) return;
+
+        var candidates = Directory.GetFiles(dataDir, "*.cs", SearchOption.AllDirectories)
+            .Where(f => File.ReadAllText(f).Contains(": DbContext") || File.ReadAllText(f).Contains("IdentityDbContext"))
+            .ToList();
+
+        if (!candidates.Any())
+        {
+            AnsiConsole.MarkupLine("[yellow]ℹ[/] No DbContext found. Skipping audit interceptor wiring.");
+            return;
+        }
+
+        string targetDbContextPath = candidates.Count == 1
+            ? candidates[0]
+            : Path.GetFullPath(Path.Combine(workingDir,
+                AnsiConsole.Prompt(new Spectre.Console.SelectionPrompt<string>().Title("Multiple DbContexts found. Select one to configure auditing:").AddChoices(candidates.Select(p => Path.GetRelativePath(workingDir, p))))));
+
+        var dbText = await File.ReadAllTextAsync(targetDbContextPath);
+
+        // Ensure usings
+        if (!dbText.Contains("using Swap.Patterns.Auditable"))
+            dbText = "using Swap.Patterns.Auditable;\n" + dbText;
+        if (!dbText.Contains("using Microsoft.AspNetCore.Http"))
+            dbText = "using Microsoft.AspNetCore.Http;\n" + dbText;
+
+        // Ensure field inside class
+        var classMatch = System.Text.RegularExpressions.Regex.Match(dbText, @"class\s+(\w+)\s*:\s*[^\n{]+");
+        if (classMatch.Success)
+        {
+            var className = classMatch.Groups[1].Value;
+            var classStart = dbText.IndexOf(classMatch.Value);
+            var braceIdx = dbText.IndexOf('{', classStart);
+            if (braceIdx > 0 && !dbText.Contains("IHttpContextAccessor _httpContextAccessor"))
+            {
+                dbText = dbText.Insert(braceIdx + 1, "\n    private readonly IHttpContextAccessor _httpContextAccessor;\n");
+            }
+
+            // Ensure constructor overload
+            if (!dbText.Contains($"public {className}(DbContextOptions") || !dbText.Contains("IHttpContextAccessor"))
+            {
+                var insertIdx = dbText.LastIndexOf('}');
+                if (insertIdx > 0)
+                {
+                    var ctor = $@"
+    public {className}(DbContextOptions options, IHttpContextAccessor httpContextAccessor) : base(options)
+    {{
+        _httpContextAccessor = httpContextAccessor;
+    }}
+";
+                    dbText = dbText.Insert(insertIdx, ctor);
+                }
+            }
+        }
+
+        // Ensure OnConfiguring has interceptor
+        if (!dbText.Contains("OnConfiguring(DbContextOptionsBuilder optionsBuilder)"))
+        {
+            var insertIdx = dbText.LastIndexOf('}');
+            if (insertIdx > 0)
+            {
+                var snippet = @"
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+    {
+        optionsBuilder.AddInterceptors(_httpContextAccessor.CreateAuditInterceptor());
+    }
+";
+                dbText = dbText.Insert(insertIdx, snippet);
+            }
+        }
+        else if (!dbText.Contains("CreateAuditInterceptor()"))
+        {
+            var marker = "OnConfiguring(DbContextOptionsBuilder optionsBuilder)";
+            var start = dbText.IndexOf(marker);
+            if (start >= 0)
+            {
+                var braceCount = 0;
+                var blockStart = dbText.IndexOf('{', start);
+                var i = blockStart + 1;
+                for (; i < dbText.Length; i++)
+                {
+                    if (dbText[i] == '{') braceCount++;
+                    else if (dbText[i] == '}')
+                    {
+                        if (braceCount == 0) break;
+                        braceCount--;
+                    }
+                }
+                if (i < dbText.Length)
+                {
+                    dbText = dbText.Insert(i, "\n        optionsBuilder.AddInterceptors(_httpContextAccessor.CreateAuditInterceptor());\n");
+                }
+            }
+        }
+
+        await File.WriteAllTextAsync(targetDbContextPath, dbText);
+        AnsiConsole.MarkupLine("[green]✓[/] Wired audit interceptor in DbContext");
     }
 
     private static async Task UpdateControllerForSluggableAsync(string workingDir, string entity)
