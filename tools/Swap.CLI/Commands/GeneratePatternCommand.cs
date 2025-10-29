@@ -32,15 +32,16 @@ public static class GeneratePatternCommand
             aliases: new[] { "--project", "-p" },
             description: "Path to project directory (default: current directory)");
 
+        // Deprecated options (hidden). We always use NuGet package mode now.
         var usePackageOption = new Option<bool>(
             aliases: new[] { "--use-package" },
-            description: "Use Swap.Patterns NuGet package instead of embedding minimal code (defaults to embed)"
-        );
+            description: "[DEPRECATED] Always on. Swap now always uses the Swap.Patterns NuGet package."
+        ) { IsHidden = true };
 
         var fallbackOption = new Option<bool>(
             aliases: new[] { "--fallback" },
-            description: "Fallback to embedded code if Swap.Patterns package installation fails (only with --use-package)"
-        );
+            description: "[DEPRECATED] No longer supported. Embed mode has been removed."
+        ) { IsHidden = true };
 
         var noMigrationsOption = new Option<bool>(
             aliases: new[] { "--no-migrations" },
@@ -63,6 +64,20 @@ public static class GeneratePatternCommand
             var projectPath = ctx.ParseResult.GetValueForOption(projectOption);
             var usePackage = ctx.ParseResult.GetValueForOption(usePackageOption);
             var fallback = ctx.ParseResult.GetValueForOption(fallbackOption);
+
+            // Emit deprecation notices if legacy flags are provided
+            if (usePackage)
+            {
+                AnsiConsole.MarkupLine("[yellow]⚠[/] [bold]--use-package[/] is deprecated and always enabled by default.");
+            }
+            if (fallback)
+            {
+                AnsiConsole.MarkupLine("[yellow]⚠[/] [bold]--fallback[/] is deprecated and ignored. Embed mode has been removed.");
+            }
+
+            // Enforce NuGet package mode by default; no embedding
+            usePackage = true;
+            fallback = false;
             var noMigrations = ctx.ParseResult.GetValueForOption(noMigrationsOption);
 
             ctx.ExitCode = await ExecuteAsync(type, entity, force, projectPath, usePackage, fallback, noMigrations);
