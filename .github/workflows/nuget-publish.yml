@@ -30,8 +30,14 @@ jobs:
     - name: Run tests
       run: dotnet test --configuration Release --no-restore --verbosity normal
     
-    - name: Pack
+    - name: Pack CLI
       run: dotnet pack tools/Swap.CLI/Swap.CLI.csproj --configuration Release --no-build --output ./nupkg
+
+    - name: Pack Patterns
+      run: dotnet pack framework/Swap.Patterns/Swap.Patterns.csproj --configuration Release --no-build --output ./nupkg
+
+    - name: Pack Testing
+      run: dotnet pack framework/Swap.Testing/Swap.Testing.csproj --configuration Release --no-build --output ./nupkg
     
     - name: Publish to NuGet
       if: github.event_name == 'release' || github.event_name == 'workflow_dispatch'

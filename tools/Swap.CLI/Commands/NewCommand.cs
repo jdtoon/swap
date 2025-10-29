@@ -15,11 +15,13 @@ public static class NewCommand
         var dbOption = new Option<string>("--database", () => "sqlite", "Database provider (sqlite|sqlserver|postgres)");
         var outOption = new Option<string?>("--output", "Output directory (default: ./{name})");
         var skipSetupOption = new Option<bool>("--skip-setup", description: "Skip prerequisites check, npm/libman steps, and initial migration (useful for CI/tests)");
+        var noHtmxShellOption = new Option<bool>("--no-htmx-shell", description: "Do not include the HTMX shell middleware by default");
         
         command.AddArgument(nameArg);
         command.AddOption(dbOption);
         command.AddOption(outOption);
         command.AddOption(skipSetupOption);
+        command.AddOption(noHtmxShellOption);
         
         command.SetHandler(async (InvocationContext context) =>
         {
@@ -27,14 +29,15 @@ public static class NewCommand
             var database = context.ParseResult.GetValueForOption(dbOption);
             var output = context.ParseResult.GetValueForOption(outOption);
             var skipSetup = context.ParseResult.GetValueForOption(skipSetupOption);
+            var noHtmxShell = context.ParseResult.GetValueForOption(noHtmxShellOption);
             
-            context.ExitCode = await ExecuteAsync(name, database!, output, skipSetup);
+            context.ExitCode = await ExecuteAsync(name, database!, output, skipSetup, noHtmxShell);
         });
         
         return command;
     }
     
-    private static async Task<int> ExecuteAsync(string name, string database, string? output, bool skipSetup)
+    private static async Task<int> ExecuteAsync(string name, string database, string? output, bool skipSetup, bool noHtmxShell)
     {
         // Validate project name
         if (string.IsNullOrWhiteSpace(name))
@@ -134,6 +137,12 @@ public static class NewCommand
         try
         {
             await GenerateProjectAsync(name, database, projectPath);
+
+            // Include HTMX shell by default unless opted out
+            if (!noHtmxShell)
+            {
+                await AddHtmxShellAsync(projectPath, name);
+            }
             
             AnsiConsole.WriteLine();
             AnsiConsole.MarkupLine("[green]✓[/] Project created successfully!");
@@ -187,13 +196,16 @@ public static class NewCommand
                 AnsiConsole.WriteLine();
                 AnsiConsole.MarkupLine("[green]✓[/] Setup completed!");
                 
-                // Create initial migration (but don't run database update - let the app do it on startup)
+                // Build-first, then create initial migration (no DB update)
                 AnsiConsole.WriteLine();
                 await AnsiConsole.Status()
                     .StartAsync("Creating initial migration...", async ctx =>
                     {
                         try
                         {
+                            ctx.Status("Building project before migration...");
+                            await RunCommandAsync("dotnet", "build", projectPath);
+
                             ctx.Status("Creating initial migration...");
                             await RunCommandAsync("dotnet", "ef migrations add InitialCreate", projectPath);
                             AnsiConsole.MarkupLine("[green]✓[/] Migration created");
@@ -242,6 +254,83 @@ public static class NewCommand
         AnsiConsole.MarkupLine("  dotnet ef migrations add InitialCreate");
         return 1;
     }
+    }
+    
+    private static async Task AddHtmxShellAsync(string workingDir, string projectName)
+    {
+        // Create middleware file
+        var middlewareDir = Path.Combine(workingDir, "Middleware");
+        Directory.CreateDirectory(middlewareDir);
+        var filePath = Path.Combine(middlewareDir, "HtmxShellMiddleware.cs");
+        if (!File.Exists(filePath))
+        {
+            var code = $@"namespace {projectName}.Middleware;
+
+public class HtmxShellMiddleware
+{{
+    private readonly RequestDelegate _next;
+
+    // Adjust allowlist for controllers that render HTMX partial routes
+    private static readonly HashSet<string> Allowlist = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+    {{
+        // e.g., ""/Posts"", ""/Categories""
+    }};
+
+    public HtmxShellMiddleware(RequestDelegate next)
+    {{
+        _next = next;
+    }}
+
+    public async Task InvokeAsync(HttpContext context)
+    {{
+        var isGet = HttpMethods.IsGet(context.Request.Method);
+        var isHtmx = context.Request.Headers.ContainsKey(""HX-Request"");
+        var path = context.Request.Path.Value ?? string.Empty;
+
+        if (isGet && !isHtmx)
+        {{
+            foreach (var baseRoute in Allowlist)
+            {{
+                if (path.StartsWith(baseRoute + ""/"", StringComparison.OrdinalIgnoreCase))
+                {{
+                    context.Response.Redirect(baseRoute);
+                    return;
+                }}
+            }}
+        }}
+
+        await _next(context);
+    }}
+}}
+";
+            await File.WriteAllTextAsync(filePath, code);
+        }
+
+        // Wire Program.cs
+        var programPath = Path.Combine(workingDir, "Program.cs");
+        if (File.Exists(programPath))
+        {
+            var content = await File.ReadAllTextAsync(programPath);
+            var usingLine = $"using {projectName}.Middleware;";
+            if (!content.Contains(usingLine))
+            {
+                var firstUsingEnd = content.IndexOf(";\n");
+                if (firstUsingEnd > 0) content = content.Insert(firstUsingEnd + 2, usingLine + "\n");
+                else content = usingLine + "\n" + content;
+            }
+
+            var buildIdx = content.IndexOf("var app = builder.Build();", StringComparison.Ordinal);
+            if (buildIdx >= 0 && !content.Contains("UseMiddleware<HtmxShellMiddleware>"))
+            {
+                var insertPos = content.IndexOf('\n', buildIdx);
+                if (insertPos > 0)
+                {
+                    content = content.Insert(insertPos + 1, "app.UseMiddleware<HtmxShellMiddleware>();\n");
+                }
+            }
+
+            await File.WriteAllTextAsync(programPath, content);
+        }
     }
     
     private static async Task GenerateProjectAsync(string projectName, string database, string projectPath)

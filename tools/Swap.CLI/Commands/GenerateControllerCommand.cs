@@ -195,24 +195,39 @@ public static class GenerateControllerCommand
 
             var content = await File.ReadAllTextAsync(layoutPath);
             var linkText = entityName + "s"; // simple plural
-            var link = $"<a href=\"/{entityName}\" hx-boost=\"true\" class=\"btn btn-ghost\">{linkText}</a>";
+            var li = $"<li><a href=\"/{entityName}\" hx-target=\"#main-content\" hx-push-url=\"true\">{linkText}</a></li>";
 
-            // Try to insert before closing </nav> if present
-            var navClose = content.LastIndexOf("</nav>", StringComparison.OrdinalIgnoreCase);
-            if (navClose >= 0)
+            // Prefer inserting inside the primary nav UL
+            var ulIdx = content.IndexOf("<ul class=\"menu menu-horizontal", StringComparison.OrdinalIgnoreCase);
+            if (ulIdx >= 0)
             {
-                content = content.Insert(navClose, "\n                " + link + "\n");
+                var ulClose = content.IndexOf("</ul>", ulIdx, StringComparison.OrdinalIgnoreCase);
+                if (ulClose > ulIdx)
+                {
+                    content = content.Insert(ulClose, "\n                        " + li + "\n");
+                }
             }
             else
             {
-                // Else: insert after opening <body>
-                var bodyIdx = content.IndexOf("<body", StringComparison.OrdinalIgnoreCase);
-                if (bodyIdx >= 0)
+                // Fallback: insert before </nav>
+                var navClose = content.LastIndexOf("</nav>", StringComparison.OrdinalIgnoreCase);
+                if (navClose >= 0)
                 {
-                    var bodyEnd = content.IndexOf('>', bodyIdx);
-                    if (bodyEnd > bodyIdx)
+                    var fallbackLink = $"<a href=\"/{entityName}\" hx-target=\"#main-content\" hx-push-url=\"true\" class=\"btn btn-ghost\">{linkText}</a>";
+                    content = content.Insert(navClose, "\n                " + fallbackLink + "\n");
+                }
+                else
+                {
+                    // Else: insert after opening <body>
+                    var bodyIdx = content.IndexOf("<body", StringComparison.OrdinalIgnoreCase);
+                    if (bodyIdx >= 0)
                     {
-                        content = content.Insert(bodyEnd + 1, "\n        <!-- Nav injected by swap --add-nav -->\n        " + link + "\n");
+                        var bodyEnd = content.IndexOf('>', bodyIdx);
+                        if (bodyEnd > bodyIdx)
+                        {
+                            var fallbackLink = $"<a href=\"/{entityName}\" hx-target=\"#main-content\" hx-push-url=\"true\" class=\"btn btn-ghost\">{linkText}</a>";
+                            content = content.Insert(bodyEnd + 1, "\n        <!-- Nav injected by swap --add-nav -->\n        " + fallbackLink + "\n");
+                        }
                     }
                 }
             }
@@ -230,6 +245,34 @@ public static class GenerateControllerCommand
     {
         try
         {
+            // Rigid gate: build before migrations
+            var build = new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = "dotnet",
+                Arguments = "build",
+                WorkingDirectory = workingDir,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+            using (var buildProc = System.Diagnostics.Process.Start(build))
+            {
+                if (buildProc != null)
+                {
+                    await buildProc.WaitForExitAsync();
+                    if (buildProc.ExitCode != 0)
+                    {
+                        AnsiConsole.MarkupLine("[red]✗ Build failed before migration creation[/]");
+                        var err = await buildProc.StandardError.ReadToEndAsync();
+                        var outp = await buildProc.StandardOutput.ReadToEndAsync();
+                        if (!string.IsNullOrWhiteSpace(outp)) AnsiConsole.WriteLine(outp);
+                        if (!string.IsNullOrWhiteSpace(err)) AnsiConsole.WriteLine(err);
+                        return;
+                    }
+                }
+            }
+
             // Detect available DbContexts
             var dbContexts = FindDbContextCandidates(workingDir);
             string? contextName = null;

@@ -144,6 +144,9 @@ public static class GenerateAuthCommand
             await ConfigureProgramCsAsync(workingDir, projectName);
             await ConfigureLayoutAsync(workingDir);
             
+            // Auto-create migration for Identity (rigid: build first, no DB update)
+            await TryCreateIdentityMigrationAsync(workingDir);
+
             // Show success and next steps
             AnsiConsole.WriteLine();
             AnsiConsole.MarkupLine("[green]✓[/] Authentication system generated and configured successfully!");
@@ -473,6 +476,132 @@ builder.Services.ConfigureApplicationCookie(options =>
             await File.WriteAllTextAsync(validationPartialPath, partialContent);
             AnsiConsole.MarkupLine("[green]✓[/] Added missing [grey]_ValidationScriptsPartial.cshtml[/] to Views/Shared");
         }
+    }
+
+    private static async Task TryCreateIdentityMigrationAsync(string workingDir)
+    {
+        try
+        {
+            var build = new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = "dotnet",
+                Arguments = "build",
+                WorkingDirectory = workingDir,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+            using (var buildProc = System.Diagnostics.Process.Start(build))
+            {
+                if (buildProc != null)
+                {
+                    await buildProc.WaitForExitAsync();
+                    if (buildProc.ExitCode != 0)
+                    {
+                        AnsiConsole.MarkupLine("[red]✗ Build failed before migration creation[/]");
+                        var err = await buildProc.StandardError.ReadToEndAsync();
+                        var outp = await buildProc.StandardOutput.ReadToEndAsync();
+                        if (!string.IsNullOrWhiteSpace(outp)) AnsiConsole.WriteLine(outp);
+                        if (!string.IsNullOrWhiteSpace(err)) AnsiConsole.WriteLine(err);
+                        return;
+                    }
+                }
+            }
+
+            var dbContexts = FindDbContextCandidates(workingDir);
+            string? contextName = null;
+            if (dbContexts.Count == 0)
+            {
+                AnsiConsole.MarkupLine("[yellow]ℹ[/] No DbContext found. Skipping automatic migration creation.");
+                return;
+            }
+            else if (dbContexts.Count == 1)
+            {
+                contextName = dbContexts[0].className;
+            }
+            else
+            {
+                var choices = dbContexts.Select(d => $"{d.className} ({d.relativePath})").ToList();
+                var selected = AnsiConsole.Prompt(
+                    new Spectre.Console.SelectionPrompt<string>()
+                        .Title("Multiple DbContexts found. Select one for the migration:")
+                        .AddChoices(choices)
+                );
+                var idx = choices.IndexOf(selected);
+                if (idx >= 0) contextName = dbContexts[idx].className;
+            }
+
+            var args = contextName != null
+                ? $"ef migrations add AddIdentity --context {contextName}"
+                : $"ef migrations add AddIdentity";
+
+            var psi = new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = "dotnet",
+                Arguments = args,
+                WorkingDirectory = workingDir,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+
+            AnsiConsole.MarkupLine($"[cyan]Creating migration:[/] AddIdentity {(contextName != null ? $"(Context: {contextName})" : string.Empty)}");
+            using var proc = System.Diagnostics.Process.Start(psi);
+            if (proc != null)
+            {
+                await proc.WaitForExitAsync();
+                if (proc.ExitCode == 0)
+                {
+                    AnsiConsole.MarkupLine("[green]✓[/] Migration created");
+                }
+                else
+                {
+                    AnsiConsole.MarkupLine("[yellow]⚠[/] Failed to create migration automatically. You can run it manually:");
+                    AnsiConsole.MarkupLine($"    dotnet ef migrations add AddIdentity{(contextName != null ? $" --context {contextName}" : string.Empty)}");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            AnsiConsole.MarkupLine($"[yellow]⚠[/] Skipped automatic migration creation: {ex.Message}");
+        }
+    }
+
+    private static List<(string className, string relativePath)> FindDbContextCandidates(string workingDir)
+    {
+        var results = new List<(string, string)>();
+        var dataDir = Path.Combine(workingDir, "Data");
+        if (!Directory.Exists(dataDir)) return results;
+
+        foreach (var file in Directory.GetFiles(dataDir, "*.cs", SearchOption.AllDirectories))
+        {
+            var text = File.ReadAllText(file);
+            var lines = text.Split('\n');
+            foreach (var line in lines)
+            {
+                if (line.Contains(": DbContext") || line.Contains("IdentityDbContext"))
+                {
+                    var idx = line.IndexOf("class ");
+                    if (idx >= 0)
+                    {
+                        var rest = line.Substring(idx + 6).Trim();
+                        var name = rest.Split(new[]{' ', ':'}, StringSplitOptions.RemoveEmptyEntries).FirstOrDefault();
+                        if (!string.IsNullOrWhiteSpace(name))
+                        {
+                            var rel = Path.GetRelativePath(workingDir, file);
+                            results.Add((name!, rel));
+                        }
+                    }
+                }
+            }
+        }
+
+        return results
+            .GroupBy(r => r.Item1)
+            .Select(g => g.First())
+            .ToList();
     }
 
     private static void ShowNextSteps(string workingDir)

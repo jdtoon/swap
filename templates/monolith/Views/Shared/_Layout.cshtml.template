@@ -8,23 +8,24 @@
     <link rel="stylesheet" type="text/css" href="~/lib/toastify-js/toastify.min.css" asp-append-version="true">
     <script src="~/lib/htmx/htmx.min.js" asp-append-version="true"></script>
 </head>
-<body>
+<body hx-boost="true">
     <header>
         <nav class="navbar bg-base-100 shadow-lg">
             <div class="container mx-auto">
-                <div class="flex-1">
+                <div class="navbar-start">
                     <a class="btn btn-ghost text-xl" href="/">{{ProjectName}}</a>
-                </div>
-                <div class="flex-none">
-                    <ul class="menu menu-horizontal px-1">
-                        <li><a href="/">Home</a></li>
+                    <ul class="menu menu-horizontal px-1 ml-2">
+                        <li><a href="/" hx-target="#main-content" hx-push-url="true">Home</a></li>
                     </ul>
+                </div>
+                <div class="navbar-end">
+                    <partial name="_LoginPartial" />
                 </div>
             </div>
         </nav>
     </header>
 
-    <main class="container mx-auto p-4">
+    <main id="main-content" class="container mx-auto p-4">
         @RenderBody()
     </main>
 

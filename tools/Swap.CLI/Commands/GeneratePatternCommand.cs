@@ -742,6 +742,34 @@ public static class GeneratePatternCommand
     {
         try
         {
+            // Rigid gate: build before migrations
+            var build = new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = "dotnet",
+                Arguments = "build",
+                WorkingDirectory = workingDir,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+            using (var buildProc = System.Diagnostics.Process.Start(build))
+            {
+                if (buildProc != null)
+                {
+                    await buildProc.WaitForExitAsync();
+                    if (buildProc.ExitCode != 0)
+                    {
+                        AnsiConsole.MarkupLine("[red]✗ Build failed before migration creation[/]");
+                        var err = await buildProc.StandardError.ReadToEndAsync();
+                        var outp = await buildProc.StandardOutput.ReadToEndAsync();
+                        if (!string.IsNullOrWhiteSpace(outp)) AnsiConsole.WriteLine(outp);
+                        if (!string.IsNullOrWhiteSpace(err)) AnsiConsole.WriteLine(err);
+                        return;
+                    }
+                }
+            }
+
             var dbContexts = FindDbContextCandidates(workingDir);
             string? contextName = null;
 
