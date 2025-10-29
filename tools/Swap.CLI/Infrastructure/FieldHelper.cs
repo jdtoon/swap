@@ -217,7 +217,7 @@ public static class FieldHelper
                 <input type=""hidden"" name=""{field.Name}"" value=""false"" />
             </div>",
             
-            "DateTime" => $@"<div class=""form-control"">
+            "DateTime" when !field.IsNullable => $@"<div class=""form-control"">
                 <label class=""label"">
                     <span class=""label-text"">{field.Name}</span>
                 </label>
@@ -225,6 +225,19 @@ public static class FieldHelper
                        name=""{field.Name}"" 
                        placeholder=""{field.Name}""
                        value=""@Model.{field.Name}.ToString(""yyyy-MM-ddTHH:mm"")""
+                       class=""input input-bordered"" 
+                       {required} />
+                <span asp-validation-for=""{field.Name}"" class=""text-error text-sm""></span>
+            </div>",
+            
+            "DateTime" when field.IsNullable => $@"<div class=""form-control"">
+                <label class=""label"">
+                    <span class=""label-text"">{field.Name}</span>
+                </label>
+                <input type=""datetime-local"" 
+                       name=""{field.Name}"" 
+                       placeholder=""{field.Name}""
+                       value=""@(Model.{field.Name}?.ToString(""yyyy-MM-ddTHH:mm"") ?? """")""
                        class=""input input-bordered"" 
                        {required} />
                 <span asp-validation-for=""{field.Name}"" class=""text-error text-sm""></span>
@@ -317,7 +330,8 @@ public static class FieldHelper
                             }}
                         </td>",
             
-            "DateTime" => $"<td>@item.{field.Name}.ToString(\"yyyy-MM-dd\")</td>",
+            "DateTime" when !field.IsNullable => $"<td>@item.{field.Name}.ToString(\"yyyy-MM-dd\")</td>",
+            "DateTime" when field.IsNullable => $"<td>@(item.{field.Name}?.ToString(\"yyyy-MM-dd\") ?? \"-\")</td>",
             
             _ => $"<td>@item.{field.Name}</td>"
         };
@@ -342,9 +356,14 @@ public static class FieldHelper
                 }}
             </div>",
             
-            "DateTime" => $@"<div>
+            "DateTime" when !field.IsNullable => $@"<div>
                 <span class=""font-semibold"">{field.Name}:</span>
                 <span>@Model.{field.Name}.ToString(""yyyy-MM-dd HH:mm"")</span>
+            </div>",
+            
+            "DateTime" when field.IsNullable => $@"<div>
+                <span class=""font-semibold"">{field.Name}:</span>
+                <span>@(Model.{field.Name}?.ToString(""yyyy-MM-dd HH:mm"") ?? ""-"")</span>
             </div>",
             
             _ => $@"<div>
