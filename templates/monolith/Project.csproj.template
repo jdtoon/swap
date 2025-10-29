@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <PackageReference Include="Swap.Htmx" Version="0.0.1" />
+    <PackageReference Include="Swap.Patterns" Version="0.0.1" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.10" />
 {{#if_sqlite}}
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="9.0.10" />
