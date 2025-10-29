@@ -1059,15 +1059,31 @@ public static class GeneratePatternCommand
         await File.WriteAllTextAsync(modelPath, formattedCode);
 
         AnsiConsole.MarkupLine($"[green]✓[/] Added ITimestampable to {entity}");
+        
+        // Create migration unless --no-migrations flag is used
+        if (!noMigrations)
+        {
+            await TryCreateMigrationAsync(workingDir, $"AddTimestampableTo{entity}");
+        }
+        else
+        {
+            AnsiConsole.MarkupLine($"[yellow]Skipping migration creation[/] (--no-migrations flag used)");
+            AnsiConsole.MarkupLine($"[grey]Create migration manually:[/] dotnet ef migrations add AddTimestampableTo{entity}");
+        }
+        
         AnsiConsole.MarkupLine($"\n[yellow]Next steps:[/]");
         AnsiConsole.MarkupLine($"1. Add the interceptor to your DbContext:");
         AnsiConsole.MarkupLine($"   [grey]protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)[/]");
         AnsiConsole.MarkupLine($"   [grey]{{[/]");
         AnsiConsole.MarkupLine($"   [grey]    optionsBuilder.AddInterceptors(new TimestampInterceptor());[/]");
         AnsiConsole.MarkupLine($"   [grey]}}[/]");
-        AnsiConsole.MarkupLine($"\n2. Create and run migration:");
-        AnsiConsole.MarkupLine($"   [grey]dotnet ef migrations add AddTimestampableTo{entity}[/]");
-        AnsiConsole.MarkupLine($"   [grey]dotnet ef database update[/]");
+        
+        if (noMigrations)
+        {
+            AnsiConsole.MarkupLine($"\n2. Create and run migration:");
+            AnsiConsole.MarkupLine($"   [grey]dotnet ef migrations add AddTimestampableTo{entity}[/]");
+            AnsiConsole.MarkupLine($"   [grey]dotnet ef database update[/]");
+        }
 
         return 0;
     }
@@ -1171,14 +1187,29 @@ public static class GeneratePatternCommand
         await File.WriteAllTextAsync(modelPath, formattedCode);
 
         AnsiConsole.MarkupLine($"[green]✓[/] Added IOrderable to {entity}");
+        
+        // Create migration unless --no-migrations flag is used
+        if (!noMigrations)
+        {
+            await TryCreateMigrationAsync(workingDir, $"AddOrderableTo{entity}");
+        }
+        else
+        {
+            AnsiConsole.MarkupLine($"[yellow]Skipping migration creation[/] (--no-migrations flag used)");
+            AnsiConsole.MarkupLine($"[grey]Create migration manually:[/] dotnet ef migrations add AddOrderableTo{entity}");
+        }
+        
         AnsiConsole.MarkupLine($"\n[yellow]Tips:[/]");
         AnsiConsole.MarkupLine($"- Use OrderByPosition() to sort lists by Position");
         AnsiConsole.MarkupLine($"- Use GetNextPositionAsync() for assigning a Position on create");
         AnsiConsole.MarkupLine($"- Use ReorderAsync() to move items and NormalizePositionsAsync() after deletes");
 
-        AnsiConsole.MarkupLine($"\n2. Create and run migration if new property added:");
-        AnsiConsole.MarkupLine($"   [grey]dotnet ef migrations add AddOrderableTo{entity}[/]");
-        AnsiConsole.MarkupLine($"   [grey]dotnet ef database update[/]");
+        if (noMigrations)
+        {
+            AnsiConsole.MarkupLine($"\n2. Create and run migration if new property added:");
+            AnsiConsole.MarkupLine($"   [grey]dotnet ef migrations add AddOrderableTo{entity}[/]");
+            AnsiConsole.MarkupLine($"   [grey]dotnet ef database update[/]");
+        }
 
         return 0;
     }
@@ -1335,13 +1366,29 @@ public static class GeneratePatternCommand
         await File.WriteAllTextAsync(modelPath, formatted);
 
         AnsiConsole.MarkupLine($"[green]✓[/] Added IPublishable to {entity}");
+        
+        // Create migration unless --no-migrations flag is used
+        if (!noMigrations)
+        {
+            await TryCreateMigrationAsync(workingDir, $"AddPublishableTo{entity}");
+        }
+        else
+        {
+            AnsiConsole.MarkupLine($"[yellow]Skipping migration creation[/] (--no-migrations flag used)");
+            AnsiConsole.MarkupLine($"[grey]Create migration manually:[/] dotnet ef migrations add AddPublishableTo{entity}");
+        }
+        
         AnsiConsole.MarkupLine($"\n[yellow]Tips:[/]");
         AnsiConsole.MarkupLine($"- Use .Publish() / .Unpublish() helpers");
         AnsiConsole.MarkupLine($"- Filter with .Published() / .Drafts() queries");
-        AnsiConsole.MarkupLine($"\n[yellow]Next steps:[/]");
-        AnsiConsole.MarkupLine($"1. Add migration if new properties were added:");
-        AnsiConsole.MarkupLine($"   [grey]dotnet ef migrations add AddPublishableTo{entity}[/]");
-        AnsiConsole.MarkupLine($"   [grey]dotnet ef database update[/]");
+        
+        if (noMigrations)
+        {
+            AnsiConsole.MarkupLine($"\n[yellow]Next steps:[/]");
+            AnsiConsole.MarkupLine($"1. Add migration if new properties were added:");
+            AnsiConsole.MarkupLine($"   [grey]dotnet ef migrations add AddPublishableTo{entity}[/]");
+            AnsiConsole.MarkupLine($"   [grey]dotnet ef database update[/]");
+        }
 
         return 0;
     }
@@ -1428,15 +1475,31 @@ public static class GeneratePatternCommand
         await File.WriteAllTextAsync(modelPath, formatted);
 
         AnsiConsole.MarkupLine($"[green]✓[/] Added IVersionable to {entity}");
+        
+        // Create migration unless --no-migrations flag is used
+        if (!noMigrations)
+        {
+            await TryCreateMigrationAsync(workingDir, $"AddVersionableTo{entity}");
+        }
+        else
+        {
+            AnsiConsole.MarkupLine($"[yellow]Skipping migration creation[/] (--no-migrations flag used)");
+            AnsiConsole.MarkupLine($"[grey]Create migration manually:[/] dotnet ef migrations add AddVersionableTo{entity}");
+        }
+        
         AnsiConsole.MarkupLine($"\n[yellow]Next steps:[/]");
         AnsiConsole.MarkupLine($"1. Add the interceptor to your DbContext:");
         AnsiConsole.MarkupLine($"   [grey]protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)[/]");
         AnsiConsole.MarkupLine($"   [grey]{{[/]");
         AnsiConsole.MarkupLine($"   [grey]    optionsBuilder.AddInterceptors(new VersionInterceptor());[/]");
         AnsiConsole.MarkupLine($"   [grey]}}[/]");
-        AnsiConsole.MarkupLine($"\n2. Create and run migration:");
-        AnsiConsole.MarkupLine($"   [grey]dotnet ef migrations add AddVersionableTo{entity}[/]");
-        AnsiConsole.MarkupLine($"   [grey]dotnet ef database update[/]");
+        
+        if (noMigrations)
+        {
+            AnsiConsole.MarkupLine($"\n2. Create and run migration:");
+            AnsiConsole.MarkupLine($"   [grey]dotnet ef migrations add AddVersionableTo{entity}[/]");
+            AnsiConsole.MarkupLine($"   [grey]dotnet ef database update[/]");
+        }
 
         return 0;
     }
@@ -1551,16 +1614,31 @@ public static class GeneratePatternCommand
         await File.WriteAllTextAsync(modelPath, formatted);
 
         AnsiConsole.MarkupLine($"[green]✓[/] Added IVisibility to {entity}");
+        
+        // Create migration unless --no-migrations flag is used
+        if (!noMigrations)
+        {
+            await TryCreateMigrationAsync(workingDir, $"AddVisibilityTo{entity}");
+        }
+        else
+        {
+            AnsiConsole.MarkupLine($"[yellow]Skipping migration creation[/] (--no-migrations flag used)");
+            AnsiConsole.MarkupLine($"[grey]Create migration manually:[/] dotnet ef migrations add AddVisibilityTo{entity}");
+        }
+        
         AnsiConsole.MarkupLine($"\n[yellow]Tips:[/]");
         AnsiConsole.MarkupLine($"- Use .Show() / .Hide() to toggle visibility manually");
         AnsiConsole.MarkupLine($"- Use .ScheduleVisibility(dateUtc) for future visibility");
         AnsiConsole.MarkupLine($"- Use .ScheduleVisibilityWindow(from, until) for time-bound content");
         AnsiConsole.MarkupLine($"- Use .IsCurrentlyVisible() or .Visible() query helper to filter visible items");
-        AnsiConsole.MarkupLine($"\n[yellow]Next steps:[/]");
-        AnsiConsole.MarkupLine($"1. Add migration if new properties were added:");
-        AnsiConsole.MarkupLine($"   [grey]dotnet ef migrations add AddVisibilityTo{entity}[/]");
-        AnsiConsole.MarkupLine($"   [grey]dotnet ef database update[/]");
-
+        
+        if (noMigrations)
+        {
+            AnsiConsole.MarkupLine($"\n[yellow]Next steps:[/]");
+            AnsiConsole.MarkupLine($"1. Add migration if new properties were added:");
+            AnsiConsole.MarkupLine($"   [grey]dotnet ef migrations add AddVisibilityTo{entity}[/]");
+            AnsiConsole.MarkupLine($"   [grey]dotnet ef database update[/]");
+        }
         return 0;
     }
 }
