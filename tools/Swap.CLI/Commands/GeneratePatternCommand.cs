@@ -32,10 +32,16 @@ public static class GeneratePatternCommand
             aliases: new[] { "--project", "-p" },
             description: "Path to project directory (default: current directory)");
 
+        var usePackageOption = new Option<bool>(
+            aliases: new[] { "--use-package" },
+            description: "Use Swap.Patterns NuGet package instead of embedding minimal code (defaults to embed)"
+        );
+
         command.AddArgument(typeArg);
         command.AddArgument(entityArg);
         command.AddOption(forceOption);
-        command.AddOption(projectOption);
+    command.AddOption(projectOption);
+    command.AddOption(usePackageOption);
 
         command.SetHandler(async (InvocationContext ctx) =>
         {
@@ -43,14 +49,15 @@ public static class GeneratePatternCommand
             var entity = ctx.ParseResult.GetValueForArgument(entityArg);
             var force = ctx.ParseResult.GetValueForOption(forceOption);
             var projectPath = ctx.ParseResult.GetValueForOption(projectOption);
+            var usePackage = ctx.ParseResult.GetValueForOption(usePackageOption);
 
-            ctx.ExitCode = await ExecuteAsync(type, entity, force, projectPath);
+            ctx.ExitCode = await ExecuteAsync(type, entity, force, projectPath, usePackage);
         });
 
         return command;
     }
 
-    public static async Task<int> ExecuteAsync(string type, string entity, bool force, string? projectPath)
+    public static async Task<int> ExecuteAsync(string type, string entity, bool force, string? projectPath, bool usePackage)
     {
         var workingDir = !string.IsNullOrEmpty(projectPath)
             ? Path.GetFullPath(projectPath)
@@ -69,9 +76,9 @@ public static class GeneratePatternCommand
         {
             return type.ToLower() switch
             {
-                "softdelete" or "soft" => await ApplySoftDeleteAsync(workingDir, projectFile, entity, force),
-                "auditable" or "audit" => await ApplyAuditableAsync(workingDir, projectFile, entity, force),
-                "sluggable" or "slug" => await ApplySluggableAsync(workingDir, projectFile, entity, force),
+                "softdelete" or "soft" => await ApplySoftDeleteAsync(workingDir, projectFile, entity, force, usePackage),
+                "auditable" or "audit" => await ApplyAuditableAsync(workingDir, projectFile, entity, force, usePackage),
+                "sluggable" or "slug" => await ApplySluggableAsync(workingDir, projectFile, entity, force, usePackage),
                 "timestampable" or "timestamp" => await ApplyTimestampableAsync(workingDir, projectFile, entity, force),
                 "orderable" or "order" => await ApplyOrderableAsync(workingDir, projectFile, entity, force),
                 "publishable" or "publish" or "pub" => await ApplyPublishableAsync(workingDir, projectFile, entity, force),
@@ -87,7 +94,7 @@ public static class GeneratePatternCommand
         }
     }
 
-    private static async Task<int> ApplySoftDeleteAsync(string workingDir, string projectFile, string entity, bool force)
+    private static async Task<int> ApplySoftDeleteAsync(string workingDir, string projectFile, string entity, bool force, bool usePackage)
     {
         AnsiConsole.MarkupLine($"[cyan]Adding soft delete pattern to {entity}...[/]");
 
@@ -99,8 +106,11 @@ public static class GeneratePatternCommand
             return 1;
         }
 
-        // Ensure Swap.Patterns package reference
-        await EnsureSwapPatternsPackageAsync(projectFile);
+        // Package path (optional)
+        if (usePackage)
+        {
+            await EnsureSwapPatternsPackageAsync(projectFile);
+        }
 
         // Modify the entity model
         var modelContent = await File.ReadAllTextAsync(modelPath);
@@ -124,27 +134,29 @@ public static class GeneratePatternCommand
             return 0;
         }
 
-        // Add using Swap.Patterns.SoftDelete
-        var hasUsing = root.DescendantNodes()
-            .OfType<UsingDirectiveSyntax>()
-            .Any(u => u.Name?.ToString() == "Swap.Patterns.SoftDelete");
-
-        var compilationUnit = (CompilationUnitSyntax)root;
-        if (!hasUsing)
+        // Package mode: add interface + using; Embed mode: properties only
+        if (usePackage)
         {
-            var usingDirective = SyntaxFactory.UsingDirective(
-                SyntaxFactory.ParseName("Swap.Patterns.SoftDelete"))
-                .WithTrailingTrivia(SyntaxFactory.CarriageReturnLineFeed);
-            compilationUnit = compilationUnit.AddUsings(usingDirective);
-            root = compilationUnit;
-        }
+            var hasUsing = root.DescendantNodes()
+                .OfType<UsingDirectiveSyntax>()
+                .Any(u => u.Name?.ToString() == "Swap.Patterns.SoftDelete");
 
-        // Add ISoftDeletable interface
-        var baseList = classDecl.BaseList ?? SyntaxFactory.BaseList();
-        baseList = baseList.AddTypes(
-            SyntaxFactory.SimpleBaseType(
-                SyntaxFactory.ParseTypeName(" ISoftDeletable")));
-        classDecl = classDecl.WithBaseList(baseList);
+            var compilationUnit = (CompilationUnitSyntax)root;
+            if (!hasUsing)
+            {
+                var usingDirective = SyntaxFactory.UsingDirective(
+                    SyntaxFactory.ParseName("Swap.Patterns.SoftDelete"))
+                    .WithTrailingTrivia(SyntaxFactory.CarriageReturnLineFeed);
+                compilationUnit = compilationUnit.AddUsings(usingDirective);
+                root = compilationUnit;
+            }
+
+            var baseList = classDecl.BaseList ?? SyntaxFactory.BaseList();
+            baseList = baseList.AddTypes(
+                SyntaxFactory.SimpleBaseType(
+                    SyntaxFactory.ParseTypeName(" ISoftDeletable")));
+            classDecl = classDecl.WithBaseList(baseList);
+        }
 
         // Add properties if missing
         var existingProps = classDecl.Members.OfType<PropertyDeclarationSyntax>().Select(p => p.Identifier.Text).ToHashSet();
@@ -227,15 +239,17 @@ public static class GeneratePatternCommand
             }
         }
 
+        // Auto-create migration (no DB update)
+        await TryCreateMigrationAsync(workingDir, $"AddSoftDeleteTo{entity}");
+
         AnsiConsole.MarkupLine($"[green]✓[/] Soft delete pattern applied successfully!");
         AnsiConsole.MarkupLine($"[cyan]Next steps:[/]");
-        AnsiConsole.MarkupLine($"  1. Add migration: [grey]dotnet ef migrations add AddSoftDeleteTo{entity}[/]");
-        AnsiConsole.MarkupLine($"  2. Update database: [grey]dotnet ef database update[/]");
+        AnsiConsole.MarkupLine($"  1. (Optional) Update database: [grey]dotnet ef database update[/]");
 
         return 0;
     }
 
-    private static async Task<int> ApplyAuditableAsync(string workingDir, string projectFile, string entity, bool force)
+    private static async Task<int> ApplyAuditableAsync(string workingDir, string projectFile, string entity, bool force, bool usePackage)
     {
         AnsiConsole.MarkupLine($"[cyan]Adding auditable pattern to {entity}...[/]");
 
@@ -247,8 +261,11 @@ public static class GeneratePatternCommand
             return 1;
         }
 
-        // Ensure Swap.Patterns package reference
-        await EnsureSwapPatternsPackageAsync(projectFile);
+        // Package mode optional
+        if (usePackage)
+        {
+            await EnsureSwapPatternsPackageAsync(projectFile);
+        }
 
         // Modify the entity model
         var modelContent = await File.ReadAllTextAsync(modelPath);
@@ -272,28 +289,29 @@ public static class GeneratePatternCommand
             return 0;
         }
 
-        // Add using statement
-        var hasUsing = root.DescendantNodes()
-            .OfType<UsingDirectiveSyntax>()
-            .Any(u => u.Name?.ToString() == "Swap.Patterns.Auditable");
-
-        CompilationUnitSyntax compilationUnit = (CompilationUnitSyntax)root;
-        if (!hasUsing)
+        // Package mode: add interface + using; Embed mode: properties only
+        if (usePackage)
         {
-            var usingDirective = SyntaxFactory.UsingDirective(
-                SyntaxFactory.ParseName("Swap.Patterns.Auditable"))
-                .WithTrailingTrivia(SyntaxFactory.CarriageReturnLineFeed);
-            compilationUnit = compilationUnit.AddUsings(usingDirective);
-            root = compilationUnit;
+            var hasUsing = root.DescendantNodes()
+                .OfType<UsingDirectiveSyntax>()
+                .Any(u => u.Name?.ToString() == "Swap.Patterns.Auditable");
+
+            CompilationUnitSyntax compilationUnit = (CompilationUnitSyntax)root;
+            if (!hasUsing)
+            {
+                var usingDirective = SyntaxFactory.UsingDirective(
+                    SyntaxFactory.ParseName("Swap.Patterns.Auditable"))
+                    .WithTrailingTrivia(SyntaxFactory.CarriageReturnLineFeed);
+                compilationUnit = compilationUnit.AddUsings(usingDirective);
+                root = compilationUnit;
+            }
+
+            var newBaseList = classDecl.BaseList ?? SyntaxFactory.BaseList();
+            newBaseList = newBaseList.AddTypes(
+                SyntaxFactory.SimpleBaseType(
+                    SyntaxFactory.ParseTypeName(" IAuditable")));
+            classDecl = classDecl.WithBaseList(newBaseList);
         }
-
-        // Add IAuditable interface
-        var newBaseList = classDecl.BaseList ?? SyntaxFactory.BaseList();
-        newBaseList = newBaseList.AddTypes(
-            SyntaxFactory.SimpleBaseType(
-                SyntaxFactory.ParseTypeName(" IAuditable")));
-
-        classDecl = classDecl.WithBaseList(newBaseList);
 
         // Add properties if they don't exist
         var hasCreatedAt = classDecl.Members
@@ -373,7 +391,10 @@ public static class GeneratePatternCommand
         }
         catch { }
 
-        // Provide configuration guidance
+    // Auto-create migration (no DB update)
+    await TryCreateMigrationAsync(workingDir, $"AddAuditableTo{entity}");
+
+    // Provide configuration guidance
         AnsiConsole.MarkupLine($"[yellow]Note:[/] Configure the audit interceptor in your DbContext:");
         AnsiConsole.MarkupLine($"[grey]// In Program.cs[/]");
         AnsiConsole.MarkupLine($"[grey]builder.Services.AddHttpContextAccessor();[/]");
@@ -395,13 +416,12 @@ public static class GeneratePatternCommand
 
         AnsiConsole.MarkupLine($"[green]✓[/] Auditable pattern applied successfully!");
         AnsiConsole.MarkupLine($"[cyan]Next steps:[/]");
-        AnsiConsole.MarkupLine($"  1. Add migration: [grey]dotnet ef migrations add AddAuditableTo{entity}[/]");
-        AnsiConsole.MarkupLine($"  2. Update database: [grey]dotnet ef database update[/]");
+        AnsiConsole.MarkupLine($"  1. (Optional) Update database: [grey]dotnet ef database update[/]");
 
         return 0;
     }
 
-    private static async Task<int> ApplySluggableAsync(string workingDir, string projectFile, string entity, bool force)
+    private static async Task<int> ApplySluggableAsync(string workingDir, string projectFile, string entity, bool force, bool usePackage)
     {
         // Find the entity file
         var modelPath = Path.Combine(workingDir, "Models", $"{entity}.cs");
@@ -436,32 +456,37 @@ public static class GeneratePatternCommand
             }
         }
 
-        // Add using statement for Swap.Patterns.Sluggable
-        var hasUsing = root.Usings.Any(u => u.Name?.ToString() == "Swap.Patterns.Sluggable");
+        // Package mode: add using; embed mode: skip
         CompilationUnitSyntax compilationUnit = root;
-        if (!hasUsing)
+        if (usePackage)
         {
-            var usingDirective = SyntaxFactory.UsingDirective(
-                SyntaxFactory.ParseName("Swap.Patterns.Sluggable"))
-                .WithTrailingTrivia(SyntaxFactory.CarriageReturnLineFeed);
-            compilationUnit = compilationUnit.AddUsings(usingDirective);
+            var hasUsing = root.Usings.Any(u => u.Name?.ToString() == "Swap.Patterns.Sluggable");
+            if (!hasUsing)
+            {
+                var usingDirective = SyntaxFactory.UsingDirective(
+                    SyntaxFactory.ParseName("Swap.Patterns.Sluggable"))
+                    .WithTrailingTrivia(SyntaxFactory.CarriageReturnLineFeed);
+                compilationUnit = compilationUnit.AddUsings(usingDirective);
+            }
         }
 
         // Add ISluggable interface to the class
-        var sluggableInterface = SyntaxFactory.SimpleBaseType(
-            SyntaxFactory.ParseTypeName(" ISluggable"));
-
-        ClassDeclarationSyntax updatedClass;
-        if (classDeclaration.BaseList == null)
+        ClassDeclarationSyntax updatedClass = classDeclaration;
+        if (usePackage)
         {
-            updatedClass = classDeclaration.WithBaseList(
-                SyntaxFactory.BaseList(
-                    SyntaxFactory.SingletonSeparatedList<BaseTypeSyntax>(sluggableInterface)));
-        }
-        else
-        {
-            updatedClass = classDeclaration.WithBaseList(
-                classDeclaration.BaseList.AddTypes(sluggableInterface));
+            var sluggableInterface = SyntaxFactory.SimpleBaseType(
+                SyntaxFactory.ParseTypeName(" ISluggable"));
+            if (classDeclaration.BaseList == null)
+            {
+                updatedClass = classDeclaration.WithBaseList(
+                    SyntaxFactory.BaseList(
+                        SyntaxFactory.SingletonSeparatedList<BaseTypeSyntax>(sluggableInterface)));
+            }
+            else
+            {
+                updatedClass = classDeclaration.WithBaseList(
+                    classDeclaration.BaseList.AddTypes(sluggableInterface));
+            }
         }
 
         // Check if Slug property already exists
@@ -533,10 +558,8 @@ public static class GeneratePatternCommand
         // Auto-inject slug generation into controller actions (Create/Edit)
         await UpdateControllerForSluggableAsync(workingDir, entity);
 
-        // Inform about migration creation
-        AnsiConsole.MarkupLine("[cyan]Next steps:[/]");
-        AnsiConsole.MarkupLine($"  1. Add migration: [grey]dotnet ef migrations add Add{entity}Slug[/]");
-        AnsiConsole.MarkupLine("  2. (Optional) Update DB: [grey]dotnet ef database update[/]");
+    // Auto-create migration (do not apply update)
+    await TryCreateMigrationAsync(workingDir, $"Add{entity}Slug");
 
         return 0;
     }
@@ -712,6 +735,105 @@ public static class GeneratePatternCommand
 
         await File.WriteAllTextAsync(controllerPath, content);
         AnsiConsole.MarkupLine("[green]✓[/] Injected slug generation into controller (Create/Edit)");
+    }
+
+    // Create a migration with interactive DbContext selection; no DB update is applied
+    private static async Task TryCreateMigrationAsync(string workingDir, string migrationName)
+    {
+        try
+        {
+            var dbContexts = FindDbContextCandidates(workingDir);
+            string? contextName = null;
+
+            if (dbContexts.Count == 0)
+            {
+                AnsiConsole.MarkupLine("[yellow]ℹ[/] No DbContext found. Skipping automatic migration creation.");
+                return;
+            }
+            else if (dbContexts.Count == 1)
+            {
+                contextName = dbContexts[0].className;
+            }
+            else
+            {
+                var choices = dbContexts.Select(d => $"{d.className} ({d.relativePath})").ToList();
+                var selected = AnsiConsole.Prompt(
+                    new Spectre.Console.SelectionPrompt<string>()
+                        .Title("Multiple DbContexts found. Select one for the migration:")
+                        .AddChoices(choices)
+                );
+                var idx = choices.IndexOf(selected);
+                if (idx >= 0) contextName = dbContexts[idx].className;
+            }
+
+            var args = contextName != null
+                ? $"ef migrations add {migrationName} --context {contextName}"
+                : $"ef migrations add {migrationName}";
+
+            var psi = new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = "dotnet",
+                Arguments = args,
+                WorkingDirectory = workingDir,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+
+            AnsiConsole.MarkupLine($"[cyan]Creating migration:[/] {migrationName} {(contextName != null ? $"(Context: {contextName})" : string.Empty)}");
+            using var proc = System.Diagnostics.Process.Start(psi);
+            if (proc != null)
+            {
+                await proc.WaitForExitAsync();
+                if (proc.ExitCode == 0)
+                {
+                    AnsiConsole.MarkupLine("[green]✓[/] Migration created");
+                }
+                else
+                {
+                    AnsiConsole.MarkupLine("[yellow]⚠[/] Failed to create migration automatically. You can run it manually:");
+                    AnsiConsole.MarkupLine($"    dotnet ef migrations add {migrationName}{(contextName != null ? $" --context {contextName}" : string.Empty)}");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            AnsiConsole.MarkupLine($"[yellow]⚠[/] Skipped automatic migration creation: {ex.Message}");
+        }
+    }
+
+    // Heuristic finder for DbContext candidates similar to controller command
+    private static List<(string className, string relativePath)> FindDbContextCandidates(string workingDir)
+    {
+        var results = new List<(string, string)>();
+        var dataDir = Path.Combine(workingDir, "Data");
+        if (!Directory.Exists(dataDir)) return results;
+
+        foreach (var file in Directory.GetFiles(dataDir, "*.cs", SearchOption.AllDirectories))
+        {
+            var text = File.ReadAllText(file);
+            var lines = text.Split('\n');
+            foreach (var line in lines)
+            {
+                if (line.Contains(": DbContext") || line.Contains("IdentityDbContext"))
+                {
+                    var idx = line.IndexOf("class ");
+                    if (idx >= 0)
+                    {
+                        var rest = line.Substring(idx + 6).Trim();
+                        var name = rest.Split(new[]{' ', ':'}, StringSplitOptions.RemoveEmptyEntries).FirstOrDefault();
+                        if (!string.IsNullOrWhiteSpace(name))
+                        {
+                            var rel = Path.GetRelativePath(workingDir, file);
+                            results.Add((name!, rel));
+                        }
+                    }
+                }
+            }
+        }
+
+        return results.GroupBy(r => r.Item1).Select(g => g.First()).ToList();
     }
     private static async Task<int> ApplyTimestampableAsync(string workingDir, string projectFile, string entity, bool force)
     {

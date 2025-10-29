@@ -34,6 +34,12 @@ public static class GenerateControllerCommand
             aliases: new[] { "--project", "-p" },
             description: "Path to project directory (default: current directory)");
         command.AddOption(projectOption);
+
+        var addNavOption = new Option<bool>(
+            aliases: new[] { "--add-nav" },
+            description: "Inject a navigation link for this controller into _Layout.cshtml (HTMX-first nav)"
+        );
+        command.AddOption(addNavOption);
         
         command.SetHandler(async (InvocationContext context) =>
         {
@@ -42,13 +48,14 @@ public static class GenerateControllerCommand
             var dryRun = context.ParseResult.GetValueForOption(dryRunOption);
             var force = context.ParseResult.GetValueForOption(forceOption);
             var projectPath = context.ParseResult.GetValueForOption(projectOption);
-            context.ExitCode = await ExecuteAsync(name, fields, dryRun, force, projectPath);
+            var addNav = context.ParseResult.GetValueForOption(addNavOption);
+            context.ExitCode = await ExecuteAsync(name, fields, dryRun, force, projectPath, addNav);
         });
         
         return command;
     }
     
-    private static async Task<int> ExecuteAsync(string entityName, string? fieldsSpec, bool dryRun, bool force, string? projectPath)
+    private static async Task<int> ExecuteAsync(string entityName, string? fieldsSpec, bool dryRun, bool force, string? projectPath, bool addNav)
     {
         // Validate entity name
         if (string.IsNullOrWhiteSpace(entityName))
@@ -135,6 +142,12 @@ public static class GenerateControllerCommand
 
             // Auto-create migration for the new entity (never applies database update)
             await TryCreateMigrationAsync(workingDir, entityName);
+
+            // Optionally inject nav link
+            if (addNav)
+            {
+                await TryInjectNavLinkAsync(workingDir, entityName);
+            }
             
             AnsiConsole.WriteLine();
             AnsiConsole.MarkupLine("[green]✓[/] Controller generated successfully!");
@@ -166,6 +179,50 @@ public static class GenerateControllerCommand
         {
             AnsiConsole.MarkupLine($"[red]Error:[/] {ex.Message}");
             return 1;
+        }
+    }
+
+    private static async Task TryInjectNavLinkAsync(string workingDir, string entityName)
+    {
+        try
+        {
+            var layoutPath = Path.Combine(workingDir, "Views", "Shared", "_Layout.cshtml");
+            if (!File.Exists(layoutPath))
+            {
+                AnsiConsole.MarkupLine("[yellow]ℹ[/] _Layout.cshtml not found, skipping --add-nav");
+                return;
+            }
+
+            var content = await File.ReadAllTextAsync(layoutPath);
+            var linkText = entityName + "s"; // simple plural
+            var link = $"<a href=\"/{entityName}\" hx-boost=\"true\" class=\"btn btn-ghost\">{linkText}</a>";
+
+            // Try to insert before closing </nav> if present
+            var navClose = content.LastIndexOf("</nav>", StringComparison.OrdinalIgnoreCase);
+            if (navClose >= 0)
+            {
+                content = content.Insert(navClose, "\n                " + link + "\n");
+            }
+            else
+            {
+                // Else: insert after opening <body>
+                var bodyIdx = content.IndexOf("<body", StringComparison.OrdinalIgnoreCase);
+                if (bodyIdx >= 0)
+                {
+                    var bodyEnd = content.IndexOf('>', bodyIdx);
+                    if (bodyEnd > bodyIdx)
+                    {
+                        content = content.Insert(bodyEnd + 1, "\n        <!-- Nav injected by swap --add-nav -->\n        " + link + "\n");
+                    }
+                }
+            }
+
+            await File.WriteAllTextAsync(layoutPath, content);
+            AnsiConsole.MarkupLine("[green]✓[/] Navigation link injected into _Layout.cshtml");
+        }
+        catch (Exception ex)
+        {
+            AnsiConsole.MarkupLine($"[yellow]⚠[/] Could not inject nav link: {ex.Message}");
         }
     }
     
