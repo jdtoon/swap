@@ -40,6 +40,12 @@ public static class GenerateControllerCommand
             description: "Inject a navigation link for this controller into _Layout.cshtml (HTMX-first nav)"
         );
         command.AddOption(addNavOption);
+
+        var noMigrationsOption = new Option<bool>(
+            aliases: new[] { "--no-migrations" },
+            description: "Skip automatic migration creation (you'll need to create migrations manually)"
+        );
+        command.AddOption(noMigrationsOption);
         
         command.SetHandler(async (InvocationContext context) =>
         {
@@ -49,13 +55,14 @@ public static class GenerateControllerCommand
             var force = context.ParseResult.GetValueForOption(forceOption);
             var projectPath = context.ParseResult.GetValueForOption(projectOption);
             var addNav = context.ParseResult.GetValueForOption(addNavOption);
-            context.ExitCode = await ExecuteAsync(name, fields, dryRun, force, projectPath, addNav);
+            var noMigrations = context.ParseResult.GetValueForOption(noMigrationsOption);
+            context.ExitCode = await ExecuteAsync(name, fields, dryRun, force, projectPath, addNav, noMigrations);
         });
         
         return command;
     }
     
-    private static async Task<int> ExecuteAsync(string entityName, string? fieldsSpec, bool dryRun, bool force, string? projectPath, bool addNav)
+    private static async Task<int> ExecuteAsync(string entityName, string? fieldsSpec, bool dryRun, bool force, string? projectPath, bool addNav, bool noMigrations)
     {
         // Validate entity name
         if (string.IsNullOrWhiteSpace(entityName))
@@ -141,7 +148,16 @@ public static class GenerateControllerCommand
             await GenerateControllerAsync(entityName, projectName, fields, force);
 
             // Auto-create migration for the new entity (never applies database update)
-            await TryCreateMigrationAsync(workingDir, entityName);
+            if (!noMigrations)
+            {
+                await TryCreateMigrationAsync(workingDir, entityName);
+            }
+            else
+            {
+                AnsiConsole.WriteLine();
+                AnsiConsole.MarkupLine("[yellow]ℹ[/] Migration creation skipped (--no-migrations flag)");
+                AnsiConsole.MarkupLine("[dim]Create migration manually:[/] [cyan]dotnet ef migrations add Add{0}[/]", entityName);
+            }
 
             // Optionally inject nav link
             if (addNav)

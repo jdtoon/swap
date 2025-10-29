@@ -37,11 +37,23 @@ public static class GeneratePatternCommand
             description: "Use Swap.Patterns NuGet package instead of embedding minimal code (defaults to embed)"
         );
 
+        var fallbackOption = new Option<bool>(
+            aliases: new[] { "--fallback" },
+            description: "Fallback to embedded code if Swap.Patterns package installation fails (only with --use-package)"
+        );
+
+        var noMigrationsOption = new Option<bool>(
+            aliases: new[] { "--no-migrations" },
+            description: "Skip automatic migration creation (you'll need to create migrations manually)"
+        );
+
         command.AddArgument(typeArg);
         command.AddArgument(entityArg);
         command.AddOption(forceOption);
     command.AddOption(projectOption);
     command.AddOption(usePackageOption);
+        command.AddOption(fallbackOption);
+        command.AddOption(noMigrationsOption);
 
         command.SetHandler(async (InvocationContext ctx) =>
         {
@@ -50,14 +62,16 @@ public static class GeneratePatternCommand
             var force = ctx.ParseResult.GetValueForOption(forceOption);
             var projectPath = ctx.ParseResult.GetValueForOption(projectOption);
             var usePackage = ctx.ParseResult.GetValueForOption(usePackageOption);
+            var fallback = ctx.ParseResult.GetValueForOption(fallbackOption);
+            var noMigrations = ctx.ParseResult.GetValueForOption(noMigrationsOption);
 
-            ctx.ExitCode = await ExecuteAsync(type, entity, force, projectPath, usePackage);
+            ctx.ExitCode = await ExecuteAsync(type, entity, force, projectPath, usePackage, fallback, noMigrations);
         });
 
         return command;
     }
 
-    public static async Task<int> ExecuteAsync(string type, string entity, bool force, string? projectPath, bool usePackage)
+    public static async Task<int> ExecuteAsync(string type, string entity, bool force, string? projectPath, bool usePackage, bool fallback, bool noMigrations)
     {
         var workingDir = !string.IsNullOrEmpty(projectPath)
             ? Path.GetFullPath(projectPath)
@@ -76,14 +90,14 @@ public static class GeneratePatternCommand
         {
             return type.ToLower() switch
             {
-                "softdelete" or "soft" => await ApplySoftDeleteAsync(workingDir, projectFile, entity, force, usePackage),
-                "auditable" or "audit" => await ApplyAuditableAsync(workingDir, projectFile, entity, force, usePackage),
-                "sluggable" or "slug" => await ApplySluggableAsync(workingDir, projectFile, entity, force, usePackage),
-                "timestampable" or "timestamp" => await ApplyTimestampableAsync(workingDir, projectFile, entity, force),
-                "orderable" or "order" => await ApplyOrderableAsync(workingDir, projectFile, entity, force),
-                "publishable" or "publish" or "pub" => await ApplyPublishableAsync(workingDir, projectFile, entity, force),
-                "versionable" or "version" or "ver" => await ApplyVersionableAsync(workingDir, projectFile, entity, force),
-                "visibility" or "visible" or "vis" => await ApplyVisibilityAsync(workingDir, projectFile, entity, force),
+                "softdelete" or "soft" => await ApplySoftDeleteAsync(workingDir, projectFile, entity, force, usePackage, fallback, noMigrations),
+                "auditable" or "audit" => await ApplyAuditableAsync(workingDir, projectFile, entity, force, usePackage, fallback, noMigrations),
+                "sluggable" or "slug" => await ApplySluggableAsync(workingDir, projectFile, entity, force, usePackage, fallback, noMigrations),
+                "timestampable" or "timestamp" => await ApplyTimestampableAsync(workingDir, projectFile, entity, force, usePackage, fallback, noMigrations),
+                "orderable" or "order" => await ApplyOrderableAsync(workingDir, projectFile, entity, force, usePackage, fallback, noMigrations),
+                "publishable" or "publish" or "pub" => await ApplyPublishableAsync(workingDir, projectFile, entity, force, usePackage, fallback, noMigrations),
+                "versionable" or "version" or "ver" => await ApplyVersionableAsync(workingDir, projectFile, entity, force, usePackage, fallback, noMigrations),
+                "visibility" or "visible" or "vis" => await ApplyVisibilityAsync(workingDir, projectFile, entity, force, usePackage, fallback, noMigrations),
                 _ => throw new Exception($"Unknown pattern type: {type}. Use softdelete, auditable, sluggable, timestampable, orderable, publishable, versionable, or visibility")
             };
         }
@@ -94,7 +108,7 @@ public static class GeneratePatternCommand
         }
     }
 
-    private static async Task<int> ApplySoftDeleteAsync(string workingDir, string projectFile, string entity, bool force, bool usePackage)
+    private static async Task<int> ApplySoftDeleteAsync(string workingDir, string projectFile, string entity, bool force, bool usePackage, bool fallback, bool noMigrations)
     {
         AnsiConsole.MarkupLine($"[cyan]Adding soft delete pattern to {entity}...[/]");
 
@@ -109,7 +123,14 @@ public static class GeneratePatternCommand
         // Package path (optional)
         if (usePackage)
         {
-            await EnsureSwapPatternsPackageAsync(projectFile);
+            var packageInstalled = await EnsureSwapPatternsPackageAsync(projectFile, fallback);
+            if (!packageInstalled && !fallback)
+            {
+                return 1; // Strict mode: fail if package installation fails
+            }
+            // If fallback is true and package failed, packageInstalled will be false
+            // and we'll use embedded code below
+            usePackage = packageInstalled; // Switch to embed mode if package failed
         }
 
         // Modify the entity model
@@ -240,16 +261,27 @@ public static class GeneratePatternCommand
         }
 
         // Auto-create migration (no DB update)
-        await TryCreateMigrationAsync(workingDir, $"AddSoftDeleteTo{entity}");
+        if (!noMigrations)
+        {
+            await TryCreateMigrationAsync(workingDir, $"AddSoftDeleteTo{entity}");
+        }
+        else
+        {
+            AnsiConsole.MarkupLine("[yellow]ℹ[/] Migration creation skipped (--no-migrations flag)");
+            AnsiConsole.MarkupLine("[dim]Create migration manually:[/] [cyan]dotnet ef migrations add AddSoftDeleteTo{0}[/]", entity);
+        }
 
         AnsiConsole.MarkupLine($"[green]✓[/] Soft delete pattern applied successfully!");
-        AnsiConsole.MarkupLine($"[cyan]Next steps:[/]");
-        AnsiConsole.MarkupLine($"  1. (Optional) Update database: [grey]dotnet ef database update[/]");
+        if (!noMigrations)
+        {
+            AnsiConsole.MarkupLine($"[cyan]Next steps:[/]");
+            AnsiConsole.MarkupLine($"  1. (Optional) Update database: [grey]dotnet ef database update[/]");
+        }
 
         return 0;
     }
 
-    private static async Task<int> ApplyAuditableAsync(string workingDir, string projectFile, string entity, bool force, bool usePackage)
+    private static async Task<int> ApplyAuditableAsync(string workingDir, string projectFile, string entity, bool force, bool usePackage, bool fallback, bool noMigrations)
     {
         AnsiConsole.MarkupLine($"[cyan]Adding auditable pattern to {entity}...[/]");
 
@@ -264,7 +296,12 @@ public static class GeneratePatternCommand
         // Package mode optional
         if (usePackage)
         {
-            await EnsureSwapPatternsPackageAsync(projectFile);
+            var packageInstalled = await EnsureSwapPatternsPackageAsync(projectFile, fallback);
+            if (!packageInstalled && !fallback)
+            {
+                return 1; // Strict mode: fail if package installation fails
+            }
+            usePackage = packageInstalled; // Switch to embed mode if package failed
         }
 
         // Modify the entity model
@@ -392,7 +429,15 @@ public static class GeneratePatternCommand
         catch { }
 
     // Auto-create migration (no DB update)
-    await TryCreateMigrationAsync(workingDir, $"AddAuditableTo{entity}");
+    if (!noMigrations)
+    {
+        await TryCreateMigrationAsync(workingDir, $"AddAuditableTo{entity}");
+    }
+    else
+    {
+        AnsiConsole.MarkupLine("[yellow]ℹ[/] Migration creation skipped (--no-migrations flag)");
+        AnsiConsole.MarkupLine("[dim]Create migration manually:[/] [cyan]dotnet ef migrations add AddAuditableTo{0}[/]", entity);
+    }
 
     // Provide configuration guidance
         AnsiConsole.MarkupLine($"[yellow]Note:[/] Configure the audit interceptor in your DbContext:");
@@ -421,7 +466,7 @@ public static class GeneratePatternCommand
         return 0;
     }
 
-    private static async Task<int> ApplySluggableAsync(string workingDir, string projectFile, string entity, bool force, bool usePackage)
+    private static async Task<int> ApplySluggableAsync(string workingDir, string projectFile, string entity, bool force, bool usePackage, bool fallback, bool noMigrations)
     {
         // Find the entity file
         var modelPath = Path.Combine(workingDir, "Models", $"{entity}.cs");
@@ -559,7 +604,15 @@ public static class GeneratePatternCommand
         await UpdateControllerForSluggableAsync(workingDir, entity);
 
     // Auto-create migration (do not apply update)
-    await TryCreateMigrationAsync(workingDir, $"Add{entity}Slug");
+    if (!noMigrations)
+    {
+        await TryCreateMigrationAsync(workingDir, $"Add{entity}Slug");
+    }
+    else
+    {
+        AnsiConsole.MarkupLine("[yellow]ℹ[/] Migration creation skipped (--no-migrations flag)");
+        AnsiConsole.MarkupLine("[dim]Create migration manually:[/] [cyan]dotnet ef migrations add Add{0}Slug[/]", entity);
+    }
 
         return 0;
     }
@@ -863,7 +916,7 @@ public static class GeneratePatternCommand
 
         return results.GroupBy(r => r.Item1).Select(g => g.First()).ToList();
     }
-    private static async Task<int> ApplyTimestampableAsync(string workingDir, string projectFile, string entity, bool force)
+    private static async Task<int> ApplyTimestampableAsync(string workingDir, string projectFile, string entity, bool force, bool usePackage, bool fallback, bool noMigrations)
     {
         AnsiConsole.MarkupLine($"[cyan]Adding timestampable pattern to {entity}...[/]");
 
@@ -875,8 +928,16 @@ public static class GeneratePatternCommand
             return 1;
         }
 
-        // Ensure Swap.Patterns package reference
-        await EnsureSwapPatternsPackageAsync(projectFile);
+        // Ensure Swap.Patterns package reference if requested
+        if (usePackage)
+        {
+            var packageInstalled = await EnsureSwapPatternsPackageAsync(projectFile, fallback);
+            if (!packageInstalled && !fallback)
+            {
+                return 1;
+            }
+            usePackage = packageInstalled;
+        }
 
         // Modify the entity model
         var modelContent = await File.ReadAllTextAsync(modelPath);
@@ -1011,7 +1072,7 @@ public static class GeneratePatternCommand
         return 0;
     }
 
-    private static async Task<int> ApplyOrderableAsync(string workingDir, string projectFile, string entity, bool force)
+    private static async Task<int> ApplyOrderableAsync(string workingDir, string projectFile, string entity, bool force, bool usePackage, bool fallback, bool noMigrations)
     {
         AnsiConsole.MarkupLine($"[cyan]Adding orderable pattern to {entity}...[/]");
 
@@ -1023,8 +1084,16 @@ public static class GeneratePatternCommand
             return 1;
         }
 
-        // Ensure Swap.Patterns package reference
-        await EnsureSwapPatternsPackageAsync(projectFile);
+        // Ensure Swap.Patterns package reference if requested
+        if (usePackage)
+        {
+            var packageInstalled = await EnsureSwapPatternsPackageAsync(projectFile, fallback);
+            if (!packageInstalled && !fallback)
+            {
+                return 1;
+            }
+            usePackage = packageInstalled;
+        }
 
         // Modify the entity model
         var modelContent = await File.ReadAllTextAsync(modelPath);
@@ -1114,12 +1183,12 @@ public static class GeneratePatternCommand
         return 0;
     }
 
-    private static async Task EnsureSwapPatternsPackageAsync(string projectFile)
+    private static async Task<bool> EnsureSwapPatternsPackageAsync(string projectFile, bool fallback)
     {
         var content = await File.ReadAllTextAsync(projectFile);
         if (content.Contains("Swap.Patterns"))
         {
-            return;
+            return true;
         }
 
         var projectDir = Path.GetDirectoryName(projectFile)!;
@@ -1144,17 +1213,30 @@ public static class GeneratePatternCommand
             await process.WaitForExitAsync();
             if (process.ExitCode != 0)
             {
-                AnsiConsole.MarkupLine($"[yellow]Warning:[/] Failed to add Swap.Patterns package automatically.");
-                AnsiConsole.MarkupLine($"[yellow]Run manually:[/] [grey]dotnet add package Swap.Patterns --prerelease[/]");
+                if (fallback)
+                {
+                    AnsiConsole.MarkupLine($"[yellow]Warning:[/] Failed to install Swap.Patterns package. Falling back to embedded code.");
+                    return false;
+                }
+                else
+                {
+                    AnsiConsole.MarkupLine($"[red]Error:[/] Failed to install Swap.Patterns package.");
+                    AnsiConsole.MarkupLine($"[yellow]Run manually:[/] [grey]dotnet add package Swap.Patterns --prerelease[/]");
+                    AnsiConsole.MarkupLine($"[yellow]Or use:[/] [grey]--fallback[/] to embed code instead");
+                    return false;
+                }
             }
             else
             {
                 AnsiConsole.MarkupLine($"[green]✓[/] Swap.Patterns package added");
+                return true;
             }
         }
+        
+        return false;
     }
 
-    private static async Task<int> ApplyPublishableAsync(string workingDir, string projectFile, string entity, bool force)
+    private static async Task<int> ApplyPublishableAsync(string workingDir, string projectFile, string entity, bool force, bool usePackage, bool fallback, bool noMigrations)
     {
         AnsiConsole.MarkupLine($"[cyan]Adding publishable pattern to {entity}...[/]");
 
@@ -1166,8 +1248,16 @@ public static class GeneratePatternCommand
             return 1;
         }
 
-        // Ensure Swap.Patterns package reference
-        await EnsureSwapPatternsPackageAsync(projectFile);
+        // Ensure Swap.Patterns package reference if requested
+        if (usePackage)
+        {
+            var packageInstalled = await EnsureSwapPatternsPackageAsync(projectFile, fallback);
+            if (!packageInstalled && !fallback)
+            {
+                return 1;
+            }
+            usePackage = packageInstalled;
+        }
 
         // Modify the entity model
         var code = await File.ReadAllTextAsync(modelPath);
@@ -1256,7 +1346,7 @@ public static class GeneratePatternCommand
         return 0;
     }
 
-    private static async Task<int> ApplyVersionableAsync(string workingDir, string projectFile, string entity, bool force)
+    private static async Task<int> ApplyVersionableAsync(string workingDir, string projectFile, string entity, bool force, bool usePackage, bool fallback, bool noMigrations)
     {
         AnsiConsole.MarkupLine($"[cyan]Adding versionable pattern to {entity}...[/]");
 
@@ -1268,8 +1358,16 @@ public static class GeneratePatternCommand
             return 1;
         }
 
-        // Ensure Swap.Patterns package reference
-        await EnsureSwapPatternsPackageAsync(projectFile);
+        // Ensure Swap.Patterns package reference if requested
+        if (usePackage)
+        {
+            var packageInstalled = await EnsureSwapPatternsPackageAsync(projectFile, fallback);
+            if (!packageInstalled && !fallback)
+            {
+                return 1;
+            }
+            usePackage = packageInstalled;
+        }
 
         // Modify the entity model
         var code = await File.ReadAllTextAsync(modelPath);
@@ -1343,7 +1441,7 @@ public static class GeneratePatternCommand
         return 0;
     }
 
-    private static async Task<int> ApplyVisibilityAsync(string workingDir, string projectFile, string entity, bool force)
+    private static async Task<int> ApplyVisibilityAsync(string workingDir, string projectFile, string entity, bool force, bool usePackage, bool fallback, bool noMigrations)
     {
         AnsiConsole.MarkupLine($"[cyan]Adding visibility pattern to {entity}...[/]");
 
@@ -1355,8 +1453,16 @@ public static class GeneratePatternCommand
             return 1;
         }
 
-        // Ensure Swap.Patterns package reference
-        await EnsureSwapPatternsPackageAsync(projectFile);
+        // Ensure Swap.Patterns package reference if requested
+        if (usePackage)
+        {
+            var packageInstalled = await EnsureSwapPatternsPackageAsync(projectFile, fallback);
+            if (!packageInstalled && !fallback)
+            {
+                return 1;
+            }
+            usePackage = packageInstalled;
+        }
 
         // Modify the entity model
         var code = await File.ReadAllTextAsync(modelPath);

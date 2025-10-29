@@ -21,23 +21,30 @@ public static class GenerateAuthCommand
         var projectOption = new Option<string?>(
             aliases: new[] { "--project", "-p" },
             description: "Path to project directory (default: current directory)");
+
+        var noMigrationsOption = new Option<bool>(
+            aliases: new[] { "--no-migrations" },
+            description: "Skip automatic migration creation (you'll need to create migrations manually)"
+        );
         
         command.AddOption(dryRunOption);
         command.AddOption(forceOption);
         command.AddOption(projectOption);
+        command.AddOption(noMigrationsOption);
         
         command.SetHandler(async (InvocationContext context) =>
         {
             var dryRun = context.ParseResult.GetValueForOption(dryRunOption);
             var force = context.ParseResult.GetValueForOption(forceOption);
             var project = context.ParseResult.GetValueForOption(projectOption);
-            context.ExitCode = await ExecuteAsync(dryRun, force, project);
+            var noMigrations = context.ParseResult.GetValueForOption(noMigrationsOption);
+            context.ExitCode = await ExecuteAsync(dryRun, force, project, noMigrations);
         });
         
         return command;
     }
     
-    private static async Task<int> ExecuteAsync(bool dryRun, bool force, string? projectPath)
+    private static async Task<int> ExecuteAsync(bool dryRun, bool force, string? projectPath, bool noMigrations)
     {
         // Resolve project directory
         var workingDir = string.IsNullOrWhiteSpace(projectPath) 
@@ -145,7 +152,16 @@ public static class GenerateAuthCommand
             await ConfigureLayoutAsync(workingDir);
             
             // Auto-create migration for Identity (rigid: build first, no DB update)
-            await TryCreateIdentityMigrationAsync(workingDir);
+            if (!noMigrations)
+            {
+                await TryCreateIdentityMigrationAsync(workingDir);
+            }
+            else
+            {
+                AnsiConsole.WriteLine();
+                AnsiConsole.MarkupLine("[yellow]ℹ[/] Migration creation skipped (--no-migrations flag)");
+                AnsiConsole.MarkupLine("[dim]Create migration manually:[/] [cyan]dotnet ef migrations add AddIdentity[/]");
+            }
 
             // Show success and next steps
             AnsiConsole.WriteLine();
