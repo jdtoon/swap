@@ -734,10 +734,21 @@ Shows a table with:
 
 ## 📚 Documentation
 
+### 🎯 Core Documentation
+- **[Container Architecture](docs/CONTAINER-ARCHITECTURE.md)** - ⭐ **START HERE** - The foundational pattern for Swap
+- **[Developer Experience Guide](docs/DEVELOPER-EXPERIENCE.md)** - Best practices and workflow
+- **[Pattern Library](docs/PATTERNS-LIBRARY.md)** - 30+ proven HTMX patterns from production apps
+- **[Testing Checklist](docs/TESTING-CHECKLIST.md)** - Comprehensive validation guide
+
+### 📖 Framework Documentation
+- **[Swap.Htmx Framework](framework/Swap.Htmx/README.md)** - SwapController, SwapView(), extensions
+- **[Swap.Patterns](framework/Swap.Patterns/README.md)** - Reusable model patterns
+- **[Swap.Testing](framework/Swap.Testing/README.md)** - HTMX testing utilities
+
+### 🌐 Online Resources
 - **[Getting Started](https://jdtoon.github.io/swap/)** - Complete setup guide
 - **[CLI Reference](https://jdtoon.github.io/swap/docs/cli/overview)** - All commands and options
 - **[Features Guide](https://jdtoon.github.io/swap/docs/features/pagination)** - Pagination, search, sorting, filtering
-- **[Pattern Library](docs/PATTERNS-LIBRARY.md)** - 30+ proven HTMX patterns
 - **[The Product Vision](docs/THE-PRODUCT.md)** - Philosophy and approach
 
 ## 🛠️ Development
