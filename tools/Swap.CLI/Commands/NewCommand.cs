@@ -138,12 +138,6 @@ public static class NewCommand
         {
             await GenerateProjectAsync(name, database, projectPath);
 
-            // Include HTMX shell by default unless opted out
-            if (!noHtmxShell)
-            {
-                await AddHtmxShellAsync(projectPath, name);
-            }
-            
             AnsiConsole.WriteLine();
             AnsiConsole.MarkupLine("[green]✓[/] Project created successfully!");
             AnsiConsole.WriteLine();

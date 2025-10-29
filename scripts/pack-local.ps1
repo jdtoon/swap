@@ -35,6 +35,12 @@ Set-Location "$rootDir\framework\Swap.Testing"
 dotnet pack -c Release -o $localFeed
 if ($LASTEXITCODE -ne 0) { throw "Failed to pack Swap.Testing" }
 
+# Pack Swap.CLI
+Write-Host "`n📦 Packing Swap.CLI..." -ForegroundColor Green
+Set-Location "$rootDir\tools\Swap.CLI"
+dotnet pack -c Release -o $localFeed
+if ($LASTEXITCODE -ne 0) { throw "Failed to pack Swap.CLI" }
+
 Set-Location $rootDir
 
 Write-Host "`n✅ All packages packed successfully!" -ForegroundColor Green
