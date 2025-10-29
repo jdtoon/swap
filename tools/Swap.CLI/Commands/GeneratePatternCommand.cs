@@ -101,6 +101,18 @@ public static class GeneratePatternCommand
 
         var projectFile = projectFiles[0];
 
+        // Check for pattern compatibility before applying
+        var modelPath = Path.Combine(workingDir, "Models", $"{entity}.cs");
+        if (File.Exists(modelPath))
+        {
+            var compatibilityIssue = await CheckPatternCompatibilityAsync(modelPath, entity, type);
+            if (compatibilityIssue != null)
+            {
+                AnsiConsole.MarkupLine($"[red]✗ Pattern conflict:[/] {compatibilityIssue}");
+                return 1;
+            }
+        }
+
         try
         {
             return type.ToLower() switch
@@ -2005,14 +2017,70 @@ public static class GeneratePatternCommand
         AnsiConsole.MarkupLine($"- Use .ScheduleVisibility(dateUtc) for future visibility");
         AnsiConsole.MarkupLine($"- Use .ScheduleVisibilityWindow(from, until) for time-bound content");
         AnsiConsole.MarkupLine($"- Use .IsCurrentlyVisible() or .Visible() query helper to filter visible items");
-        
-        if (noMigrations)
-        {
-            AnsiConsole.MarkupLine($"\n[yellow]Next steps:[/]");
-            AnsiConsole.MarkupLine($"1. Add migration if new properties were added:");
-            AnsiConsole.MarkupLine($"   [grey]dotnet ef migrations add AddVisibilityTo{entity}[/]");
-            AnsiConsole.MarkupLine($"   [grey]dotnet ef database update[/]");
-        }
+
         return 0;
     }
+
+    private static async Task<string?> CheckPatternCompatibilityAsync(string modelPath, string entity, string patternType)
+    {
+        var code = await File.ReadAllTextAsync(modelPath);
+        var tree = CSharpSyntaxTree.ParseText(code);
+        var root = tree.GetCompilationUnitRoot();
+
+        var classDecl = root.DescendantNodes()
+            .OfType<ClassDeclarationSyntax>()
+            .FirstOrDefault(c => c.Identifier.Text == entity);
+
+        if (classDecl == null) return null;
+
+        var existingInterfaces = classDecl.BaseList?.Types
+            .Select(t => t.ToString().Trim())
+            .Where(t => t.StartsWith("I"))
+            .ToHashSet() ?? new HashSet<string>();
+
+        var normalizedPattern = patternType.ToLower();
+
+        // Define incompatibility matrix
+        var conflicts = new Dictionary<string, (string[] incompatible, string reason)>
+        {
+            ["auditable"] = (
+                new[] { "ITimestampable" },
+                "IAuditable and ITimestampable both manage UpdatedAt but with different types (DateTime? vs DateTime). Choose one based on your needs:\n" +
+                "  - IAuditable: Tracks WHO changed the entity (user tracking)\n" +
+                "  - ITimestampable: Only tracks WHEN (simpler, no user context)"
+            ),
+            ["timestamp"] = (
+                new[] { "IAuditable" },
+                "ITimestampable and IAuditable both manage UpdatedAt but with different types (DateTime vs DateTime?). Choose one based on your needs:\n" +
+                "  - IAuditable: Tracks WHO changed the entity (user tracking)\n" +
+                "  - ITimestampable: Only tracks WHEN (simpler, no user context)"
+            ),
+            ["timestampable"] = (
+                new[] { "IAuditable" },
+                "ITimestampable and IAuditable both manage UpdatedAt but with different types (DateTime vs DateTime?). Choose one based on your needs:\n" +
+                "  - IAuditable: Tracks WHO changed the entity (user tracking)\n" +
+                "  - ITimestampable: Only tracks WHEN (simpler, no user context)"
+            ),
+            ["audit"] = (
+                new[] { "ITimestampable" },
+                "IAuditable and ITimestampable both manage UpdatedAt but with different types (DateTime? vs DateTime). Choose one based on your needs:\n" +
+                "  - IAuditable: Tracks WHO changed the entity (user tracking)\n" +
+                "  - ITimestampable: Only tracks WHEN (simpler, no user context)"
+            )
+        };
+
+        if (conflicts.TryGetValue(normalizedPattern, out var conflict))
+        {
+            foreach (var incompatibleInterface in conflict.incompatible)
+            {
+                if (existingInterfaces.Any(i => i.Contains(incompatibleInterface)))
+                {
+                    return $"{entity} already implements {incompatibleInterface}.\n{conflict.reason}";
+                }
+            }
+        }
+
+        return null;
+    }
+
 }
