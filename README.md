@@ -2,7 +2,7 @@
 
 [![GitHub License](https://img.shields.io/github/license/jdtoon/swap)](LICENSE)
 [![.NET Version](https://img.shields.io/badge/.NET-9.0-512BD4?logo=dotnet)](https://dotnet.microsoft.com/download)
-[![NuGet](https://img.shields.io/badge/NuGet-v0.0.14--prerelease-blue?logo=nuget)](https://www.nuget.org/packages/Swap.CLI)
+[![NuGet](https://img.shields.io/badge/NuGet-v0.1.0-blue?logo=nuget)](https://www.nuget.org/packages/Swap.CLI)
 [![GitHub Stars](https://img.shields.io/github/stars/jdtoon/swap?style=social)](https://github.com/jdtoon/swap/stargazers)
 
 **Generate production-ready ASP.NET Core + HTMX applications with beautiful DaisyUI components.**

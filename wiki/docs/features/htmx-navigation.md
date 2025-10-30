@@ -274,7 +274,7 @@ public IActionResult Index()
 
 ### HTMX Shell Middleware Throwing Exceptions
 
-**Symptom:** Exception: "HTMX request returned full page with <html> tag in view: Index"
+**Symptom:** Exception: "HTMX request returned full page with `<html>` tag in view: Index"
 
 **Cause:** Controller returning full view instead of partial.
 

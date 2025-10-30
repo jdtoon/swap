@@ -23,6 +23,112 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **CLI Options**: `--dry-run`, `--force`, `--project` support
 - **Documentation**: Updated CLI README with complete auth scaffolding guide and usage examples
 
+---
+
+## [0.1.0] - 2025-01-29
+
+### 🎉 First Production Release - OSS Ready
+
+This release marks Swap's readiness for open-source production use with comprehensive pattern auto-wiring, removal capabilities, and cross-platform support.
+
+### Added - Pattern Auto-Wiring
+- **Automatic DbContext Configuration**: Patterns now self-configure with zero boilerplate
+  - `ISoftDeletable`: Automatically adds global query filter to DbContext
+  - `IAuditable`: Auto-registers IHttpContextAccessor and SaveChanges interceptor
+  - `ITimestampable`: Auto-registers SaveChanges interceptor  
+  - `ISluggable`: Automatically creates unique index on Slug column
+- **Pattern Tracking**: New `swap-config.json` tracks applied patterns per entity
+  - Enables safe pattern removal with intelligent cleanup
+  - Prevents accidental removal when shared infrastructure is in use
+  - JSON format: `{ "patterns": { "EntityName": ["pattern1", "pattern2"] } }`
+
+### Added - Pattern Removal
+- **Remove Pattern Command**: `swap generate pattern remove <pattern> <entity>`
+  - Supported patterns: `softdelete`, `auditable`, `timestampable`, `sluggable`
+  - Removes interface implementation from model
+  - Removes pattern properties from model
+  - Intelligently removes DbContext configuration only when safe
+  - Updates or removes `swap-config.json` tracking
+  - CLI aliases: `rm`, `delete`, `del`
+- **Smart Cleanup Logic**:
+  - Checks if other entities still use shared infrastructure before removal
+  - Preserves IHttpContextAccessor if any entity uses IAuditable
+  - Preserves interceptor if any entity uses IAuditable or ITimestampable
+  - Removes global query filter only for the specific entity
+- **Documentation**: Comprehensive removal guides added to wiki
+  - `docs/cli/generate-pattern.md`: Full command reference with examples
+  - `docs/features/patterns.md`: Removal workflows and safety notes
+
+### Added - Pattern Compatibility Validation
+- **Conflict Detection**: Prevents incompatible pattern combinations
+  - Blocks applying `IAuditable` when `ITimestampable` exists (property overlap: CreatedAt, UpdatedAt)
+  - Blocks applying `ITimestampable` when `IAuditable` exists (same conflict)
+  - Clear error messages guide users to choose one or the other
+- **CheckPatternCompatibilityAsync**: Pre-flight validation before pattern application
+
+### Added - Roslyn-Based Code Modifications
+- **Robust Code Generation**: Replaced regex-based edits with Roslyn SyntaxFactory
+  - Uses `SyntaxFactory` with `NormalizeWhitespace()` for proper C# formatting
+  - Handles complex DbContext modifications safely
+  - Pattern removal with fallback cleanup for edge cases
+  - Eliminates formatting issues and malformed code generation
+
+### Added - Non-Blocking Migrations
+- **Migration Flag**: New `--no-migrations` option for all generation commands
+  - Allows entity/pattern generation without running migrations
+  - Useful for batch operations or CI/CD pipelines
+  - Clear error messages if migration fails
+  - Continues command execution even if migration step fails
+
+### Added - Cross-Platform Scripts
+- **Bash Scripts**: Linux/Mac developer support
+  - `scripts/pack-local.sh`: Build all framework packages locally
+  - `scripts/reinstall-cli.sh`: Reinstall CLI from local feed
+  - Mirrors existing PowerShell scripts for Windows users
+
+### Changed - Templates
+- **Controller Template Fix**: `EntityController.cs.template`
+  - `ToggleSelectAll` now calls correct method: `Get{{EntityName}}List` instead of `Index`
+  - Fixes CS1501 method overload mismatch error
+- **Monolith Template Fix**: `Index.cshtml.template`
+  - Removed duplicate sections causing Razor compilation errors
+  - Removed inline partial rendering with null model (ArgumentNullException)
+- **Todo Partial Template Fix**: `_TodoList.cshtml.template`
+  - Added null safety check: `Model == null || !Model.Any()`
+  - Prevents runtime exceptions on empty collections
+- **Model Generator Fix**: `GenerateModelFromFields` in `GenerateControllerCommand.cs`
+  - Fixed invalid semicolon generation for value type properties
+  - Proper C# syntax for nullable and non-nullable properties
+
+### Changed - Documentation
+- **README.md**: Updated main documentation
+  - Version badge: v0.0.14-prerelease → v0.1.0
+  - Expanded Swap.Patterns section with auto-wiring details
+  - Added pattern removal command documentation
+  - Documented `swap-config.json` tracking system
+- **Swap.Patterns README**: Enhanced package documentation
+  - Quick Start section emphasizes CLI auto-wiring benefits
+  - Removal command examples and safety notes
+- **Wiki Documentation**: Comprehensive updates
+  - Pattern removal workflows with step-by-step guides
+  - Safety validation and common scenarios
+  - Database column handling notes
+
+### Changed - Package Versions
+- **Swap.CLI**: 0.0.14 → 0.1.0
+- **Swap.Htmx**: 0.0.1 → 0.1.0
+- **Swap.Patterns**: 0.0.1 → 0.1.0
+- **Swap.Testing**: 0.0.1 → 0.1.0
+
+### Validated
+- **Database Provider Support**:
+  - ✅ SQL Server: Template validation completed
+  - ✅ PostgreSQL: Template validation completed with proper connection strings
+  - ✅ SQLite: Default provider, validated with Docker
+- **Docker Support**: Multi-stage build structure validated
+- **Test Coverage**: 267 tests passing (195 CLI/Htmx + 72 Patterns)
+- **Build Quality**: Full solution builds successfully in Release configuration
+
 ## [0.0.14] - 2025-10-28
 
 ### Added - Seeder Enhancements
