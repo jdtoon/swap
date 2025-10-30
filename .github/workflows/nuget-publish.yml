@@ -46,6 +46,9 @@ jobs:
           echo "✅ Tag v${{ steps.version.outputs.version }} does not exist yet"
         fi
     
+    - name: Create local NuGet directory
+      run: mkdir -p .nuget/local
+    
     - name: Restore dependencies
       run: dotnet restore
     
