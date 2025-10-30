@@ -1,4 +1,5 @@
 using System.CommandLine;
+using Swap.CLI.Commands.Relationships;
 
 namespace Swap.CLI.Commands;
 
@@ -19,6 +20,7 @@ public static class GenerateCommand
         command.AddCommand(GenerateFactoryCommand.Create());
         command.AddCommand(GeneratePatternCommand.Create());
         command.AddCommand(GenerateHtmxShellCommand.Create());
+        command.AddCommand(GenerateRelationshipCommand.Create());
         
         return command;
     }
