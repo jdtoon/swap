@@ -211,7 +211,7 @@ await db.SaveChangesAsync();
 - `UpdatedAt`/`UpdatedBy` set on every modification
 - No manual timestamp management needed
 
-[Learn more about Auditable →](#auditable-pattern)
+[Learn more about Auditable →](#auditable)
 
 ---
 
@@ -284,7 +284,7 @@ var found = await db.Articles
 - Handles collisions: "post" → "post-2" → "post-3"
 - Respects max length while preserving whole words
 
-[Learn more about Sluggable →](#sluggable-pattern)
+[Learn more about Sluggable →](#sluggable)
 
 ---
 
