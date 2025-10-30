@@ -255,10 +255,19 @@ swap new MyApp --database sqlserver
 
 # Create with PostgreSQL
 swap new MyApp --database postgres
+
+# Specify output directory
+swap new MyApp --output path/to/directory
+
+# Use local NuGet packages (framework development only)
+swap new MyApp --local-nuget
 ```
 
 **Options:**
 - `--database` or `-d` - Database provider: `sqlite` (default), `sqlserver`, `postgres`
+- `--output` or `-o` - Output directory (default: `./{name}`)
+- `--skip-setup` - Skip prerequisites check, npm/libman steps, and initial migration (useful for CI/tests)
+- `--local-nuget` - Use local NuGet feed for Swap packages (for framework development only)
 
 **Generates:**
 - Complete ASP.NET Core MVC project structure
@@ -433,7 +442,7 @@ swap g pattern visibility <entity>      # Public/private visibility
 **Embedded vs Package Mode:**
 
 - **Embedded (default):** Copies pattern code directly into your model (no external dependency)
-- **Package mode (`--use-package`):** Implements interfaces from `Swap.Patterns` NuGet package (v0.0.1)
+- **Package mode (`--use-package`):** Implements interfaces from `Swap.Patterns` NuGet package (v0.1.0)
 
 For full pattern documentation, see [`tools/Swap.CLI/README.md`](tools/Swap.CLI/README.md#-swappatterns-common-entity-patterns).
 
@@ -474,6 +483,32 @@ swap g factory TodoItem --force
 Generates: `Tests/Factories/<Entity>Factory.cs` with intelligent defaults inferred from property names and types.
 
 > Note: If Bogus/Swap.Testing packages are missing, the CLI will print the commands to add them.
+
+### `swap generate htmx-shell`
+
+Add HTMX shell middleware to your project for enforcing partial-only responses during development.
+
+```bash
+# Add middleware only
+swap g htmx-shell
+
+# Add middleware and enable global hx-boost
+swap g htmx-shell --add-boost
+
+# Generate in specific project
+swap g htmx-shell --project path/to/project
+```
+
+**Options:**
+- `--add-boost` - Inject `hx-boost="true"` into `_Layout.cshtml` `<body>` tag
+- `--project` or `-p` - Path to project directory (default: current directory)
+
+**Generates:**
+- `SwapHtmxShellMiddleware.cs` - Middleware that enforces partial views for HTMX requests
+- Wires middleware in `Program.cs`
+- Optionally enables global HTMX boost
+
+**Note:** This middleware is useful for development to catch cases where full pages are returned when partials are expected. The middleware is available in the `Swap.Htmx` NuGet package but can be generated directly into your project with this command.
 
 ## 🧪 Swap.Testing (HTMX Testing Framework)
 
