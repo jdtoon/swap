@@ -20,6 +20,80 @@ Patterns are **opt-in by design** - they're not automatically added when generat
 
 ## Pattern Types
 
+### `remove` - Remove Pattern
+
+Removes a previously applied pattern from an entity, cleaning up interfaces, properties, and shared wiring when safe.
+
+```bash
+swap g pattern remove <entity> <pattern-type>
+swap g p remove Post softdelete
+```
+
+**What it does:**
+1. Removes the pattern interface (e.g., `ISoftDeletable`) from your entity
+2. Removes pattern-specific properties from your entity
+3. Updates `swap-config.json` to track the removal
+4. Cleans up shared wiring in `DbContext` and `Program.cs` **only if no other entities use it**:
+   - Removes global query filters (if no entities have SoftDelete)
+   - Removes audit interceptor (if no entities have Auditable)
+   - Removes timestamp interceptor (if no entities have Timestampable)
+   - Removes slug unique index for the specific entity (Sluggable)
+
+**Supported patterns for removal:**
+- `softdelete` - Removes soft delete pattern
+- `auditable` - Removes auditable pattern
+- `timestampable` - Removes timestampable pattern
+- `sluggable` - Removes sluggable pattern
+
+**Example:**
+```bash
+# Remove soft delete from Post
+swap g p remove Post softdelete
+
+# Remove auditable from Product
+swap g p remove Product auditable
+```
+
+**What happens to the columns:**
+
+By default, the removal is **non-destructive** - columns remain in the database:
+- Preserves existing data
+- Allows manual cleanup or data migration
+- You can still access the columns programmatically if needed
+
+**To drop the columns from the database:**
+
+1. After pattern removal, manually create a migration:
+   ```bash
+   dotnet ef migrations add RemoveSoftDeleteFromPost
+   ```
+
+2. Edit the generated migration to drop the columns:
+   ```csharp
+   protected override void Up(MigrationBuilder migrationBuilder)
+   {
+       migrationBuilder.DropColumn(name: "IsDeleted", table: "Posts");
+       migrationBuilder.DropColumn(name: "DeletedAt", table: "Posts");
+       migrationBuilder.DropColumn(name: "DeletedBy", table: "Posts");
+   }
+   ```
+
+3. Apply the migration:
+   ```bash
+   dotnet ef database update
+   ```
+
+**When to use:**
+- Pattern is no longer needed for an entity
+- Simplifying entity structure
+- Removing unused features during refactoring
+
+**Important notes:**
+- ⚠️ Shared wiring (global filters, interceptors) is only removed when **no entities** use that pattern
+- ⚠️ The removal checks `swap-config.json` to determine if wiring is still needed
+- ⚠️ Always review changes and test after removal
+- ⚠️ Database columns are NOT automatically dropped - you must migrate manually if desired
+
 ### `softdelete` - Soft Delete Pattern
 
 Implements logical deletion where records are marked as deleted but remain in the database for auditing, recovery, or compliance reasons.
@@ -154,6 +228,29 @@ swap g pattern softdelete Post
 # Use aliases for speed
 swap g p soft Product
 swap g p soft Order
+
+# Remove a pattern
+swap g p remove Post softdelete
+```
+
+### Pattern Removal Workflow
+
+```bash
+# 1. Remove the pattern from your entity
+swap g p remove Article softdelete
+
+# 2. Review the changes
+# - Check Models/Article.cs (interface and properties removed)
+# - Check Data/AppDbContext.cs (filter removed if no other entities use it)
+# - Check swap-config.json (pattern entry removed)
+
+# 3. Build to ensure no compilation errors
+dotnet build
+
+# 4. (Optional) Drop the database columns
+dotnet ef migrations add RemoveSoftDeleteFromArticle
+# Edit migration to drop IsDeleted, DeletedAt, DeletedBy columns
+dotnet ef database update
 ```
 
 ### With Options

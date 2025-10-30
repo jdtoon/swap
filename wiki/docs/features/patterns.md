@@ -900,6 +900,157 @@ public class SoftDeleteTests : IClassFixture<HtmxTestFixture<Program>>
 }
 ```
 
+## Removing Patterns
+
+Swap provides a safe way to remove patterns from entities when they're no longer needed.
+
+### Basic Removal
+
+```bash
+swap g pattern remove <entity> <pattern-type>
+
+# Examples
+swap g p remove Post softdelete
+swap g p remove Product auditable
+swap g p remove Article sluggable
+```
+
+### What Happens During Removal
+
+1. **Entity cleanup:**
+   - Removes pattern interface (e.g., `ISoftDeletable`)
+   - Removes pattern properties from the model
+   - Updates `using` statements
+
+2. **Configuration tracking:**
+   - Updates `swap-config.json` to remove pattern entry
+   - Checks if other entities still use the pattern
+
+3. **Smart wiring cleanup:**
+   - **Only removes shared wiring if no other entities use it**
+   - Soft Delete: Removes `ConfigureSoftDeleteFilter()` call
+   - Auditable: Removes audit interceptor and `IHttpContextAccessor`
+   - Timestampable: Removes timestamp interceptor
+   - Sluggable: Removes the entity's unique slug index
+
+### Database Column Handling
+
+**Important:** Pattern removal is **non-destructive by default** - database columns are NOT automatically dropped.
+
+**Why?**
+- Preserves existing data
+- Allows time for data migration or archival
+- Prevents accidental data loss
+- Gives you control over timing
+
+**To drop columns after removal:**
+
+```bash
+# 1. Remove the pattern
+swap g p remove Article softdelete
+
+# 2. Create a migration
+dotnet ef migrations add RemoveSoftDeleteFromArticle
+
+# 3. Edit the generated migration to drop columns
+# Example for soft delete:
+protected override void Up(MigrationBuilder migrationBuilder)
+{
+    migrationBuilder.DropColumn(name: "IsDeleted", table: "Articles");
+    migrationBuilder.DropColumn(name: "DeletedAt", table: "Articles");
+    migrationBuilder.DropColumn(name: "DeletedBy", table: "Articles");
+}
+
+# 4. Apply the migration
+dotnet ef database update
+```
+
+### Safe Removal Workflow
+
+```bash
+# 1. Review which entities use the pattern
+#    Check swap-config.json
+
+# 2. Remove the pattern
+swap g p remove Article auditable
+
+# 3. Review the changes
+#    - Models/Article.cs (interface/properties removed)
+#    - Data/AppDbContext.cs (wiring removed only if safe)
+#    - swap-config.json (pattern entry removed)
+
+# 4. Build and test
+dotnet build
+dotnet test
+
+# 5. (Optional) Drop database columns
+#    Create and edit migration as shown above
+```
+
+### Validation and Safety
+
+Swap performs several safety checks during removal:
+
+- ✅ Verifies the entity exists
+- ✅ Checks that the pattern was actually applied
+- ✅ Updates `swap-config.json` for tracking
+- ✅ Only removes shared wiring (filters, interceptors) when **no other entities** use that pattern
+- ✅ Provides clear output showing what was changed
+
+**Example output:**
+```
+Removing softdelete pattern from Post...
+✓ Pattern interface removed from Models/Post.cs
+✓ Pattern properties removed from Models/Post.cs
+✓ Updated swap-config.json
+✓ Removed ConfigureSoftDeleteFilter from DbContext (no other entities use SoftDelete)
+
+Pattern removed successfully!
+
+Next steps:
+  1. Build project: dotnet build
+  2. (Optional) Create migration to drop columns:
+     dotnet ef migrations add RemoveSoftDeleteFromPost
+```
+
+### When to Remove Patterns
+
+**Good reasons to remove:**
+- Pattern functionality is no longer needed
+- Simplifying entity structure during refactoring
+- Pattern was applied incorrectly or to wrong entity
+- Switching to a different approach
+
+**Consider keeping:**
+- Historical data depends on pattern columns
+- Other parts of the system still reference pattern properties
+- Compliance or audit requirements
+- Data recovery scenarios
+
+### Common Scenarios
+
+**Scenario 1: Wrong pattern applied**
+```bash
+# Oops, meant to apply to Product not Post
+swap g p remove Post auditable
+swap g p auditable Product
+```
+
+**Scenario 2: Simplifying a model**
+```bash
+# Removing unused patterns to reduce complexity
+swap g p remove Article timestampable
+swap g p remove Article auditable
+# Keep only the patterns you actually use
+```
+
+**Scenario 3: Switching approaches**
+```bash
+# Moving from soft delete to hard delete
+swap g p remove Order softdelete
+# Migrate/archive soft-deleted records first!
+```
+
 ## Best Practices
 
 ### DO ✅

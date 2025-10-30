@@ -18,6 +18,18 @@ Implement soft deletion for your entities - mark records as deleted instead of p
 **Quick Start:**
 
 ```csharp
+// Using Swap CLI (Recommended - auto-wires everything)
+swap g pattern softdelete Post
+
+// The CLI automatically:
+// 1. Adds ISoftDeletable interface to your Post model
+// 2. Adds the three required properties
+// 3. Configures the global query filter in DbContext
+// 4. Tracks the pattern in swap-config.json
+// 5. Creates a database migration
+
+// --- OR Manual Setup ---
+
 // 1. Implement the interface on your entity
 public class Post : ISoftDeletable
 {
@@ -30,7 +42,7 @@ public class Post : ISoftDeletable
     public string? DeletedBy { get; set; }
 }
 
-// 2. Configure in your DbContext
+// 2. Configure in your DbContext (CLI does this automatically)
 protected override void OnModelCreating(ModelBuilder modelBuilder)
 {
     modelBuilder.ConfigureSoftDeleteFilter();
@@ -61,18 +73,23 @@ var allPosts = await _context.Posts
 **CLI Generator:**
 
 ```bash
-# Add soft delete to an existing entity
+# Add soft delete to an existing entity (auto-wires everything)
 swap generate pattern softdelete Post
+
+# Remove pattern when no longer needed
+swap g pattern remove Post softdelete
 
 # Short alias
 swap g pattern soft Post
 ```
 
-This command will:
-- Add `ISoftDeletable` interface to your entity
-- Add the required properties
-- Update your DbContext with the query filter
-- Generate a migration
+**What the CLI does automatically:**
+- ✅ Adds `ISoftDeletable` interface to your entity
+- ✅ Adds the three required properties (`IsDeleted`, `DeletedAt`, `DeletedBy`)
+- ✅ Configures `ConfigureSoftDeleteFilter()` in your DbContext
+- ✅ Tracks pattern usage in `swap-config.json`
+- ✅ Generates and applies database migration
+- ✅ Smart cleanup on removal (only removes filter when no entities use it)
 
 ## Installation
 

@@ -515,7 +515,7 @@ See `framework/Swap.Testing/README.md` for full API and examples.
 
 ## 📦 Swap.Patterns (Entity Patterns Library)
 
-Swap.Patterns provides battle-tested interfaces and implementations for common entity patterns.
+Swap.Patterns provides battle-tested interfaces and implementations for common entity patterns with **automatic wiring** and configuration tracking.
 
 **NuGet Package:** `Swap.Patterns` (v0.0.1)
 
@@ -525,12 +525,56 @@ dotnet add package Swap.Patterns --prerelease
 
 **Available Patterns:**
 - `ISoftDeletable` - Soft delete with `IsDeleted` flag and `DeletedAt` timestamp
+  - **Auto-wires:** Global query filter in DbContext
 - `IAuditable` - Full audit trail (`CreatedAt`, `CreatedBy`, `UpdatedAt`, `UpdatedBy`)
+  - **Auto-wires:** IHttpContextAccessor + audit interceptor in DbContext
 - `ITimestampable` - Created and updated timestamps
+  - **Auto-wires:** Timestamp interceptor in DbContext
+- `ISluggable` - SEO-friendly slugs with collision handling
+  - **Auto-wires:** Unique index on Slug column
 - `IPublishable` - Publishing workflow (`PublishedAt`, `IsPublished`)
 - `IOrderable` - Display order with `DisplayOrder` property
 - `IVersionable` - Version tracking with `Version` property
 - `IVisibility` - Public/private visibility with `IsPublic` flag
+
+**Automatic Wiring:**
+
+When you apply a pattern, Swap CLI automatically:
+1. Adds pattern interface and properties to your model
+2. Wires up required infrastructure (filters, interceptors, services)
+3. Tracks configuration in `swap-config.json`
+4. Creates database migration
+
+```bash
+# Apply soft delete - automatically adds global query filter
+swap g pattern softdelete Post
+
+# Apply auditable - automatically wires IHttpContextAccessor and interceptor
+swap g pattern auditable Product
+```
+
+**Pattern Removal:**
+
+Remove patterns safely with automatic cleanup:
+
+```bash
+# Remove a pattern from an entity
+swap g pattern remove Post softdelete
+
+# Smart cleanup: only removes shared wiring when safe
+# - Checks swap-config.json to see if other entities use the pattern
+# - Removes global filters/interceptors only when no entities need them
+# - Database columns are preserved by default (manual migration for drop)
+```
+
+**Configuration Tracking:**
+
+Swap maintains a `swap-config.json` file in your project root that tracks:
+- Which patterns are applied to which entities
+- Shared wiring state (filters, interceptors, services)
+- Pattern configuration history
+
+This enables safe removal and prevents duplicate wiring.
 
 **Usage:**
 
