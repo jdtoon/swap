@@ -423,20 +423,44 @@ public static class GenerateControllerCommand
         List<global::Swap.CLI.Commands.Relationships.DetectedRelationship> relationships = new();
         if (withRelationships)
         {
+            // First, try to detect from existing model file
             var entityPath = Path.Combine(workingDir, "Models", $"{entityName}.cs");
             if (File.Exists(entityPath))
             {
                 relationships = await global::Swap.CLI.Commands.Relationships.RelationshipUIGenerator.DetectRelationshipsAsync(entityPath);
-                
-                if (relationships.Any())
+            }
+            
+            // Also infer relationships from field names (e.g., CustomerId implies Customer relationship)
+            foreach (var field in fields)
+            {
+                if (field.Name.EndsWith("Id") && field.Name.Length > 2)
                 {
-                    AnsiConsole.MarkupLine($"[cyan]ℹ[/] Detected {relationships.Count} relationship(s)");
-                    foreach (var rel in relationships)
+                    var targetEntity = field.Name.Substring(0, field.Name.Length - 2); // Remove "Id"
+                    var targetPath = Path.Combine(workingDir, "Models", $"{targetEntity}.cs");
+                    
+                    // Only add if target entity exists and not already detected
+                    if (File.Exists(targetPath) && !relationships.Any(r => r.ForeignKeyProperty == field.Name))
                     {
-                        if (rel.RelationshipType == global::Swap.CLI.Commands.Relationships.DetectedRelationshipType.ManyToOne)
+                        relationships.Add(new global::Swap.CLI.Commands.Relationships.DetectedRelationship
                         {
-                            AnsiConsole.MarkupLine($"  • {rel.ForeignKeyProperty} → {rel.TargetEntity}");
-                        }
+                            ForeignKeyProperty = field.Name,
+                            TargetEntity = targetEntity,
+                            NavigationProperty = targetEntity,
+                            IsRequired = field.IsRequired,
+                            RelationshipType = global::Swap.CLI.Commands.Relationships.DetectedRelationshipType.ManyToOne
+                        });
+                    }
+                }
+            }
+            
+            if (relationships.Any())
+            {
+                AnsiConsole.MarkupLine($"[cyan]ℹ[/] Detected {relationships.Count} relationship(s)");
+                foreach (var rel in relationships)
+                {
+                    if (rel.RelationshipType == global::Swap.CLI.Commands.Relationships.DetectedRelationshipType.ManyToOne)
+                    {
+                        AnsiConsole.MarkupLine($"  • {rel.ForeignKeyProperty} → {rel.TargetEntity}");
                     }
                 }
             }
@@ -541,7 +565,7 @@ public static class GenerateControllerCommand
                 // Generate Model (if fields specified)
                 if (fields.Any())
                 {
-                    var modelContent = GenerateModelFromFields(entityName, projectName, fields);
+                    var modelContent = GenerateModelFromFields(entityName, projectName, fields, relationships);
                     var modelPath = Path.Combine("Models", $"{entityName}.cs");
                     Directory.CreateDirectory(Path.GetDirectoryName(modelPath) ?? "Models");
                     await File.WriteAllTextAsync(modelPath, modelContent);
@@ -625,7 +649,7 @@ public static class GenerateControllerCommand
             });
     }
     
-    private static string GenerateModelFromFields(string entityName, string projectName, List<FieldDefinition> fields)
+    private static string GenerateModelFromFields(string entityName, string projectName, List<FieldDefinition> fields, List<global::Swap.CLI.Commands.Relationships.DetectedRelationship> relationships)
     {
         var properties = new List<string>();
         
@@ -654,6 +678,13 @@ public static class GenerateControllerCommand
                 line += defaultValue + ";"; // property initializer requires semicolon
             }
             properties.Add(line);
+        }
+        
+        // Add navigation properties for detected relationships
+        foreach (var relationship in relationships.Where(r => r.RelationshipType == global::Swap.CLI.Commands.Relationships.DetectedRelationshipType.ManyToOne))
+        {
+            var nullability = relationship.IsRequired ? "" : "?";
+            properties.Add($"    public {relationship.TargetEntity}{nullability} {relationship.NavigationProperty} {{ get; set; }}");
         }
         
         return $@"using System.ComponentModel.DataAnnotations;
