@@ -22,6 +22,9 @@ jobs:
       with:
         fetch-depth: 0  # Fetch all history for tag creation
     
+    - name: Create local NuGet directory
+      run: mkdir -p .nuget/local
+    
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
@@ -45,9 +48,6 @@ jobs:
           echo "exists=false" >> $GITHUB_OUTPUT
           echo "✅ Tag v${{ steps.version.outputs.version }} does not exist yet"
         fi
-    
-    - name: Create local NuGet directory
-      run: mkdir -p .nuget/local
     
     - name: Restore dependencies
       run: dotnet restore
