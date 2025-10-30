@@ -137,4 +137,29 @@ public class NewCommandTests
         // Assert
         Assert.Empty(parseResult.Errors);
     }
+
+    [Fact]
+    public void Create_ShouldHaveLocalNugetOption()
+    {
+        // Act
+        var command = NewCommand.Create();
+
+        // Assert
+        var localNugetOption = command.Options.FirstOrDefault(o => o.Name == "local-nuget");
+        Assert.NotNull(localNugetOption);
+    }
+
+    [Fact]
+    public void Create_ShouldParseLocalNugetOption()
+    {
+        // Arrange
+        var command = NewCommand.Create();
+        var args = new[] { "TestApp", "--local-nuget" };
+
+        // Act
+        var parseResult = command.Parse(args);
+
+        // Assert
+        Assert.Empty(parseResult.Errors);
+    }
 }

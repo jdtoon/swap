@@ -1,0 +1,85 @@
+name: Create Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'  # Matches v0.1.0, v1.2.3, etc.
+
+permissions:
+  contents: write
+
+jobs:
+  create-release:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Fetch all history for changelog generation
+    
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '9.0.x'
+    
+    - name: Extract version from tag
+      id: version
+      run: |
+        VERSION=${GITHUB_REF#refs/tags/v}
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+        echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+    
+    - name: Restore dependencies
+      run: dotnet restore
+    
+    - name: Build
+      run: dotnet build --configuration Release --no-restore
+    
+    - name: Run tests
+      run: dotnet test --configuration Release --no-restore --verbosity normal
+    
+    - name: Pack CLI
+      run: dotnet pack tools/Swap.CLI/Swap.CLI.csproj --configuration Release --no-build --output ./release-packages
+
+    - name: Pack Htmx
+      run: dotnet pack framework/Swap.Htmx/Swap.Htmx.csproj --configuration Release --no-build --output ./release-packages
+
+    - name: Pack Patterns
+      run: dotnet pack framework/Swap.Patterns/Swap.Patterns.csproj --configuration Release --no-build --output ./release-packages
+
+    - name: Pack Testing
+      run: dotnet pack framework/Swap.Testing/Swap.Testing.csproj --configuration Release --no-build --output ./release-packages
+    
+    - name: Extract changelog for version
+      id: changelog
+      run: |
+        VERSION=${{ steps.version.outputs.version }}
+        
+        # Extract section for this version from CHANGELOG.md
+        awk "/## \[$VERSION\]/,/^## \[/" CHANGELOG.md | sed '1d;$d' > release-notes.md
+        
+        # If release notes are empty, use a default message
+        if [ ! -s release-notes.md ]; then
+          echo "Release $VERSION" > release-notes.md
+          echo "" >> release-notes.md
+          echo "See [CHANGELOG.md](CHANGELOG.md) for details." >> release-notes.md
+        fi
+        
+        cat release-notes.md
+    
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v1
+      with:
+        name: Swap ${{ steps.version.outputs.tag }}
+        body_path: release-notes.md
+        files: |
+          release-packages/*.nupkg
+        draft: false
+        prerelease: ${{ contains(steps.version.outputs.version, '-') }}
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Trigger NuGet Publish
+      run: |
+        echo "✅ Release created! NuGet publish workflow will be triggered automatically."
+        echo "📦 Packages are attached to the GitHub release."

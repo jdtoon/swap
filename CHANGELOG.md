@@ -23,6 +23,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **CLI Options**: `--dry-run`, `--force`, `--project` support
 - **Documentation**: Updated CLI README with complete auth scaffolding guide and usage examples
 
+### Added - GitHub Release Automation
+- **Automated Release Creation**: New GitHub Actions workflow triggers on version tags (v*.*.*)
+  - Automatically extracts release notes from CHANGELOG.md for the tagged version
+  - Builds and tests all packages before creating release
+  - Attaches NuGet packages (.nupkg files) to GitHub release
+  - Automatically marks pre-release versions (e.g., v0.1.0-alpha) as pre-release
+  - Triggers NuGet publish workflow automatically after release creation
+
+### Added - Local NuGet Development Support
+- **--local-nuget Flag**: New option for `swap new` command (framework development only)
+  - `swap new MyApp --local-nuget` creates project using local NuGet feed
+  - Automatically generates nuget.config with local feed priority (`c:\jd\swap\artifacts\packages`)
+  - Enables testing unreleased Swap packages during framework development
+  - Improves developer experience for Swap contributors
+
+### Fixed - Documentation
+- **Wiki Build Errors**: Fixed broken anchor links in patterns.md
+  - Updated `#auditable-pattern` → `#auditable`
+  - Updated `#sluggable-pattern` → `#sluggable`
+  - Wiki now builds without warnings (except minor broken anchor notices)
+
 ---
 
 ## [0.1.0] - 2025-01-29

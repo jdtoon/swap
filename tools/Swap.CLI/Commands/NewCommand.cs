@@ -16,12 +16,14 @@ public static class NewCommand
         var outOption = new Option<string?>("--output", "Output directory (default: ./{name})");
         var skipSetupOption = new Option<bool>("--skip-setup", description: "Skip prerequisites check, npm/libman steps, and initial migration (useful for CI/tests)");
         var noHtmxShellOption = new Option<bool>("--no-htmx-shell", description: "Do not include the HTMX shell middleware by default");
+        var localNugetOption = new Option<bool>("--local-nuget", description: "Use local NuGet feed for Swap packages (for framework development only)");
         
         command.AddArgument(nameArg);
         command.AddOption(dbOption);
         command.AddOption(outOption);
         command.AddOption(skipSetupOption);
         command.AddOption(noHtmxShellOption);
+        command.AddOption(localNugetOption);
         
         command.SetHandler(async (InvocationContext context) =>
         {
@@ -30,14 +32,15 @@ public static class NewCommand
             var output = context.ParseResult.GetValueForOption(outOption);
             var skipSetup = context.ParseResult.GetValueForOption(skipSetupOption);
             var noHtmxShell = context.ParseResult.GetValueForOption(noHtmxShellOption);
+            var localNuget = context.ParseResult.GetValueForOption(localNugetOption);
             
-            context.ExitCode = await ExecuteAsync(name, database!, output, skipSetup, noHtmxShell);
+            context.ExitCode = await ExecuteAsync(name, database!, output, skipSetup, noHtmxShell, localNuget);
         });
         
         return command;
     }
     
-    private static async Task<int> ExecuteAsync(string name, string database, string? output, bool skipSetup, bool noHtmxShell)
+    private static async Task<int> ExecuteAsync(string name, string database, string? output, bool skipSetup, bool noHtmxShell, bool localNuget)
     {
         // Validate project name
         if (string.IsNullOrWhiteSpace(name))
@@ -70,6 +73,10 @@ public static class NewCommand
         AnsiConsole.MarkupLine($"[bold cyan]Creating new Swap project:[/] {name}");
         AnsiConsole.MarkupLine($"[dim]Database:[/] {database}");
         AnsiConsole.MarkupLine($"[dim]Location:[/] {projectPath}");
+        if (localNuget)
+        {
+            AnsiConsole.MarkupLine($"[dim]NuGet Source:[/] [yellow]Local feed (development mode)[/]");
+        }
         AnsiConsole.WriteLine();
         
         if (!skipSetup)
@@ -136,7 +143,7 @@ public static class NewCommand
         
         try
         {
-            await GenerateProjectAsync(name, database, projectPath);
+            await GenerateProjectAsync(name, database, projectPath, localNuget);
 
             AnsiConsole.WriteLine();
             AnsiConsole.MarkupLine("[green]✓[/] Project created successfully!");
@@ -327,7 +334,7 @@ public class HtmxShellMiddleware
         }
     }
     
-    private static async Task GenerateProjectAsync(string projectName, string database, string projectPath)
+    private static async Task GenerateProjectAsync(string projectName, string database, string projectPath, bool localNuget)
     {
         var templatePath = Path.Combine(AppContext.BaseDirectory, "templates", "monolith");
         
@@ -344,7 +351,8 @@ public class HtmxShellMiddleware
         {
             { "ProjectName", projectName },
             { "ProjectNameLower", projectName.ToLowerInvariant() },
-            { "DatabaseProvider", database }
+            { "DatabaseProvider", database },
+            { "UseLocalNuget", localNuget.ToString().ToLowerInvariant() }
         };
         
         await AnsiConsole.Status()
@@ -352,6 +360,12 @@ public class HtmxShellMiddleware
             {
                 // Copy and process all template files
                 await ProcessTemplateDirectoryAsync(templatePath, projectPath, variables, ctx);
+                
+                // If using local NuGet, create nuget.config with local feed
+                if (localNuget)
+                {
+                    await CreateLocalNugetConfigAsync(projectPath, ctx);
+                }
             });
     }
     
@@ -457,5 +471,22 @@ public class HtmxShellMiddleware
             var error = await process.StandardError.ReadToEndAsync();
             throw new InvalidOperationException($"{command} failed: {error}");
         }
+    }
+    
+    private static async Task CreateLocalNugetConfigAsync(string projectPath, StatusContext ctx)
+    {
+        ctx.Status("Creating nuget.config for local feed...");
+        
+        var nugetConfig = @"<?xml version=""1.0"" encoding=""utf-8""?>
+<configuration>
+  <packageSources>
+    <clear />
+    <add key=""local"" value=""c:\jd\swap\artifacts\packages"" />
+    <add key=""nuget.org"" value=""https://api.nuget.org/v3/index.json"" />
+  </packageSources>
+</configuration>";
+        
+        var nugetConfigPath = Path.Combine(projectPath, "nuget.config");
+        await File.WriteAllTextAsync(nugetConfigPath, nugetConfig);
     }
 }
