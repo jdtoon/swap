@@ -24,13 +24,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Documentation**: Updated CLI README with complete auth scaffolding guide and usage examples
 
 ### Added - GitHub Release Automation
-- **Automated Release Creation**: New GitHub Actions workflow triggers on version tags (v*.*.*)
-  - Automatically extracts release notes from CHANGELOG.md for the tagged version
-  - Builds and tests all packages before creating release
-  - Attaches NuGet packages (.nupkg files) to GitHub release
-  - Automatically marks pre-release versions (e.g., v0.1.0-alpha) as pre-release
-  - Triggers NuGet publish workflow automatically after release creation
-- **NuGet Publish Workflow Enhancement**: Added Swap.Htmx to package publishing steps
+- **Automated Release on PR Merge**: When PR is merged to main, workflow automatically:
+  1. Extracts version from `Swap.CLI.csproj`
+  2. Builds and tests all packages
+  3. Publishes all 4 packages to NuGet.org
+  4. Creates git tag (`v0.1.0`, etc.)
+  5. Extracts release notes from CHANGELOG.md
+  6. Creates GitHub release with packages attached
+  7. Marks pre-release versions (e.g., `v0.1.0-alpha`) automatically
+- **Idempotent**: Checks if tag/version already exists and skips if so
+- **Zero manual steps**: No manual tagging or release creation needed
 
 ### Added - Local NuGet Development Support  
 - **--local-nuget Flag**: New option for `swap new` command (framework development only)

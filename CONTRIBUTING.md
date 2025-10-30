@@ -62,20 +62,61 @@ When suggesting features, please include:
 git clone https://github.com/YOUR_USERNAME/swap.git
 cd swap
 
-# Build the CLI
+# Build and install CLI locally (automatic method - recommended)
 cd tools/Swap.CLI
 dotnet build
+dotnet tool uninstall --global Swap.CLI  # Remove existing if installed
+dotnet tool install --global --add-source ./bin/Debug Swap.CLI
+
+# Or use the convenience script
+cd ../..
+.\scripts\reinstall-cli.ps1   # Windows
+./scripts/reinstall-cli.sh    # Linux/Mac
 
 # Run tests
-cd ../Swap.CLI.Tests
+cd tools/Swap.CLI.Tests
 dotnet test
-
-# Install locally for testing
-cd ../Swap.CLI
-dotnet pack
-dotnet tool uninstall --global Swap.CLI  # Remove existing
-dotnet tool install --global --add-source ./nupkg Swap.CLI
 ```
+
+### Testing Your Changes with --local-nuget
+
+When working on framework changes (Swap.Htmx, Swap.Patterns, Swap.Testing), you need to test them in a real project without publishing to NuGet:
+
+```bash
+# 1. Build all local packages
+.\scripts\pack-local.ps1   # Windows
+./scripts/pack-local.sh    # Linux/Mac
+
+# This creates packages in .nuget/local/
+
+# 2. Create a test project using local packages
+cd testApps
+swap new MyTestApp --local-nuget --skip-setup
+
+# The --local-nuget flag:
+# - Automatically runs pack-local if packages don't exist
+# - Creates nuget.config pointing to ../../.nuget/local
+# - Lets you test unreleased framework changes immediately
+
+# 3. Test your changes
+cd MyTestApp
+dotnet restore  # Uses local packages
+dotnet build
+dotnet run
+
+# 4. Make framework changes and rebuild
+cd ../../framework/Swap.Patterns
+# ... make your changes ...
+cd ../../
+.\scripts\pack-local.ps1  # Rebuild packages
+
+# 5. Update your test app
+cd testApps/MyTestApp
+dotnet restore --force-evaluate  # Force re-evaluation of packages
+dotnet build
+```
+
+**Important:** The `--local-nuget` flag is ONLY for development within the Swap repository. Regular users should never use it.
 
 ### Project Structure
 

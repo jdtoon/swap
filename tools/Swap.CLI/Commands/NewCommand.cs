@@ -361,9 +361,45 @@ public class HtmxShellMiddleware
                 // Copy and process all template files
                 await ProcessTemplateDirectoryAsync(templatePath, projectPath, variables, ctx);
                 
-                // If using local NuGet, create nuget.config with local feed
+                // If using local NuGet, ensure packages are built and create nuget.config
                 if (localNuget)
                 {
+                    // Check if local feed exists, if not, offer to create it
+                    var swapRootPath = Path.GetFullPath(Path.Combine(projectPath, "..", ".."));
+                    var localFeedPath = Path.Combine(swapRootPath, ".nuget", "local");
+                    
+                    if (!Directory.Exists(localFeedPath) || !Directory.GetFiles(localFeedPath, "*.nupkg").Any())
+                    {
+                        ctx.Status("Local NuGet feed not found. Building packages...");
+                        
+                        // Run pack-local script
+                        var isWindows = OperatingSystem.IsWindows();
+                        var packScript = isWindows ? "pack-local.ps1" : "pack-local.sh";
+                        var packScriptPath = Path.Combine(swapRootPath, "scripts", packScript);
+                        
+                        if (File.Exists(packScriptPath))
+                        {
+                            AnsiConsole.MarkupLine("\n[yellow]Building local NuGet packages...[/]");
+                            try
+                            {
+                                if (isWindows)
+                                {
+                                    await RunCommandAsync("pwsh", $"-File \"{packScriptPath}\"", swapRootPath);
+                                }
+                                else
+                                {
+                                    await RunCommandAsync("bash", $"\"{packScriptPath}\"", swapRootPath);
+                                }
+                                AnsiConsole.MarkupLine("[green]✓[/] Local packages built successfully!");
+                            }
+                            catch (Exception ex)
+                            {
+                                AnsiConsole.MarkupLine($"[yellow]Warning:[/] Could not build local packages: {ex.Message}");
+                                AnsiConsole.MarkupLine($"[yellow]Run manually:[/] {packScript}");
+                            }
+                        }
+                    }
+                    
                     await CreateLocalNugetConfigAsync(projectPath, ctx);
                 }
             });
