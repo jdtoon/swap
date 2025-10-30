@@ -24,6 +24,9 @@ jobs:
     
     - name: Remove local NuGet source for CI
       run: |
+        echo "📋 Original nuget.config:"
+        cat nuget.config
+        
         # Replace nuget.config with CI-only version (no local source)
         cat > nuget.config << 'EOF'
         <?xml version="1.0" encoding="utf-8"?>
@@ -34,8 +37,15 @@ jobs:
           </packageSources>
         </configuration>
         EOF
-        echo "✅ Replaced nuget.config for CI"
+        
+        echo ""
+        echo "✅ Replaced nuget.config for CI:"
         cat nuget.config
+        
+        # Check for any other nuget.config files
+        echo ""
+        echo "🔍 Searching for other nuget.config files:"
+        find . -name "nuget.config" -o -name "NuGet.config" -o -name "NuGet.Config"
     
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
