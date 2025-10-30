@@ -22,31 +22,6 @@ jobs:
       with:
         fetch-depth: 0  # Fetch all history for tag creation
     
-    - name: Remove local NuGet source for CI
-      run: |
-        echo "📋 Original nuget.config:"
-        cat nuget.config
-        
-        # Replace nuget.config with CI-only version (no local source)
-        cat > nuget.config << 'EOF'
-        <?xml version="1.0" encoding="utf-8"?>
-        <configuration>
-          <packageSources>
-            <clear />
-            <add key="nuget.org" value="https://api.nuget.org/v3/index.json" protocolVersion="3" />
-          </packageSources>
-        </configuration>
-        EOF
-        
-        echo ""
-        echo "✅ Replaced nuget.config for CI:"
-        cat nuget.config
-        
-        # Check for any other nuget.config files
-        echo ""
-        echo "🔍 Searching for other nuget.config files:"
-        find . -name "nuget.config" -o -name "NuGet.config" -o -name "NuGet.Config"
-    
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
