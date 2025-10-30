@@ -22,8 +22,12 @@ jobs:
       with:
         fetch-depth: 0  # Fetch all history for tag creation
     
-    - name: Create local NuGet directory
-      run: mkdir -p .nuget/local
+    - name: Remove local NuGet source for CI
+      run: |
+        # Remove the local-dev source from nuget.config for CI builds
+        sed -i '/<add key="local-dev"/d' nuget.config
+        echo "✅ Removed local-dev source from nuget.config"
+        cat nuget.config
     
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
