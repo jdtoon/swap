@@ -13,6 +13,18 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     
+    - name: Remove local NuGet source for CI
+      run: |
+        cat > nuget.config << 'EOF'
+        <?xml version="1.0" encoding="utf-8"?>
+        <configuration>
+          <packageSources>
+            <clear />
+            <add key="nuget.org" value="https://api.nuget.org/v3/index.json" protocolVersion="3" />
+          </packageSources>
+        </configuration>
+        EOF
+    
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
@@ -27,5 +39,11 @@ jobs:
     - name: Run tests
       run: dotnet test --configuration Release --no-restore --verbosity normal
     
-    - name: Pack
-      run: dotnet pack tools/Swap.CLI/Swap.CLI.csproj --configuration Release --no-build --output ./nupkg
+    - name: Pack CLI
+      run: dotnet pack tools/Swap.CLI/Swap.CLI.csproj --configuration Release --no-restore --output ./nupkg
+
+    - name: Pack Patterns
+      run: dotnet pack framework/Swap.Patterns/Swap.Patterns.csproj --configuration Release --no-restore --output ./nupkg
+
+    - name: Pack Testing
+      run: dotnet pack framework/Swap.Testing/Swap.Testing.csproj --configuration Release --no-restore --output ./nupkg

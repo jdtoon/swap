@@ -33,29 +33,30 @@
             <div class="mb-4">
                 <input type="text" 
                        name="searchTerm"
-                       value="@Model.SearchTerm"
                        placeholder="Search {{EntityNameLower}}..." 
                        class="input input-bordered w-full"
-                       hx-get="@Url.Action("Index")"
+                       hx-get="@Url.Action("Get{{EntityName}}List")"
                        hx-trigger="input changed delay:500ms, search"
                        hx-target="#{{EntityNameLower}}-list"
-                       hx-swap="innerHTML"
+                       hx-swap="outerHTML"
                        hx-include="[name='pageSize'], [name='sortBy'], [name='sortOrder']{{FilterIncludes}}" />
                 
                 <!-- Hidden inputs to preserve sort state -->
-                <input type="hidden" name="sortBy" value="@Model.SortBy" />
-                <input type="hidden" name="sortOrder" value="@Model.SortOrder" />
+                <input type="hidden" name="sortBy" value="" />
+                <input type="hidden" name="sortOrder" value="" />
             </div>
 
             <!-- Filters -->
             {{FilterSection}}
 
-            <!-- List Container -->
-            <div id="{{EntityNameLower}}-list"
-                 hx-get="@Url.Action("Index")"
-                 hx-trigger="refresh{{EntityName}}List from:body"
-                 hx-swap="innerHTML">
-                @await Html.PartialAsync("_{{EntityName}}List", Model)
+            <!-- {{EntityName}} List Component (loads separately via HTMX) -->
+            <div hx-get="@Url.Action("Get{{EntityName}}List")" 
+                 hx-trigger="load, refresh{{EntityName}}List from:body"
+                 hx-swap="outerHTML">
+                <div class="flex items-center justify-center py-8">
+                    <span class="loading loading-spinner loading-lg"></span>
+                    <span class="ml-2">Loading {{EntityNameLower}}...</span>
+                </div>
             </div>
         </div>
     </div>

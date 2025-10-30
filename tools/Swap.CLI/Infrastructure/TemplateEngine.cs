@@ -27,6 +27,9 @@ public class TemplateEngine
         result = ProcessConditional(result, "if_sqlserver", variables.GetValueOrDefault("DatabaseProvider") == "sqlserver");
         result = ProcessConditional(result, "if_postgres", variables.GetValueOrDefault("DatabaseProvider") == "postgres");
         
+        // Process {{#if_local_nuget}}...{{/if_local_nuget}}
+        result = ProcessConditional(result, "if_local_nuget", variables.GetValueOrDefault("UseLocalNuget") == "true");
+        
         return result;
     }
     

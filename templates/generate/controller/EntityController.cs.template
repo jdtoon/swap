@@ -4,10 +4,11 @@ using {{ProjectName}}.Data;
 using {{ProjectName}}.Models;
 using {{ProjectName}}.ViewModels;
 using {{ProjectName}}.Extensions;
+using Swap.Htmx;
 
 namespace {{ProjectName}}.Controllers;
 
-public class {{EntityName}}Controller : Controller
+public class {{EntityName}}Controller : SwapController
 {
     private readonly AppDbContext _context;
 
@@ -17,12 +18,28 @@ public class {{EntityName}}Controller : Controller
     }
 
     /// <summary>
-    /// Index action with pagination, search, sorting, and filtering support
+    /// Index action - returns the static page container
     /// </summary>
-    public async Task<IActionResult> Index(int pageNumber = 1, int pageSize = 10, string? searchTerm = null, string? sortBy = null, string? sortOrder = "asc"{{FilterParameters}})
+    public IActionResult Index()
     {
-        var isHtmxRequest = Request.Headers.ContainsKey("HX-Request");
+        // Index page is just static content - search bar, hero, etc.
+        // The list loads separately via Get{{EntityName}}List
+        var viewModel = new {{EntityName}}ListViewModel
+        {
+            SearchTerm = "",
+            SortBy = "",
+            SortOrder = "asc"
+        };
+        
+        return SwapView(viewModel);
+    }
 
+    /// <summary>
+    /// Separate endpoint for the {{EntityNameLower}} list component with pagination, search, sorting, and filtering
+    /// </summary>
+    [HttpGet]
+    public async Task<IActionResult> Get{{EntityName}}List(int pageNumber = 1, int pageSize = 10, string? searchTerm = null, string? sortBy = null, string? sortOrder = "asc"{{FilterParameters}})
+    {
         // Build query with search filter
         var query = _context.{{EntityNamePlural}}.AsQueryable();
         
@@ -66,23 +83,17 @@ public class {{EntityName}}Controller : Controller
                 PageSize = pageSize,
                 TotalItems = totalItems,
                 TotalPages = (int)Math.Ceiling(totalItems / (double)pageSize),
-                HxGetUrl = Url.Action("Index"),
+                HxGetUrl = Url.Action("Get{{EntityName}}List") ?? string.Empty,
                 HxTarget = "#{{EntityNameLower}}-list",
-                HxSwap = "innerHTML"
+                HxSwap = "outerHTML"
             }
         };
 
         // Pass selection state to view
         ViewBag.SelectedIds = HttpContext.Session.GetObject<HashSet<int>>("{{EntityName}}_Selection") ?? new HashSet<int>();
 
-        if (isHtmxRequest)
-        {
-            // Return partial view for HTMX requests
-            return PartialView("_{{EntityName}}List", viewModel);
-        }
-
-        // Return full page for initial load
-        return View(viewModel);
+        // Return just the _{{EntityName}}List partial
+        return PartialView("_{{EntityName}}List", viewModel);
     }
 
     /// <summary>
@@ -335,7 +346,7 @@ public class {{EntityName}}Controller : Controller
         HttpContext.Session.SetObject("{{EntityName}}_Selection", selectedIds);
 
         // Return updated list with selection state
-        return await Index(pageNumber, pageSize, searchTerm, sortBy, sortOrder{{FilterParameterValues}});
+        return await Get{{EntityName}}List(pageNumber, pageSize, searchTerm, sortBy, sortOrder{{FilterParameterValues}});
     }
 
     /// <summary>

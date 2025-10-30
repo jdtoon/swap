@@ -9,7 +9,7 @@ Create a new ASP.NET Core project with HTMX and Docker support.
 ## Synopsis
 
 ```bash
-swap new <name> [--database <provider>]
+swap new <name> [--database <provider>] [--no-htmx-shell]
 ```
 
 ## Options
@@ -17,18 +17,67 @@ swap new <name> [--database <provider>]
 - `<name>` - Project name (required)
 - `--database <provider>` - Database provider: `sqlite` (default), `sqlserver`, or `postgres`
 - `--db <provider>` - Short alias for `--database`
+- `--no-htmx-shell` - Disable HTMX shell middleware (advanced use cases only)
 
 ## Description
 
 Generates a production-ready ASP.NET Core MVC project with:
 - **Entity Framework Core** with your chosen database
 - **HTMX** for interactive UI without JavaScript
+- **HTMX Shell Middleware** (default) - Enforces partial view responses for HTMX requests
+- **HTMX-First Layout** - `hx-boost="true"` on body, `id="main-content"` on main element
 - **DaisyUI + Tailwind CSS** for modern, accessible components
+- **DaisyUI Navbar** - Aligned with `navbar-start`/`navbar-end` structure
 - **Docker support** with Dockerfile and docker-compose.yml
 - **Sample TodoItem CRUD** with modals, pagination, and search
 - **Toast notifications** for user feedback
 - **Auto-migrations** that run on startup
 - **Production-ready patterns** from real applications
+
+### HTMX Shell Middleware
+
+By default, new projects include HTMX shell middleware that prevents full page reloads and enforces partial view responses for HTMX requests.
+
+**How it works:**
+- Detects `HX-Request` headers on incoming requests
+- Verifies response HTML doesn't contain `<html>` tags
+- Throws exception with view name if full page detected (development aid)
+- Helps catch layout rendering bugs early
+
+**Configure the allowlist:**
+
+Edit `Middleware/HtmxShellMiddleware.cs` to allow full page rendering for specific paths:
+
+```csharp
+private static readonly HashSet<string> AllowFullPagePaths = new(StringComparer.OrdinalIgnoreCase)
+{
+    "/",           // Home page
+    "/auth/login", // Login page
+    "/auth/register"
+};
+```
+
+**To disable:** Use `--no-htmx-shell` flag when creating the project (advanced scenarios only).
+
+### HTMX Navigation
+
+All new projects are configured for SPA-like navigation with HTMX:
+- `hx-boost="true"` on `<body>` enables automatic AJAX navigation
+- Links use `hx-target="#main-content"` to swap only the content area
+- `hx-push-url="true"` maintains browser history
+- Controllers detect `HX-Request` header to return partials vs full views
+
+**Example navigation link:**
+```html
+<a href="/Article" hx-target="#main-content" hx-push-url="true">Articles</a>
+```
+
+The main content container:
+```html
+<main id="main-content" class="container mx-auto p-4">
+    @RenderBody()
+</main>
+```
 
 ## Examples
 

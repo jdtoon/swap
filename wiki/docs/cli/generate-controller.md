@@ -9,9 +9,17 @@ Generate complete CRUD controllers with HTMX-powered views, pagination, search, 
 ## Synopsis
 
 ```bash
-swap generate controller <name> --fields <field-definitions>
-swap g c <name> --fields <field-definitions>  # Short alias
+swap generate controller <name> --fields <field-definitions> [--add-nav] [--force] [--dry-run] [--project <path>]
+swap g c <name> --fields <field-definitions> [--add-nav] [--force] [--dry-run] [--project <path>]  # Short alias
 ```
+
+## Options
+
+- `--fields <definitions>` or `-f <definitions>` - **Required.** Space- or comma-separated field definitions
+- `--add-nav` - Automatically inject navigation link into `_Layout.cshtml` with HTMX attributes
+- `--force` - Overwrite existing files without prompting
+- `--dry-run` - Preview generated files without writing to disk
+- `--project <path>` or `-p <path>` - Path to project directory (default: current directory)
 
 ## Description
 
@@ -29,6 +37,33 @@ The `generate controller` command creates a modern, full-featured MVC controller
 - **Model validation** with client and server-side support
 - **Entity Framework Core** DbContext integration
 - **Automatic DbContext** updates (adds DbSet if not exists)
+- **Auto-migration creation** (`Add<Entity>` migration created after build verification)
+- **Navigation link injection** (when using `--add-nav` flag with HTMX attributes)
+
+### Build-Before-Migration Safety
+
+Swap automatically creates an Entity Framework migration after generating your controller. Before creating the migration:
+
+1. **Builds the project** (`dotnet build`) to verify there are no compilation errors
+2. **Shows compiler errors** if the build fails (migration not created)
+3. **Creates migration** if build succeeds (e.g., `AddProduct`, `AddArticle`)
+
+This prevents cryptic EF Core errors by catching compiler issues early. You'll see clear C# error messages instead of confusing migration failures.
+
+**Migration workflow:**
+```bash
+# Generate controller - migration auto-created
+swap g c Product --fields "Name:string Price:decimal"
+# Output: ✓ Migration created: AddProduct
+
+# Review migration (optional)
+cat Migrations/20250129_AddProduct.cs
+
+# Apply when ready
+dotnet ef database update
+```
+
+Swap **never** applies migrations automatically. You always control when schema changes hit your database.
 
 ## Arguments
 
@@ -275,6 +310,25 @@ public class ProductListViewModel
 ```bash
 swap g c Product --fields "Name:string Price:decimal InStock:bool CreatedDate:DateTime"
 ```
+
+### With Auto-Navigation Link
+
+```bash
+swap g c Article --fields "Title:string Content:string PublishedAt:DateTime?" --add-nav
+```
+
+This automatically injects a navigation link into `Views/Shared/_Layout.cshtml`:
+
+```html
+<ul class="menu menu-horizontal px-1 ml-2">
+    <li><a href="/" hx-target="#main-content" hx-push-url="true">Home</a></li>
+    <li><a href="/Article" hx-target="#main-content" hx-push-url="true">Articles</a></li>
+</ul>
+```
+
+**HTMX attributes:**
+- `hx-target="#main-content"` - Swaps only the content area (not full page)
+- `hx-push-url="true"` - Updates browser URL and maintains history
 
 **Generated Index Action:**
 ```csharp

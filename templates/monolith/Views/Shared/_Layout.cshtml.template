@@ -12,19 +12,27 @@
     <header>
         <nav class="navbar bg-base-100 shadow-lg">
             <div class="container mx-auto">
-                <div class="flex-1">
-                    <a class="btn btn-ghost text-xl" href="/">{{ProjectName}}</a>
-                </div>
-                <div class="flex-none">
-                    <ul class="menu menu-horizontal px-1">
-                        <li><a href="/">Home</a></li>
+                <div class="navbar-start">
+                    <a class="btn btn-ghost text-xl" 
+                       href="/" 
+                       hx-get="/" 
+                       hx-target="#main-content" 
+                       hx-push-url="true">{{ProjectName}}</a>
+                    <ul class="menu menu-horizontal px-1 ml-2">
+                        <li><a href="/" 
+                               hx-get="/" 
+                               hx-target="#main-content" 
+                               hx-push-url="true">Home</a></li>
                     </ul>
+                </div>
+                <div class="navbar-end">
+                    <!-- Authentication UI will go here -->
                 </div>
             </div>
         </nav>
     </header>
 
-    <main class="container mx-auto p-4">
+    <main id="main-content" class="container mx-auto p-4">
         @RenderBody()
     </main>
 

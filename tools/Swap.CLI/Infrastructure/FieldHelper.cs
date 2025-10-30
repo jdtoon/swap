@@ -217,7 +217,7 @@ public static class FieldHelper
                 <input type=""hidden"" name=""{field.Name}"" value=""false"" />
             </div>",
             
-            "DateTime" => $@"<div class=""form-control"">
+            "DateTime" when !field.IsNullable => $@"<div class=""form-control"">
                 <label class=""label"">
                     <span class=""label-text"">{field.Name}</span>
                 </label>
@@ -225,6 +225,19 @@ public static class FieldHelper
                        name=""{field.Name}"" 
                        placeholder=""{field.Name}""
                        value=""@Model.{field.Name}.ToString(""yyyy-MM-ddTHH:mm"")""
+                       class=""input input-bordered"" 
+                       {required} />
+                <span asp-validation-for=""{field.Name}"" class=""text-error text-sm""></span>
+            </div>",
+            
+            "DateTime" when field.IsNullable => $@"<div class=""form-control"">
+                <label class=""label"">
+                    <span class=""label-text"">{field.Name}</span>
+                </label>
+                <input type=""datetime-local"" 
+                       name=""{field.Name}"" 
+                       placeholder=""{field.Name}""
+                       value=""@(Model.{field.Name}?.ToString(""yyyy-MM-ddTHH:mm"") ?? """")""
                        class=""input input-bordered"" 
                        {required} />
                 <span asp-validation-for=""{field.Name}"" class=""text-error text-sm""></span>
@@ -274,12 +287,13 @@ public static class FieldHelper
             return $@"<th>{field.Name}</th>";
         }
         
-        // Sortable: button with HTMX and sort indicators
+        // Sortable: button with HTMX and sort indicators - calls Get{EntityName}List endpoint
+        var entityName = System.Globalization.CultureInfo.CurrentCulture.TextInfo.ToTitleCase(entityNameLower);
         return $@"<th>
                         <button class=""flex items-center gap-1 hover:text-primary""
-                                hx-get=""@Url.Action(""Index"")""
+                                hx-get=""@Url.Action(""Get{entityName}List"")""
                                 hx-target=""#{entityNameLower}-list""
-                                hx-swap=""innerHTML""
+                                hx-swap=""outerHTML""
                                 hx-include=""[name='searchTerm'], [name='pageSize']""
                                 hx-vals='{{""sortBy"": ""{fieldNameLower}"", ""sortOrder"": ""@(Model.SortBy?.ToLower() == ""{fieldNameLower}"" && Model.SortOrder == ""asc"" ? ""desc"" : ""asc"")""}}'
                                 type=""button"">
@@ -317,7 +331,8 @@ public static class FieldHelper
                             }}
                         </td>",
             
-            "DateTime" => $"<td>@item.{field.Name}.ToString(\"yyyy-MM-dd\")</td>",
+            "DateTime" when !field.IsNullable => $"<td>@item.{field.Name}.ToString(\"yyyy-MM-dd\")</td>",
+            "DateTime" when field.IsNullable => $"<td>@(item.{field.Name}?.ToString(\"yyyy-MM-dd\") ?? \"-\")</td>",
             
             _ => $"<td>@item.{field.Name}</td>"
         };
@@ -342,9 +357,14 @@ public static class FieldHelper
                 }}
             </div>",
             
-            "DateTime" => $@"<div>
+            "DateTime" when !field.IsNullable => $@"<div>
                 <span class=""font-semibold"">{field.Name}:</span>
                 <span>@Model.{field.Name}.ToString(""yyyy-MM-dd HH:mm"")</span>
+            </div>",
+            
+            "DateTime" when field.IsNullable => $@"<div>
+                <span class=""font-semibold"">{field.Name}:</span>
+                <span>@(Model.{field.Name}?.ToString(""yyyy-MM-dd HH:mm"") ?? ""-"")</span>
             </div>",
             
             _ => $@"<div>
@@ -561,7 +581,7 @@ public static class FieldHelper
                                class=""checkbox checkbox-sm""
                                hx-post=""@Url.Action(""ToggleSelectAll"", ""{entityName}"")?pageNumber=@Model.Pagination.CurrentPage&pageSize=@Model.Pagination.PageSize&searchTerm=@Model.SearchTerm&sortBy=@Model.SortBy&sortOrder=@Model.SortOrder@(string.Join("""", Model.Filters.Where(f => !string.IsNullOrEmpty(f.Value)).Select(f => $""&{{f.Key}}={{f.Value}}"")))""
                                hx-target=""#{entityName.ToLower()}-list""
-                               hx-swap=""innerHTML""
+                               hx-swap=""outerHTML""
                                @(ViewBag.SelectedIds != null && Model.Items.All(i => ((HashSet<int>)ViewBag.SelectedIds).Contains(i.Id)) ? ""checked"" : """") />
                     </th>";
     }
@@ -620,6 +640,7 @@ public static class FieldHelper
                                     Delete Selected
                                 </button>
                                 <button hx-post=""@Url.Action(""ClearSelection"", ""{entityName}"")""
+                                        hx-swap=""none""
                                         class=""btn btn-sm btn-ghost"">
                                     Clear Selection
                                 </button>

@@ -195,6 +195,148 @@ swap g m Category --fields "Name:string" --project path/to/project
 - `--force` - Overwrite existing files without prompting
 - `--project` or `-p` - Path to project directory (default: current directory)
 
+### `swap generate auth`
+
+Generate a complete authentication system with ASP.NET Core Identity, including login, registration, and password reset functionality.
+
+```bash
+# Generate authentication system
+swap generate auth
+
+# Short alias
+swap g auth
+
+# Preview what would be generated
+swap g auth --dry-run
+
+# Force overwrite existing files
+swap g auth --force
+
+# Generate in a different project
+swap g auth --project path/to/project
+```
+
+**Options:**
+- `--dry-run` - Preview what would be generated without writing files
+- `--force` - Overwrite existing files without prompting
+- `--project` or `-p` - Path to project directory (default: current directory)
+
+**What it generates:**
+- `Models/ApplicationUser.cs` - Extended Identity user with DisplayName, CreatedAt, LastLoginAt
+- `ViewModels/` - LoginViewModel, RegisterViewModel, ForgotPasswordViewModel, ResetPasswordViewModel
+- `Controllers/AuthController.cs` - Complete auth controller with all operations
+- `Views/Auth/` - Login, Register, ForgotPassword, ResetPassword, AccessDenied, and confirmation pages
+- `Views/Shared/_LoginPartial.cshtml` - Reusable login/logout navigation component
+- Adds `Microsoft.AspNetCore.Identity.EntityFrameworkCore` package reference
+
+**Features included:**
+- ✅ User registration with email validation
+- ✅ Login with "Remember Me" functionality
+- ✅ Password reset with token-based flow
+- ✅ Account lockout after failed attempts
+- ✅ Last login tracking
+- ✅ Access denied page
+- ✅ Tailwind CSS styled views
+- ✅ HTMX-compatible markup
+
+**After generation - Manual configuration required:**
+
+1. **Update your DbContext** to inherit from `IdentityDbContext<ApplicationUser>`:
+```csharp
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
+using YourApp.Models;
+
+namespace YourApp.Data;
+
+public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
+{
+    public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
+        : base(options) { }
+    
+    // Your existing DbSets here
+}
+```
+
+2. **Configure Identity in Program.cs** (add after service configuration):
+```csharp
+using Microsoft.AspNetCore.Identity;
+using YourApp.Models;
+
+// Add Identity
+builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
+{
+    // Password settings
+    options.Password.RequireDigit = true;
+    options.Password.RequireLowercase = true;
+    options.Password.RequireNonAlphanumeric = false;
+    options.Password.RequireUppercase = true;
+    options.Password.RequiredLength = 6;
+    
+    // Lockout settings
+    options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
+    options.Lockout.MaxFailedAccessAttempts = 5;
+    
+    // User settings
+    options.User.RequireUniqueEmail = true;
+})
+.AddEntityFrameworkStores<ApplicationDbContext>()
+.AddDefaultTokenProviders();
+
+// Configure application cookie
+builder.Services.ConfigureApplicationCookie(options =>
+{
+    options.Cookie.HttpOnly = true;
+    options.ExpireTimeSpan = TimeSpan.FromDays(30);
+    options.LoginPath = "/auth/login";
+    options.AccessDeniedPath = "/auth/access-denied";
+    options.SlidingExpiration = true;
+});
+
+// ... existing code ...
+
+// Add authentication/authorization middleware (BEFORE app.MapControllerRoute())
+app.UseAuthentication();
+app.UseAuthorization();
+```
+
+3. **Add the login partial to your layout** (`Views/Shared/_Layout.cshtml`):
+```html
+<!-- In your navigation or header -->
+<partial name="_LoginPartial" />
+```
+
+4. **Create and apply Identity migration**:
+```bash
+dotnet ef migrations add AddIdentity
+dotnet ef database update
+```
+
+5. **(Optional) Configure email service** for password reset:
+   - Currently, password reset tokens are logged to the console
+   - For production, implement an email service and update `AuthController.ForgotPassword`
+
+**Usage:**
+- Visit `/auth/register` to create a new account
+- Visit `/auth/login` to sign in
+- Use `[Authorize]` attribute to protect controllers/actions
+- Access user info via `User.Identity.Name` in controllers and views
+
+**Protecting routes:**
+```csharp
+[Authorize]  // Requires authentication
+public class AdminController : Controller
+{
+    // ...
+}
+
+[Authorize(Roles = "Admin")]  // Requires specific role
+public IActionResult ManageUsers()
+{
+    // ...
+}
+```
+
 ### `swap generate resource <name> --fields <fields>`
 
 Generate model + controller together (alias for backward compatibility).
@@ -545,12 +687,280 @@ var post = await _db.BlogPosts
 
 ---
 
+### `swap generate pattern timestampable <entity>`
+
+Track creation and update timestamps automatically without user attribution. A lightweight alternative to Auditable when you only need dates.
+
+```bash
+# Add timestampable to Post entity
+swap g pattern timestampable Post
+
+# Short aliases
+swap g p ts Post
+```
+
+**What it does:**
+1. Adds `ITimestampable` interface to your entity
+2. Adds two properties: `CreatedAt`, `UpdatedAt`
+3. Adds using statement for `Swap.Patterns.Timestampable`
+4. Ensures `Swap.Patterns` package reference
+
+**After generation:**
+```csharp
+public class Post : ITimestampable
+{
+    public int Id { get; set; }
+    public string Title { get; set; }
+    
+    // ITimestampable properties
+    public DateTime CreatedAt { get; set; }
+    public DateTime UpdatedAt { get; set; }
+}
+```
+
+**Next steps:**
+1. Configure timestamp interceptor in your `DbContext`:
+```csharp
+using Swap.Patterns.Timestampable;
+
+protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+{
+    optionsBuilder.AddInterceptors(new TimestampInterceptor());
+}
+```
+
+2. Create and apply migration:
+```bash
+dotnet ef migrations add AddTimestampsToPost
+dotnet ef database update
+```
+
+**How it works:**
+- `CreatedAt` set on insert; `UpdatedAt` set on every modification
+- Requires no `IHttpContextAccessor`
+- Safe to combine with most patterns (but not with Auditable)
+
+---
+
+### `swap generate pattern orderable <entity>`
+
+Add a stable `Position` property and helpers for ordering lists and drag-and-drop UIs.
+
+```bash
+# Add orderable to Category entity
+swap g pattern orderable Category
+
+# Short aliases
+swap g p order Category
+```
+
+**What it does:**
+1. Adds `IOrderable` interface to your entity
+2. Adds `Position` property
+3. Adds using statement for `Swap.Patterns.Orderable`
+4. Ensures `Swap.Patterns` package reference
+
+**After generation:**
+```csharp
+public class Category : IOrderable
+{
+    public int Id { get; set; }
+    public string Name { get; set; }
+    
+    // IOrderable property
+    public int Position { get; set; }
+}
+```
+
+**Usage:**
+```csharp
+// Get next position for a new item
+var next = await _db.Categories.GetNextPositionAsync();
+db.Categories.Add(new Category { Name = "New", Position = next });
+
+// Reorder an item (1-based index)
+var item = await _db.Categories.FindAsync(id);
+await _db.Categories.ReorderAsync(item!, newPosition: 1);
+await _db.SaveChangesAsync();
+
+// Normalize positions after deletes/bulk ops
+await _db.Categories.NormalizePositionsAsync();
+await _db.SaveChangesAsync();
+
+// Convenient ordering for queries
+var ordered = await _db.Categories.OrderByPosition().ToListAsync();
+```
+
+---
+
+### `swap generate pattern publishable <entity>`
+
+Add a draft/published workflow to your entity with a simple boolean flag and timestamp.
+
+```bash
+# Add publishable to Article entity
+swap g pattern publishable Article
+
+# Short aliases
+swap g p publish Article
+```
+
+**What it does:**
+1. Adds `IPublishable` interface to your entity
+2. Adds two properties: `IsPublished`, `PublishedAt`
+3. Adds using statement for `Swap.Patterns.Publishable`
+4. Ensures `Swap.Patterns` package reference
+
+**After generation:**
+```csharp
+public class Article : IPublishable
+{
+    public int Id { get; set; }
+    public string Title { get; set; }
+    
+    // IPublishable properties
+    public bool IsPublished { get; set; }
+    public DateTime? PublishedAt { get; set; }
+}
+```
+
+**Usage:**
+```csharp
+// Publish now (sets IsPublished and PublishedAt = UtcNow)
+article.Publish();
+
+// Unpublish (revert to draft)
+article.Unpublish();
+
+// Query helpers
+var published = await _db.Articles.Published().ToListAsync();
+var drafts = await _db.Articles.Drafts().ToListAsync();
+```
+
+---
+
+### `swap generate pattern versionable <entity>`
+
+Track and increment a simple integer `Version` on every update.
+
+```bash
+# Add versionable to Document entity
+swap g pattern versionable Document
+
+# Short aliases
+swap g p version Document
+```
+
+**What it does:**
+1. Adds `IVersionable` interface to your entity
+2. Adds one property: `Version` (int)
+3. Adds using statement for `Swap.Patterns.Versionable`
+4. Ensures `Swap.Patterns` package reference
+
+**After generation:**
+```csharp
+public class Document : IVersionable
+{
+    public int Id { get; set; }
+    public string Title { get; set; }
+    
+    // IVersionable properties
+    public int Version { get; set; }
+}
+```
+
+**Next steps:**
+1. Configure version interceptor in your `DbContext`:
+```csharp
+using Swap.Patterns.Versionable;
+
+protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+{
+    optionsBuilder.AddInterceptors(new VersionInterceptor());
+}
+```
+
+2. Create and apply migration:
+```bash
+dotnet ef migrations add AddVersionToDocument
+dotnet ef database update
+```
+
+**How it works:**
+- Sets `Version = 1` on insert if not already set
+- Increments `Version` on every update (save)
+- Query helpers: `.WithMinVersion(n)`, `.WithVersion(n)`, `.OrderByVersion()`
+
+---
+
+### `swap generate pattern visibility <entity>`
+
+Add controllable visibility with optional time-based scheduling for features, content releases, or time-bound offers.
+
+```bash
+# Add visibility to Banner entity
+swap g pattern visibility Banner
+
+# Short aliases
+swap g p visible Banner
+```
+
+**What it does:**
+1. Adds `IVisibility` interface to your entity
+2. Adds three properties: `IsVisible`, `VisibleFrom`, `VisibleUntil`
+3. Adds using statement for `Swap.Patterns.Visibility`
+4. Ensures `Swap.Patterns` package reference
+
+**After generation:**
+```csharp
+public class Banner : IVisibility
+{
+    public int Id { get; set; }
+    public string Title { get; set; }
+    
+    // IVisibility properties
+    public bool IsVisible { get; set; }
+    public DateTime? VisibleFrom { get; set; }
+    public DateTime? VisibleUntil { get; set; }
+}
+```
+
+**Usage:**
+```csharp
+// Show/hide manually
+banner.Show();
+banner.Hide();
+
+// Schedule for future (UTC)
+banner.ScheduleVisibility(DateTime.UtcNow.AddDays(7));
+
+// Schedule within a window
+banner.ScheduleVisibilityWindow(
+    DateTime.UtcNow.AddDays(7),
+    DateTime.UtcNow.AddDays(14)
+);
+
+// Check if currently visible (considering time window)
+if (banner.IsCurrentlyVisible())
+{
+    // show banner
+}
+
+// Query helpers
+var visible = await _db.Banners.Visible().ToListAsync();
+var scheduled = await _db.Banners.Scheduled().ToListAsync();
+var expired = await _db.Banners.Expired().ToListAsync();
+```
+
+---
+
 ### Combining Patterns
 
-All three patterns can be used together on the same entity:
+You can mix and match compatible patterns on the same entity. Do not combine Auditable and Timestampable together (both define CreatedAt/UpdatedAt).
 
 ```csharp
-public class Product : ISoftDeletable, IAuditable, ISluggable
+// Example with Auditable
+public class Product : ISoftDeletable, IAuditable, ISluggable, IOrderable
 {
     public int Id { get; set; }
     public string Name { get; set; }
@@ -569,6 +979,9 @@ public class Product : ISoftDeletable, IAuditable, ISluggable
     
     // Sluggable (1 property)
     public string Slug { get; set; } = "";
+
+    // Orderable (1 property)
+    public int Position { get; set; }
 }
 ```
 
@@ -577,6 +990,15 @@ Apply all patterns in sequence:
 swap g pattern softdelete Product
 swap g pattern auditable Product
 swap g pattern sluggable Product
+swap g pattern orderable Product
+```
+
+Alternatively, replace Auditable with Timestampable when you don't need user attribution:
+```bash
+swap g pattern softdelete Product
+swap g pattern timestampable Product
+swap g pattern sluggable Product
+swap g pattern orderable Product
 ```
 
 ---
@@ -633,11 +1055,22 @@ swap g s all --project path/to/project
 - Hooks into `Program.cs` for Development environment seeding
 
 **Field intelligence:**
-- Strings: emails, URLs, names, titles, descriptions, phone numbers, addresses
-- Numbers: realistic ranges based on field names (age, price, quantity)
-- Booleans: weighted probabilities (e.g., IsActive ~70% true)
-- Dates: distributed over the last 3 years
-- Foreign keys: picks from existing related entities
+- **Strings**: emails, URLs, names, titles, descriptions, phone numbers, addresses
+- **Numbers**: realistic ranges based on field names (age, price, quantity)
+- **Booleans**: weighted probabilities (e.g., IsActive ~70% true)
+- **Dates**: distributed over the last 3 years
+- **Foreign keys**: picks from existing related entities with null safety
+- **Slugs**: unique slugs with random suffix for collision avoidance
+
+**Pattern integration (v0.0.14+):**
+- **Auto-excludes** pattern properties managed by EF Core interceptors:
+  - `CreatedAt`, `CreatedBy`, `UpdatedAt`, `UpdatedBy` (IAuditable)
+  - `IsDeleted`, `DeletedAt`, `DeletedBy` (ISoftDeletable)
+  - `Version` (IVersionable)
+  - `IsVisible`, `VisibleFrom`, `VisibleUntil` (IVisibility)
+  - `Position` (IOrderable)
+- **Smart defaults**: Generates appropriate rules for application-managed properties like `PublishedAt`, `Slug`, etc.
+- **Relationship handling**: Preloads foreign key IDs and safely handles empty tables
 
 **Environment control:**
 ```bash

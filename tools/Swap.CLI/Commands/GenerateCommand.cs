@@ -10,6 +10,7 @@ public static class GenerateCommand
         command.AddAlias("g");
         
         // Add subcommands
+        command.AddCommand(GenerateAuthCommand.Create());
         command.AddCommand(GenerateControllerCommand.Create());
         command.AddCommand(GenerateModelCommand.Create());
         command.AddCommand(GenerateResourceCommand.Create());
@@ -17,6 +18,7 @@ public static class GenerateCommand
         command.AddCommand(GenerateTestCommand.Create());
         command.AddCommand(GenerateFactoryCommand.Create());
         command.AddCommand(GeneratePatternCommand.Create());
+        command.AddCommand(GenerateHtmxShellCommand.Create());
         
         return command;
     }

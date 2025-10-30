@@ -34,6 +34,18 @@ public static class GenerateControllerCommand
             aliases: new[] { "--project", "-p" },
             description: "Path to project directory (default: current directory)");
         command.AddOption(projectOption);
+
+        var addNavOption = new Option<bool>(
+            aliases: new[] { "--add-nav" },
+            description: "Inject a navigation link for this controller into _Layout.cshtml (HTMX-first nav)"
+        );
+        command.AddOption(addNavOption);
+
+        var noMigrationsOption = new Option<bool>(
+            aliases: new[] { "--no-migrations" },
+            description: "Skip automatic migration creation (you'll need to create migrations manually)"
+        );
+        command.AddOption(noMigrationsOption);
         
         command.SetHandler(async (InvocationContext context) =>
         {
@@ -42,13 +54,15 @@ public static class GenerateControllerCommand
             var dryRun = context.ParseResult.GetValueForOption(dryRunOption);
             var force = context.ParseResult.GetValueForOption(forceOption);
             var projectPath = context.ParseResult.GetValueForOption(projectOption);
-            context.ExitCode = await ExecuteAsync(name, fields, dryRun, force, projectPath);
+            var addNav = context.ParseResult.GetValueForOption(addNavOption);
+            var noMigrations = context.ParseResult.GetValueForOption(noMigrationsOption);
+            context.ExitCode = await ExecuteAsync(name, fields, dryRun, force, projectPath, addNav, noMigrations);
         });
         
         return command;
     }
     
-    private static async Task<int> ExecuteAsync(string entityName, string? fieldsSpec, bool dryRun, bool force, string? projectPath)
+    private static async Task<int> ExecuteAsync(string entityName, string? fieldsSpec, bool dryRun, bool force, string? projectPath, bool addNav, bool noMigrations)
     {
         // Validate entity name
         if (string.IsNullOrWhiteSpace(entityName))
@@ -132,6 +146,24 @@ public static class GenerateControllerCommand
             }
             
             await GenerateControllerAsync(entityName, projectName, fields, force);
+
+            // Auto-create migration for the new entity (never applies database update)
+            if (!noMigrations)
+            {
+                await TryCreateMigrationAsync(workingDir, entityName);
+            }
+            else
+            {
+                AnsiConsole.WriteLine();
+                AnsiConsole.MarkupLine("[yellow]ℹ[/] Migration creation skipped (--no-migrations flag)");
+                AnsiConsole.MarkupLine("[dim]Create migration manually:[/] [cyan]dotnet ef migrations add Add{0}[/]", entityName);
+            }
+
+            // Optionally inject nav link
+            if (addNav)
+            {
+                await TryInjectNavLinkAsync(workingDir, entityName);
+            }
             
             AnsiConsole.WriteLine();
             AnsiConsole.MarkupLine("[green]✓[/] Controller generated successfully!");
@@ -153,6 +185,7 @@ public static class GenerateControllerCommand
             AnsiConsole.WriteLine();
             AnsiConsole.MarkupLine("[bold]Next steps:[/]");
             AnsiConsole.MarkupLine($"  dotnet ef migrations add Add{entityName}");
+            AnsiConsole.MarkupLine("  # (We never auto-run database updates)");
             AnsiConsole.MarkupLine("  dotnet ef database update");
             AnsiConsole.MarkupLine($"  # Navigate to /{entityName} in your browser");
             
@@ -164,7 +197,198 @@ public static class GenerateControllerCommand
             return 1;
         }
     }
+
+    private static async Task TryInjectNavLinkAsync(string workingDir, string entityName)
+    {
+        try
+        {
+            var layoutPath = Path.Combine(workingDir, "Views", "Shared", "_Layout.cshtml");
+            if (!File.Exists(layoutPath))
+            {
+                AnsiConsole.MarkupLine("[yellow]ℹ[/] _Layout.cshtml not found, skipping --add-nav");
+                return;
+            }
+
+            var content = await File.ReadAllTextAsync(layoutPath);
+            var linkText = entityName + "s"; // simple plural
+            var li = $"<li><a href=\"/{entityName}\" hx-target=\"#main-content\" hx-push-url=\"true\">{linkText}</a></li>";
+
+            // Prefer inserting inside the primary nav UL
+            var ulIdx = content.IndexOf("<ul class=\"menu menu-horizontal", StringComparison.OrdinalIgnoreCase);
+            if (ulIdx >= 0)
+            {
+                var ulClose = content.IndexOf("</ul>", ulIdx, StringComparison.OrdinalIgnoreCase);
+                if (ulClose > ulIdx)
+                {
+                    content = content.Insert(ulClose, "\n                        " + li + "\n");
+                }
+            }
+            else
+            {
+                // Fallback: insert before </nav>
+                var navClose = content.LastIndexOf("</nav>", StringComparison.OrdinalIgnoreCase);
+                if (navClose >= 0)
+                {
+                    var fallbackLink = $"<a href=\"/{entityName}\" hx-target=\"#main-content\" hx-push-url=\"true\" class=\"btn btn-ghost\">{linkText}</a>";
+                    content = content.Insert(navClose, "\n                " + fallbackLink + "\n");
+                }
+                else
+                {
+                    // Else: insert after opening <body>
+                    var bodyIdx = content.IndexOf("<body", StringComparison.OrdinalIgnoreCase);
+                    if (bodyIdx >= 0)
+                    {
+                        var bodyEnd = content.IndexOf('>', bodyIdx);
+                        if (bodyEnd > bodyIdx)
+                        {
+                            var fallbackLink = $"<a href=\"/{entityName}\" hx-target=\"#main-content\" hx-push-url=\"true\" class=\"btn btn-ghost\">{linkText}</a>";
+                            content = content.Insert(bodyEnd + 1, "\n        <!-- Nav injected by swap --add-nav -->\n        " + fallbackLink + "\n");
+                        }
+                    }
+                }
+            }
+
+            await File.WriteAllTextAsync(layoutPath, content);
+            AnsiConsole.MarkupLine("[green]✓[/] Navigation link injected into _Layout.cshtml");
+        }
+        catch (Exception ex)
+        {
+            AnsiConsole.MarkupLine($"[yellow]⚠[/] Could not inject nav link: {ex.Message}");
+        }
+    }
     
+    private static async Task TryCreateMigrationAsync(string workingDir, string entityName)
+    {
+        try
+        {
+            // Rigid gate: build before migrations
+            var build = new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = "dotnet",
+                Arguments = "build",
+                WorkingDirectory = workingDir,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+            using (var buildProc = System.Diagnostics.Process.Start(build))
+            {
+                if (buildProc != null)
+                {
+                    await buildProc.WaitForExitAsync();
+                    if (buildProc.ExitCode != 0)
+                    {
+                        AnsiConsole.MarkupLine("[red]✗ Build failed before migration creation[/]");
+                        var err = await buildProc.StandardError.ReadToEndAsync();
+                        var outp = await buildProc.StandardOutput.ReadToEndAsync();
+                        if (!string.IsNullOrWhiteSpace(outp)) AnsiConsole.WriteLine(outp);
+                        if (!string.IsNullOrWhiteSpace(err)) AnsiConsole.WriteLine(err);
+                        return;
+                    }
+                }
+            }
+
+            // Detect available DbContexts
+            var dbContexts = FindDbContextCandidates(workingDir);
+            string? contextName = null;
+
+            if (dbContexts.Count == 0)
+            {
+                AnsiConsole.MarkupLine("[yellow]ℹ[/] No DbContext found. Skipping automatic migration creation.");
+                return;
+            }
+            else if (dbContexts.Count == 1)
+            {
+                contextName = dbContexts[0].className;
+            }
+            else
+            {
+                // Ask the user which DbContext to use
+                var choices = dbContexts.Select(d => $"{d.className} ({d.relativePath})").ToList();
+                var selected = AnsiConsole.Prompt(
+                    new Spectre.Console.SelectionPrompt<string>()
+                        .Title("Multiple DbContexts found. Select one for the migration:")
+                        .AddChoices(choices)
+                );
+                var idx = choices.IndexOf(selected);
+                if (idx >= 0) contextName = dbContexts[idx].className;
+            }
+
+            var args = contextName != null
+                ? $"ef migrations add Add{entityName} --context {contextName}"
+                : $"ef migrations add Add{entityName}";
+
+            var psi = new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = "dotnet",
+                Arguments = args,
+                WorkingDirectory = workingDir,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+
+            AnsiConsole.MarkupLine($"[cyan]Creating migration:[/] Add{entityName} {(contextName != null ? $"(Context: {contextName})" : string.Empty)}");
+            using var proc = System.Diagnostics.Process.Start(psi);
+            if (proc != null)
+            {
+                await proc.WaitForExitAsync();
+                if (proc.ExitCode == 0)
+                {
+                    AnsiConsole.MarkupLine("[green]✓[/] Migration created");
+                }
+                else
+                {
+                    AnsiConsole.MarkupLine("[yellow]⚠[/] Failed to create migration automatically. You can run it manually:");
+                    AnsiConsole.MarkupLine($"    dotnet ef migrations add Add{entityName}{(contextName != null ? $" --context {contextName}" : string.Empty)}");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            AnsiConsole.MarkupLine($"[yellow]⚠[/] Skipped automatic migration creation: {ex.Message}");
+        }
+    }
+
+    private static List<(string className, string relativePath)> FindDbContextCandidates(string workingDir)
+    {
+        var results = new List<(string, string)>();
+        var dataDir = Path.Combine(workingDir, "Data");
+        if (!Directory.Exists(dataDir)) return results;
+
+        foreach (var file in Directory.GetFiles(dataDir, "*.cs", SearchOption.AllDirectories))
+        {
+            var text = File.ReadAllText(file);
+            // Very simple heuristics: class X : DbContext OR : IdentityDbContext
+            var lines = text.Split('\n');
+            foreach (var line in lines)
+            {
+                if (line.Contains(": DbContext") || line.Contains("IdentityDbContext"))
+                {
+                    // Try extract class name
+                    var idx = line.IndexOf("class ");
+                    if (idx >= 0)
+                    {
+                        var rest = line.Substring(idx + 6).Trim();
+                        var name = rest.Split(new[]{' ', ':'}, StringSplitOptions.RemoveEmptyEntries).FirstOrDefault();
+                        if (!string.IsNullOrWhiteSpace(name))
+                        {
+                            var rel = Path.GetRelativePath(workingDir, file);
+                            results.Add((name!, rel));
+                        }
+                    }
+                }
+            }
+        }
+
+        // Distinct by className
+        return results
+            .GroupBy(r => r.Item1)
+            .Select(g => g.First())
+            .ToList();
+    }
     private static async Task GenerateControllerAsync(string entityName, string projectName, List<FieldDefinition> fields, bool force)
     {
         var templatePath = Path.Combine(AppContext.BaseDirectory, "templates", "generate", "controller");
@@ -354,12 +578,26 @@ public static class GenerateControllerCommand
             var nullability = field.IsNullable ? "?" : "";
             var required = field.IsRequired ? "[Required]" : "";
             
+            // Add default value for non-nullable strings to avoid CS8618 warning
+            var defaultValue = "";
+            var needsInitializer = false;
+            if (field.Type == "string" && !field.IsNullable)
+            {
+                defaultValue = " = string.Empty";
+                needsInitializer = true;
+            }
+            
             if (!string.IsNullOrEmpty(required))
             {
                 properties.Add($"    {required}");
             }
             
-            properties.Add($"    public {field.Type}{nullability} {field.Name} {{ get; set; }}");
+            var line = $"    public {field.Type}{nullability} {field.Name} {{ get; set; }}";
+            if (needsInitializer)
+            {
+                line += defaultValue + ";"; // property initializer requires semicolon
+            }
+            properties.Add(line);
         }
         
         return $@"using System.ComponentModel.DataAnnotations;

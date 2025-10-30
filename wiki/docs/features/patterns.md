@@ -4,7 +4,7 @@ Common, battle-tested patterns for your entities that solve real production prob
 
 ## Overview
 
-Swap.Patterns provides opt-in entity patterns that handle common requirements like soft deletion, audit trails, and SEO-friendly URLs. These patterns are extracted from production applications and designed for maximum developer experience.
+Swap.Patterns provides opt-in entity patterns that handle common requirements like soft deletion, audit trails, timestamps, ordering, and SEO-friendly URLs. These patterns are extracted from production applications and designed for maximum developer experience.
 
 **Key principles:**
 - ✅ **Opt-in by design** - Only add patterns where you need them
@@ -12,6 +12,76 @@ Swap.Patterns provides opt-in entity patterns that handle common requirements li
 - ✅ **Production-proven** - Every pattern used in real applications
 - ✅ **Minimal magic** - Simple, understandable code
 - ✅ **Well-tested** - Comprehensive test coverage
+
+## Embedded vs Package Mode
+
+Swap supports two ways to apply patterns:
+
+### Embedded Mode (Default)
+
+```bash
+swap g pattern sluggable Article
+```
+
+**How it works:**
+- Copies pattern code directly into your entity
+- No external package dependency
+- Full control and visibility of pattern code
+
+**When to use:**
+- You want full control over pattern implementation
+- You prefer seeing all code in your project
+- You don't want external NuGet dependencies
+- You plan to customize the pattern
+
+### Package Mode
+
+```bash
+swap g pattern auditable Article --use-package
+```
+
+**How it works:**
+- Implements interfaces from `Swap.Patterns` NuGet package (v0.0.1)
+- Cleaner models (just interface implementation)
+- Pattern logic in reusable package
+- Requires `dotnet add package Swap.Patterns --prerelease`
+
+**When to use:**
+- You want minimal code in your models
+- You prefer reusable package patterns
+- You trust the pattern implementations
+- You want to leverage package updates
+
+**Installation:**
+```bash
+dotnet add package Swap.Patterns --prerelease
+```
+
+**Example comparison:**
+
+Embedded mode (default):
+```csharp
+public class Article
+{
+    public int Id { get; set; }
+    public string Title { get; set; }
+    public string Slug { get; set; } = "";
+}
+```
+
+Package mode (--use-package):
+```csharp
+using Swap.Patterns.Sluggable;
+
+public class Article : ISluggable
+{
+    public int Id { get; set; }
+    public string Title { get; set; }
+    public string Slug { get; set; } = "";
+}
+```
+
+Both generate the same migration and controller code. The difference is whether the pattern interface comes from the package or is embedded.
 
 ## Available Patterns
 
@@ -141,7 +211,7 @@ await db.SaveChangesAsync();
 - `UpdatedAt`/`UpdatedBy` set on every modification
 - No manual timestamp management needed
 
-[Learn more about Auditable →](#auditable-pattern)
+[Learn more about Auditable →](#auditable)
 
 ---
 
@@ -214,16 +284,267 @@ var found = await db.Articles
 - Handles collisions: "post" → "post-2" → "post-3"
 - Respects max length while preserving whole words
 
-[Learn more about Sluggable →](#sluggable-pattern)
+[Learn more about Sluggable →](#sluggable)
+
+---
+
+### Timestampable
+
+Automatically track creation and update timestamps without user attribution. Use this when you only need dates, not who performed the action.
+
+```bash
+swap g pattern timestampable Product
+```
+
+**When to use:**
+- Entities where user attribution isn't needed
+- Lightweight alternative to Auditable
+- Background jobs, system-generated records
+
+**Quick start:**
+
+1. Apply pattern:
+```bash
+swap g p timestampable Product
+```
+
+2. Configure timestamp interceptor in DbContext:
+```csharp
+using Swap.Patterns.Timestampable;
+
+protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+{
+    optionsBuilder.AddInterceptors(new TimestampInterceptor());
+}
+```
+
+3. Use in code (automatic!):
+```csharp
+var product = new Product { Name = "Widget" };
+db.Products.Add(product);
+await db.SaveChangesAsync();
+// product.CreatedAt set automatically
+
+product.Name = "Widget+";
+await db.SaveChangesAsync();
+// product.UpdatedAt updated automatically
+```
+
+**What you get:**
+- `ITimestampable` with `CreatedAt`, `UpdatedAt`
+- EF Core `SaveChangesInterceptor` for automatic population
+- No dependency on `IHttpContextAccessor`
+
+> Note: Do NOT combine Timestampable with Auditable on the same entity (both define `CreatedAt`/`UpdatedAt`). Choose one based on your needs.
+
+---
+
+### Orderable
+
+Add a stable `Position` property and helpers for ordering lists, sortable tables, and drag-and-drop UIs.
+
+```bash
+swap g pattern orderable Category
+```
+
+**When to use:**
+- Manually ordered lists (menus, categories, steps)
+- Drag-and-drop reordering UIs
+- Maintaining deterministic order without relying on creation dates
+
+**Quick start:**
+
+1. Apply pattern:
+```bash
+swap g p orderable Category
+```
+
+2. Use helpers in code:
+```csharp
+// Get next position for a new item
+var next = await db.Categories.GetNextPositionAsync();
+db.Categories.Add(new Category { Name = "New", Position = next });
+
+// Move an item to a new position (1-based)
+var item = await db.Categories.FindAsync(id);
+await db.Categories.ReorderAsync(item!, 1);
+await db.SaveChangesAsync();
+
+// Normalize after deletes/bulk operations
+await db.Categories.NormalizePositionsAsync();
+await db.SaveChangesAsync();
+
+// Order queries by position
+var ordered = await db.Categories.OrderByPosition().ToListAsync();
+```
+
+**What you get:**
+- `IOrderable` interface with `Position` property
+- Extensions: `OrderByPosition()`, `OrderByPositionDescending()`, `GetNextPositionAsync()`, `ReorderAsync()`, `NormalizePositionsAsync()`
+
+---
+
+### Publishable
+
+Add a simple draft/published workflow with a boolean flag and published timestamp.
+
+```bash
+swap g pattern publishable Article
+```
+
+**When to use:**
+- Content that should be hidden until ready (blog posts, docs, products)
+- Scheduled or manual publishing flows
+- Lightweight alternative to complex workflow engines
+
+**Quick start:**
+
+1. Apply pattern:
+```bash
+swap g p publishable Article
+```
+
+2. Use helpers and queries:
+```csharp
+// Publish now (sets IsPublished and PublishedAt = UtcNow)
+article.Publish();
+
+// Unpublish (revert to draft)
+article.Unpublish();
+
+// Query helpers
+var published = await db.Articles.Published().ToListAsync();
+var drafts = await db.Articles.Drafts().ToListAsync();
+```
+
+**What you get:**
+- `IPublishable` interface with `IsPublished`, `PublishedAt`
+- Extensions: `Publish()`, `Unpublish()`, `Published()`, `Drafts()`, `PublishedAfter()`, `PublishedBefore()`
+
+---
+
+### Versionable
+
+Track and increment a simple integer version on every update via an EF Core interceptor.
+
+```bash
+swap g pattern versionable Document
+```
+
+**When to use:**
+- You need optimistic version counters without full change history
+- Displaying revision numbers to users (v1, v2, v3)
+- Lightweight alternative to snapshot/version-history systems
+
+**Quick start:**
+
+1. Apply pattern:
+```bash
+swap g p versionable Document
+```
+
+2. Configure version interceptor in DbContext:
+```csharp
+using Swap.Patterns.Versionable;
+
+protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+{
+    optionsBuilder.AddInterceptors(new VersionInterceptor());
+}
+```
+
+3. Use in code:
+```csharp
+var doc = new Document { Title = "Draft" };
+db.Documents.Add(doc);
+await db.SaveChangesAsync();
+// doc.Version == 1
+
+doc.Title = "Draft (edited)";
+await db.SaveChangesAsync();
+// doc.Version == 2
+```
+
+**What you get:**
+- `IVersionable` interface with `Version` property
+- `VersionInterceptor` to initialize and increment the version
+- Query helpers: `.WithMinVersion(n)`, `.WithVersion(n)`, `.OrderByVersion()`
+
+---
+
+### Visibility
+
+Control visibility of entities with optional time-based scheduling. Perfect for feature flags, scheduled content releases, or time-bound campaigns.
+
+```bash
+swap g pattern visibility Banner
+```
+
+**When to use:**
+- Feature flags (enable/disable features without deployments)
+- Scheduled content releases (blog posts, announcements)
+- Time-bound offers, promotions, or events
+- A/B testing toggles
+- Preview/staging content that should become visible later
+
+**Quick start:**
+
+1. Apply pattern:
+```bash
+swap g p visibility Banner
+```
+
+2. Use in code:
+```csharp
+// Manual toggle
+banner.Show();
+banner.Hide();
+
+// Schedule for future (UTC)
+banner.ScheduleVisibility(DateTime.UtcNow.AddDays(7));
+
+// Schedule within a window
+banner.ScheduleVisibilityWindow(
+    DateTime.UtcNow.AddDays(7),
+    DateTime.UtcNow.AddDays(14)
+);
+
+// Check if currently visible (respects time window)
+if (banner.IsCurrentlyVisible())
+{
+    // render banner
+}
+
+// Query visible items (checks IsVisible + time window)
+var visible = await _db.Banners.Visible().ToListAsync();
+
+// Query scheduled (future start date)
+var scheduled = await _db.Banners.Scheduled().ToListAsync();
+
+// Query expired (past end date)
+var expired = await _db.Banners.Expired().ToListAsync();
+```
+
+**What you get:**
+- `IVisibility` interface with `IsVisible`, `VisibleFrom`, `VisibleUntil`
+- Extensions: `Show()`, `Hide()`, `ShowNow()`, `ScheduleVisibility()`, `ScheduleVisibilityWindow()`, `IsCurrentlyVisible()`
+- Query helpers: `.Visible()`, `.Hidden()`, `.Scheduled()`, `.Expired()`
+
+**Migration:**
+```bash
+dotnet ef migrations add AddVisibilityToBanner
+dotnet ef database update
+```
 
 ---
 
 ### Combining Patterns
 
-All three patterns work together seamlessly:
+You can mix and match compatible patterns. Do not combine Auditable and Timestampable together (both define `CreatedAt`/`UpdatedAt`).
 
 ```csharp
-public class Article : ISoftDeletable, IAuditable, ISluggable
+// Example with Auditable + Orderable + Sluggable
+public class Article : ISoftDeletable, IAuditable, ISluggable, IOrderable
 {
     public int Id { get; set; }
     public string Title { get; set; }
@@ -242,6 +563,9 @@ public class Article : ISoftDeletable, IAuditable, ISluggable
     
     // Sluggable (1 property)
     public string Slug { get; set; } = "";
+    
+    // Orderable (1 property)
+    public int Position { get; set; }
 }
 ```
 
@@ -250,6 +574,7 @@ Apply patterns in sequence:
 swap g pattern softdelete Article
 swap g pattern auditable Article  
 swap g pattern sluggable Article
+swap g pattern orderable Article
 ```
 
 Complete usage example:
@@ -573,6 +898,157 @@ public class SoftDeleteTests : IClassFixture<HtmxTestFixture<Program>>
         Assert.True(deleted.IsDeleted);
     }
 }
+```
+
+## Removing Patterns
+
+Swap provides a safe way to remove patterns from entities when they're no longer needed.
+
+### Basic Removal
+
+```bash
+swap g pattern remove <entity> <pattern-type>
+
+# Examples
+swap g p remove Post softdelete
+swap g p remove Product auditable
+swap g p remove Article sluggable
+```
+
+### What Happens During Removal
+
+1. **Entity cleanup:**
+   - Removes pattern interface (e.g., `ISoftDeletable`)
+   - Removes pattern properties from the model
+   - Updates `using` statements
+
+2. **Configuration tracking:**
+   - Updates `swap-config.json` to remove pattern entry
+   - Checks if other entities still use the pattern
+
+3. **Smart wiring cleanup:**
+   - **Only removes shared wiring if no other entities use it**
+   - Soft Delete: Removes `ConfigureSoftDeleteFilter()` call
+   - Auditable: Removes audit interceptor and `IHttpContextAccessor`
+   - Timestampable: Removes timestamp interceptor
+   - Sluggable: Removes the entity's unique slug index
+
+### Database Column Handling
+
+**Important:** Pattern removal is **non-destructive by default** - database columns are NOT automatically dropped.
+
+**Why?**
+- Preserves existing data
+- Allows time for data migration or archival
+- Prevents accidental data loss
+- Gives you control over timing
+
+**To drop columns after removal:**
+
+```bash
+# 1. Remove the pattern
+swap g p remove Article softdelete
+
+# 2. Create a migration
+dotnet ef migrations add RemoveSoftDeleteFromArticle
+
+# 3. Edit the generated migration to drop columns
+# Example for soft delete:
+protected override void Up(MigrationBuilder migrationBuilder)
+{
+    migrationBuilder.DropColumn(name: "IsDeleted", table: "Articles");
+    migrationBuilder.DropColumn(name: "DeletedAt", table: "Articles");
+    migrationBuilder.DropColumn(name: "DeletedBy", table: "Articles");
+}
+
+# 4. Apply the migration
+dotnet ef database update
+```
+
+### Safe Removal Workflow
+
+```bash
+# 1. Review which entities use the pattern
+#    Check swap-config.json
+
+# 2. Remove the pattern
+swap g p remove Article auditable
+
+# 3. Review the changes
+#    - Models/Article.cs (interface/properties removed)
+#    - Data/AppDbContext.cs (wiring removed only if safe)
+#    - swap-config.json (pattern entry removed)
+
+# 4. Build and test
+dotnet build
+dotnet test
+
+# 5. (Optional) Drop database columns
+#    Create and edit migration as shown above
+```
+
+### Validation and Safety
+
+Swap performs several safety checks during removal:
+
+- ✅ Verifies the entity exists
+- ✅ Checks that the pattern was actually applied
+- ✅ Updates `swap-config.json` for tracking
+- ✅ Only removes shared wiring (filters, interceptors) when **no other entities** use that pattern
+- ✅ Provides clear output showing what was changed
+
+**Example output:**
+```
+Removing softdelete pattern from Post...
+✓ Pattern interface removed from Models/Post.cs
+✓ Pattern properties removed from Models/Post.cs
+✓ Updated swap-config.json
+✓ Removed ConfigureSoftDeleteFilter from DbContext (no other entities use SoftDelete)
+
+Pattern removed successfully!
+
+Next steps:
+  1. Build project: dotnet build
+  2. (Optional) Create migration to drop columns:
+     dotnet ef migrations add RemoveSoftDeleteFromPost
+```
+
+### When to Remove Patterns
+
+**Good reasons to remove:**
+- Pattern functionality is no longer needed
+- Simplifying entity structure during refactoring
+- Pattern was applied incorrectly or to wrong entity
+- Switching to a different approach
+
+**Consider keeping:**
+- Historical data depends on pattern columns
+- Other parts of the system still reference pattern properties
+- Compliance or audit requirements
+- Data recovery scenarios
+
+### Common Scenarios
+
+**Scenario 1: Wrong pattern applied**
+```bash
+# Oops, meant to apply to Product not Post
+swap g p remove Post auditable
+swap g p auditable Product
+```
+
+**Scenario 2: Simplifying a model**
+```bash
+# Removing unused patterns to reduce complexity
+swap g p remove Article timestampable
+swap g p remove Article auditable
+# Keep only the patterns you actually use
+```
+
+**Scenario 3: Switching approaches**
+```bash
+# Moving from soft delete to hard delete
+swap g p remove Order softdelete
+# Migrate/archive soft-deleted records first!
 ```
 
 ## Best Practices

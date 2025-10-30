@@ -15,11 +15,15 @@ public static class NewCommand
         var dbOption = new Option<string>("--database", () => "sqlite", "Database provider (sqlite|sqlserver|postgres)");
         var outOption = new Option<string?>("--output", "Output directory (default: ./{name})");
         var skipSetupOption = new Option<bool>("--skip-setup", description: "Skip prerequisites check, npm/libman steps, and initial migration (useful for CI/tests)");
+        var noHtmxShellOption = new Option<bool>("--no-htmx-shell", description: "Do not include the HTMX shell middleware by default");
+        var localNugetOption = new Option<bool>("--local-nuget", description: "Use local NuGet feed for Swap packages (for framework development only)");
         
         command.AddArgument(nameArg);
         command.AddOption(dbOption);
         command.AddOption(outOption);
         command.AddOption(skipSetupOption);
+        command.AddOption(noHtmxShellOption);
+        command.AddOption(localNugetOption);
         
         command.SetHandler(async (InvocationContext context) =>
         {
@@ -27,14 +31,16 @@ public static class NewCommand
             var database = context.ParseResult.GetValueForOption(dbOption);
             var output = context.ParseResult.GetValueForOption(outOption);
             var skipSetup = context.ParseResult.GetValueForOption(skipSetupOption);
+            var noHtmxShell = context.ParseResult.GetValueForOption(noHtmxShellOption);
+            var localNuget = context.ParseResult.GetValueForOption(localNugetOption);
             
-            context.ExitCode = await ExecuteAsync(name, database!, output, skipSetup);
+            context.ExitCode = await ExecuteAsync(name, database!, output, skipSetup, noHtmxShell, localNuget);
         });
         
         return command;
     }
     
-    private static async Task<int> ExecuteAsync(string name, string database, string? output, bool skipSetup)
+    private static async Task<int> ExecuteAsync(string name, string database, string? output, bool skipSetup, bool noHtmxShell, bool localNuget)
     {
         // Validate project name
         if (string.IsNullOrWhiteSpace(name))
@@ -67,6 +73,10 @@ public static class NewCommand
         AnsiConsole.MarkupLine($"[bold cyan]Creating new Swap project:[/] {name}");
         AnsiConsole.MarkupLine($"[dim]Database:[/] {database}");
         AnsiConsole.MarkupLine($"[dim]Location:[/] {projectPath}");
+        if (localNuget)
+        {
+            AnsiConsole.MarkupLine($"[dim]NuGet Source:[/] [yellow]Local feed (development mode)[/]");
+        }
         AnsiConsole.WriteLine();
         
         if (!skipSetup)
@@ -133,8 +143,8 @@ public static class NewCommand
         
         try
         {
-            await GenerateProjectAsync(name, database, projectPath);
-            
+            await GenerateProjectAsync(name, database, projectPath, localNuget);
+
             AnsiConsole.WriteLine();
             AnsiConsole.MarkupLine("[green]✓[/] Project created successfully!");
             AnsiConsole.WriteLine();
@@ -187,13 +197,16 @@ public static class NewCommand
                 AnsiConsole.WriteLine();
                 AnsiConsole.MarkupLine("[green]✓[/] Setup completed!");
                 
-                // Create initial migration (but don't run database update - let the app do it on startup)
+                // Build-first, then create initial migration (no DB update)
                 AnsiConsole.WriteLine();
                 await AnsiConsole.Status()
                     .StartAsync("Creating initial migration...", async ctx =>
                     {
                         try
                         {
+                            ctx.Status("Building project before migration...");
+                            await RunCommandAsync("dotnet", "build", projectPath);
+
                             ctx.Status("Creating initial migration...");
                             await RunCommandAsync("dotnet", "ef migrations add InitialCreate", projectPath);
                             AnsiConsole.MarkupLine("[green]✓[/] Migration created");
@@ -244,7 +257,84 @@ public static class NewCommand
     }
     }
     
-    private static async Task GenerateProjectAsync(string projectName, string database, string projectPath)
+    private static async Task AddHtmxShellAsync(string workingDir, string projectName)
+    {
+        // Create middleware file
+        var middlewareDir = Path.Combine(workingDir, "Middleware");
+        Directory.CreateDirectory(middlewareDir);
+        var filePath = Path.Combine(middlewareDir, "HtmxShellMiddleware.cs");
+        if (!File.Exists(filePath))
+        {
+            var code = $@"namespace {projectName}.Middleware;
+
+public class HtmxShellMiddleware
+{{
+    private readonly RequestDelegate _next;
+
+    // Adjust allowlist for controllers that render HTMX partial routes
+    private static readonly HashSet<string> Allowlist = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+    {{
+        // e.g., ""/Posts"", ""/Categories""
+    }};
+
+    public HtmxShellMiddleware(RequestDelegate next)
+    {{
+        _next = next;
+    }}
+
+    public async Task InvokeAsync(HttpContext context)
+    {{
+        var isGet = HttpMethods.IsGet(context.Request.Method);
+        var isHtmx = context.Request.Headers.ContainsKey(""HX-Request"");
+        var path = context.Request.Path.Value ?? string.Empty;
+
+        if (isGet && !isHtmx)
+        {{
+            foreach (var baseRoute in Allowlist)
+            {{
+                if (path.StartsWith(baseRoute + ""/"", StringComparison.OrdinalIgnoreCase))
+                {{
+                    context.Response.Redirect(baseRoute);
+                    return;
+                }}
+            }}
+        }}
+
+        await _next(context);
+    }}
+}}
+";
+            await File.WriteAllTextAsync(filePath, code);
+        }
+
+        // Wire Program.cs
+        var programPath = Path.Combine(workingDir, "Program.cs");
+        if (File.Exists(programPath))
+        {
+            var content = await File.ReadAllTextAsync(programPath);
+            var usingLine = $"using {projectName}.Middleware;";
+            if (!content.Contains(usingLine))
+            {
+                var firstUsingEnd = content.IndexOf(";\n");
+                if (firstUsingEnd > 0) content = content.Insert(firstUsingEnd + 2, usingLine + "\n");
+                else content = usingLine + "\n" + content;
+            }
+
+            var buildIdx = content.IndexOf("var app = builder.Build();", StringComparison.Ordinal);
+            if (buildIdx >= 0 && !content.Contains("UseMiddleware<HtmxShellMiddleware>"))
+            {
+                var insertPos = content.IndexOf('\n', buildIdx);
+                if (insertPos > 0)
+                {
+                    content = content.Insert(insertPos + 1, "app.UseMiddleware<HtmxShellMiddleware>();\n");
+                }
+            }
+
+            await File.WriteAllTextAsync(programPath, content);
+        }
+    }
+    
+    private static async Task GenerateProjectAsync(string projectName, string database, string projectPath, bool localNuget)
     {
         var templatePath = Path.Combine(AppContext.BaseDirectory, "templates", "monolith");
         
@@ -261,7 +351,8 @@ public static class NewCommand
         {
             { "ProjectName", projectName },
             { "ProjectNameLower", projectName.ToLowerInvariant() },
-            { "DatabaseProvider", database }
+            { "DatabaseProvider", database },
+            { "UseLocalNuget", localNuget.ToString().ToLowerInvariant() }
         };
         
         await AnsiConsole.Status()
@@ -269,6 +360,48 @@ public static class NewCommand
             {
                 // Copy and process all template files
                 await ProcessTemplateDirectoryAsync(templatePath, projectPath, variables, ctx);
+                
+                // If using local NuGet, ensure packages are built and create nuget.config
+                if (localNuget)
+                {
+                    // Check if local feed exists, if not, offer to create it
+                    var swapRootPath = Path.GetFullPath(Path.Combine(projectPath, "..", ".."));
+                    var localFeedPath = Path.Combine(swapRootPath, ".nuget", "local");
+                    
+                    if (!Directory.Exists(localFeedPath) || !Directory.GetFiles(localFeedPath, "*.nupkg").Any())
+                    {
+                        ctx.Status("Local NuGet feed not found. Building packages...");
+                        
+                        // Run pack-local script
+                        var isWindows = OperatingSystem.IsWindows();
+                        var packScript = isWindows ? "pack-local.ps1" : "pack-local.sh";
+                        var packScriptPath = Path.Combine(swapRootPath, "scripts", packScript);
+                        
+                        if (File.Exists(packScriptPath))
+                        {
+                            AnsiConsole.MarkupLine("\n[yellow]Building local NuGet packages...[/]");
+                            try
+                            {
+                                if (isWindows)
+                                {
+                                    await RunCommandAsync("pwsh", $"-File \"{packScriptPath}\"", swapRootPath);
+                                }
+                                else
+                                {
+                                    await RunCommandAsync("bash", $"\"{packScriptPath}\"", swapRootPath);
+                                }
+                                AnsiConsole.MarkupLine("[green]✓[/] Local packages built successfully!");
+                            }
+                            catch (Exception ex)
+                            {
+                                AnsiConsole.MarkupLine($"[yellow]Warning:[/] Could not build local packages: {ex.Message}");
+                                AnsiConsole.MarkupLine($"[yellow]Run manually:[/] {packScript}");
+                            }
+                        }
+                    }
+                    
+                    await CreateLocalNugetConfigAsync(projectPath, ctx);
+                }
             });
     }
     
@@ -374,5 +507,36 @@ public static class NewCommand
             var error = await process.StandardError.ReadToEndAsync();
             throw new InvalidOperationException($"{command} failed: {error}");
         }
+    }
+    
+    private static async Task CreateLocalNugetConfigAsync(string projectPath, StatusContext ctx)
+    {
+        ctx.Status("Creating nuget.config for local feed...");
+        
+        // Use relative path that works for testApps within swap repo
+        // From testApps/ProjectName/ → ../../.nuget/local
+        var relativeLocalFeedPath = "../../.nuget/local";
+        
+        // Verify the path exists by resolving it
+        var absoluteCheckPath = Path.GetFullPath(Path.Combine(projectPath, relativeLocalFeedPath));
+        if (!Directory.Exists(absoluteCheckPath))
+        {
+            throw new DirectoryNotFoundException(
+                $"Local NuGet feed not found at: {absoluteCheckPath}\n" +
+                $"The --local-nuget flag is intended for development within the Swap repository.\n" +
+                $"Run pack-local.ps1 or pack-local.sh first to create local packages.");
+        }
+        
+        var nugetConfig = $@"<?xml version=""1.0"" encoding=""utf-8""?>
+<configuration>
+  <packageSources>
+    <clear />
+    <add key=""local"" value=""{relativeLocalFeedPath}"" />
+    <add key=""nuget.org"" value=""https://api.nuget.org/v3/index.json"" />
+  </packageSources>
+</configuration>";
+        
+        var nugetConfigPath = Path.Combine(projectPath, "nuget.config");
+        await File.WriteAllTextAsync(nugetConfigPath, nugetConfig);
     }
 }

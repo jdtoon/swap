@@ -9,6 +9,242 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added - Authentication Scaffolding
+- **Authentication System**: Complete ASP.NET Core Identity integration with `swap generate auth`
+  - Generates ApplicationUser model extending IdentityUser with DisplayName, CreatedAt, LastLoginAt
+  - Creates 4 ViewModels: LoginViewModel, RegisterViewModel, ForgotPasswordViewModel, ResetPasswordViewModel
+  - Generates AuthController with full auth flow: register, login, logout, password reset, access denied
+  - Creates 7 views: Login, Register, ForgotPassword, ForgotPasswordConfirmation, ResetPassword, ResetPasswordConfirmation, AccessDenied
+  - Includes _LoginPartial.cshtml for layout integration
+  - All views styled with Tailwind CSS and HTMX-compatible markup
+  - Automatically adds Microsoft.AspNetCore.Identity.EntityFrameworkCore package reference
+  - Comprehensive setup instructions with code snippets for Program.cs and DbContext configuration
+- **New Tests**: Added 4 tests for auth command structure (name, aliases, options)
+- **CLI Options**: `--dry-run`, `--force`, `--project` support
+- **Documentation**: Updated CLI README with complete auth scaffolding guide and usage examples
+
+### Added - GitHub Release Automation
+- **Automated Release on PR Merge**: When PR is merged to main, workflow automatically:
+  1. Extracts version from `Swap.CLI.csproj`
+  2. Builds and tests all packages
+  3. Publishes all 4 packages to NuGet.org
+  4. Creates git tag (`v0.1.0`, etc.)
+  5. Extracts release notes from CHANGELOG.md
+  6. Creates GitHub release with packages attached
+  7. Marks pre-release versions (e.g., `v0.1.0-alpha`) automatically
+- **Idempotent**: Checks if tag/version already exists and skips if so
+- **Zero manual steps**: No manual tagging or release creation needed
+
+### Added - Local NuGet Development Support  
+- **--local-nuget Flag**: New option for `swap new` command (framework development only)
+  - `swap new MyApp --local-nuget` creates project using local NuGet feed
+  - Automatically generates nuget.config with relative path to `.nuget/local` directory
+  - Verifies local feed exists before creating project
+  - Intended exclusively for testing Swap framework changes in testApps/
+  - Enables rapid iteration without publishing packages to NuGet.org
+
+### Changed - Template Cleanup
+- **Removed Default nuget.config**: Removed nuget.config.template from monolith template
+  - Now only created when explicitly using `--local-nuget` flag
+  - Prevents confusion for normal users (they don't need local feed configuration)
+  - Cleaner project generation for production use cases
+
+### Fixed - Documentation
+- **Wiki Build Errors**: Fixed broken anchor links in patterns.md
+  - Updated `#auditable-pattern` → `#auditable`
+  - Updated `#sluggable-pattern` → `#sluggable`
+  - Wiki now builds without warnings (except minor broken anchor notices)
+
+---
+
+## [0.1.0] - 2025-01-29
+
+### 🎉 First Production Release - OSS Ready
+
+This release marks Swap's readiness for open-source production use with comprehensive pattern auto-wiring, removal capabilities, and cross-platform support.
+
+### Added - Pattern Auto-Wiring
+- **Automatic DbContext Configuration**: Patterns now self-configure with zero boilerplate
+  - `ISoftDeletable`: Automatically adds global query filter to DbContext
+  - `IAuditable`: Auto-registers IHttpContextAccessor and SaveChanges interceptor
+  - `ITimestampable`: Auto-registers SaveChanges interceptor  
+  - `ISluggable`: Automatically creates unique index on Slug column
+- **Pattern Tracking**: New `swap-config.json` tracks applied patterns per entity
+  - Enables safe pattern removal with intelligent cleanup
+  - Prevents accidental removal when shared infrastructure is in use
+  - JSON format: `{ "patterns": { "EntityName": ["pattern1", "pattern2"] } }`
+
+### Added - Pattern Removal
+- **Remove Pattern Command**: `swap generate pattern remove <pattern> <entity>`
+  - Supported patterns: `softdelete`, `auditable`, `timestampable`, `sluggable`
+  - Removes interface implementation from model
+  - Removes pattern properties from model
+  - Intelligently removes DbContext configuration only when safe
+  - Updates or removes `swap-config.json` tracking
+  - CLI aliases: `rm`, `delete`, `del`
+- **Smart Cleanup Logic**:
+  - Checks if other entities still use shared infrastructure before removal
+  - Preserves IHttpContextAccessor if any entity uses IAuditable
+  - Preserves interceptor if any entity uses IAuditable or ITimestampable
+  - Removes global query filter only for the specific entity
+- **Documentation**: Comprehensive removal guides added to wiki
+  - `docs/cli/generate-pattern.md`: Full command reference with examples
+  - `docs/features/patterns.md`: Removal workflows and safety notes
+
+### Added - Pattern Compatibility Validation
+- **Conflict Detection**: Prevents incompatible pattern combinations
+  - Blocks applying `IAuditable` when `ITimestampable` exists (property overlap: CreatedAt, UpdatedAt)
+  - Blocks applying `ITimestampable` when `IAuditable` exists (same conflict)
+  - Clear error messages guide users to choose one or the other
+- **CheckPatternCompatibilityAsync**: Pre-flight validation before pattern application
+
+### Added - Roslyn-Based Code Modifications
+- **Robust Code Generation**: Replaced regex-based edits with Roslyn SyntaxFactory
+  - Uses `SyntaxFactory` with `NormalizeWhitespace()` for proper C# formatting
+  - Handles complex DbContext modifications safely
+  - Pattern removal with fallback cleanup for edge cases
+  - Eliminates formatting issues and malformed code generation
+
+### Added - Non-Blocking Migrations
+- **Migration Flag**: New `--no-migrations` option for all generation commands
+  - Allows entity/pattern generation without running migrations
+  - Useful for batch operations or CI/CD pipelines
+  - Clear error messages if migration fails
+  - Continues command execution even if migration step fails
+
+### Added - Cross-Platform Scripts
+- **Bash Scripts**: Linux/Mac developer support
+  - `scripts/pack-local.sh`: Build all framework packages locally
+  - `scripts/reinstall-cli.sh`: Reinstall CLI from local feed
+  - Mirrors existing PowerShell scripts for Windows users
+
+### Changed - Templates
+- **Controller Template Fix**: `EntityController.cs.template`
+  - `ToggleSelectAll` now calls correct method: `Get{{EntityName}}List` instead of `Index`
+  - Fixes CS1501 method overload mismatch error
+- **Monolith Template Fix**: `Index.cshtml.template`
+  - Removed duplicate sections causing Razor compilation errors
+  - Removed inline partial rendering with null model (ArgumentNullException)
+- **Todo Partial Template Fix**: `_TodoList.cshtml.template`
+  - Added null safety check: `Model == null || !Model.Any()`
+  - Prevents runtime exceptions on empty collections
+- **Model Generator Fix**: `GenerateModelFromFields` in `GenerateControllerCommand.cs`
+  - Fixed invalid semicolon generation for value type properties
+  - Proper C# syntax for nullable and non-nullable properties
+
+### Changed - Documentation
+- **README.md**: Updated main documentation
+  - Version badge: v0.0.14-prerelease → v0.1.0
+  - Expanded Swap.Patterns section with auto-wiring details
+  - Added pattern removal command documentation
+  - Documented `swap-config.json` tracking system
+- **Swap.Patterns README**: Enhanced package documentation
+  - Quick Start section emphasizes CLI auto-wiring benefits
+  - Removal command examples and safety notes
+- **Wiki Documentation**: Comprehensive updates
+  - Pattern removal workflows with step-by-step guides
+  - Safety validation and common scenarios
+  - Database column handling notes
+
+### Changed - Package Versions
+- **Swap.CLI**: 0.0.14 → 0.1.0
+- **Swap.Htmx**: 0.0.1 → 0.1.0
+- **Swap.Patterns**: 0.0.1 → 0.1.0
+- **Swap.Testing**: 0.0.1 → 0.1.0
+
+### Validated
+- **Database Provider Support**:
+  - ✅ SQL Server: Template validation completed
+  - ✅ PostgreSQL: Template validation completed with proper connection strings
+  - ✅ SQLite: Default provider, validated with Docker
+- **Docker Support**: Multi-stage build structure validated
+- **Test Coverage**: 267 tests passing (195 CLI/Htmx + 72 Patterns)
+- **Build Quality**: Full solution builds successfully in Release configuration
+
+## [0.0.14] - 2025-10-28
+
+### Added - Seeder Enhancements
+- **Pattern Integration**: `swap generate seed` now auto-excludes pattern properties managed by interceptors
+  - Skips: `CreatedAt`, `CreatedBy`, `UpdatedAt`, `UpdatedBy` (IAuditable)
+  - Skips: `IsDeleted`, `DeletedAt`, `DeletedBy` (ISoftDeletable)
+  - Skips: `Version` (IVersionable)
+  - Skips: `IsVisible`, `VisibleFrom`, `VisibleUntil` (IVisibility)
+  - Skips: `Position` (IOrderable)
+- **Improved Slug Generation**: Unique slugs with random suffix for collision avoidance
+- **Enhanced Documentation**: Seeder template now includes inline comments about pattern property handling
+- **Better Relationship Handling**: Foreign key preloading with null safety guards
+
+### Changed
+- Seeder template adds XML doc comments and improved code comments
+- README updated with pattern integration details and field intelligence improvements
+
+## [0.0.13] - 2025-10-28
+
+### Added - Visibility Pattern
+- **Visibility Pattern**: Controllable visibility with optional time-based scheduling
+  - `IVisibility` interface with `IsVisible`, `VisibleFrom`, `VisibleUntil`
+  - Extensions: `Show()`, `Hide()`, `ShowNow()`, `ScheduleVisibility()`, `ScheduleVisibilityWindow()`, `IsCurrentlyVisible()`
+  - Query helpers: `Visible()`, `Hidden()`, `Scheduled()`, `Expired()`
+  - CLI command: `swap generate pattern visibility <entity>` with aliases
+- **New Tests**: Added 6 tests covering manual toggle, scheduling, time window logic, and query filters
+- **Docs**:
+  - CLI README: added Visibility section with full examples
+  - Wiki `features/patterns.md`: added Visibility guide with when-to-use and quick start
+
+### Changed
+- Pattern command help now mentions `visibility`
+
+## [0.0.12] - 2025-10-28
+
+### Added - Versionable Pattern
+- **Versionable Pattern**: Automatic integer versioning on save
+  - `IVersionable` interface with `Version`
+  - `VersionInterceptor` initializes and increments version
+  - Query helpers: `WithMinVersion()`, `WithVersion()`, `OrderByVersion()`
+  - CLI command: `swap generate pattern versionable <entity>` with aliases
+- **New Tests**: Added 3 tests covering initialization, increment, and query helpers
+- **Docs**:
+  - CLI README: added Versionable section
+  - Wiki `features/patterns.md`: added Versionable guide
+
+## [0.0.11] - 2025-10-28
+
+### Added - Publishable Pattern
+- **Publishable Pattern**: Draft/Published workflow
+  - `IPublishable` interface with `IsPublished`, `PublishedAt`
+  - Extensions: `Publish()`, `Unpublish()`, `Published()`, `Drafts()`, `PublishedAfter()`, `PublishedBefore()`
+  - CLI command: `swap generate pattern publishable <entity>`
+- **New Tests**: Added 3 tests for Publishable behavior (publish/unpublish and query helpers)
+- **Docs**:
+  - CLI README: added Publishable section
+  - Wiki `features/patterns.md`: added Publishable guide
+
+### Changed
+- Pattern command help now mentions `publishable`
+
+## [0.0.10] - 2025-10-28
+
+### Added - Timestampable & Orderable Patterns
+- **Timestampable Pattern**: Lightweight automatic timestamps
+  - `ITimestampable` interface with `CreatedAt`, `UpdatedAt`
+  - `TimestampInterceptor` sets timestamps on insert/update
+  - CLI command: `swap generate pattern timestampable <entity>`
+  - No `IHttpContextAccessor` required
+- **Orderable Pattern**: Stable manual ordering support
+  - `IOrderable` interface with `Position`
+  - Extensions: `OrderByPosition()`, `OrderByPositionDescending()`, `GetNextPositionAsync()`, `ReorderAsync()`, `NormalizePositionsAsync()`
+  - CLI command: `swap generate pattern orderable <entity>`
+- **New Tests**: `Swap.Patterns.Tests` project with 5 passing tests
+  - Verifies timestamp behavior and ordering helpers
+  - In-memory database isolation to avoid cross-test contamination
+- **Docs**:
+  - CLI README: added Timestampable and Orderable sections with setup and examples
+  - Wiki `features/patterns.md`: Timestampable and Orderable guides; updated Combining Patterns (don’t mix Auditable and Timestampable)
+
+### Changed
+- CLI pattern help updated to include `timestampable` and `orderable`
+- Improved code-generation formatting via NormalizeWhitespace (earlier change validated)
+
 ## [0.0.9] - 2025-10-28
 
 ### Added - Auditable & Sluggable Patterns

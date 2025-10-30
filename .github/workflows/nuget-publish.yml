@@ -1,13 +1,17 @@
 name: Publish to NuGet
 
 on:
-  release:
-    types: [published]
+  push:
+    branches:
+      - develop
   workflow_dispatch:
     inputs:
       version:
         description: 'Package version (e.g., 0.1.0)'
         required: true
+
+permissions:
+  contents: write  # Required to create tags and releases
 
 jobs:
   publish:
@@ -15,11 +19,44 @@ jobs:
     
     steps:
     - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Fetch all history for tag creation
+    
+    - name: Remove local NuGet source for CI
+      run: |
+        cat > nuget.config << 'EOF'
+        <?xml version="1.0" encoding="utf-8"?>
+        <configuration>
+          <packageSources>
+            <clear />
+            <add key="nuget.org" value="https://api.nuget.org/v3/index.json" protocolVersion="3" />
+          </packageSources>
+        </configuration>
+        EOF
     
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: '9.0.x'
+    
+    - name: Extract version from Swap.CLI.csproj
+      id: version
+      run: |
+        VERSION=$(grep -oP '<Version>\K[^<]+' tools/Swap.CLI/Swap.CLI.csproj)
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+        echo "tag=v$VERSION" >> $GITHUB_OUTPUT
+        echo "📦 Version: $VERSION"
+    
+    - name: Check if tag already exists
+      id: check_tag
+      run: |
+        if git rev-parse "v${{ steps.version.outputs.version }}" >/dev/null 2>&1; then
+          echo "exists=true" >> $GITHUB_OUTPUT
+          echo "⚠️ Tag v${{ steps.version.outputs.version }} already exists"
+        else
+          echo "exists=false" >> $GITHUB_OUTPUT
+          echo "✅ Tag v${{ steps.version.outputs.version }} does not exist yet"
+        fi
     
     - name: Restore dependencies
       run: dotnet restore
@@ -30,17 +67,82 @@ jobs:
     - name: Run tests
       run: dotnet test --configuration Release --no-restore --verbosity normal
     
-    - name: Pack
-      run: dotnet pack tools/Swap.CLI/Swap.CLI.csproj --configuration Release --no-build --output ./nupkg
+    - name: Pack CLI
+      run: dotnet pack tools/Swap.CLI/Swap.CLI.csproj --configuration Release --no-restore --output ./nupkg
+
+    - name: Pack Htmx
+      run: dotnet pack framework/Swap.Htmx/Swap.Htmx.csproj --configuration Release --no-restore --output ./nupkg
+
+    - name: Pack Patterns
+      run: dotnet pack framework/Swap.Patterns/Swap.Patterns.csproj --configuration Release --no-restore --output ./nupkg
+
+    - name: Pack Testing
+      run: dotnet pack framework/Swap.Testing/Swap.Testing.csproj --configuration Release --no-restore --output ./nupkg
     
     - name: Publish to NuGet
-      if: github.event_name == 'release' || github.event_name == 'workflow_dispatch'
+      if: steps.check_tag.outputs.exists == 'false'
       run: dotnet nuget push ./nupkg/*.nupkg --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
       env:
         NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+    
+    - name: Extract changelog for version
+      if: steps.check_tag.outputs.exists == 'false'
+      id: changelog
+      run: |
+        VERSION=${{ steps.version.outputs.version }}
+        
+        # Extract section for this version from CHANGELOG.md
+        awk "/## \[$VERSION\]/,/^## \[/" CHANGELOG.md | sed '1d;$d' > release-notes.md
+        
+        # If release notes are empty, use a default message
+        if [ ! -s release-notes.md ]; then
+          echo "Release $VERSION" > release-notes.md
+          echo "" >> release-notes.md
+          echo "See [CHANGELOG.md](CHANGELOG.md) for details." >> release-notes.md
+        fi
+        
+        echo "📝 Release notes extracted"
+        cat release-notes.md
+    
+    - name: Create Git tag
+      if: steps.check_tag.outputs.exists == 'false'
+      run: |
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+        git tag -a "${{ steps.version.outputs.tag }}" -m "Release ${{ steps.version.outputs.version }}"
+        git push origin "${{ steps.version.outputs.tag }}"
+        echo "✅ Tag ${{ steps.version.outputs.tag }} created and pushed"
+    
+    - name: Create GitHub Release
+      if: steps.check_tag.outputs.exists == 'false'
+      uses: softprops/action-gh-release@v1
+      with:
+        name: Swap ${{ steps.version.outputs.tag }}
+        tag_name: ${{ steps.version.outputs.tag }}
+        body_path: release-notes.md
+        files: |
+          nupkg/*.nupkg
+        draft: false
+        prerelease: ${{ contains(steps.version.outputs.version, '-') }}
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       
     - name: Upload artifacts
       uses: actions/upload-artifact@v4
       with:
         name: nuget-packages
         path: ./nupkg/*.nupkg
+    
+    - name: Summary
+      if: steps.check_tag.outputs.exists == 'false'
+      run: |
+        echo "🎉 Release ${{ steps.version.outputs.tag }} complete!"
+        echo "📦 Packages published to NuGet.org"
+        echo "🏷️ Tag created: ${{ steps.version.outputs.tag }}"
+        echo "📋 GitHub release created with CHANGELOG notes"
+    
+    - name: Skip publish notice
+      if: steps.check_tag.outputs.exists == 'true'
+      run: |
+        echo "⚠️ Skipping publish - version ${{ steps.version.outputs.version }} already released"
+        echo "Update version in Swap.CLI.csproj to publish a new release"

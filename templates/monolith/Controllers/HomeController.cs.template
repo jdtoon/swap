@@ -1,10 +1,11 @@
 using Microsoft.AspNetCore.Mvc;
 using {{ProjectName}}.Data;
 using {{ProjectName}}.Models;
+using Swap.Htmx;
 
 namespace {{ProjectName}}.Controllers;
 
-public class HomeController : Controller
+public class HomeController : SwapController
 {
     private readonly AppDbContext _context;
 
@@ -15,16 +16,17 @@ public class HomeController : Controller
 
     public IActionResult Index()
     {
-        var isHtmxRequest = HttpContext.Items["IsHtmxRequest"] as bool? ?? false;
+        // Index page has NO data - just static content
+        // The todo list loads separately via HTMX
+        return SwapView();
+    }
 
-        if (isHtmxRequest)
-        {
-            // Return partial view for HTMX requests
-            return PartialView("_TodoList", _context.TodoItems.ToList());
-        }
-
-        // Return full page for initial load
-        return View(_context.TodoItems.ToList());
+    // Separate endpoint for the todo list component
+    [HttpGet]
+    public IActionResult TodoList()
+    {
+        var todos = _context.TodoItems.ToList();
+        return PartialView("_TodoList", todos);
     }
 
     [HttpPost]

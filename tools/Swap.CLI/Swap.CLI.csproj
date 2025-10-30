@@ -13,7 +13,7 @@
     
     <!-- Package Metadata -->
     <PackageId>Swap.CLI</PackageId>
-  <Version>0.0.9</Version>
+    <Version>0.1.0</Version>
     <Description>Command-Line Interface for the Swap Framework. Scaffold modules, generate CRUD features, and more.</Description>
     <PackageTags>swap;cli;scaffolding;code-generation;htmx</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
@@ -24,9 +24,9 @@
     <Authors>jdtoon</Authors>
     
     <!-- Assembly Information -->
-  <AssemblyVersion>0.0.8.0</AssemblyVersion>
-  <FileVersion>0.0.8.0</FileVersion>
-  <InformationalVersion>0.0.8</InformationalVersion>
+  <AssemblyVersion>0.1.0.0</AssemblyVersion>
+  <FileVersion>0.1.0.0</FileVersion>
+  <InformationalVersion>0.1.0</InformationalVersion>
     
     <!-- Disable git hash in version -->
     <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
@@ -52,7 +52,37 @@
     <None Include="README.md" Pack="true" PackagePath="/" />
     
     <!-- Include templates in the NuGet package -->
-    <Content Include="..\..\templates\**\*.*">
+    <Content Include="..\..\templates\**\*.template">
+      <PackagePath>templates/%(RecursiveDir)%(Filename)%(Extension)</PackagePath>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>templates\%(RecursiveDir)%(Filename)%(Extension)</Link>
+    </Content>
+    <Content Include="..\..\templates\**\*.yml">
+      <PackagePath>templates/%(RecursiveDir)%(Filename)%(Extension)</PackagePath>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>templates\%(RecursiveDir)%(Filename)%(Extension)</Link>
+    </Content>
+    <Content Include="..\..\templates\**\*.json">
+      <PackagePath>templates/%(RecursiveDir)%(Filename)%(Extension)</PackagePath>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>templates\%(RecursiveDir)%(Filename)%(Extension)</Link>
+    </Content>
+    <Content Include="..\..\templates\**\*.js">
+      <PackagePath>templates/%(RecursiveDir)%(Filename)%(Extension)</PackagePath>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>templates\%(RecursiveDir)%(Filename)%(Extension)</Link>
+    </Content>
+    <Content Include="..\..\templates\**\*.cs">
+      <PackagePath>templates/%(RecursiveDir)%(Filename)%(Extension)</PackagePath>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>templates\%(RecursiveDir)%(Filename)%(Extension)</Link>
+    </Content>
+    <Content Include="..\..\templates\**\*.csproj">
+      <PackagePath>templates/%(RecursiveDir)%(Filename)%(Extension)</PackagePath>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>templates\%(RecursiveDir)%(Filename)%(Extension)</Link>
+    </Content>
+    <Content Include="..\..\templates\**\*.cshtml">
       <PackagePath>templates/%(RecursiveDir)%(Filename)%(Extension)</PackagePath>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Link>templates\%(RecursiveDir)%(Filename)%(Extension)</Link>

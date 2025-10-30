@@ -54,6 +54,17 @@ public static class SeedHelper
         return fields;
     }
 
+    private static bool IsPatternProperty(string name)
+    {
+        // Skip common pattern properties - these are auto-managed by interceptors
+        // Be specific to avoid false positives (e.g., PublishedAt should not match)
+        return name is "CreatedAt" or "CreatedBy" or "UpdatedAt" or "UpdatedBy" 
+            or "DeletedAt" or "DeletedBy" or "IsDeleted"
+            or "Version" 
+            or "IsVisible" or "VisibleFrom" or "VisibleUntil"
+            or "Position";
+    }
+
     public static (string Prelude, string Rules) GenerateFakerPreludeAndRules(
         string projectName,
         string entityName,
@@ -76,6 +87,10 @@ public static class SeedHelper
 
         foreach (var field in fields)
         {
+            // Skip pattern properties - they're auto-managed by interceptors
+            if (IsPatternProperty(field.Name))
+                continue;
+
             // Skip complex navigation properties (non-primitive and not foreign key id)
             if (!IsSupportedPrimitive(field.Type) && !(IsForeignKey(field)))
                 continue;
@@ -108,7 +123,7 @@ public static class SeedHelper
     private static (string FieldName, string TargetEntity)[] DetectForeignKeys(List<FieldDefinition> fields)
     {
         return fields
-            .Where(IsForeignKey)
+            .Where(f => IsForeignKey(f) && !IsPatternProperty(f.Name)) // Exclude pattern properties
             .Select(f => (f.Name, TargetEntity: f.Name.Substring(0, f.Name.Length - 2)))
             .ToArray();
     }
@@ -164,7 +179,10 @@ public static class SeedHelper
         if (n.Contains("state")) return "f => f.Address.State()";
         if (n.Contains("country")) return "f => f.Address.Country()";
         if (n.Contains("postal") || n.Contains("zip")) return "f => f.Address.ZipCode()";
-        if (n.Contains("slug")) return "f => f.Lorem.Slug()";
+        
+        // Slug generation: use Bogus slug + unique suffix for uniqueness
+        if (n.Contains("slug")) return "f => f.Lorem.Slug() + \"-\" + f.Random.AlphaNumeric(6)";
+        
         if (n.Contains("image")) return "f => f.Image.PicsumUrl()";
         if (n.Contains("title")) return "f => f.Lorem.Sentence(4)";
         if (n.Contains("description") || n.Contains("summary") || n.Contains("body") || n.Contains("content")) return "f => f.Lorem.Paragraph()";
