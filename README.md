@@ -500,7 +500,7 @@ Generates: `Tests/Factories/<Entity>Factory.cs` with intelligent defaults inferr
 
 Swap.Testing is a fluent testing library for asserting HTMX partials and headers.
 
-**NuGet Package:** `Swap.Testing` (v0.0.1)
+**NuGet Package:** `Swap.Testing` (v0.1.0)
 
 ```bash
 dotnet add package Swap.Testing --prerelease
@@ -513,11 +513,29 @@ Highlights:
 
 See `framework/Swap.Testing/README.md` for full API and examples.
 
+## 🎨 Swap.Htmx (HTMX Framework)
+
+Swap.Htmx provides base controllers and extensions for building HTMX applications.
+
+**NuGet Package:** `Swap.Htmx` (v0.1.0)
+
+```bash
+dotnet add package Swap.Htmx --prerelease
+```
+
+Features:
+- `SwapController` base class with HTMX-aware routing
+- `SwapView()` helper for automatic partial/full view selection
+- Extension methods for common HTMX patterns
+- Middleware for enforcing partial responses
+
+See `framework/Swap.Htmx/README.md` for full API and usage.
+
 ## 📦 Swap.Patterns (Entity Patterns Library)
 
 Swap.Patterns provides battle-tested interfaces and implementations for common entity patterns with **automatic wiring** and configuration tracking.
 
-**NuGet Package:** `Swap.Patterns` (v0.0.1)
+**NuGet Package:** `Swap.Patterns` (v0.1.0)
 
 ```bash
 dotnet add package Swap.Patterns --prerelease
@@ -866,7 +884,7 @@ Swap CLI is [MIT licensed](LICENSE). Use it freely in your projects, commercial 
 
 ## 📊 Project Status
 
-**Current Version:** `0.0.14` (Active Development)
+**Current Version:** `0.1.0` (Release Candidate)
 
 ### ✅ Phase 2C Complete
 
@@ -882,7 +900,7 @@ Swap CLI is [MIT licensed](LICENSE). Use it freely in your projects, commercial 
 - ✅ **Toast Notifications** - DaisyUI alerts for success/error
 - ✅ **DaisyUI Components** - Modern, accessible UI library
 - ✅ **Tailwind CSS** - Utility-first styling
-- ✅ **145 Passing Tests** - Comprehensive test coverage
+- ✅ **269 Passing Tests** - Comprehensive test coverage (197 CLI/Htmx + 72 Patterns)
 - ✅ **Documentation** - Complete wiki with examples
 - ✅ **Docker Support** - Multi-stage builds, health checks, all databases
 
@@ -914,14 +932,16 @@ Swap CLI is [MIT licensed](LICENSE). Use it freely in your projects, commercial 
 - ✅ **Auto-Nav Injection** - `--add-nav` flag injects navigation links with HTMX attributes
 - ✅ **ASP.NET Identity Scaffolding** - `swap g auth` with auto-migration and HTMX support
 - ✅ **Pattern Library** - 8 entity patterns (sluggable, auditable, soft delete, etc.) with `--use-package` option
-- ✅ **NuGet Packages** - Swap.Patterns (v0.0.1), Swap.Testing (v0.0.1) ready for publishing
+- ✅ **NuGet Packages** - Swap.CLI (v0.1.0), Swap.Htmx (v0.1.0), Swap.Patterns (v0.1.0), Swap.Testing (v0.1.0)
 - ✅ **DateTime? Nullable Support** - Null-conditional operators in views for clean code
+- ✅ **Local Development Workflow** - `--local-nuget` flag with automatic package building
 
-### 🎯 Phase 3: Polish & Release
+### 🎯 Phase 3: Publishing & Growth
 
-- ⏳ **NuGet Publishing** - Push Swap.CLI (v0.0.14), Swap.Patterns, Swap.Testing to NuGet.org
+- 🚀 **NuGet Publishing** - Automated release workflow on PR merge to main
 - ⏳ **VS Code Extension** - Integrated CLI experience
 - ⏳ **Video Tutorials** - Getting started screencasts
+- ⏳ **Community Growth** - GitHub Discussions, Discord server
 - ⏳ **Production Release** (v1.0.0) - Q1 2026
 
 See the complete [roadmap](docs/ROADMAP.md) for details.
@@ -939,7 +959,11 @@ For questions or feedback, open an [issue](https://github.com/jdtoon/swap/issues
 - **Documentation**: https://jdtoon.github.io/swap/
 - **GitHub**: https://github.com/jdtoon/swap
 - **Issues**: https://github.com/jdtoon/swap/issues
-- **NuGet** (coming soon): https://www.nuget.org/packages/Swap.CLI
+- **NuGet Packages**:
+  - [Swap.CLI](https://www.nuget.org/packages/Swap.CLI) (v0.1.0)
+  - [Swap.Htmx](https://www.nuget.org/packages/Swap.Htmx) (v0.1.0)
+  - [Swap.Patterns](https://www.nuget.org/packages/Swap.Patterns) (v0.1.0)
+  - [Swap.Testing](https://www.nuget.org/packages/Swap.Testing) (v0.1.0)
 
 ---
 
