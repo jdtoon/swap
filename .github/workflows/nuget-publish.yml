@@ -22,12 +22,22 @@ jobs:
       with:
         fetch-depth: 0  # Fetch all history for tag creation
     
+    - name: Remove local NuGet source for CI
+      run: |
+        cat > nuget.config << 'EOF'
+        <?xml version="1.0" encoding="utf-8"?>
+        <configuration>
+          <packageSources>
+            <clear />
+            <add key="nuget.org" value="https://api.nuget.org/v3/index.json" protocolVersion="3" />
+          </packageSources>
+        </configuration>
+        EOF
+    
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: '9.0.x'
-      env:
-        NUGET_PACKAGES: ${{ github.workspace }}/.nuget/packages
     
     - name: Extract version from Swap.CLI.csproj
       id: version
@@ -49,11 +59,7 @@ jobs:
         fi
     
     - name: Restore dependencies
-      run: |
-        echo "🔧 Clearing NuGet cache"
-        dotnet nuget locals all --clear
-        echo "📦 Restoring with updated nuget.config"
-        dotnet restore --configfile nuget.config
+      run: dotnet restore
     
     - name: Build
       run: dotnet build --configuration Release --no-restore
@@ -62,16 +68,16 @@ jobs:
       run: dotnet test --configuration Release --no-restore --verbosity normal
     
     - name: Pack CLI
-      run: dotnet pack tools/Swap.CLI/Swap.CLI.csproj --configuration Release --no-build --output ./nupkg
+      run: dotnet pack tools/Swap.CLI/Swap.CLI.csproj --configuration Release --no-restore --output ./nupkg
 
     - name: Pack Htmx
-      run: dotnet pack framework/Swap.Htmx/Swap.Htmx.csproj --configuration Release --no-build --output ./nupkg
+      run: dotnet pack framework/Swap.Htmx/Swap.Htmx.csproj --configuration Release --no-restore --output ./nupkg
 
     - name: Pack Patterns
-      run: dotnet pack framework/Swap.Patterns/Swap.Patterns.csproj --configuration Release --no-build --output ./nupkg
+      run: dotnet pack framework/Swap.Patterns/Swap.Patterns.csproj --configuration Release --no-restore --output ./nupkg
 
     - name: Pack Testing
-      run: dotnet pack framework/Swap.Testing/Swap.Testing.csproj --configuration Release --no-build --output ./nupkg
+      run: dotnet pack framework/Swap.Testing/Swap.Testing.csproj --configuration Release --no-restore --output ./nupkg
     
     - name: Publish to NuGet
       if: steps.check_tag.outputs.exists == 'false'
