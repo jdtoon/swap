@@ -13,7 +13,7 @@ public static class GeneratePatternCommand
 {
     public static Command Create()
     {
-    var command = new Command("pattern", "Add common patterns to entities (softdelete, auditable, sluggable, timestampable, orderable, publishable, versionable, visibility)");
+    var command = new Command("pattern", "Add or remove common patterns on entities (softdelete, auditable, sluggable, timestampable, orderable, publishable, versionable, visibility)");
         command.AddAlias("p");
 
         var typeArg = new Argument<string>(
@@ -51,8 +51,8 @@ public static class GeneratePatternCommand
         command.AddArgument(typeArg);
         command.AddArgument(entityArg);
         command.AddOption(forceOption);
-    command.AddOption(projectOption);
-    command.AddOption(usePackageOption);
+        command.AddOption(projectOption);
+        command.AddOption(usePackageOption);
         command.AddOption(fallbackOption);
         command.AddOption(noMigrationsOption);
 
@@ -83,7 +83,310 @@ public static class GeneratePatternCommand
             ctx.ExitCode = await ExecuteAsync(type, entity, force, projectPath, usePackage, fallback, noMigrations);
         });
 
+        // Subcommands
+        command.AddCommand(CreateRemoveSubcommand());
+
         return command;
+    }
+
+    private static async Task<int> ExecuteRemoveAsync(string type, string entity, string? projectPath, bool dropColumns, bool noMigrations)
+    {
+        var workingDir = !string.IsNullOrEmpty(projectPath)
+            ? Path.GetFullPath(projectPath)
+            : Directory.GetCurrentDirectory();
+
+        var projectFiles = Directory.GetFiles(workingDir, "*.csproj");
+        if (projectFiles.Length == 0)
+        {
+            AnsiConsole.MarkupLine($"[red]Error:[/] No .csproj file found in {workingDir}");
+            return 1;
+        }
+
+        var modelPath = Path.Combine(workingDir, "Models", $"{entity}.cs");
+        if (!File.Exists(modelPath))
+        {
+            AnsiConsole.MarkupLine($"[red]Error:[/] Model file not found: {modelPath}");
+            return 1;
+        }
+
+        type = type.ToLowerInvariant();
+
+        switch (type)
+        {
+            case "softdelete" or "soft":
+                return await RemoveSoftDeleteAsync(workingDir, modelPath, entity, dropColumns, noMigrations);
+            case "auditable" or "audit":
+                return await RemoveAuditableAsync(workingDir, modelPath, entity, dropColumns, noMigrations);
+            case "timestampable" or "timestamp":
+                return await RemoveTimestampableAsync(workingDir, modelPath, entity, dropColumns, noMigrations);
+            case "sluggable" or "slug":
+                return await RemoveSluggableAsync(workingDir, modelPath, entity, dropColumns, noMigrations);
+            default:
+                AnsiConsole.MarkupLine($"[red]Error:[/] Unknown pattern type: {type}");
+                return 1;
+        }
+    }
+
+    private static async Task<int> RemoveSoftDeleteAsync(string workingDir, string modelPath, string entity, bool dropColumns, bool noMigrations)
+    {
+        AnsiConsole.MarkupLine($"[cyan]Removing soft delete pattern from {entity}...[/]");
+        await ModifyModelForRemovalAsync(modelPath, entity, "ISoftDeletable", new[] { "IsDeleted", "DeletedAt", "DeletedBy" });
+
+        // Update swap-config
+        var (cfg, cfgPath) = Swap.CLI.Infrastructure.SwapConfigManager.LoadOrCreate(workingDir);
+        Swap.CLI.Infrastructure.SwapConfigManager.RemovePattern(cfg, entity, "SoftDelete");
+        Swap.CLI.Infrastructure.SwapConfigManager.Save(cfg, cfgPath);
+
+        // Remove global filter if no entity uses SoftDelete
+        if (!Swap.CLI.Infrastructure.SwapConfigManager.IsPatternInUse(cfg, "SoftDelete"))
+        {
+            await UpdateDbContextRemoveLinesAsync(workingDir, "ConfigureSoftDeleteFilter");
+        }
+
+        if (dropColumns && !noMigrations)
+        {
+            await TryCreateMigrationAsync(workingDir, $"RemoveSoftDeleteFrom{entity}");
+        }
+        else if (dropColumns)
+        {
+            AnsiConsole.MarkupLine("[yellow]ℹ[/] Skipping migration creation (--no-migrations). You removed the properties from the model; create a migration to drop columns if desired.");
+        }
+
+        AnsiConsole.MarkupLine("[green]✓[/] Soft delete pattern removed");
+        return 0;
+    }
+
+    private static async Task<int> RemoveAuditableAsync(string workingDir, string modelPath, string entity, bool dropColumns, bool noMigrations)
+    {
+        AnsiConsole.MarkupLine($"[cyan]Removing auditable pattern from {entity}...[/]");
+        await ModifyModelForRemovalAsync(modelPath, entity, "IAuditable", new[] { "CreatedAt", "CreatedBy", "UpdatedAt", "UpdatedBy" });
+
+        var (cfg, cfgPath) = Swap.CLI.Infrastructure.SwapConfigManager.LoadOrCreate(workingDir);
+        Swap.CLI.Infrastructure.SwapConfigManager.RemovePattern(cfg, entity, "Auditable");
+        Swap.CLI.Infrastructure.SwapConfigManager.Save(cfg, cfgPath);
+
+        // Remove interceptor and accessor registration if unused
+        if (!Swap.CLI.Infrastructure.SwapConfigManager.IsPatternInUse(cfg, "Auditable"))
+        {
+            await UpdateDbContextRemoveLinesAsync(workingDir, "CreateAuditInterceptor");
+            await UpdateProgramRemoveHttpContextAccessorAsync(workingDir);
+        }
+
+        if (dropColumns && !noMigrations)
+        {
+            await TryCreateMigrationAsync(workingDir, $"RemoveAuditableFrom{entity}");
+        }
+        else if (dropColumns)
+        {
+            AnsiConsole.MarkupLine("[yellow]ℹ[/] Skipping migration creation (--no-migrations). You removed the properties from the model; create a migration to drop columns if desired.");
+        }
+
+        AnsiConsole.MarkupLine("[green]✓[/] Auditable pattern removed");
+        return 0;
+    }
+
+    private static async Task<int> RemoveTimestampableAsync(string workingDir, string modelPath, string entity, bool dropColumns, bool noMigrations)
+    {
+        AnsiConsole.MarkupLine($"[cyan]Removing timestampable pattern from {entity}...[/]");
+        await ModifyModelForRemovalAsync(modelPath, entity, "ITimestampable", new[] { "CreatedAt", "UpdatedAt" });
+
+        var (cfg, cfgPath) = Swap.CLI.Infrastructure.SwapConfigManager.LoadOrCreate(workingDir);
+        Swap.CLI.Infrastructure.SwapConfigManager.RemovePattern(cfg, entity, "Timestampable");
+        Swap.CLI.Infrastructure.SwapConfigManager.Save(cfg, cfgPath);
+
+        if (!Swap.CLI.Infrastructure.SwapConfigManager.IsPatternInUse(cfg, "Timestampable"))
+        {
+            await UpdateDbContextRemoveLinesAsync(workingDir, "TimestampInterceptor");
+        }
+
+        if (dropColumns && !noMigrations)
+        {
+            await TryCreateMigrationAsync(workingDir, $"RemoveTimestampableFrom{entity}");
+        }
+        else if (dropColumns)
+        {
+            AnsiConsole.MarkupLine("[yellow]ℹ[/] Skipping migration creation (--no-migrations). You removed the properties from the model; create a migration to drop columns if desired.");
+        }
+
+        AnsiConsole.MarkupLine("[green]✓[/] Timestampable pattern removed");
+        return 0;
+    }
+
+    private static async Task<int> RemoveSluggableAsync(string workingDir, string modelPath, string entity, bool dropColumns, bool noMigrations)
+    {
+        AnsiConsole.MarkupLine($"[cyan]Removing sluggable pattern from {entity}...[/]");
+        await ModifyModelForRemovalAsync(modelPath, entity, "ISluggable", new[] { "Slug" });
+
+        var (cfg, cfgPath) = Swap.CLI.Infrastructure.SwapConfigManager.LoadOrCreate(workingDir);
+        Swap.CLI.Infrastructure.SwapConfigManager.RemovePattern(cfg, entity, "Sluggable");
+        Swap.CLI.Infrastructure.SwapConfigManager.Save(cfg, cfgPath);
+
+        // Remove slug index line for this entity
+        await UpdateDbContextRemoveSlugIndexForEntityAsync(workingDir, entity);
+
+        if (dropColumns && !noMigrations)
+        {
+            await TryCreateMigrationAsync(workingDir, $"Remove{entity}Slug");
+        }
+        else if (dropColumns)
+        {
+            AnsiConsole.MarkupLine("[yellow]ℹ[/] Skipping migration creation (--no-migrations). You removed the property from the model; create a migration to drop the column/index if desired.");
+        }
+
+        AnsiConsole.MarkupLine("[green]✓[/] Sluggable pattern removed");
+        return 0;
+    }
+
+    private static async Task ModifyModelForRemovalAsync(string modelPath, string entity, string interfaceName, string[] propertyNames)
+    {
+        var code = await File.ReadAllTextAsync(modelPath);
+        var tree = CSharpSyntaxTree.ParseText(code);
+        var root = tree.GetCompilationUnitRoot();
+
+        var originalClass = root.DescendantNodes().OfType<ClassDeclarationSyntax>().FirstOrDefault(c => c.Identifier.Text == entity);
+        if (originalClass == null) return;
+        var classDecl = originalClass;
+
+        // Remove interface from base list
+        if (classDecl.BaseList != null)
+        {
+            var newTypes = new SeparatedSyntaxList<BaseTypeSyntax>();
+            foreach (var t in classDecl.BaseList.Types)
+            {
+                if (!t.ToString().Contains(interfaceName))
+                {
+                    newTypes = newTypes.Add(t);
+                }
+            }
+            if (newTypes.Count == 0)
+            {
+                classDecl = classDecl.WithBaseList(null);
+            }
+            else
+            {
+                classDecl = classDecl.WithBaseList(classDecl.BaseList.WithTypes(newTypes));
+            }
+        }
+
+        // Remove properties
+        var toRemove = classDecl.Members
+            .OfType<PropertyDeclarationSyntax>()
+            .Where(p => propertyNames.Contains(p.Identifier.Text))
+            .ToList();
+        if (toRemove.Count > 0)
+        {
+            classDecl = classDecl.RemoveNodes(toRemove, SyntaxRemoveOptions.KeepNoTrivia);
+        }
+
+        // Write back
+    root = root.ReplaceNode(originalClass, classDecl!);
+        var updated = root.NormalizeWhitespace().ToFullString();
+        // Fallback cleanup: if a stray colon remains after class name, remove it
+        var strayColonPattern = $@"public\s+class\s+{System.Text.RegularExpressions.Regex.Escape(entity)}\s*:\\s*(\r?\n)?";
+        updated = System.Text.RegularExpressions.Regex.Replace(updated, strayColonPattern, $"public class {entity}$1");
+        updated = updated.Replace($"public class {entity} :", $"public class {entity}");
+        await File.WriteAllTextAsync(modelPath, updated);
+    }
+
+    private static async Task UpdateDbContextRemoveLinesAsync(string workingDir, string containsText)
+    {
+        var dataDir = Path.Combine(workingDir, "Data");
+        if (!Directory.Exists(dataDir)) return;
+
+        var candidates = Directory.GetFiles(dataDir, "*.cs", SearchOption.AllDirectories)
+            .Where(f => File.ReadAllText(f).Contains(": DbContext") || File.ReadAllText(f).Contains("IdentityDbContext"))
+            .ToList();
+
+        foreach (var path in candidates)
+        {
+            var text = await File.ReadAllTextAsync(path);
+            var newText = System.Text.RegularExpressions.Regex.Replace(text, @$"^[\ \t]*.*{containsText}.*\r?\n", string.Empty, System.Text.RegularExpressions.RegexOptions.Multiline);
+            if (!ReferenceEquals(text, newText))
+            {
+                await File.WriteAllTextAsync(path, newText);
+                AnsiConsole.MarkupLine($"[green]✓[/] Removed DbContext wiring: {containsText}");
+            }
+        }
+    }
+
+    private static async Task UpdateDbContextRemoveSlugIndexForEntityAsync(string workingDir, string entity)
+    {
+        var dataDir = Path.Combine(workingDir, "Data");
+        if (!Directory.Exists(dataDir)) return;
+
+        var candidates = Directory.GetFiles(dataDir, "*.cs", SearchOption.AllDirectories)
+            .Where(f => File.ReadAllText(f).Contains(": DbContext") || File.ReadAllText(f).Contains("IdentityDbContext"))
+            .ToList();
+
+        foreach (var path in candidates)
+        {
+            var text = await File.ReadAllTextAsync(path);
+            var pattern = $@"^.*modelBuilder\.Entity<{entity}>\(\)\.HasIndex\(e => e\.Slug\)\.IsUnique\(\);\s*\r?\n";
+            var newText = System.Text.RegularExpressions.Regex.Replace(text, pattern, string.Empty, System.Text.RegularExpressions.RegexOptions.Multiline);
+            if (newText != text)
+            {
+                await File.WriteAllTextAsync(path, newText);
+                AnsiConsole.MarkupLine("[green]✓[/] Removed Slug unique index from DbContext");
+            }
+        }
+    }
+
+    private static async Task UpdateProgramRemoveHttpContextAccessorAsync(string workingDir)
+    {
+        var programPath = Path.Combine(workingDir, "Program.cs");
+        if (!File.Exists(programPath)) return;
+        var text = await File.ReadAllTextAsync(programPath);
+        var newText = System.Text.RegularExpressions.Regex.Replace(text, @"^.*AddHttpContextAccessor\(\).*\r?\n", string.Empty, System.Text.RegularExpressions.RegexOptions.Multiline);
+        if (newText != text)
+        {
+            await File.WriteAllTextAsync(programPath, newText);
+            AnsiConsole.MarkupLine("[green]✓[/] Removed IHttpContextAccessor registration from Program.cs");
+        }
+    }
+
+    private static Command CreateRemoveSubcommand()
+    {
+        var remove = new Command("remove", "Remove a pattern from an entity");
+        remove.AddAlias("rm");
+
+        var typeArg = new Argument<string>(
+            name: "type",
+            description: "Pattern type to remove: softdelete, auditable, sluggable, timestampable, orderable, publishable, versionable, visibility");
+
+        var entityArg = new Argument<string>(
+            name: "entity",
+            description: "Entity name (e.g., Post)");
+
+        var projectOption = new Option<string?>(
+            aliases: new[] { "--project", "-p" },
+            description: "Path to project directory (default: current directory)");
+
+        var dropColumnsOption = new Option<bool>(
+            aliases: new[] { "--drop-columns" },
+            description: "Also drop columns/indexes by creating a migration");
+
+        var noMigrationsOption = new Option<bool>(
+            aliases: new[] { "--no-migrations" },
+            description: "Skip automatic migration creation when dropping columns");
+
+        remove.AddArgument(typeArg);
+        remove.AddArgument(entityArg);
+        remove.AddOption(projectOption);
+        remove.AddOption(dropColumnsOption);
+        remove.AddOption(noMigrationsOption);
+
+        remove.SetHandler(async (InvocationContext ctx) =>
+        {
+            var type = ctx.ParseResult.GetValueForArgument(typeArg);
+            var entity = ctx.ParseResult.GetValueForArgument(entityArg);
+            var projectPath = ctx.ParseResult.GetValueForOption(projectOption);
+            var dropColumns = ctx.ParseResult.GetValueForOption(dropColumnsOption);
+            var noMigrations = ctx.ParseResult.GetValueForOption(noMigrationsOption);
+
+            ctx.ExitCode = await ExecuteRemoveAsync(type, entity, projectPath, dropColumns, noMigrations);
+        });
+
+        return remove;
     }
 
     public static async Task<int> ExecuteAsync(string type, string entity, bool force, string? projectPath, bool usePackage, bool fallback, bool noMigrations)

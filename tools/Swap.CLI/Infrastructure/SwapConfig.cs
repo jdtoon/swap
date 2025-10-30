@@ -64,6 +64,25 @@ public static class SwapConfigManager
         ec.LastApplied = DateTimeOffset.UtcNow;
     }
 
+    public static void RemovePattern(SwapConfig config, string entity, string pattern)
+    {
+        if (config.Entities.TryGetValue(entity, out var ec))
+        {
+            ec.Patterns.Remove(pattern);
+            ec.LastApplied = DateTimeOffset.UtcNow;
+            if (ec.Patterns.Count == 0)
+            {
+                // Clean up empty entity entries
+                config.Entities.Remove(entity);
+            }
+        }
+    }
+
+    public static bool IsPatternInUse(SwapConfig config, string pattern)
+    {
+        return config.Entities.Values.Any(e => e.Patterns.Contains(pattern));
+    }
+
     private static JsonSerializerOptions JsonOptions() => new()
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
