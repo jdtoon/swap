@@ -155,9 +155,10 @@ public static class GenerateControllerCommand
             await GenerateControllerAsync(entityName, projectName, fields, force, workingDir, withRelationships);
 
             // Auto-create migration for the new entity (never applies database update)
+            bool migrationCreated = false;
             if (!noMigrations)
             {
-                await TryCreateMigrationAsync(workingDir, entityName);
+                migrationCreated = await TryCreateMigrationAsync(workingDir, entityName);
             }
             else
             {
@@ -191,7 +192,13 @@ public static class GenerateControllerCommand
             AnsiConsole.MarkupLine($"  Views/Shared/_PaginationControls.cshtml");
             AnsiConsole.WriteLine();
             AnsiConsole.MarkupLine("[bold]Next steps:[/]");
-            AnsiConsole.MarkupLine($"  dotnet ef migrations add Add{entityName}");
+            
+            // Only show migration command if it wasn't auto-created
+            if (!migrationCreated && !noMigrations)
+            {
+                AnsiConsole.MarkupLine($"  dotnet ef migrations add Add{entityName}");
+            }
+            
             AnsiConsole.MarkupLine("  # (We never auto-run database updates)");
             AnsiConsole.MarkupLine("  dotnet ef database update");
             AnsiConsole.MarkupLine($"  # Navigate to /{entityName} in your browser");
@@ -264,7 +271,7 @@ public static class GenerateControllerCommand
         }
     }
     
-    private static async Task TryCreateMigrationAsync(string workingDir, string entityName)
+    private static async Task<bool> TryCreateMigrationAsync(string workingDir, string entityName)
     {
         try
         {
@@ -291,7 +298,7 @@ public static class GenerateControllerCommand
                         var outp = await buildProc.StandardOutput.ReadToEndAsync();
                         if (!string.IsNullOrWhiteSpace(outp)) AnsiConsole.WriteLine(outp);
                         if (!string.IsNullOrWhiteSpace(err)) AnsiConsole.WriteLine(err);
-                        return;
+                        return false;
                     }
                 }
             }
@@ -303,7 +310,7 @@ public static class GenerateControllerCommand
             if (dbContexts.Count == 0)
             {
                 AnsiConsole.MarkupLine("[yellow]ℹ[/] No DbContext found. Skipping automatic migration creation.");
-                return;
+                return false;
             }
             else if (dbContexts.Count == 1)
             {
@@ -345,17 +352,21 @@ public static class GenerateControllerCommand
                 if (proc.ExitCode == 0)
                 {
                     AnsiConsole.MarkupLine("[green]✓[/] Migration created");
+                    return true;
                 }
                 else
                 {
                     AnsiConsole.MarkupLine("[yellow]⚠[/] Failed to create migration automatically. You can run it manually:");
                     AnsiConsole.MarkupLine($"    dotnet ef migrations add Add{entityName}{(contextName != null ? $" --context {contextName}" : string.Empty)}");
+                    return false;
                 }
             }
+            return false;
         }
         catch (Exception ex)
         {
             AnsiConsole.MarkupLine($"[yellow]⚠[/] Skipped automatic migration creation: {ex.Message}");
+            return false;
         }
     }
 
