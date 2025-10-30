@@ -342,7 +342,7 @@ The pattern has already been applied. Use `--force` to reapply or check your ent
 If the CLI can't automatically add the package reference, add it manually:
 
 ```bash
-dotnet add package Swap.Patterns --prerelease
+dotnet add package Swap.Patterns
 ```
 
 ### Query filter not working

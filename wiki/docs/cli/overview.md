@@ -20,10 +20,11 @@ swap <command> [subcommand] [arguments] [options]
 | `swap generate model` | Generate an entity model | `g m`, `generate m` |
 | `swap generate controller` | Generate a CRUD controller | `g c`, `generate c` |
 | `swap generate resource` | Generate model + controller + views | `g r`, `generate r` |
+| `swap generate pattern` | Apply entity patterns (soft delete, etc.) | `g pattern`, `g p` |
+| `swap generate auth` | Scaffold ASP.NET Identity authentication | `g auth` |
 | `swap generate seed` | Generate database seeders | `g s`, `generate s`, `g seed` |
 | `swap generate test` | Generate integration test scaffold | `g test`, `g t` |
 | `swap generate factory` | Generate Bogus test data factory | `g factory`, `g f` |
-| `swap generate pattern` | Apply entity patterns (soft delete, etc.) | `g pattern`, `g p` |
 | `swap database info` | Show database configuration and status | `db info` |
 | `swap database migrate` | Create and apply EF migrations | `db migrate` |
 | `swap database seed` | Run database seeders | `db seed` |

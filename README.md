@@ -46,7 +46,7 @@ libman --version   # Any version
 
 ```bash
 # Install the Swap CLI tool
-dotnet tool install --global Swap.CLI --prerelease
+dotnet tool install --global Swap.CLI
 
 # Verify installation
 swap --version
@@ -517,7 +517,7 @@ Swap.Testing is a fluent testing library for asserting HTMX partials and headers
 **NuGet Package:** `Swap.Testing` (v0.1.0)
 
 ```bash
-dotnet add package Swap.Testing --prerelease
+dotnet add package Swap.Testing
 ```
 
 Highlights:
@@ -534,7 +534,7 @@ Swap.Htmx provides base controllers and extensions for building HTMX application
 **NuGet Package:** `Swap.Htmx` (v0.1.0)
 
 ```bash
-dotnet add package Swap.Htmx --prerelease
+dotnet add package Swap.Htmx
 ```
 
 Features:
@@ -552,7 +552,7 @@ Swap.Patterns provides battle-tested interfaces and implementations for common e
 **NuGet Package:** `Swap.Patterns` (v0.1.0)
 
 ```bash
-dotnet add package Swap.Patterns --prerelease
+dotnet add package Swap.Patterns
 ```
 
 **Available Patterns:**
@@ -614,7 +614,7 @@ Use `swap g pattern <pattern> <entity> --use-package` to apply patterns with the
 
 ```bash
 # Install the package
-dotnet add package Swap.Patterns --prerelease
+dotnet add package Swap.Patterns
 
 # Apply pattern using interface
 swap g pattern auditable Article --use-package

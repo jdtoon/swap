@@ -26,7 +26,7 @@ Swap generates ASP.NET Core projects with HTMX-powered views using proven patter
 Install the CLI globally:
 
 ```bash
-dotnet tool install -g Swap.CLI
+dotnet tool install --global Swap.CLI
 ```
 
 Create a new project:
@@ -34,18 +34,19 @@ Create a new project:
 ```bash
 swap new MyApp
 cd MyApp
+dotnet ef database update
 dotnet run
 ```
 
-Generate a resource with custom fields:
+Generate a controller with custom fields:
 
 ```bash
-swap g r Product --fields Name:string,Price:decimal,Stock:int
-dotnet ef migrations add AddProduct
-dotnet ef database update
+swap g controller Product --fields "Name:string Price:decimal InStock:bool:f"
 ```
 
-Navigate to `http://localhost:5000/Product` to see your working CRUD interface.
+Navigate to `http://localhost:5000/Product` to see your working CRUD interface with pagination, search, sorting, and filtering.
+
+**Note:** Swap automatically creates migrations after generating controllers. The CLI builds your project first to verify compilation before creating the migration.
 
 ## Why HTMX?
 
@@ -77,11 +78,17 @@ Example generated view:
 
 - [swap new](./cli/new) - Create new projects
 - [swap generate model](./cli/generate-model) - Generate entity models
-- [swap generate controller](./cli/generate-controller) - Generate controllers with HTMX views
-- [swap generate resource](./cli/generate-resource) - Generate model + controller together
+- [swap generate controller](./cli/generate-controller) - Generate CRUD controllers with HTMX views
+- [swap generate pattern](./cli/generate-pattern) - Apply entity patterns (soft delete, auditable, etc.)
+- [swap generate auth](./cli/generate-auth) - Scaffold ASP.NET Identity authentication
+- [swap generate seed](./cli/seeders) - Generate database seeders
+- [swap generate factory](./cli/generate-factory) - Generate test data factories
+- [swap generate test](./cli/generate-test) - Generate integration tests
+- [swap db](./cli/database) - Database workflow commands
 
 ## Next Steps
 
 - [Installation](./getting-started/installation) - Set up Swap CLI
 - [Your First Project](./getting-started/first-project) - Build a simple CRUD app
 - [CLI Reference](./cli/overview) - Complete command documentation
+- [Entity Patterns](./features/patterns) - Soft delete, auditable, sluggable, and more

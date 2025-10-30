@@ -45,7 +45,7 @@ libman --version   # Any version
 
 ```bash
 # Install the Swap CLI tool
-dotnet tool install --global Swap.CLI --prerelease
+dotnet tool install --global Swap.CLI
 
 # Verify installation
 swap --version

@@ -34,6 +34,7 @@ const sidebars: SidebarsConfig = {
         'cli/generate-controller',
         'cli/generate-resource',
         'cli/generate-pattern',
+        'cli/generate-auth',
         'cli/generate-test',
         'cli/generate-factory',
         'cli/seeders',
@@ -47,6 +48,12 @@ const sidebars: SidebarsConfig = {
       items: [
         'features/patterns',
         'features/testing-framework',
+        'features/pagination',
+        'features/search',
+        'features/sorting',
+        'features/filtering',
+        'features/bulk-operations',
+        'features/htmx-navigation',
       ],
     },
     {
