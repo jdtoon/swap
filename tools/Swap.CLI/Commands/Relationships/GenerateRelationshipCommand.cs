@@ -109,7 +109,7 @@ public static class GenerateRelationshipCommand
         command.AddOption(skipMigrationsOption);
         command.AddOption(projectOption);
 
-        command.SetHandler((InvocationContext context) =>
+        command.SetHandler(async (InvocationContext context) =>
         {
             var source = context.ParseResult.GetValueForOption(sourceOption);
             var target = context.ParseResult.GetValueForOption(targetOption);
@@ -129,7 +129,7 @@ public static class GenerateRelationshipCommand
             var skipMigrations = context.ParseResult.GetValueForOption(skipMigrationsOption);
             var project = context.ParseResult.GetValueForOption(projectOption);
 
-            context.ExitCode = Execute(
+            context.ExitCode = await ExecuteAsync(
                 source, target, type, required, onDelete, display, fk, nav, inverse,
                 junction, junctionProps, principal, dependent,
                 skipNav, skipUI, skipMigrations, project);
@@ -138,7 +138,7 @@ public static class GenerateRelationshipCommand
         return command;
     }
 
-    private static int Execute(
+    private static async Task<int> ExecuteAsync(
         string? source, string? target, string? type, bool required, string onDelete,
         string? display, string? fk, string? nav, string? inverse,
         string? junction, string? junctionProps, string? principal, string? dependent,
@@ -170,7 +170,6 @@ public static class GenerateRelationshipCommand
                 return 1;
             }
 
-            // TODO: Phase 1 - Just validate, don't generate yet
             AnsiConsole.MarkupLine("[green]✓ Relationship definition is valid[/]");
             AnsiConsole.MarkupLine($"[dim]Source:[/] {definition.SourceEntity}");
             AnsiConsole.MarkupLine($"[dim]Target:[/] {definition.TargetEntity}");
@@ -178,7 +177,22 @@ public static class GenerateRelationshipCommand
             AnsiConsole.MarkupLine($"[dim]On Delete:[/] {definition.OnDelete}");
             AnsiConsole.MarkupLine($"[dim]Required:[/] {definition.IsRequired}");
             AnsiConsole.WriteLine();
-            AnsiConsole.MarkupLine("[yellow]Note: Code generation not yet implemented (Phase 2+)[/]");
+
+            // Phase 2: One-to-Many and Many-to-One implementation
+            if (definition.Type == RelationshipType.OneToMany || definition.Type == RelationshipType.ManyToOne)
+            {
+                return await GenerateOneToManyAsync(definition);
+            }
+            else if (definition.Type == RelationshipType.ManyToMany)
+            {
+                AnsiConsole.MarkupLine("[yellow]Note: Many-to-Many relationships not yet implemented (Phase 3)[/]");
+                return 0;
+            }
+            else if (definition.Type == RelationshipType.OneToOne)
+            {
+                AnsiConsole.MarkupLine("[yellow]Note: One-to-One relationships not yet implemented (Phase 4)[/]");
+                return 0;
+            }
 
             return 0;
         }
@@ -251,5 +265,149 @@ public static class GenerateRelationshipCommand
         }
 
         return definition;
+    }
+
+    private static async Task<int> GenerateOneToManyAsync(RelationshipDefinition definition)
+    {
+        try
+        {
+            return await AnsiConsole.Status().StartAsync("Generating relationship...", async ctx =>
+            {
+                // Step 1: Verify entities exist
+                ctx.Status("Verifying entities exist...");
+                
+                var sourceExists = EntityModifier.EntityExists(definition.ProjectPath, definition.SourceEntity);
+                var targetExists = EntityModifier.EntityExists(definition.ProjectPath, definition.TargetEntity);
+
+                if (!sourceExists)
+                {
+                    AnsiConsole.MarkupLine($"[red]✗ Source entity not found:[/] Models/{definition.SourceEntity}.cs");
+                    return 1;
+                }
+
+                if (!targetExists)
+                {
+                    AnsiConsole.MarkupLine($"[red]✗ Target entity not found:[/] Models/{definition.TargetEntity}.cs");
+                    return 1;
+                }
+
+                // Step 2: Modify source entity
+                ctx.Status($"Modifying {definition.SourceEntity}...");
+                var sourcePath = EntityModifier.GetEntityPath(definition.ProjectPath, definition.SourceEntity);
+                var updatedSource = await EntityModifier.AddOneToManyPropertiesAsync(
+                    sourcePath, definition.SourceEntity, definition);
+                await File.WriteAllTextAsync(sourcePath, updatedSource);
+                AnsiConsole.MarkupLine($"[green]✓[/] Modified Models/{definition.SourceEntity}.cs");
+
+                // Step 3: Modify target entity
+                ctx.Status($"Modifying {definition.TargetEntity}...");
+                var targetPath = EntityModifier.GetEntityPath(definition.ProjectPath, definition.TargetEntity);
+                var updatedTarget = await EntityModifier.AddOneToManyPropertiesAsync(
+                    targetPath, definition.TargetEntity, definition);
+                await File.WriteAllTextAsync(targetPath, updatedTarget);
+                AnsiConsole.MarkupLine($"[green]✓[/] Modified Models/{definition.TargetEntity}.cs");
+
+                // Step 4: Configure relationship in DbContext
+                ctx.Status("Configuring DbContext...");
+                var dbContextPath = DbContextModifier.FindDbContextFile(definition.ProjectPath);
+                
+                if (dbContextPath != null)
+                {
+                    var updatedDbContext = await DbContextModifier.ConfigureRelationshipAsync(
+                        dbContextPath, definition);
+                    await File.WriteAllTextAsync(dbContextPath, updatedDbContext);
+                    AnsiConsole.MarkupLine($"[green]✓[/] Configured {Path.GetFileName(dbContextPath)}");
+                }
+                else
+                {
+                    AnsiConsole.MarkupLine($"[yellow]⚠[/] DbContext not found - skipping configuration");
+                }
+
+                // Step 5: Create migration (if not skipped)
+                if (!definition.SkipMigrations)
+                {
+                    ctx.Status("Creating migration...");
+                    var migrationName = $"Add{definition.SourceEntity}To{definition.TargetEntity}Relationship";
+                    
+                    try
+                    {
+                        var process = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                        {
+                            FileName = "dotnet",
+                            Arguments = $"ef migrations add {migrationName}",
+                            WorkingDirectory = definition.ProjectPath,
+                            RedirectStandardOutput = true,
+                            RedirectStandardError = true,
+                            UseShellExecute = false,
+                            CreateNoWindow = true
+                        });
+
+                        if (process != null)
+                        {
+                            await process.WaitForExitAsync();
+                            
+                            if (process.ExitCode == 0)
+                            {
+                                AnsiConsole.MarkupLine($"[green]✓[/] Created migration: {migrationName}");
+                            }
+                            else
+                            {
+                                var error = await process.StandardError.ReadToEndAsync();
+                                AnsiConsole.MarkupLine($"[yellow]⚠[/] Migration creation failed: {error}");
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        AnsiConsole.MarkupLine($"[yellow]⚠[/] Could not create migration: {ex.Message}");
+                    }
+                }
+
+                AnsiConsole.WriteLine();
+                AnsiConsole.MarkupLine("[green]✓ Relationship generated successfully![/]");
+                AnsiConsole.WriteLine();
+                
+                // Show summary
+                AnsiConsole.MarkupLine("[bold]Summary:[/]");
+                AnsiConsole.MarkupLine($"  Type: {definition.Type}");
+                AnsiConsole.MarkupLine($"  {definition.SourceEntity} → {definition.TargetEntity}");
+                
+                if (definition.Type == RelationshipType.OneToMany)
+                {
+                    var fkName = definition.ForeignKeyName ?? $"{definition.TargetEntity}Id";
+                    AnsiConsole.MarkupLine($"  FK: {fkName} in {definition.SourceEntity}");
+                    if (!definition.SkipNavigation)
+                    {
+                        var navProp = definition.NavigationProperty ?? definition.TargetEntity;
+                        var inverseProp = definition.InverseNavigation ?? EntityModifier.Pluralize(definition.SourceEntity);
+                        AnsiConsole.MarkupLine($"  Navigation: {definition.SourceEntity}.{navProp} → {definition.TargetEntity}");
+                        AnsiConsole.MarkupLine($"  Inverse: {definition.TargetEntity}.{inverseProp} → ICollection<{definition.SourceEntity}>");
+                    }
+                }
+
+                AnsiConsole.WriteLine();
+                AnsiConsole.MarkupLine("[bold]Next steps:[/]");
+                AnsiConsole.MarkupLine($"  1. Review the modified entity files");
+                if (!definition.SkipMigrations)
+                {
+                    AnsiConsole.MarkupLine($"  2. Apply migration: [cyan]dotnet ef database update[/]");
+                }
+                if (!definition.SkipUI)
+                {
+                    AnsiConsole.MarkupLine($"  3. UI generation not yet implemented (coming soon)");
+                }
+
+                return 0;
+            });
+        }
+        catch (Exception ex)
+        {
+            AnsiConsole.MarkupLine($"[red]Error generating relationship:[/] {ex.Message}");
+            if (ex.StackTrace != null)
+            {
+                AnsiConsole.MarkupLine($"[dim]{ex.StackTrace}[/]");
+            }
+            return 1;
+        }
     }
 }
