@@ -107,7 +107,7 @@ public class RelationshipUIGenerator
         <option value="""">-- Select {label} --</option>
         @foreach (var item in ViewBag.{relationship.TargetEntity}List as IEnumerable<dynamic>)
         {{
-            <option value=""@item.Id"" @(Model.{fkName} == item.Id ? ""selected"" : """")>
+            <option value=""@item.Id"" selected=""@(Model.{fkName} == item.Id)"">
                 @item.{displayField}
             </option>
         }}

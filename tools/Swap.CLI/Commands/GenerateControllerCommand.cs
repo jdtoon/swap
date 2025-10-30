@@ -46,6 +46,12 @@ public static class GenerateControllerCommand
             description: "Skip automatic migration creation (you'll need to create migrations manually)"
         );
         command.AddOption(noMigrationsOption);
+
+        var withRelationshipsOption = new Option<bool>(
+            aliases: new[] { "--with-relationships" },
+            description: "Auto-detect relationships and generate dropdown selects for foreign keys"
+        );
+        command.AddOption(withRelationshipsOption);
         
         command.SetHandler(async (InvocationContext context) =>
         {
@@ -56,13 +62,14 @@ public static class GenerateControllerCommand
             var projectPath = context.ParseResult.GetValueForOption(projectOption);
             var addNav = context.ParseResult.GetValueForOption(addNavOption);
             var noMigrations = context.ParseResult.GetValueForOption(noMigrationsOption);
-            context.ExitCode = await ExecuteAsync(name, fields, dryRun, force, projectPath, addNav, noMigrations);
+            var withRelationships = context.ParseResult.GetValueForOption(withRelationshipsOption);
+            context.ExitCode = await ExecuteAsync(name, fields, dryRun, force, projectPath, addNav, noMigrations, withRelationships);
         });
         
         return command;
     }
     
-    private static async Task<int> ExecuteAsync(string entityName, string? fieldsSpec, bool dryRun, bool force, string? projectPath, bool addNav, bool noMigrations)
+    private static async Task<int> ExecuteAsync(string entityName, string? fieldsSpec, bool dryRun, bool force, string? projectPath, bool addNav, bool noMigrations, bool withRelationships)
     {
         // Validate entity name
         if (string.IsNullOrWhiteSpace(entityName))
@@ -145,7 +152,7 @@ public static class GenerateControllerCommand
                 return 0;
             }
             
-            await GenerateControllerAsync(entityName, projectName, fields, force);
+            await GenerateControllerAsync(entityName, projectName, fields, force, workingDir, withRelationships);
 
             // Auto-create migration for the new entity (never applies database update)
             if (!noMigrations)
@@ -389,7 +396,7 @@ public static class GenerateControllerCommand
             .Select(g => g.First())
             .ToList();
     }
-    private static async Task GenerateControllerAsync(string entityName, string projectName, List<FieldDefinition> fields, bool force)
+    private static async Task GenerateControllerAsync(string entityName, string projectName, List<FieldDefinition> fields, bool force, string workingDir, bool withRelationships)
     {
         var templatePath = Path.Combine(AppContext.BaseDirectory, "templates", "generate", "controller");
         
@@ -411,6 +418,29 @@ public static class GenerateControllerCommand
                 }
             }
         }
+
+        // Detect relationships if flag is set
+        List<global::Swap.CLI.Commands.Relationships.DetectedRelationship> relationships = new();
+        if (withRelationships)
+        {
+            var entityPath = Path.Combine(workingDir, "Models", $"{entityName}.cs");
+            if (File.Exists(entityPath))
+            {
+                relationships = await global::Swap.CLI.Commands.Relationships.RelationshipUIGenerator.DetectRelationshipsAsync(entityPath);
+                
+                if (relationships.Any())
+                {
+                    AnsiConsole.MarkupLine($"[cyan]ℹ[/] Detected {relationships.Count} relationship(s)");
+                    foreach (var rel in relationships)
+                    {
+                        if (rel.RelationshipType == global::Swap.CLI.Commands.Relationships.DetectedRelationshipType.ManyToOne)
+                        {
+                            AnsiConsole.MarkupLine($"  • {rel.ForeignKeyProperty} → {rel.TargetEntity}");
+                        }
+                    }
+                }
+            }
+        }
         
         // Generate field-specific content
         var entityNameLower = char.ToLower(entityName[0]) + entityName.Substring(1);
@@ -422,7 +452,27 @@ public static class GenerateControllerCommand
         var filterDictionary = FieldHelper.GenerateFilterDictionary(fields);
         var filterIncludes = FieldHelper.GenerateFilterIncludes(fields);
         var filterSection = FieldHelper.GenerateFilterSection(fields, entityNameLower);
-        var formFields = string.Join("\n\n", fields.Select(f => FieldHelper.GenerateFormField(f)));
+        
+        // Generate form fields with relationship awareness
+        var formFieldsList = new List<string>();
+        foreach (var field in fields)
+        {
+            var relationship = relationships.FirstOrDefault(r => r.ForeignKeyProperty == field.Name);
+            if (relationship != null && withRelationships)
+            {
+                // FK field - generate dropdown
+                var targetEntityPath = Path.Combine(workingDir, "Models", $"{relationship.TargetEntity}.cs");
+                var displayField = await global::Swap.CLI.Commands.Relationships.RelationshipUIGenerator.DetectDisplayFieldAsync(targetEntityPath, relationship.TargetEntity);
+                formFieldsList.Add(global::Swap.CLI.Commands.Relationships.RelationshipUIGenerator.GenerateDropdownFormField(relationship, displayField));
+            }
+            else
+            {
+                // Regular field
+                formFieldsList.Add(FieldHelper.GenerateFormField(field));
+            }
+        }
+        var formFields = string.Join("\n\n", formFieldsList);
+        
         var tableHeaders = string.Join("\n                    ", fields.Select(f => FieldHelper.GenerateTableHeader(f, entityNameLower)));
         var tableCells = string.Join("\n                        ", fields.Select(f => FieldHelper.GenerateTableCell(f)));
         var detailsFields = string.Join("\n            ", fields.Select(f => FieldHelper.GenerateDetailsField(f)));
@@ -434,6 +484,11 @@ public static class GenerateControllerCommand
         var bulkSelectionScript = FieldHelper.GenerateBulkSelectionScript(entityName, entityNameLower);
         var bulkActionsBar = FieldHelper.GenerateBulkActionsBar(entityName, entityNameLower);
         var bulkDeleteScript = FieldHelper.GenerateBulkDeleteScript(entityName, entityNameLower);
+        
+        // Generate ViewBag population for relationships
+        var viewBagPopulation = withRelationships && relationships.Any()
+            ? global::Swap.CLI.Commands.Relationships.RelationshipUIGenerator.GenerateViewBagPopulation(relationships)
+            : "";
         
         // Setup template variables
         var variables = new Dictionary<string, string>
@@ -460,7 +515,8 @@ public static class GenerateControllerCommand
             { "BulkSelectCell", bulkSelectCell },
             { "BulkSelectionScript", bulkSelectionScript },
             { "BulkActionsBar", bulkActionsBar },
-            { "BulkDeleteScript", bulkDeleteScript }
+            { "BulkDeleteScript", bulkDeleteScript },
+            { "ViewBagPopulation", viewBagPopulation }
         };
         
         await AnsiConsole.Status()

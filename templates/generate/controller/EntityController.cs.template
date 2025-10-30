@@ -100,8 +100,9 @@ public class {{EntityName}}Controller : SwapController
     /// GET: Display create modal
     /// </summary>
     [HttpGet]
-    public IActionResult Create()
+    public async Task<IActionResult> Create()
     {
+{{ViewBagPopulation}}
         var model = new {{EntityName}}
         {
 {{DefaultInitialization}}
@@ -139,6 +140,7 @@ public class {{EntityName}}Controller : SwapController
     [HttpGet]
     public async Task<IActionResult> Edit(int id)
     {
+{{ViewBagPopulation}}
         var entity = await _context.{{EntityNamePlural}}.FindAsync(id);
         if (entity == null)
         {
