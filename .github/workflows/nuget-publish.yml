@@ -51,6 +51,8 @@ jobs:
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: '9.0.x'
+      env:
+        NUGET_PACKAGES: ${{ github.workspace }}/.nuget/packages
     
     - name: Extract version from Swap.CLI.csproj
       id: version
@@ -72,7 +74,11 @@ jobs:
         fi
     
     - name: Restore dependencies
-      run: dotnet restore
+      run: |
+        echo "🔧 Clearing NuGet cache"
+        dotnet nuget locals all --clear
+        echo "📦 Restoring with updated nuget.config"
+        dotnet restore --configfile nuget.config
     
     - name: Build
       run: dotnet build --configuration Release --no-restore
