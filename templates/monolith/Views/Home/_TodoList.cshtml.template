@@ -2,7 +2,7 @@
 
 <div id="todo-list">
     <ul class="space-y-2">
-        @if (!Model.Any())
+        @if (Model == null || !Model.Any())
         {
             <li class="text-gray-500 italic">No todos yet. Add one above!</li>
         }
