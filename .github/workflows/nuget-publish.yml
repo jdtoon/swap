@@ -33,6 +33,9 @@ jobs:
     - name: Pack CLI
       run: dotnet pack tools/Swap.CLI/Swap.CLI.csproj --configuration Release --no-build --output ./nupkg
 
+    - name: Pack Htmx
+      run: dotnet pack framework/Swap.Htmx/Swap.Htmx.csproj --configuration Release --no-build --output ./nupkg
+
     - name: Pack Patterns
       run: dotnet pack framework/Swap.Patterns/Swap.Patterns.csproj --configuration Release --no-build --output ./nupkg
 

@@ -477,11 +477,25 @@ public class HtmxShellMiddleware
     {
         ctx.Status("Creating nuget.config for local feed...");
         
-        var nugetConfig = @"<?xml version=""1.0"" encoding=""utf-8""?>
+        // Use relative path that works for testApps within swap repo
+        // From testApps/ProjectName/ → ../../.nuget/local
+        var relativeLocalFeedPath = "../../.nuget/local";
+        
+        // Verify the path exists by resolving it
+        var absoluteCheckPath = Path.GetFullPath(Path.Combine(projectPath, relativeLocalFeedPath));
+        if (!Directory.Exists(absoluteCheckPath))
+        {
+            throw new DirectoryNotFoundException(
+                $"Local NuGet feed not found at: {absoluteCheckPath}\n" +
+                $"The --local-nuget flag is intended for development within the Swap repository.\n" +
+                $"Run pack-local.ps1 or pack-local.sh first to create local packages.");
+        }
+        
+        var nugetConfig = $@"<?xml version=""1.0"" encoding=""utf-8""?>
 <configuration>
   <packageSources>
     <clear />
-    <add key=""local"" value=""c:\jd\swap\artifacts\packages"" />
+    <add key=""local"" value=""{relativeLocalFeedPath}"" />
     <add key=""nuget.org"" value=""https://api.nuget.org/v3/index.json"" />
   </packageSources>
 </configuration>";

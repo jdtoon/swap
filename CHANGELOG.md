@@ -30,13 +30,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Attaches NuGet packages (.nupkg files) to GitHub release
   - Automatically marks pre-release versions (e.g., v0.1.0-alpha) as pre-release
   - Triggers NuGet publish workflow automatically after release creation
+- **NuGet Publish Workflow Enhancement**: Added Swap.Htmx to package publishing steps
 
-### Added - Local NuGet Development Support
+### Added - Local NuGet Development Support  
 - **--local-nuget Flag**: New option for `swap new` command (framework development only)
   - `swap new MyApp --local-nuget` creates project using local NuGet feed
-  - Automatically generates nuget.config with local feed priority (`c:\jd\swap\artifacts\packages`)
-  - Enables testing unreleased Swap packages during framework development
-  - Improves developer experience for Swap contributors
+  - Automatically generates nuget.config with relative path to `.nuget/local` directory
+  - Verifies local feed exists before creating project
+  - Intended exclusively for testing Swap framework changes in testApps/
+  - Enables rapid iteration without publishing packages to NuGet.org
+
+### Changed - Template Cleanup
+- **Removed Default nuget.config**: Removed nuget.config.template from monolith template
+  - Now only created when explicitly using `--local-nuget` flag
+  - Prevents confusion for normal users (they don't need local feed configuration)
+  - Cleaner project generation for production use cases
 
 ### Fixed - Documentation
 - **Wiki Build Errors**: Fixed broken anchor links in patterns.md
