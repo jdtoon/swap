@@ -247,11 +247,8 @@ Every generated controller includes:
 Create a new ASP.NET Core + HTMX application with DaisyUI components.
 
 ```bash
-# Create with SQLite (default) - includes HTMX shell middleware
+# Create with SQLite (default)
 swap new MyApp
-
-# Create without HTMX shell middleware (opt-out)
-swap new MyApp --no-htmx-shell
 
 # Create with SQL Server
 swap new MyApp --database sqlserver
@@ -262,7 +259,6 @@ swap new MyApp --database postgres
 
 **Options:**
 - `--database` or `-d` - Database provider: `sqlite` (default), `sqlserver`, `postgres`
-- `--no-htmx-shell` - Disable HTMX shell middleware (advanced use cases only)
 
 **Generates:**
 - Complete ASP.NET Core MVC project structure
@@ -270,31 +266,12 @@ swap new MyApp --database postgres
 - DaisyUI + Tailwind CSS configuration
 - Sample TodoItem model and CRUD
 - Database migrations with auto-apply on startup
-- **HTMX Shell Middleware** (default) - Enforces partial view responses for HTMX requests
 - **HTMX-First Layout** - `hx-boost="true"` on body, `id="main-content"` on main element
 - **DaisyUI Navbar** - Aligned with `navbar-start`/`navbar-end` components
 - **Dockerfile** with multi-stage build (Node.js + .NET SDK → ASP.NET runtime)
 - **docker-compose.yml** with database service and health checks
 - **.dockerignore** optimized for ASP.NET Core
 - Ready to run with `dotnet run` or `docker-compose up`
-
-**HTMX Shell Middleware:**
-
-By default, new projects include HTMX shell middleware that enforces partial view responses for HTMX requests. This prevents full page reloads when navigating with HTMX and ensures your app behaves like a SPA.
-
-The middleware checks for `HX-Request` headers and verifies responses don't include the `<html>` tag. If detected, it throws an exception with the problematic view name, helping you catch layout rendering bugs during development.
-
-Configure the allowlist in `Middleware/HtmxShellMiddleware.cs`:
-```csharp
-private static readonly HashSet<string> AllowFullPagePaths = new(StringComparer.OrdinalIgnoreCase)
-{
-    "/",           // Home page
-    "/auth/login", // Login page
-    "/auth/register"
-};
-```
-
-To disable the middleware, use `--no-htmx-shell` when creating the project.
 
 **HTMX Navigation:**
 
@@ -304,6 +281,8 @@ All new projects are configured for HTMX-first navigation:
 - `hx-push-url="true"` maintains browser history and back/forward navigation
 - Partials are returned for HTMX requests (via `HX-Request` header detection)
 - Controllers check `Request.Headers.ContainsKey("HX-Request")` to return partial vs full views
+
+> **Note:** For advanced HTMX debugging, consider adding the [Swap.Htmx](https://www.nuget.org/packages/Swap.Htmx) package which includes `SwapHtmxShellMiddleware` to enforce partial-only responses in development.
 
 **Docker Features:**
 - Multi-stage build optimized for production
@@ -927,7 +906,6 @@ Swap CLI is [MIT licensed](LICENSE). Use it freely in your projects, commercial 
 - ✅ **Build-Before-Migration** - Rigid gates prevent cryptic EF errors, surface compiler issues early
 - ✅ **Auto-Migration Creation** - All generators (auth, controller, pattern) create migrations automatically
 - ✅ **HTMX-First Layout** - `hx-boost="true"`, `id="main-content"` target, `hx-push-url` navigation
-- ✅ **HTMX Shell Middleware** - Default in new projects, enforces partial responses (opt-out with `--no-htmx-shell`)
 - ✅ **DaisyUI Navbar Alignment** - `navbar-start`/`navbar-end` structure for consistent layouts
 - ✅ **Auto-Nav Injection** - `--add-nav` flag injects navigation links with HTMX attributes
 - ✅ **ASP.NET Identity Scaffolding** - `swap g auth` with auto-migration and HTMX support
