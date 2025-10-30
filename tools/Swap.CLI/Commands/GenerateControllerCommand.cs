@@ -580,9 +580,11 @@ public static class GenerateControllerCommand
             
             // Add default value for non-nullable strings to avoid CS8618 warning
             var defaultValue = "";
+            var needsInitializer = false;
             if (field.Type == "string" && !field.IsNullable)
             {
                 defaultValue = " = string.Empty";
+                needsInitializer = true;
             }
             
             if (!string.IsNullOrEmpty(required))
@@ -590,7 +592,12 @@ public static class GenerateControllerCommand
                 properties.Add($"    {required}");
             }
             
-            properties.Add($"    public {field.Type}{nullability} {field.Name} {{ get; set; }}{defaultValue};");
+            var line = $"    public {field.Type}{nullability} {field.Name} {{ get; set; }}";
+            if (needsInitializer)
+            {
+                line += defaultValue + ";"; // property initializer requires semicolon
+            }
+            properties.Add(line);
         }
         
         return $@"using System.ComponentModel.DataAnnotations;

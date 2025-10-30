@@ -346,7 +346,7 @@ public class {{EntityName}}Controller : SwapController
         HttpContext.Session.SetObject("{{EntityName}}_Selection", selectedIds);
 
         // Return updated list with selection state
-        return await Index(pageNumber, pageSize, searchTerm, sortBy, sortOrder{{FilterParameterValues}});
+        return await Get{{EntityName}}List(pageNumber, pageSize, searchTerm, sortBy, sortOrder{{FilterParameterValues}});
     }
 
     /// <summary>
