@@ -41,7 +41,7 @@ public class {{EntityName}}Controller : SwapController
     public async Task<IActionResult> Get{{EntityName}}List(int pageNumber = 1, int pageSize = 10, string? searchTerm = null, string? sortBy = null, string? sortOrder = "asc"{{FilterParameters}})
     {
         // Build query with search filter
-        var query = _context.{{EntityNamePlural}}.AsQueryable();
+        var query = _context.{{EntityNamePlural}}{{IncludeStatements}}.AsQueryable();
         
         if (!string.IsNullOrWhiteSpace(searchTerm))
         {

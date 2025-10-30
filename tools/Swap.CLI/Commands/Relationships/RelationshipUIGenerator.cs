@@ -219,7 +219,7 @@ public class RelationshipUIGenerator
         return "Id";
     }
 
-    private static string FormatLabel(string name)
+    public static string FormatLabel(string name)
     {
         // Add spaces before capital letters: "CustomerId" -> "Customer Id"
         var result = System.Text.RegularExpressions.Regex.Replace(name, "([A-Z])", " $1").Trim();

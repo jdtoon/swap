@@ -477,16 +477,39 @@ public static class GenerateControllerCommand
         var filterIncludes = FieldHelper.GenerateFilterIncludes(fields);
         var filterSection = FieldHelper.GenerateFilterSection(fields, entityNameLower);
         
+        // Pre-detect display fields for all relationships to avoid multiple async calls
+        var displayFieldCache = new Dictionary<string, string>();
+        if (withRelationships)
+        {
+            foreach (var rel in relationships.Where(r => r.RelationshipType == global::Swap.CLI.Commands.Relationships.DetectedRelationshipType.ManyToOne))
+            {
+                if (rel.TargetEntity != null && !displayFieldCache.ContainsKey(rel.TargetEntity))
+                {
+                    var targetEntityPath = Path.Combine(workingDir, "Models", $"{rel.TargetEntity}.cs");
+                    try
+                    {
+                        AnsiConsole.MarkupLine($"[dim]  Detecting display field for {rel.TargetEntity}...[/]");
+                        displayFieldCache[rel.TargetEntity] = await global::Swap.CLI.Commands.Relationships.RelationshipUIGenerator.DetectDisplayFieldAsync(targetEntityPath, rel.TargetEntity);
+                        AnsiConsole.MarkupLine($"[dim]  → Using {displayFieldCache[rel.TargetEntity]}[/]");
+                    }
+                    catch (Exception ex)
+                    {
+                        AnsiConsole.MarkupLine($"[yellow]  Warning: Could not detect display field for {rel.TargetEntity}: {ex.Message}[/]");
+                        displayFieldCache[rel.TargetEntity] = "Name"; // Fallback
+                    }
+                }
+            }
+        }
+        
         // Generate form fields with relationship awareness
         var formFieldsList = new List<string>();
         foreach (var field in fields)
         {
             var relationship = relationships.FirstOrDefault(r => r.ForeignKeyProperty == field.Name);
-            if (relationship != null && withRelationships)
+            if (relationship != null && withRelationships && relationship.TargetEntity != null)
             {
                 // FK field - generate dropdown
-                var targetEntityPath = Path.Combine(workingDir, "Models", $"{relationship.TargetEntity}.cs");
-                var displayField = await global::Swap.CLI.Commands.Relationships.RelationshipUIGenerator.DetectDisplayFieldAsync(targetEntityPath, relationship.TargetEntity);
+                var displayField = displayFieldCache.GetValueOrDefault(relationship.TargetEntity, "Id");
                 formFieldsList.Add(global::Swap.CLI.Commands.Relationships.RelationshipUIGenerator.GenerateDropdownFormField(relationship, displayField));
             }
             else
@@ -497,9 +520,55 @@ public static class GenerateControllerCommand
         }
         var formFields = string.Join("\n\n", formFieldsList);
         
-        var tableHeaders = string.Join("\n                    ", fields.Select(f => FieldHelper.GenerateTableHeader(f, entityNameLower)));
-        var tableCells = string.Join("\n                        ", fields.Select(f => FieldHelper.GenerateTableCell(f)));
-        var detailsFields = string.Join("\n            ", fields.Select(f => FieldHelper.GenerateDetailsField(f)));
+        // Generate table headers and cells with relationship awareness
+        var tableHeadersList = new List<string>();
+        var tableCellsList = new List<string>();
+        var detailsFieldsList = new List<string>();
+        
+        foreach (var field in fields)
+        {
+            var relationship = relationships.FirstOrDefault(r => r.ForeignKeyProperty == field.Name);
+            if (relationship != null && withRelationships && relationship.TargetEntity != null)
+            {
+                // Skip FK column, we'll show the navigation property instead
+                var label = global::Swap.CLI.Commands.Relationships.RelationshipUIGenerator.FormatLabel(relationship.TargetEntity);
+                var displayField = displayFieldCache.GetValueOrDefault(relationship.TargetEntity, "Id");
+                
+                // Table header for relationship (using actual variable values, not template placeholders)
+                tableHeadersList.Add($@"<th>
+                        <button class=""btn btn-ghost btn-xs"" 
+                                hx-get=""@Url.Action(""Get{entityName}List"", new {{ sortBy = ""{relationship.NavigationProperty}"", sortOrder = (@Model.SortBy == ""{relationship.NavigationProperty}"" && @Model.SortOrder == ""asc"" ? ""desc"" : ""asc""), searchTerm = @Model.SearchTerm, pageNumber = 1 }})""
+                                hx-target=""#{entityNameLower}-list"" 
+                                hx-swap=""outerHTML"">
+                            {label}
+                            @if (Model.SortBy == ""{relationship.NavigationProperty}"")
+                            {{
+                                <span>@(Model.SortOrder == ""asc"" ? ""↑"" : ""↓"")</span>
+                            }}
+                        </button>
+                    </th>");
+                
+                // Table cell showing related entity name
+                tableCellsList.Add($"<td>@(item.{relationship.NavigationProperty}?.{displayField} ?? \"-\")</td>");
+                
+                // Details field for relationship
+                detailsFieldsList.Add($@"<div class=""mb-2"">
+                <span class=""font-semibold"">{label}:</span>
+                <span>@(Model.{relationship.NavigationProperty}?.{displayField} ?? ""None"")</span>
+            </div>");
+            }
+            else
+            {
+                // Regular field
+                tableHeadersList.Add(FieldHelper.GenerateTableHeader(field, entityNameLower));
+                tableCellsList.Add(FieldHelper.GenerateTableCell(field));
+                detailsFieldsList.Add(FieldHelper.GenerateDetailsField(field));
+            }
+        }
+        
+        var tableHeaders = string.Join("\n                    ", tableHeadersList);
+        var tableCells = string.Join("\n                        ", tableCellsList);
+        var detailsFields = string.Join("\n            ", detailsFieldsList);
         var defaultInitialization = FieldHelper.GenerateDefaultInitialization(fields);
         
         // Generate bulk operations content (server-driven with session)
@@ -513,6 +582,16 @@ public static class GenerateControllerCommand
         var viewBagPopulation = withRelationships && relationships.Any()
             ? global::Swap.CLI.Commands.Relationships.RelationshipUIGenerator.GenerateViewBagPopulation(relationships)
             : "";
+        
+        // Generate Include statements for EF Core to load related entities
+        var includeStatements = "";
+        if (withRelationships && relationships.Any())
+        {
+            var includes = relationships
+                .Where(r => r.RelationshipType == global::Swap.CLI.Commands.Relationships.DetectedRelationshipType.ManyToOne)
+                .Select(r => $".Include(e => e.{r.NavigationProperty})");
+            includeStatements = string.Join("", includes);
+        }
         
         // Setup template variables
         var variables = new Dictionary<string, string>
@@ -540,7 +619,8 @@ public static class GenerateControllerCommand
             { "BulkSelectionScript", bulkSelectionScript },
             { "BulkActionsBar", bulkActionsBar },
             { "BulkDeleteScript", bulkDeleteScript },
-            { "ViewBagPopulation", viewBagPopulation }
+            { "ViewBagPopulation", viewBagPopulation },
+            { "IncludeStatements", includeStatements }
         };
         
         await AnsiConsole.Status()
