@@ -72,7 +72,7 @@ Version 0.2.0 development is **substantially complete** with relationship genera
 - ✅ Comprehensive unit tests (21 tests in GenerateRelationshipManyToManyTests.cs)
 - ✅ End-to-end verification (test app build validation)
 - ✅ Wiki documentation updated (CLI reference and features page)
-- ⚠️ UI scaffolding not automatic yet (manual view extension required for checkboxes/badges)
+- ✅ **UI scaffolding now fully automatic** (checkbox lists with Selected{Entity}Ids POST handling)
 
 #### ✅ **Phase 4: One-to-One Relationships - COMPLETE**
 
@@ -97,9 +97,10 @@ Version 0.2.0 development is **substantially complete** with relationship genera
 
 **What's Done:**
 - ✅ One-to-many and many-to-one relationships (production ready)
-- ✅ Many-to-many relationships (CLI complete, UI manual)
+- ✅ Many-to-many relationships (production ready with automatic UI)
 - ✅ One-to-one relationships (CLI complete, UI standard dropdowns)
 - ✅ Relationship-aware UI in controllers (production ready)
+- ✅ Many-to-many checkbox UI (automatic generation with display field detection)
 - ✅ Comprehensive wiki documentation (3 major pages)
 - ✅ All features tested and working
 
@@ -112,13 +113,14 @@ Version 0.2.0 development is **substantially complete** with relationship genera
 3. Beautiful dropdown UIs for related entities
 4. Eager loading for performance
 5. Self-referential support (manual model + auto UI)
-6. Many-to-many with junction tables (manual UI extension for checkboxes)
+6. Many-to-many with automatic checkbox UI (scrollable lists, display field detection, POST handling)
 7. One-to-one with unique constraints (standard dropdown UI)
 
 **What's Next (Post-0.2.0):**
 1. Relationship management commands (`list`, `remove`, `update`)
-2. Self-referential support via CLI
-3. Documentation polish (tutorials, examples)
+2. Self-referential support via CLI (currently requires manual model creation)
+3. Many-to-many badge display in list views (checkboxes work, badges deferred)
+4. Documentation polish (tutorials, examples)
 
 ---
 
@@ -461,13 +463,15 @@ swap g relationship Order Customer --required
   - [x] Tests (20+ scenarios) ✅ GenerateControllerRelationshipTests + EdgeCases
 - [x] Implement many-to-one generation ✅ COMPLETE (functionally same as one-to-many)
   - [x] All features working ✅ Fully tested and documented
-- [ ] Implement many-to-many generation (Week 5) ⏳ PHASE 3 (Q1 2025)
-  - [ ] Junction table entity generation
-  - [ ] Navigation collections
-  - [ ] Checkbox UI
-  - [ ] Badge display
-  - [ ] Migration with composite key
-  - [ ] Tests (15+ scenarios)
+- [x] Implement many-to-many generation (Week 5) ✅ COMPLETE
+  - [x] Junction table entity generation ✅ COMPLETE
+  - [x] Navigation collections ✅ COMPLETE
+  - [x] Checkbox UI ✅ COMPLETE (automatic with display field detection)
+  - [x] ViewBag population ✅ COMPLETE
+  - [x] POST handling for Selected{Entity}Ids ✅ COMPLETE
+  - [x] Migration with composite key ✅ COMPLETE
+  - [x] Tests (21+ scenarios) ✅ COMPLETE
+  - [ ] Badge display ⏳ DEFERRED (checkboxes work, badges post-0.2.0)
 - [ ] Implement one-to-one generation (Week 6) ⏳ PHASE 4 (Q2 2025)
   - [ ] FK with unique constraint
   - [ ] Inline editing UI
@@ -554,9 +558,9 @@ swap g relationship Order Customer --required
 **Relationships:**
 - [x] One-to-many works end-to-end ✅ PRODUCTION READY
 - [x] Many-to-one works end-to-end ✅ PRODUCTION READY (verified fixed Oct 31)
-- [ ] Many-to-many works end-to-end ⏳ PHASE 3 (Q1 2025)
+- [x] Many-to-many works end-to-end ✅ PRODUCTION READY (Oct 31, 2025)
 - [ ] One-to-one works end-to-end ⏳ PHASE 4 (Q2 2025)
-- [x] UI generation works (dropdowns, checkboxes) ✅ DROPDOWNS COMPLETE
+- [x] UI generation works (dropdowns, checkboxes) ✅ COMPLETE
 - [x] Migrations succeed ✅ AUTO-MIGRATION WORKING
 - [x] Can build blog app in 10 commands ✅ EXAMPLES PROVIDED IN DOCS
 
@@ -583,10 +587,10 @@ swap g relationship Order Customer --required
 ### Relationship Features (Core of 0.2.0)
 - **One-to-Many Relationships** ✅ COMPLETE
 - **Many-to-One Relationships** ✅ COMPLETE  
-- **Many-to-Many Relationships** ⏳ IN PROGRESS
+- **Many-to-Many Relationships** ✅ COMPLETE (with automatic checkbox UI)
 - **One-to-One Relationships** ⏳ PENDING
-- **Relationship-Aware UI** ✅ COMPLETE - Auto-detect FKs, generate dropdowns
-- **Display Field Detection** ✅ COMPLETE - Smart dropdown labels
+- **Relationship-Aware UI** ✅ COMPLETE - Auto-detect FKs, generate dropdowns and checkboxes
+- **Display Field Detection** ✅ COMPLETE - Smart dropdown/checkbox labels
 - **Eager Loading** ✅ COMPLETE - Automatic `.Include()` for performance
 - **Self-Referential UI** ✅ COMPLETE - Hierarchical data support
 

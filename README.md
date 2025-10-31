@@ -12,6 +12,7 @@ Swap CLI is a code generator that creates complete, modern web applications usin
 ## 🌟 Why Swap?
 
 - **⚡ Production-Ready Code** - Generate complete CRUD with modals, pagination, sorting, filtering, and search
+- **🔗 Relationship Generation** - One-to-many, many-to-many, one-to-one with automatic UI (dropdowns, checkboxes)
 - **🎯 HTMX Simplicity** - Modern, interactive web apps without JavaScript frameworks
 - **🎨 DaisyUI + Tailwind** - Beautiful, accessible components out of the box
 - **🗄️ Entity Framework Core** - Full database integration with migrations support
@@ -81,6 +82,77 @@ swap g c Product --fields "Name:string Price:decimal InStock:bool:f" --add-nav
 Visit `http://localhost:5000/Product` - Full CRUD with pagination, search, sorting, and filtering! 🚀
 
 **No manual file creation. No boilerplate. Just CLI commands and business logic.**
+
+### Add Relationships (v0.2.0)
+
+```bash
+# Create related entities
+swap g m Category --fields "Name:string"
+swap g m Product --fields "Name:string Price:decimal CategoryId:int"
+
+# Add one-to-many relationship
+swap g rel --source Product --target Category --type many-to-one
+
+# Regenerate controller to get dropdown UI
+swap g c Product --force
+
+# Apply migrations
+dotnet ef database update
+```
+
+Visit `http://localhost:5000/Product` - Now with a Category dropdown instead of number input! 🎯
+
+**Automatic Features:**
+- ✅ Dropdown `<select>` for foreign keys
+- ✅ Checkbox lists for many-to-many relationships
+- ✅ Smart display field detection (Name, Title, Email, etc.)
+- ✅ ViewBag population
+- ✅ Eager loading with `.Include()`
+
+### Building a Blog (Complete Example)
+
+```bash
+# Create new project
+swap new Blog
+cd Blog
+
+# Create entities
+swap g m Author --fields "Name:string Email:string Bio:string?"
+swap g m Category --fields "Name:string Description:string?"
+swap g m Tag --fields "Name:string Color:string"
+swap g m Post --fields "Title:string Content:string PublishedAt:DateTime? AuthorId:int CategoryId:int"
+swap g m Comment --fields "Content:string AuthorName:string PostId:int CreatedAt:DateTime"
+
+# Create relationships
+swap g rel -s Post -t Author --type many-to-one      # Post → Author
+swap g rel -s Post -t Category --type many-to-one    # Post → Category  
+swap g rel -s Post -t Tag --type many-to-many        # Post ↔ Tags
+swap g rel -s Comment -t Post --type many-to-one     # Comment → Post
+
+# Generate controllers (with automatic relationship UI)
+swap g c Author
+swap g c Category
+swap g c Tag
+swap g c Post --force    # Regenerate to get dropdowns/checkboxes
+swap g c Comment --force
+
+# Apply migrations
+dotnet ef database update
+
+# Run the blog
+dotnet run
+```
+
+**What You Get:**
+- ✅ Author management with posts list
+- ✅ Category dropdown in post creation
+- ✅ Tag checkbox list for multiple selections
+- ✅ Comment forms tied to posts
+- ✅ All CRUD operations with modals
+- ✅ Search, pagination, sorting, filtering
+- ✅ Responsive UI with DaisyUI
+
+**Total time: ~2 minutes** ⚡
 
 > **Note:** Swap automatically creates migrations after generating models or controllers. The CLI builds your project first to verify there are no compilation errors before creating the migration. If the build fails, you'll see the error output and the migration won't be created. This prevents confusing EF Core errors and helps catch issues early.
 
@@ -378,6 +450,103 @@ swap g m Category --fields "Name:string" --project path/to/project
 ### `swap generate resource <name> --fields <fields>`
 
 Generate model + controller together (alias for backward compatibility).
+
+### `swap generate relationship <options>`
+
+**New in v0.2.0** - Generate relationships between entities with automatic UI generation.
+
+```bash
+# One-to-Many: Order → Customer (order belongs to one customer)
+swap g rel --source Order --target Customer --type many-to-one
+
+# Many-to-Many: Post ↔ Tags (posts have many tags, tags have many posts)
+swap g rel --source Post --target Tag --type many-to-many
+
+# One-to-One: User → Profile (each user has one profile)
+swap g rel --source Profile --target User --type one-to-one
+
+# Customize foreign key name
+swap g rel -s Order -t Customer --type many-to-one --fk CustomerId
+
+# Custom display field for dropdowns
+swap g rel -s Order -t Customer --type many-to-one --display Email
+
+# Required relationship (NOT NULL FK)
+swap g rel -s Order -t Customer --type many-to-one --required
+
+# Cascade delete
+swap g rel -s OrderItem -t Order --type many-to-one --on-delete cascade
+
+# Custom junction table for many-to-many
+swap g rel -s Student -t Course --type many-to-many --junction Enrollment
+```
+
+**Aliases:**
+- `swap g rel` - Short form
+- `swap generate relationship` - Long form
+
+**Required Options:**
+- `--source` or `-s` - Source entity name
+- `--target` or `-t` - Target entity name  
+- `--type` - Relationship type: `one-to-many`, `many-to-one`, `many-to-many`, `one-to-one`
+
+**Optional Flags:**
+- `--fk` - Custom foreign key property name (default: `{Target}Id`)
+- `--nav` - Custom navigation property name
+- `--inverse` - Custom inverse navigation property name
+- `--display` - Field to display in UI dropdowns/checkboxes (default: auto-detected)
+- `--required` - Make foreign key required (NOT NULL)
+- `--on-delete` - Delete behavior: `restrict` (default), `cascade`, `set-null`
+- `--junction` - Custom junction table name for many-to-many (default: alphabetical)
+- `--dry-run` - Preview without writing files
+- `--force` - Overwrite existing files
+- `--project` or `-p` - Path to project directory
+
+**What It Does:**
+- **One-to-Many/Many-to-One:**
+  - Adds foreign key property to source entity
+  - Adds navigation properties (both sides)
+  - Configures EF Core Fluent API
+  - Creates migration with FK constraint
+  - **Auto-generates dropdown UI** in forms
+  - Displays related entity name in list views
+  
+- **Many-to-Many:**
+  - Creates junction table entity with composite key
+  - Adds collection navigation properties (both sides)
+  - Configures EF Core with `UsingEntity<T>()`
+  - Creates migration with junction table
+  - **Auto-generates checkbox list UI** for selection
+  - Handles POST data with `Selected{Entity}Ids`
+  
+- **One-to-One:**
+  - Adds foreign key with unique constraint
+  - Adds single navigation properties (both sides)
+  - Configures principal/dependent entities
+  - Creates migration
+  - **Auto-generates dropdown UI** for FK selection
+
+**After Creating Relationship:**
+```bash
+# Regenerate controller to get UI (dropdowns/checkboxes)
+swap g c Order --force
+
+# Apply migration
+dotnet ef database update
+```
+
+**UI Features (Automatic):**
+- ✅ Dropdown `<select>` for many-to-one FKs (not number inputs)
+- ✅ Checkbox lists for many-to-many selections (scrollable, with display field)
+- ✅ Auto-detect display field (Name > Title > Description > Email > Code > Label > string > Id)
+- ✅ ViewBag population (`ViewBag.{Entity}List`)
+- ✅ Eager loading with `.Include()` for performance
+- ✅ Self-referential support (e.g., Category.ParentCategory)
+- ✅ POST handling for `Selected{Entity}Ids` arrays (many-to-many)
+
+**See Also:**
+- [Relationship Generation Guide](https://github.com/jdtoon/swap/blob/main/wiki/docs/cli/generate-relationship.md)
+- [Relationship Patterns](https://github.com/jdtoon/swap/blob/main/wiki/docs/features/relationships.md)
 
 ### `swap generate auth`
 

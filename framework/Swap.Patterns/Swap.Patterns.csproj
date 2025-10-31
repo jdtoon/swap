@@ -8,7 +8,7 @@
     
     <!-- Package Metadata -->
     <PackageId>Swap.Patterns</PackageId>
-    <Version>0.1.0</Version>
+    <Version>0.2.0</Version>
     <Description>Common patterns for ASP.NET Core applications: soft delete, audit trails, slug generation, and more.</Description>
     <PackageTags>swap;patterns;soft-delete;auditable;sluggable;aspnetcore;entity-framework</PackageTags>
     <PackageProjectUrl>https://github.com/jdtoon/swap</PackageProjectUrl>
