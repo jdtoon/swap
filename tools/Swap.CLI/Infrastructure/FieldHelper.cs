@@ -482,7 +482,7 @@ public static class FieldHelper
                             <span class=""label-text"">{f.Name}</span>
                         </label>
                         @{{
-                            var {paramName}Value = Model.Filters.TryGetValue(""{paramName}"", out var filterVal) ? filterVal : """";
+                            var {paramName}Value = Model.Filters.TryGetValue(""{paramName}"", out var {paramName}FilterVal) ? {paramName}FilterVal : """";
                         }}
                         <select name=""{paramName}"" 
                                 class=""select select-bordered w-full""
@@ -491,9 +491,9 @@ public static class FieldHelper
                                 hx-swap=""innerHTML""
                                 hx-include=""[name='searchTerm'], [name='pageSize'], [name='sortBy'], [name='sortOrder'], [name='{paramName}']""
                                 hx-trigger=""change"">
-                            <option value="""" selected=""@(string.IsNullOrEmpty({paramName}Value) ? """"selected"""" : null)"">All</option>
-                            <option value=""true"" selected=""@({paramName}Value == """"true"""" ? """"selected"""" : null)"">Yes</option>
-                            <option value=""false"" selected=""@({paramName}Value == """"false"""" ? """"selected"""" : null)"">No</option>
+                            <option value="""" selected=""@(string.IsNullOrEmpty({paramName}Value) ? ""selected"" : null)"">All</option>
+                            <option value=""true"" selected=""@({paramName}Value == ""true"" ? ""selected"" : null)"">Yes</option>
+                            <option value=""false"" selected=""@({paramName}Value == ""false"" ? ""selected"" : null)"">No</option>
                         </select>
                     </div>";
         });
