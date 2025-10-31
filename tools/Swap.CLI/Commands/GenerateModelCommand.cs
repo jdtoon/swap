@@ -325,6 +325,7 @@ public static class GenerateModelCommand
         }
         
         // Find the last DbSet property and add new one after it
+        var onModelCreatingIndex = content.IndexOf("protected override void OnModelCreating", StringComparison.Ordinal);
         var dbSetPattern = "public DbSet<";
         var lastDbSetIndex = content.LastIndexOf(dbSetPattern);
         
@@ -340,12 +341,19 @@ public static class GenerateModelCommand
         // Look for either ; or } followed by newline
         for (int i = searchStart; i < content.Length; i++)
         {
+            // Stop if we hit OnModelCreating - we've gone too far
+            if (onModelCreatingIndex != -1 && i >= onModelCreatingIndex)
+            {
+                break;
+            }
+            
             if ((content[i] == ';' || content[i] == '}') && i + 1 < content.Length)
             {
                 // Found end of property, now find the newline
-                lineEnd = content.IndexOf('\n', i);
-                if (lineEnd != -1)
+                var nextNewline = content.IndexOf('\n', i);
+                if (nextNewline != -1 && (onModelCreatingIndex == -1 || nextNewline < onModelCreatingIndex))
                 {
+                    lineEnd = nextNewline;
                     break;
                 }
             }
@@ -353,8 +361,19 @@ public static class GenerateModelCommand
         
         if (lineEnd == -1) lineEnd = content.Length;
         
+        // Double-check we're not inserting after OnModelCreating
+        if (onModelCreatingIndex != -1 && lineEnd > onModelCreatingIndex)
+        {
+            // Find the line before OnModelCreating instead
+            var beforeMethod = content.LastIndexOf('\n', onModelCreatingIndex - 1);
+            if (beforeMethod != -1)
+            {
+                lineEnd = beforeMethod;
+            }
+        }
+        
         // Insert new DbSet property with fully qualified type name to avoid conflicts
-        var newDbSet = $"\n    public DbSet<{projectName}.Models.{entityName}> {entityName}s {{ get; set; }}";
+        var newDbSet = $"\n\n    public DbSet<{projectName}.Models.{entityName}> {entityName}s {{ get; set; }}";
         content = content.Insert(lineEnd + 1, newDbSet);
         
         await File.WriteAllTextAsync(dbContextPath, content);

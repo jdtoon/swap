@@ -936,7 +936,7 @@ public class {entityName}
             {
                 // Found property terminator, now find the newline
                 var nextNewline = content.IndexOf('\n', i);
-                if (nextNewline != -1)
+                if (nextNewline != -1 && (onModelCreatingIndex == -1 || nextNewline < onModelCreatingIndex))
                 {
                     lineEnd = nextNewline;
                     break;
@@ -958,7 +958,7 @@ public class {entityName}
         }
         
         // Insert new DbSet property with fully qualified type name to avoid conflicts
-        var newDbSet = $"\n    public DbSet<{projectName}.Models.{entityName}> {pluralEntityName} {{ get; set; }}";
+        var newDbSet = $"\n\n    public DbSet<{projectName}.Models.{entityName}> {pluralEntityName} {{ get; set; }}";
         content = content.Insert(lineEnd + 1, newDbSet);
         
         await File.WriteAllTextAsync(dbContextPath, content);
