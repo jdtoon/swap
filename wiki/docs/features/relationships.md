@@ -20,7 +20,7 @@ Relationships are created using the [`swap generate relationship`](../cli/genera
 |-------------------|-------------|--------------|--------|
 | **One-to-Many** | ✅ Working | ✅ Working | **Production Ready** |
 | **Many-to-One** | ✅ Working | ✅ Working | **Production Ready** |
-| **Many-to-Many** | ⏳ Phase 3 | ⏳ Phase 3 | Roadmap Q1 2025 |
+| **Many-to-Many** | ✅ Working | ⚠️ Manual | CLI available; UI manual |
 | **One-to-One** | ⏳ Phase 4 | ⏳ Phase 4 | Roadmap Q2 2025 |
 | **Self-Referential** | ⚠️ Manual | ✅ Working | Manual model edit required |
 
@@ -40,7 +40,6 @@ Relationships are created using the [`swap generate relationship`](../cli/genera
 - Self-referential relationships (manual model editing required, UI works)
 
 ⏳ **Coming Soon**:
-- Many-to-many relationships with junction tables
 - One-to-one relationships
 - Relationship management commands (list, remove, update)
 - Reverse engineering existing relationships
@@ -186,11 +185,9 @@ This is functionally identical to one-to-many, but expresses the relationship fr
 
 See [Many-to-One Documentation](../cli/generate-relationship.md#many-to-one) for details.
 
-### Many-to-Many (Coming Soon)
+### Many-to-Many
 
-⏳ **Planned for Phase 3 (Q1 2025)**
-
-Both entities have collections of the other, connected via a junction table.
+Both entities have collections of the other, connected via a junction (join) entity.
 
 **Real-World Examples**:
 - Posts ↔ Tags
@@ -198,18 +195,38 @@ Both entities have collections of the other, connected via a junction table.
 - Users ↔ Roles
 - Products ↔ Suppliers
 
-**Planned Syntax**:
+**Command Syntax**:
 
 ```bash
 swap g rel --source Post --target Tag --type many-to-many
+
+# Custom junction name and extra properties
+swap g rel -s Post -t Tag --type many-to-many \
+    --junction PostTag \
+    --junction-props "CreatedAt:datetime,CreatedBy:string"
 ```
 
-**Will Generate**:
-- Junction table entity (e.g., `PostTag`)
-- DbSet for junction table
+**What Gets Generated**:
+- Junction entity (e.g., `PostTag` or alphabetical default like `CourseStudent`)
+- DbSet for the junction entity in the DbContext
 - Collection navigations on both sides
-- Checkbox UI for tag selection
-- Badge display in views
+- EF Core Fluent API using `UsingEntity<TJunction>` with composite key
+
+```csharp title="Data/AppDbContext.cs"
+protected override void OnModelCreating(ModelBuilder modelBuilder)
+{
+        modelBuilder.Entity<Student>()
+                .HasMany(e => e.Courses)
+                .WithMany(e => e.Students)
+                .UsingEntity<CourseStudent>(
+                        j => j.HasOne(x => x.Course).WithMany().HasForeignKey(x => x.CourseId),
+                        j => j.HasOne(x => x.Student).WithMany().HasForeignKey(x => x.StudentId),
+                        j => { j.HasKey(x => new { x.StudentId, x.CourseId }); });
+}
+```
+
+**UI Generation**:
+- Not automatic yet for many-to-many. Regenerate controllers as usual and extend views manually (e.g., checkboxes for selection, badges for display).
 
 ### One-to-One (Coming Soon)
 
@@ -537,7 +554,7 @@ dotnet ef database update
 
 Current version (0.2.0) has these limitations:
 
-1. **No many-to-many support** - Coming in Phase 3
+1. **Many-to-many UI not auto-generated** - Extend controllers/views manually
 2. **No one-to-one support** - Coming in Phase 4
 3. **Self-referential requires manual editing** - CLI validator blocks them
 4. **No automatic controller update** - Must regenerate with `--force`
@@ -668,12 +685,10 @@ dotnet ef database update
 
 ## Roadmap
 
-### Phase 3: Many-to-Many (Q1 2025)
+### Many-to-Many Enhancements
 
-- Junction table generation
-- Checkbox UI for tag selection
+- Checkbox UI for selection
 - Badge display in views
-- Support for additional junction properties
 - Efficient Include/ThenInclude queries
 
 ### Phase 4: One-to-One (Q2 2025)

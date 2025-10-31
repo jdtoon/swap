@@ -53,7 +53,7 @@ The type of relationship to create.
 **Values**: 
 - `one-to-many` / `onetomany` / `1:n` (source has collection of target)
 - `many-to-one` / `manytoone` / `n:1` (source belongs to target)
-- `many-to-many` / `manytomany` / `n:n` (both have collections) ⚠️ **Coming soon**
+- `many-to-many` / `manytomany` / `n:n` (both have collections)
 - `one-to-one` / `onetoone` / `1:1` (both have single reference) ⚠️ **Coming soon**
 
 ```bash
@@ -212,7 +212,7 @@ Specify project directory (if not current directory).
 swap g rel -s Order -t Customer --type many-to-one --project ../MyProject
 ```
 
-## Many-to-Many Options (Coming Soon)
+## Many-to-Many Options
 
 ### `--junction`
 
@@ -222,7 +222,7 @@ Custom junction table name for many-to-many relationships.
 **Default**: Alphabetically sorted combination (e.g., `PostTag` for Post/Tag)
 
 ```bash
-# Coming in Phase 3
+# Custom junction table name
 swap g rel -s Post -t Tag --type many-to-many --junction PostTags
 ```
 
@@ -234,8 +234,8 @@ Additional properties for junction table.
 **Format**: `PropertyName:type,PropertyName:type`
 
 ```bash
-# Coming in Phase 3
-swap g rel -s Post -t Tag --type many-to-many --junction-props "CreatedAt:datetime,CreatedBy:string"
+# Add extra fields on the junction entity
+swap g rel -s Post -t Tag --type many-to-many --junction-props "CreatedAt:datetime,CreatedBy:string,IsPrimary:bool"
 ```
 
 ## One-to-One Options (Coming Soon)
@@ -369,18 +369,87 @@ public class Customer
 }
 ```
 
-### Many-to-Many (Coming Soon)
+### Many-to-Many
 
-⚠️ **Not yet implemented** - Planned for Phase 3
+A many-to-many relationship allows both entities to have collections of the other, connected by a junction entity.
 
-A many-to-many relationship allows both entities to have collections of the other.
-
-**Example**: Posts have many Tags, Tags have many Posts
+**Example**: Students have many Courses, Courses have many Students
 
 ```bash
-# Will be supported in Phase 3
-swap g rel -s Post -t Tag --type many-to-many
+# Create base entities
+swap g m Student --fields "Name:string"
+swap g m Course --fields "Title:string"
+
+# Add many-to-many relationship (creates CourseStudent junction)
+swap g rel -s Student -t Course --type many-to-many
+
+# Optionally customize
+swap g rel -s Post -t Tag --type many-to-many \
+  --junction PostTag \
+  --junction-props "CreatedAt:datetime,CreatedBy:string"
 ```
+
+**Generated Code**:
+
+```csharp title="Models/CourseStudent.cs"
+public class CourseStudent
+{
+    public int StudentId { get; set; }
+    public Student? Student { get; set; }
+
+    public int CourseId { get; set; }
+    public Course? Course { get; set; }
+}
+```
+
+```csharp title="Models/Student.cs"
+public class Student
+{
+    public int Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+
+    // Added by relationship command
+    public ICollection<Course> Courses { get; set; } = new List<Course>();
+}
+```
+
+```csharp title="Models/Course.cs"
+public class Course
+{
+    public int Id { get; set; }
+    public string Title { get; set; } = string.Empty;
+
+    // Added by relationship command
+    public ICollection<Student> Students { get; set; } = new List<Student>();
+}
+```
+
+```csharp title="Data/AppDbContext.cs"
+protected override void OnModelCreating(ModelBuilder modelBuilder)
+{
+    // Added by relationship command
+    modelBuilder.Entity<Student>()
+        .HasMany(e => e.Courses)
+        .WithMany(e => e.Students)
+        .UsingEntity<CourseStudent>(
+            j => j
+                .HasOne<Course>(x => x.Course)
+                .WithMany()
+                .HasForeignKey(x => x.CourseId),
+            j => j
+                .HasOne<Student>(x => x.Student)
+                .WithMany()
+                .HasForeignKey(x => x.StudentId),
+            j =>
+            {
+                j.HasKey(x => new { x.StudentId, x.CourseId });
+            });
+}
+```
+
+:::info
+Many-to-many UI (checkboxes/badges) is not auto-generated yet. Regenerate controllers as usual and extend views as needed for collection selection.
+:::
 
 ### One-to-One (Coming Soon)
 

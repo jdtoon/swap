@@ -243,6 +243,57 @@ public class EntityModifier
     }
 
     /// <summary>
+    /// Add many-to-many navigation properties to an entity
+    /// </summary>
+    public static async Task<string> AddManyToManyNavigationAsync(
+        string entityFilePath,
+        string entityName,
+        string targetEntityName,
+        string? navigationPropertyName = null)
+    {
+        var code = await File.ReadAllTextAsync(entityFilePath);
+        
+        // Determine navigation property name
+        var navPropertyName = navigationPropertyName ?? Pluralize(targetEntityName);
+
+        // Check if property already exists
+        if (code.Contains($"ICollection<{targetEntityName}> {navPropertyName}"))
+        {
+            // Property already exists, return original code
+            return code;
+        }
+
+        // Find the class declaration
+        var classPattern = $"public class {entityName}";
+        var classIndex = code.IndexOf(classPattern, StringComparison.Ordinal);
+        
+        if (classIndex == -1)
+        {
+            throw new InvalidOperationException($"Could not find class {entityName} in {entityFilePath}");
+        }
+
+        // Find the opening brace of the class
+        var openBraceIndex = code.IndexOf('{', classIndex);
+        if (openBraceIndex == -1)
+        {
+            throw new InvalidOperationException($"Could not find opening brace for class {entityName}");
+        }
+
+        // Find the closing brace of the class
+        var closeBraceIndex = code.LastIndexOf('}');
+        if (closeBraceIndex == -1)
+        {
+            throw new InvalidOperationException($"Could not find closing brace for class {entityName}");
+        }
+
+        // Create the property declaration
+        var propertyCode = $"    public ICollection<{targetEntityName}> {navPropertyName} {{ get; set; }} = new List<{targetEntityName}>();\n";
+
+        // Insert before the closing brace
+        return code.Insert(closeBraceIndex, propertyCode);
+    }
+
+    /// <summary>
     /// Check if an entity file exists
     /// </summary>
     public static bool EntityExists(string projectPath, string entityName)

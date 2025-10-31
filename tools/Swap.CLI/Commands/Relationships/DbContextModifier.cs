@@ -155,6 +155,154 @@ public class DbContextModifier
     }
 
     /// <summary>
+    /// Add DbSet property for a junction table entity
+    /// </summary>
+    public static async Task<string> AddDbSetAsync(string dbContextPath, string junctionTableName)
+    {
+        var code = await File.ReadAllTextAsync(dbContextPath);
+        
+        // Check if DbSet already exists
+        var modelsPrefix = code.Contains($"DbSet<Models.") ? "Models." : "";
+        
+        // Check if junction table DbSet already exists
+        if (code.Contains($"DbSet<{modelsPrefix}{junctionTableName}>"))
+        {
+            return code;
+        }
+
+        // Find the class declaration
+        var classIndex = code.IndexOf("class", StringComparison.Ordinal);
+        if (classIndex == -1)
+        {
+            throw new InvalidOperationException("Could not find class declaration in DbContext");
+        }
+
+        // Find the opening brace of the class
+        var openBraceIndex = code.IndexOf('{', classIndex);
+        if (openBraceIndex == -1)
+        {
+            throw new InvalidOperationException("Could not find opening brace of DbContext class");
+        }
+
+        // Find existing DbSet properties to maintain consistent formatting
+        var lastDbSetIndex = code.LastIndexOf("DbSet<", openBraceIndex + 1);
+        
+        string dbSetProperty = $"    public DbSet<{modelsPrefix}{junctionTableName}> {junctionTableName} {{ get; set; }}";
+        
+        if (lastDbSetIndex > openBraceIndex)
+        {
+            // Insert after the last DbSet
+            var endOfLineIndex = code.IndexOf('\n', lastDbSetIndex);
+            if (endOfLineIndex == -1)
+            {
+                endOfLineIndex = code.Length;
+            }
+            
+            return code.Insert(endOfLineIndex + 1, dbSetProperty + "\n");
+        }
+        else
+        {
+            // No existing DbSets - insert after class opening brace
+            return code.Insert(openBraceIndex + 1, "\n" + dbSetProperty + "\n");
+        }
+    }
+
+    /// <summary>
+    /// Configure many-to-many relationship in DbContext
+    /// </summary>
+    public static async Task<string> ConfigureManyToManyAsync(
+        string dbContextCode,
+        RelationshipDefinition definition,
+        string junctionTableName)
+    {
+        var code = dbContextCode;
+        
+        // Detect if we need Models. prefix
+        var modelsPrefix = code.Contains("DbSet<Models.") ? "Models." : "";
+        
+        // Generate configuration code for many-to-many
+        var sourceEntity = definition.SourceEntity;
+        var targetEntity = definition.TargetEntity;
+        var sourceNavProp = definition.NavigationProperty ?? EntityModifier.Pluralize(targetEntity);
+        var targetNavProp = definition.InverseNavigation ?? EntityModifier.Pluralize(sourceEntity);
+
+        var configCode = $@"        // Many-to-many: {sourceEntity} ↔ {targetEntity}
+        modelBuilder.Entity<{modelsPrefix}{sourceEntity}>()
+            .HasMany(e => e.{sourceNavProp})
+            .WithMany(e => e.{targetNavProp})
+            .UsingEntity<{modelsPrefix}{junctionTableName}>(
+                j => j
+                    .HasOne<{modelsPrefix}{targetEntity}>(x => x.{targetEntity})
+                    .WithMany()
+                    .HasForeignKey(x => x.{targetEntity}Id),
+                j => j
+                    .HasOne<{modelsPrefix}{sourceEntity}>(x => x.{sourceEntity})
+                    .WithMany()
+                    .HasForeignKey(x => x.{sourceEntity}Id),
+                j =>
+                {{
+                    j.HasKey(x => new {{ x.{sourceEntity}Id, x.{targetEntity}Id }});
+                }});
+";
+
+        // Find OnModelCreating method
+        var onModelCreatingIndex = code.IndexOf("protected override void OnModelCreating", StringComparison.Ordinal);
+        
+        if (onModelCreatingIndex == -1)
+        {
+            // Method doesn't exist - add it before the closing brace of the class
+            var lastBraceIndex = code.LastIndexOf('}');
+            if (lastBraceIndex == -1)
+            {
+                throw new InvalidOperationException("Could not find class closing brace in DbContext");
+            }
+
+            var newMethod = $@"
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {{
+        base.OnModelCreating(modelBuilder);
+
+{configCode}
+    }}
+}}";
+            return code.Substring(0, lastBraceIndex) + newMethod;
+        }
+        else
+        {
+            // Method exists - find insertion point
+            var methodStart = onModelCreatingIndex;
+            var openBraceIndex = code.IndexOf('{', methodStart);
+            
+            if (openBraceIndex == -1)
+            {
+                throw new InvalidOperationException("Could not find opening brace of OnModelCreating method");
+            }
+
+            // Look for base.OnModelCreating call
+            var baseCallIndex = code.IndexOf("base.OnModelCreating", openBraceIndex);
+            int insertionPoint;
+
+            if (baseCallIndex > openBraceIndex && baseCallIndex < code.IndexOf('}', openBraceIndex))
+            {
+                // Insert after the base call
+                var semicolonIndex = code.IndexOf(';', baseCallIndex);
+                if (semicolonIndex == -1)
+                {
+                    throw new InvalidOperationException("Could not find semicolon after base.OnModelCreating call");
+                }
+                insertionPoint = code.IndexOf('\n', semicolonIndex) + 1;
+            }
+            else
+            {
+                // No base call - insert at the start of the method body
+                insertionPoint = code.IndexOf('\n', openBraceIndex) + 1;
+            }
+
+            return code.Insert(insertionPoint, "\n" + configCode);
+        }
+    }
+
+    /// <summary>
     /// Find the DbContext file in the project
     /// </summary>
     public static string? FindDbContextFile(string projectPath)
