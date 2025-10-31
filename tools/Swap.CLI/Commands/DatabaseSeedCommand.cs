@@ -98,7 +98,7 @@ public static class DatabaseSeedCommand
         catch (Exception ex)
         {
             AnsiConsole.WriteLine();
-            AnsiConsole.MarkupLine($"[red]Error:[/] {ex.Message}");
+            AnsiConsole.MarkupLine($"[red]Error:[/] {ex.Message.EscapeMarkup()}");
             return 1;
         }
     }

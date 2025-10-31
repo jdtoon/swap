@@ -80,7 +80,7 @@ public static class DatabaseResetCommand
         catch (Exception ex)
         {
             AnsiConsole.WriteLine();
-            AnsiConsole.MarkupLine($"[red]Error:[/] {ex.Message}");
+            AnsiConsole.MarkupLine($"[red]Error:[/] {ex.Message.EscapeMarkup()}");
             AnsiConsole.MarkupLine("[dim]Make sure you have dotnet-ef installed:[/]");
             AnsiConsole.MarkupLine("  dotnet tool install --global dotnet-ef");
             return 1;
