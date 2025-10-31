@@ -13,9 +13,19 @@ public static class SwapToastExtensions
     /// <param name="response">The HTTP response</param>
     /// <param name="message">The message to display</param>
     /// <param name="type">The type of toast (success, error, warning, info)</param>
-    public static void ShowToast(this HttpResponse response, string message, ToastType type = ToastType.Info)
+    /// <param name="position">The position of the toast (top-right, top-left, bottom-right, bottom-left)</param>
+    public static void ShowToast(this HttpResponse response, string message, ToastType type = ToastType.Info, ToastPosition position = ToastPosition.TopRight)
     {
-        var toastJson = $"{{\"type\": \"{type.ToString().ToLower()}\", \"message\": \"{EscapeJson(message)}\"}}";
+        var positionStr = position switch
+        {
+            ToastPosition.TopRight => "top-right",
+            ToastPosition.TopLeft => "top-left",
+            ToastPosition.BottomRight => "bottom-right",
+            ToastPosition.BottomLeft => "bottom-left",
+            _ => "top-right"
+        };
+        
+        var toastJson = $"{{\"type\": \"{type.ToString().ToLower()}\", \"message\": \"{EscapeJson(message)}\", \"position\": \"{positionStr}\"}}";
         
         // Check if HX-Trigger header already exists
         if (response.Headers.ContainsKey("HX-Trigger"))
@@ -92,4 +102,15 @@ public enum ToastType
     Error,
     Warning,
     Info
+}
+
+/// <summary>
+/// Positions for toast notifications
+/// </summary>
+public enum ToastPosition
+{
+    TopRight,
+    TopLeft,
+    BottomRight,
+    BottomLeft
 }
