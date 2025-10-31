@@ -129,7 +129,8 @@ public class {{EntityName}}Controller : SwapController
         await _context.SaveChangesAsync();
 
         // Trigger list refresh and success toast
-        Response.Headers.Append("HX-Trigger", "{\"refresh{{EntityName}}List\": null, \"showToast\": {\"type\": \"success\", \"message\": \"{{EntityName}} created successfully!\"}}");
+        Response.Headers.Append("HX-Trigger", "refresh{{EntityName}}List");
+        Response.ShowSuccessToast("{{EntityName}} created successfully!");
         
         return Content("");
     }
@@ -184,7 +185,8 @@ public class {{EntityName}}Controller : SwapController
         }
 
         // Trigger list refresh and success toast
-        Response.Headers.Append("HX-Trigger", "{\"refresh{{EntityName}}List\": null, \"showToast\": {\"type\": \"success\", \"message\": \"{{EntityName}} updated successfully!\"}}");
+        Response.Headers.Append("HX-Trigger", "refresh{{EntityName}}List");
+        Response.ShowSuccessToast("{{EntityName}} updated successfully!");
         
         return Content("");
     }
@@ -223,14 +225,15 @@ public class {{EntityName}}Controller : SwapController
             await _context.SaveChangesAsync();
 
             // Trigger list refresh and success toast
-            Response.Headers.Append("HX-Trigger", "{\"refresh{{EntityName}}List\": null, \"showToast\": {\"type\": \"success\", \"message\": \"{{EntityName}} deleted successfully!\"}}");
+            Response.Headers.Append("HX-Trigger", "refresh{{EntityName}}List");
+            Response.ShowSuccessToast("{{EntityName}} deleted successfully!");
             
             return Content("");
         }
         catch (DbUpdateException)
         {
             // Foreign key constraint violation
-            Response.Headers.Append("HX-Trigger", "{\"showToast\": {\"type\": \"error\", \"message\": \"Cannot delete this {{EntityNameLower}} because it is referenced by other records.\"}}");
+            Response.ShowErrorToast("Cannot delete this {{EntityNameLower}} because it is referenced by other records.");
             return StatusCode(409); // Conflict
         }
     }
@@ -270,20 +273,21 @@ public class {{EntityName}}Controller : SwapController
             HttpContext.Session.Remove("{{EntityName}}_Selection");
 
             // Trigger list refresh and show toast
-            Response.Headers.Append("HX-Trigger", "{\"refresh{{EntityName}}List\": null, \"showToast\": {\"type\": \"success\", \"message\": \"Successfully deleted " + entitiesToDelete.Count + " {{EntityNameLower}}(s)\"}}");
+            Response.Headers.Append("HX-Trigger", "refresh{{EntityName}}List");
+            Response.ShowSuccessToast($"Successfully deleted {entitiesToDelete.Count} {{EntityNameLower}}(s)");
             
             return Ok(new { deleted = entitiesToDelete.Count });
         }
         catch (DbUpdateException)
         {
             await transaction.RollbackAsync();
-            Response.Headers.Append("HX-Trigger", "{\"showToast\": {\"type\": \"error\", \"message\": \"Cannot delete one or more {{EntityNameLower}}s because they are referenced by other records.\"}}");
+            Response.ShowErrorToast("Cannot delete one or more {{EntityNameLower}}s because they are referenced by other records.");
             return StatusCode(409); // Conflict
         }
         catch (Exception ex)
         {
             await transaction.RollbackAsync();
-            Response.Headers.Append("HX-Trigger", "{\"showToast\": {\"type\": \"error\", \"message\": \"Failed to delete items\"}}");
+            Response.ShowErrorToast("Failed to delete items");
             return StatusCode(500, new { error = ex.Message });
         }
     }
