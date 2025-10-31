@@ -304,12 +304,17 @@ public static class DoctorCommand
     {
         try
         {
+            // On Windows, node might need cmd wrapper for consistent detection
+            var isWindows = OperatingSystem.IsWindows();
+            var fileName = isWindows ? "cmd.exe" : "node";
+            var arguments = isWindows ? "/c node --version" : "--version";
+            
             var process = new Process
             {
                 StartInfo = new ProcessStartInfo
                 {
-                    FileName = "node",
-                    Arguments = "--version",
+                    FileName = fileName,
+                    Arguments = arguments,
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,
                     UseShellExecute = false,
@@ -339,12 +344,17 @@ public static class DoctorCommand
     {
         try
         {
+            // On Windows, npm is a batch file/PowerShell script, so we need to use cmd.exe
+            var isWindows = OperatingSystem.IsWindows();
+            var fileName = isWindows ? "cmd.exe" : "npm";
+            var arguments = isWindows ? "/c npm --version" : "--version";
+            
             var process = new Process
             {
                 StartInfo = new ProcessStartInfo
                 {
-                    FileName = "npm",
-                    Arguments = "--version",
+                    FileName = fileName,
+                    Arguments = arguments,
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,
                     UseShellExecute = false,
