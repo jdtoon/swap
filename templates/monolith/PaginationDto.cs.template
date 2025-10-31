@@ -1,6 +1,6 @@
 using System;
 
-namespace {{ProjectName}};
+namespace {{ProjectName}}.Dtos;
 
 /// <summary>
 /// Pagination data transfer object with HTMX integration.

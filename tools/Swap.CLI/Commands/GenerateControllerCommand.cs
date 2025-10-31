@@ -101,22 +101,39 @@ public static class GenerateControllerCommand
             AnsiConsole.MarkupLine($"[dim]Using:[/] {entityName}");
         }
         
+        // Resolve working directory first (needed to check for existing model)
+        var workingDir = !string.IsNullOrEmpty(projectPath)
+            ? Path.GetFullPath(projectPath)
+            : Directory.GetCurrentDirectory();
+        
         // Parse fields
         List<FieldDefinition> fields;
         try
         {
             fields = FieldHelper.ParseFields(fieldsSpec);
+            
+            // If no fields specified, try to read from existing model file
+            if (!fields.Any())
+            {
+                var modelPath = Path.Combine(workingDir, "Models", $"{entityName}.cs");
+                if (File.Exists(modelPath))
+                {
+                    AnsiConsole.MarkupLine($"[dim]Reading fields from existing model:[/] {entityName}");
+                    var modelContent = await File.ReadAllTextAsync(modelPath);
+                    fields = SeedHelper.ParseModelProperties(modelContent);
+                    
+                    if (fields.Any())
+                    {
+                        AnsiConsole.MarkupLine($"[dim]Found {fields.Count} properties in model[/]");
+                    }
+                }
+            }
         }
         catch (ArgumentException ex)
         {
             AnsiConsole.MarkupLine($"[red]Error:[/] {ex.Message}");
             return 1;
         }
-        
-        // Resolve working directory
-        var workingDir = !string.IsNullOrEmpty(projectPath)
-            ? Path.GetFullPath(projectPath)
-            : Directory.GetCurrentDirectory();
         
         // Check if we're in a project directory
         var projectFiles = Directory.GetFiles(workingDir, "*.csproj");

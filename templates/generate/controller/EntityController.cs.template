@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using {{ProjectName}}.Data;
+using {{ProjectName}}.Dtos;
 using {{ProjectName}}.Models;
 using {{ProjectName}}.ViewModels;
 using {{ProjectName}}.Extensions;
