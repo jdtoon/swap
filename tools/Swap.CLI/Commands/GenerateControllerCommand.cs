@@ -679,7 +679,7 @@ public static class GenerateControllerCommand
         var variables = new Dictionary<string, string>
         {
             { "EntityName", entityName },
-            { "EntityNamePlural", entityName + "s" }, // Simple pluralization for now
+            { "EntityNamePlural", global::Swap.CLI.Commands.Relationships.EntityModifier.Pluralize(entityName) },
             { "EntityNameLower", entityNameLower },
             { "ProjectName", projectName },
             { "Namespace", projectName },
@@ -895,9 +895,10 @@ public class {entityName}
         var content = await File.ReadAllTextAsync(dbContextPath);
         
         // Check if DbSet already exists (check for both simple and fully qualified names)
+        var pluralEntityName = global::Swap.CLI.Commands.Relationships.EntityModifier.Pluralize(entityName);
         if (content.Contains($"DbSet<{entityName}>") || 
             content.Contains($"DbSet<{projectName}.Models.{entityName}>") ||
-            content.Contains($"{entityName}s {{ get; set; }}"))
+            content.Contains($"{pluralEntityName} {{ get; set; }}"))
         {
             AnsiConsole.MarkupLine($"[yellow]Warning:[/] DbSet for {entityName} already exists in DbContext");
             return;
@@ -950,7 +951,7 @@ public class {entityName}
         }
         
         // Insert new DbSet property with fully qualified type name to avoid conflicts
-        var newDbSet = $"\n    public DbSet<{projectName}.Models.{entityName}> {entityName}s {{ get; set; }}";
+        var newDbSet = $"\n    public DbSet<{projectName}.Models.{entityName}> {pluralEntityName} {{ get; set; }}";
         content = content.Insert(lineEnd + 1, newDbSet);
         
         await File.WriteAllTextAsync(dbContextPath, content);
