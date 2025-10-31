@@ -71,6 +71,15 @@ public static class GenerateModelCommand
             return 1;
         }
         
+        // Check for reserved/problematic names that conflict with .NET types
+        var reservedNames = new[] { "Task", "Action", "Result", "Controller", "View", "Model", "String", "Object", "Type", "Attribute" };
+        if (reservedNames.Contains(entityName, StringComparer.OrdinalIgnoreCase))
+        {
+            AnsiConsole.MarkupLine($"[red]Error:[/] Entity name '{entityName}' conflicts with a .NET framework type.");
+            AnsiConsole.MarkupLine($"[yellow]Suggestion:[/] Use a more specific name (e.g., 'TodoItem' instead of 'Task', 'UserAction' instead of 'Action').");
+            return 1;
+        }
+        
         if (!char.IsUpper(entityName[0]))
         {
             AnsiConsole.MarkupLine($"[yellow]Warning:[/] Entity name should start with an uppercase letter (PascalCase).");
