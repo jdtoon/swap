@@ -126,7 +126,7 @@ public static class GenerateSeedCommand
         var modelContent = await File.ReadAllTextAsync(modelPath);
         var fields = SeedHelper.ParseModelProperties(modelContent);
 
-        var (prelude, rules) = SeedHelper.GenerateFakerPreludeAndRules(projectName, entityName, fields);
+        var (prelude, rules, postProcess) = SeedHelper.GenerateFakerPreludeAndRules(projectName, entityName, fields);
 
         var templateDir = Path.Combine(AppContext.BaseDirectory, "templates", "generate", "seed");
         var templateFile = Path.Combine(templateDir, "EntitySeeder.cs.template");
@@ -144,7 +144,8 @@ public static class GenerateSeedCommand
             { "SeedLocale", locale },
             { "SeedIfEmpty", ifEmpty ? "true" : "false" },
             { "ForeignKeyPrelude", prelude },
-            { "FakerRules", rules }
+            { "FakerRules", rules },
+            { "PostProcess", postProcess }
         };
 
         var processed = TemplateEngine.Process(templateContent, variables);

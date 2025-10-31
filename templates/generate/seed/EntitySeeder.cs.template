@@ -34,6 +34,7 @@ public static class {{EntityName}}Seeder
         // Note: Pattern properties (timestamps, audit, soft delete, etc.) are
         // automatically managed by EF Core interceptors and should not be set here
         var items = faker.Generate(count);
+{{PostProcess}}
         
         await db.{{EntityNamePlural}}.AddRangeAsync(items);
         await db.SaveChangesAsync();

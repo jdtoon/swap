@@ -65,13 +65,17 @@ public static class SeedHelper
             or "Position";
     }
 
-    public static (string Prelude, string Rules) GenerateFakerPreludeAndRules(
+    public static (string Prelude, string Rules, string PostProcess) GenerateFakerPreludeAndRules(
         string projectName,
         string entityName,
         List<FieldDefinition> fields)
     {
         var prelude = new System.Text.StringBuilder();
         var rules = new System.Text.StringBuilder();
+        var postProcess = new System.Text.StringBuilder();
+
+        // Detect one-to-one relationships from AppDbContext.cs
+        var oneToOneFields = DetectOneToOneForeignKeys(entityName);
 
         // Preload foreign key id lists
         foreach (var fk in DetectForeignKeys(fields))
@@ -79,6 +83,23 @@ public static class SeedHelper
             var dbSet = fk.TargetEntity + "s"; // simple pluralization
             var varName = ToCamelCase(fk.TargetEntity) + "Ids";
             prelude.AppendLine($"        var {varName} = await db.{dbSet}.Select(x => x.Id).ToListAsync();");
+            
+            // For one-to-one relationships, shuffle the list for sequential assignment
+            if (oneToOneFields.Contains(fk.FieldName))
+            {
+                prelude.AppendLine($"        {varName} = {varName}.OrderBy(x => Guid.NewGuid()).ToList(); // Shuffle for one-to-one");
+            }
+        }
+
+        // For one-to-one relationships, limit count to available parent IDs
+        if (oneToOneFields.Any())
+        {
+            var fksList = DetectForeignKeys(fields).Where(fk => oneToOneFields.Contains(fk.FieldName)).ToList();
+            foreach (var fk in fksList)
+            {
+                var varName = ToCamelCase(fk.TargetEntity) + "Ids";
+                prelude.AppendLine($"        count = Math.Min(count, {varName}.Count); // Limit to available {fk.TargetEntity} for one-to-one");
+            }
         }
 
         // Advanced cross-field rule for UpdatedAt if CreatedAt exists
@@ -95,7 +116,7 @@ public static class SeedHelper
             if (!IsSupportedPrimitive(field.Type) && !(IsForeignKey(field)))
                 continue;
 
-            var rule = GenerateRuleForField(projectName, field, fields);
+            var rule = GenerateRuleForField(projectName, field, fields, oneToOneFields);
             if (string.IsNullOrWhiteSpace(rule)) continue;
 
             rules.AppendLine($"            .RuleFor(x => x.{field.Name}, {rule})");
@@ -113,7 +134,23 @@ public static class SeedHelper
             );
         }
 
-        return (prelude.ToString().TrimEnd(), rules.ToString().TrimEnd());
+        // Generate post-processing code for one-to-one FK assignment
+        if (oneToOneFields.Any())
+        {
+            postProcess.AppendLine();
+            postProcess.AppendLine("        // Assign one-to-one foreign keys sequentially to ensure uniqueness");
+            var fksList = DetectForeignKeys(fields).Where(fk => oneToOneFields.Contains(fk.FieldName)).ToList();
+            foreach (var fk in fksList)
+            {
+                var varName = ToCamelCase(fk.TargetEntity) + "Ids";
+                postProcess.AppendLine($"        for (int i = 0; i < items.Count; i++)");
+                postProcess.AppendLine($"        {{");
+                postProcess.AppendLine($"            items[i].{fk.FieldName} = {varName}[i];");
+                postProcess.AppendLine($"        }}");
+            }
+        }
+
+        return (prelude.ToString().TrimEnd(), rules.ToString().TrimEnd(), postProcess.ToString().TrimEnd());
     }
 
     private static bool IsSupportedPrimitive(string type) => type is "string" or "int" or "long" or "short" or "byte" or "bool" or "float" or "double" or "decimal" or "DateTime" or "Guid";
@@ -128,11 +165,18 @@ public static class SeedHelper
             .ToArray();
     }
 
-    private static string GenerateRuleForField(string projectName, FieldDefinition field, List<FieldDefinition> all)
+    private static string GenerateRuleForField(string projectName, FieldDefinition field, List<FieldDefinition> all, HashSet<string> oneToOneFields)
     {
         // Foreign keys
         if (IsForeignKey(field))
         {
+            // For one-to-one relationships, skip the RuleFor - we'll assign manually after generation
+            if (oneToOneFields.Contains(field.Name))
+            {
+                return ""; // Skip rule for one-to-one FKs
+            }
+            
+            // Normal one-to-many: use PickRandom
             var target = field.Name.Substring(0, field.Name.Length - 2);
             var varName = ToCamelCase(target) + "Ids";
             var pick = $"f => {varName}.Count > 0 ? f.PickRandom({varName}) : 0";
@@ -213,4 +257,44 @@ public static class SeedHelper
         if (n.Contains("isdeleted") || n.Contains("deleted")) return "f => f.Random.Bool(0.1f)"; // 10% deleted
         return "f => f.Random.Bool()";
     }
+
+    /// <summary>
+    /// Detects one-to-one foreign key fields for an entity by parsing AppDbContext.cs
+    /// Returns a set of field names that are one-to-one FKs (e.g., "AuthorId")
+    /// </summary>
+    private static HashSet<string> DetectOneToOneForeignKeys(string entityName)
+    {
+        var oneToOneFields = new HashSet<string>();
+        
+        try
+        {
+            var dbContextPath = Path.Combine("Data", "AppDbContext.cs");
+            if (!File.Exists(dbContextPath))
+                return oneToOneFields;
+
+            var content = File.ReadAllText(dbContextPath);
+            
+            // Look for patterns like:
+            // modelBuilder.Entity<Author>().HasOne(e => e.AuthorProfile).WithOne(e => e.Author).HasForeignKey<AuthorProfile>(e => e.AuthorId)
+            // Key indicator: WithOne() means one-to-one relationship
+            
+            var pattern = $@"\.HasOne\([^)]+\)\.WithOne\([^)]+\)\.HasForeignKey<{entityName}>\(e\s*=>\s*e\.(\w+)\)";
+            var matches = Regex.Matches(content, pattern);
+            
+            foreach (Match match in matches)
+            {
+                if (match.Groups.Count > 1)
+                {
+                    oneToOneFields.Add(match.Groups[1].Value);
+                }
+            }
+        }
+        catch
+        {
+            // If we can't detect, safely assume no one-to-one relationships
+        }
+        
+        return oneToOneFields;
+    }
 }
+
