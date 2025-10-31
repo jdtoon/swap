@@ -21,7 +21,7 @@ Relationships are created using the [`swap generate relationship`](../cli/genera
 | **One-to-Many** | ✅ Working | ✅ Working | **Production Ready** |
 | **Many-to-One** | ✅ Working | ✅ Working | **Production Ready** |
 | **Many-to-Many** | ✅ Working | ⚠️ Manual | CLI available; UI manual |
-| **One-to-One** | ⏳ Phase 4 | ⏳ Phase 4 | Roadmap Q2 2025 |
+| **One-to-One** | ✅ Working | ✅ Working | **Production Ready** |
 | **Self-Referential** | ⚠️ Manual | ✅ Working | Manual model edit required |
 
 ### Current Capabilities (v0.2.0)
@@ -40,7 +40,6 @@ Relationships are created using the [`swap generate relationship`](../cli/genera
 - Self-referential relationships (manual model editing required, UI works)
 
 ⏳ **Coming Soon**:
-- One-to-one relationships
 - Relationship management commands (list, remove, update)
 - Reverse engineering existing relationships
 
@@ -228,27 +227,71 @@ protected override void OnModelCreating(ModelBuilder modelBuilder)
 **UI Generation**:
 - Not automatic yet for many-to-many. Regenerate controllers as usual and extend views manually (e.g., checkboxes for selection, badges for display).
 
-### One-to-One (Coming Soon)
+### One-to-One
 
-⏳ **Planned for Phase 4 (Q2 2025)**
-
-Each entity has exactly one of the other.
+Each entity has exactly one of the other. One entity (principal) has no foreign key, the other (dependent) has a unique foreign key.
 
 **Real-World Examples**:
 - User → Profile
 - Employee → EmployeeDetails
 - Invoice → InvoiceMetadata
 
-**Planned Syntax**:
+**Command Syntax**:
 
 ```bash
-swap g rel --source User --target Profile --type one-to-one --principal User
+swap g rel --source Profile --target User --type one-to-one --required
+
+# Explicitly specify principal
+swap g rel -s Profile -t User --type one-to-one --principal User
 ```
 
-**Will Generate**:
-- FK with unique constraint on dependent
-- Single navigation on both sides
-- Inline editing UI
+**What Gets Generated**:
+
+```csharp title="Models/Profile.cs (Dependent)"
+public class Profile
+{
+    public int Id { get; set; }
+    public string Bio { get; set; } = string.Empty;
+    
+    // Added by relationship command
+    public int UserId { get; set; }
+    public User? User { get; set; }
+}
+```
+
+```csharp title="Models/User.cs (Principal)"
+public class User
+{
+    public int Id { get; set; }
+    public string Email { get; set; } = string.Empty;
+    
+    // Added by relationship command
+    public Profile? Profile { get; set; }
+}
+```
+
+```csharp title="Data/AppDbContext.cs"
+protected override void OnModelCreating(ModelBuilder modelBuilder)
+{
+    modelBuilder.Entity<User>()
+        .HasOne(e => e.Profile)
+        .WithOne(e => e.User)
+        .HasForeignKey<Profile>(e => e.UserId)
+        .IsRequired()
+        .OnDelete(DeleteBehavior.Restrict);
+    
+    // Unique constraint ensures true one-to-one
+    modelBuilder.Entity<Profile>()
+        .HasIndex(e => e.UserId)
+        .IsUnique();
+}
+```
+
+**Key Features**:
+- FK with unique constraint on dependent entity
+- Single navigation properties (not collections)
+- Principal/dependent roles can be specified or inferred
+- Supports required and optional relationships
 
 ### Self-Referential Relationships
 
@@ -555,7 +598,7 @@ dotnet ef database update
 Current version (0.2.0) has these limitations:
 
 1. **Many-to-many UI not auto-generated** - Extend controllers/views manually
-2. **No one-to-one support** - Coming in Phase 4
+2. **One-to-one UI not auto-generated** - Standard dropdowns work, but inline editing not automatic
 3. **Self-referential requires manual editing** - CLI validator blocks them
 4. **No automatic controller update** - Must regenerate with `--force`
 5. **No relationship management commands** - Can't list, remove, or update relationships via CLI
@@ -685,18 +728,11 @@ dotnet ef database update
 
 ## Roadmap
 
-### Many-to-Many Enhancements
+### UI Enhancements
 
-- Checkbox UI for selection
-- Badge display in views
+- Many-to-many: Checkbox UI for selection, badge display
+- One-to-one: Inline editing UI
 - Efficient Include/ThenInclude queries
-
-### Phase 4: One-to-One (Q2 2025)
-
-- Principal/dependent configuration
-- Unique constraint on FK
-- Inline editing UI
-- Optional vs required one-to-one
 
 ### Future Enhancements
 

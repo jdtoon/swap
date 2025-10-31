@@ -189,8 +189,7 @@ public static class GenerateRelationshipCommand
             }
             else if (definition.Type == RelationshipType.OneToOne)
             {
-                AnsiConsole.MarkupLine("[yellow]Note: One-to-One relationships not yet implemented (Phase 4)[/]");
-                return 0;
+                return await GenerateOneToOneAsync(definition);
             }
 
             return 0;
@@ -645,5 +644,179 @@ public class {junctionTableName}
             "guid" => "Guid",
             _ => "string"
         };
+    }
+
+    private static async Task<int> GenerateOneToOneAsync(RelationshipDefinition definition)
+    {
+        try
+        {
+            return await AnsiConsole.Status().StartAsync("Generating one-to-one relationship...", async ctx =>
+            {
+                // Step 1: Verify entities exist
+                ctx.Status("Verifying entities exist...");
+                
+                var sourceExists = EntityModifier.EntityExists(definition.ProjectPath, definition.SourceEntity);
+                var targetExists = EntityModifier.EntityExists(definition.ProjectPath, definition.TargetEntity);
+
+                if (!sourceExists)
+                {
+                    AnsiConsole.MarkupLine($"[red]✗ Source entity not found:[/] Models/{definition.SourceEntity}.cs");
+                    return 1;
+                }
+
+                if (!targetExists)
+                {
+                    AnsiConsole.MarkupLine($"[red]✗ Target entity not found:[/] Models/{definition.TargetEntity}.cs");
+                    return 1;
+                }
+
+                // Step 2: Determine principal and dependent
+                string principalEntity;
+                string dependentEntity;
+                
+                if (!string.IsNullOrEmpty(definition.PrincipalEntity))
+                {
+                    principalEntity = definition.PrincipalEntity;
+                    dependentEntity = principalEntity == definition.SourceEntity ? definition.TargetEntity : definition.SourceEntity;
+                }
+                else if (!string.IsNullOrEmpty(definition.DependentEntity))
+                {
+                    dependentEntity = definition.DependentEntity;
+                    principalEntity = dependentEntity == definition.SourceEntity ? definition.TargetEntity : definition.SourceEntity;
+                }
+                else
+                {
+                    // Default: source is dependent (holds FK), target is principal
+                    dependentEntity = definition.SourceEntity;
+                    principalEntity = definition.TargetEntity;
+                }
+
+                ctx.Status($"Principal: {principalEntity}, Dependent: {dependentEntity}");
+                AnsiConsole.MarkupLine($"[green]✓[/] Principal: {principalEntity}, Dependent: {dependentEntity}");
+
+                // Step 3: Modify dependent entity (add FK and navigation)
+                ctx.Status($"Modifying {dependentEntity}...");
+                var dependentPath = EntityModifier.GetEntityPath(definition.ProjectPath, dependentEntity);
+                var updatedDependent = await EntityModifier.AddOneToOnePropertiesAsync(
+                    dependentPath, dependentEntity, principalEntity, definition, isDependent: true);
+                await File.WriteAllTextAsync(dependentPath, updatedDependent);
+                AnsiConsole.MarkupLine($"[green]✓[/] Modified Models/{dependentEntity}.cs (FK + navigation)");
+
+                // Step 4: Modify principal entity (add navigation only)
+                if (!definition.SkipNavigation)
+                {
+                    ctx.Status($"Modifying {principalEntity}...");
+                    var principalPath = EntityModifier.GetEntityPath(definition.ProjectPath, principalEntity);
+                    var updatedPrincipal = await EntityModifier.AddOneToOnePropertiesAsync(
+                        principalPath, principalEntity, dependentEntity, definition, isDependent: false);
+                    await File.WriteAllTextAsync(principalPath, updatedPrincipal);
+                    AnsiConsole.MarkupLine($"[green]✓[/] Modified Models/{principalEntity}.cs (navigation)");
+                }
+                else
+                {
+                    AnsiConsole.MarkupLine($"[yellow]⚠[/] Skipped navigation properties (--skip-nav)");
+                }
+
+                // Step 5: Configure relationship in DbContext
+                ctx.Status("Configuring DbContext...");
+                var dbContextPath = DbContextModifier.FindDbContextFile(definition.ProjectPath);
+                
+                if (dbContextPath != null)
+                {
+                    var updatedDbContext = await DbContextModifier.ConfigureOneToOneAsync(
+                        dbContextPath, definition, principalEntity, dependentEntity);
+                    await File.WriteAllTextAsync(dbContextPath, updatedDbContext);
+                    AnsiConsole.MarkupLine($"[green]✓[/] Configured {Path.GetFileName(dbContextPath)}");
+                }
+                else
+                {
+                    AnsiConsole.MarkupLine($"[yellow]⚠[/] DbContext not found - skipping configuration");
+                }
+
+                // Step 6: Create migration (if not skipped)
+                if (!definition.SkipMigrations)
+                {
+                    ctx.Status("Creating migration...");
+                    var migrationName = $"Add{definition.SourceEntity}{definition.TargetEntity}OneToOne";
+                    
+                    try
+                    {
+                        var process = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                        {
+                            FileName = "dotnet",
+                            Arguments = $"ef migrations add {migrationName}",
+                            WorkingDirectory = definition.ProjectPath,
+                            RedirectStandardOutput = true,
+                            RedirectStandardError = true,
+                            UseShellExecute = false,
+                            CreateNoWindow = true
+                        });
+
+                        if (process != null)
+                        {
+                            await process.WaitForExitAsync();
+                            
+                            if (process.ExitCode == 0)
+                            {
+                                AnsiConsole.MarkupLine($"[green]✓[/] Created migration: {migrationName}");
+                            }
+                            else
+                            {
+                                var error = await process.StandardError.ReadToEndAsync();
+                                AnsiConsole.MarkupLine($"[yellow]⚠[/] Migration creation failed: {error}");
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        AnsiConsole.MarkupLine($"[yellow]⚠[/] Could not create migration: {ex.Message}");
+                    }
+                }
+
+                AnsiConsole.WriteLine();
+                AnsiConsole.MarkupLine("[green]✓ One-to-one relationship generated successfully![/]");
+                AnsiConsole.WriteLine();
+                
+                // Show summary
+                var fkName = definition.ForeignKeyName ?? $"{principalEntity}Id";
+                var principalNavProp = definition.NavigationProperty ?? dependentEntity;
+                var dependentNavProp = definition.InverseNavigation ?? principalEntity;
+
+                AnsiConsole.MarkupLine("[bold]Summary:[/]");
+                AnsiConsole.MarkupLine($"  Type: One-to-One");
+                AnsiConsole.MarkupLine($"  Principal: {principalEntity}");
+                AnsiConsole.MarkupLine($"  Dependent: {dependentEntity}");
+                AnsiConsole.MarkupLine($"  FK: {fkName} in {dependentEntity} (unique constraint)");
+                
+                if (!definition.SkipNavigation)
+                {
+                    AnsiConsole.MarkupLine($"  {principalEntity}.{principalNavProp} → {dependentEntity}");
+                    AnsiConsole.MarkupLine($"  {dependentEntity}.{dependentNavProp} → {principalEntity}");
+                }
+
+                AnsiConsole.WriteLine();
+                AnsiConsole.MarkupLine("[bold]Next steps:[/]");
+                AnsiConsole.MarkupLine($"  1. Review the modified entity files");
+                if (!definition.SkipMigrations)
+                {
+                    AnsiConsole.MarkupLine($"  2. Apply migration: [cyan]dotnet ef database update[/]");
+                }
+                if (!definition.SkipUI)
+                {
+                    AnsiConsole.MarkupLine($"  3. Regenerate controllers: [cyan]swap g c {dependentEntity} --force[/]");
+                }
+
+                return 0;
+            });
+        }
+        catch (Exception ex)
+        {
+            AnsiConsole.MarkupLine($"[red]Error generating one-to-one relationship:[/] {ex.Message}");
+            if (ex.StackTrace != null)
+            {
+                AnsiConsole.MarkupLine($"[dim]{ex.StackTrace}[/]");
+            }
+            return 1;
+        }
     }
 }

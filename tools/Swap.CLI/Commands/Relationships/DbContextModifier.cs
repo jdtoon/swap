@@ -303,6 +303,107 @@ public class DbContextModifier
     }
 
     /// <summary>
+    /// Configure one-to-one relationship in DbContext
+    /// </summary>
+    public static async Task<string> ConfigureOneToOneAsync(
+        string dbContextPath,
+        RelationshipDefinition definition,
+        string principalEntity,
+        string dependentEntity)
+    {
+        var code = await File.ReadAllTextAsync(dbContextPath);
+        var configCode = GenerateOneToOneConfig(definition, principalEntity, dependentEntity);
+
+        // Find OnModelCreating method
+        var onModelCreatingIndex = code.IndexOf("protected override void OnModelCreating", StringComparison.Ordinal);
+        
+        if (onModelCreatingIndex == -1)
+        {
+            // Method doesn't exist - add it before the closing brace of the class
+            var lastBraceIndex = code.LastIndexOf('}');
+            if (lastBraceIndex == -1)
+            {
+                throw new InvalidOperationException("Could not find class closing brace in DbContext");
+            }
+
+            var newMethod = $@"
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {{
+        base.OnModelCreating(modelBuilder);
+
+{configCode}
+    }}
+}}";
+            return code.Substring(0, lastBraceIndex) + newMethod;
+        }
+        else
+        {
+            // Method exists - find insertion point
+            var methodStart = onModelCreatingIndex;
+            var openBraceIndex = code.IndexOf('{', methodStart);
+            
+            if (openBraceIndex == -1)
+            {
+                throw new InvalidOperationException("Could not find opening brace of OnModelCreating method");
+            }
+
+            // Look for base.OnModelCreating call
+            var baseCallIndex = code.IndexOf("base.OnModelCreating", openBraceIndex);
+            int insertionPoint;
+
+            if (baseCallIndex > openBraceIndex && baseCallIndex < code.IndexOf('}', openBraceIndex))
+            {
+                // Insert after the base call
+                var semicolonIndex = code.IndexOf(';', baseCallIndex);
+                if (semicolonIndex == -1)
+                {
+                    throw new InvalidOperationException("Could not find semicolon after base.OnModelCreating call");
+                }
+                insertionPoint = code.IndexOf('\n', semicolonIndex) + 1;
+            }
+            else
+            {
+                // No base call - insert at the start of the method body
+                insertionPoint = code.IndexOf('\n', openBraceIndex) + 1;
+            }
+
+            return code.Insert(insertionPoint, "\n" + configCode);
+        }
+    }
+
+    private static string GenerateOneToOneConfig(
+        RelationshipDefinition definition,
+        string principalEntity,
+        string dependentEntity)
+    {
+        var fkName = definition.ForeignKeyName ?? $"{principalEntity}Id";
+        var principalNavProp = definition.NavigationProperty ?? dependentEntity;
+        var dependentNavProp = definition.InverseNavigation ?? principalEntity;
+        
+        var deleteAction = definition.OnDelete switch
+        {
+            DeleteBehavior.Cascade => "DeleteBehavior.Cascade",
+            DeleteBehavior.SetNull => "DeleteBehavior.SetNull",
+            _ => "DeleteBehavior.Restrict"
+        };
+
+        var required = definition.IsRequired ? "IsRequired()" : "IsRequired(false)";
+
+        return $@"        // {principalEntity} <-> {dependentEntity} (One-to-One)
+        modelBuilder.Entity<{principalEntity}>()
+            .HasOne(e => e.{principalNavProp})
+            .WithOne(e => e.{dependentNavProp})
+            .HasForeignKey<{dependentEntity}>(e => e.{fkName})
+            .{required}
+            .OnDelete({deleteAction});
+        
+        // Ensure unique constraint on FK
+        modelBuilder.Entity<{dependentEntity}>()
+            .HasIndex(e => e.{fkName})
+            .IsUnique();";
+    }
+
+    /// <summary>
     /// Find the DbContext file in the project
     /// </summary>
     public static string? FindDbContextFile(string projectPath)

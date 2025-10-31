@@ -58,21 +58,36 @@ Version 0.2.0 development is **substantially complete** with relationship genera
 - ⏳ CLI help text improvements (--help output for all commands)
 - ⏳ "Building a Blog" step-by-step tutorial (or equivalent examples)
 
-#### ⏳ **Phase 3: Many-to-Many Relationships - NOT STARTED**
+#### ✅ **Phase 3: Many-to-Many Relationships - COMPLETE**
 
-**Status:** Required for 0.2.0 completion
+**Status:** Production Ready ✅
 
-- ❌ Not implemented
-- 📅 Next priority after documentation complete
-- Command structure exists, exits with "not yet implemented" message
+- ✅ Full CLI implementation (`swap g rel --type many-to-many`)
+- ✅ Junction entity generation with composite key
+- ✅ Collection navigation properties on both entities
+- ✅ EF Core Fluent API using `UsingEntity<TJunction>`
+- ✅ Custom junction name support (`--junction` flag)
+- ✅ Additional junction properties support (`--junction-props` flag)
+- ✅ Automatic DbSet creation with Models namespace detection
+- ✅ Comprehensive unit tests (21 tests in GenerateRelationshipManyToManyTests.cs)
+- ✅ End-to-end verification (test app build validation)
+- ✅ Wiki documentation updated (CLI reference and features page)
+- ⚠️ UI scaffolding not automatic yet (manual view extension required for checkboxes/badges)
 
-#### ⏳ **Phase 4: One-to-One Relationships - NOT STARTED**
+#### ✅ **Phase 4: One-to-One Relationships - COMPLETE**
 
-**Status:** Required for 0.2.0 completion
+**Status:** Production Ready ✅
 
-- ❌ Not implemented
-- 📅 After many-to-many complete
-- Command structure exists, exits with "not yet implemented" message
+- ✅ Full CLI implementation (`swap g rel --type one-to-one`)
+- ✅ Principal/dependent entity configuration
+- ✅ FK with unique constraint on dependent
+- ✅ Single navigation properties on both entities
+- ✅ EF Core Fluent API using `HasOne`/`WithOne`
+- ✅ Support for required and optional relationships
+- ✅ Comprehensive unit tests (13 tests in GenerateRelationshipOneToOneTests.cs)
+- ✅ End-to-end verification (test app build validation)
+- ✅ Wiki documentation updated (CLI reference and features page)
+- ⚠️ UI scaffolding not automatic yet (standard dropdowns work, inline editing requires manual implementation)
 
 **Relationship Management Commands:**
 - ❌ Not implemented (`list`, `remove`, `update`, `detect`)
@@ -82,21 +97,23 @@ Version 0.2.0 development is **substantially complete** with relationship genera
 
 **What's Done:**
 - ✅ One-to-many and many-to-one relationships (production ready)
+- ✅ Many-to-many relationships (CLI complete, UI manual)
+- ✅ One-to-one relationships (CLI complete, UI standard dropdowns)
 - ✅ Relationship-aware UI in controllers (production ready)
 - ✅ Comprehensive wiki documentation (3 major pages)
 - ✅ All features tested and working
 
 **What's Remaining for 0.2.0:**
-- ⏳ Many-to-many relationships implementation
-- ⏳ One-to-one relationships implementation
-- ⏳ Documentation polish (README updates, help text)
+- ⏳ Documentation polish (README updates, help text, tutorials)
 
 **What Users Get:**
-1. Generate relationships with `swap g rel` command (one-to-many, many-to-one, many-to-many, one-to-one)
+1. Generate all relationship types with `swap g rel` command (one-to-many, many-to-one, many-to-many, one-to-one)
 2. Auto-detect FKs in controller generation
 3. Beautiful dropdown UIs for related entities
 4. Eager loading for performance
 5. Self-referential support (manual model + auto UI)
+6. Many-to-many with junction tables (manual UI extension for checkboxes)
+7. One-to-one with unique constraints (standard dropdown UI)
 
 **What's Next (Post-0.2.0):**
 1. Relationship management commands (`list`, `remove`, `update`)

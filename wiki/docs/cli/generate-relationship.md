@@ -238,29 +238,31 @@ Additional properties for junction table.
 swap g rel -s Post -t Tag --type many-to-many --junction-props "CreatedAt:datetime,CreatedBy:string,IsPrimary:bool"
 ```
 
-## One-to-One Options (Coming Soon)
+## One-to-One Options
 
 ### `--principal`
 
-Specify the principal entity in a one-to-one relationship.
+Specify the principal entity in a one-to-one relationship (the entity without the foreign key).
 
 **Type**: `string`
 
 ```bash
-# Coming in Phase 4
-swap g rel -s User -t Profile --type one-to-one --principal User
+swap g rel -s Profile -t User --type one-to-one --principal User
+# User is principal (no FK), Profile is dependent (has FK)
 ```
 
 ### `--dependent`
 
-Specify the dependent entity in a one-to-one relationship.
+Specify the dependent entity in a one-to-one relationship (the entity with the foreign key).
 
 **Type**: `string`
 
 ```bash
-# Coming in Phase 4
-swap g rel -s User -t Profile --type one-to-one --dependent Profile
+swap g rel -s Profile -t User --type one-to-one --dependent Profile
+# Profile is dependent (has FK), User is principal (no FK)
 ```
+
+**Note**: If neither `--principal` nor `--dependent` is specified, the source entity is treated as dependent by default.
 
 ## Relationship Types
 
@@ -451,18 +453,77 @@ protected override void OnModelCreating(ModelBuilder modelBuilder)
 Many-to-many UI (checkboxes/badges) is not auto-generated yet. Regenerate controllers as usual and extend views as needed for collection selection.
 :::
 
-### One-to-One (Coming Soon)
+### One-to-One
 
-⚠️ **Not yet implemented** - Planned for Phase 4
+A one-to-one relationship means each entity has exactly one of the other. The principal entity has no foreign key, while the dependent entity has a unique foreign key.
 
-A one-to-one relationship means each entity has exactly one of the other.
-
-**Example**: User has one Profile
+**Example**: User has one Profile, Profile belongs to one User
 
 ```bash
-# Will be supported in Phase 4
-swap g rel -s User -t Profile --type one-to-one
+# Create base entities
+swap g m User --fields "Email:string Name:string"
+swap g m Profile --fields "Bio:string Location:string"
+
+# Add one-to-one relationship (Profile is dependent by default)
+swap g rel -s Profile -t User --type one-to-one --required
+
+# Explicitly specify principal/dependent
+swap g rel -s Profile -t User --type one-to-one --principal User --required
+
+# Optional relationship
+swap g rel -s Profile -t User --type one-to-one
 ```
+
+**Generated Code**:
+
+```csharp title="Models/Profile.cs (Dependent)"
+public class Profile
+{
+    public int Id { get; set; }
+    public string Bio { get; set; } = string.Empty;
+    public string Location { get; set; } = string.Empty;
+    
+    // Added by relationship command
+    public int UserId { get; set; }
+    public User? User { get; set; }
+}
+```
+
+```csharp title="Models/User.cs (Principal)"
+public class User
+{
+    public int Id { get; set; }
+    public string Email { get; set; } = string.Empty;
+    public string Name { get; set; } = string.Empty;
+    
+    // Added by relationship command
+    public Profile? Profile { get; set; }
+}
+```
+
+```csharp title="Data/AppDbContext.cs"
+protected override void OnModelCreating(ModelBuilder modelBuilder)
+{
+    // Added by relationship command
+    modelBuilder.Entity<User>()
+        .HasOne(e => e.Profile)
+        .WithOne(e => e.User)
+        .HasForeignKey<Profile>(e => e.UserId)
+        .IsRequired()
+        .OnDelete(DeleteBehavior.Restrict);
+    
+    // Ensure unique constraint on FK
+    modelBuilder.Entity<Profile>()
+        .HasIndex(e => e.UserId)
+        .IsUnique();
+}
+```
+
+**Key Features**:
+- Unique constraint ensures true one-to-one relationship
+- Principal/dependent roles can be explicitly specified or inferred
+- Supports required and optional relationships
+- Custom FK names via `--fk` flag
 
 ## Validation Rules
 

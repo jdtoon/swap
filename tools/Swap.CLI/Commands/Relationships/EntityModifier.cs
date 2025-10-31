@@ -294,6 +294,79 @@ public class EntityModifier
     }
 
     /// <summary>
+    /// Add FK and navigation property for a one-to-one relationship
+    /// </summary>
+    public static async Task<string> AddOneToOnePropertiesAsync(
+        string entityFilePath,
+        string entityName,
+        string relatedEntityName,
+        RelationshipDefinition definition,
+        bool isDependent)
+    {
+        var code = await File.ReadAllTextAsync(entityFilePath);
+        
+        // Find the class declaration
+        var classPattern = $"public class {entityName}";
+        var classIndex = code.IndexOf(classPattern, StringComparison.Ordinal);
+        
+        if (classIndex == -1)
+        {
+            throw new InvalidOperationException($"Could not find class {entityName} in {entityFilePath}");
+        }
+
+        // Find the closing brace of the class
+        var closeBraceIndex = code.LastIndexOf('}');
+        if (closeBraceIndex == -1)
+        {
+            throw new InvalidOperationException($"Could not find closing brace for class {entityName}");
+        }
+
+        var propertiesToAdd = new System.Text.StringBuilder();
+
+        if (isDependent)
+        {
+            // Dependent entity gets FK and navigation
+            var fkName = definition.ForeignKeyName ?? $"{relatedEntityName}Id";
+            var fkType = definition.IsRequired ? "int" : "int?";
+            var navPropertyName = definition.InverseNavigation ?? relatedEntityName;
+
+            // Check if FK already exists
+            if (!code.Contains($"{fkType} {fkName}"))
+            {
+                propertiesToAdd.AppendLine($"    public {fkType} {fkName} {{ get; set; }}");
+            }
+
+            // Check if navigation already exists
+            if (!definition.SkipNavigation && !code.Contains($"{relatedEntityName}? {navPropertyName}"))
+            {
+                propertiesToAdd.AppendLine($"    public {relatedEntityName}? {navPropertyName} {{ get; set; }}");
+            }
+        }
+        else
+        {
+            // Principal entity gets navigation only
+            if (!definition.SkipNavigation)
+            {
+                var navPropertyName = definition.NavigationProperty ?? relatedEntityName;
+                
+                // Check if navigation already exists
+                if (!code.Contains($"{relatedEntityName}? {navPropertyName}"))
+                {
+                    propertiesToAdd.AppendLine($"    public {relatedEntityName}? {navPropertyName} {{ get; set; }}");
+                }
+            }
+        }
+
+        // Insert properties before the closing brace
+        if (propertiesToAdd.Length > 0)
+        {
+            return code.Insert(closeBraceIndex, propertiesToAdd.ToString());
+        }
+
+        return code;
+    }
+
+    /// <summary>
     /// Check if an entity file exists
     /// </summary>
     public static bool EntityExists(string projectPath, string entityName)

@@ -9,6 +9,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added - One-to-One Relationship Generation
+- **One-to-One Support**: Full CLI support for generating one-to-one relationships
+  - Generates FK with unique constraint on dependent entity
+  - Adds single navigation properties to both entities
+  - Configures EF Core Fluent API using `HasOne`/`WithOne` with unique index
+  - Supports principal/dependent specification via `--principal` and `--dependent` flags
+  - Automatically determines principal/dependent if not specified (source is dependent by default)
+  - Supports required and optional relationships
+  - Full unit test coverage (13 tests)
+- **CLI Examples**:
+  ```bash
+  # Basic one-to-one (Profile is dependent by default)
+  swap g rel -s Profile -t User --type one-to-one --required
+  
+  # Explicitly specify principal
+  swap g rel -s Profile -t User --type one-to-one --principal User
+  
+  # Optional relationship
+  swap g rel -s Profile -t User --type one-to-one
+  ```
+- **Note**: UI scaffolding for one-to-one inline editing is not yet automatic; standard dropdowns work
+
 ### Added - Many-to-Many Relationship Generation
 - **Many-to-Many Support**: Full CLI support for generating many-to-many relationships
   - Generates junction entity with composite key (alphabetical naming convention, e.g., `CourseStudent`)
