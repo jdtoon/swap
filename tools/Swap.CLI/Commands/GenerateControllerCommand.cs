@@ -807,13 +807,17 @@ public static class GenerateControllerCommand
                     ctx
                 );
                 
-                // Generate Model (if fields specified)
-                if (fields.Any())
+                // Generate Model (if fields specified AND model doesn't already exist)
+                var modelPath = Path.Combine(workingDir, "Models", $"{entityName}.cs");
+                if (fields.Any() && !File.Exists(modelPath))
                 {
                     var modelContent = GenerateModelFromFields(entityName, projectName, fields, relationships);
-                    var modelPath = Path.Combine(workingDir, "Models", $"{entityName}.cs");
                     Directory.CreateDirectory(Path.GetDirectoryName(modelPath) ?? Path.Combine(workingDir, "Models"));
                     await File.WriteAllTextAsync(modelPath, modelContent);
+                }
+                else if (File.Exists(modelPath))
+                {
+                    ctx.Status($"[dim]Model already exists, skipping regeneration[/]");
                 }
                 
                 // Generate Views

@@ -334,23 +334,28 @@ public class RelationshipUIGenerator
         code.AppendLine();
         code.AppendLine("        // Handle many-to-many relationships");
         
+        // Generate all Include statements for a single query
+        var includes = string.Join("", manyToManyRels.Select(r => 
+            $"\n            .Include(e => e.{r.NavigationProperty ?? EntityModifier.Pluralize(r.TargetEntity ?? "Items")})"));
+        
+        code.AppendLine($@"        // Load existing relationships for the entity being edited
+        var existing{entityName} = await _context.{EntityModifier.Pluralize(entityName)}{includes}
+            .FirstOrDefaultAsync(e => e.Id == id);
+            
+        if (existing{entityName} != null)
+        {{");
+        
+        // Generate clear/add logic for each relationship
         foreach (var rel in manyToManyRels)
         {
             var navProp = rel.NavigationProperty ?? EntityModifier.Pluralize(rel.TargetEntity ?? "Items");
             var targetEntity = rel.TargetEntity;
             var targetPlural = EntityModifier.Pluralize(targetEntity ?? "Items");
             
-            code.AppendLine($@"        // Load existing {navProp} for the entity being edited
-        var existing{entityName} = await _context.{EntityModifier.Pluralize(entityName)}
-            .Include(e => e.{navProp})
-            .FirstOrDefaultAsync(e => e.Id == id);
-            
-        if (existing{entityName} != null)
-        {{
-            // Clear existing relationships
+            code.AppendLine($@"            // Clear existing {navProp}
             existing{entityName}.{navProp}.Clear();
             
-            // Add new relationships
+            // Add new {navProp}
             if (selected{targetEntity}Ids != null && selected{targetEntity}Ids.Any())
             {{
                 var selected{targetEntity} = await _context.{targetPlural}
@@ -362,8 +367,10 @@ public class RelationshipUIGenerator
                     existing{entityName}.{navProp}.Add(item);
                 }}
             }}
-        }}");
+");
         }
+        
+        code.AppendLine("        }");
         
         return code.ToString();
     }
