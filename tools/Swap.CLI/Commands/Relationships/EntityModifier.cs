@@ -48,19 +48,21 @@ public class EntityModifier
             {
                 // Source entity gets collection navigation (one-to-many side)
                 // Example: Category has many Products -> Category.Products (collection)
+                // NavigationProperty is used for the collection on the source
                 if (!definition.SkipNavigation)
                 {
-                    newClass = AddCollectionNavigation(newClass, definition.TargetEntity, definition.InverseNavigation);
+                    newClass = AddCollectionNavigation(newClass, definition.TargetEntity, definition.NavigationProperty);
                 }
             }
             else // isTarget
             {
                 // Target entity gets FK and navigation to source (many-to-one side)
                 // Example: Product belongs to Category -> Product.CategoryId (FK) and Product.Category (nav)
+                // InverseNavigation is used for the single navigation on the target
                 newClass = AddForeignKeyProperty(newClass, definition);
                 if (!definition.SkipNavigation)
                 {
-                    newClass = AddNavigationProperty(newClass, definition.SourceEntity, definition.NavigationProperty);
+                    newClass = AddNavigationProperty(newClass, definition.SourceEntity, definition.InverseNavigation);
                 }
             }
         }
@@ -69,6 +71,8 @@ public class EntityModifier
             // For many-to-one: source is "many" side, target is "one" side
             // Example: Order -> Customer (many-to-one) means many Orders to one Customer
             // Order (source) gets FK and navigation, Customer (target) gets collection
+            // NavigationProperty is used for the single navigation on the source
+            // InverseNavigation is used for the collection on the target
             
             if (isSource)
             {
