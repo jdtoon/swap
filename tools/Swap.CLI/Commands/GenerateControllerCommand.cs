@@ -49,7 +49,8 @@ public static class GenerateControllerCommand
 
         var withRelationshipsOption = new Option<bool>(
             aliases: new[] { "--with-relationships" },
-            description: "Auto-detect relationships and generate dropdown selects for foreign keys"
+            description: "Auto-detect relationships and generate dropdown selects for foreign keys",
+            getDefaultValue: () => true  // Enable by default
         );
         command.AddOption(withRelationshipsOption);
         
