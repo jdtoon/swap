@@ -243,7 +243,7 @@ public static class FieldHelper
                 <span asp-validation-for=""{field.Name}"" class=""text-error text-sm""></span>
             </div>",
             
-            "decimal" or "float" or "double" => $@"<div class=""form-control"">
+            "decimal" or "float" or "double" when !field.IsNullable => $@"<div class=""form-control"">
                 <label class=""label"">
                     <span class=""label-text"">{field.Name}</span>
                 </label>
@@ -251,6 +251,20 @@ public static class FieldHelper
                        name=""{field.Name}"" 
                        placeholder=""{field.Name}""
                        value=""@Model.{field.Name}.ToString(""G29"", System.Globalization.CultureInfo.InvariantCulture)""
+                       step=""any""
+                       class=""input input-bordered"" 
+                       {required} />
+                <span asp-validation-for=""{field.Name}"" class=""text-error text-sm""></span>
+            </div>",
+            
+            "decimal" or "float" or "double" when field.IsNullable => $@"<div class=""form-control"">
+                <label class=""label"">
+                    <span class=""label-text"">{field.Name}</span>
+                </label>
+                <input type=""{inputType}"" 
+                       name=""{field.Name}"" 
+                       placeholder=""{field.Name}""
+                       value=""@(Model.{field.Name}?.ToString(""G29"", System.Globalization.CultureInfo.InvariantCulture) ?? """")""
                        step=""any""
                        class=""input input-bordered"" 
                        {required} />

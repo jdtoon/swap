@@ -500,18 +500,9 @@ public static class GenerateControllerCommand
                     {
                         // Target doesn't exist and not self-reference by name
                         // This might be a self-reference with descriptive FK name (e.g., ParentId in Category)
-                        var currentEntityPath = Path.Combine(workingDir, "Models", $"{entityName}.cs");
-                        if (File.Exists(currentEntityPath))
-                        {
-                            // Current entity exists, so this is likely self-reference
-                            targetEntity = entityName;
-                            isSelfReference = true;
-                        }
-                        else
-                        {
-                            // Skip - neither target nor current entity exists
-                            continue;
-                        }
+                        // Since we're generating this entity now, assume it's a self-reference to the current entity
+                        targetEntity = entityName;
+                        isSelfReference = true;
                     }
                     
                     // Use descriptive navigation property name for self-reference
