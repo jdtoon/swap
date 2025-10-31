@@ -139,7 +139,7 @@ public static class GenerateModelCommand
                 return 0;
             }
             
-            await GenerateModelAsync(entityName, projectName, fields, force);
+            await GenerateModelAsync(entityName, projectName, fields, force, workingDir);
             
             AnsiConsole.WriteLine();
             AnsiConsole.MarkupLine("[green]✓[/] Model generated successfully!");
@@ -201,7 +201,7 @@ public static class GenerateModelCommand
         };
     }
     
-    private static async Task GenerateModelAsync(string entityName, string projectName, List<FieldDefinition> fields, bool force)
+    private static async Task GenerateModelAsync(string entityName, string projectName, List<FieldDefinition> fields, bool force, string workingDir)
     {
         var templatePath = Path.Combine(AppContext.BaseDirectory, "templates", "generate", "model");
         
@@ -236,8 +236,9 @@ public static class GenerateModelCommand
                 }
                 
                 // Check if model file already exists
-                Directory.CreateDirectory("Models");
-                var modelFile = Path.Combine("Models", $"{entityName}.cs");
+                var modelsDir = Path.Combine(workingDir, "Models");
+                Directory.CreateDirectory(modelsDir);
+                var modelFile = Path.Combine(modelsDir, $"{entityName}.cs");
                 
                 if (File.Exists(modelFile) && !force)
                 {
@@ -253,7 +254,7 @@ public static class GenerateModelCommand
                 
                 // Update DbContext
                 ctx.Status("Updating DbContext...");
-                await UpdateDbContextAsync(entityName, projectName);
+                await UpdateDbContextAsync(entityName, projectName, workingDir);
             });
     }
     
@@ -306,9 +307,9 @@ public static class GenerateModelCommand
         };
     }
     
-    private static async Task UpdateDbContextAsync(string entityName, string projectName)
+    private static async Task UpdateDbContextAsync(string entityName, string projectName, string workingDir)
     {
-        var dbContextPath = Path.Combine("Data", "AppDbContext.cs");
+        var dbContextPath = Path.Combine(workingDir, "Data", "AppDbContext.cs");
         
         if (!File.Exists(dbContextPath))
         {

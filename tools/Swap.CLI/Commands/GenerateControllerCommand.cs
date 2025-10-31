@@ -814,7 +814,7 @@ public static class GenerateControllerCommand
                 
                 // Update DbContext
                 ctx.Status("Updating DbContext...");
-                await UpdateDbContextAsync(entityName, projectName);
+                await UpdateDbContextAsync(entityName, projectName, workingDir);
             });
     }
     
@@ -890,9 +890,9 @@ public class {entityName}
         await Task.Delay(50); // Visual feedback
     }
     
-    private static async Task UpdateDbContextAsync(string entityName, string projectName)
+    private static async Task UpdateDbContextAsync(string entityName, string projectName, string workingDir)
     {
-        var dbContextPath = Path.Combine("Data", "AppDbContext.cs");
+        var dbContextPath = Path.Combine(workingDir, "Data", "AppDbContext.cs");
         
         if (!File.Exists(dbContextPath))
         {
