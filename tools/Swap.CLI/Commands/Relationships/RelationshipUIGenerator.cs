@@ -94,7 +94,11 @@ public class RelationshipUIGenerator
     public static string GenerateDropdownFormField(DetectedRelationship relationship, string displayField = "Name")
     {
         var fkName = relationship.ForeignKeyProperty ?? $"{relationship.TargetEntity}Id";
-        var label = FormatLabel(relationship.TargetEntity ?? "Related");
+        // For self-reference, use navigation property name for better UX (e.g., "Parent" not "Category")
+        var labelText = relationship.IsSelfReferencing 
+            ? relationship.NavigationProperty 
+            : relationship.TargetEntity;
+        var label = FormatLabel(labelText ?? "Related");
         var required = relationship.IsRequired ? "required" : "";
 
         return $@"<div class=""form-control"">
@@ -237,6 +241,7 @@ public class DetectedRelationship
     public string? NavigationProperty { get; set; }
     public bool IsRequired { get; set; }
     public DetectedRelationshipType RelationshipType { get; set; }
+    public bool IsSelfReferencing { get; set; }
 }
 
 /// <summary>

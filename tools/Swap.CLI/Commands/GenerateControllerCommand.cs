@@ -485,20 +485,51 @@ public static class GenerateControllerCommand
             {
                 if (field.Name.EndsWith("Id") && field.Name.Length > 2)
                 {
-                    var targetEntity = field.Name.Substring(0, field.Name.Length - 2); // Remove "Id"
-                    var targetPath = Path.Combine(workingDir, "Models", $"{targetEntity}.cs");
+                    var fkPrefix = field.Name.Substring(0, field.Name.Length - 2); // Remove "Id" (e.g., "Parent" from "ParentId")
                     
-                    // Only add if target entity exists and not already detected
-                    if (File.Exists(targetPath) && !relationships.Any(r => r.ForeignKeyProperty == field.Name))
+                    // Check if FK prefix matches entity name (e.g., CategoryId in Category)
+                    bool isSelfReference = string.Equals(fkPrefix, entityName, StringComparison.OrdinalIgnoreCase);
+                    string targetEntity = fkPrefix;
+                    
+                    // Check if target entity file exists
+                    var targetPath = Path.Combine(workingDir, "Models", $"{targetEntity}.cs");
+                    bool targetExists = File.Exists(targetPath);
+                    
+                    if (!isSelfReference && !targetExists)
                     {
-                        relationships.Add(new global::Swap.CLI.Commands.Relationships.DetectedRelationship
+                        // Target doesn't exist and not self-reference by name
+                        // This might be a self-reference with descriptive FK name (e.g., ParentId in Category)
+                        var currentEntityPath = Path.Combine(workingDir, "Models", $"{entityName}.cs");
+                        if (File.Exists(currentEntityPath))
+                        {
+                            // Current entity exists, so this is likely self-reference
+                            targetEntity = entityName;
+                            isSelfReference = true;
+                        }
+                        else
+                        {
+                            // Skip - neither target nor current entity exists
+                            continue;
+                        }
+                    }
+                    
+                    // Use descriptive navigation property name for self-reference
+                    var navPropertyName = isSelfReference ? fkPrefix : targetEntity;
+                    
+                    // Only add if not already detected
+                    if (!relationships.Any(r => r.ForeignKeyProperty == field.Name))
+                    {
+                        var relationship = new global::Swap.CLI.Commands.Relationships.DetectedRelationship
                         {
                             ForeignKeyProperty = field.Name,
                             TargetEntity = targetEntity,
-                            NavigationProperty = targetEntity,
+                            NavigationProperty = navPropertyName,
                             IsRequired = field.IsRequired,
-                            RelationshipType = global::Swap.CLI.Commands.Relationships.DetectedRelationshipType.ManyToOne
-                        });
+                            RelationshipType = global::Swap.CLI.Commands.Relationships.DetectedRelationshipType.ManyToOne,
+                            IsSelfReferencing = isSelfReference
+                        };
+                        
+                        relationships.Add(relationship);
                     }
                 }
             }
@@ -510,7 +541,8 @@ public static class GenerateControllerCommand
                 {
                     if (rel.RelationshipType == global::Swap.CLI.Commands.Relationships.DetectedRelationshipType.ManyToOne)
                     {
-                        AnsiConsole.MarkupLine($"  • {rel.ForeignKeyProperty} → {rel.TargetEntity}");
+                        var selfRefIndicator = rel.IsSelfReferencing ? " (self-reference)" : "";
+                        AnsiConsole.MarkupLine($"  • {rel.ForeignKeyProperty} → {rel.TargetEntity}{selfRefIndicator}");
                     }
                 }
             }
