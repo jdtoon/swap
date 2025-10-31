@@ -720,6 +720,7 @@ public static class GenerateControllerCommand
                     Path.Combine(templatePath, "EntityController.cs.template"),
                     Path.Combine("Controllers", $"{entityName}Controller.cs"),
                     variables,
+                    workingDir,
                     ctx
                 );
                 
@@ -728,6 +729,7 @@ public static class GenerateControllerCommand
                     Path.Combine(templatePath, "EntityListViewModel.cs.template"),
                     Path.Combine("ViewModels", $"{entityName}ListViewModel.cs"),
                     variables,
+                    workingDir,
                     ctx
                 );
                 
@@ -735,19 +737,20 @@ public static class GenerateControllerCommand
                 if (fields.Any())
                 {
                     var modelContent = GenerateModelFromFields(entityName, projectName, fields, relationships);
-                    var modelPath = Path.Combine("Models", $"{entityName}.cs");
-                    Directory.CreateDirectory(Path.GetDirectoryName(modelPath) ?? "Models");
+                    var modelPath = Path.Combine(workingDir, "Models", $"{entityName}.cs");
+                    Directory.CreateDirectory(Path.GetDirectoryName(modelPath) ?? Path.Combine(workingDir, "Models"));
                     await File.WriteAllTextAsync(modelPath, modelContent);
                 }
                 
                 // Generate Views
-                Directory.CreateDirectory(Path.Combine("Views", entityName));
-                Directory.CreateDirectory(Path.Combine("Views", "Shared"));
+                Directory.CreateDirectory(Path.Combine(workingDir, "Views", entityName));
+                Directory.CreateDirectory(Path.Combine(workingDir, "Views", "Shared"));
                 
                 await GenerateFileFromTemplateAsync(
                     Path.Combine(templatePath, "Views", "Index.cshtml.template"),
                     Path.Combine("Views", entityName, "Index.cshtml"),
                     variables,
+                    workingDir,
                     ctx
                 );
                 
@@ -755,6 +758,7 @@ public static class GenerateControllerCommand
                     Path.Combine(templatePath, "Views", "_EntityList.cshtml.template"),
                     Path.Combine("Views", entityName, $"_{entityName}List.cshtml"),
                     variables,
+                    workingDir,
                     ctx
                 );
                 
@@ -762,6 +766,7 @@ public static class GenerateControllerCommand
                     Path.Combine(templatePath, "Views", "_EntityCreateModal.cshtml.template"),
                     Path.Combine("Views", entityName, $"_{entityName}CreateModal.cshtml"),
                     variables,
+                    workingDir,
                     ctx
                 );
                 
@@ -769,6 +774,7 @@ public static class GenerateControllerCommand
                     Path.Combine(templatePath, "Views", "_EntityEditModal.cshtml.template"),
                     Path.Combine("Views", entityName, $"_{entityName}EditModal.cshtml"),
                     variables,
+                    workingDir,
                     ctx
                 );
                 
@@ -776,6 +782,7 @@ public static class GenerateControllerCommand
                     Path.Combine(templatePath, "Views", "_EntityDetails.cshtml.template"),
                     Path.Combine("Views", entityName, $"_{entityName}Details.cshtml"),
                     variables,
+                    workingDir,
                     ctx
                 );
                 
@@ -783,6 +790,7 @@ public static class GenerateControllerCommand
                     Path.Combine(templatePath, "Views", "_EntityForm.cshtml.template"),
                     Path.Combine("Views", entityName, $"_{entityName}Form.cshtml"),
                     variables,
+                    workingDir,
                     ctx
                 );
                 
@@ -790,6 +798,7 @@ public static class GenerateControllerCommand
                     Path.Combine(templatePath, "Views", "_EntityCheckboxCell.cshtml.template"),
                     Path.Combine("Views", entityName, $"_{entityName}CheckboxCell.cshtml"),
                     variables,
+                    workingDir,
                     ctx
                 );
                 
@@ -797,17 +806,20 @@ public static class GenerateControllerCommand
                     Path.Combine(templatePath, "Views", "_BulkActionsBar.cshtml.template"),
                     Path.Combine("Views", entityName, "_BulkActionsBar.cshtml"),
                     variables,
+                    workingDir,
                     ctx
                 );
                 
                 // Generate shared pagination controls (only once)
                 var paginationPath = Path.Combine("Views", "Shared", "_PaginationControls.cshtml");
-                if (!File.Exists(paginationPath))
+                var absolutePaginationPath = Path.Combine(workingDir, paginationPath);
+                if (!File.Exists(absolutePaginationPath))
                 {
                     await GenerateFileFromTemplateAsync(
                         Path.Combine(templatePath, "Views", "_PaginationControls.cshtml.template"),
                         paginationPath,
                         variables,
+                        workingDir,
                         ctx
                     );
                 }
@@ -873,6 +885,7 @@ public class {entityName}
         string templateFile,
         string targetFile,
         Dictionary<string, string> variables,
+        string baseDir,
         StatusContext ctx)
     {
         ctx.Status($"Creating {targetFile}...");
@@ -880,13 +893,14 @@ public class {entityName}
         var templateContent = await File.ReadAllTextAsync(templateFile);
         var processedContent = TemplateEngine.Process(templateContent, variables);
         
-        var targetDir = Path.GetDirectoryName(targetFile);
+        var absoluteTarget = Path.Combine(baseDir, targetFile);
+        var targetDir = Path.GetDirectoryName(absoluteTarget);
         if (!string.IsNullOrEmpty(targetDir))
         {
             Directory.CreateDirectory(targetDir);
         }
         
-        await File.WriteAllTextAsync(targetFile, processedContent);
+        await File.WriteAllTextAsync(absoluteTarget, processedContent);
         await Task.Delay(50); // Visual feedback
     }
     

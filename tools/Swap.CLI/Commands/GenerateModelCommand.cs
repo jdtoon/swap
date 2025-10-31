@@ -262,6 +262,7 @@ public static class GenerateModelCommand
     {
         var sb = new System.Text.StringBuilder();
         
+        sb.AppendLine("using System.ComponentModel.DataAnnotations;");
         sb.AppendLine($"namespace {projectName}.Models;");
         sb.AppendLine();
         sb.AppendLine($"public class {entityName}");
@@ -281,14 +282,16 @@ public static class GenerateModelCommand
                 propertyType += "?";
             }
             
+            // For reference types that are non-nullable (e.g., string), initialize to avoid CS8618 warnings
+            var initializer = (field.Type == "string" && !field.IsNullable) ? " = string.Empty;" : "";
+            
+            // Add [Required] attribute for non-nullable fields to enforce validation at runtime
             if (field.IsRequired)
             {
-                sb.AppendLine($"    public required {propertyType} {field.Name} {{ get; set; }}");
+                sb.AppendLine("    [Required]");
             }
-            else
-            {
-                sb.AppendLine($"    public {propertyType} {field.Name} {{ get; set; }}");
-            }
+            
+            sb.AppendLine($"    public {propertyType} {field.Name} {{ get; set; }}{initializer}");
         }
         
         sb.AppendLine("}");
