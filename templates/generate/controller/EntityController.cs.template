@@ -140,7 +140,7 @@ public class {{EntityName}}Controller : SwapController
     [HttpGet]
     public async Task<IActionResult> Edit(int id)
     {
-{{ViewBagPopulation}}
+{{ViewBagPopulationEdit}}
         var entity = await _context.{{EntityNamePlural}}.FindAsync(id);
         if (entity == null)
         {

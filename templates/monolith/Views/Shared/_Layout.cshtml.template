@@ -5,8 +5,54 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - {{ProjectName}}</title>
     <link rel="stylesheet" href="~/css/app.min.css" asp-append-version="true" />
-    <link rel="stylesheet" type="text/css" href="~/lib/toastify-js/toastify.min.css" asp-append-version="true">
     <script src="~/lib/htmx/htmx.min.js" asp-append-version="true"></script>
+    <style>
+        /* Pure CSS Toast Notifications - No JavaScript Required */
+        #toast-container {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            pointer-events: none;
+        }
+        
+        .toast {
+            pointer-events: auto;
+            min-width: 300px;
+            padding: 1rem 1.5rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            color: white;
+            font-weight: 500;
+            animation: slideIn 0.3s ease-out, fadeOut 0.5s ease-in 3s forwards;
+        }
+        
+        .toast-success { background-color: #4CAF50; }
+        .toast-error { background-color: #F44336; }
+        .toast-warning { background-color: #FF9800; }
+        .toast-info { background-color: #2196F3; }
+        
+        @@keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        @@keyframes fadeOut {
+            to {
+                opacity: 0;
+                transform: translateX(400px);
+            }
+        }
+    </style>
 </head>
 <body>
     <header>
@@ -42,64 +88,17 @@
         </aside>
     </footer>
 
-    <script src="~/lib/toastify-js/toastify.min.js" asp-append-version="true"></script>
-
-    <script>
-        // Global Toast notification handler using Toastify.js
-        function displayToast(detailObject, defaultType) {
-            let message = 'An operation completed.';
-            let type = defaultType || 'info';
-
-            if (typeof detailObject === 'string') {
-                message = detailObject;
-            } else if (typeof detailObject === 'object' && detailObject !== null) {
-                if (detailObject.message) {
-                    message = detailObject.message;
-                } else if (detailObject.value) {
-                    message = detailObject.value;
-                }
-                if (detailObject.type) {
-                    type = detailObject.type;
-                }
-            }
-
-            let backgroundColor = "#2196F3"; // Info blue (default)
-            if (type === 'success') backgroundColor = "#4CAF50";
-            else if (type === 'error') backgroundColor = "#F44336";
-            else if (type === 'warning') backgroundColor = "#FF9800";
-
-            Toastify({
-                text: message,
-                duration: 3500,
-                close: true,
-                gravity: "top",
-                position: "right",
-                stopOnFocus: true,
-                style: { background: backgroundColor },
-                onClick: function () { }
-            }).showToast();
-        }
-
-        document.body.addEventListener('showToast', function (evt) {
-            displayToast(evt.detail, evt.detail?.type || 'info');
-        });
-
-        document.body.addEventListener('showToastSuccess', function (evt) {
-            displayToast(evt.detail, 'success');
-        });
-
-        document.body.addEventListener('showToastError', function (evt) {
-            displayToast(evt.detail, 'error');
-        });
-
-        document.body.addEventListener('showToastWarning', function (evt) {
-            displayToast(evt.detail, 'warning');
-        });
-
-        document.body.addEventListener('showToastInfo', function (evt) {
-            displayToast(evt.detail, 'info');
-        });
-    </script>
+    <!-- Pure HTMX Toast Container - No JavaScript Required -->
+    <div id="toast-container" 
+         hx-on:show-toast="
+            let detail = event.detail || {};
+            let toast = document.createElement('div');
+            toast.className = 'toast toast-' + (detail.type || 'info');
+            toast.textContent = detail.message || 'Operation completed';
+            this.appendChild(toast);
+            setTimeout(() => toast.remove(), 3500);
+         ">
+    </div>
 
     @await RenderSectionAsync("Scripts", required: false)
 </body>

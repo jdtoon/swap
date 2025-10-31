@@ -665,6 +665,11 @@ public static class GenerateControllerCommand
             ? global::Swap.CLI.Commands.Relationships.RelationshipUIGenerator.GenerateViewBagPopulation(relationships)
             : "";
         
+        // Generate ViewBag population for Edit action (excludes current entity for self-references)
+        var viewBagPopulationEdit = withRelationships && relationships.Any()
+            ? global::Swap.CLI.Commands.Relationships.RelationshipUIGenerator.GenerateViewBagPopulationForEdit(relationships, entityName)
+            : "";
+        
         // Generate Include statements for EF Core to load related entities
         var includeStatements = "";
         if (withRelationships && relationships.Any())
@@ -702,6 +707,7 @@ public static class GenerateControllerCommand
             { "BulkActionsBar", bulkActionsBar },
             { "BulkDeleteScript", bulkDeleteScript },
             { "ViewBagPopulation", viewBagPopulation },
+            { "ViewBagPopulationEdit", viewBagPopulationEdit },
             { "IncludeStatements", includeStatements }
         };
         

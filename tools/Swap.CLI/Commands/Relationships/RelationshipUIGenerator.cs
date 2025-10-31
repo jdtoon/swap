@@ -136,6 +136,30 @@ public class RelationshipUIGenerator
     }
 
     /// <summary>
+    /// Generate controller code to populate ViewBag for Edit action (excludes current entity for self-references)
+    /// </summary>
+    public static string GenerateViewBagPopulationForEdit(List<DetectedRelationship> relationships, string entityName)
+    {
+        var code = new System.Text.StringBuilder();
+
+        foreach (var rel in relationships.Where(r => r.RelationshipType == DetectedRelationshipType.ManyToOne))
+        {
+            if (rel.IsSelfReferencing)
+            {
+                // For self-referencing, exclude the current entity to prevent circular reference
+                code.AppendLine($"        ViewBag.{rel.TargetEntity}List = await _context.{EntityModifier.Pluralize(rel.TargetEntity!)}.Where(e => e.Id != id).ToListAsync();");
+            }
+            else
+            {
+                // For normal relationships, include all entities
+                code.AppendLine($"        ViewBag.{rel.TargetEntity}List = await _context.{EntityModifier.Pluralize(rel.TargetEntity!)}.ToListAsync();");
+            }
+        }
+
+        return code.ToString();
+    }
+
+    /// <summary>
     /// Generate display for related entity in detail/list views
     /// </summary>
     public static string GenerateRelationshipDisplay(DetectedRelationship relationship, string displayField = "Name")
