@@ -53,63 +53,55 @@ Version 0.2.0 development is **substantially complete** with relationship genera
 - ✅ Improved CLI output formatting (Spectre.Console markup)
 - ✅ Better error messages with escaping
 
-**Remaining (Non-Blocking):**
+**Remaining (Required for 0.2.0):**
 - ⏳ Root README.md update for relationship features
 - ⏳ CLI help text improvements (--help output for all commands)
-- ⏳ "Building a Blog" step-by-step tutorial
-- ⏳ Troubleshooting guide expansion
+- ⏳ "Building a Blog" step-by-step tutorial (or equivalent examples)
 
-#### ❌ **Phase 2: Codebase Refactor - NOT STARTED**
+#### ⏳ **Phase 3: Many-to-Many Relationships - NOT STARTED**
 
-**Status:** Deferred to post-0.2.0 release
+**Status:** Required for 0.2.0 completion
 
-**Reason:** Relationship features implemented successfully without major refactoring. Current code is maintainable and well-tested. Refactoring can happen as needed for future features.
-
-#### ⏳ **Phase 3 & 4: Advanced Relationships - ROADMAP**
-
-**Many-to-Many Relationships:**
 - ❌ Not implemented
-- 📅 Planned for Q1 2025 (Phase 3)
-- Command exits gracefully with "not yet implemented" message
+- 📅 Next priority after documentation complete
+- Command structure exists, exits with "not yet implemented" message
 
-**One-to-One Relationships:**
+#### ⏳ **Phase 4: One-to-One Relationships - NOT STARTED**
+
+**Status:** Required for 0.2.0 completion
+
 - ❌ Not implemented
-- 📅 Planned for Q2 2025 (Phase 4)
-- Command exits gracefully with "not yet implemented" message
+- 📅 After many-to-many complete
+- Command structure exists, exits with "not yet implemented" message
 
 **Relationship Management Commands:**
 - ❌ Not implemented (`list`, `remove`, `update`, `detect`)
-- 📅 Future enhancement
+- 📅 Future enhancement (post-0.2.0)
 
-#### ❌ **Blog Template - NOT STARTED**
+### ⚠️ VERSION 0.2.0 NOT YET COMPLETE
 
-**Status:** Deferred to post-0.2.0 release
-
-**Alternative:** Complete examples provided in relationship documentation
-
-### 🚀 READY FOR RELEASE
-
-**Version 0.2.0 is release-ready with:**
-- ✅ Production-ready one-to-many and many-to-one relationships
-- ✅ Full relationship-aware UI in controllers
-- ✅ Comprehensive documentation (3 major wiki pages)
+**What's Done:**
+- ✅ One-to-many and many-to-one relationships (production ready)
+- ✅ Relationship-aware UI in controllers (production ready)
+- ✅ Comprehensive wiki documentation (3 major pages)
 - ✅ All features tested and working
-- ✅ Known limitations clearly documented
-- ✅ Migration path clear (graceful fallback for unimplemented features)
+
+**What's Remaining for 0.2.0:**
+- ⏳ Many-to-many relationships implementation
+- ⏳ One-to-one relationships implementation
+- ⏳ Documentation polish (README updates, help text)
 
 **What Users Get:**
-1. Generate relationships with `swap g rel` command
+1. Generate relationships with `swap g rel` command (one-to-many, many-to-one, many-to-many, one-to-one)
 2. Auto-detect FKs in controller generation
 3. Beautiful dropdown UIs for related entities
 4. Eager loading for performance
 5. Self-referential support (manual model + auto UI)
 
 **What's Next (Post-0.2.0):**
-1. Many-to-many relationships (Q1 2025)
-2. One-to-one relationships (Q2 2025)
-3. Relationship management commands
-4. Documentation polish (help text, tutorials)
-5. Codebase refactoring (if needed)
+1. Relationship management commands (`list`, `remove`, `update`)
+2. Self-referential support via CLI
+3. Documentation polish (tutorials, examples)
 
 ---
 
@@ -197,9 +189,7 @@ Version 0.1.0 established Swap CLI as a production-ready code generator for ASP.
 ### Secondary Objectives
 
 1. **Documentation Excellence** - Ensure every feature is accurately documented and code matches docs
-2. **Codebase Maintainability** - Refactor large classes for easier development
-3. **Developer Experience** - Hyper-intelligent CLI with helpful suggestions and validation
-4. **Demonstration Value** - Blog template to showcase relationship capabilities
+2. **Developer Experience** - Hyper-intelligent CLI with helpful suggestions and validation
 
 ---
 
@@ -215,9 +205,7 @@ Version 0.1.0 established Swap CLI as a production-ready code generator for ASP.
 - Add troubleshooting section
 - Better error messages with "Did you mean...?" suggestions
 
-**2. Codebase Refactor**
-- Split large classes (GenerateControllerCommand, NewCommand, TemplateEngine)
-- Zero feature changes - all 269 tests must still pass
+### Phase 2: Core Feature (Weeks 4-6)
 - Improve testability and single responsibility
 - Prepare codebase for relationship generation work
 
@@ -271,52 +259,7 @@ Version 0.1.0 established Swap CLI as a production-ready code generator for ASP.
 - ✅ `swap --help` output is beautiful and comprehensive
 - ✅ Error messages include actionable next steps
 
-### 2. Codebase Refactor
-
-**Objectives:**
-- Improve maintainability for 0.2.0 relationship work
-- Split large classes into focused, testable units
-- Zero breaking changes to CLI interface
-- All existing tests pass
-
-**Refactor Candidates:**
-
-**GenerateControllerCommand.cs** (likely >500 LOC):
-- Split into: `ControllerGenerator`, `ViewGenerator`, `ViewModelGenerator`
-- Each class handles one responsibility
-- Easier to test and extend for relationships
-
-**NewCommand.cs** (monolithic project creation):
-- Split into: `ProjectScaffolder`, `DependencyInstaller`, `MigrationRunner`
-- Separate template application from setup logic
-
-**TemplateEngine.cs**:
-- Split into: `TemplateLoader`, `TemplateParser`, `TemplateRenderer`
-- Plugin architecture for custom template functions
-
-**Principles:**
-- ✅ Single Responsibility Principle
-- ✅ All 269 tests still pass
-- ✅ No CLI interface changes
-- ✅ Don't over-engineer (avoid 50 tiny classes)
-
-**Tasks:**
-- [ ] Identify largest classes (run LOC analysis) ⚠️ Deferred
-- [ ] Find natural class boundaries (methods that belong together) ⚠️ Deferred
-- [ ] Extract classes with clear responsibilities ⚠️ Deferred
-- [ ] Keep all tests passing throughout refactor ⚠️ Deferred
-- [ ] Add tests for new classes if coverage gaps exist ⚠️ Deferred
-- [ ] Update documentation if internal architecture changes ⚠️ Deferred
-
-**Status:** DEFERRED to post-0.2.0 release. Relationship features implemented successfully without major refactoring needed.
-
-**Success Metrics:**
-- ✅ No class >300 LOC (except template content)
-- ✅ 269/269 tests passing
-- ✅ Improved testability (mocking, isolation)
-- ✅ Faster to add relationship features
-
-### 3. Relationship Generation ⭐ PRIMARY FEATURE ⭐
+### 2. Relationship Generation ⭐ PRIMARY FEATURE ⭐
 
 **Objectives:**
 - Generate foreign key relationships between entities
@@ -609,37 +552,38 @@ swap g relationship Order Customer --required
 - [x] 50+ new tests for relationships ✅ GenerateControllerRelationshipTests + EdgeCases
 - [x] Zero regressions in existing features ✅ All existing tests passing
 - [x] CI pipeline passes ✅ Verified
-- [x] Ready for NuGet publish ✅ READY FOR RELEASE
+- [ ] Ready for NuGet publish ⏳ PENDING completion of many-to-many and one-to-one
 
 ---
 
-## 🎯 WHAT'S IN 0.2.0 (Summary for Release Notes)
+## 🎯 WHAT WILL BE IN 0.2.0 (Target Feature Set)
 
 ### New Commands
-- `swap generate relationship` / `swap g rel` - Create relationships between entities
+- `swap generate relationship` / `swap g rel` - Create relationships between entities (all types)
 - `swap db migration add/apply/list/remove` - Enhanced database migration management
 - Enhanced `swap doctor` - Auto-install missing tools, Windows compatibility
 
-### New Features
-- **One-to-Many Relationships** - Full CLI generation with FK, navigation props, DbContext config
-- **Many-to-One Relationships** - Same as one-to-many, different perspective
-- **Relationship-Aware UI** - Auto-detect FKs, generate dropdowns (`--with-relationships` flag)
-- **Display Field Detection** - Smart dropdown labels (Name > Title > Description > Email > Code > Label > string > Id)
-- **Eager Loading** - Automatic `.Include()` for performance
-- **Self-Referential UI** - Hierarchical data support (manual model + auto UI)
-- **Toast Notifications** - Pure CSS toast system with dynamic positioning
-- **Reserved Name Validation** - Prevents conflicts with .NET types
-- **Improved CLI Output** - Better formatting, markup escaping, clear errors
+### Relationship Features (Core of 0.2.0)
+- **One-to-Many Relationships** ✅ COMPLETE
+- **Many-to-One Relationships** ✅ COMPLETE  
+- **Many-to-Many Relationships** ⏳ IN PROGRESS
+- **One-to-One Relationships** ⏳ PENDING
+- **Relationship-Aware UI** ✅ COMPLETE - Auto-detect FKs, generate dropdowns
+- **Display Field Detection** ✅ COMPLETE - Smart dropdown labels
+- **Eager Loading** ✅ COMPLETE - Automatic `.Include()` for performance
+- **Self-Referential UI** ✅ COMPLETE - Hierarchical data support
 
-### New Documentation
-- `wiki/docs/cli/generate-relationship.md` - Complete CLI reference with examples
-- `wiki/docs/features/relationships.md` - Conceptual guide with workflows
-- Updated `wiki/docs/cli/generate-controller.md` - Relationship-aware UI section
+### Other New Features
+- **Toast Notifications** ✅ COMPLETE - Pure CSS toast system
+- **Reserved Name Validation** ✅ COMPLETE - Prevents conflicts with .NET types
+- **Improved CLI Output** ✅ COMPLETE - Better formatting, clear errors
 
-### Coming Soon (Roadmap)
-- **Phase 3 (Q1 2025):** Many-to-many relationships, junction tables, checkbox UI
-- **Phase 4 (Q2 2025):** One-to-one relationships, unique constraints, inline editing
-- **Future:** Relationship management commands (list, remove, update, detect)
+### Documentation
+- `wiki/docs/cli/generate-relationship.md` ✅ COMPLETE
+- `wiki/docs/features/relationships.md` ✅ COMPLETE
+- Updated `wiki/docs/cli/generate-controller.md` ✅ COMPLETE
+- Root README.md updates ⏳ PENDING
+- CLI help text improvements ⏳ PENDING
 
 ---
 
