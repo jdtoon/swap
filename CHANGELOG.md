@@ -9,6 +9,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added - Many-to-Many Relationship Generation
+- **Many-to-Many Support**: Full CLI support for generating many-to-many relationships
+  - Generates junction entity with composite key (alphabetical naming convention, e.g., `CourseStudent`)
+  - Adds collection navigation properties to both entities (`ICollection<T>`)
+  - Configures EF Core Fluent API using `UsingEntity<TJunction>` with proper composite key
+  - Supports custom junction table names via `--junction` flag
+  - Supports additional junction properties via `--junction-props` flag (e.g., `CreatedAt:datetime,CreatedBy:string`)
+  - Automatic DbSet creation with Models namespace detection
+  - Full unit test coverage (21 tests)
+- **CLI Examples**:
+  ```bash
+  # Basic many-to-many
+  swap g rel -s Student -t Course --type many-to-many
+  
+  # Custom junction with extra properties
+  swap g rel -s Post -t Tag --type many-to-many --junction PostTag --junction-props "CreatedAt:datetime"
+  ```
+- **Note**: UI scaffolding for many-to-many (checkboxes, badges) is not yet automatic and requires manual view extension
+
 ### Added - Authentication Scaffolding
 - **Authentication System**: Complete ASP.NET Core Identity integration with `swap generate auth`
   - Generates ApplicationUser model extending IdentityUser with DisplayName, CreatedAt, LastLoginAt
