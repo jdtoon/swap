@@ -10,26 +10,32 @@ public static class DoctorCommand
     {
         var command = new Command("doctor", "Check development environment and dependencies");
         
-        command.SetHandler(async () =>
+        var fixOption = new Option<bool>(
+            aliases: new[] { "--fix", "-f" },
+            description: "Attempt to install missing tools automatically");
+        
+        command.AddOption(fixOption);
+        
+        command.SetHandler(async (bool fix) =>
         {
-            await ExecuteAsync();
-        });
+            await ExecuteAsync(fix);
+        }, fixOption);
         
         return command;
     }
     
-    private static async Task ExecuteAsync()
+    private static async Task ExecuteAsync(bool fix = false)
     {
         AnsiConsole.MarkupLine("[bold cyan]Checking development environment...[/]");
         AnsiConsole.WriteLine();
         
-        var checks = new List<(string Name, bool IsRequired, Func<Task<(bool Success, string Version, string? Message)>> Check)>
+        var checks = new List<(string Name, bool IsRequired, Func<Task<(bool Success, string Version, string? Message)>> Check, Func<Task<bool>>? Install)>
         {
-            (".NET SDK", true, CheckDotNetAsync),
-            ("dotnet-ef", true, CheckDotNetEfAsync),
-            ("Node.js", false, CheckNodeAsync),
-            ("npm", false, CheckNpmAsync),
-            ("libman", false, CheckLibmanAsync)
+            (".NET SDK", true, CheckDotNetAsync, null), // Cannot auto-install .NET SDK
+            ("dotnet-ef", true, CheckDotNetEfAsync, InstallDotNetEfAsync),
+            ("Node.js", false, CheckNodeAsync, null), // Cannot auto-install Node.js (needs installer)
+            ("npm", false, CheckNpmAsync, null), // Comes with Node.js
+            ("libman", false, CheckLibmanAsync, InstallLibmanAsync)
         };
         
         var table = new Table();
@@ -42,8 +48,9 @@ public static class DoctorCommand
         int passCount = 0;
         int failCount = 0;
         int warnCount = 0;
+        var missingTools = new List<(string Name, bool IsRequired, Func<Task<bool>>? Install)>();
         
-        foreach (var (name, isRequired, check) in checks)
+        foreach (var (name, isRequired, check, install) in checks)
         {
             var (success, version, message) = await check();
             
@@ -59,12 +66,14 @@ public static class DoctorCommand
             {
                 status = "[red]✗ Missing[/]";
                 failCount++;
+                missingTools.Add((name, isRequired, install));
             }
             else
             {
                 status = "[yellow]⚠ Missing[/]";
                 warnCount++;
                 notes = notes == "" ? "Optional" : $"Optional - {notes}";
+                missingTools.Add((name, isRequired, install));
             }
             
             table.AddRow(
@@ -83,20 +92,130 @@ public static class DoctorCommand
         {
             AnsiConsole.MarkupLine($"[red]✗ {failCount} required tool(s) missing[/]");
             AnsiConsole.WriteLine();
-            AnsiConsole.MarkupLine("[bold]Installation instructions:[/]");
-            AnsiConsole.MarkupLine("  dotnet-ef: dotnet tool install --global dotnet-ef");
+            
+            if (fix)
+            {
+                await InstallMissingToolsAsync(missingTools.Where(t => t.IsRequired).ToList());
+            }
+            else
+            {
+                AnsiConsole.MarkupLine("[bold]Installation instructions:[/]");
+                AnsiConsole.MarkupLine("  dotnet-ef: [cyan]dotnet tool install --global dotnet-ef[/]");
+                AnsiConsole.WriteLine();
+                AnsiConsole.MarkupLine("[dim]Tip: Run[/] [cyan]swap doctor --fix[/] [dim]to install missing tools automatically[/]");
+            }
         }
         else if (warnCount > 0)
         {
             AnsiConsole.MarkupLine($"[yellow]⚠ {warnCount} optional tool(s) missing[/]");
             AnsiConsole.WriteLine();
-            AnsiConsole.MarkupLine("[bold]Optional installations:[/]");
-            AnsiConsole.MarkupLine("  Node.js: https://nodejs.org/");
-            AnsiConsole.MarkupLine("  libman: dotnet tool install --global Microsoft.Web.LibraryManager.Cli");
+            
+            if (fix)
+            {
+                if (AnsiConsole.Confirm("Install optional tools?", false))
+                {
+                    await InstallMissingToolsAsync(missingTools.Where(t => !t.IsRequired).ToList());
+                }
+            }
+            else
+            {
+                AnsiConsole.MarkupLine("[bold]Optional installations:[/]");
+                AnsiConsole.MarkupLine("  Node.js: [cyan]https://nodejs.org/[/]");
+                AnsiConsole.MarkupLine("  libman: [cyan]dotnet tool install --global Microsoft.Web.LibraryManager.Cli[/]");
+                AnsiConsole.WriteLine();
+                AnsiConsole.MarkupLine("[dim]Tip: Run[/] [cyan]swap doctor --fix[/] [dim]to install optional tools interactively[/]");
+            }
         }
         else
         {
             AnsiConsole.MarkupLine($"[green]✓ All checks passed! Environment ready.[/]");
+        }
+    }
+    
+    private static async Task InstallMissingToolsAsync(List<(string Name, bool IsRequired, Func<Task<bool>>? Install)> tools)
+    {
+        AnsiConsole.WriteLine();
+        AnsiConsole.MarkupLine("[bold cyan]Installing missing tools...[/]");
+        AnsiConsole.WriteLine();
+        
+        foreach (var (name, _, install) in tools)
+        {
+            if (install == null)
+            {
+                AnsiConsole.MarkupLine($"[yellow]⚠[/] {name} cannot be auto-installed. Please install manually.");
+                continue;
+            }
+            
+            AnsiConsole.MarkupLine($"[cyan]Installing {name}...[/]");
+            var success = await install();
+            
+            if (success)
+            {
+                AnsiConsole.MarkupLine($"[green]✓[/] {name} installed successfully!");
+            }
+            else
+            {
+                AnsiConsole.MarkupLine($"[red]✗[/] Failed to install {name}");
+            }
+        }
+        
+        AnsiConsole.WriteLine();
+        AnsiConsole.MarkupLine("[dim]Run[/] [cyan]swap doctor[/] [dim]again to verify installation[/]");
+    }
+    
+    private static async Task<bool> InstallDotNetEfAsync()
+    {
+        try
+        {
+            var process = new Process
+            {
+                StartInfo = new ProcessStartInfo
+                {
+                    FileName = "dotnet",
+                    Arguments = "tool install --global dotnet-ef",
+                    RedirectStandardOutput = false,
+                    RedirectStandardError = false,
+                    UseShellExecute = false,
+                    CreateNoWindow = false
+                }
+            };
+            
+            process.Start();
+            await process.WaitForExitAsync();
+            
+            return process.ExitCode == 0;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+    
+    private static async Task<bool> InstallLibmanAsync()
+    {
+        try
+        {
+            var process = new Process
+            {
+                StartInfo = new ProcessStartInfo
+                {
+                    FileName = "dotnet",
+                    Arguments = "tool install --global Microsoft.Web.LibraryManager.Cli",
+                    RedirectStandardOutput = false,
+                    RedirectStandardError = false,
+                    UseShellExecute = false,
+                    CreateNoWindow = false
+                }
+            };
+            
+            process.Start();
+            await process.WaitForExitAsync();
+            
+            return process.ExitCode == 0;
+        }
+        catch
+        {
+            return false;
         }
     }
     
