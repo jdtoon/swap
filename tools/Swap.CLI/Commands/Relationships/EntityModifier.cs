@@ -66,21 +66,27 @@ public class EntityModifier
         }
         else if (definition.Type == RelationshipType.ManyToOne)
         {
+            // For many-to-one: source is "many" side, target is "one" side
+            // Example: Order -> Customer (many-to-one) means many Orders to one Customer
+            // Order (source) gets FK and navigation, Customer (target) gets collection
+            
             if (isSource)
             {
-                // Source entity gets collection navigation (one-to-many side from source perspective)
+                // Source entity is "many" side - gets FK and navigation to target
+                // Example: Order gets CustomerId (FK) and Customer (navigation)
+                newClass = AddForeignKeyProperty(newClass, definition);
                 if (!definition.SkipNavigation)
                 {
-                    newClass = AddCollectionNavigation(newClass, definition.TargetEntity, definition.NavigationProperty);
+                    newClass = AddNavigationProperty(newClass, definition.TargetEntity, definition.NavigationProperty);
                 }
             }
             else // isTarget
             {
-                // Target entity gets FK and navigation to source (many-to-one side)
-                newClass = AddForeignKeyProperty(newClass, definition);
+                // Target entity is "one" side - gets collection navigation
+                // Example: Customer gets ICollection<Order> Orders
                 if (!definition.SkipNavigation)
                 {
-                    newClass = AddNavigationProperty(newClass, definition.SourceEntity, definition.InverseNavigation);
+                    newClass = AddCollectionNavigation(newClass, definition.SourceEntity, definition.InverseNavigation);
                 }
             }
         }
@@ -93,10 +99,27 @@ public class EntityModifier
         ClassDeclarationSyntax classDeclaration,
         RelationshipDefinition definition)
     {
-        // Determine FK name and type
-        // For OneToMany (Category->Product): Product gets CategoryId (SourceEntityId)
-        // For ManyToOne: Also uses SourceEntityId
-        var fkName = definition.ForeignKeyName ?? $"{definition.SourceEntity}Id";
+        // Determine FK name and type based on relationship type
+        string fkName;
+        
+        if (definition.Type == RelationshipType.OneToMany)
+        {
+            // For OneToMany: target (many side) gets FK to source (one side)
+            // Example: Category->Product, Product gets CategoryId (SourceEntityId)
+            fkName = definition.ForeignKeyName ?? $"{definition.SourceEntity}Id";
+        }
+        else if (definition.Type == RelationshipType.ManyToOne)
+        {
+            // For ManyToOne: source (many side) gets FK to target (one side)
+            // Example: Order->Customer, Order gets CustomerId (TargetEntityId)
+            fkName = definition.ForeignKeyName ?? $"{definition.TargetEntity}Id";
+        }
+        else
+        {
+            // Fallback for other types
+            fkName = definition.ForeignKeyName ?? $"{definition.SourceEntity}Id";
+        }
+        
         var fkType = definition.IsRequired ? "int" : "int?";
 
         // Check if property already exists

@@ -127,10 +127,14 @@ public class DbContextModifier
 
     private static string GenerateManyToOneConfig(RelationshipDefinition definition)
     {
-        // Many-to-one is just one-to-many from the other perspective
-        var fkName = definition.ForeignKeyName ?? $"{definition.SourceEntity}Id";
-        var navProp = definition.InverseNavigation ?? definition.SourceEntity;
-        var inverseProp = definition.NavigationProperty ?? EntityModifier.Pluralize(definition.TargetEntity);
+        // For many-to-one: source is "many" side, target is "one" side
+        // Example: Order->Customer, many Orders to one Customer
+        // Order (source) has FK CustomerId and navigation to Customer
+        // Customer (target) has collection of Orders
+        
+        var fkName = definition.ForeignKeyName ?? $"{definition.TargetEntity}Id";
+        var navProp = definition.NavigationProperty ?? definition.TargetEntity;
+        var inverseProp = definition.InverseNavigation ?? EntityModifier.Pluralize(definition.SourceEntity);
         
         var deleteAction = definition.OnDelete switch
         {
@@ -141,8 +145,8 @@ public class DbContextModifier
 
         var required = definition.IsRequired ? "IsRequired()" : "IsRequired(false)";
 
-        return $@"        // {definition.TargetEntity} -> {definition.SourceEntity} (Many-to-One)
-        modelBuilder.Entity<{definition.TargetEntity}>()
+        return $@"        // {definition.SourceEntity} -> {definition.TargetEntity} (Many-to-One)
+        modelBuilder.Entity<{definition.SourceEntity}>()
             .HasOne(e => e.{navProp})
             .WithMany(e => e.{inverseProp})
             .HasForeignKey(e => e.{fkName})
