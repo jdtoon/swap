@@ -46,19 +46,21 @@ public class EntityModifier
         {
             if (isSource)
             {
-                // Source entity gets the FK and navigation to target (many-to-one side)
-                newClass = AddForeignKeyProperty(newClass, definition);
+                // Source entity gets collection navigation (one-to-many side)
+                // Example: Category has many Products -> Category.Products (collection)
                 if (!definition.SkipNavigation)
                 {
-                    newClass = AddNavigationProperty(newClass, definition.TargetEntity, definition.NavigationProperty);
+                    newClass = AddCollectionNavigation(newClass, definition.TargetEntity, definition.InverseNavigation);
                 }
             }
             else // isTarget
             {
-                // Target entity gets collection navigation (one-to-many side)
+                // Target entity gets FK and navigation to source (many-to-one side)
+                // Example: Product belongs to Category -> Product.CategoryId (FK) and Product.Category (nav)
+                newClass = AddForeignKeyProperty(newClass, definition);
                 if (!definition.SkipNavigation)
                 {
-                    newClass = AddCollectionNavigation(newClass, definition.SourceEntity, definition.InverseNavigation);
+                    newClass = AddNavigationProperty(newClass, definition.SourceEntity, definition.NavigationProperty);
                 }
             }
         }
@@ -92,7 +94,9 @@ public class EntityModifier
         RelationshipDefinition definition)
     {
         // Determine FK name and type
-        var fkName = definition.ForeignKeyName ?? $"{definition.TargetEntity}Id";
+        // For OneToMany (Category->Product): Product gets CategoryId (SourceEntityId)
+        // For ManyToOne: Also uses SourceEntityId
+        var fkName = definition.ForeignKeyName ?? $"{definition.SourceEntity}Id";
         var fkType = definition.IsRequired ? "int" : "int?";
 
         // Check if property already exists
@@ -105,7 +109,7 @@ public class EntityModifier
             return classDeclaration; // Already exists, skip
         }
 
-        // Create FK property: public int? CustomerId { get; set; }
+        // Create FK property: public int? CategoryId { get; set; }
         var fkProperty = SyntaxFactory.PropertyDeclaration(
                 SyntaxFactory.ParseTypeName(fkType),
                 SyntaxFactory.Identifier(fkName))

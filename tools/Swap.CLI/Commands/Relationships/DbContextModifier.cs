@@ -42,39 +42,47 @@ public class DbContextModifier
         }
         else
         {
-            // Method exists - find the closing brace and insert before it
+            // Method exists - find a safe insertion point
+            // Strategy: Look for "base.OnModelCreating" or the opening brace of the method,
+            // then insert after the first statement (or at start if no base call)
+            
             var methodStart = onModelCreatingIndex;
-            var braceCount = 0;
-            var foundFirstBrace = false;
-            var insertPosition = -1;
-
-            for (int i = methodStart; i < code.Length; i++)
+            
+            // Find the opening brace of the method
+            var openBraceIndex = code.IndexOf('{', methodStart);
+            if (openBraceIndex == -1)
             {
-                if (code[i] == '{')
+                throw new InvalidOperationException("Could not find OnModelCreating opening brace");
+            }
+            
+            // Look for base.OnModelCreating call
+            var baseCallIndex = code.IndexOf("base.OnModelCreating", methodStart);
+            
+            int insertPosition;
+            if (baseCallIndex != -1 && baseCallIndex < code.Length)
+            {
+                // Find the end of the base call (semicolon)
+                var semicolonIndex = code.IndexOf(';', baseCallIndex);
+                if (semicolonIndex != -1)
                 {
-                    foundFirstBrace = true;
-                    braceCount++;
+                    // Insert after the semicolon and newline
+                    var nextNewline = code.IndexOf('\n', semicolonIndex);
+                    insertPosition = nextNewline != -1 ? nextNewline + 1 : semicolonIndex + 1;
                 }
-                else if (code[i] == '}')
+                else
                 {
-                    braceCount--;
-                    if (foundFirstBrace && braceCount == 0)
-                    {
-                        // Found the closing brace of the method
-                        insertPosition = i;
-                        break;
-                    }
+                    insertPosition = openBraceIndex + 1;
                 }
             }
-
-            if (insertPosition == -1)
+            else
             {
-                throw new InvalidOperationException("Could not find OnModelCreating method closing brace");
+                // No base call, insert right after opening brace
+                var nextNewline = code.IndexOf('\n', openBraceIndex);
+                insertPosition = nextNewline != -1 ? nextNewline + 1 : openBraceIndex + 1;
             }
 
-            // Insert configuration before the closing brace
-            var configWithNewline = $"\n{configCode}\n    ";
-            return code.Substring(0, insertPosition) + configWithNewline + code.Substring(insertPosition);
+            // Insert configuration with proper indentation
+            return code.Substring(0, insertPosition) + $"\n{configCode}\n" + code.Substring(insertPosition);
         }
     }
 
@@ -94,9 +102,10 @@ public class DbContextModifier
 
     private static string GenerateOneToManyConfig(RelationshipDefinition definition)
     {
-        var fkName = definition.ForeignKeyName ?? $"{definition.TargetEntity}Id";
-        var navProp = definition.NavigationProperty ?? definition.TargetEntity;
-        var inverseProp = definition.InverseNavigation ?? EntityModifier.Pluralize(definition.SourceEntity);
+        // For OneToMany (Category->Product): Target (Product) has FK to Source (Category)
+        var fkName = definition.ForeignKeyName ?? $"{definition.SourceEntity}Id";
+        var navProp = definition.NavigationProperty ?? definition.SourceEntity;  // Product.Category
+        var inverseProp = definition.InverseNavigation ?? EntityModifier.Pluralize(definition.TargetEntity);  // Category.Products
         
         var deleteAction = definition.OnDelete switch
         {
@@ -108,7 +117,7 @@ public class DbContextModifier
         var required = definition.IsRequired ? "IsRequired()" : "IsRequired(false)";
 
         return $@"        // {definition.SourceEntity} -> {definition.TargetEntity} (One-to-Many)
-        modelBuilder.Entity<{definition.SourceEntity}>()
+        modelBuilder.Entity<{definition.TargetEntity}>()
             .HasOne(e => e.{navProp})
             .WithMany(e => e.{inverseProp})
             .HasForeignKey(e => e.{fkName})
