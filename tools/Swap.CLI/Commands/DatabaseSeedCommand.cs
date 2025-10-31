@@ -62,36 +62,40 @@ public static class DatabaseSeedCommand
         AnsiConsole.MarkupLine($"[bold cyan]Running Seeders:[/] {projectName}");
         AnsiConsole.WriteLine();
         
-        // Build environment variables
-        var envVars = new Dictionary<string, string>();
-        if (count.HasValue)
-        {
-            envVars["SEED_COUNT"] = count.Value.ToString();
-            AnsiConsole.MarkupLine($"[dim]Count:[/] {count.Value}");
-        }
-        if (!string.IsNullOrWhiteSpace(locale))
-        {
-            envVars["SEED_LOCALE"] = locale;
-            AnsiConsole.MarkupLine($"[dim]Locale:[/] {locale}");
-        }
+        // Display parameters
+        var seedCount = count ?? 50;
+        var seedLocale = locale ?? "en";
+        
+        AnsiConsole.MarkupLine($"[dim]Count:[/] {seedCount}");
+        AnsiConsole.MarkupLine($"[dim]Locale:[/] {seedLocale}");
         if (ifEmpty)
         {
-            envVars["SEED_IFEMPTY"] = "true";
             AnsiConsole.MarkupLine($"[dim]If Empty:[/] true");
         }
         
         AnsiConsole.WriteLine();
+        AnsiConsole.MarkupLine("[yellow]⚠️  Note:[/] This command currently requires starting the application.");
+        AnsiConsole.MarkupLine("[dim]The seeders will run, then you should stop the app (Ctrl+C).[/]");
+        AnsiConsole.MarkupLine("[dim]A dedicated seeder runner will be added in a future version.[/]");
+        AnsiConsole.WriteLine();
+        
+        // Build environment variables
+        var envVars = new Dictionary<string, string>
+        {
+            ["SEED_COUNT"] = seedCount.ToString(),
+            ["SEED_LOCALE"] = seedLocale,
+            ["ASPNETCORE_ENVIRONMENT"] = "Development"
+        };
+        
+        if (ifEmpty)
+        {
+            envVars["SEED_IFEMPTY"] = "true";
+        }
         
         try
         {
-            await AnsiConsole.Status()
-                .StartAsync("Running seeders...", async ctx =>
-                {
-                    await RunDotnetAsync("run", envVars);
-                });
-            
-            AnsiConsole.MarkupLine("[green]✓[/] Seeding complete!");
-            AnsiConsole.MarkupLine("[dim]Note: The application will start and seed data, then you can stop it (Ctrl+C).[/]");
+            AnsiConsole.MarkupLine("[cyan]Starting application for seeding...[/]");
+            await RunDotnetAsync("run", envVars);
             
             return 0;
         }
@@ -99,6 +103,7 @@ public static class DatabaseSeedCommand
         {
             AnsiConsole.WriteLine();
             AnsiConsole.MarkupLine($"[red]Error:[/] {ex.Message.EscapeMarkup()}");
+            AnsiConsole.MarkupLine("[dim]Make sure no other instance is running on the same port.[/]");
             return 1;
         }
     }

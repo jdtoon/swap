@@ -4,15 +4,15 @@ using Spectre.Console;
 
 namespace Swap.CLI.Commands;
 
-public static class DatabaseResetCommand
+public static class DatabaseMigrationRemoveCommand
 {
     public static Command Create()
     {
-        var command = new Command("reset", "Drop and recreate the database");
+        var command = new Command("remove", "Remove the last migration");
         
         var forceOption = new Option<bool>(
             aliases: new[] { "--force", "-f" },
-            description: "Skip confirmation prompt");
+            description: "Force removal even if the migration has been applied");
         
         command.AddOption(forceOption);
         
@@ -35,19 +35,14 @@ public static class DatabaseResetCommand
             return 1;
         }
         
-        var projectFile = projectFiles[0];
-        var projectName = Path.GetFileNameWithoutExtension(projectFile);
+        var projectName = Path.GetFileNameWithoutExtension(projectFiles[0]);
         
-        AnsiConsole.MarkupLine($"[bold cyan]Database Reset:[/] {projectName}");
+        AnsiConsole.MarkupLine($"[bold cyan]Removing Last Migration:[/] {projectName}");
         AnsiConsole.WriteLine();
         
-        // Confirmation prompt
         if (!force)
         {
-            var confirm = AnsiConsole.Confirm(
-                "[yellow]⚠️  This will DROP the database and ALL DATA will be lost. Continue?[/]",
-                false);
-            
+            var confirm = AnsiConsole.Confirm("[yellow]⚠️  Remove the last migration?[/]", false);
             if (!confirm)
             {
                 AnsiConsole.MarkupLine("[dim]Operation cancelled.[/]");
@@ -57,29 +52,22 @@ public static class DatabaseResetCommand
         
         try
         {
-            // Drop database
-            AnsiConsole.MarkupLine("[yellow]Dropping database...[/]");
-            await RunDotnetEfAsync("database drop --force");
-            AnsiConsole.MarkupLine("[green]✓[/] Database dropped");
-            AnsiConsole.WriteLine();
+            await AnsiConsole.Status()
+                .StartAsync("Removing migration...", async ctx =>
+                {
+                    var args = force ? "migrations remove --force" : "migrations remove";
+                    await RunDotnetEfAsync(args);
+                });
             
-            // Apply migrations (recreate)
-            AnsiConsole.MarkupLine("[yellow]Applying migrations...[/]");
-            await RunDotnetEfAsync("database update");
-            AnsiConsole.MarkupLine("[green]✓[/] Migrations applied");
-
-            AnsiConsole.WriteLine();
-            AnsiConsole.MarkupLine("[green]✓ Database reset complete![/]");
-            AnsiConsole.MarkupLine("[dim]To seed data, run: swap db seed[/]");
-            
+            AnsiConsole.MarkupLine("[green]✓[/] Migration removed successfully!");
             return 0;
         }
         catch (Exception ex)
         {
             AnsiConsole.WriteLine();
             AnsiConsole.MarkupLine($"[red]Error:[/] {ex.Message.EscapeMarkup()}");
-            AnsiConsole.MarkupLine("[dim]Make sure you have dotnet-ef installed:[/]");
-            AnsiConsole.MarkupLine("  dotnet tool install --global dotnet-ef");
+            AnsiConsole.MarkupLine("[dim]Note: You cannot remove a migration that has been applied to the database.[/]");
+            AnsiConsole.MarkupLine("[dim]Use --force to remove it anyway (not recommended).[/]");
             return 1;
         }
     }
@@ -91,10 +79,10 @@ public static class DatabaseResetCommand
             FileName = "dotnet",
             Arguments = $"ef {arguments}",
             WorkingDirectory = Directory.GetCurrentDirectory(),
-            RedirectStandardOutput = false,
+            RedirectStandardOutput = true,
             RedirectStandardError = true,
             UseShellExecute = false,
-            CreateNoWindow = false
+            CreateNoWindow = true
         };
         
         using var process = System.Diagnostics.Process.Start(psi);
