@@ -290,12 +290,29 @@ public static class GenerateControllerCommand
             {
                 if (buildProc != null)
                 {
-                    await buildProc.WaitForExitAsync();
+                    // Read output asynchronously to prevent deadlock
+                    var outputTask = buildProc.StandardOutput.ReadToEndAsync();
+                    var errorTask = buildProc.StandardError.ReadToEndAsync();
+                    
+                    // Add timeout
+                    using var cts = new System.Threading.CancellationTokenSource(TimeSpan.FromSeconds(120));
+                    try
+                    {
+                        await buildProc.WaitForExitAsync(cts.Token);
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        buildProc.Kill(true);
+                        AnsiConsole.MarkupLine("[red]✗ Build timed out after 120 seconds[/]");
+                        return false;
+                    }
+                    
+                    var outp = await outputTask;
+                    var err = await errorTask;
+                    
                     if (buildProc.ExitCode != 0)
                     {
                         AnsiConsole.MarkupLine("[red]✗ Build failed before migration creation[/]");
-                        var err = await buildProc.StandardError.ReadToEndAsync();
-                        var outp = await buildProc.StandardOutput.ReadToEndAsync();
                         if (!string.IsNullOrWhiteSpace(outp)) AnsiConsole.WriteLine(outp);
                         if (!string.IsNullOrWhiteSpace(err)) AnsiConsole.WriteLine(err);
                         return false;
@@ -348,7 +365,27 @@ public static class GenerateControllerCommand
             using var proc = System.Diagnostics.Process.Start(psi);
             if (proc != null)
             {
-                await proc.WaitForExitAsync();
+                // CRITICAL: Read output asynchronously to prevent deadlock
+                // Buffers can fill up and block WaitForExitAsync if not read
+                var outputTask = proc.StandardOutput.ReadToEndAsync();
+                var errorTask = proc.StandardError.ReadToEndAsync();
+                
+                // Add timeout to prevent infinite hangs
+                using var cts = new System.Threading.CancellationTokenSource(TimeSpan.FromSeconds(60));
+                try
+                {
+                    await proc.WaitForExitAsync(cts.Token);
+                }
+                catch (OperationCanceledException)
+                {
+                    proc.Kill(true); // Kill entire process tree
+                    AnsiConsole.MarkupLine("[red]✗[/] Migration creation timed out after 60 seconds");
+                    return false;
+                }
+                
+                var output = await outputTask;
+                var error = await errorTask;
+                
                 if (proc.ExitCode == 0)
                 {
                     AnsiConsole.MarkupLine("[green]✓[/] Migration created");
@@ -356,6 +393,8 @@ public static class GenerateControllerCommand
                 }
                 else
                 {
+                    if (!string.IsNullOrWhiteSpace(output)) AnsiConsole.WriteLine(output);
+                    if (!string.IsNullOrWhiteSpace(error)) AnsiConsole.WriteLine(error);
                     AnsiConsole.MarkupLine("[yellow]⚠[/] Failed to create migration automatically. You can run it manually:");
                     AnsiConsole.MarkupLine($"    dotnet ef migrations add Add{entityName}{(contextName != null ? $" --context {contextName}" : string.Empty)}");
                     return false;
@@ -832,7 +871,8 @@ public class {entityName}
             return;
         }
         
-        // Find the last DbSet property and add new one after it
+        // Find where to insert: after last DbSet but before OnModelCreating
+        var onModelCreatingIndex = content.IndexOf("protected override void OnModelCreating", StringComparison.Ordinal);
         var dbSetPattern = "public DbSet<";
         var lastDbSetIndex = content.LastIndexOf(dbSetPattern);
         
@@ -841,24 +881,41 @@ public class {entityName}
             throw new InvalidOperationException("Could not find any DbSet properties in DbContext");
         }
         
-        // Find the end of the DbSet property (look for ; or } then newline)
-        // This handles both styles: { get; set; } and => Set<T>()
+        // Find the end of the LAST DbSet property
         var lineEnd = -1;
         var searchStart = lastDbSetIndex;
         for (int i = searchStart; i < content.Length; i++)
         {
+            // Stop searching if we hit OnModelCreating - we've gone too far
+            if (onModelCreatingIndex != -1 && i >= onModelCreatingIndex)
+            {
+                break;
+            }
+            
             if ((content[i] == ';' || content[i] == '}') && i + 1 < content.Length)
             {
                 // Found property terminator, now find the newline
-                lineEnd = content.IndexOf('\n', i);
-                if (lineEnd != -1)
+                var nextNewline = content.IndexOf('\n', i);
+                if (nextNewline != -1)
                 {
+                    lineEnd = nextNewline;
                     break;
                 }
             }
         }
         
         if (lineEnd == -1) lineEnd = content.Length;
+        
+        // Double-check we're not inserting after OnModelCreating
+        if (onModelCreatingIndex != -1 && lineEnd > onModelCreatingIndex)
+        {
+            // Find the line before OnModelCreating instead
+            var beforeMethod = content.LastIndexOf('\n', onModelCreatingIndex - 1);
+            if (beforeMethod != -1)
+            {
+                lineEnd = beforeMethod;
+            }
+        }
         
         // Insert new DbSet property with fully qualified type name to avoid conflicts
         var newDbSet = $"\n    public DbSet<{projectName}.Models.{entityName}> {entityName}s {{ get; set; }}";
