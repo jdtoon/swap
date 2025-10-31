@@ -1,0 +1,18 @@
+<!-- Pure HTMX Toast Container -->
+<div id="toast-container"></div>
+
+<script>
+    // HTMX automatically fires events from HX-Trigger header
+    // Listen for the showToast event
+    document.body.addEventListener('showToast', function(event) {
+        const detail = event.detail || {};
+        const container = document.getElementById('toast-container');
+        if (container) {
+            const toast = document.createElement('div');
+            toast.className = 'toast toast-' + (detail.type || 'info');
+            toast.textContent = detail.message || 'Operation completed';
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 3500);
+        }
+    });
+</script>

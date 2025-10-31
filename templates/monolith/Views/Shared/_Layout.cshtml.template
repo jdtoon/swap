@@ -5,54 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - {{ProjectName}}</title>
     <link rel="stylesheet" href="~/css/app.min.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/htmx-toast.css" asp-append-version="true" />
     <script src="~/lib/htmx/htmx.min.js" asp-append-version="true"></script>
-    <style>
-        /* Pure CSS Toast Notifications - No JavaScript Required */
-        #toast-container {
-            position: fixed;
-            top: 1rem;
-            right: 1rem;
-            z-index: 9999;
-            display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
-            pointer-events: none;
-        }
-        
-        .toast {
-            pointer-events: auto;
-            min-width: 300px;
-            padding: 1rem 1.5rem;
-            border-radius: 0.5rem;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            color: white;
-            font-weight: 500;
-            animation: slideIn 0.3s ease-out, fadeOut 0.5s ease-in 3s forwards;
-        }
-        
-        .toast-success { background-color: #4CAF50; }
-        .toast-error { background-color: #F44336; }
-        .toast-warning { background-color: #FF9800; }
-        .toast-info { background-color: #2196F3; }
-        
-        @@keyframes slideIn {
-            from {
-                transform: translateX(400px);
-                opacity: 0;
-            }
-            to {
-                transform: translateX(0);
-                opacity: 1;
-            }
-        }
-        
-        @@keyframes fadeOut {
-            to {
-                opacity: 0;
-                transform: translateX(400px);
-            }
-        }
-    </style>
 </head>
 <body>
     <header>
@@ -88,17 +42,7 @@
         </aside>
     </footer>
 
-    <!-- Pure HTMX Toast Container - No JavaScript Required -->
-    <div id="toast-container" 
-         hx-on:show-toast="
-            let detail = event.detail || {};
-            let toast = document.createElement('div');
-            toast.className = 'toast toast-' + (detail.type || 'info');
-            toast.textContent = detail.message || 'Operation completed';
-            this.appendChild(toast);
-            setTimeout(() => toast.remove(), 3500);
-         ">
-    </div>
+    @await Html.PartialAsync("_ToastContainer")
 
     @await RenderSectionAsync("Scripts", required: false)
 </body>

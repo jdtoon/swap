@@ -8,10 +8,6 @@
       "files": [
         "htmx.min.js"
       ]
-    },
-    {
-      "library": "toastify-js@1.12.0",
-      "destination": "wwwroot/lib/toastify-js"
     }
   ]
 }
