@@ -564,7 +564,28 @@ public static class GenerateControllerCommand
         var displayFieldCache = new Dictionary<string, string>();
         if (withRelationships)
         {
+            // Detect display fields for ManyToOne relationships
             foreach (var rel in relationships.Where(r => r.RelationshipType == global::Swap.CLI.Commands.Relationships.DetectedRelationshipType.ManyToOne))
+            {
+                if (rel.TargetEntity != null && !displayFieldCache.ContainsKey(rel.TargetEntity))
+                {
+                    var targetEntityPath = Path.Combine(workingDir, "Models", $"{rel.TargetEntity}.cs");
+                    try
+                    {
+                        AnsiConsole.MarkupLine($"[dim]  Detecting display field for {rel.TargetEntity}...[/]");
+                        displayFieldCache[rel.TargetEntity] = await global::Swap.CLI.Commands.Relationships.RelationshipUIGenerator.DetectDisplayFieldAsync(targetEntityPath, rel.TargetEntity);
+                        AnsiConsole.MarkupLine($"[dim]  → Using {displayFieldCache[rel.TargetEntity]}[/]");
+                    }
+                    catch (Exception ex)
+                    {
+                        AnsiConsole.MarkupLine($"[yellow]  Warning: Could not detect display field for {rel.TargetEntity}: {ex.Message}[/]");
+                        displayFieldCache[rel.TargetEntity] = "Name"; // Fallback
+                    }
+                }
+            }
+            
+            // Detect display fields for ManyToMany relationships
+            foreach (var rel in relationships.Where(r => r.RelationshipType == global::Swap.CLI.Commands.Relationships.DetectedRelationshipType.ManyToMany))
             {
                 if (rel.TargetEntity != null && !displayFieldCache.ContainsKey(rel.TargetEntity))
                 {
@@ -601,6 +622,21 @@ public static class GenerateControllerCommand
                 formFieldsList.Add(FieldHelper.GenerateFormField(field));
             }
         }
+        
+        // Add many-to-many checkbox lists
+        if (withRelationships)
+        {
+            var manyToManyRelationships = relationships.Where(r => r.RelationshipType == global::Swap.CLI.Commands.Relationships.DetectedRelationshipType.ManyToMany);
+            foreach (var rel in manyToManyRelationships)
+            {
+                if (rel.TargetEntity != null)
+                {
+                    var displayField = displayFieldCache.GetValueOrDefault(rel.TargetEntity, "Id");
+                    formFieldsList.Add(global::Swap.CLI.Commands.Relationships.RelationshipUIGenerator.GenerateCheckboxListFormField(rel, displayField));
+                }
+            }
+        }
+        
         var formFields = string.Join("\n\n", formFieldsList);
         
         // Generate table headers and cells with relationship awareness
@@ -681,6 +717,23 @@ public static class GenerateControllerCommand
             includeStatements = string.Join("", includes);
         }
         
+        // Generate many-to-many handling code
+        var manyToManyParameters = withRelationships && relationships.Any()
+            ? global::Swap.CLI.Commands.Relationships.RelationshipUIGenerator.GenerateManyToManyParameters(relationships)
+            : "";
+        
+        var manyToManyCreateCode = withRelationships && relationships.Any()
+            ? global::Swap.CLI.Commands.Relationships.RelationshipUIGenerator.GenerateManyToManyCreateCode(relationships)
+            : "";
+        
+        var manyToManyEditCode = withRelationships && relationships.Any()
+            ? global::Swap.CLI.Commands.Relationships.RelationshipUIGenerator.GenerateManyToManyEditCode(relationships, entityName)
+            : "";
+        
+        var manyToManyIncludes = withRelationships && relationships.Any()
+            ? global::Swap.CLI.Commands.Relationships.RelationshipUIGenerator.GenerateManyToManyIncludes(relationships)
+            : "";
+        
         // Setup template variables
         var variables = new Dictionary<string, string>
         {
@@ -709,7 +762,11 @@ public static class GenerateControllerCommand
             { "BulkDeleteScript", bulkDeleteScript },
             { "ViewBagPopulation", viewBagPopulation },
             { "ViewBagPopulationEdit", viewBagPopulationEdit },
-            { "IncludeStatements", includeStatements }
+            { "IncludeStatements", includeStatements },
+            { "ManyToManyParameters", manyToManyParameters },
+            { "ManyToManyCreateCode", manyToManyCreateCode },
+            { "ManyToManyEditCode", manyToManyEditCode },
+            { "ManyToManyIncludes", manyToManyIncludes }
         };
         
         await AnsiConsole.Status()

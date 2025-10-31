@@ -115,7 +115,7 @@ public class {{EntityName}}Controller : SwapController
     /// POST: Create new entity
     /// </summary>
     [HttpPost]
-    public async Task<IActionResult> Create({{EntityName}} model)
+    public async Task<IActionResult> Create({{EntityName}} model{{ManyToManyParameters}})
     {
         if (!ModelState.IsValid)
         {
@@ -124,7 +124,7 @@ public class {{EntityName}}Controller : SwapController
             Response.Headers.Append("HX-Reswap", "innerHTML");
             return PartialView("_{{EntityName}}CreateModal", model);
         }
-
+{{ManyToManyCreateCode}}
         _context.{{EntityNamePlural}}.Add(model);
         await _context.SaveChangesAsync();
 
@@ -142,7 +142,7 @@ public class {{EntityName}}Controller : SwapController
     public async Task<IActionResult> Edit(int id)
     {
 {{ViewBagPopulationEdit}}
-        var entity = await _context.{{EntityNamePlural}}.FindAsync(id);
+        var entity = await _context.{{EntityNamePlural}}{{ManyToManyIncludes}}.FirstOrDefaultAsync(e => e.Id == id);
         if (entity == null)
         {
             return NotFound();
@@ -155,7 +155,7 @@ public class {{EntityName}}Controller : SwapController
     /// POST: Update existing entity
     /// </summary>
     [HttpPost]
-    public async Task<IActionResult> Edit(int id, {{EntityName}} model)
+    public async Task<IActionResult> Edit(int id, {{EntityName}} model{{ManyToManyParameters}})
     {
         if (id != model.Id)
         {
@@ -172,6 +172,7 @@ public class {{EntityName}}Controller : SwapController
 
         try
         {
+{{ManyToManyEditCode}}
             _context.Update(model);
             await _context.SaveChangesAsync();
         }

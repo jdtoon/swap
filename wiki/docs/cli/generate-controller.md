@@ -164,11 +164,7 @@ Control sorting and filtering behavior per field:
 
 **New in v0.2.0**
 
-When `--with-relationships` is enabled (default), the generator automatically detects and handles foreign key relationships in your entities.
-
-:::info
-Many-to-many relationships are supported by the relationship generator, but UI scaffolding for selecting multiple related items is not yet automatic. After generating the relationship, regenerate your controller as usual and extend the views manually (e.g., checkboxes or multiselect) to manage the collections.
-:::
+When `--with-relationships` is enabled (default), the generator automatically detects and handles foreign key relationships and many-to-many relationships in your entities.
 
 ### Overview
 

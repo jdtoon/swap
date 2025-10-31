@@ -48,7 +48,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   # Custom junction with extra properties
   swap g rel -s Post -t Tag --type many-to-many --junction PostTag --junction-props "CreatedAt:datetime"
   ```
-- **Note**: UI scaffolding for many-to-many (checkboxes, badges) is not yet automatic and requires manual view extension
+- **UI Generation**: Automatically generates checkbox list UI in forms, ViewBag population, and controller action handlers for Selected{Entity}Ids
 
 ### Added - Authentication Scaffolding
 - **Authentication System**: Complete ASP.NET Core Identity integration with `swap generate auth`

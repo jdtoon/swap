@@ -449,9 +449,63 @@ protected override void OnModelCreating(ModelBuilder modelBuilder)
 }
 ```
 
-:::info
-Many-to-many UI (checkboxes/badges) is not auto-generated yet. Regenerate controllers as usual and extend views as needed for collection selection.
-:::
+**UI Generated:**
+
+```html
+<!-- Create/Edit Form (_PostForm.cshtml) -->
+<div class="form-control mb-4">
+    <label class="label">
+        <span class="label-text font-semibold">Tags</span>
+    </label>
+    <div class="border border-base-300 rounded-lg p-4 max-h-64 overflow-y-auto">
+        @foreach (var item in ViewBag.TagList)
+        {
+            var isChecked = selectedTagIds.Contains(item.Id);
+            <label class="label cursor-pointer justify-start gap-2 py-2">
+                <input type="checkbox" 
+                       name="SelectedTagIds" 
+                       value="@item.Id" 
+                       class="checkbox checkbox-primary checkbox-sm"
+                       checked="@isChecked" />
+                <span class="label-text">@item.Name</span>
+            </label>
+        }
+    </div>
+</div>
+```
+
+```csharp
+// Controller Create action
+public async Task<IActionResult> Create(Post model, int[]? selectedTagIds = null)
+{
+    if (!ModelState.IsValid) { /* ... */ }
+    
+    // Handle many-to-many relationships
+    if (selectedTagIds != null && selectedTagIds.Any())
+    {
+        var selectedTags = await _context.Tags
+            .Where(e => selectedTagIds.Contains(e.Id))
+            .ToListAsync();
+        model.Tags = selectedTags;
+    }
+    
+    _context.Posts.Add(model);
+    await _context.SaveChangesAsync();
+    /* ... */
+}
+```
+
+After creating the relationship, regenerate the Post controller:
+
+```bash
+swap g c Post --force
+```
+
+The generated UI includes:
+- **Checkbox List**: Scrollable list with automatic selection state management
+- **ViewBag Population**: `ViewBag.TagList` populated with all available tags
+- **POST Handling**: `SelectedTagIds` parameter in Create/Edit actions
+- **Collection Management**: Automatic assignment of selected tags to the Post
 
 ### One-to-One
 

@@ -225,7 +225,11 @@ protected override void OnModelCreating(ModelBuilder modelBuilder)
 ```
 
 **UI Generation**:
-- Not automatic yet for many-to-many. Regenerate controllers as usual and extend views manually (e.g., checkboxes for selection, badges for display).
+- **Create/Edit Forms**: Checkbox list for selecting multiple related entities
+- **List View**: Display count of related items or badges
+- **Details View**: Show all related items with links
+
+See [Many-to-Many Documentation](../cli/generate-relationship.md#many-to-many) for details.
 
 ### One-to-One
 
