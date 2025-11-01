@@ -711,6 +711,8 @@ public static class GenerateControllerCommand
                 detailsFieldsList.Add(FieldHelper.GenerateDetailsField(field));
             }
             // else: FK field or navigation property - already handled above, skip it
+        }
+
         // Add many-to-many relationship columns
         if (withRelationships)
         {
@@ -722,13 +724,13 @@ public static class GenerateControllerCommand
                     var label = global::Swap.CLI.Commands.Relationships.RelationshipUIGenerator.FormatLabel(rel.NavigationProperty);
                     var displayField = displayFieldCache.GetValueOrDefault(rel.TargetEntity, "Id");
                     var navProp = rel.NavigationProperty;
-                    
+
                     // Table header for many-to-many (non-sortable for now)
                     tableHeadersList.Add($"<th>{label}</th>");
-                    
+
                     // Table cell showing comma-separated list of related items (limit to first 3)
                     tableCellsList.Add($@"<td>@(string.Join("", "", item.{navProp}.Take(3).Select(x => x.{displayField})) + (item.{navProp}.Count > 3 ? $"" (+{{item.{navProp}.Count - 3}} more)"" : """"))</td>");
-                    
+
                     // Details field showing all related items as badges
                     detailsFieldsList.Add($@"<div class=""mb-2"">
                 <span class=""font-semibold"">{label}:</span>
@@ -745,8 +747,6 @@ public static class GenerateControllerCommand
             </div>");
                 }
             }
-        }
-        
         }
         
         var tableHeaders = string.Join("\n                    ", tableHeadersList);

@@ -150,6 +150,38 @@ public static class SeedHelper
             }
         }
 
+        // Generate many-to-many post-processing (link entities after generation)
+        var manyToMany = DetectManyToManyRelationships(entityName);
+        if (manyToMany.Any())
+        {
+            // Preload target entity lists for linking
+            prelude.AppendLine();
+            prelude.AppendLine("        // Preload target entities for many-to-many linking");
+            foreach (var rel in manyToMany)
+            {
+                var listVar = ToCamelCase(rel.TargetEntity) + "List";
+                var dbSet = rel.TargetEntity + "s"; // simple pluralization
+                prelude.AppendLine($"        var {listVar} = await db.{dbSet}.ToListAsync();");
+            }
+
+            // Link selections per entity
+            postProcess.AppendLine();
+            postProcess.AppendLine("        // Assign many-to-many relationships with 1-4 random links per entity");
+            postProcess.AppendLine("        var rand = new Random();");
+            foreach (var rel in manyToMany)
+            {
+                var listVar = ToCamelCase(rel.TargetEntity) + "List";
+                var navProp = rel.NavigationProperty;
+                postProcess.AppendLine("        foreach (var entity in items)");
+                postProcess.AppendLine("        {");
+                postProcess.AppendLine($"            if ({listVar}.Count == 0) continue;");
+                postProcess.AppendLine($"            var take = rand.Next(1, Math.Min(4, {listVar}.Count) + 1);");
+                postProcess.AppendLine($"            var selected = {listVar}.OrderBy(x => Guid.NewGuid()).Take(take).ToList();");
+                postProcess.AppendLine($"            foreach (var relItem in selected) entity.{navProp}.Add(relItem);");
+                postProcess.AppendLine("        }");
+            }
+        }
+
         return (prelude.ToString().TrimEnd(), rules.ToString().TrimEnd(), postProcess.ToString().TrimEnd());
     }
 
@@ -295,6 +327,55 @@ public static class SeedHelper
         }
         
         return oneToOneFields;
+    }
+
+    /// <summary>
+    /// Detect many-to-many navigation properties by scanning model files for reciprocal ICollection<T> navigations
+    /// </summary>
+    private static List<(string NavigationProperty, string TargetEntity)> DetectManyToManyRelationships(string entityName)
+    {
+        var results = new List<(string NavigationProperty, string TargetEntity)>();
+        try
+        {
+            var modelPath = Path.Combine("Models", $"{entityName}.cs");
+            if (!File.Exists(modelPath)) return results;
+            var content = File.ReadAllText(modelPath);
+
+            // Find collection navigation properties on this entity
+            var collRegex = new Regex(@"public\s+ICollection<(?<target>[A-Za-z0-9_\.]+)>\s+(?<name>[A-Za-z_][A-Za-z0-9_]*)\s*\{", RegexOptions.Compiled);
+            var candidates = new List<(string NavName, string Target)>();
+            foreach (Match m in collRegex.Matches(content))
+            {
+                var target = m.Groups["target"].Value.Contains('.') ? m.Groups["target"].Value.Split('.').Last() : m.Groups["target"].Value;
+                var navName = m.Groups["name"].Value;
+                candidates.Add((navName, target));
+            }
+
+            // Verify reciprocal collection exists on target entity (to distinguish many-to-many)
+            foreach (var (navName, target) in candidates)
+            {
+                try
+                {
+                    var targetPath = Path.Combine("Models", $"{target}.cs");
+                    if (!File.Exists(targetPath)) continue;
+                    var targetContent = File.ReadAllText(targetPath);
+                    var reciprocalPattern = $@"public\\s+ICollection<\s*{Regex.Escape(entityName)}\s*>\s+"; // any nav name
+                    if (Regex.IsMatch(targetContent, reciprocalPattern))
+                    {
+                        results.Add((navName, target));
+                    }
+                }
+                catch
+                {
+                    // ignore malformed files
+                }
+            }
+        }
+        catch
+        {
+            // swallow; return what we have
+        }
+        return results;
     }
 }
 
