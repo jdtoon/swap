@@ -173,8 +173,7 @@ public class {{EntityName}}Controller : SwapController
 
         try
         {
-{{ManyToManyEditCode}}
-            _context.Update(model);
+{{ManyToManyEditCode}}{{ContextUpdate}}
             await _context.SaveChangesAsync();
         }
         catch (DbUpdateConcurrencyException)

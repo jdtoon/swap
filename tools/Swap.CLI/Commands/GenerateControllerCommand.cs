@@ -711,6 +711,42 @@ public static class GenerateControllerCommand
                 detailsFieldsList.Add(FieldHelper.GenerateDetailsField(field));
             }
             // else: FK field or navigation property - already handled above, skip it
+        // Add many-to-many relationship columns
+        if (withRelationships)
+        {
+            var manyToManyRelationships = relationships.Where(r => r.RelationshipType == global::Swap.CLI.Commands.Relationships.DetectedRelationshipType.ManyToMany);
+            foreach (var rel in manyToManyRelationships)
+            {
+                if (rel.TargetEntity != null && rel.NavigationProperty != null)
+                {
+                    var label = global::Swap.CLI.Commands.Relationships.RelationshipUIGenerator.FormatLabel(rel.NavigationProperty);
+                    var displayField = displayFieldCache.GetValueOrDefault(rel.TargetEntity, "Id");
+                    var navProp = rel.NavigationProperty;
+                    
+                    // Table header for many-to-many (non-sortable for now)
+                    tableHeadersList.Add($"<th>{label}</th>");
+                    
+                    // Table cell showing comma-separated list of related items (limit to first 3)
+                    tableCellsList.Add($@"<td>@(string.Join("", "", item.{navProp}.Take(3).Select(x => x.{displayField})) + (item.{navProp}.Count > 3 ? $"" (+{{item.{navProp}.Count - 3}} more)"" : """"))</td>");
+                    
+                    // Details field showing all related items as badges
+                    detailsFieldsList.Add($@"<div class=""mb-2"">
+                <span class=""font-semibold"">{label}:</span>
+                <div class=""flex flex-wrap gap-1 mt-1"">
+                    @foreach (var relItem in Model.{navProp})
+                    {{
+                        <span class=""badge badge-primary"">@relItem.{displayField}</span>
+                    }}
+                    @if (!Model.{navProp}.Any())
+                    {{
+                        <span class=""text-gray-500"">None</span>
+                    }}
+                </div>
+            </div>");
+                }
+            }
+        }
+        
         }
         
         var tableHeaders = string.Join("\n                    ", tableHeadersList);
@@ -739,8 +775,10 @@ public static class GenerateControllerCommand
         var includeStatements = "";
         if (withRelationships && relationships.Any())
         {
+            // Include both ManyToOne and ManyToMany navigation properties
             var includes = relationships
-                .Where(r => r.RelationshipType == global::Swap.CLI.Commands.Relationships.DetectedRelationshipType.ManyToOne)
+                .Where(r => r.RelationshipType == global::Swap.CLI.Commands.Relationships.DetectedRelationshipType.ManyToOne || 
+                            r.RelationshipType == global::Swap.CLI.Commands.Relationships.DetectedRelationshipType.ManyToMany)
                 .Select(r => $".Include(e => e.{r.NavigationProperty})");
             includeStatements = string.Join("", includes);
         }
@@ -755,12 +793,17 @@ public static class GenerateControllerCommand
             : "";
         
         var manyToManyEditCode = withRelationships && relationships.Any()
-            ? global::Swap.CLI.Commands.Relationships.RelationshipUIGenerator.GenerateManyToManyEditCode(relationships, entityName)
+            ? global::Swap.CLI.Commands.Relationships.RelationshipUIGenerator.GenerateManyToManyEditCode(relationships, entityName, fields)
             : "";
         
         var manyToManyIncludes = withRelationships && relationships.Any()
             ? global::Swap.CLI.Commands.Relationships.RelationshipUIGenerator.GenerateManyToManyIncludes(relationships)
             : "";
+        
+        // Only include Update(model) if there's no many-to-many code (which handles the update itself)
+        var contextUpdate = string.IsNullOrEmpty(manyToManyEditCode)
+            ? "            _context.Update(model);"
+            : "            // Update handled in many-to-many code above";
         
         // Setup template variables
         var variables = new Dictionary<string, string>
@@ -794,7 +837,8 @@ public static class GenerateControllerCommand
             { "ManyToManyParameters", manyToManyParameters },
             { "ManyToManyCreateCode", manyToManyCreateCode },
             { "ManyToManyEditCode", manyToManyEditCode },
-            { "ManyToManyIncludes", manyToManyIncludes }
+            { "ManyToManyIncludes", manyToManyIncludes },
+            { "ContextUpdate", contextUpdate }
         };
         
         await AnsiConsole.Status()

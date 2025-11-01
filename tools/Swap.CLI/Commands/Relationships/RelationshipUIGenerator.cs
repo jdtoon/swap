@@ -2,6 +2,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Swap.CLI.Commands.Relationships.Models;
+using Swap.CLI.Infrastructure;
 
 namespace Swap.CLI.Commands.Relationships;
 
@@ -335,7 +336,7 @@ public class RelationshipUIGenerator
     /// Generate code for Edit action to handle many-to-many Selected{Entity}Ids
     /// Includes loading existing relationships and updating the collection
     /// </summary>
-    public static string GenerateManyToManyEditCode(List<DetectedRelationship> relationships, string entityName)
+    public static string GenerateManyToManyEditCode(List<DetectedRelationship> relationships, string entityName, List<FieldDefinition> fields)
     {
         var code = new System.Text.StringBuilder();
         var manyToManyRels = relationships.Where(r => r.RelationshipType == DetectedRelationshipType.ManyToMany).ToList();
@@ -358,6 +359,22 @@ public class RelationshipUIGenerator
             
         if (existing{entityName} != null)
         {{");
+        
+        // Copy scalar properties from model to existing entity
+        // Filter out Id (primary key) and navigation properties
+        var scalarFields = fields.Where(f => 
+            f.Name != "Id" && 
+            !relationships.Any(r => r.NavigationProperty == f.Name)).ToList();
+        
+        if (scalarFields.Any())
+        {
+            code.AppendLine("            // Update scalar properties from model");
+            foreach (var field in scalarFields)
+            {
+                code.AppendLine($"            existing{entityName}.{field.Name} = model.{field.Name};");
+            }
+            code.AppendLine();
+        }
         
         // Generate clear/add logic for each relationship
         foreach (var rel in manyToManyRels)
