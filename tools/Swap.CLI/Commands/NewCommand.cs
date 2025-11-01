@@ -413,6 +413,12 @@ public class HtmxShellMiddleware
         {
             var relativePath = Path.GetRelativePath(sourcePath, file);
             var targetFileName = relativePath.Replace(".template", "");
+
+            // Skip legacy root-level PaginationDto; use Dtos/PaginationDto.cs instead
+            if (string.Equals(relativePath, "PaginationDto.cs.template", StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
             
             // Special case: rename Project.csproj to {ProjectName}.csproj
             if (targetFileName == "Project.csproj")
