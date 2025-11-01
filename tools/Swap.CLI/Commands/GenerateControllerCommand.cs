@@ -255,7 +255,7 @@ public static class GenerateControllerCommand
 
             var content = await File.ReadAllTextAsync(layoutPath);
             var linkText = entityName + "s"; // simple plural
-            var li = $"<li><a href=\"/{entityName}\" hx-target=\"#main-content\" hx-push-url=\"true\">{linkText}</a></li>";
+            var li = $"<li><a href=\"/{entityName}\" hx-get=\"/{entityName}\" hx-target=\"#main-content\" hx-push-url=\"true\">{linkText}</a></li>";
 
             // Prefer inserting inside the primary nav UL
             var ulIdx = content.IndexOf("<ul class=\"menu menu-horizontal", StringComparison.OrdinalIgnoreCase);
@@ -273,7 +273,7 @@ public static class GenerateControllerCommand
                 var navClose = content.LastIndexOf("</nav>", StringComparison.OrdinalIgnoreCase);
                 if (navClose >= 0)
                 {
-                    var fallbackLink = $"<a href=\"/{entityName}\" hx-target=\"#main-content\" hx-push-url=\"true\" class=\"btn btn-ghost\">{linkText}</a>";
+                    var fallbackLink = $"<a href=\"/{entityName}\" hx-get=\"/{entityName}\" hx-target=\"#main-content\" hx-push-url=\"true\" class=\"btn btn-ghost\">{linkText}</a>";
                     content = content.Insert(navClose, "\n                " + fallbackLink + "\n");
                 }
                 else
@@ -285,7 +285,7 @@ public static class GenerateControllerCommand
                         var bodyEnd = content.IndexOf('>', bodyIdx);
                         if (bodyEnd > bodyIdx)
                         {
-                            var fallbackLink = $"<a href=\"/{entityName}\" hx-target=\"#main-content\" hx-push-url=\"true\" class=\"btn btn-ghost\">{linkText}</a>";
+                            var fallbackLink = $"<a href=\"/{entityName}\" hx-get=\"/{entityName}\" hx-target=\"#main-content\" hx-push-url=\"true\" class=\"btn btn-ghost\">{linkText}</a>";
                             content = content.Insert(bodyEnd + 1, "\n        <!-- Nav injected by swap --add-nav -->\n        " + fallbackLink + "\n");
                         }
                     }
@@ -636,11 +636,15 @@ public static class GenerateControllerCommand
                 var displayField = displayFieldCache.GetValueOrDefault(relationship.TargetEntity, "Id");
                 formFieldsList.Add(global::Swap.CLI.Commands.Relationships.RelationshipUIGenerator.GenerateDropdownFormField(relationship, displayField));
             }
-            else
+            else if (!withRelationships || 
+                     (!relationships.Any(r => r.ForeignKeyProperty == field.Name) && 
+                      !relationships.Any(r => r.NavigationProperty == field.Name)))
             {
-                // Regular field
+                // Regular field (not a FK or navigation property, or relationships disabled)
+                // Skip FK fields and navigation properties to avoid duplicates
                 formFieldsList.Add(FieldHelper.GenerateFormField(field));
             }
+            // else: FK field or navigation property - already handled or skip
         }
         
         // Add many-to-many checkbox lists
@@ -669,7 +673,7 @@ public static class GenerateControllerCommand
             var relationship = relationships.FirstOrDefault(r => r.ForeignKeyProperty == field.Name);
             if (relationship != null && withRelationships && relationship.TargetEntity != null)
             {
-                // Skip FK column, we'll show the navigation property instead
+                // This is a FK field with a relationship - show the navigation property instead
                 var label = global::Swap.CLI.Commands.Relationships.RelationshipUIGenerator.FormatLabel(relationship.TargetEntity);
                 var displayField = displayFieldCache.GetValueOrDefault(relationship.TargetEntity, "Id");
                 
@@ -696,13 +700,17 @@ public static class GenerateControllerCommand
                 <span>@(Model.{relationship.NavigationProperty}?.{displayField} ?? ""None"")</span>
             </div>");
             }
-            else
+            else if (!withRelationships || 
+                     (!relationships.Any(r => r.ForeignKeyProperty == field.Name) && 
+                      !relationships.Any(r => r.NavigationProperty == field.Name)))
             {
-                // Regular field
+                // Regular field (not a FK or navigation property, or relationships disabled)
+                // Skip FK fields and navigation properties to avoid duplicates - they're handled above
                 tableHeadersList.Add(FieldHelper.GenerateTableHeader(field, entityNameLower));
                 tableCellsList.Add(FieldHelper.GenerateTableCell(field));
                 detailsFieldsList.Add(FieldHelper.GenerateDetailsField(field));
             }
+            // else: FK field or navigation property - already handled above, skip it
         }
         
         var tableHeaders = string.Join("\n                    ", tableHeadersList);
