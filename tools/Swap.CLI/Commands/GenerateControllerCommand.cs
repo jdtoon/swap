@@ -306,24 +306,23 @@ public static class GenerateControllerCommand
         try
         {
             // Rigid gate: build before migrations
-            var build = new System.Diagnostics.ProcessStartInfo
+            var buildPsi = new System.Diagnostics.ProcessStartInfo
             {
                 FileName = "dotnet",
-                Arguments = "build",
+                Arguments = "build --nologo",
                 WorkingDirectory = workingDir,
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
                 UseShellExecute = false,
                 CreateNoWindow = true
             };
-            using (var buildProc = System.Diagnostics.Process.Start(build))
+            using (var buildProc = System.Diagnostics.Process.Start(buildPsi))
             {
                 if (buildProc != null)
                 {
-                    // Read output asynchronously to prevent deadlock
                     var outputTask = buildProc.StandardOutput.ReadToEndAsync();
                     var errorTask = buildProc.StandardError.ReadToEndAsync();
-                    
+
                     // Add timeout
                     using var cts = new System.Threading.CancellationTokenSource(TimeSpan.FromSeconds(120));
                     try
@@ -332,14 +331,14 @@ public static class GenerateControllerCommand
                     }
                     catch (OperationCanceledException)
                     {
-                        buildProc.Kill(true);
+                        try { buildProc.Kill(true); } catch { }
                         AnsiConsole.MarkupLine("[red]✗ Build timed out after 120 seconds[/]");
                         return false;
                     }
-                    
+
                     var outp = await outputTask;
                     var err = await errorTask;
-                    
+
                     if (buildProc.ExitCode != 0)
                     {
                         AnsiConsole.MarkupLine("[red]✗ Build failed before migration creation[/]");
@@ -677,16 +676,27 @@ public static class GenerateControllerCommand
                 var label = global::Swap.CLI.Commands.Relationships.RelationshipUIGenerator.FormatLabel(relationship.TargetEntity);
                 var displayField = displayFieldCache.GetValueOrDefault(relationship.TargetEntity, "Id");
                 
-                // Table header for relationship (using actual variable values, not template placeholders)
+                // Table header for relationship - consistent HTMX pattern and includes
+                var relSortKey = (relationship.NavigationProperty ?? relationship.TargetEntity ?? string.Empty).ToLower();
                 tableHeadersList.Add($@"<th>
-                        <button class=""btn btn-ghost btn-xs"" 
-                                hx-get=""@Url.Action(""Get{entityName}List"", new {{ sortBy = ""{relationship.NavigationProperty}"", sortOrder = (@Model.SortBy == ""{relationship.NavigationProperty}"" && @Model.SortOrder == ""asc"" ? ""desc"" : ""asc""), searchTerm = @Model.SearchTerm, pageNumber = 1 }})""
+                        <button class=""flex items-center gap-1 hover:text-primary""
+                                hx-get=""@Url.Action(""Get{entityName}List"")""
                                 hx-target=""#{entityNameLower}-list"" 
-                                hx-swap=""outerHTML"">
+                                hx-swap=""outerHTML""
+                                hx-include=""[name='searchTerm'], [name='pageSize']{FieldHelper.GenerateFilterIncludes(fields)}""
+                                hx-vals='{{""sortBy"": ""{relSortKey}"", ""sortOrder"": ""@(Model.SortBy?.ToLower() == ""{relSortKey}"" && Model.SortOrder == ""asc"" ? ""desc"" : ""asc"")""}}'
+                                type=""button"">
                             {label}
-                            @if (Model.SortBy == ""{relationship.NavigationProperty}"")
+                            @if (Model.SortBy?.ToLower() == ""{relSortKey}"")
                             {{
-                                <span>@(Model.SortOrder == ""asc"" ? ""↑"" : ""↓"")</span>
+                                @if (Model.SortOrder == ""desc"")
+                                {{
+                                    <span>↓</span>
+                                }}
+                                else
+                                {{
+                                    <span>↑</span>
+                                }}
                             }}
                         </button>
                     </th>");
@@ -749,7 +759,7 @@ public static class GenerateControllerCommand
             }
         }
         
-        var tableHeaders = string.Join("\n                    ", tableHeadersList);
+    var tableHeaders = string.Join("\n                    ", tableHeadersList);
         var tableCells = string.Join("\n                        ", tableCellsList);
         var detailsFields = string.Join("\n            ", detailsFieldsList);
         var defaultInitialization = FieldHelper.GenerateDefaultInitialization(fields);
@@ -806,6 +816,33 @@ public static class GenerateControllerCommand
             : "            // Update handled in many-to-many code above";
         
         // Setup template variables
+        // Extend sort cases with relationship-based sorting (by display field on navigation)
+        var relationshipSortCases = new List<string>();
+        if (withRelationships)
+        {
+            foreach (var rel in relationships.Where(r => r.RelationshipType == global::Swap.CLI.Commands.Relationships.DetectedRelationshipType.ManyToOne))
+            {
+                if (!string.IsNullOrEmpty(rel.NavigationProperty) && rel.TargetEntity != null)
+                {
+                    var displayField = displayFieldCache.GetValueOrDefault(rel.TargetEntity, "Id");
+                    var key = rel.NavigationProperty.ToLower();
+                    relationshipSortCases.Add($"\"{key}\" => isDescending ? query.OrderByDescending(x => x.{rel.NavigationProperty}.{displayField}) : query.OrderBy(x => x.{rel.NavigationProperty}.{displayField}),");
+                }
+            }
+        }
+        if (relationshipSortCases.Any())
+        {
+            sortCases = sortCases.TrimEnd();
+            if (!string.IsNullOrEmpty(sortCases) && !sortCases.Contains("No sortable fields"))
+            {
+                sortCases += "\n            " + string.Join("\n            ", relationshipSortCases);
+            }
+            else
+            {
+                sortCases = string.Join("\n            ", relationshipSortCases);
+            }
+        }
+
         var variables = new Dictionary<string, string>
         {
             { "EntityName", entityName },

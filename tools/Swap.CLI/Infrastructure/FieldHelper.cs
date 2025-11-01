@@ -252,6 +252,7 @@ public static class FieldHelper
                        placeholder=""{field.Name}""
                        value=""@Model.{field.Name}.ToString(""G29"", System.Globalization.CultureInfo.InvariantCulture)""
                        step=""any""
+                  inputmode=""decimal""
                        class=""input input-bordered"" 
                        {required} />
                 <span asp-validation-for=""{field.Name}"" class=""text-error text-sm""></span>
@@ -266,6 +267,7 @@ public static class FieldHelper
                        placeholder=""{field.Name}""
                        value=""@(Model.{field.Name}?.ToString(""G29"", System.Globalization.CultureInfo.InvariantCulture) ?? """")""
                        step=""any""
+                  inputmode=""decimal""
                        class=""input input-bordered"" 
                        {required} />
                 <span asp-validation-for=""{field.Name}"" class=""text-error text-sm""></span>
@@ -413,7 +415,11 @@ public static class FieldHelper
     /// </summary>
     public static string GenerateSortCases(List<FieldDefinition> fields)
     {
-        var sortableFields = fields.Where(f => f.IsSortable).ToList();
+        var sortablePrimitives = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "string", "int", "long", "short", "byte", "bool", "float", "double", "decimal", "DateTime", "Guid"
+        };
+        var sortableFields = fields.Where(f => f.IsSortable && sortablePrimitives.Contains(f.Type)).ToList();
         
         if (!sortableFields.Any())
         {

@@ -7,7 +7,11 @@ using Swap.Htmx;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services
-builder.Services.AddControllersWithViews();
+builder.Services.AddControllersWithViews(options =>
+{
+    // Accept both 123.45 and 123,45 for decimal inputs
+    options.ModelBinderProviders.Insert(0, new {{ProjectName}}.Infrastructure.InvariantDecimalModelBinderProvider());
+});
 builder.Services.AddSwapHtmx();
 
 // Add session support for server-side bulk operations

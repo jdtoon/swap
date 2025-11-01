@@ -11,12 +11,12 @@
             @* Page size selector *@
             <div class="flex items-center gap-2">
                 <label class="text-sm text-base-content/70">Show:</label>
-                <select class="select select-sm select-bordered"
+        <select class="select select-sm select-bordered"
                         name="pageSize"
                         hx-get="@Model.HxGetUrl"
                         hx-target="@Model.HxTarget"
                         hx-swap="@Model.HxSwap"
-                        hx-include="[name='searchTerm']">
+            hx-include="[name='searchTerm'], [name='sortBy'], [name='sortOrder']{{FilterIncludes}}">
                     <option value="10" selected="@(Model.PageSize == 10)">10</option>
                     <option value="25" selected="@(Model.PageSize == 25)">25</option>
                     <option value="50" selected="@(Model.PageSize == 50)">50</option>
@@ -28,11 +28,11 @@
         <div class="join">
             @if (Model.HasPreviousPage)
             {
-                <button class="join-item btn btn-sm"
+        <button class="join-item btn btn-sm"
                         hx-get="@Model.HxGetUrl?pageNumber=@(Model.CurrentPage - 1)&pageSize=@Model.PageSize"
                         hx-target="@Model.HxTarget"
                         hx-swap="@Model.HxSwap"
-                        hx-include="[name='searchTerm']">
+            hx-include="[name='searchTerm'], [name='sortBy'], [name='sortOrder']{{FilterIncludes}}">
                     «
                 </button>
             }
@@ -48,11 +48,11 @@
                 // Always show first page
                 if (startPage > 1)
                 {
-                    <button class="join-item btn btn-sm"
+            <button class="join-item btn btn-sm"
                             hx-get="@Model.HxGetUrl?pageNumber=1&pageSize=@Model.PageSize"
                             hx-target="@Model.HxTarget"
                             hx-swap="@Model.HxSwap"
-                            hx-include="[name='searchTerm']">
+                hx-include="[name='searchTerm'], [name='sortBy'], [name='sortOrder']{{FilterIncludes}}">
                         1
                     </button>
                     if (startPage > 2)
@@ -70,11 +70,11 @@
                     }
                     else
                     {
-                        <button class="join-item btn btn-sm"
+            <button class="join-item btn btn-sm"
                                 hx-get="@Model.HxGetUrl?pageNumber=@i&pageSize=@Model.PageSize"
                                 hx-target="@Model.HxTarget"
                                 hx-swap="@Model.HxSwap"
-                                hx-include="[name='searchTerm']">
+                hx-include="[name='searchTerm'], [name='sortBy'], [name='sortOrder']{{FilterIncludes}}">
                             @i
                         </button>
                     }
@@ -87,11 +87,11 @@
                     {
                         <button class="join-item btn btn-sm btn-disabled">...</button>
                     }
-                    <button class="join-item btn btn-sm"
+            <button class="join-item btn btn-sm"
                             hx-get="@Model.HxGetUrl?pageNumber=@Model.TotalPages&pageSize=@Model.PageSize"
                             hx-target="@Model.HxTarget"
                             hx-swap="@Model.HxSwap"
-                            hx-include="[name='searchTerm']">
+                hx-include="[name='searchTerm'], [name='sortBy'], [name='sortOrder']{{FilterIncludes}}">
                         @Model.TotalPages
                     </button>
                 }
@@ -99,11 +99,11 @@
             
             @if (Model.HasNextPage)
             {
-                <button class="join-item btn btn-sm"
+        <button class="join-item btn btn-sm"
                         hx-get="@Model.HxGetUrl?pageNumber=@(Model.CurrentPage + 1)&pageSize=@Model.PageSize"
                         hx-target="@Model.HxTarget"
                         hx-swap="@Model.HxSwap"
-                        hx-include="[name='searchTerm']">
+            hx-include="[name='searchTerm'], [name='sortBy'], [name='sortOrder']{{FilterIncludes}}">
                     »
                 </button>
             }
