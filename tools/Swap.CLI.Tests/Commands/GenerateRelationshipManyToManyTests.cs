@@ -126,7 +126,7 @@ public class AppDbContext : DbContext
         var result = await DbContextModifier.AddDbSetAsync(dbContextPath, "CourseStudent");
 
         // Assert
-        Assert.Contains("public DbSet<CourseStudent> CourseStudent { get; set; }", result);
+        Assert.Contains("public DbSet<CourseStudent> CourseStudents { get; set; }", result);
     }
 
     [Fact]
@@ -302,7 +302,8 @@ public class AppDbContext : DbContext
             "Student", 
             "Course", 
             "CourseStudent",
-            null 
+            null,
+            "TestApp"
         }) as string;
 
         // Assert
@@ -334,7 +335,8 @@ public class AppDbContext : DbContext
             "Student", 
             "Course", 
             "CourseStudent",
-            additionalProps 
+            additionalProps,
+            "TestApp"
         }) as string;
 
         // Assert
