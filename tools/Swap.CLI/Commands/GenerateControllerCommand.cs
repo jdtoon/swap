@@ -624,6 +624,26 @@ public static class GenerateControllerCommand
                     }
                 }
             }
+            
+            // Detect display fields for OneToOne relationships
+            foreach (var rel in relationships.Where(r => r.RelationshipType == global::Swap.CLI.Commands.Relationships.DetectedRelationshipType.OneToOne))
+            {
+                if (rel.TargetEntity != null && !displayFieldCache.ContainsKey(rel.TargetEntity))
+                {
+                    var targetEntityPath = Path.Combine(workingDir, "Models", $"{rel.TargetEntity}.cs");
+                    try
+                    {
+                        AnsiConsole.MarkupLine($"[dim]  Detecting display field for {rel.TargetEntity}...[/]");
+                        displayFieldCache[rel.TargetEntity] = await global::Swap.CLI.Commands.Relationships.RelationshipUIGenerator.DetectDisplayFieldAsync(targetEntityPath, rel.TargetEntity);
+                        AnsiConsole.MarkupLine($"[dim]  → Using {displayFieldCache[rel.TargetEntity]}[/]");
+                    }
+                    catch (Exception ex)
+                    {
+                        AnsiConsole.MarkupLine($"[yellow]  Warning: Could not detect display field for {rel.TargetEntity}: {ex.Message}[/]");
+                        displayFieldCache[rel.TargetEntity] = "Name"; // Fallback
+                    }
+                }
+            }
         }
         
         // Generate form fields with relationship awareness
@@ -638,15 +658,30 @@ public static class GenerateControllerCommand
                 var isOneToOne = relationship.RelationshipType == global::Swap.CLI.Commands.Relationships.DetectedRelationshipType.OneToOne;
                 formFieldsList.Add(global::Swap.CLI.Commands.Relationships.RelationshipUIGenerator.GenerateDropdownFormField(relationship, displayField, isOneToOne));
             }
-            else if (!withRelationships || 
-                     (!relationships.Any(r => r.ForeignKeyProperty == field.Name) && 
-                      !relationships.Any(r => r.NavigationProperty == field.Name)))
+            else
             {
-                // Regular field (not a FK or navigation property, or relationships disabled)
-                // Skip FK fields and navigation properties to avoid duplicates
-                formFieldsList.Add(FieldHelper.GenerateFormField(field));
+                // Check if this field is a OneToOne principal navigation property
+                var oneToOneNav = relationships.FirstOrDefault(r => 
+                    r.NavigationProperty == field.Name && 
+                    r.RelationshipType == global::Swap.CLI.Commands.Relationships.DetectedRelationshipType.OneToOne &&
+                    string.IsNullOrEmpty(r.ForeignKeyProperty)); // Principal side has no FK
+                    
+                if (oneToOneNav != null && withRelationships && oneToOneNav.TargetEntity != null)
+                {
+                    // OneToOne principal navigation - generate dropdown to select dependent entity
+                    var displayField = displayFieldCache.GetValueOrDefault(oneToOneNav.TargetEntity, "Id");
+                    formFieldsList.Add(global::Swap.CLI.Commands.Relationships.RelationshipUIGenerator.GenerateDropdownFormField(oneToOneNav, displayField, true));
+                }
+                else if (!withRelationships || 
+                         (!relationships.Any(r => r.ForeignKeyProperty == field.Name) && 
+                          !relationships.Any(r => r.NavigationProperty == field.Name)))
+                {
+                    // Regular field (not a FK or navigation property, or relationships disabled)
+                    // Skip FK fields and navigation properties to avoid duplicates
+                    formFieldsList.Add(FieldHelper.GenerateFormField(field));
+                }
+                // else: FK field or navigation property - already handled or skip
             }
-            // else: FK field or navigation property - already handled or skip
         }
         
         // Add many-to-many checkbox lists

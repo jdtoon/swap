@@ -220,6 +220,9 @@ public class RelationshipUIGenerator
     public static string GenerateDropdownFormField(DetectedRelationship relationship, string displayField = "Name", bool isOneToOne = false)
     {
         var fkName = relationship.ForeignKeyProperty ?? $"{relationship.TargetEntity}Id";
+        var navProp = relationship.NavigationProperty ?? relationship.TargetEntity;
+        var isOneToOnePrincipal = isOneToOne && string.IsNullOrEmpty(relationship.ForeignKeyProperty);
+        
         // For self-reference, use navigation property name for better UX (e.g., "Parent" not "Category")
         var labelText = relationship.IsSelfReferencing 
             ? relationship.NavigationProperty 
@@ -227,7 +230,30 @@ public class RelationshipUIGenerator
         var label = FormatLabel(labelText ?? "Related");
         var required = relationship.IsRequired ? "required" : "";
 
-        // For OneToOne relationships, FK should be readonly on edit (unique constraint)
+        // For OneToOne principal (no FK on this entity), generate special dropdown
+        if (isOneToOnePrincipal)
+        {
+            return $@"<div class=""form-control"">
+    <label class=""label"">
+        <span class=""label-text"">{label}</span>
+    </label>
+    <select name=""{navProp}Id"" 
+            class=""select select-bordered w-full"" 
+            {required}>
+        <option value="""">-- Select {label} --</option>
+        @foreach (var item in ViewBag.{relationship.TargetEntity}List as IEnumerable<dynamic>)
+        {{
+            <option value=""@item.Id"" selected=""@(Model.{navProp}?.Id == item.Id)"">
+                @item.{displayField}
+            </option>
+        }}
+    </select>
+    <span asp-validation-for=""{navProp}"" class=""text-error text-sm""></span>
+    <span class=""text-sm text-gray-500 mt-1"">Optional one-to-one relationship</span>
+</div>";
+        }
+
+        // For OneToOne dependent (FK on this entity), FK should be readonly on edit (unique constraint)
         if (isOneToOne)
         {
             return $@"@if (Model.Id == 0)
@@ -259,7 +285,7 @@ else
             <span class=""label-text"">{label}</span>
         </label>
         <input type=""text"" 
-               value=""@(Model.{relationship.NavigationProperty}?.{displayField} ?? """")"" 
+               value=""@(Model.{navProp}?.{displayField} ?? """")"" 
                class=""input input-bordered"" 
                readonly 
                disabled />
@@ -346,6 +372,15 @@ else
             }
         }
 
+        // OneToOne principal navigation dropdowns (e.g., User selecting UserProfile)
+        foreach (var rel in relationships.Where(r => r.RelationshipType == DetectedRelationshipType.OneToOne && string.IsNullOrEmpty(r.ForeignKeyProperty)))
+        {
+            if (rel.TargetEntity != null && addedEntities.Add(rel.TargetEntity))
+            {
+                code.AppendLine($"        ViewBag.{rel.TargetEntity}List = await _context.{EntityModifier.Pluralize(rel.TargetEntity)}.ToListAsync();");
+            }
+        }
+
         // ManyToMany checkboxes
         foreach (var rel in relationships.Where(r => r.RelationshipType == DetectedRelationshipType.ManyToMany))
         {
@@ -368,6 +403,24 @@ else
 
         // ManyToOne dropdowns
         foreach (var rel in relationships.Where(r => r.RelationshipType == DetectedRelationshipType.ManyToOne))
+        {
+            if (rel.TargetEntity != null && addedEntities.Add(rel.TargetEntity))
+            {
+                if (rel.IsSelfReferencing)
+                {
+                    // For self-referencing, exclude the current entity to prevent circular reference
+                    code.AppendLine($"        ViewBag.{rel.TargetEntity}List = await _context.{EntityModifier.Pluralize(rel.TargetEntity)}.Where(e => e.Id != id).ToListAsync();");
+                }
+                else
+                {
+                    // For normal relationships, include all entities
+                    code.AppendLine($"        ViewBag.{rel.TargetEntity}List = await _context.{EntityModifier.Pluralize(rel.TargetEntity)}.ToListAsync();");
+                }
+            }
+        }
+
+        // OneToOne principal navigation dropdowns (e.g., User selecting UserProfile)
+        foreach (var rel in relationships.Where(r => r.RelationshipType == DetectedRelationshipType.OneToOne && string.IsNullOrEmpty(r.ForeignKeyProperty)))
         {
             if (rel.TargetEntity != null && addedEntities.Add(rel.TargetEntity))
             {
