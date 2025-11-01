@@ -71,6 +71,15 @@ public static class GenerateModelCommand
             return 1;
         }
         
+        // Check for reserved/problematic names that conflict with .NET types
+        var reservedNames = new[] { "Task", "Action", "Result", "Controller", "View", "Model", "String", "Object", "Type", "Attribute" };
+        if (reservedNames.Contains(entityName, StringComparer.OrdinalIgnoreCase))
+        {
+            AnsiConsole.MarkupLine($"[red]Error:[/] Entity name '{entityName}' conflicts with a .NET framework type.");
+            AnsiConsole.MarkupLine($"[yellow]Suggestion:[/] Use a more specific name (e.g., 'TodoItem' instead of 'Task', 'UserAction' instead of 'Action').");
+            return 1;
+        }
+        
         if (!char.IsUpper(entityName[0]))
         {
             AnsiConsole.MarkupLine($"[yellow]Warning:[/] Entity name should start with an uppercase letter (PascalCase).");
@@ -139,7 +148,7 @@ public static class GenerateModelCommand
                 return 0;
             }
             
-            await GenerateModelAsync(entityName, projectName, fields, force);
+            await GenerateModelAsync(entityName, projectName, fields, force, workingDir);
             
             AnsiConsole.WriteLine();
             AnsiConsole.MarkupLine("[green]✓[/] Model generated successfully!");
@@ -201,7 +210,7 @@ public static class GenerateModelCommand
         };
     }
     
-    private static async Task GenerateModelAsync(string entityName, string projectName, List<FieldDefinition> fields, bool force)
+    private static async Task GenerateModelAsync(string entityName, string projectName, List<FieldDefinition> fields, bool force, string workingDir)
     {
         var templatePath = Path.Combine(AppContext.BaseDirectory, "templates", "generate", "model");
         
@@ -236,8 +245,9 @@ public static class GenerateModelCommand
                 }
                 
                 // Check if model file already exists
-                Directory.CreateDirectory("Models");
-                var modelFile = Path.Combine("Models", $"{entityName}.cs");
+                var modelsDir = Path.Combine(workingDir, "Models");
+                Directory.CreateDirectory(modelsDir);
+                var modelFile = Path.Combine(modelsDir, $"{entityName}.cs");
                 
                 if (File.Exists(modelFile) && !force)
                 {
@@ -253,7 +263,7 @@ public static class GenerateModelCommand
                 
                 // Update DbContext
                 ctx.Status("Updating DbContext...");
-                await UpdateDbContextAsync(entityName, projectName);
+                await UpdateDbContextAsync(entityName, projectName, workingDir);
             });
     }
     
@@ -261,6 +271,7 @@ public static class GenerateModelCommand
     {
         var sb = new System.Text.StringBuilder();
         
+        sb.AppendLine("using System.ComponentModel.DataAnnotations;");
         sb.AppendLine($"namespace {projectName}.Models;");
         sb.AppendLine();
         sb.AppendLine($"public class {entityName}");
@@ -280,14 +291,16 @@ public static class GenerateModelCommand
                 propertyType += "?";
             }
             
+            // For reference types that are non-nullable (e.g., string), initialize to avoid CS8618 warnings
+            var initializer = (field.Type == "string" && !field.IsNullable) ? " = string.Empty;" : "";
+            
+            // Add [Required] attribute for non-nullable fields to enforce validation at runtime
             if (field.IsRequired)
             {
-                sb.AppendLine($"    public required {propertyType} {field.Name} {{ get; set; }}");
+                sb.AppendLine("    [Required]");
             }
-            else
-            {
-                sb.AppendLine($"    public {propertyType} {field.Name} {{ get; set; }}");
-            }
+            
+            sb.AppendLine($"    public {propertyType} {field.Name} {{ get; set; }}{initializer}");
         }
         
         sb.AppendLine("}");
@@ -306,9 +319,9 @@ public static class GenerateModelCommand
         };
     }
     
-    private static async Task UpdateDbContextAsync(string entityName, string projectName)
+    private static async Task UpdateDbContextAsync(string entityName, string projectName, string workingDir)
     {
-        var dbContextPath = Path.Combine("Data", "AppDbContext.cs");
+        var dbContextPath = Path.Combine(workingDir, "Data", "AppDbContext.cs");
         
         if (!File.Exists(dbContextPath))
         {
@@ -325,6 +338,7 @@ public static class GenerateModelCommand
         }
         
         // Find the last DbSet property and add new one after it
+        var onModelCreatingIndex = content.IndexOf("protected override void OnModelCreating", StringComparison.Ordinal);
         var dbSetPattern = "public DbSet<";
         var lastDbSetIndex = content.LastIndexOf(dbSetPattern);
         
@@ -340,12 +354,19 @@ public static class GenerateModelCommand
         // Look for either ; or } followed by newline
         for (int i = searchStart; i < content.Length; i++)
         {
+            // Stop if we hit OnModelCreating - we've gone too far
+            if (onModelCreatingIndex != -1 && i >= onModelCreatingIndex)
+            {
+                break;
+            }
+            
             if ((content[i] == ';' || content[i] == '}') && i + 1 < content.Length)
             {
                 // Found end of property, now find the newline
-                lineEnd = content.IndexOf('\n', i);
-                if (lineEnd != -1)
+                var nextNewline = content.IndexOf('\n', i);
+                if (nextNewline != -1 && (onModelCreatingIndex == -1 || nextNewline < onModelCreatingIndex))
                 {
+                    lineEnd = nextNewline;
                     break;
                 }
             }
@@ -353,8 +374,19 @@ public static class GenerateModelCommand
         
         if (lineEnd == -1) lineEnd = content.Length;
         
+        // Double-check we're not inserting after OnModelCreating
+        if (onModelCreatingIndex != -1 && lineEnd > onModelCreatingIndex)
+        {
+            // Find the line before OnModelCreating instead
+            var beforeMethod = content.LastIndexOf('\n', onModelCreatingIndex - 1);
+            if (beforeMethod != -1)
+            {
+                lineEnd = beforeMethod;
+            }
+        }
+        
         // Insert new DbSet property with fully qualified type name to avoid conflicts
-        var newDbSet = $"\n    public DbSet<{projectName}.Models.{entityName}> {entityName}s {{ get; set; }}";
+        var newDbSet = $"\n\n    public DbSet<{projectName}.Models.{entityName}> {entityName}s {{ get; set; }}";
         content = content.Insert(lineEnd + 1, newDbSet);
         
         await File.WriteAllTextAsync(dbContextPath, content);

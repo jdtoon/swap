@@ -16,7 +16,7 @@ HTMX navigation framework for ASP.NET Core MVC applications. Provides a rigid, o
 ## Installation
 
 ```bash
-dotnet add package Swap.Htmx --prerelease
+dotnet add package Swap.Htmx
 ```
 
 ## Quick Start

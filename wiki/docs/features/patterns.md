@@ -41,10 +41,10 @@ swap g pattern auditable Article --use-package
 ```
 
 **How it works:**
-- Implements interfaces from `Swap.Patterns` NuGet package (v0.0.1)
+- Implements interfaces from `Swap.Patterns` NuGet package (v0.1.0)
 - Cleaner models (just interface implementation)
 - Pattern logic in reusable package
-- Requires `dotnet add package Swap.Patterns --prerelease`
+- Requires `dotnet add package Swap.Patterns`
 
 **When to use:**
 - You want minimal code in your models
@@ -54,7 +54,7 @@ swap g pattern auditable Article --use-package
 
 **Installation:**
 ```bash
-dotnet add package Swap.Patterns --prerelease
+dotnet add package Swap.Patterns
 ```
 
 **Example comparison:**
@@ -638,7 +638,7 @@ The pattern is provided by the `Swap.Patterns` library, which is automatically r
 
 **Manual installation:**
 ```bash
-dotnet add package Swap.Patterns --prerelease
+dotnet add package Swap.Patterns
 ```
 
 ### Usage

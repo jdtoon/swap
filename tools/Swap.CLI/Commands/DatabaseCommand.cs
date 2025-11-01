@@ -10,10 +10,13 @@ public static class DatabaseCommand
         command.AddAlias("db");
         
         // Add subcommands
+        command.AddCommand(DatabaseMigrationCommand.Create());
         command.AddCommand(DatabaseResetCommand.Create());
-        command.AddCommand(DatabaseMigrateCommand.Create());
         command.AddCommand(DatabaseSeedCommand.Create());
         command.AddCommand(DatabaseInfoCommand.Create());
+        
+        // Keep old 'migrate' command for backward compatibility (deprecated)
+        command.AddCommand(DatabaseMigrateCommand.Create());
         
         return command;
     }

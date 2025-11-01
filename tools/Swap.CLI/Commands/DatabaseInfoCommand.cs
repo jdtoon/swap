@@ -107,10 +107,19 @@ public static class DatabaseInfoCommand
             try
             {
                 var pendingOutput = await GetPendingMigrationsAsync();
-                if (!string.IsNullOrWhiteSpace(pendingOutput))
+                var lines = string.IsNullOrWhiteSpace(pendingOutput)
+                    ? Array.Empty<string>()
+                    : pendingOutput.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+                var pendingLines = lines.Where(l => l.Contains("(Pending)", StringComparison.OrdinalIgnoreCase)).ToArray();
+                var noMigrations = lines.Any(l => l.Contains("No migrations were found.", StringComparison.OrdinalIgnoreCase));
+
+                if (pendingLines.Length > 0)
                 {
                     AnsiConsole.MarkupLine("[yellow]Pending migrations found:[/]");
-                    AnsiConsole.WriteLine(pendingOutput);
+                    foreach (var line in pendingLines)
+                    {
+                        AnsiConsole.WriteLine(line);
+                    }
                     AnsiConsole.MarkupLine("[dim]Apply with: swap db migrate[/]");
                 }
                 else

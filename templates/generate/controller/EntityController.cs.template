@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using {{ProjectName}}.Data;
+using {{ProjectName}}.Dtos;
 using {{ProjectName}}.Models;
 using {{ProjectName}}.ViewModels;
 using {{ProjectName}}.Extensions;
@@ -41,7 +42,7 @@ public class {{EntityName}}Controller : SwapController
     public async Task<IActionResult> Get{{EntityName}}List(int pageNumber = 1, int pageSize = 10, string? searchTerm = null, string? sortBy = null, string? sortOrder = "asc"{{FilterParameters}})
     {
         // Build query with search filter
-        var query = _context.{{EntityNamePlural}}.AsQueryable();
+        var query = _context.{{EntityNamePlural}}{{IncludeStatements}}.AsQueryable();
         
         if (!string.IsNullOrWhiteSpace(searchTerm))
         {
@@ -100,8 +101,9 @@ public class {{EntityName}}Controller : SwapController
     /// GET: Display create modal
     /// </summary>
     [HttpGet]
-    public IActionResult Create()
+    public async Task<IActionResult> Create()
     {
+{{ViewBagPopulation}}
         var model = new {{EntityName}}
         {
 {{DefaultInitialization}}
@@ -114,7 +116,7 @@ public class {{EntityName}}Controller : SwapController
     /// POST: Create new entity
     /// </summary>
     [HttpPost]
-    public async Task<IActionResult> Create({{EntityName}} model)
+    public async Task<IActionResult> Create({{EntityName}} model{{ManyToManyParameters}})
     {
         if (!ModelState.IsValid)
         {
@@ -123,12 +125,13 @@ public class {{EntityName}}Controller : SwapController
             Response.Headers.Append("HX-Reswap", "innerHTML");
             return PartialView("_{{EntityName}}CreateModal", model);
         }
-
+{{ManyToManyCreateCode}}
         _context.{{EntityNamePlural}}.Add(model);
         await _context.SaveChangesAsync();
 
         // Trigger list refresh and success toast
-        Response.Headers.Append("HX-Trigger", "{\"refresh{{EntityName}}List\": null, \"showToast\": {\"type\": \"success\", \"message\": \"{{EntityName}} created successfully!\"}}");
+        Response.Headers.Append("HX-Trigger", "refresh{{EntityName}}List");
+        Response.ShowSuccessToast("{{EntityName}} created successfully!");
         
         return Content("");
     }
@@ -139,7 +142,8 @@ public class {{EntityName}}Controller : SwapController
     [HttpGet]
     public async Task<IActionResult> Edit(int id)
     {
-        var entity = await _context.{{EntityNamePlural}}.FindAsync(id);
+{{ViewBagPopulationEdit}}
+        var entity = await _context.{{EntityNamePlural}}{{ManyToManyIncludes}}.FirstOrDefaultAsync(e => e.Id == id);
         if (entity == null)
         {
             return NotFound();
@@ -152,7 +156,7 @@ public class {{EntityName}}Controller : SwapController
     /// POST: Update existing entity
     /// </summary>
     [HttpPost]
-    public async Task<IActionResult> Edit(int id, {{EntityName}} model)
+    public async Task<IActionResult> Edit(int id, {{EntityName}} model{{ManyToManyParameters}})
     {
         if (id != model.Id)
         {
@@ -164,12 +168,13 @@ public class {{EntityName}}Controller : SwapController
             // Return form with validation errors
             Response.Headers.Append("HX-Retarget", "#modal-container");
             Response.Headers.Append("HX-Reswap", "innerHTML");
+{{ViewBagPopulationEdit}}
             return PartialView("_{{EntityName}}EditModal", model);
         }
 
         try
         {
-            _context.Update(model);
+{{ManyToManyEditCode}}{{ContextUpdate}}
             await _context.SaveChangesAsync();
         }
         catch (DbUpdateConcurrencyException)
@@ -182,7 +187,8 @@ public class {{EntityName}}Controller : SwapController
         }
 
         // Trigger list refresh and success toast
-        Response.Headers.Append("HX-Trigger", "{\"refresh{{EntityName}}List\": null, \"showToast\": {\"type\": \"success\", \"message\": \"{{EntityName}} updated successfully!\"}}");
+        Response.Headers.Append("HX-Trigger", "refresh{{EntityName}}List");
+        Response.ShowSuccessToast("{{EntityName}} updated successfully!");
         
         return Content("");
     }
@@ -193,7 +199,8 @@ public class {{EntityName}}Controller : SwapController
     [HttpGet]
     public async Task<IActionResult> Details(int id)
     {
-        var entity = await _context.{{EntityNamePlural}}.FindAsync(id);
+        var entity = await _context.{{EntityNamePlural}}{{IncludeStatements}}
+            .FirstOrDefaultAsync(e => e.Id == id);
         if (entity == null)
         {
             return NotFound();
@@ -214,13 +221,23 @@ public class {{EntityName}}Controller : SwapController
             return NotFound();
         }
 
-        _context.{{EntityNamePlural}}.Remove(entity);
-        await _context.SaveChangesAsync();
+        try
+        {
+            _context.{{EntityNamePlural}}.Remove(entity);
+            await _context.SaveChangesAsync();
 
-        // Trigger list refresh and success toast
-        Response.Headers.Append("HX-Trigger", "{\"refresh{{EntityName}}List\": null, \"showToast\": {\"type\": \"success\", \"message\": \"{{EntityName}} deleted successfully!\"}}");
-        
-        return Content("");
+            // Trigger list refresh and success toast
+            Response.Headers.Append("HX-Trigger", "refresh{{EntityName}}List");
+            Response.ShowSuccessToast("{{EntityName}} deleted successfully!");
+            
+            return Content("");
+        }
+        catch (DbUpdateException)
+        {
+            // Foreign key constraint violation
+            Response.ShowErrorToast("Cannot delete this {{EntityNameLower}} because it is referenced by other records.");
+            return StatusCode(409); // Conflict
+        }
     }
 
     /// <summary>
@@ -258,14 +275,21 @@ public class {{EntityName}}Controller : SwapController
             HttpContext.Session.Remove("{{EntityName}}_Selection");
 
             // Trigger list refresh and show toast
-            Response.Headers.Append("HX-Trigger", "{\"refresh{{EntityName}}List\": null, \"showToast\": {\"type\": \"success\", \"message\": \"Successfully deleted " + entitiesToDelete.Count + " {{EntityNameLower}}(s)\"}}");
+            Response.Headers.Append("HX-Trigger", "refresh{{EntityName}}List");
+            Response.ShowSuccessToast($"Successfully deleted {entitiesToDelete.Count} {{EntityNameLower}}(s)");
             
             return Ok(new { deleted = entitiesToDelete.Count });
+        }
+        catch (DbUpdateException)
+        {
+            await transaction.RollbackAsync();
+            Response.ShowErrorToast("Cannot delete one or more {{EntityNameLower}}s because they are referenced by other records.");
+            return StatusCode(409); // Conflict
         }
         catch (Exception ex)
         {
             await transaction.RollbackAsync();
-            Response.Headers.Append("HX-Trigger", "{\"showToast\": {\"type\": \"error\", \"message\": \"Failed to delete items\"}}");
+            Response.ShowErrorToast("Failed to delete items");
             return StatusCode(500, new { error = ex.Message });
         }
     }
@@ -307,8 +331,8 @@ public class {{EntityName}}Controller : SwapController
     {
         var selectedIds = HttpContext.Session.GetObject<HashSet<int>>("{{EntityName}}_Selection") ?? new HashSet<int>();
         
-        // Get current page IDs
-        var query = _context.{{EntityNamePlural}}.AsQueryable();
+        // Get current page IDs - must match GetList query exactly (including relationships for consistent ordering)
+        var query = _context.{{EntityNamePlural}}{{IncludeStatements}}.AsQueryable();
         
         if (!string.IsNullOrWhiteSpace(searchTerm))
         {
@@ -316,6 +340,12 @@ public class {{EntityName}}Controller : SwapController
         }
 
         query = ApplyFilters(query{{FilterParameterValues}});
+        
+        // Apply same sorting as list to ensure pagination matches
+        if (!string.IsNullOrWhiteSpace(sortBy))
+        {
+            query = ApplySorting(query, sortBy, sortOrder ?? "asc");
+        }
 
         var currentPageIds = await query
             .Skip((pageNumber - 1) * pageSize)

@@ -41,18 +41,6 @@ project.lock.json
 project.assets.json
 publish/
 
-# Sample apps directory (showcase apps - committed for demonstration)
-# sampleApps/ - Intentionally committed to show CLI capabilities
-
-# Dogfooding apps (temporary validation apps - NOT committed)
-dogfood/
-*Dogfood*/app.db
-*Dogfood*/app.db-shm
-
-# Test projects directory (generated via CLI for testing - NOT committed)
-testProjects/
-*Dogfood*/app.db-wal
-
 # Test apps (temporary testing - NOT committed)
 testApps/
 E2ETest*/
@@ -69,10 +57,6 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 yarn.lock
-
-# Ignore package-lock.json except in wiki folder (needed for CI/CD)
-package-lock.json
-!wiki/package-lock.json
 
 # Compiled CSS (generated from Tailwind)
 **/wwwroot/css/*.min.css

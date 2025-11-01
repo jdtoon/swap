@@ -243,7 +243,7 @@ public static class FieldHelper
                 <span asp-validation-for=""{field.Name}"" class=""text-error text-sm""></span>
             </div>",
             
-            "decimal" or "float" or "double" => $@"<div class=""form-control"">
+            "decimal" or "float" or "double" when !field.IsNullable => $@"<div class=""form-control"">
                 <label class=""label"">
                     <span class=""label-text"">{field.Name}</span>
                 </label>
@@ -252,6 +252,22 @@ public static class FieldHelper
                        placeholder=""{field.Name}""
                        value=""@Model.{field.Name}.ToString(""G29"", System.Globalization.CultureInfo.InvariantCulture)""
                        step=""any""
+                  inputmode=""decimal""
+                       class=""input input-bordered"" 
+                       {required} />
+                <span asp-validation-for=""{field.Name}"" class=""text-error text-sm""></span>
+            </div>",
+            
+            "decimal" or "float" or "double" when field.IsNullable => $@"<div class=""form-control"">
+                <label class=""label"">
+                    <span class=""label-text"">{field.Name}</span>
+                </label>
+                <input type=""{inputType}"" 
+                       name=""{field.Name}"" 
+                       placeholder=""{field.Name}""
+                       value=""@(Model.{field.Name}?.ToString(""G29"", System.Globalization.CultureInfo.InvariantCulture) ?? """")""
+                       step=""any""
+                  inputmode=""decimal""
                        class=""input input-bordered"" 
                        {required} />
                 <span asp-validation-for=""{field.Name}"" class=""text-error text-sm""></span>
@@ -399,7 +415,11 @@ public static class FieldHelper
     /// </summary>
     public static string GenerateSortCases(List<FieldDefinition> fields)
     {
-        var sortableFields = fields.Where(f => f.IsSortable).ToList();
+        var sortablePrimitives = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "string", "int", "long", "short", "byte", "bool", "float", "double", "decimal", "DateTime", "Guid"
+        };
+        var sortableFields = fields.Where(f => f.IsSortable && sortablePrimitives.Contains(f.Type)).ToList();
         
         if (!sortableFields.Any())
         {
@@ -482,7 +502,7 @@ public static class FieldHelper
                             <span class=""label-text"">{f.Name}</span>
                         </label>
                         @{{
-                            var {paramName}Value = Model.Filters.TryGetValue(""{paramName}"", out var filterVal) ? filterVal : """";
+                            var {paramName}Value = Model.Filters.TryGetValue(""{paramName}"", out var {paramName}FilterVal) ? {paramName}FilterVal : """";
                         }}
                         <select name=""{paramName}"" 
                                 class=""select select-bordered w-full""
@@ -491,9 +511,9 @@ public static class FieldHelper
                                 hx-swap=""innerHTML""
                                 hx-include=""[name='searchTerm'], [name='pageSize'], [name='sortBy'], [name='sortOrder'], [name='{paramName}']""
                                 hx-trigger=""change"">
-                            <option value="""" selected=""@(string.IsNullOrEmpty({paramName}Value) ? """"selected"""" : null)"">All</option>
-                            <option value=""true"" selected=""@({paramName}Value == """"true"""" ? """"selected"""" : null)"">Yes</option>
-                            <option value=""false"" selected=""@({paramName}Value == """"false"""" ? """"selected"""" : null)"">No</option>
+                            <option value="""" selected=""@(string.IsNullOrEmpty({paramName}Value) ? ""selected"" : null)"">All</option>
+                            <option value=""true"" selected=""@({paramName}Value == ""true"" ? ""selected"" : null)"">Yes</option>
+                            <option value=""false"" selected=""@({paramName}Value == ""false"" ? ""selected"" : null)"">No</option>
                         </select>
                     </div>";
         });
@@ -573,14 +593,14 @@ public static class FieldHelper
     /// <summary>
     /// Generate checkbox column header for bulk selection (Select All)
     /// </summary>
-    public static string GenerateBulkSelectHeader(string entityName)
+    public static string GenerateBulkSelectHeader(string entityName, string entityNameLower)
     {
         return $@"<th>
                         <input type=""checkbox"" 
                                id=""select-all"" 
                                class=""checkbox checkbox-sm""
                                hx-post=""@Url.Action(""ToggleSelectAll"", ""{entityName}"")?pageNumber=@Model.Pagination.CurrentPage&pageSize=@Model.Pagination.PageSize&searchTerm=@Model.SearchTerm&sortBy=@Model.SortBy&sortOrder=@Model.SortOrder@(string.Join("""", Model.Filters.Where(f => !string.IsNullOrEmpty(f.Value)).Select(f => $""&{{f.Key}}={{f.Value}}"")))""
-                               hx-target=""#{entityName.ToLower()}-list""
+                               hx-target=""#{entityNameLower}-list""
                                hx-swap=""outerHTML""
                                @(ViewBag.SelectedIds != null && Model.Items.All(i => ((HashSet<int>)ViewBag.SelectedIds).Contains(i.Id)) ? ""checked"" : """") />
                     </th>";

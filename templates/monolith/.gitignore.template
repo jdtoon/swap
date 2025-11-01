@@ -46,5 +46,9 @@ wwwroot/lib/
 
 # Docker
 {{#if_sqlite}}
-data/
+# Ignore SQLite database files in docker volumes but not source code
+docker-data/
+*.db
+*.db-shm
+*.db-wal
 {{/if_sqlite}}

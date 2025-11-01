@@ -16,6 +16,7 @@ swap g c <name> --fields <field-definitions> [--add-nav] [--force] [--dry-run] [
 ## Options
 
 - `--fields <definitions>` or `-f <definitions>` - **Required.** Space- or comma-separated field definitions
+- `--with-relationships` - **Default: true.** Enable relationship-aware UI generation (dropdowns for foreign keys)
 - `--add-nav` - Automatically inject navigation link into `_Layout.cshtml` with HTMX attributes
 - `--force` - Overwrite existing files without prompting
 - `--dry-run` - Preview generated files without writing to disk
@@ -26,6 +27,7 @@ swap g c <name> --fields <field-definitions> [--add-nav] [--force] [--dry-run] [
 The `generate controller` command creates a modern, full-featured MVC controller with:
 
 - **Complete CRUD operations** (Create, Read, Update, Delete) via HTMX modals
+- **Relationship-Aware UI** with automatic foreign key dropdown generation (enabled by default)
 - **Pagination** with configurable page sizes (10, 25, 50, 100)
 - **Search** with real-time filtering (500ms debounce)
 - **Column Sorting** with ascending/descending toggle and field-level control
@@ -157,6 +159,517 @@ Control sorting and filtering behavior per field:
 # - InStock: sortable (default), has filter dropdown
 # - CreatedDate: sortable (default), no filter
 ```
+
+## Relationship-Aware UI
+
+**New in v0.2.0**
+
+When `--with-relationships` is enabled (default), the generator automatically detects and handles foreign key relationships and many-to-many relationships in your entities.
+
+### Overview
+
+The relationship-aware UI feature provides:
+
+- **Automatic FK Detection** - Identifies foreign keys by naming convention or explicit relationships
+- **Dropdown Generation** - Replaces number inputs with `<select>` dropdowns
+- **ViewBag Population** - Automatically loads related entities
+- **Eager Loading** - Adds `.Include()` statements for performance
+- **Display Field Detection** - Smart field selection for dropdown labels
+- **Self-Referential Support** - Special handling for hierarchical data
+
+### Enable/Disable
+
+**Enabled by default:**
+```bash
+# These are equivalent
+swap g c Order --fields "OrderDate:DateTime CustomerId:int Total:decimal"
+swap g c Order --fields "OrderDate:DateTime CustomerId:int Total:decimal" --with-relationships
+```
+
+**Disable if needed:**
+```bash
+# Generate without relationship detection
+swap g c Order --fields "OrderDate:DateTime CustomerId:int Total:decimal" --with-relationships false
+```
+
+### Automatic FK Detection
+
+The generator identifies foreign keys in two ways:
+
+#### 1. Naming Convention
+
+Fields ending in `Id` that match an existing entity name are treated as foreign keys.
+
+**Example:**
+```bash
+# Create entities
+swap g m Customer --fields "Name:string Email:string"
+swap g m Order --fields "OrderDate:DateTime CustomerId:int Total:decimal"
+
+# Generate controller - CustomerId auto-detected
+swap g c Order
+```
+
+**Detection Logic:**
+- Field name: `CustomerId`
+- Strips `Id` suffix: `Customer`
+- Checks if `Models/Customer.cs` exists: ✅
+- Result: Treats `CustomerId` as FK to `Customer`
+
+#### 2. Explicit Relationships
+
+Relationships created with [`swap generate relationship`](./generate-relationship.md) are automatically detected via navigation properties.
+
+**Example:**
+```bash
+# Create relationship
+swap g rel --source Order --target Customer --type many-to-one
+
+# Regenerate controller to pick up relationship
+swap g c Order --force
+```
+
+### Dropdown Generation
+
+Foreign key fields render as `<select>` dropdowns instead of number inputs.
+
+**Without Relationships** (`--with-relationships false`):
+```html
+<label class="form-control">
+  <span class="label-text">Customer Id</span>
+  <input type="number" name="CustomerId" class="input input-bordered" required />
+</label>
+```
+
+**With Relationships** (default):
+```html
+<label class="form-control">
+  <span class="label-text">Customer</span>
+  <select name="CustomerId" class="select select-bordered" required>
+    <option value="">Select Customer</option>
+    @foreach (var item in ViewBag.CustomerList)
+    {
+      <option value="@item.Id">@item.Name</option>
+    }
+  </select>
+</label>
+```
+
+**Key Changes:**
+- Label text: `Customer Id` → `Customer`
+- Input type: `number` → `select`
+- Options populated from `ViewBag.CustomerList`
+- Display field automatically determined (see Display Field Detection)
+
+### ViewBag Population
+
+Controllers automatically populate related entity lists in Create and Edit actions.
+
+**Generated Code:**
+```csharp
+public async Task<IActionResult> Create()
+{
+    // Auto-generated for CustomerId FK
+    ViewBag.CustomerList = await _context.Customers
+        .OrderBy(e => e.Name)  // Sorted by display field
+        .ToListAsync();
+    
+    return PartialView("_OrderCreateModal");
+}
+
+public async Task<IActionResult> Edit(int id)
+{
+    var order = await _context.Orders.FindAsync(id);
+    if (order == null) return NotFound();
+    
+    // Auto-generated for CustomerId FK
+    ViewBag.CustomerList = await _context.Customers
+        .OrderBy(e => e.Name)
+        .ToListAsync();
+    
+    return PartialView("_OrderEditModal", order);
+}
+```
+
+**ViewBag Key Pattern:** `{Entity}List` (e.g., `CustomerList`, `CategoryList`)
+
+### Eager Loading
+
+List and Details queries use `.Include()` for related entities to prevent N+1 query problems.
+
+**Without Relationships:**
+```csharp
+var query = _context.Orders.AsQueryable();
+// Accessing Order.Customer in views causes N+1 queries
+```
+
+**With Relationships:**
+```csharp
+var query = _context.Orders
+    .Include(e => e.Customer)  // ← Auto-added
+    .AsQueryable();
+// Single query, Customer data already loaded
+```
+
+**Performance Benefit:**
+- Without Include: 1 query for orders + N queries for customers = N+1 queries
+- With Include: 1 query with JOIN = Always 1 query
+
+### Display Field Detection
+
+Dropdowns automatically determine which field to display using this priority:
+
+1. `Name`
+2. `Title`
+3. `Description`
+4. `Email`
+5. `Code`
+6. `Label`
+7. First `string` property found
+8. `Id` (fallback)
+
+**Example 1: Name Field**
+```csharp title="Models/Customer.cs"
+public class Customer
+{
+    public int Id { get; set; }
+    public string Name { get; set; }   // ← Used in dropdown
+    public string Email { get; set; }
+}
+```
+
+**Dropdown Output:**
+```html
+<option value="1">John Smith</option>
+<option value="2">Jane Doe</option>
+```
+
+**Example 2: No Name, Uses Title**
+```csharp title="Models/Category.cs"
+public class Category
+{
+    public int Id { get; set; }
+    public string Title { get; set; }  // ← Used in dropdown
+    public string Slug { get; set; }
+}
+```
+
+**Dropdown Output:**
+```html
+<option value="1">Electronics</option>
+<option value="2">Clothing</option>
+```
+
+**Example 3: Fallback to Id**
+```csharp title="Models/Tag.cs"
+public class Tag
+{
+    public int Id { get; set; }         // ← Used in dropdown (no better option)
+    public string Slug { get; set; }    // Not in priority list
+}
+```
+
+**Dropdown Output:**
+```html
+<option value="1">1</option>
+<option value="2">2</option>
+```
+
+:::tip
+To customize display field, use the `--display` flag with [`swap generate relationship`](./generate-relationship.md):
+```bash
+swap g rel -s Product -t Category --type many-to-one --display Slug
+```
+:::
+
+### Self-Referential Relationships
+
+The UI generator fully supports self-referential relationships (entities that reference themselves).
+
+**Example: Hierarchical Categories**
+
+```bash
+# 1. Generate base model
+swap g m Category --fields "Name:string Slug:string"
+
+# 2. Manually edit Models/Category.cs
+#    Add: public int? ParentId { get; set; }
+#         public Category? Parent { get; set; }
+#         public ICollection<Category> Children { get; set; } = new List<Category>();
+
+# 3. Generate controller (detects self-reference)
+swap g c Category
+```
+
+**Special Handling:**
+
+#### Navigation Property Naming
+Instead of `Category.Category`, uses descriptive name:
+```csharp
+// Bad (confusing)
+public Category? Category { get; set; }
+
+// Good (detected and used)
+public Category? Parent { get; set; }
+```
+
+#### Edit Action Exclusion
+Prevents circular references by excluding current entity:
+
+```csharp
+public async Task<IActionResult> Edit(int id)
+{
+    var category = await _context.Categories.FindAsync(id);
+    if (category == null) return NotFound();
+    
+    // Exclude current category to prevent self-selection
+    ViewBag.CategoryList = await _context.Categories
+        .Where(e => e.Id != id)  // ← Auto-added for self-refs
+        .OrderBy(e => e.Name)
+        .ToListAsync();
+    
+    return PartialView("_CategoryEditModal", category);
+}
+```
+
+**Result:** User can't select current category as parent (prevents `Category 5 → Parent: Category 5`).
+
+#### Create Action Behavior
+All entities available (can select any parent):
+
+```csharp
+public async Task<IActionResult> Create()
+{
+    // No exclusion - all categories available as parent
+    ViewBag.CategoryList = await _context.Categories
+        .OrderBy(e => e.Name)
+        .ToListAsync();
+    
+    return PartialView("_CategoryCreateModal");
+}
+```
+
+:::info
+Self-referential relationships must be added manually to models. The [`swap generate relationship`](./generate-relationship.md) command currently blocks them.
+:::
+
+### Multiple Relationships
+
+Controllers handle entities with multiple foreign keys.
+
+**Example:**
+```bash
+# Create entities
+swap g m Customer --fields "Name:string Email:string"
+swap g m Product --fields "Name:string Price:decimal"
+swap g m Order --fields "OrderDate:DateTime CustomerId:int Status:string"
+swap g m OrderItem --fields "OrderId:int ProductId:int Quantity:int"
+
+# Generate controller with two FKs
+swap g c OrderItem
+```
+
+**Generated Code:**
+```csharp
+public async Task<IActionResult> Create()
+{
+    // Both FKs detected and populated
+    ViewBag.OrderList = await _context.Orders
+        .OrderBy(e => e.Id)  // No Name field, uses Id
+        .ToListAsync();
+    
+    ViewBag.ProductList = await _context.Products
+        .OrderBy(e => e.Name)
+        .ToListAsync();
+    
+    return PartialView("_OrderItemCreateModal");
+}
+```
+
+**Form UI:**
+```html
+<select name="OrderId" class="select select-bordered" required>
+  <option value="">Select Order</option>
+  @foreach (var item in ViewBag.OrderList) { ... }
+</select>
+
+<select name="ProductId" class="select select-bordered" required>
+  <option value="">Select Product</option>
+  @foreach (var item in ViewBag.ProductList) { ... }
+</select>
+```
+
+### Nullable vs Required Foreign Keys
+
+Dropdowns reflect FK nullability in validation.
+
+**Required FK** (`int`):
+```csharp
+public int CustomerId { get; set; }  // Required
+```
+
+**Dropdown:**
+```html
+<select name="CustomerId" class="select select-bordered" required>
+  <option value="">Select Customer</option>
+  <!-- Options -->
+</select>
+```
+
+**Nullable FK** (`int?`):
+```csharp
+public int? CustomerId { get; set; }  // Optional
+```
+
+**Dropdown:**
+```html
+<select name="CustomerId" class="select select-bordered">
+  <option value="">None</option>  <!-- ← "None" instead of "Select" -->
+  <!-- Options -->
+</select>
+```
+
+### List View Integration
+
+Related entity names display in list views instead of FK IDs.
+
+**Without Relationships:**
+```html
+<td>42</td>  <!-- CustomerId -->
+```
+
+**With Relationships:**
+```html
+<td>@item.Customer?.Name</td>  <!-- "Acme Corp" -->
+```
+
+**Null Safety:** Uses null-conditional operator (`?.`) to handle missing relationships gracefully.
+
+### Known Limitations
+
+1. **Sorting by Navigation Properties** - Table headers render as sortable, but server-side sorting doesn't include navigation properties (e.g., can sort by `CustomerId`, not `Customer.Name`)
+
+2. **No Cascade Display** - Only shows immediate related entity, not nested relationships (Order → Customer works, Order → Customer.Address requires manual coding)
+
+3. **Many-to-Many Not Supported** - Junction table relationships require manual coding (coming in Phase 3)
+
+4. **No "Add New" in Dropdown** - Can't create related entity inline (future enhancement)
+
+### Workflow Examples
+
+#### Example 1: Blog with Categories
+
+```bash
+# Create entities
+swap g m Category --fields "Name:string Slug:string"
+swap g m Post --fields "Title:string Content:string PublishedAt:DateTime?"
+
+# Add relationship
+swap g rel --source Post --target Category --type many-to-one
+
+# Generate controllers
+swap g c Category
+swap g c Post --force  # Regenerate to pick up Category dropdown
+
+# Result: Post form has Category dropdown
+```
+
+#### Example 2: E-Commerce Orders
+
+```bash
+# Create entities
+swap g m Customer --fields "Name:string Email:string"
+swap g m Product --fields "Name:string Price:decimal"
+swap g m Order --fields "OrderDate:DateTime CustomerId:int"
+swap g m OrderItem --fields "OrderId:int ProductId:int Quantity:int"
+
+# Generate controllers (FKs auto-detected by naming)
+swap g c Customer
+swap g c Product
+swap g c Order  # CustomerId detected
+swap g c OrderItem  # OrderId and ProductId detected
+
+# Result: Order form has Customer dropdown, OrderItem form has Order and Product dropdowns
+```
+
+#### Example 3: Disable Relationships
+
+```bash
+# Generate controller without relationship detection
+swap g c Order --fields "OrderDate:DateTime CustomerId:int" --with-relationships false
+
+# Result: CustomerId is a number input, not a dropdown
+```
+
+### Troubleshooting
+
+#### Dropdown Shows Id Instead of Name
+
+**Cause:** Related entity has no suitable display field.
+
+**Solution:** Add a `Name`, `Title`, or other priority field:
+```bash
+swap g m Category --fields "Name:string" --force
+```
+
+#### FK Not Detected
+
+**Cause:** Entity file doesn't exist or naming doesn't match.
+
+**Check:**
+```bash
+# If you have CustomerId field, verify Models/Customer.cs exists
+ls Models/Customer.cs
+```
+
+**Solution:** Ensure entity name matches FK prefix:
+```bash
+# CustomerId → Customer
+# CategoryId → Category
+# BlogPostId → BlogPost
+```
+
+#### Dropdown Empty
+
+**Cause:** Related table has no data.
+
+**Solution:** Seed data:
+```bash
+swap g seed Customer --count 10
+```
+
+Or create records manually in the UI.
+
+#### Wrong Display Field
+
+**Cause:** Entity has multiple string fields, wrong one selected by priority.
+
+**Solution:** Manually edit controller's ViewBag query:
+```csharp
+// Change from Name to Email
+ViewBag.CustomerList = await _context.Customers
+    .OrderBy(e => e.Email)  // ← Change this
+    .ToListAsync();
+```
+
+Or use `--display` flag when creating relationship:
+```bash
+swap g rel -s Order -t Customer --type many-to-one --display Email
+```
+
+### Disabling Relationship-Aware UI
+
+To generate controllers without relationship detection:
+
+```bash
+swap g c Order --fields "OrderDate:DateTime CustomerId:int" --with-relationships false
+```
+
+**Use Cases:**
+- CustomerId is not a foreign key (just happens to end in Id)
+- Manual control over form inputs
+- Performance optimization (skip Include statements)
+- Related entity doesn't exist yet
 
 ## Generated Files
 

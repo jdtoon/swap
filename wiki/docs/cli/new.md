@@ -9,22 +9,22 @@ Create a new ASP.NET Core project with HTMX and Docker support.
 ## Synopsis
 
 ```bash
-swap new <name> [--database <provider>] [--no-htmx-shell]
+swap new <name> [options]
 ```
 
 ## Options
 
 - `<name>` - Project name (required)
-- `--database <provider>` - Database provider: `sqlite` (default), `sqlserver`, or `postgres`
-- `--db <provider>` - Short alias for `--database`
-- `--no-htmx-shell` - Disable HTMX shell middleware (advanced use cases only)
+- `--database <provider>` or `-d` - Database provider: `sqlite` (default), `sqlserver`, or `postgres`
+- `--output <path>` or `-o` - Output directory (default: `./{name}`)
+- `--skip-setup` - Skip prerequisites check, npm/libman steps, and initial migration (useful for CI/tests)
+- `--local-nuget` - Use local NuGet feed for Swap packages (for framework development only)
 
 ## Description
 
 Generates a production-ready ASP.NET Core MVC project with:
 - **Entity Framework Core** with your chosen database
 - **HTMX** for interactive UI without JavaScript
-- **HTMX Shell Middleware** (default) - Enforces partial view responses for HTMX requests
 - **HTMX-First Layout** - `hx-boost="true"` on body, `id="main-content"` on main element
 - **DaisyUI + Tailwind CSS** for modern, accessible components
 - **DaisyUI Navbar** - Aligned with `navbar-start`/`navbar-end` structure
@@ -36,28 +36,17 @@ Generates a production-ready ASP.NET Core MVC project with:
 
 ### HTMX Shell Middleware
 
-By default, new projects include HTMX shell middleware that prevents full page reloads and enforces partial view responses for HTMX requests.
+The HTMX shell middleware is available as an **optional** feature via the `Swap.Htmx` NuGet package or can be generated directly into your project with `swap generate htmx-shell`.
 
-**How it works:**
+**What it does:**
 - Detects `HX-Request` headers on incoming requests
-- Verifies response HTML doesn't contain `<html>` tags
+- Verifies response HTML doesn't contain full `<html>` tags
 - Throws exception with view name if full page detected (development aid)
 - Helps catch layout rendering bugs early
 
-**Configure the allowlist:**
+**Already included:** The middleware is automatically wired via `Swap.Htmx` package and `app.UseSwapHtmxShell()` in `Program.cs`.
 
-Edit `Middleware/HtmxShellMiddleware.cs` to allow full page rendering for specific paths:
-
-```csharp
-private static readonly HashSet<string> AllowFullPagePaths = new(StringComparer.OrdinalIgnoreCase)
-{
-    "/",           // Home page
-    "/auth/login", // Login page
-    "/auth/register"
-};
-```
-
-**To disable:** Use `--no-htmx-shell` flag when creating the project (advanced scenarios only).
+**Customization:** If you need to customize the middleware behavior, you can generate a local copy with `swap generate htmx-shell` and modify the allowlist.
 
 ### HTMX Navigation
 

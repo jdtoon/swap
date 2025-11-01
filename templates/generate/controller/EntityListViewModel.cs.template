@@ -1,3 +1,4 @@
+using {{Namespace}}.Dtos;
 using {{Namespace}}.Models;
 
 namespace {{Namespace}}.ViewModels;

@@ -57,20 +57,17 @@ public static class DatabaseResetCommand
         
         try
         {
-            await AnsiConsole.Status()
-                .StartAsync("Resetting database...", async ctx =>
-                {
-                    // Drop database
-                    ctx.Status("Dropping database...");
-                    await RunDotnetEfAsync("database drop --force");
-                    AnsiConsole.MarkupLine("[green]✓[/] Database dropped");
-                    
-                    // Apply migrations (recreate)
-                    ctx.Status("Applying migrations...");
-                    await RunDotnetEfAsync("database update");
-                    AnsiConsole.MarkupLine("[green]✓[/] Migrations applied");
-                });
+            // Drop database
+            AnsiConsole.MarkupLine("[yellow]Dropping database...[/]");
+            await RunDotnetEfAsync("database drop --force");
+            AnsiConsole.MarkupLine("[green]✓[/] Database dropped");
+            AnsiConsole.WriteLine();
             
+            // Apply migrations (recreate)
+            AnsiConsole.MarkupLine("[yellow]Applying migrations...[/]");
+            await RunDotnetEfAsync("database update");
+            AnsiConsole.MarkupLine("[green]✓[/] Migrations applied");
+
             AnsiConsole.WriteLine();
             AnsiConsole.MarkupLine("[green]✓ Database reset complete![/]");
             AnsiConsole.MarkupLine("[dim]To seed data, run: swap db seed[/]");
@@ -80,7 +77,7 @@ public static class DatabaseResetCommand
         catch (Exception ex)
         {
             AnsiConsole.WriteLine();
-            AnsiConsole.MarkupLine($"[red]Error:[/] {ex.Message}");
+            AnsiConsole.MarkupLine($"[red]Error:[/] {ex.Message.EscapeMarkup()}");
             AnsiConsole.MarkupLine("[dim]Make sure you have dotnet-ef installed:[/]");
             AnsiConsole.MarkupLine("  dotnet tool install --global dotnet-ef");
             return 1;
@@ -94,10 +91,10 @@ public static class DatabaseResetCommand
             FileName = "dotnet",
             Arguments = $"ef {arguments}",
             WorkingDirectory = Directory.GetCurrentDirectory(),
-            RedirectStandardOutput = true,
+            RedirectStandardOutput = false,
             RedirectStandardError = true,
             UseShellExecute = false,
-            CreateNoWindow = true
+            CreateNoWindow = false
         };
         
         using var process = System.Diagnostics.Process.Start(psi);

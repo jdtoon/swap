@@ -15,14 +15,12 @@ public static class NewCommand
         var dbOption = new Option<string>("--database", () => "sqlite", "Database provider (sqlite|sqlserver|postgres)");
         var outOption = new Option<string?>("--output", "Output directory (default: ./{name})");
         var skipSetupOption = new Option<bool>("--skip-setup", description: "Skip prerequisites check, npm/libman steps, and initial migration (useful for CI/tests)");
-        var noHtmxShellOption = new Option<bool>("--no-htmx-shell", description: "Do not include the HTMX shell middleware by default");
         var localNugetOption = new Option<bool>("--local-nuget", description: "Use local NuGet feed for Swap packages (for framework development only)");
         
         command.AddArgument(nameArg);
         command.AddOption(dbOption);
         command.AddOption(outOption);
         command.AddOption(skipSetupOption);
-        command.AddOption(noHtmxShellOption);
         command.AddOption(localNugetOption);
         
         command.SetHandler(async (InvocationContext context) =>
@@ -31,16 +29,15 @@ public static class NewCommand
             var database = context.ParseResult.GetValueForOption(dbOption);
             var output = context.ParseResult.GetValueForOption(outOption);
             var skipSetup = context.ParseResult.GetValueForOption(skipSetupOption);
-            var noHtmxShell = context.ParseResult.GetValueForOption(noHtmxShellOption);
             var localNuget = context.ParseResult.GetValueForOption(localNugetOption);
             
-            context.ExitCode = await ExecuteAsync(name, database!, output, skipSetup, noHtmxShell, localNuget);
+            context.ExitCode = await ExecuteAsync(name, database!, output, skipSetup, localNuget);
         });
         
         return command;
     }
     
-    private static async Task<int> ExecuteAsync(string name, string database, string? output, bool skipSetup, bool noHtmxShell, bool localNuget)
+    private static async Task<int> ExecuteAsync(string name, string database, string? output, bool skipSetup, bool localNuget)
     {
         // Validate project name
         if (string.IsNullOrWhiteSpace(name))
@@ -352,6 +349,7 @@ public class HtmxShellMiddleware
             { "ProjectName", projectName },
             { "ProjectNameLower", projectName.ToLowerInvariant() },
             { "DatabaseProvider", database },
+            { "DatabaseType", database }, // Alias for use in display/UI
             { "UseLocalNuget", localNuget.ToString().ToLowerInvariant() }
         };
         
@@ -415,6 +413,12 @@ public class HtmxShellMiddleware
         {
             var relativePath = Path.GetRelativePath(sourcePath, file);
             var targetFileName = relativePath.Replace(".template", "");
+
+            // Skip legacy root-level PaginationDto; use Dtos/PaginationDto.cs instead
+            if (string.Equals(relativePath, "PaginationDto.cs.template", StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
             
             // Special case: rename Project.csproj to {ProjectName}.csproj
             if (targetFileName == "Project.csproj")

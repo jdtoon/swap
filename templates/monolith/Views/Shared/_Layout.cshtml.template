@@ -5,7 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - {{ProjectName}}</title>
     <link rel="stylesheet" href="~/css/app.min.css" asp-append-version="true" />
-    <link rel="stylesheet" type="text/css" href="~/lib/toastify-js/toastify.min.css" asp-append-version="true">
+    <link rel="stylesheet" href="~/css/htmx-toast.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/htmx-transitions.css" asp-append-version="true" />
     <script src="~/lib/htmx/htmx.min.js" asp-append-version="true"></script>
 </head>
 <body>
@@ -42,64 +43,7 @@
         </aside>
     </footer>
 
-    <script src="~/lib/toastify-js/toastify.min.js" asp-append-version="true"></script>
-
-    <script>
-        // Global Toast notification handler using Toastify.js
-        function displayToast(detailObject, defaultType) {
-            let message = 'An operation completed.';
-            let type = defaultType || 'info';
-
-            if (typeof detailObject === 'string') {
-                message = detailObject;
-            } else if (typeof detailObject === 'object' && detailObject !== null) {
-                if (detailObject.message) {
-                    message = detailObject.message;
-                } else if (detailObject.value) {
-                    message = detailObject.value;
-                }
-                if (detailObject.type) {
-                    type = detailObject.type;
-                }
-            }
-
-            let backgroundColor = "#2196F3"; // Info blue (default)
-            if (type === 'success') backgroundColor = "#4CAF50";
-            else if (type === 'error') backgroundColor = "#F44336";
-            else if (type === 'warning') backgroundColor = "#FF9800";
-
-            Toastify({
-                text: message,
-                duration: 3500,
-                close: true,
-                gravity: "top",
-                position: "right",
-                stopOnFocus: true,
-                style: { background: backgroundColor },
-                onClick: function () { }
-            }).showToast();
-        }
-
-        document.body.addEventListener('showToast', function (evt) {
-            displayToast(evt.detail, evt.detail?.type || 'info');
-        });
-
-        document.body.addEventListener('showToastSuccess', function (evt) {
-            displayToast(evt.detail, 'success');
-        });
-
-        document.body.addEventListener('showToastError', function (evt) {
-            displayToast(evt.detail, 'error');
-        });
-
-        document.body.addEventListener('showToastWarning', function (evt) {
-            displayToast(evt.detail, 'warning');
-        });
-
-        document.body.addEventListener('showToastInfo', function (evt) {
-            displayToast(evt.detail, 'info');
-        });
-    </script>
+    @await Html.PartialAsync("_ToastContainer")
 
     @await RenderSectionAsync("Scripts", required: false)
 </body>

@@ -42,8 +42,8 @@
                        hx-include="[name='pageSize'], [name='sortBy'], [name='sortOrder']{{FilterIncludes}}" />
                 
                 <!-- Hidden inputs to preserve sort state -->
-                <input type="hidden" name="sortBy" value="" />
-                <input type="hidden" name="sortOrder" value="" />
+                <input type="hidden" name="sortBy" value="@Model.SortBy" />
+                <input type="hidden" name="sortOrder" value="@Model.SortOrder" />
             </div>
 
             <!-- Filters -->

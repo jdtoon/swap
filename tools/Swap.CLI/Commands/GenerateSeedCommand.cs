@@ -92,6 +92,8 @@ public static class GenerateSeedCommand
                 {
                     await GenerateSeederForEntityAsync(projectName, entity, count, locale, ifEmpty, append, force);
                 }
+                // Ensure SeedRunner call order matches resolved entity order (base entities first, junctions last)
+                await RebuildSeederCallsAsync(entities);
             }
             else
             {
@@ -126,7 +128,7 @@ public static class GenerateSeedCommand
         var modelContent = await File.ReadAllTextAsync(modelPath);
         var fields = SeedHelper.ParseModelProperties(modelContent);
 
-        var (prelude, rules) = SeedHelper.GenerateFakerPreludeAndRules(projectName, entityName, fields);
+        var (prelude, rules, postProcess) = SeedHelper.GenerateFakerPreludeAndRules(projectName, entityName, fields);
 
         var templateDir = Path.Combine(AppContext.BaseDirectory, "templates", "generate", "seed");
         var templateFile = Path.Combine(templateDir, "EntitySeeder.cs.template");
@@ -144,7 +146,8 @@ public static class GenerateSeedCommand
             { "SeedLocale", locale },
             { "SeedIfEmpty", ifEmpty ? "true" : "false" },
             { "ForeignKeyPrelude", prelude },
-            { "FakerRules", rules }
+            { "FakerRules", rules },
+            { "PostProcess", postProcess }
         };
 
         var processed = TemplateEngine.Process(templateContent, variables);
@@ -202,6 +205,37 @@ public static class GenerateSeedCommand
         await File.WriteAllTextAsync(runnerPath, content);
     }
 
+    private static async Task RebuildSeederCallsAsync(List<string> orderedEntities)
+    {
+        var runnerPath = Path.Combine("Data", "Seeders", "SeedRunner.cs");
+        if (!File.Exists(runnerPath)) return;
+        var content = await File.ReadAllTextAsync(runnerPath);
+        var startMarker = "public static async Task RunAsync";
+        var idx = content.IndexOf(startMarker);
+        if (idx < 0) return;
+        var sentinel = "// Add seeder calls here";
+        if (!content.Contains(sentinel)) return;
+
+        // Build new block of calls in the specified order
+        var calls = string.Join("\n                ", orderedEntities.Select(e => $"await {e}Seeder.SeedAsync(db, services, count, locale, ifEmpty);"));
+        var lines = content.Split('\n').ToList();
+        for (int i = 0; i < lines.Count; i++)
+        {
+            if (lines[i].Contains("await") && lines[i].Contains("Seeder.SeedAsync"))
+            {
+                // Remove existing calls
+                while (i < lines.Count && lines[i].Contains("Seeder.SeedAsync"))
+                {
+                    lines.RemoveAt(i);
+                }
+                // Insert new ordered calls here
+                lines.Insert(i, "                " + calls);
+                break;
+            }
+        }
+        await File.WriteAllTextAsync(runnerPath, string.Join('\n', lines));
+    }
+
     private static async Task<List<string>> GetEntitiesFromDbContextAsync()
     {
         var path = Path.Combine("Data", "AppDbContext.cs");
@@ -217,7 +251,21 @@ public static class GenerateSeedCommand
             if (!string.Equals(typeName, "Migration", StringComparison.OrdinalIgnoreCase))
                 list.Add(typeName);
         }
-        return list.Distinct().ToList();
+        var distinct = list.Distinct().ToList();
+
+        // Heuristic ordering: ensure junction/composite entities (e.g., CourseStudent)
+        // are seeded AFTER their constituent base entities (Course, Student)
+        distinct.Sort((a, b) =>
+        {
+            if (a == b) return 0;
+            var aContainsB = a.Contains(b, StringComparison.Ordinal);
+            var bContainsA = b.Contains(a, StringComparison.Ordinal);
+            if (aContainsB && !bContainsA) return 1;  // a after b
+            if (bContainsA && !aContainsB) return -1; // a before b
+            return 0;
+        });
+
+        return distinct;
     }
 
     private static async Task EnsurePackageReferenceAsync(string csprojPath, string packageId, string version)

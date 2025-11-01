@@ -1,10 +1,12 @@
 @model {{ProjectName}}.ViewModels.{{EntityName}}ListViewModel
 
 <div id="{{EntityNameLower}}-list" 
-     hx-get="@Url.Action("Get{{EntityName}}List")" 
+     hx-get="@Url.Action("Get{{EntityName}}List", new { pageNumber = Model.Pagination.CurrentPage, pageSize = Model.Pagination.PageSize, searchTerm = Model.SearchTerm, sortBy = Model.SortBy, sortOrder = Model.SortOrder })" 
      hx-trigger="refresh{{EntityName}}List from:body"
-     hx-swap="outerHTML"
-     hx-include="[name='searchTerm'], [name='pageSize'], [name='sortBy'], [name='sortOrder']">
+     hx-swap="outerHTML">
+    <!-- Persist sort state for pagination and other HTMX requests -->
+    <input type="hidden" name="sortBy" value="@Model.SortBy" />
+    <input type="hidden" name="sortOrder" value="@Model.SortOrder" />
      
 @if (!Model.Items.Any())
 {

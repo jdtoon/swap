@@ -31,27 +31,28 @@ dotnet --version
 Install as a global .NET tool:
 
 ```bash
-dotnet tool install -g Swap.CLI
+dotnet tool install --global Swap.CLI
 ```
 
 Verify the installation:
 
 ```bash
 swap --version
+# Should show 0.1.0
 ```
 
 ### Update the CLI
 
-Update to the latest version:
+To update to the latest version:
 
 ```bash
-dotnet tool update -g Swap.CLI
+dotnet tool update --global Swap.CLI
 ```
 
 ### Uninstall the CLI
 
 ```bash
-dotnet tool uninstall -g Swap.CLI
+dotnet tool uninstall --global Swap.CLI
 ```
 
 ## Local Development Installation
