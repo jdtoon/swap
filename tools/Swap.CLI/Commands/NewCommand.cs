@@ -349,6 +349,7 @@ public class HtmxShellMiddleware
             { "ProjectName", projectName },
             { "ProjectNameLower", projectName.ToLowerInvariant() },
             { "DatabaseProvider", database },
+            { "DatabaseType", database }, // Alias for use in display/UI
             { "UseLocalNuget", localNuget.ToString().ToLowerInvariant() }
         };
         

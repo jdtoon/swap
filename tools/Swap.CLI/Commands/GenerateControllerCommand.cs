@@ -179,6 +179,9 @@ public static class GenerateControllerCommand
                 return 0;
             }
             
+            // Ensure _ViewImports.cshtml has Dtos namespace (needed for PaginationDto)
+            await EnsureDtosNamespaceInViewImportsAsync(workingDir, projectName);
+            
             await GenerateControllerAsync(entityName, projectName, fields, force, workingDir, withRelationships);
 
             // Auto-create migration for the new entity (never applies database update)
@@ -1053,6 +1056,51 @@ public class {entityName}
         var newDbSet = $"\n\n    public DbSet<{projectName}.Models.{entityName}> {pluralEntityName} {{ get; set; }}";
         content = content.Insert(lineEnd + 1, newDbSet);
         
+        
         await File.WriteAllTextAsync(dbContextPath, content);
     }
+
+    private static async Task EnsureDtosNamespaceInViewImportsAsync(string workingDir, string projectName)
+    {
+        var viewImportsPath = Path.Combine(workingDir, "Views", "_ViewImports.cshtml");
+        
+        if (!File.Exists(viewImportsPath))
+        {
+            return; // No _ViewImports file to update
+        }
+        
+        var content = await File.ReadAllTextAsync(viewImportsPath);
+        var dtosUsing = $"@using {projectName}.Dtos";
+        
+        // Check if Dtos namespace is already present
+        if (content.Contains(dtosUsing))
+        {
+            return; // Already has it
+        }
+        
+        // Find the last @using statement
+        var lastUsingIndex = content.LastIndexOf("@using", StringComparison.Ordinal);
+        if (lastUsingIndex == -1)
+        {
+            // No @using statements found, add after first line
+            var firstNewline = content.IndexOf('\n');
+            if (firstNewline > 0)
+            {
+                content = content.Insert(firstNewline + 1, dtosUsing + "\n");
+            }
+        }
+        else
+        {
+            // Find the end of the last @using line
+            var endOfLine = content.IndexOf('\n', lastUsingIndex);
+            if (endOfLine > lastUsingIndex)
+            {
+                content = content.Insert(endOfLine + 1, dtosUsing + "\n");
+            }
+        }
+        
+        await File.WriteAllTextAsync(viewImportsPath, content);
+        AnsiConsole.MarkupLine($"[dim]Updated _ViewImports.cshtml with Dtos namespace[/]");
+    }
 }
+

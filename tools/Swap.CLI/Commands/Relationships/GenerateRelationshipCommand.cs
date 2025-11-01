@@ -372,14 +372,17 @@ public static class GenerateRelationshipCommand
                 
                 if (definition.Type == RelationshipType.OneToMany)
                 {
-                    var fkName = definition.ForeignKeyName ?? $"{definition.TargetEntity}Id";
-                    AnsiConsole.MarkupLine($"  FK: {fkName} in {definition.SourceEntity}");
+                    // For OneToMany (Author->Post): Target (Post) has FK to Source (Author)
+                    var fkName = definition.ForeignKeyName ?? $"{definition.SourceEntity}Id";
+                    AnsiConsole.MarkupLine($"  FK: {fkName} in {definition.TargetEntity}");
                     if (!definition.SkipNavigation)
                     {
-                        var navProp = definition.NavigationProperty ?? definition.TargetEntity;
-                        var inverseProp = definition.InverseNavigation ?? EntityModifier.Pluralize(definition.SourceEntity);
-                        AnsiConsole.MarkupLine($"  Navigation: {definition.SourceEntity}.{navProp} → {definition.TargetEntity}");
-                        AnsiConsole.MarkupLine($"  Inverse: {definition.TargetEntity}.{inverseProp} → ICollection<{definition.SourceEntity}>");
+                        // Collection navigation on source (Author.Posts)
+                        var collectionProp = definition.NavigationProperty ?? EntityModifier.Pluralize(definition.TargetEntity);
+                        // Single navigation on target (Post.Author)
+                        var singleProp = definition.InverseNavigation ?? definition.SourceEntity;
+                        AnsiConsole.MarkupLine($"  Navigation: {definition.SourceEntity}.{collectionProp} → ICollection<{definition.TargetEntity}>");
+                        AnsiConsole.MarkupLine($"  Inverse: {definition.TargetEntity}.{singleProp} → {definition.SourceEntity}");
                     }
                 }
 
