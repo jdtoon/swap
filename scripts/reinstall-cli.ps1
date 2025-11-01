@@ -8,7 +8,7 @@ Write-Host ""
 
 # Get the root directory
 $rootDir = Split-Path $PSScriptRoot -Parent
-$localFeed = Join-Path $rootDir "nuget" "local"
+$localFeed = Join-Path $rootDir ".nuget" "local"
 
 # Create local feed directory if it doesn't exist, or clear it
 if (Test-Path $localFeed) {
