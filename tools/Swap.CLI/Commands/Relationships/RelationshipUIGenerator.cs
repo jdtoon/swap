@@ -87,6 +87,35 @@ public class RelationshipUIGenerator
                     });
                 }
             }
+            
+            // Detect OneToOne navigation properties (e.g., UserProfile? UserProfile on User)
+            // These are reference properties that aren't collections, FKs, or primitives
+            if (!propName.EndsWith("Id", StringComparison.Ordinal) && 
+                propName != "Id" &&
+                !propType.Contains("ICollection<") && 
+                !propType.Contains("List<") &&
+                !IsPrimitiveType(propType))
+            {
+                // Extract the entity type name (handle nullable types like "UserProfile?")
+                var targetEntity = propType.TrimEnd('?').Trim();
+                
+                // Verify the target entity file exists (to distinguish from other types like DTOs)
+                var entityDir = Path.GetDirectoryName(entityPath) ?? "";
+                var targetEntityPath = Path.Combine(entityDir, $"{targetEntity}.cs");
+                
+                if (File.Exists(targetEntityPath))
+                {
+                    // This is likely a OneToOne relationship where this entity is the principal
+                    // We'll mark it for now and verify in second pass by checking for FK in target
+                    relationships.Add(new DetectedRelationship
+                    {
+                        NavigationProperty = propName,
+                        TargetEntity = targetEntity,
+                        RelationshipType = DetectedRelationshipType.OneToOne,
+                        IsRequired = !propType.Contains("?")
+                    });
+                }
+            }
         }
 
         // Second pass: Detect many-to-many relationships
@@ -136,13 +165,59 @@ public class RelationshipUIGenerator
             }
         }
         
+        // Third pass: Detect OneToOne relationships (dependent side with FK)
+        // A ManyToOne is actually OneToOne if:
+        // 1. This entity has FK (e.g., UserProfile.UserId)
+        // 2. Target entity has single navigation property back (not collection)
+        var manyToOneRels = relationships.Where(r => r.RelationshipType == DetectedRelationshipType.ManyToOne).ToList();
+        
+        foreach (var rel in manyToOneRels)
+        {
+            if (rel.TargetEntity == null) continue;
+            
+            // Check if target entity has a single navigation property pointing back
+            var targetEntityPath = Path.Combine(Path.GetDirectoryName(entityPath) ?? "", $"{rel.TargetEntity}.cs");
+            
+            if (File.Exists(targetEntityPath))
+            {
+                var targetCode = await File.ReadAllTextAsync(targetEntityPath);
+                var targetTree = CSharpSyntaxTree.ParseText(targetCode);
+                var targetRoot = targetTree.GetCompilationUnitRoot();
+                var targetClass = targetRoot.DescendantNodes().OfType<ClassDeclarationSyntax>().FirstOrDefault();
+                
+                if (targetClass != null)
+                {
+                    var targetProperties = targetClass.Members.OfType<PropertyDeclarationSyntax>();
+                    
+                    // Look for single navigation property (not collection) pointing back
+                    var singleNavProp = targetProperties.FirstOrDefault(p =>
+                    {
+                        var type = p.Type.ToString();
+                        var propName = p.Identifier.Text;
+                        // Match: UserProfile? or UserProfile (not ICollection<UserProfile>)
+                        return (type.Contains(entityName) && 
+                                !type.Contains("ICollection<") && 
+                                !type.Contains("List<") &&
+                                propName != "Id" &&
+                                !propName.EndsWith("Id"));
+                    });
+                    
+                    if (singleNavProp != null)
+                    {
+                        // This is OneToOne! Update the relationship type
+                        rel.RelationshipType = DetectedRelationshipType.OneToOne;
+                    }
+                }
+            }
+        }
+        
         return relationships;
     }
 
     /// <summary>
     /// Generate a dropdown select for a foreign key field
     /// </summary>
-    public static string GenerateDropdownFormField(DetectedRelationship relationship, string displayField = "Name")
+    public static string GenerateDropdownFormField(DetectedRelationship relationship, string displayField = "Name", bool isOneToOne = false)
     {
         var fkName = relationship.ForeignKeyProperty ?? $"{relationship.TargetEntity}Id";
         // For self-reference, use navigation property name for better UX (e.g., "Parent" not "Category")
@@ -151,6 +226,48 @@ public class RelationshipUIGenerator
             : relationship.TargetEntity;
         var label = FormatLabel(labelText ?? "Related");
         var required = relationship.IsRequired ? "required" : "";
+
+        // For OneToOne relationships, FK should be readonly on edit (unique constraint)
+        if (isOneToOne)
+        {
+            return $@"@if (Model.Id == 0)
+{{
+    @* Create mode: show dropdown *@
+    <div class=""form-control"">
+        <label class=""label"">
+            <span class=""label-text"">{label}</span>
+        </label>
+        <select name=""{fkName}"" 
+                class=""select select-bordered w-full"" 
+                {required}>
+            <option value="""">-- Select {label} --</option>
+            @foreach (var item in ViewBag.{relationship.TargetEntity}List as IEnumerable<dynamic>)
+            {{
+                <option value=""@item.Id"" selected=""@(Model.{fkName} == item.Id)"">
+                    @item.{displayField}
+                </option>
+            }}
+        </select>
+        <span asp-validation-for=""{fkName}"" class=""text-error text-sm""></span>
+    </div>
+}}
+else
+{{
+    @* Edit mode: show readonly field *@
+    <div class=""form-control"">
+        <label class=""label"">
+            <span class=""label-text"">{label}</span>
+        </label>
+        <input type=""text"" 
+               value=""@(Model.{relationship.NavigationProperty}?.{displayField} ?? """")"" 
+               class=""input input-bordered"" 
+               readonly 
+               disabled />
+        <input type=""hidden"" name=""{fkName}"" value=""@Model.{fkName}"" />
+        <span class=""text-sm text-gray-500 mt-1"">Cannot change {label.ToLower()} after creation due to one-to-one relationship</span>
+    </div>
+}}";
+        }
 
         return $@"<div class=""form-control"">
     <label class=""label"">
@@ -519,6 +636,34 @@ public class RelationshipUIGenerator
         var result = System.Text.RegularExpressions.Regex.Replace(name, "([A-Z])", " $1").Trim();
         return result;
     }
+    
+    /// <summary>
+    /// Check if a property type is a primitive type (not an entity relationship)
+    /// </summary>
+    private static bool IsPrimitiveType(string typeName)
+    {
+        // Remove nullable indicator and trim
+        var cleanType = typeName.TrimEnd('?').Trim();
+        
+        // Common primitive types and framework types
+        var primitiveTypes = new HashSet<string>
+        {
+            "int", "Int32",
+            "long", "Int64",
+            "short", "Int16",
+            "byte", "Byte",
+            "bool", "Boolean",
+            "decimal", "Decimal",
+            "double", "Double",
+            "float", "Single",
+            "string", "String",
+            "DateTime", "DateTimeOffset",
+            "Guid", "TimeSpan",
+            "char", "Char"
+        };
+        
+        return primitiveTypes.Contains(cleanType);
+    }
 }
 
 /// <summary>
@@ -541,5 +686,6 @@ public enum DetectedRelationshipType
 {
     ManyToOne,   // This entity has FK to another (needs dropdown)
     OneToMany,   // This entity has collection of others (display count/badges)
-    ManyToMany   // This entity has collection that relates via junction table (checkboxes)
+    ManyToMany,  // This entity has collection that relates via junction table (checkboxes)
+    OneToOne     // This entity has single navigation to another (principal side - no form field needed)
 }

@@ -593,14 +593,14 @@ public static class FieldHelper
     /// <summary>
     /// Generate checkbox column header for bulk selection (Select All)
     /// </summary>
-    public static string GenerateBulkSelectHeader(string entityName)
+    public static string GenerateBulkSelectHeader(string entityName, string entityNameLower)
     {
         return $@"<th>
                         <input type=""checkbox"" 
                                id=""select-all"" 
                                class=""checkbox checkbox-sm""
                                hx-post=""@Url.Action(""ToggleSelectAll"", ""{entityName}"")?pageNumber=@Model.Pagination.CurrentPage&pageSize=@Model.Pagination.PageSize&searchTerm=@Model.SearchTerm&sortBy=@Model.SortBy&sortOrder=@Model.SortOrder@(string.Join("""", Model.Filters.Where(f => !string.IsNullOrEmpty(f.Value)).Select(f => $""&{{f.Key}}={{f.Value}}"")))""
-                               hx-target=""#{entityName.ToLower()}-list""
+                               hx-target=""#{entityNameLower}-list""
                                hx-swap=""outerHTML""
                                @(ViewBag.SelectedIds != null && Model.Items.All(i => ((HashSet<int>)ViewBag.SelectedIds).Contains(i.Id)) ? ""checked"" : """") />
                     </th>";

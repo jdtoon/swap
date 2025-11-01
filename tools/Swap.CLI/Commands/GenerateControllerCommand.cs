@@ -559,10 +559,12 @@ public static class GenerateControllerCommand
                 AnsiConsole.MarkupLine($"[cyan]ℹ[/] Detected {relationships.Count} relationship(s)");
                 foreach (var rel in relationships)
                 {
-                    if (rel.RelationshipType == global::Swap.CLI.Commands.Relationships.DetectedRelationshipType.ManyToOne)
+                    var typeLabel = rel.RelationshipType == global::Swap.CLI.Commands.Relationships.DetectedRelationshipType.OneToOne ? " [OneToOne]" : "";
+                    if (rel.RelationshipType == global::Swap.CLI.Commands.Relationships.DetectedRelationshipType.ManyToOne ||
+                        rel.RelationshipType == global::Swap.CLI.Commands.Relationships.DetectedRelationshipType.OneToOne)
                     {
                         var selfRefIndicator = rel.IsSelfReferencing ? " (self-reference)" : "";
-                        AnsiConsole.MarkupLine($"  • {rel.ForeignKeyProperty} → {rel.TargetEntity}{selfRefIndicator}");
+                        AnsiConsole.MarkupLine($"  • {rel.ForeignKeyProperty} → {rel.TargetEntity}{selfRefIndicator}{typeLabel}");
                     }
                 }
             }
@@ -631,9 +633,10 @@ public static class GenerateControllerCommand
             var relationship = relationships.FirstOrDefault(r => r.ForeignKeyProperty == field.Name);
             if (relationship != null && withRelationships && relationship.TargetEntity != null)
             {
-                // FK field - generate dropdown
+                // FK field - generate dropdown (with OneToOne special handling)
                 var displayField = displayFieldCache.GetValueOrDefault(relationship.TargetEntity, "Id");
-                formFieldsList.Add(global::Swap.CLI.Commands.Relationships.RelationshipUIGenerator.GenerateDropdownFormField(relationship, displayField));
+                var isOneToOne = relationship.RelationshipType == global::Swap.CLI.Commands.Relationships.DetectedRelationshipType.OneToOne;
+                formFieldsList.Add(global::Swap.CLI.Commands.Relationships.RelationshipUIGenerator.GenerateDropdownFormField(relationship, displayField, isOneToOne));
             }
             else if (!withRelationships || 
                      (!relationships.Any(r => r.ForeignKeyProperty == field.Name) && 
@@ -765,7 +768,7 @@ public static class GenerateControllerCommand
         var defaultInitialization = FieldHelper.GenerateDefaultInitialization(fields);
         
         // Generate bulk operations content (server-driven with session)
-        var bulkSelectHeader = FieldHelper.GenerateBulkSelectHeader(entityName);
+        var bulkSelectHeader = FieldHelper.GenerateBulkSelectHeader(entityName, entityNameLower);
         var bulkSelectCell = FieldHelper.GenerateBulkSelectCell(entityName, entityNameLower);
         var bulkSelectionScript = FieldHelper.GenerateBulkSelectionScript(entityName, entityNameLower);
         var bulkActionsBar = FieldHelper.GenerateBulkActionsBar(entityName, entityNameLower);
