@@ -6,18 +6,8 @@
     <title>@ViewData["Title"] - {{ProjectName}}</title>
     <link rel="stylesheet" href="~/css/app.min.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/htmx-toast.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/htmx-transitions.css" asp-append-version="true" />
     <script src="~/lib/htmx/htmx.min.js" asp-append-version="true"></script>
-    <style>
-        /* Global HTMX transition - smooth fade-in effect */
-        .htmx-swapping {
-            opacity: 0;
-            transition: opacity 200ms ease-out;
-        }
-        .htmx-settling {
-            opacity: 1;
-            transition: opacity 200ms ease-in;
-        }
-    </style>
 </head>
 <body>
     <header>
