@@ -217,17 +217,24 @@ public class RelationshipUIGenerator
     public static string GenerateViewBagPopulation(List<DetectedRelationship> relationships)
     {
         var code = new System.Text.StringBuilder();
+        var addedEntities = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
         // ManyToOne dropdowns
         foreach (var rel in relationships.Where(r => r.RelationshipType == DetectedRelationshipType.ManyToOne))
         {
-            code.AppendLine($"        ViewBag.{rel.TargetEntity}List = await _context.{EntityModifier.Pluralize(rel.TargetEntity!)}.ToListAsync();");
+            if (rel.TargetEntity != null && addedEntities.Add(rel.TargetEntity))
+            {
+                code.AppendLine($"        ViewBag.{rel.TargetEntity}List = await _context.{EntityModifier.Pluralize(rel.TargetEntity)}.ToListAsync();");
+            }
         }
 
         // ManyToMany checkboxes
         foreach (var rel in relationships.Where(r => r.RelationshipType == DetectedRelationshipType.ManyToMany))
         {
-            code.AppendLine($"        ViewBag.{rel.TargetEntity}List = await _context.{EntityModifier.Pluralize(rel.TargetEntity!)}.ToListAsync();");
+            if (rel.TargetEntity != null && addedEntities.Add(rel.TargetEntity))
+            {
+                code.AppendLine($"        ViewBag.{rel.TargetEntity}List = await _context.{EntityModifier.Pluralize(rel.TargetEntity)}.ToListAsync();");
+            }
         }
 
         return code.ToString();
@@ -239,26 +246,33 @@ public class RelationshipUIGenerator
     public static string GenerateViewBagPopulationForEdit(List<DetectedRelationship> relationships, string entityName)
     {
         var code = new System.Text.StringBuilder();
+        var addedEntities = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
         // ManyToOne dropdowns
         foreach (var rel in relationships.Where(r => r.RelationshipType == DetectedRelationshipType.ManyToOne))
         {
-            if (rel.IsSelfReferencing)
+            if (rel.TargetEntity != null && addedEntities.Add(rel.TargetEntity))
             {
-                // For self-referencing, exclude the current entity to prevent circular reference
-                code.AppendLine($"        ViewBag.{rel.TargetEntity}List = await _context.{EntityModifier.Pluralize(rel.TargetEntity!)}.Where(e => e.Id != id).ToListAsync();");
-            }
-            else
-            {
-                // For normal relationships, include all entities
-                code.AppendLine($"        ViewBag.{rel.TargetEntity}List = await _context.{EntityModifier.Pluralize(rel.TargetEntity!)}.ToListAsync();");
+                if (rel.IsSelfReferencing)
+                {
+                    // For self-referencing, exclude the current entity to prevent circular reference
+                    code.AppendLine($"        ViewBag.{rel.TargetEntity}List = await _context.{EntityModifier.Pluralize(rel.TargetEntity)}.Where(e => e.Id != id).ToListAsync();");
+                }
+                else
+                {
+                    // For normal relationships, include all entities
+                    code.AppendLine($"        ViewBag.{rel.TargetEntity}List = await _context.{EntityModifier.Pluralize(rel.TargetEntity)}.ToListAsync();");
+                }
             }
         }
 
         // ManyToMany checkboxes
         foreach (var rel in relationships.Where(r => r.RelationshipType == DetectedRelationshipType.ManyToMany))
         {
-            code.AppendLine($"        ViewBag.{rel.TargetEntity}List = await _context.{EntityModifier.Pluralize(rel.TargetEntity!)}.ToListAsync();");
+            if (rel.TargetEntity != null && addedEntities.Add(rel.TargetEntity))
+            {
+                code.AppendLine($"        ViewBag.{rel.TargetEntity}List = await _context.{EntityModifier.Pluralize(rel.TargetEntity)}.ToListAsync();");
+            }
         }
 
         return code.ToString();

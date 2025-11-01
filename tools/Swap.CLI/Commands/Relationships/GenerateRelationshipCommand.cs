@@ -448,11 +448,18 @@ public static class GenerateRelationshipCommand
                 }
                 else
                 {
+                    // Get project namespace from .csproj file
+                    var projectFiles = Directory.GetFiles(definition.ProjectPath, "*.csproj");
+                    var projectNamespace = projectFiles.Length > 0 
+                        ? Path.GetFileNameWithoutExtension(projectFiles[0])
+                        : "Models"; // Fallback
+                    
                     var junctionEntityCode = GenerateJunctionEntityCode(
                         definition.SourceEntity, 
                         definition.TargetEntity, 
                         junctionTableName,
-                        definition.JunctionProperties);
+                        definition.JunctionProperties,
+                        projectNamespace);
                     
                     await File.WriteAllTextAsync(junctionEntityPath, junctionEntityCode);
                     AnsiConsole.MarkupLine($"[green]✓[/] Created Models/{junctionTableName}.cs");
@@ -599,7 +606,8 @@ public static class GenerateRelationshipCommand
         string sourceEntity, 
         string targetEntity, 
         string junctionTableName,
-        Dictionary<string, string>? additionalProperties)
+        Dictionary<string, string>? additionalProperties,
+        string projectNamespace)
     {
         var sourceFk = $"{sourceEntity}Id";
         var targetFk = $"{targetEntity}Id";
@@ -614,7 +622,7 @@ public static class GenerateRelationshipCommand
             }
         }
 
-        return $@"namespace Models;
+        return $@"namespace {projectNamespace}.Models;
 
 public class {junctionTableName}
 {{

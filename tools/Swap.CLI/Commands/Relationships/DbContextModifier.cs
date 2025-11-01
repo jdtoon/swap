@@ -187,7 +187,9 @@ public class DbContextModifier
         // Find existing DbSet properties to maintain consistent formatting
         var lastDbSetIndex = code.LastIndexOf("DbSet<", openBraceIndex + 1);
         
-        string dbSetProperty = $"    public DbSet<{modelsPrefix}{junctionTableName}> {junctionTableName} {{ get; set; }}";
+        // Use pluralized name for DbSet property
+        var pluralName = EntityModifier.Pluralize(junctionTableName);
+        string dbSetProperty = $"    public DbSet<{modelsPrefix}{junctionTableName}> {pluralName} {{ get; set; }}";
         
         if (lastDbSetIndex > openBraceIndex)
         {
