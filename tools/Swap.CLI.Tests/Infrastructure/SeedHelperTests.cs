@@ -36,7 +36,7 @@ public class Post : IAuditable
 }";
 
         var fields = SeedHelper.ParseModelProperties(modelContent);
-        var (prelude, rules) = SeedHelper.GenerateFakerPreludeAndRules("TestApp", "Post", fields);
+        var (prelude, rules, postProcess) = SeedHelper.GenerateFakerPreludeAndRules("TestApp", "Post", fields);
 
         // Should include Title
         Assert.Contains("Title", rules);
@@ -62,7 +62,7 @@ public class Post : ISoftDeletable
 }";
 
         var fields = SeedHelper.ParseModelProperties(modelContent);
-        var (prelude, rules) = SeedHelper.GenerateFakerPreludeAndRules("TestApp", "Post", fields);
+        var (prelude, rules, postProcess) = SeedHelper.GenerateFakerPreludeAndRules("TestApp", "Post", fields);
 
         // Should include Title
         Assert.Contains("Title", rules);
@@ -85,7 +85,7 @@ public class Post : IVersionable
 }";
 
         var fields = SeedHelper.ParseModelProperties(modelContent);
-        var (prelude, rules) = SeedHelper.GenerateFakerPreludeAndRules("TestApp", "Post", fields);
+        var (prelude, rules, postProcess) = SeedHelper.GenerateFakerPreludeAndRules("TestApp", "Post", fields);
 
         // Should include Title
         Assert.Contains("Title", rules);
@@ -108,7 +108,7 @@ public class Post : IVisibility
 }";
 
         var fields = SeedHelper.ParseModelProperties(modelContent);
-        var (prelude, rules) = SeedHelper.GenerateFakerPreludeAndRules("TestApp", "Post", fields);
+        var (prelude, rules, postProcess) = SeedHelper.GenerateFakerPreludeAndRules("TestApp", "Post", fields);
 
         // Should include Title
         Assert.Contains("Title", rules);
@@ -131,7 +131,7 @@ public class Post : IOrderable
 }";
 
         var fields = SeedHelper.ParseModelProperties(modelContent);
-        var (prelude, rules) = SeedHelper.GenerateFakerPreludeAndRules("TestApp", "Post", fields);
+        var (prelude, rules, postProcess) = SeedHelper.GenerateFakerPreludeAndRules("TestApp", "Post", fields);
 
         // Should include Title
         Assert.Contains("Title", rules);
@@ -152,7 +152,7 @@ public class Post
 }";
 
         var fields = SeedHelper.ParseModelProperties(modelContent);
-        var (prelude, rules) = SeedHelper.GenerateFakerPreludeAndRules("TestApp", "Post", fields);
+        var (prelude, rules, postProcess) = SeedHelper.GenerateFakerPreludeAndRules("TestApp", "Post", fields);
 
         // Should include both Title and PublishedAt
         Assert.Contains("Title", rules);
@@ -171,7 +171,7 @@ public class Post : ISluggable
 }";
 
         var fields = SeedHelper.ParseModelProperties(modelContent);
-        var (prelude, rules) = SeedHelper.GenerateFakerPreludeAndRules("TestApp", "Post", fields);
+        var (prelude, rules, postProcess) = SeedHelper.GenerateFakerPreludeAndRules("TestApp", "Post", fields);
 
         // Slug should have random suffix for uniqueness
         Assert.Contains("Slug", rules);
@@ -190,7 +190,7 @@ public class Post
 }";
 
         var fields = SeedHelper.ParseModelProperties(modelContent);
-        var (prelude, rules) = SeedHelper.GenerateFakerPreludeAndRules("TestApp", "Post", fields);
+        var (prelude, rules, postProcess) = SeedHelper.GenerateFakerPreludeAndRules("TestApp", "Post", fields);
 
         // Prelude should load author IDs
         Assert.Contains("authorIds", prelude);
@@ -221,7 +221,7 @@ public class Post : ISoftDeletable, IAuditable, IVersionable
 }";
 
         var fields = SeedHelper.ParseModelProperties(modelContent);
-        var (prelude, rules) = SeedHelper.GenerateFakerPreludeAndRules("TestApp", "Post", fields);
+        var (prelude, rules, postProcess) = SeedHelper.GenerateFakerPreludeAndRules("TestApp", "Post", fields);
 
         // Should include application properties
         Assert.Contains("Title", rules);
@@ -254,7 +254,7 @@ public class User
 }";
 
         var fields = SeedHelper.ParseModelProperties(modelContent);
-        var (prelude, rules) = SeedHelper.GenerateFakerPreludeAndRules("TestApp", "User", fields);
+        var (prelude, rules, postProcess) = SeedHelper.GenerateFakerPreludeAndRules("TestApp", "User", fields);
 
         // Check smart field detection
         Assert.Contains("Email", rules);
