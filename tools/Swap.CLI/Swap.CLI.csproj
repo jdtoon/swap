@@ -13,7 +13,7 @@
     
     <!-- Package Metadata -->
     <PackageId>Swap.CLI</PackageId>
-    <Version>0.2.0</Version>
+    <Version>0.2.0-dev</Version>
     <Description>Command-Line Interface for the Swap Framework. Scaffold modules, generate CRUD features, and more.</Description>
     <PackageTags>swap;cli;scaffolding;code-generation;htmx</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>

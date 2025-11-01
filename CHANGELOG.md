@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [0.2.0] - 2025-01-XX
+## [0.2.0-dev] - 2025-11-01
 
 ### 🎉 Relationship Auto-Wiring Complete
 
@@ -37,7 +37,10 @@ This release completes the relationship story with **automatic UI generation** f
   # Optional relationship
   swap g rel -s Profile -t User --type one-to-one
   ```
-- **Automatic UI**: Generates dropdown in forms with automatic display field detection (Name, Title, Email, etc.)
+- **Automatic UI**: Generates dropdown in forms on dependent side with automatic display field detection
+  - ⚠️ **Known Limitation**: Principal side navigation property generates as text input instead of dropdown
+  - Workaround: Manage one-to-one relationships from the dependent side (entity with FK)
+  - Example: Edit UserProfile to select User, rather than editing User to select UserProfile
 
 ### Added - Many-to-Many Relationship Generation
 - **Many-to-Many Support**: Full CLI support for generating many-to-many relationships
@@ -61,9 +64,22 @@ This release completes the relationship story with **automatic UI generation** f
 ### Added - Automatic Display Field Detection
 - **Smart Display Field Selection**: Controllers now intelligently choose display fields for dropdowns
   - Priority order: `Name` → `Title` → `Email` → `Username` → `Description` → fallback to `Id`
-  - Works for all foreign key relationships (one-to-many, many-to-one, one-to-one)
+  - Works for all foreign key relationships (one-to-many, many-to-one, one-to-one dependent)
   - No manual configuration required
   - Generates clean UI code: `@item.Email` or `@item.Name` instead of `@item.ToString()`
+
+### Added - Select-All Checkbox Fix
+- **Bulk Selection**: Fixed ID casing mismatch in select-all checkbox
+  - Previously used all-lowercase entity name (e.g., `#userprofile-list`)
+  - Now correctly uses camelCase (e.g., `#userProfile-list`)
+  - Select-all checkbox now properly targets the list container
+
+### Added - OneToOne Edit FK Protection
+- **Unique Constraint Protection**: Added conditional readonly FK field for one-to-one edit forms
+  - FK dropdown shown on create (Model.Id == 0)
+  - FK shown as readonly on edit with helper text explaining unique constraint
+  - Prevents SQLite UNIQUE constraint errors when trying to reassign one-to-one relationships
+  - Note: Detection logic for one-to-one vs many-to-one currently based on FK inference, not metadata
 
 ### Added - Comprehensive Documentation
 - **README.md Enhancements**:
@@ -76,7 +92,7 @@ This release completes the relationship story with **automatic UI generation** f
     - Complete working blog with automatic UI in 15 commands
 - **CLI Help Text**: All relationship features properly documented in `--help` output
 
-### Added - Authentication Scaffolding (from 0.1.0)
+### Added - Authentication Scaffolding
 - **Authentication System**: Complete ASP.NET Core Identity integration with `swap generate auth`
   - Generates ApplicationUser model extending IdentityUser with DisplayName, CreatedAt, LastLoginAt
   - Creates 4 ViewModels: LoginViewModel, RegisterViewModel, ForgotPasswordViewModel, ResetPasswordViewModel
@@ -89,10 +105,16 @@ This release completes the relationship story with **automatic UI generation** f
 - **CLI Options**: `--dry-run`, `--force`, `--project` support
 
 ### Changed - Package Versions
-- **Swap.CLI**: 0.1.0 → 0.2.0
-- **Swap.Htmx**: 0.1.0 → 0.2.0
-- **Swap.Patterns**: 0.1.0 → 0.2.0
-- **Swap.Testing**: 0.1.0 → 0.2.0
+- **Swap.CLI**: 0.1.0 → 0.2.0-dev
+- **Swap.Htmx**: 0.1.0 → 0.2.0-dev
+- **Swap.Patterns**: 0.1.0 → 0.2.0-dev
+- **Swap.Testing**: 0.1.0 → 0.2.0-dev
+
+### Known Issues
+- **One-to-One Principal Side**: Navigation property on principal side generates as text input in forms
+  - Affects scenarios where you want to select dependent entity from principal entity form
+  - Detection logic successfully identifies one-to-one relationships but form generation needs enhancement
+  - Workaround: Always manage one-to-one relationships from dependent side (entity with FK)
 
 ### Validated
 - **All Relationship Types Production-Ready**:
