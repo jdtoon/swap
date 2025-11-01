@@ -1,14 +1,24 @@
 #!/usr/bin/env pwsh
-# Reinstalls the Swap CLI tool locally for testing
+# Reinstalls the Swap CLI tool and framework packages locally for testing
 
 $ErrorActionPreference = "Stop"
 
-Write-Host "🔄 Reinstalling Swap CLI..." -ForegroundColor Cyan
+Write-Host "🔄 Reinstalling Swap CLI and Framework Packages..." -ForegroundColor Cyan
 Write-Host ""
 
 # Get the root directory
 $rootDir = Split-Path $PSScriptRoot -Parent
-$localFeed = Join-Path $rootDir ".nuget" "local"
+$localFeed = Join-Path $rootDir "nuget" "local"
+
+# Create local feed directory if it doesn't exist, or clear it
+if (Test-Path $localFeed) {
+    Write-Host "🗑️  Clearing old packages from local feed..." -ForegroundColor Yellow
+    Remove-Item "$localFeed\*.nupkg" -Force -ErrorAction SilentlyContinue
+    Write-Host "   ✅ Old packages cleared" -ForegroundColor Green
+    Write-Host ""
+} else {
+    New-Item -ItemType Directory -Path $localFeed -Force | Out-Null
+}
 
 # Uninstall existing CLI
 Write-Host "🗑️  Uninstalling existing Swap CLI..." -ForegroundColor Yellow
@@ -17,6 +27,34 @@ try {
     Write-Host "   ✅ Existing CLI uninstalled" -ForegroundColor Green
 } catch {
     Write-Host "   ℹ️  No existing CLI found" -ForegroundColor Gray
+}
+
+Write-Host ""
+
+# Pack all framework packages
+Write-Host "📦 Packing Framework Packages..." -ForegroundColor Yellow
+
+$frameworkProjects = @(
+    "framework\Swap.Htmx\Swap.Htmx.csproj",
+    "framework\Swap.Patterns\Swap.Patterns.csproj",
+    "framework\Swap.Testing\Swap.Testing.csproj"
+)
+
+foreach ($project in $frameworkProjects) {
+    $projectPath = Join-Path $rootDir $project
+    $projectName = Split-Path $project -Leaf
+    $projectName = $projectName -replace '\.csproj$', ''
+    
+    Write-Host "   📦 Packing $projectName..." -ForegroundColor Cyan
+    
+    dotnet pack $projectPath -c Release -o $localFeed --nologo
+    
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "   ❌ Failed to pack $projectName" -ForegroundColor Red
+        exit 1
+    }
+    
+    Write-Host "   ✅ $projectName packed successfully" -ForegroundColor Green
 }
 
 Write-Host ""
@@ -36,7 +74,7 @@ if ([string]::IsNullOrWhiteSpace($version)) {
 
 Write-Host "   Version: $version" -ForegroundColor Cyan
 
-dotnet pack -c Release -o $localFeed
+dotnet pack -c Release -o $localFeed --nologo
 
 if ($LASTEXITCODE -ne 0) {
     Write-Host "   ❌ Failed to pack Swap.CLI" -ForegroundColor Red
@@ -44,6 +82,13 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 Write-Host "   ✅ CLI packed successfully" -ForegroundColor Green
+Write-Host ""
+
+# List all packages in local feed
+Write-Host "📋 Packages in local feed:" -ForegroundColor Cyan
+Get-ChildItem $localFeed -Filter "*.nupkg" | ForEach-Object {
+    Write-Host "   • $($_.Name)" -ForegroundColor Gray
+}
 Write-Host ""
 
 # Install the CLI from local feed
@@ -59,13 +104,13 @@ Write-Host "   ✅ CLI installed successfully" -ForegroundColor Green
 Write-Host ""
 
 # Verify installation
-Write-Host "✅ Swap CLI is ready!" -ForegroundColor Green
+Write-Host "✅ Swap CLI and Framework Packages are ready!" -ForegroundColor Green
 Write-Host ""
-Write-Host "📋 Installed version:" -ForegroundColor Cyan
+Write-Host "📋 Installed CLI version:" -ForegroundColor Cyan
 swap --version
 
 Write-Host ""
 Write-Host "💡 Try it out:" -ForegroundColor Cyan
-Write-Host "   swap new MyTestApp --database sqlite" -ForegroundColor White
+Write-Host "   swap new MyTestApp --database sqlite --local-nuget" -ForegroundColor White
 Write-Host "   cd MyTestApp" -ForegroundColor White
 Write-Host "   dotnet run" -ForegroundColor White
