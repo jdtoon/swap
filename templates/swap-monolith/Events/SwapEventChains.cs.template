@@ -8,7 +8,7 @@ public static class SwapEventChains
     {
         // Todo domain chains (homepage demo uses Todo items)
         events
-            .Chain("todo.created", "ui.todo.refreshList", "ui.toast.success", "ui.stats.refresh", "ui.activity.append")
-            .Chain("todo.deleted", "ui.todo.refreshList", "ui.toast.success", "ui.stats.refresh", "ui.activity.append");
+            .Chain(EventNames.Domain.TodoCreated, EventNames.Ui.TodoRefreshList, EventNames.Ui.ToastSuccess, EventNames.Ui.StatsRefresh, EventNames.Ui.ActivityAppend)
+            .Chain(EventNames.Domain.TodoDeleted, EventNames.Ui.TodoRefreshList, EventNames.Ui.ToastSuccess, EventNames.Ui.StatsRefresh, EventNames.Ui.ActivityAppend);
     }
 }

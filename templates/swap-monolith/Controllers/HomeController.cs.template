@@ -3,6 +3,7 @@ using {{ProjectName}}.Data;
 using {{ProjectName}}.Models;
 using Swap.Htmx.Events;
 using Swap.Htmx;
+using {{ProjectName}}.Events;
 
 namespace {{ProjectName}}.Controllers;
 
@@ -50,7 +51,10 @@ public class HomeController : SwapController
     _context.SaveChanges();
 
     // Emit domain event (chained to UI events via Events/SwapEventChains.cs)
-    _events.Emit("todo.created", new { id = todo.Id, title = todo.Title });
+    _events.Emit(EventNames.Domain.TodoCreated, new { id = todo.Id, title = todo.Title });
+
+    // Show a success toast overlay via HX-Trigger
+    Response.ShowSuccessToast($"Created: {todo.Title}");
 
         // Return the updated list
         return PartialView("_TodoList", _context.TodoItems.ToList());
@@ -99,7 +103,9 @@ public class HomeController : SwapController
     _context.TodoItems.Remove(todo);
     _context.SaveChanges();
 
-    _events.Emit("todo.deleted", new { id = id });
+    _events.Emit(EventNames.Domain.TodoDeleted, new { id = id });
+
+    Response.ShowSuccessToast($"Deleted todo #{id}");
 
         return PartialView("_TodoList", _context.TodoItems.ToList());
     }

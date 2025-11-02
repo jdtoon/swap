@@ -1,0 +1,18 @@
+namespace {{ProjectName}}.Events;
+
+public static class EventNames
+{
+    public static class Domain
+    {
+        public const string TodoCreated = "todo.created";
+        public const string TodoDeleted = "todo.deleted";
+    }
+
+    public static class Ui
+    {
+        public const string TodoRefreshList = "ui.todo.refreshList";
+        public const string ToastSuccess = "ui.toast.success";
+        public const string StatsRefresh = "ui.stats.refresh";
+        public const string ActivityAppend = "ui.activity.append";
+    }
+}

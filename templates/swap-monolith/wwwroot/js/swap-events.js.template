@@ -12,6 +12,23 @@
 (function (global) {
   var REGISTRY = new Set();
 
+  function scanAndActivate(root) {
+    try {
+      var scope = root || (global.document && global.document);
+      if (!scope || !scope.querySelectorAll) return;
+      var els = scope.querySelectorAll('[data-swap-events]');
+      els.forEach(function (el) {
+        var vals = (el.getAttribute('data-swap-events') || '')
+          .split(',')
+          .map(function (s) { return s.trim(); })
+          .filter(Boolean);
+        for (var i = 0; i < vals.length; i++) {
+          REGISTRY.add(vals[i]);
+        }
+      });
+    } catch (_) { /* best-effort */ }
+  }
+
   function toHeaderValue() {
     if (REGISTRY.size === 0) return '';
     return Array.from(REGISTRY).join(',');
@@ -84,9 +101,14 @@
   // Hook now if htmx is already loaded, else hook when it becomes available
   if (global.htmx) {
     ensureHtmxHook();
+    // Populate registry immediately based on current DOM
+    scanAndActivate(global.document);
   } else if (global.document) {
     // Try again on DOM ready in case htmx loads late
-    global.document.addEventListener('DOMContentLoaded', ensureHtmxHook, { once: true });
+    global.document.addEventListener('DOMContentLoaded', function(){
+      ensureHtmxHook();
+      scanAndActivate(global.document);
+    }, { once: true });
   }
 })(window);
 
@@ -101,6 +123,8 @@
   document.body.addEventListener('htmx:afterOnLoad', function(evt){
     var triggers = parseTriggers(evt.detail && evt.detail.xhr);
     if (triggers.length === 0) return;
+    // Elements inserted/changed by HTMX may include new subscriptions
+    try { (window && window.document) && scanAndActivate(window.document); } catch(_) {}
     var lowered = triggers.map(function(t){return t.toLowerCase();});
     document.querySelectorAll('[data-swap-events]').forEach(function(el){
       var listens = (el.getAttribute('data-swap-events')||'')
