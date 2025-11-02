@@ -1,0 +1,48 @@
+using Microsoft.AspNetCore.Mvc;
+using {{ProjectName}}.Data;
+using Swap.Htmx;
+
+namespace {{ProjectName}}.Controllers;
+
+public class DemoController : SwapController
+{
+    private readonly AppDbContext _context;
+    private static readonly List<string> Activity = new();
+
+    public DemoController(AppDbContext context)
+    {
+        _context = context;
+    }
+
+    [HttpGet]
+    public IActionResult Index()
+    {
+        return SwapView();
+    }
+
+    [HttpGet]
+    public IActionResult Stats()
+    {
+        var count = _context.TodoItems.Count();
+        return PartialView("~/Views/Demo/_Stats.cshtml", count);
+    }
+
+    [HttpGet]
+    public IActionResult Toasts()
+    {
+        var latest = _context.TodoItems.OrderByDescending(t => t.Id).Select(t => t.Title).FirstOrDefault();
+        var message = latest == null ? "No recent activity" : $"Created: {latest}";
+        return PartialView("~/Views/Demo/_Toasts.cshtml", message);
+    }
+
+    [HttpGet]
+    public IActionResult ActivityLog()
+    {
+        var items = _context.TodoItems
+            .OrderByDescending(t => t.Id)
+            .Select(t => $"Created: {t.Title}")
+            .Take(10)
+            .ToList();
+        return PartialView("~/Views/Demo/_ActivityLog.cshtml", items);
+    }
+}

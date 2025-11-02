@@ -1,0 +1,44 @@
+@{
+    ViewData["Title"] = "Event System Demo";
+}
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+  <section class="card bg-base-100 shadow">
+    <div class="card-body">
+      <h2 class="card-title">Create Todo (emits todo.created)</h2>
+      <form hx-post="/Home/AddTodo" hx-target="#todo-list" class="flex gap-2">
+        <input type="text" name="title" class="input input-bordered flex-1" placeholder="New task title" required />
+        <button type="submit" class="btn btn-primary">Add</button>
+      </form>
+      <p class="text-sm text-base-content/60 mt-2">On success, the server emits <code>todo.created</code> which chains to: <code>ui.todo.refreshList</code>, <code>ui.toast.success</code>, <code>ui.stats.refresh</code>, <code>ui.activity.append</code>.</p>
+    </div>
+  </section>
+
+  <section class="card bg-base-100 shadow">
+    <div class="card-body">
+      <h2 class="card-title">Stats</h2>
+      <div id="stats" data-swap-events="ui.stats.refresh" hx-get="/Demo/Stats" class="border rounded p-3"></div>
+    </div>
+  </section>
+
+  <section class="card bg-base-100 shadow lg:col-span-2">
+    <div class="card-body">
+      <h2 class="card-title">Todo List</h2>
+      <div id="todo-list" data-swap-events="ui.todo.refreshList" hx-get="/Home/TodoList"></div>
+    </div>
+  </section>
+
+  <section class="card bg-base-100 shadow">
+    <div class="card-body">
+      <h2 class="card-title">Toasts</h2>
+      <div id="toasts" data-swap-events="ui.toast.success" hx-get="/Demo/Toasts" class="space-y-2"></div>
+    </div>
+  </section>
+
+  <section class="card bg-base-100 shadow">
+    <div class="card-body">
+      <h2 class="card-title">Activity</h2>
+      <div id="activity" data-swap-events="ui.activity.append" hx-get="/Demo/ActivityLog" class="space-y-1"></div>
+    </div>
+  </section>
+</div>

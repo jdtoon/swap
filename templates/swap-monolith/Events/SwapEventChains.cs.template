@@ -1,0 +1,14 @@
+namespace {{ProjectName}}.Events;
+
+using Swap.Htmx.Events;
+
+public static class SwapEventChains
+{
+    public static void Configure(SwapEventBusOptions events)
+    {
+        // Todo domain chains (homepage demo uses Todo items)
+        events
+            .Chain("todo.created", "ui.todo.refreshList", "ui.toast.success", "ui.stats.refresh", "ui.activity.append")
+            .Chain("todo.deleted", "ui.todo.refreshList", "ui.toast.success", "ui.stats.refresh", "ui.activity.append");
+    }
+}

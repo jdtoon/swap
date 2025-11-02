@@ -1,0 +1,21 @@
+{
+  "Environment": "Development",
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning"
+    }
+  },
+  "AllowedHosts": "*",
+  "ConnectionStrings": {
+{{#if_sqlite}}
+    "DefaultConnection": "Data Source={{ProjectName}}.db"
+{{/if_sqlite}}
+{{#if_sqlserver}}
+    "DefaultConnection": "Server=(localdb)\\mssqllocaldb;Database={{ProjectName}};Trusted_Connection=True;MultipleActiveResultSets=true"
+{{/if_sqlserver}}
+{{#if_postgres}}
+    "DefaultConnection": "Host=localhost;Database={{ProjectName}};Username=postgres;Password=postgres"
+{{/if_postgres}}
+  }
+}
