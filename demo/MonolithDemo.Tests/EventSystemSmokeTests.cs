@@ -230,4 +230,24 @@ public class EventSystemSmokeTests : IClassFixture<HtmxTestFixture<MonolithDemo.
         }
         await Task.WhenAll(tasks);
     }
+
+    [Fact]
+    public async Task Malformed_Preexisting_HxTrigger_Does_Not_Break_And_Event_Is_Emitted()
+    {
+        _client.AsHtmxRequest().WithHeader("X-Swap-Events", "ui.refreshList");
+        var resp = await _client.HtmxPostAsync("/Products/MalformedPreTrigger", new Dictionary<string, string>());
+        resp.AssertSuccess();
+        resp.AssertHxTriggered("ui.refreshList");
+        resp.AssertHxTriggerFieldEquals("ui.refreshList", "status", "ok");
+    }
+
+    [Fact]
+    public async Task Emit_On_BadRequest_Still_Emits_Header_Currently()
+    {
+        _client.AsHtmxRequest().WithHeader("X-Swap-Events", "ui.refreshList");
+        var resp = await _client.HtmxPostAsync("/Products/EmitThenBadRequest", new Dictionary<string, string>());
+        Assert.Equal(System.Net.HttpStatusCode.BadRequest, resp.StatusCode);
+        resp.AssertHxTriggered("ui.refreshList");
+        resp.AssertHxTriggerFieldEquals("ui.refreshList", "state", "bad");
+    }
 }
