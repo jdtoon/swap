@@ -113,4 +113,35 @@ public class ProductsController : Controller
         Response.Headers["HX-Redirect"] = "/Products/Noop";
         return Content("HX-Redirect set");
     }
+
+    [HttpPost]
+    public async Task<IActionResult> WriteThenEmit()
+    {
+        // Write to the response body first (this starts the response and triggers OnStarting)
+        await Response.Body.WriteAsync(System.Text.Encoding.UTF8.GetBytes("partial"));
+        await Response.Body.FlushAsync();
+
+        // Emit after the response has started; current behavior will NOT include this in HX-Trigger
+        await _events.EmitAsync(SwapEvents.UI.RefreshList, new { after = "write" });
+
+        // Finish the response
+        return Content("done");
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> EmitThenThrow()
+    {
+        await _events.EmitAsync(SwapEvents.UI.RefreshList, new { state = "error" });
+        throw new InvalidOperationException("boom");
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> EmitNestedCollision()
+    {
+        // Pre-set nested payload for ui.refreshList
+        Response.Headers["HX-Trigger"] = "{\"ui.refreshList\":{\"nested\":{\"x\":1},\"v\":\"alpha\",\"keep\":\"y\"}}";
+        // Emit nested payload for same key; last-write-wins should replace entire object for that key
+        await _events.EmitAsync(SwapEvents.UI.RefreshList, new { nested = new { x = 2 }, v = "beta" });
+        return Content("nested collision");
+    }
 }

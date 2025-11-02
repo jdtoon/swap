@@ -339,4 +339,61 @@ public class EventSystemEventFlowTests : IClassFixture<HtmxTestFixture<EventSyst
         resp.AssertSuccess();
         resp.AssertHxTriggered("ui.refreshList");
     }
+
+    [Fact]
+    public async Task Emit_After_First_Write_Still_Emits_Header_Currently()
+    {
+        // Arrange: subscribe to ui.refreshList
+        _client.AsHtmxRequest().WithHeader("X-Swap-Events", "ui.refreshList");
+
+        // Act: this endpoint writes the response before emitting
+        var resp = await _client.HtmxPostAsync("/Products/WriteThenEmit", new Dictionary<string, string>());
+
+        // Assert: current behavior under TestServer - HX-Trigger still includes the emit
+        resp.AssertHxTriggered("ui.refreshList");
+        resp.AssertHxTriggerFieldEquals("ui.refreshList", "after", "write");
+    }
+
+    [Fact]
+    public async Task Emit_Then_Throw_InternalServerError_Still_Emits_Header_Currently()
+    {
+        _client.AsHtmxRequest().WithHeader("X-Swap-Events", "ui.refreshList");
+        var resp = await _client.HtmxPostAsync("/Products/EmitThenThrow", new Dictionary<string, string>());
+        Assert.Equal(HttpStatusCode.InternalServerError, resp.StatusCode);
+        resp.AssertHxTriggered("ui.refreshList");
+        resp.AssertHxTriggerFieldEquals("ui.refreshList", "state", "error");
+    }
+
+    [Fact]
+    public async Task Nested_Collision_Last_Write_Wins_And_Replaces_Preexisting_Object()
+    {
+        _client.AsHtmxRequest().WithHeader("X-Swap-Events", "ui.refreshList");
+        var resp = await _client.HtmxPostAsync("/Products/EmitNestedCollision", new Dictionary<string, string>());
+        resp.AssertSuccess();
+        using var json = resp.GetHxTriggerJson()!;
+        var root = json.RootElement;
+        Assert.True(root.TryGetProperty("ui.refreshList", out var ui), "Missing ui.refreshList");
+        Assert.True(ui.TryGetProperty("v", out var v), "Missing v");
+        Assert.Equal("beta", v.GetString());
+        Assert.True(ui.TryGetProperty("nested", out var nested), "Missing nested");
+        Assert.True(nested.TryGetProperty("x", out var x), "Missing nested.x");
+        Assert.Equal(2, x.GetInt32());
+        // Preexisting 'keep' field should be replaced by last-write-wins
+        Assert.False(ui.TryGetProperty("keep", out _));
+    }
+
+    [Fact]
+    public async Task Emits_For_Non_Htmx_Request_Currently()
+    {
+        // Use plain HttpClient (no AsHtmxRequest; no HX-Request header)
+        var http = _fixture.Factory.CreateClient();
+        var form = new System.Net.Http.FormUrlEncodedContent(new Dictionary<string, string>());
+        var resp = await http.PostAsync("/Products/Create", form);
+        Assert.True((int)resp.StatusCode >= 200 && (int)resp.StatusCode < 400);
+        Assert.True(resp.Headers.TryGetValues("HX-Trigger", out var values), "HX-Trigger header missing");
+        var raw = values.FirstOrDefault();
+        Assert.False(string.IsNullOrWhiteSpace(raw), "HX-Trigger value missing");
+        using var doc = System.Text.Json.JsonDocument.Parse(raw!);
+        Assert.True(doc.RootElement.TryGetProperty("ui.refreshList", out _), "ui.refreshList not found in HX-Trigger");
+    }
 }

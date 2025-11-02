@@ -18,6 +18,15 @@ These tests mirror the scenarios validated in `EventSystemDemo.Tests` to ensure 
 - Extreme scenarios:
   - 100 emitted UI events and 100 subscriptions are delivered
   - 100 unrelated subscriptions result in no trigger
+- Non-2xx and redirect behaviors (current observations)
+  - 400 BadRequest after emit still includes HX-Trigger
+  - HX-Redirect header approach preserves HX-Trigger for assertions and client redirect
+- Robustness and semantics
+  - Case-insensitive subscriptions are honored (e.g., `UI.RefreshList`)
+  - Emitting after writing the response body still results in HX-Trigger under TestServer
+  - Emitting then throwing (500) still includes HX-Trigger
+  - Nested collision on same key replaces the preexisting object (last-write-wins)
+  - Non-htmx requests (no `HX-Request`) currently still receive HX-Trigger
 
 ## Test matrix (method → scenario)
 
@@ -30,6 +39,13 @@ These tests mirror the scenarios validated in `EventSystemDemo.Tests` to ensure 
 - Duplicate_Subscriptions_Are_Deduped → Duplicate header subscriptions don’t duplicate results
 - Header_With_Whitespace_Is_Handled → Robustness to header whitespace
 - Concurrency_Isolation_Across_Parallel_Requests → Per-request isolation under parallel load
+- Emit_On_BadRequest_Still_Emits_Header_Currently → 400 still includes HX-Trigger
+- Emit_On_Redirect_Emits_Header_Currently → HX-Redirect + HX-Trigger present
+- Subscription_Is_Case_Insensitive → Case-insensitive matching
+- Emit_After_First_Write_Still_Emits_Header_Currently → Write then emit still included
+- Emit_Then_Throw_InternalServerError_Still_Emits_Header_Currently → 500 still includes HX-Trigger
+- Nested_Collision_Last_Write_Wins_And_Replaces_Preexisting_Object → Nested object replaced on collision
+- Emits_For_Non_Htmx_Request_Currently → Header included without HX-Request
 
 ## How it works
 

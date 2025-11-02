@@ -105,4 +105,28 @@ public class ProductsController : Controller
         Response.Headers["HX-Redirect"] = "/Products/Noop";
         return Content("HX-Redirect set");
     }
+
+    [HttpPost]
+    public async Task<IActionResult> WriteThenEmit()
+    {
+        await Response.Body.WriteAsync(System.Text.Encoding.UTF8.GetBytes("partial"));
+        await Response.Body.FlushAsync();
+        await _events.EmitAsync(SwapEvents.UI.RefreshList, new { after = "write" });
+        return Content("done");
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> EmitThenThrow()
+    {
+        await _events.EmitAsync(SwapEvents.UI.RefreshList, new { state = "error" });
+        throw new InvalidOperationException("boom");
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> EmitNestedCollision()
+    {
+        Response.Headers["HX-Trigger"] = "{\"ui.refreshList\":{\"nested\":{\"x\":1},\"v\":\"alpha\",\"keep\":\"y\"}}";
+        await _events.EmitAsync(SwapEvents.UI.RefreshList, new { nested = new { x = 2 }, v = "beta" });
+        return Content("nested collision");
+    }
 }
