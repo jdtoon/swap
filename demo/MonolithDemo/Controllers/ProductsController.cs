@@ -56,4 +56,28 @@ public class ProductsController : Controller
         }
         return Content("Extreme emit complete");
     }
+
+    [HttpPost]
+    public IActionResult Noop()
+    {
+        // No events emitted
+        return Content("No events");
+    }
+
+    [HttpPost]
+    public IActionResult NoopWithPreTrigger()
+    {
+        // Pre-set HX-Trigger but emit no events; should be preserved as-is
+        Response.Headers["HX-Trigger"] = "{\"preOnly\":\"gamma\"}";
+        return Content("No events but pre-trigger");
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> DuplicateUiEmits()
+    {
+        // Emit same UI event twice; last payload should win
+        await _events.EmitAsync(SwapEvents.UI.RefreshList, new { v = "one" });
+        await _events.EmitAsync(SwapEvents.UI.RefreshList, new { v = "two" });
+        return Content("Duplicate UI emits");
+    }
 }

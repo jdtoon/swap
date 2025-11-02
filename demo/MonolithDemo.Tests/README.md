@@ -19,6 +19,18 @@ These tests mirror the scenarios validated in `EventSystemDemo.Tests` to ensure 
   - 100 emitted UI events and 100 subscriptions are delivered
   - 100 unrelated subscriptions result in no trigger
 
+## Test matrix (method → scenario)
+
+- Filtered_Subscriptions_Only_Chained_Active → Filtered-only delivery of chained events
+- Merge_Preexisting_HxTrigger_With_SwapEvents → Merge behavior with pre-set HX-Trigger
+- Extreme_Subscriptions_And_Emits → 100 events delivered
+- Duplicate_UI_Emits_Last_Payload_Wins → Last-write-wins for duplicate UI emits
+- No_Events_Result_In_No_HxTrigger → No events → no header
+- No_Events_With_Preexisting_Trigger_Is_Preserved → Pre-set header preserved when no events emitted
+- Duplicate_Subscriptions_Are_Deduped → Duplicate header subscriptions don’t duplicate results
+- Header_With_Whitespace_Is_Handled → Robustness to header whitespace
+- Concurrency_Isolation_Across_Parallel_Requests → Per-request isolation under parallel load
+
 ## How it works
 
 - Tests use `HtmxTestFixture<MonolithDemo.AppMarker>` (WebApplicationFactory) and `HtmxTestClient` helpers from `Swap.Testing`.

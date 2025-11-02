@@ -28,6 +28,26 @@ These tests validate end-to-end behavior of request-scoped event collection, sub
   - 100 emitted UI events and 100 subscriptions all pass and are delivered.
   - 100 unrelated subscriptions result in no trigger.
 
+## Test matrix (method → scenario)
+
+- Actioned_Request_With_Filtered_Subscriptions_Sends_Only_Chained_Active → Filtered-only delivery of chained events
+- Actioned_Request_Without_Filter_Sends_Original_And_Chained → Unfiltered includes original + chained events
+- Preexisting_HxTrigger_Is_Merged_With_SwapEvents → Merge behavior with pre-set HX-Trigger
+- Multiple_Chained_Events_Are_Delivered_When_Subscribed → Both chained UI events delivered
+- Duplicate_Emits_Last_Payload_Wins_For_Original_Event → Last-write-wins for duplicate domain emits
+- No_Header_Treated_As_No_Filter_And_Emits_Original_And_Chained → No header means no filtering
+- Empty_Header_Treated_As_No_Filter → Whitespace header means no filtering
+- Unrelated_Subscriptions_Result_In_No_HxTrigger → Unrelated subs produce no trigger
+- Existing_Trigger_Key_Is_Overridden_By_Event_System_On_Collision → Event-system overrides pre-set key on collision
+- Filter_ShowToast_Only_Delivers_ShowToast → Single-event filter delivers only that event
+- Extreme_Many_Emits_And_Subscriptions_All_Passed → 100 events delivered
+- Extreme_Unrelated_Subscriptions_No_Trigger → 100 unrelated subs produce no trigger
+- Duplicate_UI_Emits_Last_Payload_Wins → Last-write-wins for duplicate UI emits
+- No_Events_Result_In_No_HxTrigger → No events → no header
+- No_Events_With_Preexisting_Trigger_Is_Preserved → Pre-set header preserved when no events emitted
+- Duplicate_Subscriptions_Are_Deduped → Duplicate header subscriptions don’t duplicate results
+- Header_With_Whitespace_Is_Handled → Robustness to header whitespace
+
 ## How it works
 
 - Tests use `HtmxTestFixture<EventSystemDemo.AppMarker>` (WebApplicationFactory) and `HtmxTestClient` helpers from `Swap.Testing`.
