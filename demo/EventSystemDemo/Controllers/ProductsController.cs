@@ -54,6 +54,15 @@ public class ProductsController : Controller
     }
 
     [HttpPost]
+    public async Task<IActionResult> MalformedPreTrigger()
+    {
+        // Pre-set a malformed HX-Trigger value; middleware should not crash and should still emit our event
+        Response.Headers["HX-Trigger"] = "not-json";
+        await _events.EmitAsync(SwapEvents.UI.RefreshList, new { status = "ok" });
+        return Content("Malformed pre-trigger handled");
+    }
+
+    [HttpPost]
     public IActionResult Noop()
     {
         // No events emitted
@@ -86,5 +95,13 @@ public class ProductsController : Controller
             await _events.EmitAsync($"ui.component{i}", new { index = i });
         }
         return Content("Extreme emit complete");
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> EmitThenBadRequest()
+    {
+        // Emit an event but return a 400 status to observe current behavior on non-2xx
+        await _events.EmitAsync(SwapEvents.UI.RefreshList, new { state = "bad" });
+        return BadRequest("Bad request after emit");
     }
 }

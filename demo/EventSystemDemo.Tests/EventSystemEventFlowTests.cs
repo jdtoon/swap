@@ -221,6 +221,21 @@ public class EventSystemEventFlowTests : IClassFixture<HtmxTestFixture<EventSyst
     }
 
     [Fact]
+    public async Task Malformed_Preexisting_HxTrigger_Does_Not_Break_And_Event_Is_Emitted()
+    {
+        // Arrange
+        _client.AsHtmxRequest().WithHeader("X-Swap-Events", "ui.refreshList");
+
+        // Act
+        var resp = await _client.HtmxPostAsync("/Products/MalformedPreTrigger", new Dictionary<string, string>());
+
+        // Assert: Should still succeed and include ui.refreshList from event system
+        resp.AssertSuccess();
+        resp.AssertHxTriggered("ui.refreshList");
+    resp.AssertHxTriggerFieldEquals("ui.refreshList", "status", "ok");
+    }
+
+    [Fact]
     public async Task No_Events_Result_In_No_HxTrigger()
     {
         _client.AsHtmxRequest();
@@ -289,5 +304,18 @@ public class EventSystemEventFlowTests : IClassFixture<HtmxTestFixture<EventSyst
             }));
         }
         await Task.WhenAll(tasks);
+    }
+
+    [Fact]
+    public async Task Emit_On_BadRequest_Still_Emits_Header_Currently()
+    {
+        // Current behavior observation: middleware emits HX-Trigger even on 400 responses
+        _client.AsHtmxRequest().WithHeader("X-Swap-Events", "ui.refreshList");
+        var resp = await _client.HtmxPostAsync("/Products/EmitThenBadRequest", new Dictionary<string, string>());
+
+        Assert.Equal(HttpStatusCode.BadRequest, resp.StatusCode);
+        // HX-Trigger should still be present under current implementation
+        resp.AssertHxTriggered("ui.refreshList");
+        resp.AssertHxTriggerFieldEquals("ui.refreshList", "state", "bad");
     }
 }
