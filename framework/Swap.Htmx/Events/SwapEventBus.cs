@@ -95,7 +95,7 @@ public class SwapEventBus : ISwapEventBus
         ctx.Items.Remove(SwapEventKeys.PendingEvents);
     }
 
-    public (IReadOnlyDictionary<string, object?> resolved, int beforeFilterCount) ResolveAndFilterFor(HttpContext context)
+    internal (IReadOnlyDictionary<string, object?> resolved, int beforeFilterCount) ResolveAndFilterFor(HttpContext context)
     {
         var pending = context.Items[SwapEventKeys.PendingEvents] as List<SwapPendingEvent>;
         var active = context.Items[SwapEventKeys.ActiveEvents] as HashSet<string>;

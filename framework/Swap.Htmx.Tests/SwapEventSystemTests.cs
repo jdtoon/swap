@@ -83,4 +83,77 @@ public class SwapEventSystemTests
         Assert.Contains(SwapEvents.Entity.Created("product"), dict.Keys);
         Assert.Contains(SwapEvents.UI.RefreshList, dict.Keys);
     }
+
+    [Fact]
+    public async Task Response_Merges_With_Existing_HX_Trigger_Header()
+    {
+        // Arrange
+        var context = CreateContext();
+        context.Response.Headers["HX-Trigger"] = JsonSerializer.Serialize(new Dictionary<string, object?>
+        {
+            {"alpha", null}
+        });
+
+        var accessor = new HttpContextAccessor { HttpContext = context };
+        var options = new SwapEventBusOptions()
+            .Chain(SwapEvents.Entity.Created("product"), SwapEvents.UI.RefreshList);
+
+        var bus = new SwapEventBus(accessor, options, NullLogger<SwapEventBus>.Instance);
+        var ctxMw = new SwapEventContextMiddleware(_ => Task.CompletedTask);
+        var respMw = new SwapEventResponseMiddleware(_ => Task.CompletedTask, accessor, options, NullLogger<SwapEventResponseMiddleware>.Instance);
+
+        // Act
+        await ctxMw.InvokeAsync(context);
+        bus.Emit(SwapEvents.UI.RefreshList);
+        await context.Response.WriteAsync("OK");
+        await respMw.InvokeAsync(context);
+
+        // Assert
+        var json = context.Response.Headers["HX-Trigger"].ToString();
+        var dict = JsonSerializer.Deserialize<Dictionary<string, object?>>(json)!;
+        Assert.Contains("alpha", dict.Keys);
+        Assert.Contains(SwapEvents.UI.RefreshList, dict.Keys);
+    }
+
+    [Fact]
+    public async Task Multiple_Emits_Last_Payload_Wins()
+    {
+        // Arrange
+        var context = CreateContext();
+        var accessor = new HttpContextAccessor { HttpContext = context };
+        var options = new SwapEventBusOptions();
+
+        var bus = new SwapEventBus(accessor, options, NullLogger<SwapEventBus>.Instance);
+        var ctxMw = new SwapEventContextMiddleware(_ => Task.CompletedTask);
+        var respMw = new SwapEventResponseMiddleware(_ => Task.CompletedTask, accessor, options, NullLogger<SwapEventResponseMiddleware>.Instance);
+
+        await ctxMw.InvokeAsync(context);
+        bus.Emit(SwapEvents.Entity.Created("product"), new { id = 1 });
+        bus.Emit(SwapEvents.Entity.Created("product"), new { id = 2 });
+        await context.Response.WriteAsync("OK");
+        await respMw.InvokeAsync(context);
+
+        var json = context.Response.Headers["HX-Trigger"].ToString();
+        var dict = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(json)!;
+        var payload = dict[SwapEvents.Entity.Created("product")];
+        Assert.True(payload.TryGetProperty("id", out var idProp));
+        Assert.Equal(2, idProp.GetInt32());
+    }
+
+    [Fact]
+    public async Task No_Pending_Events_Does_Not_Set_Header()
+    {
+        var context = CreateContext();
+        var accessor = new HttpContextAccessor { HttpContext = context };
+        var options = new SwapEventBusOptions();
+
+        var ctxMw = new SwapEventContextMiddleware(_ => Task.CompletedTask);
+        var respMw = new SwapEventResponseMiddleware(_ => Task.CompletedTask, accessor, options, NullLogger<SwapEventResponseMiddleware>.Instance);
+
+        await ctxMw.InvokeAsync(context);
+        await context.Response.WriteAsync("OK");
+        await respMw.InvokeAsync(context);
+
+        Assert.False(context.Response.Headers.ContainsKey("HX-Trigger"));
+    }
 }

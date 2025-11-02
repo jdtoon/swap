@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Primitives;
 
 namespace Swap.Htmx.Middleware;
 
@@ -20,11 +21,12 @@ public class SwapEventContextMiddleware
 
     public async Task InvokeAsync(HttpContext context)
     {
-        if (context.Request.Headers.TryGetValue("X-Swap-Events", out var header) && header.Count > 0)
+        if (context.Request.Headers.TryGetValue("X-Swap-Events", out StringValues header) && !StringValues.IsNullOrEmpty(header))
         {
             var set = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             foreach (var value in header)
             {
+                if (string.IsNullOrWhiteSpace(value)) continue;
                 foreach (var token in value.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
                 {
                     if (!string.IsNullOrWhiteSpace(token)) set.Add(token);

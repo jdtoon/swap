@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Primitives;
 using Swap.Htmx.Events;
 
 namespace Swap.Htmx.Middleware;
@@ -41,14 +42,43 @@ public class SwapEventResponseMiddleware
         }
 
         var json = JsonSerializer.Serialize(resolved);
-        if (!context.Response.Headers.ContainsKey("HX-Trigger"))
+        if (!context.Response.Headers.TryGetValue("HX-Trigger", out StringValues existing) || StringValues.IsNullOrEmpty(existing))
         {
-            context.Response.Headers.Append("HX-Trigger", json);
+            context.Response.Headers["HX-Trigger"] = json;
         }
         else
         {
             // Merge if someone already set HX-Trigger earlier (best-effort)
-            context.Response.Headers.Append("HX-Trigger", json);
+            try
+            {
+                var merged = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
+
+                foreach (var value in existing)
+                {
+                    try
+                    {
+                        if (string.IsNullOrWhiteSpace(value)) continue;
+                        var obj = JsonSerializer.Deserialize<Dictionary<string, object?>>(value);
+                        if (obj is not null)
+                        {
+                            foreach (var kv in obj) merged[kv.Key] = kv.Value;
+                        }
+                    }
+                    catch
+                    {
+                        // ignore unparsable existing value
+                    }
+                }
+
+                foreach (var kv in resolved) merged[kv.Key] = kv.Value; // last-write-wins
+                var mergedJson = JsonSerializer.Serialize(merged);
+                context.Response.Headers["HX-Trigger"] = mergedJson;
+            }
+            catch
+            {
+                // If merging fails, fall back to appending another header value
+                context.Response.Headers.Append("HX-Trigger", json);
+            }
         }
 
         var active = context.Items[SwapEventKeys.ActiveEvents] as HashSet<string>;

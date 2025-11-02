@@ -184,6 +184,24 @@ Usage recap:
 Client side, ensure your components declare the events they listen to and send the `X-Swap-Events` header with active subscriptions (a small helper script can do this automatically; see docs). If the header is missing, no filtering occurs and all emitted+chained events are sent.
 
 
+#### Client helper (swap-events.js)
+
+If you used the monolith template, include `/wwwroot/js/swap-events.js`. Otherwise, copy it from `templates/monolith/wwwroot/js/swap-events.js.template` into your app (rename to `swap-events.js`) and add it to your layout:
+
+```html
+<script src="/js/swap-events.js"></script>
+<script>
+    // Opt-in to events you care about on this page
+    SwapEvents.activate('ui.refreshList');
+    // Later: SwapEvents.deactivate('ui.refreshList');
+    // Advanced: SwapEvents.set(['ui.refreshList', 'ui.showToast']);
+    // Inspect current: SwapEvents.list()
+    // Clear all: SwapEvents.clear()
+    // The script will automatically set X-Swap-Events on HTMX requests.
+    </script>
+```
+
+
 ### Automatic Page/Partial Detection
 
 `SwapView()` checks for the `HX-Request` header:
