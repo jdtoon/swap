@@ -1,45 +1,46 @@
-using System.Net;
 using Swap.Testing;
 using Xunit;
 
-namespace EventSystemDemo.Tests;
+namespace MonolithDemo.Tests;
 
-public class EventSystemEventFlowTests : IClassFixture<HtmxTestFixture<EventSystemDemo.AppMarker>>
+public class EventSystemSmokeTests : IClassFixture<HtmxTestFixture<MonolithDemo.AppMarker>>
 {
-    private readonly HtmxTestClient<EventSystemDemo.AppMarker> _client;
-    private readonly HtmxTestFixture<EventSystemDemo.AppMarker> _fixture;
+    private readonly HtmxTestClient<MonolithDemo.AppMarker> _client;
+    private readonly HtmxTestFixture<MonolithDemo.AppMarker> _fixture;
 
-    public EventSystemEventFlowTests(HtmxTestFixture<EventSystemDemo.AppMarker> fixture)
+    public EventSystemSmokeTests(HtmxTestFixture<MonolithDemo.AppMarker> fixture)
     {
         _fixture = fixture;
         _client = fixture.Client;
     }
 
     [Fact]
-    public async Task Actioned_Request_With_Filtered_Subscriptions_Sends_Only_Chained_Active()
+    public async Task Filtered_Subscriptions_Only_Chained_Active()
     {
-        // Arrange: page declares it listens to ui.refreshList only
         _client.AsHtmxRequest().WithHeader("X-Swap-Events", "ui.refreshList");
-
-        // Act: POST to create product (emits product.created -> chains to ui.refreshList)
         var resp = await _client.HtmxPostAsync("/Products/Create", new Dictionary<string, string>());
-
-        // Assert
         resp.AssertSuccess();
-        // Only chained and active event present
         resp.AssertHxTriggered("ui.refreshList");
-        // Original should be filtered out
         var names = resp.GetHxTriggerEventNames().ToArray();
         Assert.DoesNotContain("product.created", names);
     }
 
     [Fact]
-    public async Task Actioned_Request_Without_Filter_Sends_Original_And_Chained()
+    public async Task Merge_Preexisting_HxTrigger_With_SwapEvents()
     {
-        // Use a fresh client and explicitly advertise both events (no effective filtering)
-        var freshClient = new HtmxTestClient<EventSystemDemo.AppMarker>(_fixture.Factory);
-        freshClient.AsHtmxRequest().WithHeader("X-Swap-Events", "product.created,ui.refreshList,ui.showToast");
+        _client.AsHtmxRequest().WithHeader("X-Swap-Events", "ui.refreshList");
+        var resp = await _client.HtmxPostAsync("/Products/CreateWithTrigger", new Dictionary<string, string>());
+        resp.AssertSuccess();
+        var names = resp.GetHxTriggerEventNames().ToArray();
+        Assert.Contains("pre", names);
+        Assert.Contains("ui.refreshList", names);
+    }
 
+    [Fact]
+    public async Task Without_Filter_Original_And_Chained_Are_Emitted()
+    {
+        var freshClient = new HtmxTestClient<MonolithDemo.AppMarker>(_fixture.Factory);
+        freshClient.AsHtmxRequest().WithHeader("X-Swap-Events", "product.created,ui.refreshList,ui.showToast");
         var resp = await freshClient.HtmxPostAsync("/Products/Create", new Dictionary<string, string>());
         resp.AssertSuccess();
         var names = resp.GetHxTriggerEventNames().ToArray();
@@ -48,46 +49,20 @@ public class EventSystemEventFlowTests : IClassFixture<HtmxTestFixture<EventSyst
     }
 
     [Fact]
-    public async Task Preexisting_HxTrigger_Is_Merged_With_SwapEvents()
+    public async Task Multiple_Chained_Events_Delivered_When_Subscribed()
     {
-        // Arrange: listen to ui.refreshList
-        _client.AsHtmxRequest().WithHeader("X-Swap-Events", "ui.refreshList");
-
-        // Act
-        var resp = await _client.HtmxPostAsync("/Products/CreateWithTrigger", new Dictionary<string, string>());
-
-        // Assert merge: both pre and ui.refreshList should be present
-        resp.AssertSuccess();
-        var names = resp.GetHxTriggerEventNames().ToArray();
-        Assert.Contains("pre", names);
-        Assert.Contains("ui.refreshList", names);
-    }
-
-    [Fact]
-    public async Task Multiple_Chained_Events_Are_Delivered_When_Subscribed()
-    {
-        // Arrange: listen to both UI events
         _client.AsHtmxRequest().WithHeader("X-Swap-Events", "ui.refreshList,ui.showToast");
-
-        // Act
         var resp = await _client.HtmxPostAsync("/Products/Create", new Dictionary<string, string>());
-
-        // Assert
         resp.AssertSuccess();
         resp.AssertHxTriggered("ui.refreshList");
         resp.AssertHxTriggered("ui.showToast");
     }
 
     [Fact]
-    public async Task Duplicate_Emits_Last_Payload_Wins_For_Original_Event()
+    public async Task Duplicate_Emits_Last_Payload_Wins()
     {
-        // Arrange: advertise original and chained to avoid filtering
         _client.AsHtmxRequest().WithHeader("X-Swap-Events", "product.created,ui.refreshList,ui.showToast");
-
-        // Act
         var resp = await _client.HtmxPostAsync("/Products/CreateDuplicateEmits", new Dictionary<string, string>());
-
-        // Assert: product.created present with id == 2 (last payload wins)
         resp.AssertSuccess();
         resp.AssertHxTriggered("product.created");
         using var json = resp.GetHxTriggerJson()!;
@@ -98,15 +73,10 @@ public class EventSystemEventFlowTests : IClassFixture<HtmxTestFixture<EventSyst
     }
 
     [Fact]
-    public async Task No_Header_Treated_As_No_Filter_And_Emits_Original_And_Chained()
+    public async Task No_Header_Treated_As_No_Filter()
     {
-        // Arrange: use a fresh client with no headers
-        var freshClient = new HtmxTestClient<EventSystemDemo.AppMarker>(_fixture.Factory);
-
-        // Act
+        var freshClient = new HtmxTestClient<MonolithDemo.AppMarker>(_fixture.Factory);
         var resp = await freshClient.HtmxPostAsync("/Products/Create", new Dictionary<string, string>());
-
-        // Assert: expect at least original and one chained event present
         resp.AssertSuccess();
         var names = resp.GetHxTriggerEventNames().ToArray();
         Assert.Contains("product.created", names);
@@ -116,13 +86,8 @@ public class EventSystemEventFlowTests : IClassFixture<HtmxTestFixture<EventSyst
     [Fact]
     public async Task Empty_Header_Treated_As_No_Filter()
     {
-        // Arrange: set an empty header value (whitespace)
         _client.AsHtmxRequest().WithHeader("X-Swap-Events", "   ");
-
-        // Act
         var resp = await _client.HtmxPostAsync("/Products/Create", new Dictionary<string, string>());
-
-        // Assert
         resp.AssertSuccess();
         var names = resp.GetHxTriggerEventNames().ToArray();
         Assert.Contains("product.created", names);
@@ -132,27 +97,17 @@ public class EventSystemEventFlowTests : IClassFixture<HtmxTestFixture<EventSyst
     [Fact]
     public async Task Unrelated_Subscriptions_Result_In_No_HxTrigger()
     {
-        // Arrange: subscribe to an unrelated event name
         _client.AsHtmxRequest().WithHeader("X-Swap-Events", "ui.unknown");
-
-        // Act
         var resp = await _client.HtmxPostAsync("/Products/Create", new Dictionary<string, string>());
-
-        // Assert: no HX-Trigger header should be present
         var raw = resp.GetHxTriggerRaw();
         Assert.True(string.IsNullOrWhiteSpace(raw), $"Expected no HX-Trigger, but got: {raw}");
     }
 
     [Fact]
-    public async Task Existing_Trigger_Key_Is_Overridden_By_Event_System_On_Collision()
+    public async Task Preexisting_Key_Overridden_By_Event_System_On_Collision()
     {
-        // Arrange
         _client.AsHtmxRequest().WithHeader("X-Swap-Events", "ui.refreshList");
-
-        // Act
         var resp = await _client.HtmxPostAsync("/Products/EmitDirectUiEventCollision", new Dictionary<string, string>());
-
-        // Assert: ui.refreshList payload should be from event system (beta), overriding pre-set alpha
         resp.AssertSuccess();
         resp.AssertHxTriggered("ui.refreshList");
         resp.AssertHxTriggerFieldEquals("ui.refreshList", "v", "beta");
@@ -161,13 +116,8 @@ public class EventSystemEventFlowTests : IClassFixture<HtmxTestFixture<EventSyst
     [Fact]
     public async Task Filter_ShowToast_Only_Delivers_ShowToast()
     {
-        // Arrange
         _client.AsHtmxRequest().WithHeader("X-Swap-Events", "ui.showToast");
-
-        // Act
         var resp = await _client.HtmxPostAsync("/Products/Create", new Dictionary<string, string>());
-
-        // Assert
         resp.AssertSuccess();
         var names = resp.GetHxTriggerEventNames().ToArray();
         Assert.Contains("ui.showToast", names);
@@ -176,37 +126,27 @@ public class EventSystemEventFlowTests : IClassFixture<HtmxTestFixture<EventSyst
     }
 
     [Fact]
-    public async Task Extreme_Many_Emits_And_Subscriptions_All_Passed()
+    public async Task Extreme_Unrelated_Subscriptions_No_Trigger()
     {
-        // Arrange: subscribe to 100 component events
+        var unrelated = Enumerable.Range(1, 100).Select(i => $"ui.unrelated{i}");
+        var header = string.Join(",", unrelated);
+        _client.AsHtmxRequest().WithHeader("X-Swap-Events", header);
+        var resp = await _client.HtmxPostAsync("/Products/Create", new Dictionary<string, string>());
+        var raw = resp.GetHxTriggerRaw();
+        Assert.True(string.IsNullOrWhiteSpace(raw), $"Expected no HX-Trigger, but got: {raw}");
+    }
+
+    [Fact]
+    public async Task Extreme_Subscriptions_And_Emits()
+    {
         var events = Enumerable.Range(1, 100).Select(i => $"ui.component{i}");
         var header = string.Join(",", events);
         _client.AsHtmxRequest().WithHeader("X-Swap-Events", header);
-
-        // Act
         var resp = await _client.HtmxPostAsync("/Products/ExtremeEmit", new Dictionary<string, string>());
-
-        // Assert
         resp.AssertSuccess();
         var names = resp.GetHxTriggerEventNames().ToArray();
         Assert.Equal(100, names.Length);
         Assert.Contains("ui.component1", names);
         Assert.Contains("ui.component100", names);
-    }
-
-    [Fact]
-    public async Task Extreme_Unrelated_Subscriptions_No_Trigger()
-    {
-        // Arrange: subscribe to 100 unrelated names
-        var unrelated = Enumerable.Range(1, 100).Select(i => $"ui.unrelated{i}");
-        var header = string.Join(",", unrelated);
-        _client.AsHtmxRequest().WithHeader("X-Swap-Events", header);
-
-        // Act
-        var resp = await _client.HtmxPostAsync("/Products/Create", new Dictionary<string, string>());
-
-        // Assert
-        var raw = resp.GetHxTriggerRaw();
-        Assert.True(string.IsNullOrWhiteSpace(raw), $"Expected no HX-Trigger, but got: {raw}");
     }
 }
