@@ -1,5 +1,15 @@
 ---
 id: events
+title: Events (DX-first)
+slug: /cli/events
+---
+
+DX-focused commands to wire and manage the Event System, with smart defaults that actually save time.
+
+> Status: Planned. The APIs below are proposed and may change.
+
+---
+id: events
 title: Events (Planned)
 slug: /cli/events
 ---
@@ -40,3 +50,4 @@ swap events ls
 
 - All templates will ship with Event System wiring by default
 - Suppression policy for non-2xx/redirect may be configurable in future
+- Creates Razor partials + JS mount that automatically sends `X-Swap-Events` for declared `--listens`
