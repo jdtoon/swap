@@ -12,16 +12,18 @@ public static class NewCommand
         var command = new Command("new", "Create a new Swap project");
         
         var nameArg = new Argument<string>("name", "The name of the project (e.g., MyApp)");
-        var dbOption = new Option<string>("--database", () => "sqlite", "Database provider (sqlite|sqlserver|postgres)");
+    var dbOption = new Option<string>("--database", () => "sqlite", "Database provider (sqlite|sqlserver|postgres)");
+    var templateOption = new Option<string>("--template", () => "monolith", "Project template (monolith|swap-monolith)");
         var outOption = new Option<string?>("--output", "Output directory (default: ./{name})");
         var skipSetupOption = new Option<bool>("--skip-setup", description: "Skip prerequisites check, npm/libman steps, and initial migration (useful for CI/tests)");
         var localNugetOption = new Option<bool>("--local-nuget", description: "Use local NuGet feed for Swap packages (for framework development only)");
         
         command.AddArgument(nameArg);
         command.AddOption(dbOption);
-        command.AddOption(outOption);
-        command.AddOption(skipSetupOption);
-        command.AddOption(localNugetOption);
+    command.AddOption(outOption);
+    command.AddOption(skipSetupOption);
+    command.AddOption(localNugetOption);
+    command.AddOption(templateOption);
         
         command.SetHandler(async (InvocationContext context) =>
         {
@@ -30,14 +32,15 @@ public static class NewCommand
             var output = context.ParseResult.GetValueForOption(outOption);
             var skipSetup = context.ParseResult.GetValueForOption(skipSetupOption);
             var localNuget = context.ParseResult.GetValueForOption(localNugetOption);
+            var template = context.ParseResult.GetValueForOption(templateOption);
             
-            context.ExitCode = await ExecuteAsync(name, database!, output, skipSetup, localNuget);
+            context.ExitCode = await ExecuteAsync(name, database!, output, skipSetup, localNuget, template!);
         });
         
         return command;
     }
     
-    private static async Task<int> ExecuteAsync(string name, string database, string? output, bool skipSetup, bool localNuget)
+    private static async Task<int> ExecuteAsync(string name, string database, string? output, bool skipSetup, bool localNuget, string template)
     {
         // Validate project name
         if (string.IsNullOrWhiteSpace(name))
@@ -69,7 +72,8 @@ public static class NewCommand
         
         AnsiConsole.MarkupLine($"[bold cyan]Creating new Swap project:[/] {name}");
         AnsiConsole.MarkupLine($"[dim]Database:[/] {database}");
-        AnsiConsole.MarkupLine($"[dim]Location:[/] {projectPath}");
+    AnsiConsole.MarkupLine($"[dim]Location:[/] {projectPath}");
+    AnsiConsole.MarkupLine($"[dim]Template:[/] {template}");
         if (localNuget)
         {
             AnsiConsole.MarkupLine($"[dim]NuGet Source:[/] [yellow]Local feed (development mode)[/]");
@@ -140,7 +144,7 @@ public static class NewCommand
         
         try
         {
-            await GenerateProjectAsync(name, database, projectPath, localNuget);
+            await GenerateProjectAsync(name, database, projectPath, localNuget, template);
 
             AnsiConsole.WriteLine();
             AnsiConsole.MarkupLine("[green]✓[/] Project created successfully!");
@@ -194,7 +198,7 @@ public static class NewCommand
                 AnsiConsole.WriteLine();
                 AnsiConsole.MarkupLine("[green]✓[/] Setup completed!");
                 
-                // Build-first, then create initial migration (no DB update)
+                // Build-first, then create initial migration and update the database
                 AnsiConsole.WriteLine();
                 await AnsiConsole.Status()
                     .StartAsync("Creating initial migration...", async ctx =>
@@ -207,6 +211,10 @@ public static class NewCommand
                             ctx.Status("Creating initial migration...");
                             await RunCommandAsync("dotnet", "ef migrations add InitialCreate", projectPath);
                             AnsiConsole.MarkupLine("[green]✓[/] Migration created");
+
+                            ctx.Status("Updating database...");
+                            await RunCommandAsync("dotnet", "ef database update", projectPath);
+                            AnsiConsole.MarkupLine("[green]✓[/] Database updated");
                         }
                         catch (Exception ex)
                         {
@@ -216,7 +224,7 @@ public static class NewCommand
                     });
                     
                 AnsiConsole.WriteLine();
-                AnsiConsole.MarkupLine("[green]✓[/] Migration ready!");
+                AnsiConsole.MarkupLine("[green]✓[/] Migrations applied and database ready!");
                 }
                 catch (Exception)
                 {
@@ -227,6 +235,7 @@ public static class NewCommand
                     AnsiConsole.MarkupLine("  libman restore");
                     AnsiConsole.MarkupLine("  npm run build:css");
                     AnsiConsole.MarkupLine("  dotnet ef migrations add InitialCreate");
+                    AnsiConsole.MarkupLine("  dotnet ef database update");
                     return 1;
                 }
             }
@@ -250,6 +259,7 @@ public static class NewCommand
         AnsiConsole.MarkupLine("  libman restore");
         AnsiConsole.MarkupLine("  npm run build:css");
         AnsiConsole.MarkupLine("  dotnet ef migrations add InitialCreate");
+        AnsiConsole.MarkupLine("  dotnet ef database update");
         return 1;
     }
     }
@@ -331,9 +341,14 @@ public class HtmxShellMiddleware
         }
     }
     
-    private static async Task GenerateProjectAsync(string projectName, string database, string projectPath, bool localNuget)
+    private static async Task GenerateProjectAsync(string projectName, string database, string projectPath, bool localNuget, string template)
     {
-        var templatePath = Path.Combine(AppContext.BaseDirectory, "templates", "monolith");
+        var selected = (template ?? "monolith").Trim().ToLowerInvariant();
+        if (selected != "monolith" && selected != "swap-monolith")
+        {
+            throw new ArgumentException($"Unknown template '{template}'. Use 'monolith' or 'swap-monolith'.");
+        }
+        var templatePath = Path.Combine(AppContext.BaseDirectory, "templates", selected);
         
         if (!Directory.Exists(templatePath))
         {
