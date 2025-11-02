@@ -6,8 +6,11 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllersWithViews();
 builder.Services.AddSwapHtmx(events =>
 {
-    // When a product is created, refresh lists that subscribe
-    events.Chain(Swap.Htmx.Events.SwapEvents.Entity.Created("product"), Swap.Htmx.Events.SwapEvents.UI.RefreshList);
+    // When a product is created, refresh lists and optionally show a toast
+    events.Chain(
+        Swap.Htmx.Events.SwapEvents.Entity.Created("product"),
+        Swap.Htmx.Events.SwapEvents.UI.RefreshList,
+        Swap.Htmx.Events.SwapEvents.UI.ShowToast);
 });
 
 var app = builder.Build();
