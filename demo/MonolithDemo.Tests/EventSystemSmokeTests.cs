@@ -250,4 +250,23 @@ public class EventSystemSmokeTests : IClassFixture<HtmxTestFixture<MonolithDemo.
         resp.AssertHxTriggered("ui.refreshList");
         resp.AssertHxTriggerFieldEquals("ui.refreshList", "state", "bad");
     }
+
+    [Fact]
+    public async Task Emit_On_Redirect_Emits_Header_Currently()
+    {
+        _client.AsHtmxRequest().WithHeader("X-Swap-Events", "ui.refreshList");
+        var resp = await _client.HtmxPostAsync("/Products/EmitThenRedirect", new Dictionary<string, string>());
+        resp.AssertHxRedirect("/Products/Noop");
+        resp.AssertHxTriggered("ui.refreshList");
+        resp.AssertHxTriggerFieldEquals("ui.refreshList", "state", "redirect");
+    }
+
+    [Fact]
+    public async Task Subscription_Is_Case_Insensitive()
+    {
+        _client.AsHtmxRequest().WithHeader("X-Swap-Events", "UI.RefreshList");
+        var resp = await _client.HtmxPostAsync("/Products/Create", new Dictionary<string, string>());
+        resp.AssertSuccess();
+        resp.AssertHxTriggered("ui.refreshList");
+    }
 }

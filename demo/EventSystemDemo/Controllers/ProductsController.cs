@@ -104,4 +104,13 @@ public class ProductsController : Controller
         await _events.EmitAsync(SwapEvents.UI.RefreshList, new { state = "bad" });
         return BadRequest("Bad request after emit");
     }
+
+    [HttpPost]
+    public async Task<IActionResult> EmitThenRedirect()
+    {
+        // Emit an event and then instruct client to redirect via HX-Redirect
+        await _events.EmitAsync(SwapEvents.UI.RefreshList, new { state = "redirect" });
+        Response.Headers["HX-Redirect"] = "/Products/Noop";
+        return Content("HX-Redirect set");
+    }
 }
