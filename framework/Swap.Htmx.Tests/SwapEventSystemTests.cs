@@ -31,18 +31,15 @@ public class SwapEventSystemTests
 
         // Prepare middlewares independently
         var ctxMw = new SwapEventContextMiddleware(_ => Task.CompletedTask);
-        var respMw = new SwapEventResponseMiddleware(_ => Task.CompletedTask, accessor, options, NullLogger<SwapEventResponseMiddleware>.Instance);
+        var respMw = new SwapEventResponseMiddleware(async ctx =>
+        {
+            await ctx.Response.WriteAsync("OK");
+        }, accessor, options, NullLogger<SwapEventResponseMiddleware>.Instance);
 
         // Act: run context middleware (populate active events), then emit, then build response header
         await ctxMw.InvokeAsync(context);
         await bus.EmitAsync(SwapEvents.Entity.Created("product"), new { id = 1 });
-        await context.Response.WriteAsync("OK");
-    // Before invoking response middleware, ensure resolve/filter finds what we expect
-    var probe = new SwapEventBus(accessor, options, NullLogger<SwapEventBus>.Instance);
-    var (resolvedProbe, beforeFilter) = probe.ResolveAndFilterFor(context);
-    Assert.True(resolvedProbe.ContainsKey(SwapEvents.UI.RefreshList));
-
-    await respMw.InvokeAsync(context);
+        await respMw.InvokeAsync(context);
 
         // Assert
         Assert.True(context.Response.Headers.TryGetValue("HX-Trigger", out var header));
@@ -64,18 +61,15 @@ public class SwapEventSystemTests
         var bus = new SwapEventBus(accessor, options, NullLogger<SwapEventBus>.Instance);
 
         var ctxMw = new SwapEventContextMiddleware(_ => Task.CompletedTask);
-        var respMw = new SwapEventResponseMiddleware(_ => Task.CompletedTask, accessor, options, NullLogger<SwapEventResponseMiddleware>.Instance);
+        var respMw = new SwapEventResponseMiddleware(async ctx =>
+        {
+            await ctx.Response.WriteAsync("OK");
+        }, accessor, options, NullLogger<SwapEventResponseMiddleware>.Instance);
 
         // Act
         await ctxMw.InvokeAsync(context);
         bus.Emit(SwapEvents.Entity.Created("product"), new { id = 2 });
-        await context.Response.WriteAsync("OK");
-    var probe = new SwapEventBus(accessor, options, NullLogger<SwapEventBus>.Instance);
-    var (resolvedProbe, beforeFilter) = probe.ResolveAndFilterFor(context);
-    Assert.True(resolvedProbe.ContainsKey(SwapEvents.Entity.Created("product")));
-    Assert.True(resolvedProbe.ContainsKey(SwapEvents.UI.RefreshList));
-
-    await respMw.InvokeAsync(context);
+        await respMw.InvokeAsync(context);
 
         // Assert
         var json = context.Response.Headers["HX-Trigger"].ToString();
@@ -100,13 +94,15 @@ public class SwapEventSystemTests
 
         var bus = new SwapEventBus(accessor, options, NullLogger<SwapEventBus>.Instance);
         var ctxMw = new SwapEventContextMiddleware(_ => Task.CompletedTask);
-        var respMw = new SwapEventResponseMiddleware(_ => Task.CompletedTask, accessor, options, NullLogger<SwapEventResponseMiddleware>.Instance);
+        var respMw = new SwapEventResponseMiddleware(async ctx =>
+        {
+            await ctx.Response.WriteAsync("OK");
+        }, accessor, options, NullLogger<SwapEventResponseMiddleware>.Instance);
 
         // Act
         await ctxMw.InvokeAsync(context);
-        bus.Emit(SwapEvents.UI.RefreshList);
-        await context.Response.WriteAsync("OK");
-        await respMw.InvokeAsync(context);
+    bus.Emit(SwapEvents.UI.RefreshList);
+    await respMw.InvokeAsync(context);
 
         // Assert
         var json = context.Response.Headers["HX-Trigger"].ToString();
@@ -125,13 +121,15 @@ public class SwapEventSystemTests
 
         var bus = new SwapEventBus(accessor, options, NullLogger<SwapEventBus>.Instance);
         var ctxMw = new SwapEventContextMiddleware(_ => Task.CompletedTask);
-        var respMw = new SwapEventResponseMiddleware(_ => Task.CompletedTask, accessor, options, NullLogger<SwapEventResponseMiddleware>.Instance);
+        var respMw = new SwapEventResponseMiddleware(async ctx =>
+        {
+            await ctx.Response.WriteAsync("OK");
+        }, accessor, options, NullLogger<SwapEventResponseMiddleware>.Instance);
 
-        await ctxMw.InvokeAsync(context);
-        bus.Emit(SwapEvents.Entity.Created("product"), new { id = 1 });
-        bus.Emit(SwapEvents.Entity.Created("product"), new { id = 2 });
-        await context.Response.WriteAsync("OK");
-        await respMw.InvokeAsync(context);
+    await ctxMw.InvokeAsync(context);
+    bus.Emit(SwapEvents.Entity.Created("product"), new { id = 1 });
+    bus.Emit(SwapEvents.Entity.Created("product"), new { id = 2 });
+    await respMw.InvokeAsync(context);
 
         var json = context.Response.Headers["HX-Trigger"].ToString();
         var dict = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(json)!;
@@ -148,10 +146,12 @@ public class SwapEventSystemTests
         var options = new SwapEventBusOptions();
 
         var ctxMw = new SwapEventContextMiddleware(_ => Task.CompletedTask);
-        var respMw = new SwapEventResponseMiddleware(_ => Task.CompletedTask, accessor, options, NullLogger<SwapEventResponseMiddleware>.Instance);
+        var respMw = new SwapEventResponseMiddleware(async ctx =>
+        {
+            await ctx.Response.WriteAsync("OK");
+        }, accessor, options, NullLogger<SwapEventResponseMiddleware>.Instance);
 
         await ctxMw.InvokeAsync(context);
-        await context.Response.WriteAsync("OK");
         await respMw.InvokeAsync(context);
 
         Assert.False(context.Response.Headers.ContainsKey("HX-Trigger"));

@@ -31,59 +31,131 @@ public class SwapEventResponseMiddleware
 
     public async Task InvokeAsync(HttpContext context)
     {
-        await _next(context);
-
-        var bus = new SwapEventBus(_http, _options, null);
-        var (resolved, beforeFilter) = bus.ResolveAndFilterFor(context);
-
-        if (resolved.Count == 0)
+        // Register an OnStarting callback so headers are set before the response starts
+        context.Response.OnStarting(state =>
         {
-            return;
-        }
+            var httpContext = (HttpContext)state!;
+            var bus = new SwapEventBus(_http, _options, null);
+            var (resolved, beforeFilter) = bus.ResolveAndFilterFor(httpContext);
 
-        var json = JsonSerializer.Serialize(resolved);
-        if (!context.Response.Headers.TryGetValue("HX-Trigger", out StringValues existing) || StringValues.IsNullOrEmpty(existing))
-        {
-            context.Response.Headers["HX-Trigger"] = json;
-        }
-        else
-        {
-            // Merge if someone already set HX-Trigger earlier (best-effort)
+            if (resolved.Count == 0)
+            {
+                return Task.CompletedTask;
+            }
+
             try
             {
-                var merged = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
-
-                foreach (var value in existing)
+                var json = JsonSerializer.Serialize(resolved);
+                if (!httpContext.Response.Headers.TryGetValue("HX-Trigger", out StringValues existing) || StringValues.IsNullOrEmpty(existing))
                 {
+                    httpContext.Response.Headers["HX-Trigger"] = json;
+                }
+                else
+                {
+                    // Merge if someone already set HX-Trigger earlier (best-effort)
                     try
                     {
-                        if (string.IsNullOrWhiteSpace(value)) continue;
-                        var obj = JsonSerializer.Deserialize<Dictionary<string, object?>>(value);
-                        if (obj is not null)
+                        var merged = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
+
+                        foreach (var value in existing)
                         {
-                            foreach (var kv in obj) merged[kv.Key] = kv.Value;
+                            try
+                            {
+                                if (string.IsNullOrWhiteSpace(value)) continue;
+                                var obj = JsonSerializer.Deserialize<Dictionary<string, object?>>(value);
+                                if (obj is not null)
+                                {
+                                    foreach (var kv in obj) merged[kv.Key] = kv.Value;
+                                }
+                            }
+                            catch
+                            {
+                                // ignore unparsable existing value
+                            }
                         }
+
+                        foreach (var kv in resolved) merged[kv.Key] = kv.Value; // last-write-wins
+                        var mergedJson = JsonSerializer.Serialize(merged);
+                        httpContext.Response.Headers["HX-Trigger"] = mergedJson;
                     }
                     catch
                     {
-                        // ignore unparsable existing value
+                        // If merging fails, fall back to appending another header value
+                        httpContext.Response.Headers.Append("HX-Trigger", json);
                     }
                 }
 
-                foreach (var kv in resolved) merged[kv.Key] = kv.Value; // last-write-wins
-                var mergedJson = JsonSerializer.Serialize(merged);
-                context.Response.Headers["HX-Trigger"] = mergedJson;
+                var active = httpContext.Items[SwapEventKeys.ActiveEvents] as HashSet<string>;
+                var activeCount = active?.Count ?? 0;
+                _logger?.LogInformation("[SwapEvents] Emitted={Emitted} Filtered={Filtered} Active={Active}", beforeFilter, resolved.Count, activeCount);
+                httpContext.Items.Remove(SwapEventKeys.PendingEvents);
             }
             catch
             {
-                // If merging fails, fall back to appending another header value
-                context.Response.Headers.Append("HX-Trigger", json);
+                // never throw from OnStarting
+            }
+
+            return Task.CompletedTask;
+        }, context);
+
+        await _next(context);
+
+        // In unit-test scenarios or edge cases where OnStarting didn't run yet and the response hasn't started,
+        // perform header setting now to ensure HX-Trigger is emitted.
+        if (!context.Response.HasStarted)
+        {
+            try
+            {
+                var bus = new SwapEventBus(_http, _options, null);
+                var (resolved, beforeFilter) = bus.ResolveAndFilterFor(context);
+                if (resolved.Count > 0)
+                {
+                    var json = JsonSerializer.Serialize(resolved);
+                    if (!context.Response.Headers.TryGetValue("HX-Trigger", out StringValues existing) || StringValues.IsNullOrEmpty(existing))
+                    {
+                        context.Response.Headers["HX-Trigger"] = json;
+                    }
+                    else
+                    {
+                        try
+                        {
+                            var merged = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
+                            foreach (var value in existing)
+                            {
+                                try
+                                {
+                                    if (string.IsNullOrWhiteSpace(value)) continue;
+                                    var obj = JsonSerializer.Deserialize<Dictionary<string, object?>>(value);
+                                    if (obj is not null)
+                                    {
+                                        foreach (var kv in obj) merged[kv.Key] = kv.Value;
+                                    }
+                                }
+                                catch { }
+                            }
+                            foreach (var kv in resolved) merged[kv.Key] = kv.Value;
+                            var mergedJson = JsonSerializer.Serialize(merged);
+                            context.Response.Headers["HX-Trigger"] = mergedJson;
+                        }
+                        catch
+                        {
+                            context.Response.Headers.Append("HX-Trigger", json);
+                        }
+                    }
+
+                    var active = context.Items[SwapEventKeys.ActiveEvents] as HashSet<string>;
+                    var activeCount = active?.Count ?? 0;
+                    _logger?.LogInformation("[SwapEvents] Emitted={Emitted} Filtered={Filtered} Active={Active}", beforeFilter, resolved.Count, activeCount);
+                }
+            }
+            catch
+            {
+                // swallow
+            }
+            finally
+            {
+                context.Items.Remove(SwapEventKeys.PendingEvents);
             }
         }
-
-        var active = context.Items[SwapEventKeys.ActiveEvents] as HashSet<string>;
-        var activeCount = active?.Count ?? 0;
-        _logger?.LogInformation("[SwapEvents] Emitted={Emitted} Filtered={Filtered} Active={Active}", beforeFilter, resolved.Count, activeCount);
-        context.Items.Remove(SwapEventKeys.PendingEvents);
     }
 }
