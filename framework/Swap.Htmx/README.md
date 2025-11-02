@@ -30,12 +30,18 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add MVC and Swap.Htmx
 builder.Services.AddControllersWithViews();
-builder.Services.AddSwapHtmx();
+builder.Services.AddSwapHtmx(events =>
+{
+    // Example chain: when a product is created, refresh any list listening
+    events.Chain(Swap.Htmx.Events.SwapEvents.Entity.Created("product"),
+                 Swap.Htmx.Events.SwapEvents.UI.RefreshList);
+});
 
 var app = builder.Build();
 
 // Add middleware (after UseRouting, before MapControllers)
 app.UseRouting();
+app.UseSwapHtmx();       // Event context + response header builder
 app.UseSwapHtmxShell(); // Enforces partial responses for HTMX requests
 
 app.MapControllerRoute(
@@ -55,11 +61,13 @@ using Swap.Htmx;
 
 public class ArticlesController : SwapController
 {
+    private readonly Swap.Htmx.Events.ISwapEventBus _events;
     private readonly AppDbContext _context;
 
-    public ArticlesController(AppDbContext context)
+    public ArticlesController(AppDbContext context, Swap.Htmx.Events.ISwapEventBus events)
     {
         _context = context;
+        _events = events;
     }
 
     public async Task<IActionResult> Index()
@@ -84,8 +92,7 @@ public class ArticlesController : SwapController
 
         _context.Articles.Add(article);
         await _context.SaveChangesAsync();
-
-        Response.HxTrigger("articleCreated"); // Trigger client-side event
+        await _events.EmitAsync(Swap.Htmx.Events.SwapEvents.Entity.Created("article"), new { id = article.Id });
         return SwapView("Details", article);
     }
 }
@@ -161,6 +168,21 @@ public class ArticlesController : SwapController
 ```
 
 ## How It Works
+### Event System (Filtered + Chained)
+
+Swap.Htmx includes a minimal event bus that:
+- Captures events you emit in controllers during a request
+- Resolves configured chains (e.g., product.created → ui.refreshList)
+- Filters to active client subscriptions from `X-Swap-Events`
+- Builds an `HX-Trigger` header automatically at response time
+
+Usage recap:
+- Register: `builder.Services.AddSwapHtmx(opts => opts.Chain("product.created", "ui.refreshList"));`
+- Middleware: `app.UseSwapHtmx();`
+- Emit in controller: `await _events.EmitAsync(SwapEvents.Entity.Created("product"), new { id });`
+
+Client side, ensure your components declare the events they listen to and send the `X-Swap-Events` header with active subscriptions (a small helper script can do this automatically; see docs). If the header is missing, no filtering occurs and all emitted+chained events are sent.
+
 
 ### Automatic Page/Partial Detection
 
