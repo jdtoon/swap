@@ -1,0 +1,8 @@
+using {{ProjectName}}.Application.Dtos;
+
+namespace {{ProjectName}}.Application.Features.Stats;
+
+public interface IStatsService
+{
+    Task<StatsModel> GetStatsAsync(CancellationToken ct = default);
+}

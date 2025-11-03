@@ -1,0 +1,20 @@
+using Microsoft.EntityFrameworkCore;
+using {{ProjectName}}.Domain.Entities;
+
+namespace {{ProjectName}}.Infrastructure;
+
+public class AppDbContext : DbContext
+{
+    public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
+
+    public DbSet<TodoItem> TodoItems => Set<TodoItem>();
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        base.OnModelCreating(modelBuilder);
+        modelBuilder.Entity<TodoItem>().HasData(
+            new TodoItem { Id = 1, Title = "Welcome to Swap!", IsComplete = false },
+            new TodoItem { Id = 2, Title = "Build something amazing", IsComplete = false }
+        );
+    }
+}

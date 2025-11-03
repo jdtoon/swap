@@ -1,7 +1,7 @@
 # Swap Framework Architecture
 
-**Last Updated**: November 1, 2025  
-**Status**: Technical Design & Roadmap  
+**Last Updated**: November 3, 2025  
+**Status**: Updated for v0.3.0 (event system shipped)  
 **Purpose**: Define the comprehensive framework structure and event system
 
 ---
@@ -34,13 +34,13 @@ While developers can customize after generation, Swap provides **opinionated, ba
 
 ## 📦 Framework Packages
 
-### Current State
+### Current State (v0.3.0)
 
 ```
 framework/
-├── Swap.Htmx/           ✅ Core HTMX integration (v0.2.0-dev)
-├── Swap.Patterns/       ✅ Domain patterns (v0.2.0-dev)
-├── Swap.Testing/        ✅ HTMX testing utilities (v0.2.0-dev)
+├── Swap.Htmx/           ✅ Core HTMX integration + Event System (v0.3.0)
+├── Swap.Patterns/       ✅ Domain patterns (v0.3.0)
+├── Swap.Testing/        ✅ HTMX testing utilities (v0.3.0)
 
 templates/
 └── components/          🆕 UI component templates (installed as source)
@@ -50,7 +50,7 @@ templates/
 
 ```
 framework/
-├── Swap.Htmx/           ⭐ Enhanced with event system
+├── Swap.Htmx/           ⭐ Ongoing enhancements (dev tooling, DX)
 ├── Swap.Auth/           🆕 Authentication & authorization
 ├── Swap.WebSockets/     🆕 Real-time updates via WebSockets
 ├── Swap.SignalR/        🆕 SignalR integration for HTMX
@@ -68,7 +68,7 @@ templates/
 
 **Purpose:** Make ASP.NET Core HTMX-native with zero friction.
 
-### Current Features (v0.2.0-dev)
+### Current Features (v0.3.0)
 
 ```csharp
 // 1. SwapController - Automatic page/partial detection
@@ -101,10 +101,17 @@ Response.ShowErrorToast("Validation failed");
 Response.ShowWarningToast("Stock low");
 Response.ShowInfoToast("Processing...");
 
-// 5. Event System (Basic)
-HtmxEvents.Trigger(Response, "productCreated", new { id = 123 });
-HtmxEvents.TriggerAfterSettle(Response, "refreshList");
-HtmxEvents.TriggerAfterSwap(Response, "updateCount", new { count = 5 });
+// 5. Event System (server-driven + filtered)
+// Configure in Program.cs
+// builder.Services.AddSwapHtmx(events => {
+//   events.Chain(SwapEvents.Entity.Created("todo"), SwapEvents.UI.RefreshList, SwapEvents.UI.ShowToast);
+//   events.ResolutionMode = ChainResolutionMode.OneHop; // or Bidirectional/Transitive
+// });
+// app.UseSwapHtmx();
+// if (app.Environment.IsDevelopment()) app.MapSwapHtmxDevEndpoints();
+
+// Emit in controller (domain → UI chain, filtered to active UI listeners)
+await _events.EmitAsync(SwapEvents.Entity.Created("todo"), new { id = 123 });
 
 // 6. Middleware
 app.UseSwapHtmxShell(); // Enforces partial responses for HX-Request
@@ -238,11 +245,11 @@ The Swap event system uses a **client-side event registry** that tells the serve
 ```
 Browser                          Server
 ├── Event Registry              ├── Event Context Middleware
-│   (sessionStorage)            │   (Extracts active events)
-├── Component Registration      ├── Event Chain Resolver
-│   (data-swap-events)          │   (Resolves dependencies)
-└── HTMX Interceptor            └── Event Filter & Response
-    (X-Swap-Events header)          (Builds HX-Trigger)
+│   (scan hx-trigger for ui.*)  │   (Extracts X-Swap-Events)
+├── HTMX Interceptor            ├── Event Chain Resolver
+│   (X-Swap-Events header)      │   (Resolves dependencies)
+└── Component Markup            └── Event Filter & Response
+    (declare ui.* in hx-trigger)    (Builds HX-Trigger JSON)
 ```
 
 ### Current State (Basic Events)
@@ -269,7 +276,7 @@ Response.HxTrigger("productCreated");
 
 The complete event system design addresses all these problems through:
 
-1. **Client-Side Event Registry** - Components declare subscriptions, browser tracks active events
+1. **Client-Side Event Registry** - Browser scans `hx-trigger` for `ui.*` and tracks active UI events
 2. **Server-Side Filtering** - Only emit events with active listeners on current page
 3. **Event Chains** - Define workflows once, reuse everywhere
 4. **Standard Events** - Type-safe event naming convention
@@ -278,22 +285,20 @@ The complete event system design addresses all these problems through:
 **Quick Example:**
 
 ```csharp
-// 1. Component declares events in markup
-<div data-swap-component="product-list"
-     data-swap-events="product.created,product.updated,product.deleted">
-</div>
+// 1. Component declares UI listener in markup
+<div id="product-list" hx-trigger="ui.refreshList from:body"></div>
 
-// 2. Browser sends active events with each request
-// X-Swap-Events: product.created,product.updated,product.deleted
+// 2. Browser sends active UI events with each HTMX request
+// X-Swap-Events: ui.refreshList
 
-// 3. Server emits event
+// 3. Server emits domain event
 await _eventBus.EmitAsync(SwapEvents.Entity.Created("product"));
 
-// 4. Server resolves chains and filters to active events only
-// product.created → ui.refreshList, stats.updated (both active on page)
+// 4. Server resolves chains and filters against active subscriptions
+// product.created → ui.refreshList, ui.showToast (only UI listeners are kept)
 
 // 5. Browser receives filtered events
-// HX-Trigger: {"product.created": {"id": 123}, "ui.refreshList": null}
+// HX-Trigger: {"ui.refreshList": null, "ui.showToast": {"message":"Created!"}}
 ```
 
 **For complete implementation details, architecture diagrams, code examples, and API reference, see:**
@@ -330,26 +335,40 @@ public static class SwapEvents
 }
 ```
 
-**Event Bus API:**
+**Event Bus API (v0.3.0):**
 ```csharp
 public interface ISwapEventBus
 {
-    Task EmitAsync(string eventName, object? payload = null);
-    Task EmitManyAsync(params (string eventName, object? payload)[] events);
-    Task EmitAfterSwapAsync(string eventName, object? payload = null);
-    Task EmitAfterSettleAsync(string eventName, object? payload = null);
-    ISwapEventBus Chain(string triggerEvent, params string[] chainedEvents);
+    Task EmitAsync(string eventName, object? payload = null, CancellationToken ct = default);
+    void Emit(string eventName, object? payload = null);
+    void ClearPendingEvents();
+}
+```
+
+**Configuration:**
+```csharp
+builder.Services.AddSwapHtmx(events =>
+{
+    events.Chain("product.created", "ui.refreshList", "stats.updated");
+    events.ResolutionMode = ChainResolutionMode.OneHop; // or Bidirectional/Transitive
+    events.MaxTransitiveDepth = 2; // only for Transitive
+});
+
+app.UseSwapHtmx();
+if (app.Environment.IsDevelopment())
+{
+    app.MapSwapHtmxDevEndpoints();
 }
 ```
 
 **Controller Usage:**
 ```csharp
-public async Task<IActionResult> Create(ProductDto dto)
+public async Task<IActionResult> Create(ProductDto dto, [FromServices] ISwapEventBus events)
 {
     var product = await _service.CreateAsync(dto);
     
-    // Emit event - automatically filtered to active listeners
-    await _eventBus.EmitAsync(SwapEvents.Entity.Created("product"), new { id = product.Id });
+    // Emit event - server resolves chains and filters to active listeners
+    await events.EmitAsync("product.created", new { id = product.Id });
     
     return SwapView("Details", product);
 }
@@ -357,10 +376,9 @@ public async Task<IActionResult> Create(ProductDto dto)
 
 **Component Declaration:**
 ```html
-<div data-swap-component="product-list"
-     data-swap-events="product.created,product.updated,product.deleted"
-     hx-get="/products"
-     hx-trigger="load, product.created from:body, product.updated from:body">
+<div id="product-list"
+    hx-get="/products"
+    hx-trigger="load, ui.refreshList from:body">
 </div>
 ```
 
@@ -446,8 +464,8 @@ public class ProductsController : SwapController
   <partial name="_Table" model="Model" />
   <partial name="_Pagination" model="ModelPagination" />
   <partial name="_Toast" />
-  <!-- Templates include data-swap-component/data-swap-events where appropriate -->
-  <!-- so they participate in the event system automatically. -->
+    <!-- Templates declare ui.* listeners in hx-trigger so they participate -->
+    <!-- in the event system automatically. -->
   </div>
 ```
 
@@ -522,7 +540,7 @@ app.UseSwapSessionTimeout(options =>
 // Automatic validation error handling
 [HttpPost]
 [ValidateModel] // Custom attribute
-public async Task<IActionResult> Create(ProductDto dto)
+public async Task<IActionResult> Create(ProductDto dto, [FromServices] ISwapEventBus events)
 {
     // If invalid, automatically:
     // 1. Retargets to form container
@@ -531,7 +549,8 @@ public async Task<IActionResult> Create(ProductDto dto)
     // No manual ModelState checking needed!
     
     var product = await _service.CreateAsync(dto);
-    Response.TriggerCreated(product);
+    await events.EmitAsync("product.created", new { id = product.Id });
+    Response.ShowSuccessToast("Created");
     return SwapView("Details", product);
 }
 
@@ -571,22 +590,29 @@ public class ProductDtoValidator : SwapValidator<ProductDto>
 ```csharp
 // 1. Write test for desired feature
 [Fact]
-public async Task EventBus_Should_TriggerChainedEvents()
+public async Task EventBus_Should_ResolveChains_And_Filter()
 {
-    // Arrange
-    var bus = new SwapEventBus();
-    bus.Chain(SwapEvents.Product.Created)
-        .ThenTrigger(SwapEvents.UI.RefreshList)
-        .ThenTrigger(SwapEvents.UI.ShowToast);
-    
+    // Arrange: configure chains
+    var options = new SwapEventBusOptions();
+    options.Chain("product.created", "ui.refreshList", "ui.showToast");
+    var http = new DefaultHttpContext();
+    // active subscriptions on this page
+    http.Items[SwapEventKeys.ActiveEvents] = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+    {
+        "product.created", "ui.refreshList", "ui.showToast"
+    };
+    var accessor = new HttpContextAccessor { HttpContext = http };
+    var bus = new SwapEventBus(accessor, options);
+
     // Act
-    await bus.EmitAsync(SwapEvents.Product.Created, new { id = 1 });
-    
+    await bus.EmitAsync("product.created", new { id = 1 });
+    // middleware would build headers at end of pipeline
+    var (resolved, _) = bus.ResolveAndFilterFor(http);
+
     // Assert
-    var headers = _response.Headers["HX-Trigger"];
-    Assert.Contains("product.created", headers);
-    Assert.Contains("ui.refreshList", headers);
-    Assert.Contains("ui.showToast", headers);
+    Assert.True(resolved.ContainsKey("product.created"));
+    Assert.True(resolved.ContainsKey("ui.refreshList"));
+    Assert.True(resolved.ContainsKey("ui.showToast"));
 }
 
 // 2. Implement feature to pass test

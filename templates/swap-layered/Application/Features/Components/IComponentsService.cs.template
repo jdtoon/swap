@@ -1,0 +1,9 @@
+using {{ProjectName}}.Application.Abstractions;
+
+namespace {{ProjectName}}.Application.Features.Components;
+
+public interface IComponentsService
+{
+    Task<int> GetCounterAsync(string name, CancellationToken ct = default);
+    Task<int> IncrementAsync(string name, CancellationToken ct = default);
+}

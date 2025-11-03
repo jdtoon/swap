@@ -1,0 +1,20 @@
+using {{ProjectName}}.Application.Abstractions;
+using {{ProjectName}}.Application.Features.Todos;
+using {{ProjectName}}.Domain.Events;
+
+namespace {{ProjectName}}.Application.Features.Bulk;
+
+public class BulkService : IBulkService
+{
+    private readonly ITodoRepository _repo;
+    private readonly IEventBus _events;
+    public BulkService(ITodoRepository repo, IEventBus events) { _repo = repo; _events = events; }
+
+    public async Task<int> CompleteAsync(int[] ids, CancellationToken ct = default)
+    {
+        if (ids == null || ids.Length == 0) return 0;
+        var updated = await _repo.BulkCompleteAsync(ids, ct);
+        if (updated > 0) _events.Emit(DomainEvents.BulkCompleted, new { count = updated });
+        return updated;
+    }
+}

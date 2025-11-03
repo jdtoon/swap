@@ -11,6 +11,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.3.1] - 2025-11-03
+
+### Fixed - CLI Setup Hang
+- Resolved intermittent hang during "Building project before migration..." by streaming stdout/stderr in the command runner to avoid process output buffer deadlocks.
+
+### Changed - Templates & Tests
+- Integration tests for both templates standardized on Swap.Testing; removed direct Microsoft.AspNetCore.Mvc.Testing references to prevent NU1605 downgrades.
+- HTMX smoke tests adjusted to use the fluent API correctly (no async chaining on Task instances).
+- Layered Docker/readme instructions aligned with src/test layout and correct EF commands (`-p src/Infrastructure -s src/Web`).
+
+### Added - Documentation
+- Heavily expanded template READMEs (monolith and layered):
+  - What you get, architecture/layout, run/migrate instructions, HTMX + event chains, Swap.Testing usage and example, Docker notes, and links to the wiki.
+- Wiki updates:
+  - New Templates overview page with comparison and quick-starts.
+  - Intro highlights Templates prominently; CLI `new` page links to Templates.
+  - Layered getting-started updated to src/test paths.
+
+### Version Bumps
+- Swap.CLI: 0.3.0 → 0.3.1
+- Wiki site (docs): 0.0.1 → 0.0.2
+
+### Validated
+- Generated monolith and layered apps build/run; integration tests pass using Swap.Testing.
+
+---
+
 ## [0.3.0] - 2025-11-03
 
 ### Added - HTMX-Native Event System (Foundation)

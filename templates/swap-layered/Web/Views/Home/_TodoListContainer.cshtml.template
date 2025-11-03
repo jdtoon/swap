@@ -1,0 +1,10 @@
+<div id="todo-list-container"
+     hx-get="/Home/TodoList"
+     hx-trigger="load, ui.todo.refreshList from:body"
+     hx-target="this"
+     hx-swap="innerHTML">
+  <div class="flex items-center justify-center py-4">
+    <span class="loading loading-spinner loading-md"></span>
+    <span class="ml-2">Loading todos...</span>
+  </div>
+</div>

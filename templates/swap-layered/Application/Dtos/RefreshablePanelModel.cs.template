@@ -1,0 +1,8 @@
+namespace {{ProjectName}}.Application.Dtos;
+
+public class RefreshablePanelModel
+{
+    public string Title { get; set; } = string.Empty;
+    public string ContentUrl { get; set; } = string.Empty;
+    public string EventName { get; set; } = string.Empty; // e.g., ui.components.a.refresh
+}

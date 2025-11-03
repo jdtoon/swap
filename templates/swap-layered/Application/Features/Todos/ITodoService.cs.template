@@ -1,0 +1,11 @@
+using {{ProjectName}}.Application.Dtos;
+
+namespace {{ProjectName}}.Application.Features.Todos;
+
+public interface ITodoService
+{
+    Task<List<TodoItemDto>> GetAllAsync(CancellationToken ct = default);
+    Task AddAsync(string title, CancellationToken ct = default);
+    Task<TodoItemDto?> ToggleAsync(int id, CancellationToken ct = default);
+    Task DeleteAsync(int id, CancellationToken ct = default);
+}

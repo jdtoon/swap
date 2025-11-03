@@ -1,0 +1,159 @@
+# {{ProjectName}} (Layered Solution)
+
+Production-ready architecture with four projects and HTMX-native events. Use this when you want a clean separation of concerns and a path to scale.
+
+## What you get
+
+- Four projects under `src/`: Web, Application, Domain, Infrastructure
+- Swap Event System wired with domain→ui chains
+- HTMX 2.x + DaisyUI/Tailwind setup
+- EF Core DbContext/repositories in Infrastructure
+- Real integration tests using Swap.Testing
+- Dockerfile and docker-compose.yml under Web
+
+## Solution layout
+
+```
+{{ProjectName}}/
+├─ {{ProjectName}}.sln
+├─ src/
+│  ├─ Web/                 # ASP.NET Core MVC + HTMX + Swap
+│  │  ├─ Controllers/ Views/ wwwroot/ Events/ Extensions/
+│  │  ├─ appsettings*.json | Program.cs | {{ProjectName}}.Web.csproj
+│  │  ├─ Dockerfile | docker-compose.yml | libman.json | package.json
+│  │  └─ tailwind.config.js
+│  ├─ Application/         # Use cases + abstractions (IEventBus, repos)
+│  ├─ Domain/              # Entities + domain event names (pure)
+│  └─ Infrastructure/      # EF Core DbContext + repository impls
+└─ test/
+   ├─ Unit/                # Application unit tests
+   └─ Integration/         # Web integration tests with Swap.Testing
+```
+
+## Architecture notes
+
+- Web talks to Application services (no DbContext in controllers)
+- Application depends on Domain abstractions and raises events via IEventBus
+- Web adapts IEventBus to Swap.Htmx, maps domain events to `ui.*` via chains
+- UI listens via HTMX `hx-trigger` and swaps only the content area
+
+In `Web/Program.cs` (excerpt):
+
+```csharp
+builder.Services.AddSwapHtmx(events =>
+{
+	events.Chain(
+		SwapEvents.Entity.Created("todo"),
+		SwapEvents.UI.RefreshList,
+		SwapEvents.UI.ShowToast);
+});
+```
+
+A view:
+
+```html
+<div id="todo-list"
+	 hx-get="/Home/TodoList"
+	 hx-trigger="load, ui.refreshList from:body"
+	 hx-swap="outerHTML"></div>
+```
+
+Dev endpoints (Development only): `/_swap/dev/events` shows active chains and emissions.
+
+## Run it locally
+
+From `src/Web/`:
+
+```bash
+npm install
+libman restore
+npm run build:css
+```
+
+From the solution root:
+
+```bash
+# Create DB (CLI usually does this for you)
+dotnet ef migrations add InitialCreate -p src/Infrastructure -s src/Web
+dotnet ef database update -p src/Infrastructure -s src/Web
+
+# Run the web app
+cd src/Web
+dotnet run
+```
+
+Open http://localhost:5000
+
+Tip: `npm run watch:css` from `src/Web` will rebuild CSS during development.
+
+## Testing with Swap.Testing
+
+Integration tests live under `test/Integration` and use the `HtmxTestFixture<TProgram>` and `HtmxTestClient<TProgram>` for HTMX-aware flows.
+
+Example (trimmed):
+
+```csharp
+public class HtmxSmokeTests : IClassFixture<HtmxTestFixture<Program>>
+{
+	private readonly HtmxTestClient<Program> _client;
+	public HtmxSmokeTests(HtmxTestFixture<Program> fixture) => _client = fixture.Client;
+
+	[Fact]
+	public async Task Todo_Htmx_Flow_Adds_And_Shows_Item()
+	{
+		var list = await _client.HtmxGetAsync("/Home/TodoList");
+		list.AssertSuccess();
+		await list.AssertPartialViewAsync();
+
+		var added = await _client.HtmxPostAsync("/Home/AddTodo", new Dictionary<string,string>
+		{
+			["title"] = "HTMX integration test"
+		});
+		added.AssertSuccess();
+
+		var listAfter = await _client.HtmxGetAsync("/Home/TodoList");
+		await listAfter.AssertContainsAsync("HTMX integration test");
+	}
+}
+```
+
+Docs: /docs/features/testing-framework
+
+Run tests:
+
+```bash
+dotnet test
+```
+
+## Docker
+
+From `src/Web`:
+
+```bash
+docker build -t {{ProjectNameLower}}-web -f Dockerfile ..
+docker compose -f docker-compose.yml up --build
+```
+
+Notes:
+- Dockerfile builds/publishes Web with static assets and references Application/Infrastructure/Domain
+- Auto-migrations run on Development startup
+- DataProtection keys are configured for container session state
+
+## Generate more with the CLI
+
+```bash
+# Full resource (model+controller+views) in Web project
+swap g r Product --fields "Name:string Price:decimal InStock:bool:f"
+
+# Add a migration
+dotnet ef migrations add AddProduct -p src/Infrastructure -s src/Web
+dotnet ef database update -p src/Infrastructure -s src/Web
+```
+
+## Learn more
+
+- Templates: /docs/templates/overview
+- Event System: /docs/features/event-system
+- Testing: /docs/features/testing-framework
+- Docker: /docs/deployment/docker
+- CLI Reference: /docs/cli/overview

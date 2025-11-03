@@ -18,10 +18,19 @@ const sidebars: SidebarsConfig = {
     'intro',
     {
       type: 'category',
+      label: 'Templates',
+      items: [
+        'templates/overview',
+        'templates/modular-monolith',
+      ],
+    },
+    {
+      type: 'category',
       label: 'Getting Started',
       items: [
         'getting-started/installation',
         'getting-started/first-project',
+        'getting-started/layered-solution',
       ],
     },
     {

@@ -1,206 +1,160 @@
 # {{ProjectName}}
 
-Built with [Swap](https://github.com/jdtoon/swap) - ASP.NET Core + HTMX + DaisyUI
+Built with [Swap](https://github.com/jdtoon/swap) — ASP.NET Core + HTMX + DaisyUI, with the Swap Event System and real integration tests out of the box.
 
-## Prerequisites
+This template is a developer-friendly single-project app that still follows solid patterns. It’s ideal when you want to move fast without giving up HTMX-native events, nice UI, and a clean testing story.
 
-- [.NET 9.0 SDK](https://dotnet.microsoft.com/download)
-- [Node.js](https://nodejs.org/) (for Tailwind CSS)
-{{#if_sqlserver}}
-- SQL Server (local or remote)
-{{/if_sqlserver}}
-{{#if_postgres}}
-- PostgreSQL (local or remote)
-{{/if_postgres}}
+## What you get
 
-## Getting Started
+- ASP.NET Core 9 MVC + Entity Framework Core 9
+- HTMX 2.x via LibMan and DaisyUI + Tailwind via npm
+- Swap Event System wired (server chains + ui.* listeners)
+- Real integration tests using Swap.Testing (HTMX-aware)
+- Dockerfile and docker-compose for containerized runs
 
-### 1. Install Dependencies
-
-```bash
-npm install
-dotnet restore
-```
-
-### 2. Build CSS
-
-```bash
-npm run build:css
-```
-
-Or watch for changes during development:
-
-```bash
-npm run watch:css
-```
-
-### 3. Run Database Migrations
-
-```bash
-dotnet ef database update
-```
-
-### 4. Run the Application
-
-```bash
-dotnet run
-```
-
-Visit `http://localhost:5000`
-
-## Docker Support
-
-### Build and Run with Docker
-
-**Build the image:**
-
-```bash
-docker build -t {{ProjectNameLower}} .
-```
-
-**Run the container:**
-
-{{#if_sqlite}}
-```bash
-# SQLite - with persistent volume
-docker run -d -p 5000:8080 -p 5001:8081 \
-  -v $(pwd)/data:/app/data \
-  --name {{ProjectNameLower}} \
-  {{ProjectNameLower}}
-```
-
-The SQLite database will be persisted in the `./data` directory.
-{{/if_sqlite}}
-{{#if_sqlserver}}
-```bash
-# SQL Server - with connection string
-docker run -d -p 5000:8080 -p 5001:8081 \
-  -e "ConnectionStrings__DefaultConnection=Server=YOUR_SERVER;Database={{ProjectName}};User=YOUR_USER;Password=YOUR_PASSWORD;TrustServerCertificate=True" \
-  --name {{ProjectNameLower}} \
-  {{ProjectNameLower}}
-```
-
-Replace `YOUR_SERVER`, `YOUR_USER`, and `YOUR_PASSWORD` with your SQL Server credentials.
-{{/if_sqlserver}}
-{{#if_postgres}}
-```bash
-# PostgreSQL - with connection string
-docker run -d -p 5000:8080 -p 5001:8081 \
-  -e "ConnectionStrings__DefaultConnection=Host=YOUR_HOST;Database={{ProjectName}};Username=YOUR_USER;Password=YOUR_PASSWORD" \
-  --name {{ProjectNameLower}} \
-  {{ProjectNameLower}}
-```
-
-Replace `YOUR_HOST`, `YOUR_USER`, and `YOUR_PASSWORD` with your PostgreSQL credentials.
-{{/if_postgres}}
-
-### Using Docker Compose
-
-Docker Compose provides a complete environment with the application and database:
-
-```bash
-# Start all services
-docker-compose up -d
-
-# View logs
-docker-compose logs -f
-
-# Stop all services
-docker-compose down
-
-# Stop and remove volumes (destroys data)
-docker-compose down -v
-```
-
-{{#if_sqlite}}
-The application will be available at `http://localhost:5000`.
-
-Database file is stored in `./data/{{ProjectName}}.db`.
-{{/if_sqlite}}
-{{#if_sqlserver}}
-The application will be available at `http://localhost:5000`.
-
-**Default database credentials:**
-- Server: localhost,1433
-- User: sa
-- Password: YourStrong@Password123
-- Database: {{ProjectName}}
-
-**⚠️ Important:** Change the default password in `docker-compose.yml` before production use!
-{{/if_sqlserver}}
-{{#if_postgres}}
-The application will be available at `http://localhost:5000`.
-
-**Default database credentials:**
-- Host: localhost
-- Port: 5432
-- User: postgres
-- Password: YourStrong@Password123
-- Database: {{ProjectName}}
-
-**⚠️ Important:** Change the default password in `docker-compose.yml` before production use!
-{{/if_postgres}}
-
-### Run Database Migrations in Docker
-
-After starting the container, run migrations:
-
-```bash
-docker exec -it {{ProjectNameLower}} dotnet ef database update
-```
-
-Or with Docker Compose:
-
-```bash
-docker-compose exec app dotnet ef database update
-```
-
-## Project Structure
+## Project layout
 
 ```
 {{ProjectName}}/
-├── Controllers/        # MVC Controllers
-├── Data/              # Entity Framework DbContext
-├── Models/            # Entity models
-├── Views/             # Razor views with HTMX
-├── wwwroot/           # Static files (CSS, JS, images)
-├── Program.cs         # Application entry point
-└── appsettings.json   # Configuration
+├─ {{ProjectName}}.sln        # Root solution
+├─ src/                       # Application (web project)
+│  ├─ Controllers/
+│  ├─ Data/                   # AppDbContext + Migrations/
+│  ├─ Dtos/ | Events/ | Extensions/ | Infrastructure/
+│  ├─ Models/ | Views/ | wwwroot/
+│  ├─ appsettings*.json | Program.cs | {{ProjectName}}.csproj
+│  ├─ Dockerfile | docker-compose.yml | libman.json | package.json
+│  └─ tailwind.config.js
+└─ test/                      # Tests
+   ├─ Unit/
+   └─ Integration/            # Uses Swap.Testing
 ```
 
-## Development
+## Run it locally
 
-### Generate Code with Swap CLI
+From the `src/` folder:
 
 ```bash
-# Generate a complete resource (model + controller + views)
-swap g r Product --fields "Name:string, Price:decimal, Stock:int"
+npm install
+libman restore
+npm run build:css
 
-# Generate controller only
-swap g c Category --fields "Name:string, Description:string"
+# Create DB (CLI usually does this for you)
+dotnet ef database update
 
-# Generate model only
-swap g m Tag --fields "Name:string, Slug:string"
+# Run
+dotnet run
 ```
 
-### Watch CSS Changes
+Open http://localhost:5000
 
-Run this in a separate terminal during development:
+Tip: `npm run watch:css` will rebuild CSS automatically during development.
+
+## HTMX + Swap events
+
+The template is HTMX-native. We declare UI listeners in markup and wire server-side chains once.
+
+In `Program.cs`:
+
+```csharp
+builder.Services.AddSwapHtmx(events =>
+{
+    events.Chain(
+        SwapEvents.Entity.Created("todo"),
+        SwapEvents.UI.RefreshList,
+        SwapEvents.UI.ShowToast);
+});
+```
+
+In a view:
+
+```html
+<div id="todo-list"
+     hx-get="/Home/TodoList"
+     hx-trigger="load, ui.refreshList from:body"
+     hx-swap="outerHTML"></div>
+```
+
+Dev endpoints (Development only):
+
+- `/_swap/dev/events` — Live event chains dashboard
+
+## Testing with Swap.Testing
+
+Integration tests live in `test/Integration`. We use `HtmxTestFixture<TProgram>` and `HtmxTestClient<TProgram>` to make HTMX requests and assert on partials, headers, and DOM.
+
+Example (trimmed):
+
+```csharp
+public class HtmxSmokeTests : IClassFixture<HtmxTestFixture<Program>>
+{
+    private readonly HtmxTestClient<Program> _client;
+    public HtmxSmokeTests(HtmxTestFixture<Program> fixture) => _client = fixture.Client;
+
+    [Fact]
+    public async Task Todo_Htmx_Flow_Adds_And_Shows_Item()
+    {
+        var list = await _client.HtmxGetAsync("/Home/TodoList");
+        list.AssertSuccess();
+        await list.AssertPartialViewAsync();
+
+        var added = await _client.HtmxPostAsync("/Home/AddTodo", new Dictionary<string,string>
+        {
+            ["title"] = "HTMX integration test"
+        });
+        added.AssertSuccess();
+
+        var listAfter = await _client.HtmxGetAsync("/Home/TodoList");
+        await listAfter.AssertContainsAsync("HTMX integration test");
+    }
+}
+```
+
+See the full docs: Templates → Testing Framework
+- Wiki: /docs/features/testing-framework
+
+Run tests from the solution root:
 
 ```bash
-npm run watch:css
+dotnet test
 ```
 
-## Tech Stack
+## Docker
 
-- **Backend:** ASP.NET Core 9.0 (C#)
-- **Frontend:** HTMX + DaisyUI (Tailwind CSS)
-- **Database:** {{DatabaseProvider}}
-- **ORM:** Entity Framework Core 9.0
+From `src/`:
 
-## Learn More
+```bash
+docker build -t {{ProjectNameLower}} .
+docker run -d -p 5000:8080 --name {{ProjectNameLower}} {{ProjectNameLower}}
+```
 
-- [Swap Documentation](https://jdtoon.github.io/swap)
-- [HTMX Documentation](https://htmx.org/)
-- [DaisyUI Components](https://daisyui.com/components/)
-- [ASP.NET Core Documentation](https://docs.microsoft.com/aspnet/core)
+Or with compose (in `src/`):
+
+```bash
+docker-compose up --build
+```
+
+Notes:
+- SQLite DB persists in `src/` next to the app unless overridden
+- Auto-migrations run on startup in Development
+
+## Generate more with the CLI
+
+```bash
+# Full resource (model + controller + HTMX views)
+swap g r Product --fields "Name:string Price:decimal InStock:bool:f"
+
+# Controller only
+swap g c Category --fields "Name:string Description:string?"
+
+# Model only
+swap g m Tag --fields "Name:string Slug:string"
+```
+
+## Learn more
+
+- Templates: /docs/templates/overview
+- Testing: /docs/features/testing-framework
+- Event System: /docs/features/event-system
+- Docker: /docs/deployment/docker
+- CLI Reference: /docs/cli/overview

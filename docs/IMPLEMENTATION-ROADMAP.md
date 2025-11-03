@@ -1,7 +1,7 @@
 # Swap Implementation Roadmap - Battle-Tested Increments
 
 **Last Updated**: November 3, 2025  
-**Current Version**: 0.3.0  
+**Current Version**: 0.3.1  
 **Status**: Active Development  
 **Focus**: Developer Experience First
 
@@ -37,7 +37,7 @@
 
 ---
 
-## 📍 Where We Are (v0.3.0)
+## 📍 Where We Are (v0.3.1)
 
 ### ✅ What's Working
 
@@ -69,6 +69,11 @@
 - ✅ Actually generates working code
 - ✅ Uses proven patterns (from TTW, Kanban, Habits, Carestream)
 - ✅ Saves hours of boilerplate
+
+**Recent 0.3.1 Improvements:**
+- Fixed CLI setup hang by streaming process output during build/migration steps
+- Standardized template integration tests on Swap.Testing; removed direct Mvc.Testing refs
+- Template docs overhaul; wiki adds prominent Templates section and overview
 
 **What's Missing:**
 - ❌ Components are embedded in CRUD templates, not reusable
@@ -672,6 +677,10 @@ Build blog app, confirm it works well.
 ---
 
 ## 📅 Release Schedule
+
+### v0.3.2 (November 2025)
+- Modular monolith template (modules folder with feature isolation)
+- CLI support to scaffold modules (initial)
 
 ### v0.4.0 (January 2026)
 - Event system foundation
