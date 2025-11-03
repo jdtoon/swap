@@ -60,6 +60,7 @@ Learn more: Event System → https://jdtoon.github.io/swap/docs/features/event-s
 - **⚡ Production-Ready Code** - Generate complete CRUD with modals, pagination, sorting, filtering, and search
 - **🔗 Relationship Generation** - One-to-many, many-to-many, one-to-one with automatic UI (dropdowns, checkboxes)
 - **🎯 HTMX Simplicity** - Modern, interactive web apps without JavaScript frameworks
+- **🔔 Event-Driven UI** - Built-in Event System wires HTMX `ui.*` events to server-side chains for easy UI orchestration, visualization, and testing
 - **🎨 DaisyUI + Tailwind** - Beautiful, accessible components out of the box
 - **🗄️ Entity Framework Core** - Full database integration with migrations support
 - **🐳 Docker Ready** - Every project includes Dockerfile and docker-compose.yml with multi-stage builds
