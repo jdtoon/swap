@@ -1,0 +1,23 @@
+@model List<string>
+<div>
+  <form class="flex gap-2" hx-post="/Demo/AddNote" hx-target="#details">
+    <input type="text" name="text" class="input input-bordered flex-1" placeholder="New note..." required />
+    <button type="submit" class="btn btn-primary">Add Note</button>
+  </form>
+
+  <div class="mt-4 space-y-1">
+    @if (Model.Count == 0)
+    {
+      <div class="text-sm opacity-60">No notes yet.</div>
+    }
+    else
+    {
+      <ul class="list-disc pl-5">
+        @foreach (var n in Model)
+        {
+          <li>@n</li>
+        }
+      </ul>
+    }
+  </div>
+</div>

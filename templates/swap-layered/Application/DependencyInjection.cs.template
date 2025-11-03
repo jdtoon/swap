@@ -1,6 +1,11 @@
 using Microsoft.Extensions.DependencyInjection;
 using {{ProjectName}}.Application.Abstractions;
 using {{ProjectName}}.Application.Features.Todos;
+using {{ProjectName}}.Application.Features.Stats;
+using {{ProjectName}}.Application.Features.Components;
+using {{ProjectName}}.Application.Features.Notes;
+using {{ProjectName}}.Application.Features.Bulk;
+using {{ProjectName}}.Application.Features.Demo;
 
 namespace {{ProjectName}}.Application;
 
@@ -9,6 +14,11 @@ public static class DependencyInjection
     public static IServiceCollection AddApplication(this IServiceCollection services)
     {
         services.AddScoped<ITodoService, TodoService>();
+        services.AddScoped<IStatsService, StatsService>();
+        services.AddScoped<IComponentsService, ComponentsService>();
+        services.AddSingleton<INotesService, NotesService>();
+        services.AddScoped<IBulkService, BulkService>();
+        services.AddScoped<IDemoQueries, DemoQueries>();
         // IEventBus is provided by Web via adapter; no registration here
         return services;
     }
