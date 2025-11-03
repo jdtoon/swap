@@ -1,7 +1,7 @@
 # Swap Event System - Intelligent Server-Driven Event Coordination
 
-**Last Updated**: November 1, 2025  
-**Status**: Design Specification  
+**Last Updated**: November 3, 2025  
+**Status**: Shipped in v0.3.0 (server + client registry + dev endpoints)  
 **Purpose**: Define the filtered, chain-based event system for Swap framework
 
 ---
@@ -88,7 +88,25 @@ Response.HxTrigger("product.created");
 
 ---
 
-## 🔧 Implementation Specification
+## � What shipped in v0.3.0
+
+- Server-side chain resolution with a global mode: `OneHop` (default), `Bidirectional`, `Transitive` (with `MaxTransitiveDepth`)
+- Client registry + HTMX interceptor sending `X-Swap-Events`
+- Strict server-side filtering by active client subscriptions
+- Middleware-based header building (`SwapEventResponseMiddleware`) using `OnStarting` with safe merging if `HX-Trigger` is already set
+- Dev endpoints (Development only):
+    - `/_swap/dev/events` – HTML dashboard (table + Mermaid graph)
+    - `/_swap/dev/events.json` – chains JSON
+    - `/_swap/dev/events.meta.json` – current resolution mode + depth
+    - `/_swap/dev/explain.json?event=...` – server-side resolution preview
+- Configuration validation in Development (invalid names or cycles throw during startup)
+
+API surface in 0.3.0:
+- Configure chains and mode via `builder.Services.AddSwapHtmx(options => { ... })`
+- Emit events with `ISwapEventBus.Emit(...)` or `EmitAsync(...)`
+- Advanced per-event timing headers (`AfterSwap`/`AfterSettle`) are not included in 0.3.0; may be revisited later
+
+## �🔧 Implementation Specification
 
 ### Phase 1: Client-Side Event Registry
 
@@ -543,44 +561,11 @@ namespace Swap.Htmx.Events;
 /// </summary>
 public interface ISwapEventBus
 {
-    /// <summary>
-    /// Emit an event (will be filtered to active subscriptions)
-    /// </summary>
-    Task EmitAsync(string eventName, object? payload = null);
-    
-    /// <summary>
-    /// Emit multiple events at once
-    /// </summary>
-    Task EmitManyAsync(params (string eventName, object? payload)[] events);
-    
-    /// <summary>
-    /// Emit event after HTMX swap completes
-    /// </summary>
-    Task EmitAfterSwapAsync(string eventName, object? payload = null);
-    
-    /// <summary>
-    /// Emit event after HTMX settle completes
-    /// </summary>
-    Task EmitAfterSettleAsync(string eventName, object? payload = null);
-    
-    /// <summary>
-    /// Force emit event (bypass filtering)
-    /// </summary>
-    Task EmitForceAsync(string eventName, object? payload = null);
-    
-    /// <summary>
-    /// Define event chain (when trigger fires, also fire these events)
-    /// </summary>
-    ISwapEventBus Chain(string triggerEvent, params string[] chainedEvents);
-    
-    /// <summary>
-    /// Get count of pending events
-    /// </summary>
-    int GetPendingEventCount();
-    
-    /// <summary>
-    /// Clear all pending events
-    /// </summary>
+    // Emit an event (will be filtered to active subscriptions and expanded per configured chains)
+    Task EmitAsync(string eventName, object? payload = null, CancellationToken ct = default);
+    // Synchronous convenience
+    void Emit(string eventName, object? payload = null);
+    // Clear pending events for the current request
     void ClearPendingEvents();
 }
 
@@ -855,110 +840,40 @@ public class SwapEventResponseMiddleware
 
 #### 2.4 Service Registration
 
-**File:** `framework/Swap.Htmx/SwapHtmxServiceExtensions.cs` (update)
+**Program.cs (registration + configuration)**
 
 ```csharp
-using Microsoft.AspNetCore.Builder;
-using Microsoft.Extensions.DependencyInjection;
+using Swap.Htmx;
+using Swap.Htmx.Dev;
 using Swap.Htmx.Events;
-using Swap.Htmx.Middleware;
 
-namespace Swap.Htmx;
+var builder = WebApplication.CreateBuilder(args);
 
-public static class SwapHtmxServiceExtensions
+// Register Swap.Htmx and configure event chains + resolution mode
+builder.Services.AddSwapHtmx(events =>
 {
-    /// <summary>
-    /// Add Swap.Htmx services including event bus
-    /// </summary>
-    public static IServiceCollection AddSwapHtmx(
-        this IServiceCollection services,
-        Action<SwapEventBusOptions>? configureEvents = null)
-    {
-        // Register HTTP context accessor
-        services.AddHttpContextAccessor();
-        
-        // Register event bus
-        services.AddScoped<ISwapEventBus, SwapEventBus>();
-        
-        // Configure event chains
-        if (configureEvents != null)
-        {
-            services.Configure(configureEvents);
-            
-            // Build event chains at startup
-            services.AddSingleton<IEventChainConfiguration>(sp =>
-            {
-                var config = new EventChainConfiguration();
-                configureEvents(new SwapEventBusOptions(config));
-                return config;
-            });
-        }
-        
-        return services;
-    }
+    // Chains
+    events.Chain("todo.created", "ui.todo.refreshList", "ui.toast.success");
+    events.Chain("todo.deleted", "ui.todo.refreshList");
 
-    /// <summary>
-    /// Use Swap.Htmx middleware (event context and response building)
-    /// </summary>
-    public static IApplicationBuilder UseSwapHtmx(this IApplicationBuilder app)
-    {
-        // Extract event context from request
-        app.UseMiddleware<SwapEventContextMiddleware>();
-        
-        // Build event response headers
-        app.UseMiddleware<SwapEventResponseMiddleware>();
-        
-        return app;
-    }
+    // Resolution mode (global)
+    events.ResolutionMode = ChainResolutionMode.OneHop; // or Bidirectional/Transitive
+    events.MaxTransitiveDepth = 2; // used when Transitive
+});
+
+var app = builder.Build();
+
+// Event middlewares (must be before MVC endpoints)
+app.UseSwapHtmx();
+
+// Dev endpoints (Development only)
+if (app.Environment.IsDevelopment())
+{
+    app.MapSwapHtmxDevEndpoints();
 }
 
-/// <summary>
-/// Configuration options for event bus
-/// </summary>
-public class SwapEventBusOptions
-{
-    private readonly IEventChainConfiguration _config;
-
-    internal SwapEventBusOptions(IEventChainConfiguration config)
-    {
-        _config = config;
-    }
-
-    /// <summary>
-    /// Define event chain
-    /// </summary>
-    public SwapEventBusOptions Chain(string triggerEvent, params string[] chainedEvents)
-    {
-        _config.AddChain(triggerEvent, chainedEvents);
-        return this;
-    }
-}
-
-internal interface IEventChainConfiguration
-{
-    void AddChain(string trigger, string[] chained);
-    Dictionary<string, HashSet<string>> GetChains();
-}
-
-internal class EventChainConfiguration : IEventChainConfiguration
-{
-    private readonly Dictionary<string, HashSet<string>> _chains = new();
-
-    public void AddChain(string trigger, string[] chained)
-    {
-        if (!_chains.ContainsKey(trigger))
-        {
-            _chains[trigger] = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        }
-        
-        foreach (var evt in chained)
-        {
-            _chains[trigger].Add(evt);
-        }
-    }
-
-    public Dictionary<string, HashSet<string>> GetChains() => _chains;
-}
+app.MapControllers();
+app.Run();
 ```
 
 ---
@@ -1255,20 +1170,18 @@ app.Run();
 
 ---
 
-#### 4.2 Controller Usage
+#### 4.2 Controller Usage (v0.3.0 API)
 
 ```csharp
 public class ProductsController : SwapController
 {
     private readonly IProductService _service;
-    private readonly ISwapEventBus _eventBus;
+    private readonly ISwapEventBus _events;
 
-    public ProductsController(
-        IProductService service,
-        ISwapEventBus eventBus)
+    public ProductsController(IProductService service, ISwapEventBus events)
     {
         _service = service;
-        _eventBus = eventBus;
+        _events = events;
     }
 
     [HttpPost]
@@ -1281,15 +1194,11 @@ public class ProductsController : SwapController
 
         var product = await _service.CreateAsync(dto);
 
-        // Emit event - framework handles the rest
-        // 1. Resolves chain: product.created → ui.refreshList, inventory.updated, stats.updated
-        // 2. Filters to active events on page
-        // 3. Returns only events with listeners
-        await _eventBus.TriggerCreated("product", new { id = product.Id });
+        // Emit event – server resolves chains, then filters to active client subscriptions
+        await _events.EmitAsync("product.created", new { id = product.Id });
 
-        // Or use helper
-        await _eventBus.NotifySuccess("Product created!");
-        await _eventBus.CloseModal();
+        // Optional: toast via helpers
+        Response.ShowSuccessToast("Product created!");
 
         return SwapView("_ProductCard", product);
     }
@@ -1298,34 +1207,18 @@ public class ProductsController : SwapController
     public async Task<IActionResult> Delete(int id)
     {
         await _service.DeleteAsync(id);
-
-        // One event triggers entire chain
-        await _eventBus.TriggerDeleted("product", new { id });
-        await _eventBus.NotifySuccess("Product deleted");
-
-        return Ok();
-    }
-
-    [HttpPost]
-    public async Task<IActionResult> BulkDelete(int[] ids)
-    {
-        await _service.DeleteManyAsync(ids);
-
-        // Bulk operation
-        await _eventBus.TriggerBulkDeleted("product", ids.Length);
-        await _eventBus.NotifySuccess($"{ids.Length} products deleted");
-
+        await _events.EmitAsync("product.deleted", new { id });
+        Response.ShowSuccessToast("Product deleted");
         return Ok();
     }
 
     // Component endpoint
     public async Task<IActionResult> ProductList()
     {
-        // Check if anyone is listening
-        if (!HttpContext.IsEventActive("product.created"))
+        // Example optimization: skip work if nobody listens
+        if (!HttpContext.IsEventActive("product.created") && !HttpContext.IsEventActive("product.deleted"))
         {
-            // No one cares about products on this page
-            // Could skip expensive queries
+            // could skip expensive queries
         }
 
         var products = await _service.GetAllAsync();
@@ -1401,7 +1294,9 @@ public class ProductsController : SwapController
 
 ### Phase 5: Advanced Features
 
-#### 5.1 Event Versioning
+> Note: The features below are aspirational and not part of v0.3.0. They may evolve or be simplified based on real-world feedback.
+
+#### 5.1 Event Versioning (future)
 
 ```csharp
 /// <summary>
@@ -1434,7 +1329,7 @@ window.SwapEvents.registerVersionedEvent("product.created", 2);
 
 ---
 
-#### 5.2 Event Priorities
+#### 5.2 Event Priorities (future)
 
 ```csharp
 public enum EventPriority
@@ -1456,7 +1351,7 @@ events.Chain(SwapEvents.Entity.Created("product"))
 
 ---
 
-#### 5.3 Conditional Events
+#### 5.3 Conditional Events (future)
 
 ```csharp
 // Only emit if condition met
@@ -1473,7 +1368,7 @@ events.Chain(SwapEvents.Entity.Deleted("product"))
 
 ---
 
-#### 5.4 Event Batching
+#### 5.4 Event Batching (future)
 
 ```csharp
 // Wait for multiple events before emitting
@@ -1490,7 +1385,14 @@ await batcher.EmitAsync("product.created");
 
 ---
 
-#### 5.5 Event Debugging UI
+#### 5.5 Event Debugging UI (implemented as dev endpoints)
+
+In Development, use the built-in endpoints:
+
+- `/_swap/dev/events` – HTML dashboard with chains table and Mermaid graph
+- `/_swap/dev/events.json` – chains JSON
+- `/_swap/dev/events.meta.json` – current ResolutionMode/MaxTransitiveDepth
+- `/_swap/dev/explain.json?event=...` – server-side resolution preview under current mode
 
 ```html
 <!-- Development Mode Event Inspector -->
