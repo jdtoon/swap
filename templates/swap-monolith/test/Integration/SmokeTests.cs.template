@@ -1,25 +1,39 @@
-using Microsoft.AspNetCore.Mvc.Testing;
-using System.Net.Http;
 using System.Threading.Tasks;
+using System.Collections.Generic;
+using Swap.Testing;
 using Xunit;
 
 namespace {{ProjectName}}.IntegrationTests;
 
-public class HomePageTests : IClassFixture<WebApplicationFactory<Program>>
+public class HtmxSmokeTests : IClassFixture<HtmxTestFixture<Program>>
 {
-    private readonly HttpClient _client;
+    private readonly HtmxTestClient<Program> _client;
 
-    public HomePageTests(WebApplicationFactory<Program> factory)
+    public HtmxSmokeTests(HtmxTestFixture<Program> fixture)
     {
-        _client = factory.CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
+        _client = fixture.Client;
     }
 
     [Fact]
-    public async Task Get_Root_Returns200_And_Contains_EventDriven_Tagline()
+    public async Task Todo_Htmx_Flow_Adds_And_Shows_Item()
     {
-        var response = await _client.GetAsync("/");
-        response.EnsureSuccessStatusCode();
-        var html = await response.Content.ReadAsStringAsync();
-        Assert.Contains("Event-driven", html);
+        // 1) Load the list as an HTMX partial
+        var list = await _client.HtmxGetAsync("/Home/TodoList");
+        list.AssertSuccess();
+        await list.AssertPartialViewAsync();
+        await list.AssertElementExistsAsync("#todo-list");
+
+        // 2) Add a todo via HTMX
+        var added = await _client.HtmxPostAsync("/Home/AddTodo", new Dictionary<string, string>
+        {
+            ["title"] = "HTMX integration test"
+        });
+        added.AssertSuccess();
+
+        // 3) Reload list and assert the new item appears
+        var listAfter = await _client.HtmxGetAsync("/Home/TodoList");
+        listAfter.AssertSuccess();
+        await listAfter.AssertPartialViewAsync();
+        await listAfter.AssertContainsAsync("HTMX integration test");
     }
 }
