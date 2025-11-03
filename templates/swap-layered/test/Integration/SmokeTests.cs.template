@@ -1,12 +1,25 @@
+using Microsoft.AspNetCore.Mvc.Testing;
+using System.Net.Http;
+using System.Threading.Tasks;
 using Xunit;
 
 namespace {{ProjectName}}.Web.Tests;
 
-public class SmokeTests
+public class HomePageTests : IClassFixture<WebApplicationFactory<Program>>
 {
-    [Fact]
-    public void True_is_true()
+    private readonly HttpClient _client;
+
+    public HomePageTests(WebApplicationFactory<Program> factory)
     {
-        Assert.True(true);
+        _client = factory.CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
+    }
+
+    [Fact]
+    public async Task Get_Root_Returns200_And_Contains_EventDriven_Tagline()
+    {
+        var response = await _client.GetAsync("/");
+        response.EnsureSuccessStatusCode();
+        var html = await response.Content.ReadAsStringAsync();
+        Assert.Contains("Event-driven", html);
     }
 }
