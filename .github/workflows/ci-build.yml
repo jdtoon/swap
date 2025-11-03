@@ -46,32 +46,16 @@ jobs:
     
     - name: Restore dependencies
       run: dotnet restore
-    
-    # Frontend toolchain for Tailwind/DaisyUI CSS build in demo apps
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '20.x'
-
-    - name: Install frontend deps (EventSystemIT)
-      run: npm ci
-      working-directory: demo/EventSystemIT
-
-    - name: Install frontend deps (MonolithDemo)
-      run: npm ci
-      working-directory: demo/MonolithDemo
 
     - name: Build
       run: dotnet build --configuration Release --no-restore
     
     - name: Run tests
       run: dotnet test --configuration Release --no-restore --verbosity normal
-    
+
     - name: Pack packages (artifacts)
       run: |
         dotnet pack framework/Swap.Htmx/Swap.Htmx.csproj --configuration Release --no-restore --output ./nupkg
         dotnet pack framework/Swap.Patterns/Swap.Patterns.csproj --configuration Release --no-restore --output ./nupkg
         dotnet pack framework/Swap.Testing/Swap.Testing.csproj --configuration Release --no-restore --output ./nupkg
         dotnet pack tools/Swap.CLI/Swap.CLI.csproj --configuration Release --no-restore --output ./nupkg
-
-    # Publishing/uploading of packages is handled in a separate workflow; no upload here.
