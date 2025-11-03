@@ -72,6 +72,11 @@ const config: Config = {
           label: 'Documentation',
         },
         {
+          to: '/docs/templates/overview',
+          label: 'Templates',
+          position: 'left',
+        },
+        {
           href: 'https://github.com/jdtoon/swap',
           label: 'GitHub',
           position: 'right',

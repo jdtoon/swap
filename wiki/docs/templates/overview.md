@@ -8,6 +8,7 @@ Swap ships two first-class templates. Both are HTMX-native and include the Swap 
 
 - Monolith (swap-monolith) — Single project optimized for developer experience; move fast without ceremony.
 - Layered (swap-layered) — Multi-project architecture (Web, Application, Domain, Infrastructure) ready to scale.
+ - Modular Monolith (swap-modular) — Coming soon. A single deployable with clear module boundaries and internal APIs.
 
 ## Quick compare
 
@@ -45,6 +46,13 @@ swap new MyApp --database sqlserver
 
 # PostgreSQL
 swap new MyApp --database postgres
+```
+
+Planned:
+
+```bash
+# Modular Monolith (coming soon)
+swap new MyApp --template swap-modular
 ```
 
 ## What’s included (both)
@@ -147,3 +155,7 @@ See /docs/deployment/docker for details.
 Templates wire server-side chains and HTMX UI listeners for you. Inspect and modify chains in your Program.cs and event chain files, and visit `/_swap/dev/events` (Development) to visualize emissions and active chains.
 
 See /docs/features/event-system.
+
+## Modular Monolith (Coming soon)
+
+We’re building a modular monolith template with first-class module scaffolding and boundaries. Learn more: /docs/templates/modular-monolith

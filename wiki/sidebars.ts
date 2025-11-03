@@ -21,6 +21,7 @@ const sidebars: SidebarsConfig = {
       label: 'Templates',
       items: [
         'templates/overview',
+        'templates/modular-monolith',
       ],
     },
     {

@@ -23,6 +23,11 @@ function HomepageHeader() {
             to="/docs/">
             Get Started
           </Link>
+          <Link
+            className="button button--info button--lg margin-left--sm"
+            to="/docs/templates/overview">
+            Explore Templates
+          </Link>
         </div>
       </div>
     </header>
