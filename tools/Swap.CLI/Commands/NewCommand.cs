@@ -596,14 +596,14 @@ public class HtmxShellMiddleware
         var isWindows = OperatingSystem.IsWindows();
         var fileName = command;
         var args = arguments;
-        
+
         if (isWindows && (command == "npm" || command == "npx"))
         {
             fileName = "cmd.exe";
             args = $"/c {command} {arguments}";
         }
-        
-        var processStartInfo = new System.Diagnostics.ProcessStartInfo
+
+        var psi = new System.Diagnostics.ProcessStartInfo
         {
             FileName = fileName,
             Arguments = args,
@@ -613,19 +613,50 @@ public class HtmxShellMiddleware
             UseShellExecute = false,
             CreateNoWindow = true
         };
-        
-        using var process = System.Diagnostics.Process.Start(processStartInfo);
-        if (process == null)
+
+        using var process = new System.Diagnostics.Process { StartInfo = psi, EnableRaisingEvents = true };
+
+        var stdOutTcs = new TaskCompletionSource();
+        var stdErrTcs = new TaskCompletionSource();
+
+        process.OutputDataReceived += (s, e) =>
+        {
+            if (e.Data == null)
+            {
+                stdOutTcs.TrySetResult();
+            }
+            else
+            {
+                // Stream output to console to give feedback and avoid buffer deadlocks
+                AnsiConsole.MarkupLine($"[dim]{Markup.Escape(e.Data)}[/]");
+            }
+        };
+        process.ErrorDataReceived += (s, e) =>
+        {
+            if (e.Data == null)
+            {
+                stdErrTcs.TrySetResult();
+            }
+            else
+            {
+                AnsiConsole.MarkupLine($"[red]{Markup.Escape(e.Data)}[/]");
+            }
+        };
+
+        if (!process.Start())
         {
             throw new InvalidOperationException($"Failed to start {command}");
         }
-        
+
+        process.BeginOutputReadLine();
+        process.BeginErrorReadLine();
+
         await process.WaitForExitAsync();
-        
+        await Task.WhenAll(stdOutTcs.Task, stdErrTcs.Task);
+
         if (process.ExitCode != 0)
         {
-            var error = await process.StandardError.ReadToEndAsync();
-            throw new InvalidOperationException($"{command} failed: {error}");
+            throw new InvalidOperationException($"{command} exited with code {process.ExitCode}");
         }
     }
     
