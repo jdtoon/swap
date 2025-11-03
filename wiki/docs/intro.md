@@ -3,23 +3,57 @@ sidebar_position: 1
 slug: /
 ---
 
-# Swap CLI
+# Swap
 
-A command-line tool for generating production-ready ASP.NET Core applications with HTMX.
+An HTMX-native .NET framework and CLI for generating production-ready ASP.NET Core applications.
 
 ## What is Swap?
 
-Swap generates ASP.NET Core projects with HTMX-powered views using proven patterns from real production applications. It handles the project setup and boilerplate so you can focus on building features.
+Swap has two parts that work together:
+
+- The framework (`Swap.*` packages), especially `Swap.Htmx`, which extends ASP.NET Core with HTMX-native features and an intelligent event system.
+- The CLI (`swap`) that scaffolds complete projects and patterns using those features.
+
+It generates ASP.NET Core projects with HTMX-powered views using proven patterns from real applications. You write business logic; Swap wires the rest.
 
 **Core Features:**
 
-- **Generate complete projects** with `swap new` - Full ASP.NET Core + HTMX stack
+- **Generate complete projects** with `swap new` - Full ASP.NET Core + HTMX stack (includes the event system)
 - **Scaffold models** with custom fields and 11 data types
 - **Create CRUD controllers** with modals, pagination, sorting, and filtering
 - **DaisyUI + Tailwind CSS** for modern, accessible UI components
 - **Entity Framework Core** integration included
 - **Docker-ready** - Every project includes Dockerfile and docker-compose.yml
+- **Event System** - Server-driven, filtered events with chain resolution (zero wasted triggers)
 - **Pattern-driven** - Every generated file uses battle-tested patterns
+
+## Event System at a glance
+
+Generated apps include the Swap event system out of the box. Components declare UI listeners in `hx-trigger`, the browser sends active UI subscriptions via `X-Swap-Events`, and the server only emits events that have listeners.
+
+Configure once in Program.cs:
+
+```csharp
+builder.Services.AddSwapHtmx(events =>
+{
+    events.Chain(SwapEvents.Entity.Created("todo"),
+                 SwapEvents.UI.RefreshList,
+                 SwapEvents.UI.ShowToast);
+});
+app.UseSwapHtmx();
+```
+
+Emit domain events from controllers:
+
+```csharp
+await _events.EmitAsync(SwapEvents.Entity.Created("todo"), new { id = 123 });
+```
+
+Declare UI listeners in markup:
+
+```html
+<div id="todo-list" hx-get="/Todo/List" hx-trigger="load, ui.refreshList from:body" hx-swap="outerHTML"></div>
+```
 
 ## Quick Start
 

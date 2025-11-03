@@ -101,17 +101,17 @@ Response.ShowErrorToast("Validation failed");
 Response.ShowWarningToast("Stock low");
 Response.ShowInfoToast("Processing...");
 
-// 5. Event System (Server-driven + filtered)
+// 5. Event System (server-driven + filtered)
 // Configure in Program.cs
 // builder.Services.AddSwapHtmx(events => {
-//   events.Chain("todo.created", "ui.todo.refreshList");
+//   events.Chain(SwapEvents.Entity.Created("todo"), SwapEvents.UI.RefreshList, SwapEvents.UI.ShowToast);
 //   events.ResolutionMode = ChainResolutionMode.OneHop; // or Bidirectional/Transitive
 // });
 // app.UseSwapHtmx();
 // if (app.Environment.IsDevelopment()) app.MapSwapHtmxDevEndpoints();
 
-// Emit in controller
-await _events.EmitAsync("todo.created", new { id = 123 });
+// Emit in controller (domain → UI chain, filtered to active UI listeners)
+await _events.EmitAsync(SwapEvents.Entity.Created("todo"), new { id = 123 });
 
 // 6. Middleware
 app.UseSwapHtmxShell(); // Enforces partial responses for HX-Request
@@ -245,11 +245,11 @@ The Swap event system uses a **client-side event registry** that tells the serve
 ```
 Browser                          Server
 ├── Event Registry              ├── Event Context Middleware
-│   (sessionStorage)            │   (Extracts active events)
-├── Component Registration      ├── Event Chain Resolver
-│   (data-swap-events)          │   (Resolves dependencies)
-└── HTMX Interceptor            └── Event Filter & Response
-    (X-Swap-Events header)          (Builds HX-Trigger)
+│   (scan hx-trigger for ui.*)  │   (Extracts X-Swap-Events)
+├── HTMX Interceptor            ├── Event Chain Resolver
+│   (X-Swap-Events header)      │   (Resolves dependencies)
+└── Component Markup            └── Event Filter & Response
+    (declare ui.* in hx-trigger)    (Builds HX-Trigger JSON)
 ```
 
 ### Current State (Basic Events)
@@ -276,7 +276,7 @@ Response.HxTrigger("productCreated");
 
 The complete event system design addresses all these problems through:
 
-1. **Client-Side Event Registry** - Components declare subscriptions, browser tracks active events
+1. **Client-Side Event Registry** - Browser scans `hx-trigger` for `ui.*` and tracks active UI events
 2. **Server-Side Filtering** - Only emit events with active listeners on current page
 3. **Event Chains** - Define workflows once, reuse everywhere
 4. **Standard Events** - Type-safe event naming convention
@@ -285,22 +285,20 @@ The complete event system design addresses all these problems through:
 **Quick Example:**
 
 ```csharp
-// 1. Component declares events in markup
-<div data-swap-component="product-list"
-     data-swap-events="product.created,product.updated,product.deleted">
-</div>
+// 1. Component declares UI listener in markup
+<div id="product-list" hx-trigger="ui.refreshList from:body"></div>
 
-// 2. Browser sends active events with each request
-// X-Swap-Events: product.created,product.updated,product.deleted
+// 2. Browser sends active UI events with each HTMX request
+// X-Swap-Events: ui.refreshList
 
-// 3. Server emits event
+// 3. Server emits domain event
 await _eventBus.EmitAsync(SwapEvents.Entity.Created("product"));
 
-// 4. Server resolves chains and filters to active events only
-// product.created → ui.refreshList, stats.updated (both active on page)
+// 4. Server resolves chains and filters against active subscriptions
+// product.created → ui.refreshList, ui.showToast (only UI listeners are kept)
 
 // 5. Browser receives filtered events
-// HX-Trigger: {"product.created": {"id": 123}, "ui.refreshList": null}
+// HX-Trigger: {"ui.refreshList": null, "ui.showToast": {"message":"Created!"}}
 ```
 
 **For complete implementation details, architecture diagrams, code examples, and API reference, see:**
@@ -378,10 +376,9 @@ public async Task<IActionResult> Create(ProductDto dto, [FromServices] ISwapEven
 
 **Component Declaration:**
 ```html
-<div data-swap-component="product-list"
-     data-swap-events="product.created,product.updated,product.deleted"
-     hx-get="/products"
-     hx-trigger="load, product.created from:body, product.updated from:body">
+<div id="product-list"
+    hx-get="/products"
+    hx-trigger="load, ui.refreshList from:body">
 </div>
 ```
 
@@ -467,8 +464,8 @@ public class ProductsController : SwapController
   <partial name="_Table" model="Model" />
   <partial name="_Pagination" model="ModelPagination" />
   <partial name="_Toast" />
-  <!-- Templates include data-swap-component/data-swap-events where appropriate -->
-  <!-- so they participate in the event system automatically. -->
+    <!-- Templates declare ui.* listeners in hx-trigger so they participate -->
+    <!-- in the event system automatically. -->
   </div>
 ```
 

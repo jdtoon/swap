@@ -5,8 +5,8 @@ import type * as Preset from '@docusaurus/preset-classic';
 // This runs in Node.js - Don't use client-side code here (browser APIs, JSX...)
 
 const config: Config = {
-  title: 'Swap CLI',
-  tagline: 'Generate production-ready ASP.NET Core apps with HTMX',
+  title: 'Swap',
+  tagline: 'HTMX-native .NET framework and CLI',
   favicon: 'img/favicon.ico',
 
   // Future flags, see https://docusaurus.io/docs/api/docusaurus-config#future
@@ -59,7 +59,7 @@ const config: Config = {
       respectPrefersColorScheme: true,
     },
     navbar: {
-      title: 'Swap CLI',
+  title: 'Swap',
       logo: {
         alt: 'Swap CLI Logo',
         src: 'img/logo.svg',
@@ -72,7 +72,7 @@ const config: Config = {
           label: 'Documentation',
         },
         {
-          href: 'https://github.com/jdtoon/swap-cli',
+          href: 'https://github.com/jdtoon/swap',
           label: 'GitHub',
           position: 'right',
         },
@@ -99,7 +99,7 @@ const config: Config = {
           items: [
             {
               label: 'GitHub',
-              href: 'https://github.com/jdtoon/swap-cli',
+              href: 'https://github.com/jdtoon/swap',
             },
             {
               label: 'ASP.NET Core',
