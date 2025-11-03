@@ -19,7 +19,9 @@ swap new <name> [options]
 - `--output <path>` or `-o` - Output directory (default: `./{name}`)
 - `--skip-setup` - Skip prerequisites check, npm/libman steps, and initial migration (useful for CI/tests)
 - `--local-nuget` - Use local NuGet feed for Swap packages (for framework development only)
- - `--template <name>` - Choose template; `swap-monolith` wires the Event System (chains, middleware, dev endpoints)
+ - `--template <name>` - Choose template:
+     - `swap-monolith` - Single-project DX-forward template with Event System wired
+     - `layered` / `swap-layered` - Multi-project solution (Web, Application, Domain, Infrastructure)
 
 ## Description
 
@@ -89,6 +91,29 @@ docker-compose up --build
 ```
 
 Navigate to `http://localhost:5000` to see the Todo CRUD interface.
+
+### Layered solution (multi-project)
+
+```bash
+swap new MyApp --template layered --database sqlite
+
+# Run from the Web project
+cd MyApp/Web
+dotnet run
+```
+
+If you pass `--skip-setup`, run the post-create steps manually:
+
+```bash
+# In Web/
+npm install
+libman restore
+npm run build:css
+
+# From solution root
+dotnet ef migrations add InitialCreate -p Infrastructure -s Web
+dotnet ef database update -p Infrastructure -s Web
+```
 
 ## Generated Structure
 

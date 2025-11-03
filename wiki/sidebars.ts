@@ -22,6 +22,7 @@ const sidebars: SidebarsConfig = {
       items: [
         'getting-started/installation',
         'getting-started/first-project',
+        'getting-started/layered-solution',
       ],
     },
     {
