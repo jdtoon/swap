@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - {{ProjectName}}</title>
+    <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+</head>
+<body>
+    <header>
+        <nav>
+            <a href="/" hx-get="/" hx-target="#main-content" hx-push-url="true">{{ProjectName}}</a>
+        </nav>
+    </header>
+    <main id="main-content">
+        @RenderBody()
+    </main>
+
+    @await Html.PartialAsync("_ToastContainer")
+    @await RenderSectionAsync("Scripts", required: false)
+    <script src="~/js/swap-events.js" asp-append-version="true"></script>
+</body>
+</html>

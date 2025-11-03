@@ -1,0 +1,9 @@
+@{
+    ViewData["Title"] = "Home";
+}
+
+<h1>{{ProjectName}} (Layered - Multi-Project)</h1>
+<p>Presentation → Application → Infrastructure → Domain</p>
+
+@await Html.PartialAsync("~/Views/Home/_TodoForm.cshtml")
+@await Html.PartialAsync("~/Views/Home/_TodoListContainer.cshtml")

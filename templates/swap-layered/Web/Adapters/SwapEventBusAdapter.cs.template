@@ -1,0 +1,11 @@
+using Swap.Htmx.Events;
+using {{ProjectName}}.Application.Abstractions;
+
+namespace {{ProjectName}}.Web.Adapters;
+
+public class SwapEventBusAdapter : IEventBus
+{
+    private readonly ISwapEventBus _inner;
+    public SwapEventBusAdapter(ISwapEventBus inner) { _inner = inner; }
+    public void Emit(string eventName, object? payload = null) => _inner.Emit(eventName, payload);
+}

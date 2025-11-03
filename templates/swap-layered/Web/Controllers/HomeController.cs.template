@@ -1,0 +1,43 @@
+using Microsoft.AspNetCore.Mvc;
+using {{ProjectName}}.Application.Features.Todos;
+using {{ProjectName}}.Web.Events;
+using Swap.Htmx;
+
+namespace {{ProjectName}}.Web.Controllers;
+
+public class HomeController : SwapController
+{
+    private readonly ITodoService _service;
+    public HomeController(ITodoService service) { _service = service; }
+
+    public IActionResult Index() => SwapView();
+
+    [HttpGet]
+    public async Task<IActionResult> TodoList()
+        => PartialView("_TodoList", await _service.GetAllAsync());
+
+    [HttpPost]
+    public async Task<IActionResult> AddTodo(string title)
+    {
+        if (string.IsNullOrWhiteSpace(title)) return BadRequest();
+        await _service.AddAsync(title);
+        Response.ShowSuccessToast($"Created: {title}");
+        return NoContent();
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> ToggleItem(int id)
+    {
+        var item = await _service.ToggleAsync(id);
+        if (item == null) return NotFound();
+        return PartialView("_TodoItem", item);
+    }
+
+    [HttpDelete]
+    public async Task<IActionResult> DeleteItem(int id)
+    {
+        await _service.DeleteAsync(id);
+        Response.ShowSuccessToast($"Deleted todo #{id}");
+        return Ok();
+    }
+}

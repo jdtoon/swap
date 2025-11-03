@@ -1,0 +1,47 @@
+using {{ProjectName}}.Application.Abstractions;
+using {{ProjectName}}.Domain.Entities;
+using {{ProjectName}}.Domain.Events;
+
+namespace {{ProjectName}}.Application.Features.Todos;
+
+public class TodoService : ITodoService
+{
+    private readonly ITodoRepository _repo;
+    private readonly IEventBus _events;
+
+    public TodoService(ITodoRepository repo, IEventBus events)
+    {
+        _repo = repo;
+        _events = events;
+    }
+
+    public async Task<List<TodoItem>> GetAllAsync(CancellationToken ct = default) => await _repo.GetAllAsync(ct);
+
+    public async Task AddAsync(string title, CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(title)) throw new ArgumentException("Title is required", nameof(title));
+        var todo = new TodoItem { Title = title, IsComplete = false };
+        await _repo.AddAsync(todo, ct);
+        await _repo.SaveChangesAsync(ct);
+    _events.Emit(DomainEvents.TodoCreated, new { id = todo.Id, title = todo.Title });
+    }
+
+    public async Task<TodoItem?> ToggleAsync(int id, CancellationToken ct = default)
+    {
+        var todo = await _repo.FindAsync(id, ct);
+        if (todo == null) return null;
+        todo.IsComplete = !todo.IsComplete;
+        await _repo.SaveChangesAsync(ct);
+    _events.Emit(DomainEvents.TodoToggled, new { id });
+        return todo;
+    }
+
+    public async Task DeleteAsync(int id, CancellationToken ct = default)
+    {
+        var todo = await _repo.FindAsync(id, ct);
+        if (todo == null) return;
+        await _repo.RemoveAsync(todo, ct);
+        await _repo.SaveChangesAsync(ct);
+    _events.Emit(DomainEvents.TodoDeleted, new { id });
+    }
+}

@@ -1,0 +1,24 @@
+# {{ProjectName}} (Layered, Multi-Project)
+
+Solution structure:
+
+- Domain — Entities and domain events (no external deps)
+- Application — Use-case services and abstractions (IEventBus, repositories)
+- Infrastructure — EF Core DbContext and repository implementations
+- Web — ASP.NET Core MVC app, HTMX + Swap.Htmx wiring, event chains, adapters, views
+
+Key points:
+
+- Controllers depend on Application services, not DbContext
+- Application emits domain events via IEventBus; Web adapts to Swap.Htmx
+- UI refresh uses HTMX-native `ui.*` events (see `Web/Events/SwapEventChains.cs`)
+
+Getting started:
+
+1. Configure `Web/appsettings.json` connection string.
+2. Run the Web project (F5 or `dotnet run` from `Web`).
+3. Open `/` and try the Todo demo.
+
+Dev endpoints:
+
+- `/_swap/dev/events` — Event chains dashboard in Development

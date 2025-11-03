@@ -1,0 +1,14 @@
+using Swap.Htmx.Events;
+
+namespace {{ProjectName}}.Web.Events;
+
+public static class SwapEventChains
+{
+    public static void Configure(SwapEventBusOptions events)
+    {
+        events
+            .Chain(EventNames.Domain.TodoCreated, EventNames.Ui.TodoRefreshList, EventNames.Ui.ToastSuccess, EventNames.Ui.StatsRefresh)
+            .Chain(EventNames.Domain.TodoDeleted, EventNames.Ui.ToastSuccess, EventNames.Ui.StatsRefresh)
+            .Chain(EventNames.Domain.TodoToggled, EventNames.Ui.StatsRefresh);
+    }
+}

@@ -1,0 +1,15 @@
+@model TodoItem
+
+<li id="todo-item-@Model.Id">
+  <input type="checkbox"
+         @(Model.IsComplete ? "checked" : "")
+         hx-post="@Url.Action("ToggleItem", new { id = Model.Id })"
+         hx-target="closest li"
+         hx-swap="outerHTML" />
+  <span class="@(Model.IsComplete ? "line-through" : "")">@Model.Title</span>
+  <button type="button"
+          hx-delete="@Url.Action("DeleteItem", new { id = Model.Id })"
+          hx-target="closest li"
+          hx-swap="delete"
+          hx-confirm="Are you sure?">Delete</button>
+</li>

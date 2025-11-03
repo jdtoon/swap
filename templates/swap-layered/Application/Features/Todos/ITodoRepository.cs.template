@@ -1,0 +1,12 @@
+using {{ProjectName}}.Domain.Entities;
+
+namespace {{ProjectName}}.Application.Features.Todos;
+
+public interface ITodoRepository
+{
+    Task<List<TodoItem>> GetAllAsync(CancellationToken ct = default);
+    Task<TodoItem?> FindAsync(int id, CancellationToken ct = default);
+    Task AddAsync(TodoItem item, CancellationToken ct = default);
+    Task RemoveAsync(TodoItem item, CancellationToken ct = default);
+    Task SaveChangesAsync(CancellationToken ct = default);
+}

@@ -1,0 +1,7 @@
+<div id="todo-list-container"
+     hx-get="/Home/TodoList"
+     hx-trigger="load, ui.todo.refreshList from:body"
+     hx-target="this"
+     hx-swap="innerHTML">
+  <div>Loading todos...</div>
+</div>

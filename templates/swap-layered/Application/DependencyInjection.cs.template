@@ -1,0 +1,15 @@
+using Microsoft.Extensions.DependencyInjection;
+using {{ProjectName}}.Application.Abstractions;
+using {{ProjectName}}.Application.Features.Todos;
+
+namespace {{ProjectName}}.Application;
+
+public static class DependencyInjection
+{
+    public static IServiceCollection AddApplication(this IServiceCollection services)
+    {
+        services.AddScoped<ITodoService, TodoService>();
+        // IEventBus is provided by Web via adapter; no registration here
+        return services;
+    }
+}

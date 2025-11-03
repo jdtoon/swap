@@ -1,0 +1,8 @@
+namespace {{ProjectName}}.Domain.Events;
+
+public static class DomainEvents
+{
+    public const string TodoCreated = "todo.created";
+    public const string TodoDeleted = "todo.deleted";
+    public const string TodoToggled = "todo.toggled";
+}

@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.10" />
+{{#if_sqlite}}
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="9.0.10" />
+{{/if_sqlite}}
+{{#if_sqlserver}}
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="9.0.10" />
+{{/if_sqlserver}}
+{{#if_postgres}}
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.4" />
+{{/if_postgres}}
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Application\{{ProjectName}}.Application.csproj" />
+    <ProjectReference Include="..\Domain\{{ProjectName}}.Domain.csproj" />
+  </ItemGroup>
+</Project>
