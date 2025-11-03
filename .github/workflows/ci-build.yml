@@ -47,6 +47,20 @@ jobs:
     - name: Restore dependencies
       run: dotnet restore
     
+    # Frontend toolchain for Tailwind/DaisyUI CSS build in demo apps
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20.x'
+
+    - name: Install frontend deps (EventSystemIT)
+      run: npm ci
+      working-directory: demo/EventSystemIT
+
+    - name: Install frontend deps (MonolithDemo)
+      run: npm ci
+      working-directory: demo/MonolithDemo
+
     - name: Build
       run: dotnet build --configuration Release --no-restore
     
