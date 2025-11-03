@@ -5,12 +5,9 @@
     const container = document.getElementById('toast-container');
     if (!container) return;
     const toast = document.createElement('div');
-    toast.style.padding = '8px 12px';
-    toast.style.margin = '8px';
-    toast.style.border = '1px solid #ccc';
-    toast.style.background = '#f6f6f6';
+    toast.className = 'toast toast-' + (detail.type || 'info');
     toast.textContent = detail.message || 'Operation completed';
     container.appendChild(toast);
-    setTimeout(() => toast.remove(), 3000);
+    setTimeout(() => toast.remove(), 3500);
   });
 </script>

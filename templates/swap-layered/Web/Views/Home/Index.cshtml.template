@@ -2,8 +2,15 @@
     ViewData["Title"] = "Home";
 }
 
-<h1>{{ProjectName}} (Layered - Multi-Project)</h1>
-<p>Presentation → Application → Infrastructure → Domain</p>
+<div class="hero bg-base-200 rounded-lg p-8 mb-8">
+  <div class="hero-content text-center">
+    <div class="max-w-md">
+      <h1 class="text-5xl font-bold">Welcome to {{ProjectName}}!</h1>
+      <p class="py-6">Layered solution with Swap + HTMX + DaisyUI.</p>
+      <div class="badge badge-primary">HTMX Powered</div>
+    </div>
+  </div>
+  </div>
 
 @await Html.PartialAsync("~/Views/Home/_TodoForm.cshtml")
 @await Html.PartialAsync("~/Views/Home/_TodoListContainer.cshtml")

@@ -10,7 +10,6 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
-        // DbContext
         {{#if_sqlite}}
         services.AddDbContext<AppDbContext>(options =>
             options.UseSqlite(configuration.GetConnectionString("DefaultConnection")));
@@ -24,9 +23,7 @@ public static class DependencyInjection
             options.UseNpgsql(configuration.GetConnectionString("DefaultConnection")));
         {{/if_postgres}}
 
-        // Repositories
         services.AddScoped<ITodoRepository, TodoRepository>();
-
         return services;
     }
 }

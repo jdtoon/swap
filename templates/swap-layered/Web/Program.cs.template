@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using Swap.Htmx;
 using Swap.Htmx.Dev;
 using {{ProjectName}}.Application;
@@ -18,7 +17,6 @@ builder.Services.AddSwapHtmx(events =>
     SwapEventChains.Configure(events);
 });
 
-// Session support (optional but handy)
 builder.Services.AddDistributedMemoryCache();
 builder.Services.AddSession(options =>
 {
@@ -27,11 +25,8 @@ builder.Services.AddSession(options =>
     options.Cookie.IsEssential = true;
 });
 
-// Layered DI
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
-
-// Bind application-level IEventBus to Swap.Htmx adapter
 builder.Services.AddScoped<IEventBus, SwapEventBusAdapter>();
 
 var app = builder.Build();
@@ -44,14 +39,10 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseStaticFiles();
-
 app.UseRouting();
-
 app.UseSwapHtmxShell();
 app.UseSwapHtmx();
-
 app.UseSession();
-
 app.UseAuthorization();
 
 app.MapControllerRoute(

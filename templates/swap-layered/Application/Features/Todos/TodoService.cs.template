@@ -23,7 +23,7 @@ public class TodoService : ITodoService
         var todo = new TodoItem { Title = title, IsComplete = false };
         await _repo.AddAsync(todo, ct);
         await _repo.SaveChangesAsync(ct);
-    _events.Emit(DomainEvents.TodoCreated, new { id = todo.Id, title = todo.Title });
+        _events.Emit(DomainEvents.TodoCreated, new { id = todo.Id, title = todo.Title });
     }
 
     public async Task<TodoItem?> ToggleAsync(int id, CancellationToken ct = default)
@@ -32,7 +32,7 @@ public class TodoService : ITodoService
         if (todo == null) return null;
         todo.IsComplete = !todo.IsComplete;
         await _repo.SaveChangesAsync(ct);
-    _events.Emit(DomainEvents.TodoToggled, new { id });
+        _events.Emit(DomainEvents.TodoToggled, new { id });
         return todo;
     }
 
@@ -42,6 +42,6 @@ public class TodoService : ITodoService
         if (todo == null) return;
         await _repo.RemoveAsync(todo, ct);
         await _repo.SaveChangesAsync(ct);
-    _events.Emit(DomainEvents.TodoDeleted, new { id });
+        _events.Emit(DomainEvents.TodoDeleted, new { id });
     }
 }

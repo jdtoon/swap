@@ -1,3 +1,19 @@
+# {{ProjectName}} (Layered Solution)
+
+This solution uses four projects:
+
+- Domain — Entities + domain events (no external deps)
+- Application — Use-case services, repository abstractions, IEventBus abstraction
+- Infrastructure — EF Core DbContext + repository implementations
+- Web — ASP.NET Core MVC app with HTMX + Swap.Htmx wiring, event chains, adapters, views
+
+Dev stack and tooling mirrors `swap-monolith`:
+
+- HTMX via LibMan (see `Web/libman.json`)
+- Tailwind + DaisyUI via NPM (see `Web/package.json`)
+- Docker + Compose for containerized runs (see `Web/Dockerfile`, `Web/docker-compose.yml`)
+
+See `Web/README.md` for run instructions.
 # {{ProjectName}} (Layered, Multi-Project)
 
 Solution structure:

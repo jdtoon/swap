@@ -1,4 +1,10 @@
-<form hx-post="/Home/AddTodo" hx-on::after-request="this.reset()">
-  <input type="text" name="title" placeholder="What needs to be done?" required />
-  <button type="submit">Add</button>
+<form hx-post="/Home/AddTodo"
+      hx-on::after-request="this.reset()"
+      class="flex gap-2 mb-4">
+  <input type="text"
+         name="title"
+         placeholder="What needs to be done?"
+         class="input input-bordered flex-1"
+         required />
+  <button type="submit" class="btn btn-primary">Add</button>
 </form>
