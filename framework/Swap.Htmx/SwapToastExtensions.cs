@@ -31,17 +31,32 @@ public static class SwapToastExtensions
         if (response.Headers.ContainsKey("HX-Trigger"))
         {
             var existingTrigger = response.Headers["HX-Trigger"].ToString();
-            
+
             // If it's already a JSON object, merge in showToast
-            if (existingTrigger.StartsWith("{"))
+            if (existingTrigger.TrimStart().StartsWith("{"))
             {
                 existingTrigger = existingTrigger.TrimEnd('}');
                 response.Headers["HX-Trigger"] = $"{existingTrigger}, \"showToast\": {toastJson}}}";
             }
             else
             {
-                // Simple event name, convert to JSON object
-                response.Headers["HX-Trigger"] = $"{{\"{existingTrigger}\": null, \"showToast\": {toastJson}}}";
+                // Comma-separated event names → convert to JSON object with each key
+                var names = existingTrigger
+                    .Split(',')
+                    .Select(s => s.Trim())
+                    .Where(s => !string.IsNullOrWhiteSpace(s))
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .ToArray();
+
+                var keysJson = names.Length == 0
+                    ? string.Empty
+                    : string.Join(", ", names.Select(n => $"\"{n}\": null"));
+
+                var merged = string.IsNullOrEmpty(keysJson)
+                    ? $"{{\"showToast\": {toastJson}}}"
+                    : $"{{{keysJson}, \"showToast\": {toastJson}}}";
+
+                response.Headers["HX-Trigger"] = merged;
             }
         }
         else

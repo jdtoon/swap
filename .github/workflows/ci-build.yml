@@ -13,7 +13,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     
-    - name: Remove local NuGet source for CI
+    - name: Configure NuGet sources for CI
       run: |
         cat > nuget.config << 'EOF'
         <?xml version="1.0" encoding="utf-8"?>
@@ -21,6 +21,7 @@ jobs:
           <packageSources>
             <clear />
             <add key="nuget.org" value="https://api.nuget.org/v3/index.json" protocolVersion="3" />
+            <add key="local" value=".nuget/local" />
           </packageSources>
         </configuration>
         EOF
@@ -29,21 +30,32 @@ jobs:
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: '9.0.x'
+
+    - name: Prepare local feed directory
+      run: |
+        mkdir -p .nuget/local
+        echo "Prepared local NuGet feed at .nuget/local"
+
+    - name: Pack framework packages to local feed
+      run: |
+        dotnet pack framework/Swap.Htmx/Swap.Htmx.csproj --configuration Release --output ./.nuget/local
+        dotnet pack framework/Swap.Patterns/Swap.Patterns.csproj --configuration Release --output ./.nuget/local
+        dotnet pack framework/Swap.Testing/Swap.Testing.csproj --configuration Release --output ./.nuget/local
+      env:
+        DOTNET_NUGET_SIGNATURE_VERIFICATION: false
     
     - name: Restore dependencies
       run: dotnet restore
-    
+
     - name: Build
       run: dotnet build --configuration Release --no-restore
     
     - name: Run tests
       run: dotnet test --configuration Release --no-restore --verbosity normal
-    
-    - name: Pack CLI
-      run: dotnet pack tools/Swap.CLI/Swap.CLI.csproj --configuration Release --no-restore --output ./nupkg
 
-    - name: Pack Patterns
-      run: dotnet pack framework/Swap.Patterns/Swap.Patterns.csproj --configuration Release --no-restore --output ./nupkg
-
-    - name: Pack Testing
-      run: dotnet pack framework/Swap.Testing/Swap.Testing.csproj --configuration Release --no-restore --output ./nupkg
+    - name: Pack packages (artifacts)
+      run: |
+        dotnet pack framework/Swap.Htmx/Swap.Htmx.csproj --configuration Release --no-restore --output ./nupkg
+        dotnet pack framework/Swap.Patterns/Swap.Patterns.csproj --configuration Release --no-restore --output ./nupkg
+        dotnet pack framework/Swap.Testing/Swap.Testing.csproj --configuration Release --no-restore --output ./nupkg
+        dotnet pack tools/Swap.CLI/Swap.CLI.csproj --configuration Release --no-restore --output ./nupkg

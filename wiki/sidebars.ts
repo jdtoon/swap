@@ -37,6 +37,7 @@ const sidebars: SidebarsConfig = {
         'cli/generate-pattern',
         'cli/generate-auth',
         'cli/generate-htmx-shell',
+        'cli/events',
         'cli/generate-test',
         'cli/generate-factory',
         'cli/seeders',
@@ -48,6 +49,7 @@ const sidebars: SidebarsConfig = {
       type: 'category',
       label: 'Features',
       items: [
+        'features/event-system',
         'features/relationships',
         'features/patterns',
         'features/testing-framework',

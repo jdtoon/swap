@@ -51,6 +51,20 @@ templates/
 - `{{UseLocalNuget}}` - true/false for local NuGet feed
 
 ### 2. Generate Templates (`generate/`)
+### 3. Swap Monolith Template (`swap-monolith/`)
+
+Used by: planned `swap new <ProjectName> --template swap-monolith`
+
+Purpose: Same as Monolith, but with the Event System fully wired out-of-the-box.
+
+Adds:
+- `Events/SwapEventChains.cs` with sensible default chains (use `EventNames.*` constants like `EventNames.Ui.RefreshList`, `EventNames.Ui.ToastSuccess`)
+- `Program.cs` registers both `UseSwapHtmxShell()` and `UseSwapHtmx()` and calls `AddSwapHtmx(opts => SwapEventChains.Configure(opts))`
+
+Notes:
+- The CLI will gain a `--template` switch to choose between `monolith` and `swap-monolith`.
+- Existing `monolith` remains unchanged for parity and minimalism; `swap-monolith` is the DX-forward option.
+
 
 **Used by:** `swap generate <type>` commands
 

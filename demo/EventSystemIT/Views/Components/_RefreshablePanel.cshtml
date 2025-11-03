@@ -1,0 +1,17 @@
+@model EventSystemIT.Dtos.RefreshablePanelModel
+<div class="card bg-base-200 shadow mb-4" data-component>
+  <div class="card-body">
+    <div class="flex items-center justify-between">
+      <h3 class="card-title">@Model.Title</h3>
+    </div>
+    <div hx-get="@Model.ContentUrl"
+         hx-trigger="load, @Model.EventName from:body"
+         hx-target="this"
+         hx-swap="innerHTML">
+      <div class="flex items-center justify-center py-4">
+        <span class="loading loading-spinner loading-md"></span>
+        <span class="ml-2">Loading...</span>
+      </div>
+    </div>
+  </div>
+  </div>

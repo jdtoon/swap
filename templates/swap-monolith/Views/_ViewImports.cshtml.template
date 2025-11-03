@@ -1,0 +1,4 @@
+@using {{ProjectName}}
+@using {{ProjectName}}.Models
+@using {{ProjectName}}.Dtos
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers

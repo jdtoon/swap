@@ -28,5 +28,6 @@ rootCommand.AddCommand(GenerateCommand.Create());
 rootCommand.AddCommand(DatabaseCommand.Create());
 rootCommand.AddCommand(DoctorCommand.Create());
 rootCommand.AddCommand(ListCommand.Create());
+rootCommand.AddCommand(EventsCommand.Create());
 
 return await rootCommand.InvokeAsync(args);

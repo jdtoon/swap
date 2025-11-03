@@ -30,12 +30,18 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add MVC and Swap.Htmx
 builder.Services.AddControllersWithViews();
-builder.Services.AddSwapHtmx();
+builder.Services.AddSwapHtmx(events =>
+{
+    // Example chain: when a product is created, refresh any list listening
+    events.Chain(Swap.Htmx.Events.SwapEvents.Entity.Created("product"),
+                 Swap.Htmx.Events.SwapEvents.UI.RefreshList);
+});
 
 var app = builder.Build();
 
 // Add middleware (after UseRouting, before MapControllers)
 app.UseRouting();
+app.UseSwapHtmx();       // Event context + response header builder
 app.UseSwapHtmxShell(); // Enforces partial responses for HTMX requests
 
 app.MapControllerRoute(
@@ -55,11 +61,13 @@ using Swap.Htmx;
 
 public class ArticlesController : SwapController
 {
+    private readonly Swap.Htmx.Events.ISwapEventBus _events;
     private readonly AppDbContext _context;
 
-    public ArticlesController(AppDbContext context)
+    public ArticlesController(AppDbContext context, Swap.Htmx.Events.ISwapEventBus events)
     {
         _context = context;
+        _events = events;
     }
 
     public async Task<IActionResult> Index()
@@ -84,8 +92,7 @@ public class ArticlesController : SwapController
 
         _context.Articles.Add(article);
         await _context.SaveChangesAsync();
-
-        Response.HxTrigger("articleCreated"); // Trigger client-side event
+        await _events.EmitAsync(Swap.Htmx.Events.SwapEvents.Entity.Created("article"), new { id = article.Id });
         return SwapView("Details", article);
     }
 }
@@ -161,6 +168,66 @@ public class ArticlesController : SwapController
 ```
 
 ## How It Works
+### Event System (Filtered + Chained)
+
+Swap.Htmx includes a minimal event bus that:
+- Captures events you emit in controllers during a request
+- Resolves configured chains (e.g., product.created → ui.refreshList)
+- Filters to active client subscriptions from `X-Swap-Events`
+- Builds an `HX-Trigger` header automatically at response time
+
+Usage recap:
+- Register: `builder.Services.AddSwapHtmx(opts => opts.Chain("product.created", "ui.refreshList"));`
+- Middleware: `app.UseSwapHtmx();`
+- Emit in controller: `await _events.EmitAsync(SwapEvents.Entity.Created("product"), new { id });`
+
+Client side, ensure your components declare the events they listen to and send the `X-Swap-Events` header with active subscriptions (a small helper script can do this automatically; see docs). If the header is missing, no filtering occurs and all emitted+chained events are sent.
+
+#### Chain resolution modes
+
+You can control how chains expand at runtime via an enum on options. Default is safest.
+
+```csharp
+builder.Services.AddSwapHtmx(opts =>
+{
+    // Chains
+    opts.Chain("todo.created", "ui.todo.refreshList", "ui.stats.refresh");
+
+    // Resolution defaults to OneHop (immediate children only)
+    opts.ResolutionMode = Swap.Htmx.Events.ChainResolutionMode.OneHop; // default
+
+    // Other strategies:
+    // opts.ResolutionMode = ChainResolutionMode.Bidirectional; // reverse one-hop (Y emits X when X->Y configured)
+    // opts.ResolutionMode = ChainResolutionMode.Transitive;    // expand breadth-first up to MaxTransitiveDepth
+    // opts.MaxTransitiveDepth = 2; // depth limit when Transitive
+});
+```
+
+Semantics:
+- OneHop: A → {B,C} means emitting A includes B and C only.
+- Bidirectional: A → B means emitting A includes B, and emitting B also includes A (one hop each way).
+- Transitive: A → B → C expands along edges up to the configured depth (depth=1 equals OneHop).
+
+Guardrails: `Validate()` checks for invalid names and cycles at startup (Development), regardless of mode.
+
+
+#### Client helper (swap-events.js)
+
+If you used the monolith template, include `/wwwroot/js/swap-events.js`. Otherwise, copy it from `templates/monolith/wwwroot/js/swap-events.js.template` into your app (rename to `swap-events.js`) and add it to your layout:
+
+```html
+<script src="/js/swap-events.js"></script>
+<script>
+    // Opt-in to events you care about on this page
+    SwapEvents.activate('ui.refreshList');
+    // Later: SwapEvents.deactivate('ui.refreshList');
+    // Advanced: SwapEvents.set(['ui.refreshList', 'ui.showToast']);
+    // Inspect current: SwapEvents.list()
+    // Clear all: SwapEvents.clear()
+    // The script will automatically set X-Swap-Events on HTMX requests.
+    </script>
+```
+
 
 ### Automatic Page/Partial Detection
 

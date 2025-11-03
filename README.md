@@ -2,7 +2,7 @@
 
 [![GitHub License](https://img.shields.io/github/license/jdtoon/swap)](LICENSE)
 [![.NET Version](https://img.shields.io/badge/.NET-9.0-512BD4?logo=dotnet)](https://dotnet.microsoft.com/download)
-[![NuGet](https://img.shields.io/badge/NuGet-v0.1.0-blue?logo=nuget)](https://www.nuget.org/packages/Swap.CLI)
+[![NuGet](https://img.shields.io/badge/NuGet-v0.3.0-blue?logo=nuget)](https://www.nuget.org/packages/Swap.CLI)
 [![GitHub Stars](https://img.shields.io/github/stars/jdtoon/swap?style=social)](https://github.com/jdtoon/swap/stargazers)
 
 **Generate production-ready ASP.NET Core + HTMX applications with beautiful DaisyUI components.**
@@ -60,14 +60,15 @@ swap --version
 swap new MyApp
 cd MyApp
 
-# Apply migrations and run
-dotnet ef database update
+# Run the app (migrations auto-apply on startup in Development)
 dotnet run
 ```
 
 Visit `http://localhost:5000` - Your HTMX-powered application is running! 🎉
 
-**Note:** The CLI automatically runs `npm install`, `libman restore`, and `npm run build:css` during project creation.
+**Notes:**
+- The CLI automatically runs `npm install`, `libman restore`, and `npm run build:css` during project creation.
+- Templates auto-apply EF Core migrations on startup in Development. In CI/production, you decide when to apply migrations.
 
 ### Generate Your First CRUD
 
@@ -83,7 +84,7 @@ Visit `http://localhost:5000/Product` - Full CRUD with pagination, search, sorti
 
 **No manual file creation. No boilerplate. Just CLI commands and business logic.**
 
-### Add Relationships (v0.2.0)
+### Add Relationships
 
 ```bash
 # Create related entities
@@ -337,6 +338,7 @@ swap new MyApp --local-nuget
 
 **Options:**
 - `--database` or `-d` - Database provider: `sqlite` (default), `sqlserver`, `postgres`
+- `--template` - Project template: `swap-monolith` (recommended), `monolith`
 - `--output` or `-o` - Output directory (default: `./{name}`)
 - `--skip-setup` - Skip prerequisites check, npm/libman steps, and initial migration (useful for CI/tests)
 - `--local-nuget` - Use local NuGet feed for Swap packages (for framework development only)
@@ -354,6 +356,25 @@ swap new MyApp --local-nuget
 - **.dockerignore** optimized for ASP.NET Core
 - Ready to run with `dotnet run` or `docker-compose up`
 
+To start with the Event System fully wired, use the DX-forward template:
+
+```bash
+# Recommended: event system + demos + dev dashboard
+swap new MyApp --template swap-monolith
+
+# Classic monolith
+swap new MyApp --template monolith
+```
+
+If you choose `--template swap-monolith` you also get:
+- Event system wired in Program.cs via `AddSwapHtmx(...)` + `UseSwapHtmx()`
+- Central event chains file at `Events/SwapEventChains.cs`
+- Dev dashboard endpoints (Development only):
+  - `/_swap/dev/events` (HTML dashboard with Mermaid graph)
+  - `/_swap/dev/events.json` (chains JSON)
+  - `/_swap/dev/events.meta.json` (resolution mode/depth)
+  - `/_swap/dev/explain.json?event=...` (server-side resolution preview)
+
 **HTMX Navigation:**
 
 All new projects are configured for HTMX-first navigation:
@@ -363,7 +384,7 @@ All new projects are configured for HTMX-first navigation:
 - Partials are returned for HTMX requests (via `HX-Request` header detection)
 - Controllers check `Request.Headers.ContainsKey("HX-Request")` to return partial vs full views
 
-> **Note:** For advanced HTMX debugging, consider adding the [Swap.Htmx](https://www.nuget.org/packages/Swap.Htmx) package which includes `SwapHtmxShellMiddleware` to enforce partial-only responses in development.
+> **Note:** For advanced HTMX debugging, consider adding the [Swap.Htmx](https://www.nuget.org/packages/Swap.Htmx) package which includes `SwapHtmxShellMiddleware` to enforce partial-only responses in development. The `swap-monolith` template already includes Swap.Htmx and the event system wiring out-of-the-box.
 
 **Docker Features:**
 - Multi-stage build optimized for production
@@ -374,6 +395,31 @@ All new projects are configured for HTMX-first navigation:
 - Data protection keys configured for containers
 
 ### `swap generate controller <name> --fields <fields>`
+### Event System Tooling
+
+Inspect, validate, and visualize your event chains from source or a running app.
+
+```bash
+# List events and chains from source
+swap events list -p .
+
+# Read chains from a running dev app
+swap events from-server --url http://localhost:5000
+
+# Validate names and detect cycles (non-zero exit on failures)
+swap events validate -p .
+
+# Output a graph (Mermaid or DOT)
+swap events graph -p . --format mermaid
+swap events graph -p . --format dot --output chains.dot
+```
+
+Dev dashboard (Development only):
+- `/_swap/dev/events` – HTML dashboard with chains table and Mermaid graph
+- `/_swap/dev/events.json` – chains JSON
+- `/_swap/dev/events.meta.json` – current resolution mode/depth
+- `/_swap/dev/explain.json?event=...` – server-side resolution preview under the current mode
+
 
 Generate a complete CRUD controller with all features.
 

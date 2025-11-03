@@ -11,6 +11,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.3.0] - 2025-11-03
+
+### Added - HTMX-Native Event System (Foundation)
+- Server-side event bus with chain resolution and client filtering via X-Swap-Events
+- Resolution modes with safe default: `ChainResolutionMode`
+  - `OneHop` (default), `Bidirectional`, `Transitive` (with `MaxTransitiveDepth`)
+- Development endpoints (Development only):
+  - `/_swap/dev/events` (HTML dashboard with chains table and Mermaid graph)
+  - `/_swap/dev/events.json` (chains JSON)
+  - `/_swap/dev/events.meta.json` (mode/depth meta)
+  - `/_swap/dev/explain.json?event=...` (server-side resolution under current mode)
+- CLI event commands:
+  - `swap events list` (source scan with constants resolution)
+  - `swap events from-server` (read live chains from dev endpoint)
+  - `swap events validate` (naming + cycle checks with exit codes)
+  - `swap events graph` (Mermaid/DOT output)
+
+### Fixed - Dev Dashboard
+- Mermaid graph now renders properly (no HTML encoding of graph text)
+- Distinct edge counting in summary and table; de-duplicated edges in graph output
+- Explain section includes clear legend about server-side resolution vs client filtering
+
+### Changed - Templates
+- `swap-monolith` and classic `monolith` templates reference the event system by default
+- Both templates updated to reference Swap packages at `0.3.0`
+
+### Changed - Package Versions
+- Swap.CLI: 0.2.0-dev → 0.3.0 (Assembly/FileVersion: 0.3.0.0)
+- Swap.Htmx: 0.2.0-dev → 0.3.0
+- Swap.Patterns: 0.2.0-dev → 0.3.0
+- Swap.Testing: 0.2.0-dev → 0.3.0
+
+### Validated
+- 55 new/updated tests cover event resolution modes, filtering, and edge cases
+- Manual validation of dev dashboard endpoints and CLI event commands
+
+---
+
 ## [0.2.0-dev] - 2025-11-01
 
 ### 🎉 Relationship Auto-Wiring Complete

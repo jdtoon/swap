@@ -91,6 +91,9 @@ Historical test run summaries from earlier development phases.
 docs/
 ├── CONTAINER-ARCHITECTURE.md  ← Foundational HTMX pattern
 ├── DEVELOPER-EXPERIENCE.md    ← DX philosophy
+├── event-system/              ← Event system reference and CLI plan
+│   ├── README.md              ← Authoritative reference & usage
+│   └── CLI-INTEGRATION.md     ← DX/CLI integration plan
 ├── PROJECT-SYNOPSIS.md         ← Project overview
 ├── THE-PRODUCT.md              ← Product vision
 ├── VERSION-0.2.0-PLAN.md       ← Current roadmap
@@ -104,6 +107,7 @@ These documents are actively maintained:
 - ✅ `VERSION-0.2.0-PLAN.md` - Updated as we progress
 - ✅ `CONTAINER-ARCHITECTURE.md` - Core pattern reference
 - ✅ `DEVELOPER-EXPERIENCE.md` - Evolving best practices
+- ✅ `event-system/README.md` - Event system reference
 
 ### Reference Documents
 These documents are historical but valuable:
@@ -122,6 +126,7 @@ For complete project documentation:
    - [framework/Swap.Htmx/README.md](../framework/Swap.Htmx/README.md)
    - [framework/Swap.Patterns/README.md](../framework/Swap.Patterns/README.md)
    - [framework/Swap.Testing/README.md](../framework/Swap.Testing/README.md)
+    - [docs/event-system/README.md](./event-system/README.md)
 5. **Contributing** → [CONTRIBUTING.md](../CONTRIBUTING.md)
 6. **Changelog** → [CHANGELOG.md](../CHANGELOG.md)
 7. **Wiki** → [wiki/](../wiki/) (Docusaurus site)

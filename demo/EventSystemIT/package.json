@@ -1,0 +1,13 @@
+{
+  "name": "eventsystemit",
+  "version": "1.0.0",
+  "description": "EventSystemIT - Built with Swap",
+  "scripts": {
+    "build:css": "tailwindcss -i ./wwwroot/css/app.css -o ./wwwroot/css/app.min.css --minify",
+    "watch:css": "tailwindcss -i ./wwwroot/css/app.css -o ./wwwroot/css/app.min.css --watch"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.4.1",
+    "daisyui": "^4.12.14"
+  }
+}

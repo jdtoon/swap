@@ -19,6 +19,7 @@ swap new <name> [options]
 - `--output <path>` or `-o` - Output directory (default: `./{name}`)
 - `--skip-setup` - Skip prerequisites check, npm/libman steps, and initial migration (useful for CI/tests)
 - `--local-nuget` - Use local NuGet feed for Swap packages (for framework development only)
+ - `--template <name>` - Choose template; `swap-monolith` wires the Event System (chains, middleware, dev endpoints)
 
 ## Description
 
@@ -34,7 +35,7 @@ Generates a production-ready ASP.NET Core MVC project with:
 - **Auto-migrations** that run on startup
 - **Production-ready patterns** from real applications
 
-### HTMX Shell Middleware
+### HTMX Shell Middleware + Event System (swap-monolith template)
 
 The HTMX shell middleware is available as an **optional** feature via the `Swap.Htmx` NuGet package or can be generated directly into your project with `swap generate htmx-shell`.
 
@@ -44,7 +45,7 @@ The HTMX shell middleware is available as an **optional** feature via the `Swap.
 - Throws exception with view name if full page detected (development aid)
 - Helps catch layout rendering bugs early
 
-**Already included:** The middleware is automatically wired via `Swap.Htmx` package and `app.UseSwapHtmxShell()` in `Program.cs`.
+**Already included:** In the `swap-monolith` template, the Event System is fully wired with `AddSwapHtmx(...)`, `UseSwapHtmxShell()`, and `UseSwapHtmx()`; dev endpoints at `/_swap/dev/events(.json)` map only in Development.
 
 **Customization:** If you need to customize the middleware behavior, you can generate a local copy with `swap generate htmx-shell` and modify the allowlist.
 
