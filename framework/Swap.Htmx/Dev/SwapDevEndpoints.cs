@@ -91,25 +91,28 @@ public static class SwapDevEndpoints
         sb.AppendLine($"<p class=\"muted\">ResolutionMode: <code>{enc.Encode(options.ResolutionMode.ToString())}</code> · MaxTransitiveDepth: <code>{options.MaxTransitiveDepth}</code></p>");
         sb.AppendLine("<p class=\"muted\">This page reflects the currently configured event chains. It updates automatically when you change chains and refresh.</p>");
 
-        // Summary
-        var edgeCount = chains.Sum(kv => kv.Value.Count);
+        // Summary (dedupe duplicate edges per trigger)
+        var edgeCount = chains.Sum(kv => kv.Value
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Count());
         sb.AppendLine($"<div class=\"grid\"><div class=\"card\"><div><strong>Triggers</strong></div><div>{chains.Count}</div></div>" +
                       $"<div class=\"card\"><div><strong>Edges</strong></div><div>{edgeCount}</div></div>" +
                       $"<div class=\"card\"><div><strong>Endpoints</strong></div><div><a href=\"/_swap/dev/events.json\">events.json</a> · <a href=\"/_swap/dev/events.meta.json\">events.meta.json</a></div></div></div>");
 
-        // Table view
+        // Table view (show distinct chained events per trigger)
         sb.AppendLine("<h2>Chains</h2>");
         sb.AppendLine("<table><thead><tr><th>Trigger</th><th>Chained events</th></tr></thead><tbody>");
         foreach (var (trigger, nexts) in chains.OrderBy(k => k.Key))
         {
             sb.Append("<tr><td><code>").Append(enc.Encode(trigger)).Append("</code></td><td>");
-            if (nexts.Count == 0)
+            var distinctNexts = nexts.Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+            if (distinctNexts.Count == 0)
             {
                 sb.Append("<span class=\"muted\">(none)</span>");
             }
             else
             {
-                foreach (var n in nexts.OrderBy(s => s))
+                foreach (var n in distinctNexts.OrderBy(s => s))
                 {
                     sb.Append("<span class=\"pill\"><code>").Append(enc.Encode(n)).Append("</code></span>");
                 }
@@ -118,13 +121,15 @@ public static class SwapDevEndpoints
         }
         sb.AppendLine("</tbody></table>");
 
-        // Mermaid graph
+        // Mermaid graph (do not HTML-encode the graph text; Mermaid expects raw syntax)
         var mermaid = BuildMermaid(chains);
         sb.AppendLine("<div class=\"section\"><h2>Graph</h2>");
-        sb.Append("<pre class=\"mermaid\">\n").Append(enc.Encode(mermaid)).AppendLine("\n</pre></div>");
+        sb.Append("<div class=\"mermaid\">\n").Append(mermaid).AppendLine("\n</div></div>");
 
-        // Explain form
-        sb.AppendLine("<div class=\"section\"><h2>Explain</h2><div class=\"row\"><input id=\"ev\" placeholder=\"event name e.g. todo.created\" style=\"width:340px;padding:6px;border:1px solid #ccc;border-radius:6px\"/><button id=\"btn\" style=\"padding:6px 10px\">Resolve</button><span class=\"muted\">under current mode/depth</span></div><div id=\"out\" class=\"section\"></div></div>");
+    // Explain form + legend
+    sb.AppendLine("<div class=\"section\"><h2>Explain</h2>"
+        + "<p class=\"muted\">Explains server-side resolution for a single event under the current ResolutionMode/MaxTransitiveDepth. Actual runtime still filters by client subscriptions (hx-trigger on the page). Use this to understand what the server would emit before client-side filtering.</p>"
+        + "<div class=\"row\"><input id=\"ev\" placeholder=\"event name e.g. todo.created\" style=\"width:340px;padding:6px;border:1px solid #ccc;border-radius:6px\"/><button id=\"btn\" style=\"padding:6px 10px\">Resolve</button><span class=\"muted\">under current mode/depth</span></div><div id=\"out\" class=\"section\"></div></div>");
         sb.AppendLine("<script>document.getElementById('btn').addEventListener('click',async()=>{const ev=document.getElementById('ev').value; if(!ev) return; const res=await fetch('/_swap/dev/explain.json?event='+encodeURIComponent(ev)); const data=await res.json(); const out=document.getElementById('out'); if(data.error){out.innerHTML='<span style=\\'color:red\\'>'+data.error+'</span>';return;} out.innerHTML='<div><strong>Resolved ('+data.resolved.length+')</strong></div>'+data.resolved.map(e=>'\n<span class=\\'pill\\'><code>'+e+'</code></span>').join('');});</script>");
 
         sb.AppendLine("<p class=\"muted\">JSON: <a href=\"/_swap/dev/events.json\">/_swap/dev/events.json</a> · Meta: <a href=\"/_swap/dev/events.meta.json\">/_swap/dev/events.meta.json</a> · Explain: <code>/_swap/dev/explain.json?event=...</code></p>");
@@ -179,12 +184,17 @@ public static class SwapDevEndpoints
     {
         var sb = new StringBuilder();
         sb.AppendLine("graph LR");
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach (var kv in chains.OrderBy(k=>k.Key))
         {
-            foreach (var n in kv.Value.OrderBy(x=>x))
+            foreach (var n in kv.Value.Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(x=>x))
             {
-                // Quote in case of dots
-                sb.AppendLine($"\"{kv.Key}\" --> \"{n}\"");
+                // Deduplicate identical edges and quote labels (dots allowed)
+                var key = $"{kv.Key}=>{n}".ToLowerInvariant();
+                if (seen.Add(key))
+                {
+                    sb.AppendLine($"\"{kv.Key}\" --> \"{n}\"");
+                }
             }
         }
         return sb.ToString();
