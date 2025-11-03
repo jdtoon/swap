@@ -1,4 +1,4 @@
-@model List<{{ProjectName}}.Domain.Entities.TodoItem>
+@model List<{{ProjectName}}.Application.Dtos.TodoItemDto>
 <form hx-post="/Demo/BulkComplete" hx-target="#bulk-list">
   <div class="overflow-x-auto">
     <table class="table">
@@ -11,7 +11,7 @@
         </tr>
       </thead>
       <tbody>
-      @foreach (var t in Model)
+  @foreach (var t in Model)
       {
         <tr>
           <td>

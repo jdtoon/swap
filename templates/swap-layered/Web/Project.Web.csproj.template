@@ -11,9 +11,10 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Application\{{ProjectName}}.Application.csproj" />
+    <ProjectReference Include="..\Infrastructure\{{ProjectName}}.Infrastructure.csproj" />
   </ItemGroup>
 
-  <Target Name="BuildCSS" BeforeTargets="Compile">
+  <Target Name="BuildCSS" BeforeTargets="Compile" Condition="Exists('package.json') and Exists('node_modules')">
     <Exec Command="npm run build:css" />
   </Target>
 </Project>

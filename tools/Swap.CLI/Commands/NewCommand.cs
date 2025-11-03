@@ -494,23 +494,36 @@ public class HtmxShellMiddleware
         foreach (var file in Directory.GetFiles(sourcePath, "*.template", SearchOption.AllDirectories))
         {
             var relativePath = Path.GetRelativePath(sourcePath, file);
-            var targetFileName = relativePath.Replace(".template", "");
+            var targetRelativePath = relativePath.Replace(".template", "");
 
             // Skip legacy root-level PaginationDto; use Dtos/PaginationDto.cs instead
             if (string.Equals(relativePath, "PaginationDto.cs.template", StringComparison.OrdinalIgnoreCase))
             {
                 continue;
             }
-            
-            // Special case: rename Project.csproj to {ProjectName}.csproj
-            if (targetFileName == "Project.csproj")
+
+            // Apply variable substitution to the path (e.g., {{ProjectName}}.sln)
+            targetRelativePath = TemplateEngine.Process(targetRelativePath, variables);
+
+            // Normalize csproj filenames: Project.*.csproj => {ProjectName}.*.csproj
+            if (targetRelativePath.EndsWith(".csproj", StringComparison.OrdinalIgnoreCase))
             {
-                targetFileName = $"{variables["ProjectName"]}.csproj";
+                var fileNameOnly = Path.GetFileName(targetRelativePath);
+                if (fileNameOnly.StartsWith("Project.", StringComparison.OrdinalIgnoreCase))
+                {
+                    var newFileName = fileNameOnly.Replace("Project.", variables["ProjectName"] + ".");
+                    targetRelativePath = Path.Combine(Path.GetDirectoryName(targetRelativePath) ?? string.Empty, newFileName);
+                }
+                else if (string.Equals(fileNameOnly, "Project.csproj", StringComparison.OrdinalIgnoreCase))
+                {
+                    var newFileName = $"{variables["ProjectName"]}.csproj";
+                    targetRelativePath = Path.Combine(Path.GetDirectoryName(targetRelativePath) ?? string.Empty, newFileName);
+                }
             }
-            
-            var targetFile = Path.Combine(targetPath, targetFileName);
-            
-            ctx.Status($"Creating {targetFileName}...");
+
+            var targetFile = Path.Combine(targetPath, targetRelativePath);
+
+            ctx.Status($"Creating {targetRelativePath}...");
             
             // Create target directory if needed
             var targetDir = Path.GetDirectoryName(targetFile)!;

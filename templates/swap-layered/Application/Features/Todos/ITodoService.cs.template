@@ -1,11 +1,11 @@
-using {{ProjectName}}.Domain.Entities;
+using {{ProjectName}}.Application.Dtos;
 
 namespace {{ProjectName}}.Application.Features.Todos;
 
 public interface ITodoService
 {
-    Task<List<TodoItem>> GetAllAsync(CancellationToken ct = default);
+    Task<List<TodoItemDto>> GetAllAsync(CancellationToken ct = default);
     Task AddAsync(string title, CancellationToken ct = default);
-    Task<TodoItem?> ToggleAsync(int id, CancellationToken ct = default);
+    Task<TodoItemDto?> ToggleAsync(int id, CancellationToken ct = default);
     Task DeleteAsync(int id, CancellationToken ct = default);
 }

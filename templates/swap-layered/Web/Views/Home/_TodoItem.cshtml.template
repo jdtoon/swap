@@ -1,4 +1,4 @@
-@model TodoItem
+@model {{ProjectName}}.Application.Dtos.TodoItemDto
 
 <li id="todo-item-@Model.Id" class="flex items-center gap-2 p-3 bg-base-200 rounded-lg">
     <input type="checkbox" 
