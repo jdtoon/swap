@@ -16,29 +16,39 @@
 
   <section class="card bg-base-100 shadow">
     <div class="card-body">
-      <h2 class="card-title">Stats</h2>
-      <div id="stats" data-swap-events="ui.stats.refresh" hx-get="/Demo/Stats" class="border rounded p-3"></div>
+    <h2 class="card-title">Stats</h2>
+    <div id="stats" hx-get="/Demo/Stats" hx-trigger="load, ui.stats.refresh from:body" hx-target="this" hx-swap="innerHTML" class="border rounded p-3">Loading…</div>
     </div>
   </section>
 
   <section class="card bg-base-100 shadow lg:col-span-2">
     <div class="card-body">
-      <h2 class="card-title">Todo List</h2>
-      <div id="todo-list" data-swap-events="ui.todo.refreshList" hx-get="/Home/TodoList"></div>
+    <h2 class="card-title">Todo List</h2>
+    <div id="todo-list" hx-get="/Home/TodoList" hx-trigger="load, ui.todo.refreshList from:body" hx-target="this" hx-swap="innerHTML">Loading…</div>
     </div>
   </section>
 
   <section class="card bg-base-100 shadow">
     <div class="card-body">
-      <h2 class="card-title">Toasts</h2>
-      <div id="toasts" data-swap-events="ui.toast.success" hx-get="/Demo/Toasts" class="space-y-2"></div>
+    <h2 class="card-title">Toasts</h2>
+    <div id="toasts" hx-get="/Demo/Toasts" hx-trigger="load, ui.toast.success from:body" hx-target="this" hx-swap="innerHTML" class="space-y-2">Loading…</div>
     </div>
   </section>
 
   <section class="card bg-base-100 shadow">
     <div class="card-body">
-      <h2 class="card-title">Activity</h2>
-      <div id="activity" data-swap-events="ui.activity.append" hx-get="/Demo/ActivityLog" class="space-y-1"></div>
+    <h2 class="card-title">Activity</h2>
+    <div id="activity" hx-get="/Demo/ActivityLog" hx-trigger="load, ui.activity.append from:body" hx-target="this" hx-swap="innerHTML" class="space-y-1">Loading…</div>
+    </div>
+  </section>
+
+  <section class="card bg-base-100 shadow lg:col-span-2">
+    <div class="card-body">
+      <h2 class="card-title">More demos</h2>
+      <div class="flex gap-3">
+        <a class="btn" href="/Demo/Dynamic" hx-get="/Demo/Dynamic" hx-target="#main-content" hx-push-url="true">Dynamic Components</a>
+        <a class="btn" href="/Demo/Bulk" hx-get="/Demo/Bulk" hx-target="#main-content" hx-push-url="true">Bulk Operations</a>
+      </div>
     </div>
   </section>
 </div>

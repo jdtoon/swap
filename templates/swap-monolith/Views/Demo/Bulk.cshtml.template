@@ -1,0 +1,27 @@
+@{
+    ViewData["Title"] = "Bulk Operations";
+}
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+  <section class="card bg-base-100 shadow lg:col-span-2">
+    <div class="card-body">
+  <h2 class="card-title">Bulk Complete Todos</h2>
+  <div id="bulk-list" hx-get="/Demo/BulkTodos" hx-trigger="load, ui.todo.refreshList from:body" hx-target="this" hx-swap="innerHTML">Loading…</div>
+      <p class="text-sm text-base-content/60 mt-2">Completing items emits a bulk event which refreshes list, stats and shows a toast.</p>
+    </div>
+  </section>
+
+  <section class="card bg-base-100 shadow">
+    <div class="card-body">
+  <h2 class="card-title">Stats</h2>
+  <div id="stats" hx-get="/Demo/Stats" hx-trigger="load, ui.stats.refresh from:body" hx-target="this" hx-swap="innerHTML" class="border rounded p-3">Loading…</div>
+    </div>
+  </section>
+
+  <section class="card bg-base-100 shadow">
+    <div class="card-body">
+  <h2 class="card-title">Toasts</h2>
+  <div id="toasts" hx-get="/Demo/Toasts" hx-trigger="load, ui.toast.success from:body" hx-target="this" hx-swap="innerHTML" class="space-y-2">Loading…</div>
+    </div>
+  </section>
+</div>

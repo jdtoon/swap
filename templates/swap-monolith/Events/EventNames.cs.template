@@ -6,6 +6,9 @@ public static class EventNames
     {
         public const string TodoCreated = "todo.created";
         public const string TodoDeleted = "todo.deleted";
+        public const string ProjectNoteAdded = "project.note.added";
+        public const string BulkCompleted = "bulk.completed";
+        public const string TodoToggled = "todo.toggled";
     }
 
     public static class Ui
@@ -14,5 +17,7 @@ public static class EventNames
         public const string ToastSuccess = "ui.toast.success";
         public const string StatsRefresh = "ui.stats.refresh";
         public const string ActivityAppend = "ui.activity.append";
+        public const string DetailsRefresh = "ui.details.refresh";
+        public const string SummaryRefresh = "ui.summary.refresh";
     }
 }

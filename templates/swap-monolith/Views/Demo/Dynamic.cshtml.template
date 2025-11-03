@@ -1,0 +1,22 @@
+@{
+    ViewData["Title"] = "Dynamic Components";
+}
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+  <section class="card bg-base-100 shadow">
+    <div class="card-body">
+  <h2 class="card-title">Summary</h2>
+  <div id="summary" hx-get="/Demo/Summary" hx-trigger="load, ui.summary.refresh from:body" hx-target="this" hx-swap="innerHTML" class="border rounded p-3">Loading…</div>
+      <p class="text-sm text-base-content/60 mt-2">Updates when notes are added in the Details panel.</p>
+    </div>
+  </section>
+
+  <section class="card bg-base-100 shadow">
+    <div class="card-body">
+  <h2 class="card-title">Details</h2>
+  <button class="btn btn-outline" hx-get="/Demo/Details" hx-target="#details" hx-swap="innerHTML">Show details</button>
+  <div id="details" class="mt-4" hx-trigger="ui.details.refresh from:body"></div>
+      <p class="text-sm text-base-content/60 mt-2">This panel is injected after page load and listens for <code>ui.details.refresh</code>.</p>
+    </div>
+  </section>
+</div>

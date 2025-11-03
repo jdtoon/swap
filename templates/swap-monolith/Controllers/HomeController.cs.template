@@ -72,6 +72,9 @@ public class HomeController : SwapController
         todo.IsComplete = !todo.IsComplete;
         _context.SaveChanges();
 
+        // Emit a toggle event so stats can refresh via chain
+        _events.Emit(EventNames.Domain.TodoToggled, new { id });
+
         return PartialView("_TodoList", _context.TodoItems.ToList());
     }
 
@@ -86,6 +89,8 @@ public class HomeController : SwapController
 
         todo.IsComplete = !todo.IsComplete;
         _context.SaveChanges();
+
+        _events.Emit(EventNames.Domain.TodoToggled, new { id });
 
         // Return just this single item
         return PartialView("_TodoItem", todo);

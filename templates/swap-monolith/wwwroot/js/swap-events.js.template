@@ -1,142 +1,83 @@
 /*
- Swap Events client helper
- - Tracks active client-side event subscriptions
- - Adds X-Swap-Events header to HTMX requests via htmx:configRequest
- Usage:
-   <script src="/js/swap-events.js"></script>
-   <script>
-     SwapEvents.activate('ui.refreshList');
-     // later: SwapEvents.deactivate('ui.refreshList');
-   </script>
+ Swap Events client helper (HTMX-native)
+ - Parses hx-trigger to discover UI event subscriptions (ui.*)
+ - De-duplicates and sends X-Swap-Events in HTMX requests for server-side filtering
+ - No custom data-* attributes; HTMX drives refresh via hx-trigger
 */
 (function (global) {
   var REGISTRY = new Set();
-
-  function scanAndActivate(root) {
-    try {
-      var scope = root || (global.document && global.document);
-      if (!scope || !scope.querySelectorAll) return;
-      var els = scope.querySelectorAll('[data-swap-events]');
-      els.forEach(function (el) {
-        var vals = (el.getAttribute('data-swap-events') || '')
-          .split(',')
-          .map(function (s) { return s.trim(); })
-          .filter(Boolean);
-        for (var i = 0; i < vals.length; i++) {
-          REGISTRY.add(vals[i]);
-        }
-      });
-    } catch (_) { /* best-effort */ }
-  }
 
   function toHeaderValue() {
     if (REGISTRY.size === 0) return '';
     return Array.from(REGISTRY).join(',');
   }
 
+  function extractUiTriggers(triggerValue) {
+    // Example: "load, ui.stats.refresh from:body, click .selector"
+    if (!triggerValue || typeof triggerValue !== 'string') return [];
+    var out = [];
+    triggerValue.split(',').forEach(function (part) {
+      var s = part.trim();
+      if (!s) return;
+      // take token before whitespace or before ' from:' segment
+      var idx = s.indexOf(' from:');
+      if (idx >= 0) s = s.substring(0, idx);
+      var first = s.split(/\s+/)[0];
+      if (first && first.indexOf('ui.') === 0) out.push(first);
+    });
+    return out;
+  }
+
+  function rescan(root) {
+    try {
+      var scope = root || (global.document && global.document);
+      if (!scope || !scope.querySelectorAll) return;
+      var els = scope.querySelectorAll('[hx-trigger]');
+      els.forEach(function (el) {
+        var triggers = extractUiTriggers(el.getAttribute('hx-trigger'));
+        for (var i = 0; i < triggers.length; i++) REGISTRY.add(triggers[i]);
+      });
+    } catch (_) { /* best-effort */ }
+  }
+
   function ensureHtmxHook() {
     if (!global.htmx || !global.htmx.on) return;
-    // Avoid double-hooking
     if (ensureHtmxHook._hooked) return;
     ensureHtmxHook._hooked = true;
 
+    // Add header on all HTMX requests
     global.htmx.on('htmx:configRequest', function (evt) {
       try {
         var headerVal = toHeaderValue();
-        if (headerVal) {
-          evt.detail.headers = evt.detail.headers || {};
-          // Do not overwrite if user explicitly set it; merge unique values instead
-          var existing = evt.detail.headers['X-Swap-Events'];
-          if (existing) {
-            var parts = (existing + ',' + headerVal)
-              .split(',')
-              .map(function (s) { return s.trim(); })
-              .filter(Boolean);
-            var dedup = Array.from(new Set(parts));
-            evt.detail.headers['X-Swap-Events'] = dedup.join(',');
-          } else {
-            evt.detail.headers['X-Swap-Events'] = headerVal;
-          }
+        if (!headerVal) return;
+        evt.detail.headers = evt.detail.headers || {};
+        var existing = evt.detail.headers['X-Swap-Events'];
+        if (existing) {
+          var parts = (existing + ',' + headerVal).split(',').map(function (s) { return s.trim(); }).filter(Boolean);
+          var dedup = Array.from(new Set(parts));
+          evt.detail.headers['X-Swap-Events'] = dedup.join(',');
+        } else {
+          evt.detail.headers['X-Swap-Events'] = headerVal;
         }
       } catch (e) {
-        // best-effort, never throw
-        if (global && global.console && console.debug) {
-          console.debug('[SwapEvents] Failed to set X-Swap-Events header', e);
-        }
+        if (global && global.console && console.debug) console.debug('[SwapEvents] Failed to set X-Swap-Events header', e);
       }
     });
+
+    // After swaps, new elements may have hx-trigger; rescan
+    global.htmx.on('htmx:afterSwap', function () { rescan(global.document); });
   }
 
-  function activate(name) {
-    if (!name || typeof name !== 'string') return;
-    REGISTRY.add(name);
-  }
-
-  function deactivate(name) {
-    if (!name || typeof name !== 'string') return;
-    REGISTRY.delete(name);
-  }
-
-  function list() { return Array.from(REGISTRY); }
-  function clear() { REGISTRY.clear(); }
-  function setAll(arr) {
-    REGISTRY.clear();
-    if (!Array.isArray(arr)) return;
-    for (var i = 0; i < arr.length; i++) {
-      var s = arr[i];
-      if (typeof s === 'string' && s.trim()) REGISTRY.add(s.trim());
+  // Init
+  if (global.document) {
+    if (global.htmx) {
+      ensureHtmxHook();
+      rescan(global.document);
+    } else {
+      global.document.addEventListener('DOMContentLoaded', function(){
+        ensureHtmxHook();
+        rescan(global.document);
+      }, { once: true });
     }
   }
-
-  var api = {
-    activate: activate,
-    deactivate: deactivate,
-    set: setAll,
-    clear: clear,
-    list: list
-  };
-
-  global.SwapEvents = global.SwapEvents || api;
-
-  // Hook now if htmx is already loaded, else hook when it becomes available
-  if (global.htmx) {
-    ensureHtmxHook();
-    // Populate registry immediately based on current DOM
-    scanAndActivate(global.document);
-  } else if (global.document) {
-    // Try again on DOM ready in case htmx loads late
-    global.document.addEventListener('DOMContentLoaded', function(){
-      ensureHtmxHook();
-      scanAndActivate(global.document);
-    }, { once: true });
-  }
 })(window);
-
-// Auto-refresh helper: refresh any element with data-swap-events matching HX-Trigger events
-(function(){
-  function parseTriggers(xhr){
-    var raw = xhr && xhr.getResponseHeader && xhr.getResponseHeader('HX-Trigger');
-    if(!raw) return [];
-    try { var obj = JSON.parse(raw); if (obj && typeof obj === 'object') return Object.keys(obj); } catch(e){}
-    return (raw || '').split(',').map(function(s){return s.trim();}).filter(Boolean);
-  }
-  document.body.addEventListener('htmx:afterOnLoad', function(evt){
-    var triggers = parseTriggers(evt.detail && evt.detail.xhr);
-    if (triggers.length === 0) return;
-    // Elements inserted/changed by HTMX may include new subscriptions
-    try { (window && window.document) && scanAndActivate(window.document); } catch(_) {}
-    var lowered = triggers.map(function(t){return t.toLowerCase();});
-    document.querySelectorAll('[data-swap-events]').forEach(function(el){
-      var listens = (el.getAttribute('data-swap-events')||'')
-        .split(',').map(function(s){return s.trim().toLowerCase();}).filter(Boolean);
-      if (listens.length === 0) return;
-      var hit = listens.some(function(x){ return lowered.indexOf(x) >= 0; });
-      if (hit) {
-        var url = el.getAttribute('hx-get') || el.getAttribute('hx-post') || el.getAttribute('hx-put') || el.getAttribute('hx-patch');
-        if (url && window.htmx) {
-          window.htmx.ajax('GET', url, { target: el });
-        }
-      }
-    });
-  });
-})();
