@@ -1,0 +1,29 @@
+namespace EventSystemIT.Events;
+
+public static class EventNames
+{
+    public static class Domain
+    {
+        public const string TodoCreated = "todo.created";
+        public const string TodoDeleted = "todo.deleted";
+        public const string ProjectNoteAdded = "project.note.added";
+        public const string BulkCompleted = "bulk.completed";
+        public const string TodoToggled = "todo.toggled";
+        // Reusable components demo
+        public const string ComponentAUpdated = "component.a.updated";
+        public const string ComponentBUpdated = "component.b.updated";
+    }
+
+    public static class Ui
+    {
+        public const string TodoRefreshList = "ui.todo.refreshList";
+        public const string ToastSuccess = "ui.toast.success";
+        public const string StatsRefresh = "ui.stats.refresh";
+        public const string ActivityAppend = "ui.activity.append";
+        public const string DetailsRefresh = "ui.details.refresh";
+        public const string SummaryRefresh = "ui.summary.refresh";
+        // Reusable components demo
+        public const string ComponentARefresh = "ui.components.a.refresh";
+        public const string ComponentBRefresh = "ui.components.b.refresh";
+    }
+}

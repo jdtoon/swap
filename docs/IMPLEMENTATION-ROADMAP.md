@@ -1,7 +1,7 @@
 # Swap Implementation Roadmap - Battle-Tested Increments
 
-**Last Updated**: November 1, 2025  
-**Current Version**: 0.2.0-dev  
+**Last Updated**: November 3, 2025  
+**Current Version**: 0.3.0  
 **Status**: Active Development  
 **Focus**: Developer Experience First
 
@@ -37,7 +37,7 @@
 
 ---
 
-## 📍 Where We Are (v0.2.0-dev)
+## 📍 Where We Are (v0.3.0)
 
 ### ✅ What's Working
 
@@ -48,6 +48,14 @@
 - Toast notification extensions (`ShowSuccessToast()`, etc.)
 - Middleware for shell enforcement
 
+**Event System (New in 0.3.0):**
+- HTMX-native client filtering via `X-Swap-Events` header
+- Centralized chains with validation (naming + cycle detection)
+- Resolution modes: `OneHop` (default), `Bidirectional`, `Transitive` with depth
+- Dev endpoints: `/ _swap/dev/events`, `/events.json`, `/events.meta.json`, `/explain.json`
+- CLI: `events list`, `events from-server`, `events validate`, `events graph`
+- Dev dashboard: chains table, Mermaid graph, and Explain tooling
+
 **CLI (`swap`):**
 - `swap new MyApp` - Create monolith project from template
 - `swap generate model Product --fields Name:string,Price:decimal`
@@ -55,6 +63,7 @@
 - `swap generate resource Product` - Full CRUD generation
 - `swap db migrate`, `swap db update` - Database commands
 - `swap doctor` - Environment checks
+ - Event commands: `events list`, `events from-server`, `events validate`, `events graph`
 
 **What Makes This Good:**
 - ✅ Actually generates working code
@@ -63,7 +72,7 @@
 
 **What's Missing:**
 - ❌ Components are embedded in CRUD templates, not reusable
-- ❌ No event system for coordination
+- ❌ Event system per-root overrides (optional) – deferred
 - ❌ Only one architecture template (monolith)
 - ❌ CRUD generation dominates the framework identity
 
@@ -159,9 +168,9 @@ window.swapEventDebug()
 
 Note: Previous Phase 0 and Phase 1 have been removed to focus immediately on the Event System foundation. Components will be delivered as templates (source you own), not as a framework package.
 
-### Phase 2: Event System Foundation (v0.3.0 → v0.4.0)
-**Timeline:** 3 weeks  
-**Goal:** Ship basic event system that solves real coordination problems
+### Phase 2: Event System Foundation (Shipped as 0.3.0, ongoing polish)
+**Timeline:** shipped in 0.3.0  
+**Goal:** Ship event system that solves real coordination problems (complete for OneHop/Bidirectional/Transitive); continue polish
 
 > **⚠️ CRITICAL: This is THE most important phase. Everything else builds on events.**
 
@@ -206,7 +215,17 @@ await _eventBus.EmitAsync("product.created");
 Server receives: `X-Swap-Events: product.created,product.updated,product.deleted`  
 Server only sends events that are in this list. No wasted triggers.
 
-#### Tasks
+#### Delivered (0.3.0)
+- Core event bus with chain resolution and filtering
+- ChainResolutionMode + MaxTransitiveDepth
+- Dev endpoints (events, events.json/meta.json, explain)
+- CLI commands (list/from-server/validate/graph)
+- Tests and documentation across framework + tools + wiki
+
+#### Next (Polish/Optional)
+- Per-root resolution overrides (safe union per response)
+- Precomputed reverse index for Bidirectional performance on large graphs
+- Direction policies (allow/forbid) – evaluate after usage
 
 **Week 1: Core Event Bus with Static Events**
 1. Create `SwapEvents` static class with all standard events:

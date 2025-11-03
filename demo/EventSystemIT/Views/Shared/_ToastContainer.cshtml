@@ -1,0 +1,32 @@
+<!-- HTMX Toast Container -->
+<div id="toast-container"></div>
+
+<script>
+    // HTMX fires custom events from HX-Trigger header
+    // For JSON triggers like {"showToast": {...}}, event name is "showToast"
+    document.body.addEventListener('showToast', function(event) {
+        console.log('Toast event received:', event.detail);
+        
+        // HTMX wraps JSON trigger values in event.detail.value
+        const detail = event.detail.value || event.detail || {};
+        console.log('Toast detail:', detail);
+        
+        const container = document.getElementById('toast-container');
+        if (container) {
+            // Set container position if provided
+            if (detail.position) {
+                container.setAttribute('data-position', detail.position);
+            }
+            
+            const toast = document.createElement('div');
+            toast.className = 'toast toast-' + (detail.type || 'info');
+            toast.textContent = detail.message || 'Operation completed';
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 3500);
+        } else {
+            console.error('Toast container not found!');
+        }
+    });
+    
+    console.log('Toast listener registered');
+</script>
