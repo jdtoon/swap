@@ -92,6 +92,8 @@ The CLI provides the following commands:
 ### Events (DX)
 - `swap events list [-p <dir>]` – Source-scan your project for chains in `Events/SwapEventChains.cs`, resolving `EventNames.*` constants.
 - `swap events from-server --url <http://host:port>` – Query a running app’s dev endpoint (`/_swap/dev/events.json`) and pretty-print Trigger → Chained.
+ - `swap events validate [-p <dir>]` – Validate names and detect cycles from source; exits non‑zero on errors.
+ - `swap events graph [-p <dir>] [--format mermaid|dot] [--output file]` – Output a graph of your chains.
 
 Tip: Run the app in one terminal and query from another so the process isn’t interrupted.
 

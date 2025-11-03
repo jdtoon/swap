@@ -1303,6 +1303,13 @@ swap events list -p .
 
 # From running server (Development-only endpoint)
 swap events from-server --url http://localhost:5000
+
+# Validate names and cycles
+swap events validate -p .
+
+# Graph output (Mermaid or DOT)
+swap events graph -p . --format mermaid
+swap events graph -p . --format dot --output chains.dot
 ```
 
 Notes:

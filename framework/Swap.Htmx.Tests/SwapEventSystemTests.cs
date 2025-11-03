@@ -156,4 +156,125 @@ public class SwapEventSystemTests
 
         Assert.False(context.Response.Headers.ContainsKey("HX-Trigger"));
     }
+
+    [Fact]
+    public async Task Transitive_With_Filtering_Subset()
+    {
+        // Arrange
+        var context = CreateContext();
+        context.Request.Headers["X-Swap-Events"] = "b,c"; // only b and c
+        var accessor = new HttpContextAccessor { HttpContext = context };
+        var options = new SwapEventBusOptions
+        {
+            ResolutionMode = ChainResolutionMode.Transitive,
+            MaxTransitiveDepth = 2
+        }
+        .Chain("a", "b")
+        .Chain("b", "c");
+
+        var bus = new SwapEventBus(accessor, options, NullLogger<SwapEventBus>.Instance);
+        var ctxMw = new SwapEventContextMiddleware(_ => Task.CompletedTask);
+        var respMw = new SwapEventResponseMiddleware(async ctx => { await ctx.Response.WriteAsync("OK"); }, accessor, options, NullLogger<SwapEventResponseMiddleware>.Instance);
+
+        await ctxMw.InvokeAsync(context);
+        bus.Emit("a");
+        await respMw.InvokeAsync(context);
+
+    var dict = JsonSerializer.Deserialize<Dictionary<string, object?>>(context.Response.Headers["HX-Trigger"].ToString())!;
+        Assert.DoesNotContain("a", dict.Keys); // filtered out
+        Assert.Contains("b", dict.Keys);
+        Assert.Contains("c", dict.Keys);
+    }
+
+    [Fact]
+    public async Task Bidirectional_Filtering_Subset()
+    {
+        var context = CreateContext();
+        context.Request.Headers["X-Swap-Events"] = "a"; // only parent allowed
+        var accessor = new HttpContextAccessor { HttpContext = context };
+        var options = new SwapEventBusOptions { ResolutionMode = ChainResolutionMode.Bidirectional }
+            .Chain("a", "b");
+
+        var bus = new SwapEventBus(accessor, options, NullLogger<SwapEventBus>.Instance);
+        var ctxMw = new SwapEventContextMiddleware(_ => Task.CompletedTask);
+        var respMw = new SwapEventResponseMiddleware(async ctx => { await ctx.Response.WriteAsync("OK"); }, accessor, options, NullLogger<SwapEventResponseMiddleware>.Instance);
+
+        await ctxMw.InvokeAsync(context);
+        bus.Emit("b"); // reverse should include 'a'
+        await respMw.InvokeAsync(context);
+
+    var dict = JsonSerializer.Deserialize<Dictionary<string, object?>>(context.Response.Headers["HX-Trigger"].ToString())!;
+        Assert.Contains("a", dict.Keys);
+        Assert.DoesNotContain("b", dict.Keys); // filtered
+    }
+
+    [Fact]
+    public async Task Multiple_Pending_Events_Merge()
+    {
+        var context = CreateContext();
+        var accessor = new HttpContextAccessor { HttpContext = context };
+        var options = new SwapEventBusOptions()
+            .Chain("a", "x")
+            .Chain("b", "y");
+
+        var bus = new SwapEventBus(accessor, options, NullLogger<SwapEventBus>.Instance);
+        var ctxMw = new SwapEventContextMiddleware(_ => Task.CompletedTask);
+        var respMw = new SwapEventResponseMiddleware(async ctx => { await ctx.Response.WriteAsync("OK"); }, accessor, options, NullLogger<SwapEventResponseMiddleware>.Instance);
+
+        await ctxMw.InvokeAsync(context);
+        bus.Emit("a");
+        bus.Emit("b");
+        await respMw.InvokeAsync(context);
+
+    var dict = JsonSerializer.Deserialize<Dictionary<string, object?>>(context.Response.Headers["HX-Trigger"].ToString())!;
+        Assert.Contains("a", dict.Keys);
+        Assert.Contains("b", dict.Keys);
+        Assert.Contains("x", dict.Keys);
+        Assert.Contains("y", dict.Keys);
+    }
+
+    [Fact]
+    public async Task Chained_Payload_Is_Null()
+    {
+        var context = CreateContext();
+        var accessor = new HttpContextAccessor { HttpContext = context };
+        var options = new SwapEventBusOptions().Chain("a", "b");
+        var bus = new SwapEventBus(accessor, options, NullLogger<SwapEventBus>.Instance);
+        var ctxMw = new SwapEventContextMiddleware(_ => Task.CompletedTask);
+        var respMw = new SwapEventResponseMiddleware(async ctx => { await ctx.Response.WriteAsync("OK"); }, accessor, options, NullLogger<SwapEventResponseMiddleware>.Instance);
+
+        await ctxMw.InvokeAsync(context);
+        bus.Emit("a", new { id = 1 });
+        await respMw.InvokeAsync(context);
+
+    var dict = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(context.Response.Headers["HX-Trigger"].ToString())!;
+        Assert.True(dict.TryGetValue("a", out var payload));
+        Assert.True(payload.TryGetProperty("id", out _));
+        Assert.True(dict.ContainsKey("b"));
+        Assert.Equal(JsonValueKind.Null, dict["b"].ValueKind);
+    }
+
+    [Fact]
+    public async Task Merge_Robustness_With_Invalid_Header_Values()
+    {
+        var context = CreateContext();
+        // Two values: one valid JSON, one invalid
+        context.Response.Headers.Append("HX-Trigger", JsonSerializer.Serialize(new Dictionary<string, object?> { { "alpha", null } }));
+        context.Response.Headers.Append("HX-Trigger", "not-json");
+
+        var accessor = new HttpContextAccessor { HttpContext = context };
+        var options = new SwapEventBusOptions().Chain("a", "b");
+        var bus = new SwapEventBus(accessor, options, NullLogger<SwapEventBus>.Instance);
+        var ctxMw = new SwapEventContextMiddleware(_ => Task.CompletedTask);
+        var respMw = new SwapEventResponseMiddleware(async ctx => { await ctx.Response.WriteAsync("OK"); }, accessor, options, NullLogger<SwapEventResponseMiddleware>.Instance);
+
+        await ctxMw.InvokeAsync(context);
+        bus.Emit("a");
+        await respMw.InvokeAsync(context);
+
+    var dict = JsonSerializer.Deserialize<Dictionary<string, object?>>(context.Response.Headers["HX-Trigger"].ToString())!;
+        Assert.Contains("alpha", dict.Keys); // preserved
+        Assert.Contains("a", dict.Keys);
+        Assert.Contains("b", dict.Keys);
+    }
 }
