@@ -35,6 +35,26 @@ This is the authoritative reference for Swap's server-side event system that coo
   app.UseSwapHtmx();
   ```
 
+### Chain resolution modes
+
+Control how chains expand at runtime using a single enum (default: OneHop):
+
+```csharp
+builder.Services.AddSwapHtmx(opts =>
+{
+    opts.Chain("todo.created", "ui.todo.refreshList", "ui.stats.refresh");
+    opts.ResolutionMode = Swap.Htmx.Events.ChainResolutionMode.OneHop; // default
+    // opts.ResolutionMode = ChainResolutionMode.Bidirectional; // reverse one-hop
+    // opts.ResolutionMode = ChainResolutionMode.Transitive;    // BFS up to MaxTransitiveDepth
+    // opts.MaxTransitiveDepth = 2;
+});
+```
+
+Semantics:
+- OneHop: A emits its immediate children only.
+- Bidirectional: A→B means emitting B also includes A (one hop each way).
+- Transitive: A→B→C expands along edges up to the configured depth.
+
 ## Merge and Filtering semantics
 
 - Filtering
@@ -80,3 +100,5 @@ This is the authoritative reference for Swap's server-side event system that coo
 - `demo/EventSystemDemo` and `demo/MonolithDemo` controllers
 - Tests in `demo/*Tests` for full matrices
 - Middleware: `framework/Swap.Htmx/Middleware/SwapEventResponseMiddleware.cs` and `SwapEventContextMiddleware.cs`
+ - Dev endpoints: `/_swap/dev/events`, `/_swap/dev/events.json`, `/_swap/dev/events.meta.json`, and `/_swap/dev/explain.json?event=...`
+ - CLI: `swap events list`, `swap events from-server --url ...`, `swap events validate`, `swap events graph`
