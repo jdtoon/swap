@@ -6,10 +6,13 @@ using {{ProjectName}}.Application.Abstractions;
 using {{ProjectName}}.Infrastructure;
 using {{ProjectName}}.Web.Adapters;
 using {{ProjectName}}.Web.Events;
+using {{ProjectName}}.Web.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllersWithViews();
+builder.Services
+    .AddControllersWithViews()
+    .AddMvcOptions(o => o.ModelBinderProviders.Insert(0, new InvariantDecimalModelBinderProvider()));
 
 // Swap + HTMX + Event System
 builder.Services.AddSwapHtmx(events =>
