@@ -6,6 +6,8 @@ sidebar_position: 2
 
 Create a new ASP.NET Core project with HTMX and Docker support.
 
+See [Templates](../templates/overview) for choosing monolith vs layered, feature comparison, and run instructions.
+
 ## Synopsis
 
 ```bash

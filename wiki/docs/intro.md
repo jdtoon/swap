@@ -16,6 +16,15 @@ Swap has two parts that work together:
 
 It generates ASP.NET Core projects with HTMX-powered views using proven patterns from real applications. You write business logic; Swap wires the rest.
 
+## Templates
+
+Swap ships with two first-class templates (both HTMX-native and event-driven):
+
+- Monolith (single project) — optimized DX, move fast without ceremony
+- Layered (Web, Application, Domain, Infrastructure) — clean architecture for teams and long-lived apps
+
+Start here to choose: [Templates](./templates/overview)
+
 **Core Features:**
 
 - **Generate complete projects** with `swap new` - Full ASP.NET Core + HTMX stack (includes the event system)

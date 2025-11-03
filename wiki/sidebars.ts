@@ -18,6 +18,13 @@ const sidebars: SidebarsConfig = {
     'intro',
     {
       type: 'category',
+      label: 'Templates',
+      items: [
+        'templates/overview',
+      ],
+    },
+    {
+      type: 'category',
       label: 'Getting Started',
       items: [
         'getting-started/installation',

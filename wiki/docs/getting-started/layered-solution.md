@@ -17,10 +17,12 @@ The layered template generates a clean, multi-project solution with HTMX-native 
 ```
 MyApp/
 ├─ MyApp.sln
-├─ Web/               # Presentation (MVC + HTMX + Swap chains)
-├─ Application/       # Use cases/services, abstractions, DTOs
-├─ Domain/            # Entities and domain events (single source of names)
-└─ Infrastructure/    # EF Core DbContext and repositories
+├─ src/
+│  ├─ Web/            # Presentation (MVC + HTMX + Swap chains)
+│  ├─ Application/    # Use cases/services, abstractions, DTOs
+│  ├─ Domain/         # Entities and domain events (single source of names)
+│  └─ Infrastructure/ # EF Core DbContext and repositories
+└─ test/              # Unit + Integration tests
 ```
 
 ## Create a new layered app
@@ -33,13 +35,13 @@ Aliases: `--template layered` and `--template swap-layered` are equivalent.
 
 ## Post-create steps (automated unless you pass --skip-setup)
 
-- In `Web/`: `npm install`, `libman restore`, `npm run build:css`
-- Migrations at solution root: `dotnet ef migrations add InitialCreate -p Infrastructure -s Web` then `dotnet ef database update -p Infrastructure -s Web`
+- In `src/Web`: `npm install`, `libman restore`, `npm run build:css`
+- Migrations at solution root: `dotnet ef migrations add InitialCreate -p src/Infrastructure -s src/Web` then `dotnet ef database update -p src/Infrastructure -s src/Web`
 
 ## Run the app
 
 ```
-cd MyApp/Web
+cd MyApp/src/Web
 dotnet run
 ```
 
