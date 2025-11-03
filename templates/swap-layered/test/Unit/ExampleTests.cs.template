@@ -1,0 +1,13 @@
+using Xunit;
+
+namespace {{ProjectName}}.Application.Tests;
+
+public class ExampleTests
+{
+    [Fact]
+    public void Adds_numbers()
+    {
+        var sum = 1 + 1;
+        Assert.Equal(2, sum);
+    }
+}

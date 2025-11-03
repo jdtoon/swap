@@ -30,7 +30,7 @@
     <PackageReference Include="Bogus" Version="35.5.0" />
   </ItemGroup>
 
-  <Target Name="BuildCSS" BeforeTargets="Compile">
+  <Target Name="BuildCSS" BeforeTargets="Compile" Condition="Exists('package.json') and Exists('node_modules')">
     <Exec Command="npm run build:css" />
   </Target>
 

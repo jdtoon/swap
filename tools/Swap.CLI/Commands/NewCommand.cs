@@ -160,7 +160,8 @@ public static class NewCommand
                         {
                             var isLayered = string.Equals(template, "layered", StringComparison.OrdinalIgnoreCase) ||
                                             string.Equals(template, "swap-layered", StringComparison.OrdinalIgnoreCase);
-                            var webDir = isLayered ? Path.Combine(projectPath, "Web") : projectPath;
+                            // New folder layout uses src/ for app
+                            var webDir = isLayered ? Path.Combine(projectPath, "src", "Web") : Path.Combine(projectPath, "src");
                             try
                             {
                                 ctx.Status("Running npm install...");
@@ -216,22 +217,22 @@ public static class NewCommand
                             ctx.Status("Creating initial migration...");
                             if (isLayered)
                             {
-                                await RunCommandAsync("dotnet", "ef migrations add InitialCreate -p Infrastructure -s Web", projectPath);
+                                await RunCommandAsync("dotnet", "ef migrations add InitialCreate -p src/Infrastructure -s src/Web", projectPath);
                             }
                             else
                             {
-                                await RunCommandAsync("dotnet", "ef migrations add InitialCreate", projectPath);
+                                await RunCommandAsync("dotnet", "ef migrations add InitialCreate", Path.Combine(projectPath, "src"));
                             }
                             AnsiConsole.MarkupLine("[green]✓[/] Migration created");
 
                             ctx.Status("Updating database...");
                             if (isLayered)
                             {
-                                await RunCommandAsync("dotnet", "ef database update -p Infrastructure -s Web", projectPath);
+                                await RunCommandAsync("dotnet", "ef database update -p src/Infrastructure -s src/Web", projectPath);
                             }
                             else
                             {
-                                await RunCommandAsync("dotnet", "ef database update", projectPath);
+                                await RunCommandAsync("dotnet", "ef database update", Path.Combine(projectPath, "src"));
                             }
                             AnsiConsole.MarkupLine("[green]✓[/] Database updated");
                         }
@@ -253,17 +254,17 @@ public static class NewCommand
                                     string.Equals(template, "swap-layered", StringComparison.OrdinalIgnoreCase);
                     if (isLayered)
                     {
-                        AnsiConsole.MarkupLine($"  cd {name}/Web");
+                        AnsiConsole.MarkupLine($"  cd {name}/src/Web");
                         AnsiConsole.MarkupLine("  npm install");
                         AnsiConsole.MarkupLine("  libman restore");
                         AnsiConsole.MarkupLine("  npm run build:css");
-                        AnsiConsole.MarkupLine($"  cd ..");
-                        AnsiConsole.MarkupLine("  dotnet ef migrations add InitialCreate -p Infrastructure -s Web");
-                        AnsiConsole.MarkupLine("  dotnet ef database update -p Infrastructure -s Web");
+                        AnsiConsole.MarkupLine($"  cd ../..");
+                        AnsiConsole.MarkupLine("  dotnet ef migrations add InitialCreate -p src/Infrastructure -s src/Web");
+                        AnsiConsole.MarkupLine("  dotnet ef database update -p src/Infrastructure -s src/Web");
                     }
                     else
                     {
-                        AnsiConsole.MarkupLine($"  cd {name}");
+                        AnsiConsole.MarkupLine($"  cd {name}/src");
                         AnsiConsole.MarkupLine("  npm install");
                         AnsiConsole.MarkupLine("  libman restore");
                         AnsiConsole.MarkupLine("  npm run build:css");
@@ -282,12 +283,12 @@ public static class NewCommand
                       string.Equals(template, "swap-layered", StringComparison.OrdinalIgnoreCase);
         if (layered)
         {
-            AnsiConsole.MarkupLine($"  cd {name}/Web");
+            AnsiConsole.MarkupLine($"  cd {name}/src/Web");
             AnsiConsole.MarkupLine("  dotnet run");
         }
         else
         {
-            AnsiConsole.MarkupLine($"  cd {name}");
+            AnsiConsole.MarkupLine($"  cd {name}/src");
             AnsiConsole.MarkupLine("  dotnet run");
         }
         AnsiConsole.WriteLine();
@@ -302,17 +303,17 @@ public static class NewCommand
                         string.Equals(template, "swap-layered", StringComparison.OrdinalIgnoreCase);
         if (isLayered)
         {
-            AnsiConsole.MarkupLine($"  cd {name}/Web");
+            AnsiConsole.MarkupLine($"  cd {name}/src/Web");
             AnsiConsole.MarkupLine("  npm install");
             AnsiConsole.MarkupLine("  libman restore");
             AnsiConsole.MarkupLine("  npm run build:css");
-            AnsiConsole.MarkupLine($"  cd ..");
-            AnsiConsole.MarkupLine("  dotnet ef migrations add InitialCreate -p Infrastructure -s Web");
-            AnsiConsole.MarkupLine("  dotnet ef database update -p Infrastructure -s Web");
+            AnsiConsole.MarkupLine($"  cd ../..");
+            AnsiConsole.MarkupLine("  dotnet ef migrations add InitialCreate -p src/Infrastructure -s src/Web");
+            AnsiConsole.MarkupLine("  dotnet ef database update -p src/Infrastructure -s src/Web");
         }
         else
         {
-            AnsiConsole.MarkupLine($"  cd {name}");
+            AnsiConsole.MarkupLine($"  cd {name}/src");
             AnsiConsole.MarkupLine("  npm install");
             AnsiConsole.MarkupLine("  libman restore");
             AnsiConsole.MarkupLine("  npm run build:css");
@@ -438,8 +439,12 @@ public class HtmxShellMiddleware
         await AnsiConsole.Status()
             .StartAsync("Generating project...", async ctx =>
             {
+                // Decide folder layout: place app under src, tests under test
+                var useSrcLayout = string.Equals(selected, "swap-monolith", StringComparison.OrdinalIgnoreCase) ||
+                                    string.Equals(selected, "swap-layered", StringComparison.OrdinalIgnoreCase);
+
                 // Copy and process all template files
-                await ProcessTemplateDirectoryAsync(templatePath, projectPath, variables, ctx);
+                await ProcessTemplateDirectoryAsync(templatePath, projectPath, variables, ctx, useSrcLayout ? "src" : null);
                 
                 // If using local NuGet, ensure packages are built and create nuget.config
                 if (localNuget)
@@ -489,7 +494,8 @@ public class HtmxShellMiddleware
         string sourcePath,
         string targetPath,
         Dictionary<string, string> variables,
-        StatusContext ctx)
+        StatusContext ctx,
+        string? prefixFolder)
     {
         foreach (var file in Directory.GetFiles(sourcePath, "*.template", SearchOption.AllDirectories))
         {
@@ -504,6 +510,21 @@ public class HtmxShellMiddleware
 
             // Apply variable substitution to the path (e.g., {{ProjectName}}.sln)
             targetRelativePath = TemplateEngine.Process(targetRelativePath, variables);
+
+            // If requested, place most content under a 'src' folder; keep root items and tests at root/test
+            if (!string.IsNullOrEmpty(prefixFolder))
+            {
+                var relLower = relativePath.Replace('\\','/').ToLowerInvariant();
+                var isTest = relLower.StartsWith("test/");
+                var isSln = targetRelativePath.EndsWith(".sln", StringComparison.OrdinalIgnoreCase);
+                var isRootFile = string.Equals(targetRelativePath, ".gitignore", StringComparison.OrdinalIgnoreCase) ||
+                                 string.Equals(targetRelativePath, "nuget.config", StringComparison.OrdinalIgnoreCase) ||
+                                 string.Equals(targetRelativePath, "README.md", StringComparison.OrdinalIgnoreCase);
+                if (!isTest && !isSln && !isRootFile)
+                {
+                    targetRelativePath = Path.Combine(prefixFolder!, targetRelativePath);
+                }
+            }
 
             // Normalize csproj filenames: Project.*.csproj => {ProjectName}.*.csproj
             if (targetRelativePath.EndsWith(".csproj", StringComparison.OrdinalIgnoreCase))
