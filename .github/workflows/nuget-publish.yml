@@ -22,7 +22,7 @@ jobs:
       with:
         fetch-depth: 0  # Fetch all history for tag creation
     
-    - name: Remove local NuGet source for CI
+    - name: Configure NuGet sources for publish
       run: |
         cat > nuget.config << 'EOF'
         <?xml version="1.0" encoding="utf-8"?>
@@ -30,9 +30,23 @@ jobs:
           <packageSources>
             <clear />
             <add key="nuget.org" value="https://api.nuget.org/v3/index.json" protocolVersion="3" />
+            <add key="local" value=".nuget/local" />
           </packageSources>
         </configuration>
         EOF
+
+    - name: Prepare local feed directory
+      run: |
+        mkdir -p .nuget/local
+        echo "Prepared local NuGet feed at .nuget/local"
+
+    - name: Pack framework packages to local feed
+      run: |
+        dotnet pack framework/Swap.Htmx/Swap.Htmx.csproj --configuration Release --output ./.nuget/local
+        dotnet pack framework/Swap.Patterns/Swap.Patterns.csproj --configuration Release --output ./.nuget/local
+        dotnet pack framework/Swap.Testing/Swap.Testing.csproj --configuration Release --output ./.nuget/local
+      env:
+        DOTNET_NUGET_SIGNATURE_VERIFICATION: false
     
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
