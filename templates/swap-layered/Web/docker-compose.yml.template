@@ -3,8 +3,8 @@ version: '3.8'
 services:
   app:
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: Web/Dockerfile
     ports:
       - "5000:8080"
 {{#if_sqlite}}

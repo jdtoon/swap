@@ -13,28 +13,22 @@ RUN dotnet tool install -g Microsoft.Web.LibraryManager.Cli
 # Add .NET tools to PATH
 ENV PATH="$PATH:/root/.dotnet/tools"
 
-WORKDIR /src
+WORKDIR /work
 
-# Copy project file and restore dependencies
-COPY ["{{ProjectName}}.Web.csproj", "./"]
-RUN dotnet restore "{{ProjectName}}.Web.csproj"
+# Copy project files and restore dependencies (build context is src)
+COPY ["Web/{{ProjectName}}.Web.csproj", "Web/"]
+COPY ["Application/{{ProjectName}}.Application.csproj", "Application/"]
+COPY ["Infrastructure/{{ProjectName}}.Infrastructure.csproj", "Infrastructure/"]
+COPY ["Domain/{{ProjectName}}.Domain.csproj", "Domain/"]
+RUN dotnet restore "Web/{{ProjectName}}.Web.csproj"
 
-# Restore LibMan dependencies
-COPY ["libman.json", "./"]
-RUN libman restore
+# Copy the rest of the source code
+COPY . ./
 
-# Copy the wwwroot folder to ensure static files are in place
-COPY ["wwwroot/", "/app/wwwroot/"]
-RUN chmod -R 755 /app/wwwroot
-
-# Copy package.json and install npm dependencies
-COPY ["package.json", "./"]
+# Build frontend assets
+WORKDIR /work/Web
 RUN npm install
-
-# Copy the rest of the application
-COPY . .
-
-# Build CSS (Tailwind)
+RUN libman restore
 RUN npm run build:css
 
 # Build and publish the application
@@ -47,10 +41,7 @@ WORKDIR /app
 # Expose port (HTTP only)
 EXPOSE 8080
 
-# Copy published application from build stage
 COPY --from=build /app/publish .
-# Copy wwwroot with libman dependencies
-COPY --from=build /app/wwwroot ./wwwroot
 
 {{#if_sqlite}}
 # For SQLite: Create directories for database file and data protection keys
