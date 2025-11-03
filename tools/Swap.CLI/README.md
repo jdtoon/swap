@@ -1293,6 +1293,18 @@ What you get:
 - `Events/SwapEventChains.cs` using `EventNames.*` constants
 - Dev-only endpoints at `/_swap/dev/events` and `/_swap/dev/events.json`
 
+Or generate a multi-project layered solution (aliases: `layered` and `swap-layered`):
+
+```
+swap new MyApp --template layered --database sqlite
+```
+
+What you get:
+- Solution with projects: Web, Application, Domain, Infrastructure
+- Web registers `AddSwapHtmx(...)` and `UseSwapHtmxShell()/UseSwapHtmx()`
+- Event chains: `Web/Events/SwapEventChains.cs` mapping domain → ui.* events
+- Post-create (automated unless `--skip-setup`): npm/libman/CSS in `Web/`, EF migrations with `-p Infrastructure -s Web`
+
 ## Events inspection and DX helpers
 
 Inspect your event chains from source or from a running app:

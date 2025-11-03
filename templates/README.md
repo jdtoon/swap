@@ -11,6 +11,8 @@ Templates are the heart of Swap CLI's code generation engine. Every file generat
 ```
 templates/
 ├── monolith/          # Full project template (swap new)
+├── swap-monolith/     # Monolith with Swap event system wired by default
+├── swap-layered/      # Multi-project layered solution (Web, Application, Domain, Infrastructure)
 └── generate/          # CRUD generation templates (swap generate)
     ├── auth/          # Authentication scaffolding
     ├── controller/    # CRUD controllers and views
@@ -50,10 +52,9 @@ templates/
 - `{{DatabaseProvider}}` - sqlite, sqlserver, or postgres
 - `{{UseLocalNuget}}` - true/false for local NuGet feed
 
-### 2. Generate Templates (`generate/`)
-### 3. Swap Monolith Template (`swap-monolith/`)
+### 2. Swap Monolith Template (`swap-monolith/`)
 
-Used by: planned `swap new <ProjectName> --template swap-monolith`
+Used by: `swap new <ProjectName> --template swap-monolith`
 
 Purpose: Same as Monolith, but with the Event System fully wired out-of-the-box.
 
@@ -62,8 +63,37 @@ Adds:
 - `Program.cs` registers both `UseSwapHtmxShell()` and `UseSwapHtmx()` and calls `AddSwapHtmx(opts => SwapEventChains.Configure(opts))`
 
 Notes:
-- The CLI will gain a `--template` switch to choose between `monolith` and `swap-monolith`.
 - Existing `monolith` remains unchanged for parity and minimalism; `swap-monolith` is the DX-forward option.
+
+### 3. Layered Solution Template (`swap-layered/`)
+
+Used by: `swap new <ProjectName> --template layered` (alias) or `--template swap-layered`
+
+Purpose: Multi-project solution enforcing clean layering and HTMX-native event system.
+
+Projects:
+- `Web/` (Presentation): Controllers, views, HTMX integration, Swap event chains, model binders
+- `Application/`: Use cases/services, abstractions, DTOs, event emission via IEventBus
+- `Domain/`: Entities and domain events (single source of truth for event names)
+- `Infrastructure/`: EF Core DbContext and repositories (provider-specific packages)
+
+Highlights:
+- HTMX-native ui.* events and server-side Swap event chains out of the box
+- Session support and dev endpoints when ASPNETCORE_ENVIRONMENT=Development
+- Pre-wired demos: Todos, Stats, Components, Dynamic, Bulk operations
+
+Post-create steps (performed by CLI when not skipping setup):
+- Run npm install + libman restore in `Web/`
+- Build CSS in `Web/` (Tailwind + DaisyUI)
+- Create and apply EF Core migration using `-p Infrastructure -s Web`
+
+Template Variables:
+- `{{ProjectName}}`, `{{ProjectNameLower}}`, `{{DatabaseProvider}}`, `{{UseLocalNuget}}`
+
+Aliases:
+- `--template layered` and `--template swap-layered` are equivalent and point to `templates/swap-layered`.
+
+### 4. Generate Templates (`generate/`)
 
 
 **Used by:** `swap generate <type>` commands

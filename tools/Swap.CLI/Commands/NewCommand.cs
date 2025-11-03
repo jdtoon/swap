@@ -411,7 +411,11 @@ public class HtmxShellMiddleware
             "swap-layered" => "swap-layered",
             _ => throw new ArgumentException($"Unknown template '{template}'. Use 'monolith', 'swap-monolith', 'layered', or 'swap-layered'.")
         };
-        var templatePath = Path.Combine(AppContext.BaseDirectory, "templates", selected);
+        // Allow tests and custom packaging to override templates base directory
+        var templatesBase = Environment.GetEnvironmentVariable("SWAP_TEMPLATES_DIR");
+        var templatePath = string.IsNullOrWhiteSpace(templatesBase)
+            ? Path.Combine(AppContext.BaseDirectory, "templates", selected)
+            : Path.Combine(templatesBase!, selected);
         
         if (!Directory.Exists(templatePath))
         {
