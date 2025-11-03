@@ -1279,6 +1279,39 @@ For questions or feedback, open an [issue](https://github.com/jdtoon/swap/issues
 
 ---
 
+## Template selection (DX)
+
+Choose the DX-forward template with the Event System fully wired:
+
+```
+swap new MyApp --template swap-monolith --database sqlite
+```
+
+What you get:
+- `AddSwapHtmx(...)` with chains scaffold
+- Middleware: `UseSwapHtmxShell()` and `UseSwapHtmx()`
+- `Events/SwapEventChains.cs` using `EventNames.*` constants
+- Dev-only endpoints at `/_swap/dev/events` and `/_swap/dev/events.json`
+
+## Events inspection and DX helpers
+
+Inspect your event chains from source or from a running app:
+
+```
+# Source scan (resolves EventNames constants)
+swap events list -p .
+
+# From running server (Development-only endpoint)
+swap events from-server --url http://localhost:5000
+```
+
+Notes:
+- Run the server in one terminal (or detached) and query from another.
+- Dev endpoint returns a live snapshot of Trigger → Chained edges.
+- Chains are directional and one-hop by default; advanced modes are available in `SwapEventBusOptions` via `ResolutionMode` and `MaxTransitiveDepth`.
+
+---
+
 **Built with ❤️ for the .NET community**
 
 *Swap CLI - Generate production-ready ASP.NET + HTMX applications in seconds.*

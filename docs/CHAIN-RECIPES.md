@@ -67,3 +67,23 @@ Performance notes
 Tooling
 - Dev dashboard: `/_swap/dev/events` (HTML) and `/_swap/dev/events.json` (JSON)
 - CLI: `swap events list` (source scan) or `swap events from-server --url http://localhost:5000`
+
+Resolution modes (advanced)
+- Default is OneHop (directional, immediate children only).
+- `Bidirectional`: treat edges as mirrored for a single hop (X→Y implies emitting Y also includes X).
+- `Transitive`: breadth-first expansion along edges up to `MaxTransitiveDepth`.
+
+Example configuration:
+```csharp
+builder.Services.AddSwapHtmx(opts =>
+{
+  opts.Chain(EventNames.Domain.TodoCreated, EventNames.Ui.TodoRefreshList, EventNames.Ui.StatsRefresh);
+  // defaults to OneHop
+  opts.ResolutionMode = ChainResolutionMode.OneHop;
+
+  // Alternatives:
+  // opts.ResolutionMode = ChainResolutionMode.Bidirectional;
+  // opts.ResolutionMode = ChainResolutionMode.Transitive;
+  // opts.MaxTransitiveDepth = 2; // when Transitive
+});
+```

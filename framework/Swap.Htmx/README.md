@@ -183,6 +183,33 @@ Usage recap:
 
 Client side, ensure your components declare the events they listen to and send the `X-Swap-Events` header with active subscriptions (a small helper script can do this automatically; see docs). If the header is missing, no filtering occurs and all emitted+chained events are sent.
 
+#### Chain resolution modes
+
+You can control how chains expand at runtime via an enum on options. Default is safest.
+
+```csharp
+builder.Services.AddSwapHtmx(opts =>
+{
+    // Chains
+    opts.Chain("todo.created", "ui.todo.refreshList", "ui.stats.refresh");
+
+    // Resolution defaults to OneHop (immediate children only)
+    opts.ResolutionMode = Swap.Htmx.Events.ChainResolutionMode.OneHop; // default
+
+    // Other strategies:
+    // opts.ResolutionMode = ChainResolutionMode.Bidirectional; // reverse one-hop (Y emits X when X->Y configured)
+    // opts.ResolutionMode = ChainResolutionMode.Transitive;    // expand breadth-first up to MaxTransitiveDepth
+    // opts.MaxTransitiveDepth = 2; // depth limit when Transitive
+});
+```
+
+Semantics:
+- OneHop: A → {B,C} means emitting A includes B and C only.
+- Bidirectional: A → B means emitting A includes B, and emitting B also includes A (one hop each way).
+- Transitive: A → B → C expands along edges up to the configured depth (depth=1 equals OneHop).
+
+Guardrails: `Validate()` checks for invalid names and cycles at startup (Development), regardless of mode.
+
 
 #### Client helper (swap-events.js)
 
