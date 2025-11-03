@@ -2,12 +2,58 @@
 
 [![GitHub License](https://img.shields.io/github/license/jdtoon/swap)](LICENSE)
 [![.NET Version](https://img.shields.io/badge/.NET-9.0-512BD4?logo=dotnet)](https://dotnet.microsoft.com/download)
-[![NuGet](https://img.shields.io/badge/NuGet-v0.3.0-blue?logo=nuget)](https://www.nuget.org/packages/Swap.CLI)
+[![NuGet](https://img.shields.io/badge/NuGet-v0.3.1-blue?logo=nuget)](https://www.nuget.org/packages/Swap.CLI)
 [![GitHub Stars](https://img.shields.io/github/stars/jdtoon/swap?style=social)](https://github.com/jdtoon/swap/stargazers)
 
 **Generate production-ready ASP.NET Core + HTMX applications with beautiful DaisyUI components.**
 
 Swap CLI is a code generator that creates complete, modern web applications using ASP.NET Core MVC, HTMX for interactivity, DaisyUI for UI components, and Entity Framework Core for data access. Generate full CRUD operations with pagination, search, sorting, filtering, and modal-based editing in seconds.
+
+## 🚧 Templates (HTMX-first)
+
+Two first-class architecture templates ship with Swap. Both include HTMX 2.x, DaisyUI, the Swap Event System, Docker, and real integration tests using Swap.Testing.
+
+- Monolith — Single project optimized for developer experience; move fast without ceremony
+- Layered — Multi-project architecture (Web, Application, Domain, Infrastructure) ready to scale
+- Modular Monolith — Coming soon (0.3.2): single deployable with clear module boundaries
+
+Explore: Templates overview → https://jdtoon.github.io/swap/docs/templates/overview
+
+Create from the CLI:
+
+```bash
+# Monolith (default)
+swap new MyApp
+
+# Explicit monolith
+swap new MyApp --template swap-monolith
+
+# Layered architecture
+swap new MyApp --template swap-layered
+```
+
+Both templates automatically run setup (npm install, libman restore, Tailwind build) and auto-apply EF Core migrations on startup in Development.
+
+## 🔔 Event System (built-in)
+
+The Swap Event System makes your UI and server flows declarative and testable. It wires HTMX UI events (like `ui.afterOnLoad`) to server-side chains you control.
+
+- Declarative server chains you can visualize and validate
+- HTMX-native UX: partials, toasts, and navigation out of the box
+- Dev dashboard in Development:
+  - `/_swap/dev/events` (HTML dashboard with Mermaid graph)
+  - `/_swap/dev/events.json` (chains JSON)
+  - `/_swap/dev/events.meta.json` (resolution mode/depth)
+  - `/_swap/dev/explain.json?event=...` (resolution preview)
+- CLI tooling:
+
+```bash
+swap events list -p .
+swap events validate -p .
+swap events graph -p . --format mermaid
+```
+
+Learn more: Event System → https://jdtoon.github.io/swap/docs/features/event-system
 
 ## 🌟 Why Swap?
 
