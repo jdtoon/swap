@@ -13,7 +13,7 @@ public static class NewCommand
         
         var nameArg = new Argument<string>("name", "The name of the project (e.g., MyApp)");
     var dbOption = new Option<string>("--database", () => "sqlite", "Database provider (sqlite|sqlserver|postgres)");
-    var templateOption = new Option<string>("--template", () => "monolith", "Project template (monolith|swap-monolith)");
+    var templateOption = new Option<string>("--template", () => "monolith", "Project template (monolith|swap-monolith|layered|swap-layered)");
         var outOption = new Option<string?>("--output", "Output directory (default: ./{name})");
         var skipSetupOption = new Option<bool>("--skip-setup", description: "Skip prerequisites check, npm/libman steps, and initial migration (useful for CI/tests)");
         var localNugetOption = new Option<bool>("--local-nuget", description: "Use local NuGet feed for Swap packages (for framework development only)");
@@ -158,10 +158,13 @@ public static class NewCommand
                     await AnsiConsole.Status()
                         .StartAsync("Running setup commands...", async ctx =>
                         {
+                            var isLayered = string.Equals(template, "layered", StringComparison.OrdinalIgnoreCase) ||
+                                            string.Equals(template, "swap-layered", StringComparison.OrdinalIgnoreCase);
+                            var webDir = isLayered ? Path.Combine(projectPath, "Web") : projectPath;
                             try
                             {
                                 ctx.Status("Running npm install...");
-                                await RunCommandAsync("npm", "install", projectPath);
+                                await RunCommandAsync("npm", "install", webDir);
                                 AnsiConsole.MarkupLine("[green]✓[/] npm install completed");
                             }
                             catch (Exception ex)
@@ -173,7 +176,7 @@ public static class NewCommand
                             try
                             {
                                 ctx.Status("Running libman restore...");
-                                await RunCommandAsync("libman", "restore", projectPath);
+                                await RunCommandAsync("libman", "restore", webDir);
                                 AnsiConsole.MarkupLine("[green]✓[/] libman restore completed");
                             }
                             catch (Exception ex)
@@ -185,7 +188,7 @@ public static class NewCommand
                             try
                             {
                                 ctx.Status("Building CSS...");
-                                await RunCommandAsync("npm", "run build:css", projectPath);
+                                await RunCommandAsync("npm", "run build:css", webDir);
                                 AnsiConsole.MarkupLine("[green]✓[/] CSS build completed");
                             }
                             catch (Exception ex)
@@ -208,12 +211,28 @@ public static class NewCommand
                             ctx.Status("Building project before migration...");
                             await RunCommandAsync("dotnet", "build", projectPath);
 
+                            var isLayered = string.Equals(template, "layered", StringComparison.OrdinalIgnoreCase) ||
+                                            string.Equals(template, "swap-layered", StringComparison.OrdinalIgnoreCase);
                             ctx.Status("Creating initial migration...");
-                            await RunCommandAsync("dotnet", "ef migrations add InitialCreate", projectPath);
+                            if (isLayered)
+                            {
+                                await RunCommandAsync("dotnet", "ef migrations add InitialCreate -p Infrastructure -s Web", projectPath);
+                            }
+                            else
+                            {
+                                await RunCommandAsync("dotnet", "ef migrations add InitialCreate", projectPath);
+                            }
                             AnsiConsole.MarkupLine("[green]✓[/] Migration created");
 
                             ctx.Status("Updating database...");
-                            await RunCommandAsync("dotnet", "ef database update", projectPath);
+                            if (isLayered)
+                            {
+                                await RunCommandAsync("dotnet", "ef database update -p Infrastructure -s Web", projectPath);
+                            }
+                            else
+                            {
+                                await RunCommandAsync("dotnet", "ef database update", projectPath);
+                            }
                             AnsiConsole.MarkupLine("[green]✓[/] Database updated");
                         }
                         catch (Exception ex)
@@ -230,12 +249,27 @@ public static class NewCommand
                 {
                     AnsiConsole.WriteLine();
                     AnsiConsole.MarkupLine("[red]✗ Setup failed. Please run the setup commands manually:[/]");
-                    AnsiConsole.MarkupLine($"  cd {name}");
-                    AnsiConsole.MarkupLine("  npm install");
-                    AnsiConsole.MarkupLine("  libman restore");
-                    AnsiConsole.MarkupLine("  npm run build:css");
-                    AnsiConsole.MarkupLine("  dotnet ef migrations add InitialCreate");
-                    AnsiConsole.MarkupLine("  dotnet ef database update");
+                    var isLayered = string.Equals(template, "layered", StringComparison.OrdinalIgnoreCase) ||
+                                    string.Equals(template, "swap-layered", StringComparison.OrdinalIgnoreCase);
+                    if (isLayered)
+                    {
+                        AnsiConsole.MarkupLine($"  cd {name}/Web");
+                        AnsiConsole.MarkupLine("  npm install");
+                        AnsiConsole.MarkupLine("  libman restore");
+                        AnsiConsole.MarkupLine("  npm run build:css");
+                        AnsiConsole.MarkupLine($"  cd ..");
+                        AnsiConsole.MarkupLine("  dotnet ef migrations add InitialCreate -p Infrastructure -s Web");
+                        AnsiConsole.MarkupLine("  dotnet ef database update -p Infrastructure -s Web");
+                    }
+                    else
+                    {
+                        AnsiConsole.MarkupLine($"  cd {name}");
+                        AnsiConsole.MarkupLine("  npm install");
+                        AnsiConsole.MarkupLine("  libman restore");
+                        AnsiConsole.MarkupLine("  npm run build:css");
+                        AnsiConsole.MarkupLine("  dotnet ef migrations add InitialCreate");
+                        AnsiConsole.MarkupLine("  dotnet ef database update");
+                    }
                     return 1;
                 }
             }
@@ -244,8 +278,18 @@ public static class NewCommand
         AnsiConsole.MarkupLine("[bold green]🎉 Project ready![/]");
         AnsiConsole.WriteLine();
         AnsiConsole.MarkupLine("[bold]Run your application:[/]");
-        AnsiConsole.MarkupLine($"  cd {name}");
-        AnsiConsole.MarkupLine("  dotnet run");
+        var layered = string.Equals(template, "layered", StringComparison.OrdinalIgnoreCase) ||
+                      string.Equals(template, "swap-layered", StringComparison.OrdinalIgnoreCase);
+        if (layered)
+        {
+            AnsiConsole.MarkupLine($"  cd {name}/Web");
+            AnsiConsole.MarkupLine("  dotnet run");
+        }
+        else
+        {
+            AnsiConsole.MarkupLine($"  cd {name}");
+            AnsiConsole.MarkupLine("  dotnet run");
+        }
         AnsiConsole.WriteLine();
         AnsiConsole.MarkupLine("[dim]Then visit: http://localhost:5000[/]");
         return 0;
@@ -254,12 +298,27 @@ public static class NewCommand
     {
         AnsiConsole.WriteLine();
         AnsiConsole.MarkupLine("[red]✗ Setup failed. Please run the setup commands manually:[/]");
-        AnsiConsole.MarkupLine($"  cd {name}");
-        AnsiConsole.MarkupLine("  npm install");
-        AnsiConsole.MarkupLine("  libman restore");
-        AnsiConsole.MarkupLine("  npm run build:css");
-        AnsiConsole.MarkupLine("  dotnet ef migrations add InitialCreate");
-        AnsiConsole.MarkupLine("  dotnet ef database update");
+        var isLayered = string.Equals(template, "layered", StringComparison.OrdinalIgnoreCase) ||
+                        string.Equals(template, "swap-layered", StringComparison.OrdinalIgnoreCase);
+        if (isLayered)
+        {
+            AnsiConsole.MarkupLine($"  cd {name}/Web");
+            AnsiConsole.MarkupLine("  npm install");
+            AnsiConsole.MarkupLine("  libman restore");
+            AnsiConsole.MarkupLine("  npm run build:css");
+            AnsiConsole.MarkupLine($"  cd ..");
+            AnsiConsole.MarkupLine("  dotnet ef migrations add InitialCreate -p Infrastructure -s Web");
+            AnsiConsole.MarkupLine("  dotnet ef database update -p Infrastructure -s Web");
+        }
+        else
+        {
+            AnsiConsole.MarkupLine($"  cd {name}");
+            AnsiConsole.MarkupLine("  npm install");
+            AnsiConsole.MarkupLine("  libman restore");
+            AnsiConsole.MarkupLine("  npm run build:css");
+            AnsiConsole.MarkupLine("  dotnet ef migrations add InitialCreate");
+            AnsiConsole.MarkupLine("  dotnet ef database update");
+        }
         return 1;
     }
     }
@@ -343,11 +402,15 @@ public class HtmxShellMiddleware
     
     private static async Task GenerateProjectAsync(string projectName, string database, string projectPath, bool localNuget, string template)
     {
-        var selected = (template ?? "monolith").Trim().ToLowerInvariant();
-        if (selected != "monolith" && selected != "swap-monolith")
+        var raw = (template ?? "monolith").Trim().ToLowerInvariant();
+        var selected = raw switch
         {
-            throw new ArgumentException($"Unknown template '{template}'. Use 'monolith' or 'swap-monolith'.");
-        }
+            "monolith" => "monolith",
+            "swap-monolith" => "swap-monolith",
+            "layered" => "swap-layered",
+            "swap-layered" => "swap-layered",
+            _ => throw new ArgumentException($"Unknown template '{template}'. Use 'monolith', 'swap-monolith', 'layered', or 'swap-layered'.")
+        };
         var templatePath = Path.Combine(AppContext.BaseDirectory, "templates", selected);
         
         if (!Directory.Exists(templatePath))
