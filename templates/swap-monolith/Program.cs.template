@@ -3,6 +3,7 @@ using {{ProjectName}}.Data.Seeders;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.DataProtection;
 using Swap.Htmx;
+using Swap.Htmx.Dev;
 using {{ProjectName}}.Events;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -111,6 +112,12 @@ app.UseAuthorization();
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
+
+// Dev-only: event chains dashboard
+if (app.Environment.IsDevelopment())
+{
+    app.MapSwapHtmxDevEndpoints();
+}
 
 app.Run();
 

@@ -56,7 +56,7 @@ public class HomeController : SwapController
         // Show a success toast overlay via HX-Trigger
         Response.ShowSuccessToast($"Created: {todo.Title}");
 
-        // Form is self-owned; let the list refresh via ui.todo.refreshList chain
+    // Form is self-owned; let the list refresh via EventNames.Ui.TodoRefreshList chain
         return NoContent();
     }
 

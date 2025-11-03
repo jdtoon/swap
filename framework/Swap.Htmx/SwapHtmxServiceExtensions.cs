@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Swap.Htmx.Events;
 using Swap.Htmx.Middleware;
+using Swap.Htmx.Dev;
 
 namespace Swap.Htmx;
 
@@ -44,6 +45,23 @@ public static class SwapHtmxServiceExtensions
         services.AddSwapHtmx();
         var opts = new SwapEventBusOptions();
         configureEvents?.Invoke(opts);
+        // Guardrails: validate configuration early
+        try
+        {
+            var diag = opts.Validate();
+            var env = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
+            var isDev = string.Equals(env, "Development", StringComparison.OrdinalIgnoreCase);
+            if (diag.HasErrors && isDev)
+            {
+                var msg = "Swap.Htmx event chain validation failed:\n - " + string.Join("\n - ", diag.Errors);
+                throw new InvalidOperationException(msg);
+            }
+            // In non-dev, we don't throw to avoid blocking startup; warnings/errors could be logged by host app.
+        }
+        catch
+        {
+            throw;
+        }
         // Replace the default singleton with configured one
         services.AddSingleton(opts);
         return services;

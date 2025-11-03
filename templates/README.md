@@ -58,7 +58,7 @@ Used by: planned `swap new <ProjectName> --template swap-monolith`
 Purpose: Same as Monolith, but with the Event System fully wired out-of-the-box.
 
 Adds:
-- `Events/SwapEventChains.cs` with sensible default chains (ui.refreshList, ui.toast.success, ui.modal.close)
+- `Events/SwapEventChains.cs` with sensible default chains (use `EventNames.*` constants like `EventNames.Ui.RefreshList`, `EventNames.Ui.ToastSuccess`)
 - `Program.cs` registers both `UseSwapHtmxShell()` and `UseSwapHtmx()` and calls `AddSwapHtmx(opts => SwapEventChains.Configure(opts))`
 
 Notes:
