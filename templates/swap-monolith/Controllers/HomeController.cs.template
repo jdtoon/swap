@@ -47,17 +47,17 @@ public class HomeController : SwapController
             IsComplete = false
         };
 
-    _context.TodoItems.Add(todo);
-    _context.SaveChanges();
+        _context.TodoItems.Add(todo);
+        _context.SaveChanges();
 
-    // Emit domain event (chained to UI events via Events/SwapEventChains.cs)
-    _events.Emit(EventNames.Domain.TodoCreated, new { id = todo.Id, title = todo.Title });
+        // Emit domain event (chained to UI events via Events/SwapEventChains.cs)
+        _events.Emit(EventNames.Domain.TodoCreated, new { id = todo.Id, title = todo.Title });
 
-    // Show a success toast overlay via HX-Trigger
-    Response.ShowSuccessToast($"Created: {todo.Title}");
+        // Show a success toast overlay via HX-Trigger
+        Response.ShowSuccessToast($"Created: {todo.Title}");
 
-        // Return the updated list
-        return PartialView("_TodoList", _context.TodoItems.ToList());
+        // Form is self-owned; let the list refresh via ui.todo.refreshList chain
+        return NoContent();
     }
 
     [HttpPost]
@@ -97,7 +97,7 @@ public class HomeController : SwapController
     }
 
     [HttpDelete]
-    public IActionResult DeleteTodo(int id)
+    public IActionResult DeleteItem(int id)
     {
         var todo = _context.TodoItems.Find(id);
         if (todo == null)
@@ -105,13 +105,14 @@ public class HomeController : SwapController
             return NotFound();
         }
 
-    _context.TodoItems.Remove(todo);
-    _context.SaveChanges();
+        _context.TodoItems.Remove(todo);
+        _context.SaveChanges();
 
-    _events.Emit(EventNames.Domain.TodoDeleted, new { id = id });
+        _events.Emit(EventNames.Domain.TodoDeleted, new { id = id });
 
-    Response.ShowSuccessToast($"Deleted todo #{id}");
+        Response.ShowSuccessToast($"Deleted todo #{id}");
 
-        return PartialView("_TodoList", _context.TodoItems.ToList());
+        // Item is self-owned; client will delete the li via hx-swap="delete"
+        return Ok();
     }
 }

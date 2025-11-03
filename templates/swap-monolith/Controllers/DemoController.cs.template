@@ -114,8 +114,8 @@ public class DemoController : SwapController
         if (ids == null || ids.Length == 0)
         {
             Response.ShowInfoToast("No items selected");
-            var none = _context.TodoItems.ToList();
-            return PartialView("~/Views/Demo/_BulkTodos.cshtml", none);
+            // Let the list container stay as-is; no content swap
+            return NoContent();
         }
 
         var todos = _context.TodoItems.Where(t => ids.Contains(t.Id)).ToList();
@@ -128,7 +128,7 @@ public class DemoController : SwapController
         Response.ShowSuccessToast($"Completed {todos.Count} todos");
         _events.Emit(EventNames.Domain.BulkCompleted, new { count = todos.Count });
 
-        var refreshed = _context.TodoItems.ToList();
-        return PartialView("~/Views/Demo/_BulkTodos.cshtml", refreshed);
+        // Chain will refresh list + stats; avoid double swaps
+        return NoContent();
     }
 }

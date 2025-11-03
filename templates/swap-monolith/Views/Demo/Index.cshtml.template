@@ -17,28 +17,28 @@
   <section class="card bg-base-100 shadow">
     <div class="card-body">
     <h2 class="card-title">Stats</h2>
-    <div id="stats" hx-get="/Demo/Stats" hx-trigger="load, ui.stats.refresh from:body" hx-target="this" hx-swap="innerHTML" class="border rounded p-3">Loading…</div>
+    @await Html.PartialAsync("~/Views/Demo/_StatsPanel.cshtml")
     </div>
   </section>
 
   <section class="card bg-base-100 shadow lg:col-span-2">
     <div class="card-body">
     <h2 class="card-title">Todo List</h2>
-    <div id="todo-list" hx-get="/Home/TodoList" hx-trigger="load, ui.todo.refreshList from:body" hx-target="this" hx-swap="innerHTML">Loading…</div>
+    @await Html.PartialAsync("~/Views/Demo/_TodoListPanel.cshtml")
     </div>
   </section>
 
   <section class="card bg-base-100 shadow">
     <div class="card-body">
     <h2 class="card-title">Toasts</h2>
-    <div id="toasts" hx-get="/Demo/Toasts" hx-trigger="load, ui.toast.success from:body" hx-target="this" hx-swap="innerHTML" class="space-y-2">Loading…</div>
+    @await Html.PartialAsync("~/Views/Demo/_ToastsPanel.cshtml")
     </div>
   </section>
 
   <section class="card bg-base-100 shadow">
     <div class="card-body">
     <h2 class="card-title">Activity</h2>
-    <div id="activity" hx-get="/Demo/ActivityLog" hx-trigger="load, ui.activity.append from:body" hx-target="this" hx-swap="innerHTML" class="space-y-1">Loading…</div>
+    @await Html.PartialAsync("~/Views/Demo/_ActivityPanel.cshtml")
     </div>
   </section>
 

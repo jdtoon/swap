@@ -9,12 +9,15 @@ public static class SwapEventChains
         // Todo domain chains (homepage demo uses Todo items)
         events
             .Chain(EventNames.Domain.TodoCreated, EventNames.Ui.TodoRefreshList, EventNames.Ui.ToastSuccess, EventNames.Ui.StatsRefresh, EventNames.Ui.ActivityAppend)
-            .Chain(EventNames.Domain.TodoDeleted, EventNames.Ui.TodoRefreshList, EventNames.Ui.ToastSuccess, EventNames.Ui.StatsRefresh, EventNames.Ui.ActivityAppend)
+            .Chain(EventNames.Domain.TodoDeleted, EventNames.Ui.ToastSuccess, EventNames.Ui.StatsRefresh, EventNames.Ui.ActivityAppend)
             // Dynamic components demo: note added refreshes details and summary + toast
             .Chain(EventNames.Domain.ProjectNoteAdded, EventNames.Ui.DetailsRefresh, EventNames.Ui.SummaryRefresh, EventNames.Ui.ToastSuccess)
             // Bulk operations demo: after completing items refresh list/stats + toast
             .Chain(EventNames.Domain.BulkCompleted, EventNames.Ui.TodoRefreshList, EventNames.Ui.StatsRefresh, EventNames.Ui.ToastSuccess)
             // Toggle refreshes stats only (list rendering handled by response swap in Toggle actions)
-            .Chain(EventNames.Domain.TodoToggled, EventNames.Ui.StatsRefresh);
+            .Chain(EventNames.Domain.TodoToggled, EventNames.Ui.StatsRefresh)
+            // Reusable components demo chains
+            .Chain(EventNames.Domain.ComponentAUpdated, EventNames.Ui.ComponentARefresh, EventNames.Ui.ToastSuccess)
+            .Chain(EventNames.Domain.ComponentBUpdated, EventNames.Ui.ComponentBRefresh, EventNames.Ui.ToastSuccess);
     }
 }

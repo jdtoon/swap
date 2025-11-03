@@ -16,33 +16,10 @@
 <div class="card bg-base-100 shadow-xl">
     <div class="card-body">
         <h2 class="card-title">Todo List Example</h2>
-        <p class="text-sm text-gray-600 mb-4">Try adding, toggling, or deleting items. Notice how only the list updates (HTMX magic! ✨)</p>
-        
-        <!-- Add Todo Form -->
-        <form hx-post="/Home/AddTodo" 
-              hx-target="#todo-list" 
-              hx-swap="outerHTML"
-              hx-on::after-request="this.reset()"
-              class="flex gap-2 mb-4">
-            <input type="text" 
-                   name="title" 
-                   placeholder="What needs to be done?" 
-                   class="input input-bordered flex-1" 
-                   required />
-            <button type="submit" class="btn btn-primary">
-                Add
-            </button>
-        </form>
+        <p class="text-sm text-gray-600 mb-4">Try adding, toggling, or deleting items. Components own themselves; chains update cross-cutting UI.</p>
 
-        <!-- Todo List Component (loads separately via HTMX) -->
-        <div hx-get="/Home/TodoList" 
-             hx-trigger="load"
-             hx-swap="outerHTML">
-            <div class="flex items-center justify-center py-4">
-                <span class="loading loading-spinner loading-md"></span>
-                <span class="ml-2">Loading todos...</span>
-            </div>
-        </div>
+        @await Html.PartialAsync("~/Views/Home/_TodoForm.cshtml")
+        @await Html.PartialAsync("~/Views/Home/_TodoListContainer.cshtml")
     </div>
 </div>
 
@@ -51,8 +28,6 @@
     <div>
         <h3 class="font-bold">Next Steps</h3>
         <ul class="list-disc list-inside mt-2">
-            <li>Run: <code class="bg-base-300 px-2 py-1 rounded">dotnet ef migrations add InitialCreate</code></li>
-            <li>Run: <code class="bg-base-300 px-2 py-1 rounded">dotnet ef database update</code></li>
             <li>Modify <code>Models/</code> to add your entities</li>
             <li>Use: <code class="bg-base-300 px-2 py-1 rounded">swap generate feature Product</code> to scaffold CRUD operations</li>
         </ul>
