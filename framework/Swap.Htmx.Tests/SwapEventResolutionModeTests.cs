@@ -95,4 +95,80 @@ public class SwapEventResolutionModeTests
         Assert.Contains("b", resolved.Keys);
         Assert.DoesNotContain("c", resolved.Keys);
     }
+
+    [Fact]
+    public void OneHop_Fanout_Over_Eight()
+    {
+        // Arrange: root -> e1..e9 (9 children)
+        var context = Ctx();
+        var accessor = new HttpContextAccessor { HttpContext = context };
+        var options = new SwapEventBusOptions { ResolutionMode = ChainResolutionMode.OneHop };
+        var children = Enumerable.Range(1, 9).Select(i => $"e{i}").ToArray();
+        options.Chain("root", children);
+
+        var bus = new SwapEventBus(accessor, options, NullLogger<SwapEventBus>.Instance);
+        bus.Emit("root");
+
+        // Act
+        var (resolved, _) = bus.ResolveAndFilterFor(context);
+
+        // Assert: includes root and all 9 children; not include any reverse or transitive
+        Assert.Contains("root", resolved.Keys);
+        foreach (var ch in children)
+        {
+            Assert.Contains(ch, resolved.Keys);
+        }
+    }
+
+    [Fact]
+    public void Bidirectional_Reverse_Gathers_Many_Parents()
+    {
+        // Arrange: t1..t9 -> hub; emit hub; bidirectional should include all t1..t9
+        var context = Ctx();
+        var accessor = new HttpContextAccessor { HttpContext = context };
+        var options = new SwapEventBusOptions { ResolutionMode = ChainResolutionMode.Bidirectional };
+        for (int i = 1; i <= 9; i++)
+        {
+            options.Chain($"t{i}", "hub");
+        }
+
+        var bus = new SwapEventBus(accessor, options, NullLogger<SwapEventBus>.Instance);
+        bus.Emit("hub");
+
+        // Act
+        var (resolved, _) = bus.ResolveAndFilterFor(context);
+
+        // Assert: hub plus all parents
+        Assert.Contains("hub", resolved.Keys);
+        for (int i = 1; i <= 9; i++)
+        {
+            Assert.Contains($"t{i}", resolved.Keys);
+        }
+    }
+
+    [Fact]
+    public void Transitive_Deep_Chain_Over_Eight()
+    {
+        // Arrange: a->b->c->d->e->f->g->h->i->j (10 nodes), depth 9 to reach j
+        var context = Ctx();
+        var accessor = new HttpContextAccessor { HttpContext = context };
+        var options = new SwapEventBusOptions { ResolutionMode = ChainResolutionMode.Transitive, MaxTransitiveDepth = 9 };
+        var nodes = new[] { "a","b","c","d","e","f","g","h","i","j" };
+        for (int k = 0; k < nodes.Length - 1; k++)
+        {
+            options.Chain(nodes[k], nodes[k + 1]);
+        }
+
+        var bus = new SwapEventBus(accessor, options, NullLogger<SwapEventBus>.Instance);
+        bus.Emit("a");
+
+        // Act
+        var (resolved, _) = bus.ResolveAndFilterFor(context);
+
+        // Assert: includes all nodes
+        foreach (var n in nodes)
+        {
+            Assert.Contains(n, resolved.Keys);
+        }
+    }
 }
