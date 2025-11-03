@@ -9,7 +9,7 @@ Swap is a lightweight, modern .NET 9 web framework designed for building server-
 - **Server-rendered first** - HTML generated on the server, minimal JavaScript
 - **HTMX-powered** - Progressive enhancement via HTMX attributes
 - **Container architecture** - Shell → Page → Component hierarchy for surgical DOM updates
-- **Pattern-driven** - Common behaviors (soft delete, slugs, audit trails, etc.) applied via CLI
+- **Event-driven** - HTMX focused event-driven updates to the view, easy to manage and maintain
 - **Convention over configuration** - Sensible defaults, minimal boilerplate
 
 ## Current State (October 2025)

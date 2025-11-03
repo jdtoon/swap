@@ -13,13 +13,7 @@ public class BulkService : IBulkService
     public async Task<int> CompleteAsync(int[] ids, CancellationToken ct = default)
     {
         if (ids == null || ids.Length == 0) return 0;
-        var list = await _repo.GetAllAsync(ct);
-        var updated = 0;
-        foreach (var t in list.Where(t => ids.Contains(t.Id)))
-        {
-            if (!t.IsComplete) { t.IsComplete = true; updated++; }
-        }
-        await _repo.SaveChangesAsync(ct);
+        var updated = await _repo.BulkCompleteAsync(ids, ct);
         if (updated > 0) _events.Emit(DomainEvents.BulkCompleted, new { count = updated });
         return updated;
     }

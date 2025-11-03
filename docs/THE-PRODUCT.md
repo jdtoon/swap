@@ -44,7 +44,7 @@ Modern web development presents developers with difficult tradeoffs:
 
 ### Swap's Approach
 
-**Server-Rendered HTML + HTMX + Pattern-Driven Code Generation + .NET**
+**Server-Rendered HTML + HTMX + Event-Driven Code Generation + .NET**
 
 Swap combines the best ideas from multiple ecosystems:
 Swap combines the best ideas from multiple ecosystems:
@@ -737,7 +737,7 @@ Fast feedback loops, clear error messages, and generated code that teaches best 
 - ✅ .NET type safety and performance
 - ✅ Developer ownership and transparency
 
-**Our Mission**: Make building web applications with .NET + HTMX productive, enjoyable, and pattern-driven.
+**Our Mission**: Make building web applications with .NET + HTMX productive, enjoyable, and event-driven.
 
 **Our Process**: Build real apps → Extract patterns → Generate code → Ship features fast
 

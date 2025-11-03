@@ -21,6 +21,11 @@ public class TodoRepository : ITodoRepository
     public Task RemoveAsync(TodoItem item, CancellationToken ct = default)
     { _db.TodoItems.Remove(item); return Task.CompletedTask; }
 
+    public Task<int> BulkCompleteAsync(int[] ids, CancellationToken ct = default)
+        => _db.TodoItems
+            .Where(t => ids.Contains(t.Id) && !t.IsComplete)
+            .ExecuteUpdateAsync(s => s.SetProperty(t => t.IsComplete, true), ct);
+
     public Task SaveChangesAsync(CancellationToken ct = default)
         => _db.SaveChangesAsync(ct);
 }

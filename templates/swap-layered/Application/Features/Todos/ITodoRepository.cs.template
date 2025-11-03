@@ -8,5 +8,6 @@ public interface ITodoRepository
     Task<TodoItem?> FindAsync(int id, CancellationToken ct = default);
     Task AddAsync(TodoItem item, CancellationToken ct = default);
     Task RemoveAsync(TodoItem item, CancellationToken ct = default);
+    Task<int> BulkCompleteAsync(int[] ids, CancellationToken ct = default);
     Task SaveChangesAsync(CancellationToken ct = default);
 }

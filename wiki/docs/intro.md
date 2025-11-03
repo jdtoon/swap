@@ -25,7 +25,6 @@ It generates ASP.NET Core projects with HTMX-powered views using proven patterns
 - **Entity Framework Core** integration included
 - **Docker-ready** - Every project includes Dockerfile and docker-compose.yml
 - **Event System** - Server-driven, filtered events with chain resolution (zero wasted triggers)
-- **Pattern-driven** - Every generated file uses battle-tested patterns
 
 ## Event System at a glance
 
