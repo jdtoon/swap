@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Text.Json;
+using System;
+using Swap.Htmx.Models;
 
 namespace Swap.Htmx;
 
@@ -17,7 +19,7 @@ public static class SwapHtmxExtensions
     /// <returns>True if the request has the HX-Request header, false otherwise.</returns>
     public static bool IsHtmxRequest(this HttpRequest request)
     {
-        return request.Headers.ContainsKey("HX-Request");
+        return request.Headers.ContainsKey(HxHeaders.Request);
     }
 
     /// <summary>
@@ -27,7 +29,7 @@ public static class SwapHtmxExtensions
     /// <returns>True if the request has the HX-Boosted header, false otherwise.</returns>
     public static bool IsHtmxBoosted(this HttpRequest request)
     {
-        return request.Headers.ContainsKey("HX-Boosted");
+        return request.Headers.ContainsKey(HxHeaders.Boosted);
     }
 
     /// <summary>
@@ -37,7 +39,16 @@ public static class SwapHtmxExtensions
     /// <returns>The current URL if present, null otherwise.</returns>
     public static string? GetHtmxCurrentUrl(this HttpRequest request)
     {
-        return request.Headers["HX-Current-URL"].FirstOrDefault();
+        return request.Headers[HxHeaders.CurrentUrl].FirstOrDefault();
+    }
+
+    /// <summary>
+    /// Gets the current URL from the HX-Current-URL header as a Uri.
+    /// </summary>
+    public static Uri? GetHtmxCurrentUrlUri(this HttpRequest request)
+    {
+        var url = request.GetHtmxCurrentUrl();
+        return Uri.TryCreate(url, UriKind.Absolute, out var uri) ? uri : null;
     }
 
     /// <summary>
@@ -47,7 +58,7 @@ public static class SwapHtmxExtensions
     /// <returns>The target element ID if present, null otherwise.</returns>
     public static string? GetHtmxTarget(this HttpRequest request)
     {
-        return request.Headers["HX-Target"].FirstOrDefault();
+        return request.Headers[HxHeaders.Target].FirstOrDefault();
     }
 
     /// <summary>
@@ -57,7 +68,32 @@ public static class SwapHtmxExtensions
     /// <returns>The trigger element ID if present, null otherwise.</returns>
     public static string? GetHtmxTrigger(this HttpRequest request)
     {
-        return request.Headers["HX-Trigger"].FirstOrDefault();
+        return request.Headers[HxHeaders.Trigger].FirstOrDefault();
+    }
+
+    /// <summary>
+    /// Gets the name attribute of the element that triggered the request (HX-Trigger-Name).
+    /// </summary>
+    public static string? GetHtmxTriggerName(this HttpRequest request)
+    {
+        return request.Headers[HxHeaders.TriggerName].FirstOrDefault();
+    }
+
+    /// <summary>
+    /// Gets the user input from the htmx prompt dialog (HX-Prompt).
+    /// </summary>
+    public static string? GetHtmxPrompt(this HttpRequest request)
+    {
+        return request.Headers[HxHeaders.Prompt].FirstOrDefault();
+    }
+
+    /// <summary>
+    /// Checks if this request is a history restore request (back/forward navigation) via HX-History-Restore-Request.
+    /// </summary>
+    public static bool IsHtmxHistoryRestoreRequest(this HttpRequest request)
+    {
+        var value = request.Headers[HxHeaders.HistoryRestore].FirstOrDefault();
+        return string.Equals(value, "true", StringComparison.OrdinalIgnoreCase);
     }
 
     /// <summary>
@@ -73,7 +109,7 @@ public static class SwapHtmxExtensions
     /// </example>
     public static void HxTrigger(this HttpResponse response, string eventName)
     {
-        response.Headers["HX-Trigger"] = eventName;
+        response.Headers[HxHeaders.TriggerResp] = eventName;
     }
 
     /// <summary>
@@ -89,7 +125,78 @@ public static class SwapHtmxExtensions
     /// </example>
     public static void HxTriggerWithDetails(this HttpResponse response, string json)
     {
-        response.Headers["HX-Trigger"] = json;
+        response.Headers[HxHeaders.TriggerResp] = json;
+    }
+
+    /// <summary>
+    /// Triggers a client event with a typed details object that will be serialized to JSON.
+    /// Produces: { "eventName": { ...details... } }
+    /// </summary>
+    public static void HxTrigger(this HttpResponse response, string eventName, object details)
+    {
+        var payload = JsonSerializer.Serialize(new Dictionary<string, object?>
+        {
+            [eventName] = details
+        });
+        response.Headers[HxHeaders.TriggerResp] = payload;
+    }
+
+    /// <summary>
+    /// Queue an event to fire on the client after swap completes.
+    /// </summary>
+    public static void HxTriggerAfterSwap(this HttpResponse response, string eventName)
+    {
+        response.Headers[HxHeaders.TriggerAfterSwap] = eventName;
+    }
+
+    /// <summary>
+    /// Queue an event with JSON details to fire after swap completes.
+    /// </summary>
+    public static void HxTriggerAfterSwapWithDetails(this HttpResponse response, string json)
+    {
+        response.Headers[HxHeaders.TriggerAfterSwap] = json;
+    }
+
+    /// <summary>
+    /// Queue a typed-details event to fire after swap completes.
+    /// Produces: { "eventName": { ...details... } }
+    /// </summary>
+    public static void HxTriggerAfterSwap(this HttpResponse response, string eventName, object details)
+    {
+        var payload = JsonSerializer.Serialize(new Dictionary<string, object?>
+        {
+            [eventName] = details
+        });
+        response.Headers[HxHeaders.TriggerAfterSwap] = payload;
+    }
+
+    /// <summary>
+    /// Queue an event to fire on the client after settle completes.
+    /// </summary>
+    public static void HxTriggerAfterSettle(this HttpResponse response, string eventName)
+    {
+        response.Headers[HxHeaders.TriggerAfterSettle] = eventName;
+    }
+
+    /// <summary>
+    /// Queue an event with JSON details to fire after settle completes.
+    /// </summary>
+    public static void HxTriggerAfterSettleWithDetails(this HttpResponse response, string json)
+    {
+        response.Headers[HxHeaders.TriggerAfterSettle] = json;
+    }
+
+    /// <summary>
+    /// Queue a typed-details event to fire after settle completes.
+    /// Produces: { "eventName": { ...details... } }
+    /// </summary>
+    public static void HxTriggerAfterSettle(this HttpResponse response, string eventName, object details)
+    {
+        var payload = JsonSerializer.Serialize(new Dictionary<string, object?>
+        {
+            [eventName] = details
+        });
+        response.Headers[HxHeaders.TriggerAfterSettle] = payload;
     }
 
     /// <summary>
@@ -105,7 +212,7 @@ public static class SwapHtmxExtensions
     /// </example>
     public static void HxPushUrl(this HttpResponse response, string url)
     {
-        response.Headers["HX-Push-Url"] = url;
+        response.Headers[HxHeaders.PushUrl] = url;
     }
 
     /// <summary>
@@ -115,7 +222,7 @@ public static class SwapHtmxExtensions
     /// <param name="response">The HTTP response.</param>
     public static void HxPreventPushUrl(this HttpResponse response)
     {
-        response.Headers["HX-Push-Url"] = "false";
+        response.Headers[HxHeaders.PushUrl] = "false";
     }
 
     /// <summary>
@@ -131,7 +238,7 @@ public static class SwapHtmxExtensions
     /// </example>
     public static void HxReplaceUrl(this HttpResponse response, string url)
     {
-        response.Headers["HX-Replace-Url"] = url;
+        response.Headers[HxHeaders.ReplaceUrl] = url;
     }
 
     /// <summary>
@@ -147,7 +254,7 @@ public static class SwapHtmxExtensions
     /// </example>
     public static void HxRedirect(this HttpResponse response, string url)
     {
-        response.Headers["HX-Redirect"] = url;
+        response.Headers[HxHeaders.Redirect] = url;
     }
 
     /// <summary>
@@ -162,7 +269,7 @@ public static class SwapHtmxExtensions
     /// </example>
     public static void HxRefresh(this HttpResponse response)
     {
-        response.Headers["HX-Refresh"] = "true";
+        response.Headers[HxHeaders.Refresh] = "true";
     }
 
     /// <summary>
@@ -178,7 +285,7 @@ public static class SwapHtmxExtensions
     /// </example>
     public static void HxRetarget(this HttpResponse response, string selector)
     {
-        response.Headers["HX-Retarget"] = selector;
+        response.Headers[HxHeaders.Retarget] = selector;
     }
 
     /// <summary>
@@ -194,7 +301,15 @@ public static class SwapHtmxExtensions
     /// </example>
     public static void HxReswap(this HttpResponse response, string swapStrategy)
     {
-        response.Headers["HX-Reswap"] = swapStrategy;
+        response.Headers[HxHeaders.Reswap] = swapStrategy;
+    }
+
+    /// <summary>
+    /// Strongly-typed HX-Reswap using options builder.
+    /// </summary>
+    public static void HxReswap(this HttpResponse response, HxReswapOptions options)
+    {
+        response.Headers[HxHeaders.Reswap] = options.ToHeaderValue();
     }
 
     /// <summary>
@@ -203,7 +318,7 @@ public static class SwapHtmxExtensions
     /// </summary>
     public static void HxLocation(this HttpResponse response, string url)
     {
-        response.Headers["HX-Location"] = url;
+        response.Headers[HxHeaders.Location] = url;
     }
 
     /// <summary>
@@ -212,7 +327,15 @@ public static class SwapHtmxExtensions
     /// </summary>
     public static void HxLocation(this HttpResponse response, object options)
     {
-        response.Headers["HX-Location"] = JsonSerializer.Serialize(options);
+        response.Headers[HxHeaders.Location] = JsonSerializer.Serialize(options);
+    }
+
+    /// <summary>
+    /// Strongly-typed HX-Location JSON body.
+    /// </summary>
+    public static void HxLocation(this HttpResponse response, HxLocationOptions options)
+    {
+        response.Headers[HxHeaders.Location] = JsonSerializer.Serialize(options);
     }
 
     /// <summary>
@@ -221,6 +344,40 @@ public static class SwapHtmxExtensions
     /// </summary>
     public static void HxReselect(this HttpResponse response, string selector)
     {
-        response.Headers["HX-Reselect"] = selector;
+        response.Headers[HxHeaders.Reselect] = selector;
+    }
+
+    /// <summary>
+    /// Signal the client to stop polling this endpoint by returning HTTP status 286.
+    /// </summary>
+    public static void HxStopPolling(this HttpResponse response)
+    {
+        response.StatusCode = 286; // htmx polling cancel
+    }
+
+    /// <summary>
+    /// Ensure the response varies on the HX-Request header when content differs for HTMX vs full requests.
+    /// Appends/sets Vary: HX-Request appropriately.
+    /// </summary>
+    public static void EnsureVaryHxRequest(this HttpResponse response)
+    {
+        const string vary = "Vary";
+        var existing = response.Headers[vary].ToString();
+        if (string.IsNullOrWhiteSpace(existing))
+        {
+            response.Headers[vary] = HxHeaders.Request;
+            return;
+        }
+
+        // Avoid duplicate entries
+        var parts = existing.Split(',');
+        foreach (var p in parts)
+        {
+            if (string.Equals(p.Trim(), HxHeaders.Request, StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
+        }
+        response.Headers[vary] = existing + ", " + HxHeaders.Request;
     }
 }

@@ -344,8 +344,17 @@ if (Request.IsHtmxBoosted())
 
 // Get HTMX headers
 var currentUrl = Request.GetHtmxCurrentUrl();
+var currentUri = Request.GetHtmxCurrentUrlUri();
 var target = Request.GetHtmxTarget();
 var trigger = Request.GetHtmxTrigger();
+var triggerName = Request.GetHtmxTriggerName();
+var promptValue = Request.GetHtmxPrompt();
+
+// Navigation via back/forward (history restore)
+if (Request.IsHtmxHistoryRestoreRequest())
+{
+    // e.g., return cached fragment or fast path
+}
 ```
 
 ### Response Headers
@@ -356,6 +365,9 @@ Response.HxTrigger("itemCreated");
 
 // Trigger with JSON details
 Response.HxTriggerWithDetails("{\"showMessage\": {\"level\": \"info\"}}");
+
+// Or typed trigger with details (auto-serializes to { "event": { ...details... } })
+Response.HxTrigger("showMessage", new { level = "info", text = "Saved" });
 
 // Push URL to browser history
 Response.HxPushUrl($"/articles/{article.Id}");
@@ -374,6 +386,39 @@ Response.HxRetarget("#notification-area");
 
 // Change swap strategy
 Response.HxReswap("beforebegin");
+
+// Or typed reswap options
+Response.HxReswap(new Swap.Htmx.Models.HxReswapOptions
+{
+    Style = Swap.Htmx.Models.HxSwapStyle.innerHTML,
+    Transition = true,
+    SwapDelay = 50,
+    SettleDelay = 50
+});
+
+// HX-Location: string or typed options object
+Response.HxLocation("/inbox");
+Response.HxLocation(new Swap.Htmx.Models.HxLocationOptions
+{
+    Path = "/inbox",
+    Target = "#main",
+    Select = "#main",
+}.WithSwap(new Swap.Htmx.Models.HxReswapOptions { Style = Swap.Htmx.Models.HxSwapStyle.outerHTML }));
+
+// Stop polling this endpoint
+Response.HxStopPolling(); // returns HTTP 286
+
+// If content differs for HTMX vs non-HTMX, set Vary header
+Response.EnsureVaryHxRequest();
+
+// Fire events at specific lifecycle moments
+Response.HxTriggerAfterSwap("listRefreshed");
+Response.HxTriggerAfterSwapWithDetails("{\"listRefreshed\": { \"count\": 42 }}");
+Response.HxTriggerAfterSwap("listRefreshed", new { count = 42 });
+
+Response.HxTriggerAfterSettle("toast");
+Response.HxTriggerAfterSettleWithDetails("{\"toast\": { \"level\": \"success\" }}");
+Response.HxTriggerAfterSettle("toast", new { level = "success" });
 ```
 
 ## Architecture Benefits
