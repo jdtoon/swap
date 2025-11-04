@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using ModularMonolithDemo.Modules.Orders.Contracts;
@@ -20,7 +21,14 @@ public sealed class OrdersModule : IModule
 
     public void ConfigureEndpoints(IEndpointRouteBuilder endpoints)
     {
-        endpoints.MapGet("/orders/ping", () => Results.Ok(new { ok = true, module = "Orders" }));
+    endpoints.MapGet("/orders/ping", () => Results.Content("<div>Orders module OK</div>", "text/html"));
+        endpoints.MapPost("/orders/create", async (HttpContext ctx) =>
+        {
+            var registrar = ctx.RequestServices.GetRequiredService<IEventChainRegistrar>();
+            var payload = new OrderCreated(Guid.NewGuid(), 10m);
+            await registrar.PublishAsync(OrderEvents.OrderCreated, payload, ctx.RequestServices);
+            return Results.Content("<div>Order created and event published. <a href=\"/inventory/dashboard\">Go to Inventory Dashboard</a></div>", "text/html");
+        });
     }
 
     public void ConfigureEventChains(IEventChainRegistrar registrar)

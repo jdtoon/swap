@@ -17,7 +17,9 @@ public interface IModule
 
 public interface IEventChainRegistrar
 {
-    // Placeholder for integration with the Swap Event System
-    // Implementations may be in-process or broker-backed in the future
-    void Register(string eventKey, Delegate handler);
+    // Register a handler for a typed event. The service provider is provided for resolving scoped dependencies.
+    void Register<TEvent>(string eventKey, Func<TEvent, IServiceProvider, Task> handler);
+
+    // Publish a typed event to all subscribers.
+    Task PublishAsync<TEvent>(string eventKey, TEvent payload, IServiceProvider services, CancellationToken ct = default);
 }

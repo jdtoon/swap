@@ -6,6 +6,7 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\Modules\Orders\Orders.Module\Orders.Module.csproj" />
+    <ProjectReference Include="..\Modules\Inventory\Inventory.Module\Inventory.Module.csproj" />
     <ProjectReference Include="..\..\..\..\framework\Swap.Modularity\Swap.Modularity.csproj" />
   </ItemGroup>
 </Project>
