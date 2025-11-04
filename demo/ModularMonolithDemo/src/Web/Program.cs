@@ -2,6 +2,7 @@ using ModularMonolithDemo.Modules.Orders.Module;
 using ModularMonolithDemo.Modules.Inventory.Module;
 using ModularMonolithDemo.Modules.Todos.Module;
 using ModularMonolithDemo.Modules.Todos.Web.Controllers;
+using ModularMonolithDemo.Modules.Todos.Web.Events;
 using ModularMonolithDemo.Web;
 using ModularMonolithDemo.Modules.Orders.Contracts;
 using ModularMonolithDemo.Modules.Inventory.Contracts;
@@ -20,8 +21,10 @@ var mvc = builder.Services.AddControllersWithViews();
 builder.Services.AddSingleton<IEventChainRegistrar, SimpleEventChainRegistrar>();
 builder.Services.AddSwapHtmx(opts =>
 {
-	// Example host-level chain (modules also register their own chains)
+	// Host-level chain example
 	opts.Chain(OrderEvents.OrderCreated, InventoryUIEvents.Refresh);
+	// Module-owned UI chains registered here
+	TodosUiChains.Configure(opts);
 });
 
 // Register modules and explicitly include module assemblies so they're loaded for discovery

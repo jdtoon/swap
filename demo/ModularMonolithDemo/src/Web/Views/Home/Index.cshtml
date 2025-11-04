@@ -7,7 +7,7 @@
     <div class="hero-content text-center">
         <div class="max-w-md">
             <h1 class="text-5xl font-bold">Welcome to Modular Monolith Demo!</h1>
-            <p class="py-6">MVC + HTMX + DaisyUI. Modules own their UI via View Components.</p>
+            <p class="py-6">MVC + HTMX + DaisyUI. Modules own their UI via controllers + partials (no View Components).</p>
             <div class="badge badge-primary">HTMX Powered</div>
         </div>
     </div>
@@ -20,6 +20,16 @@
             <input type="text" name="title" placeholder="Add a todo..." class="input input-bordered flex-1" required />
             <button type="submit" class="btn btn-primary">Add</button>
         </form>
-        @await Component.InvokeAsync("TodosList")
+        <div id="todos-list-container"
+             hx-get="/todos/ui/list"
+             hx-trigger="load, ui.todos.refreshList from:body"
+             hx-target="this"
+             hx-swap="innerHTML">
+            <div class="flex items-center justify-center py-4">
+                <span class="loading loading-spinner loading-md"></span>
+                <span class="ml-2">Loading todos...</span>
+            </div>
+        </div>
     </div>
+    
 </div>

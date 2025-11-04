@@ -1,19 +1,56 @@
-<!doctype html>
-<html data-theme="light">
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
 <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - Modular Monolith Demo</title>
-    <script src="https://unpkg.com/htmx.org@2.0.3"></script>
+    <link rel="stylesheet" href="~/css/app.min.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/htmx-toast.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/htmx-transitions.css" asp-append-version="true" />
+    <!-- Temporary: include Tailwind + DaisyUI via CDN until local build pipeline is added -->
     <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css" rel="stylesheet" type="text/css" />
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Use CDN for HTMX to ensure availability -->
+    <script src="https://unpkg.com/htmx.org@2.0.3"></script>
 </head>
 <body>
-    <div class="container mx-auto p-6">
-        <header class="mb-6"><h1 class="text-3xl font-bold">Modular Monolith Demo</h1></header>
-        <main>
-            @RenderBody()
-        </main>
-    </div>
+    <header>
+        <nav class="navbar bg-base-100 shadow-lg">
+            <div class="container mx-auto">
+                <div class="navbar-start">
+                    <a class="btn btn-ghost text-xl"
+                       href="/"
+                       hx-get="/"
+                       hx-target="#main-content"
+                       hx-push-url="true">ModularMonolithDemo</a>
+                    <ul class="menu menu-horizontal px-1 ml-2">
+                        <li><a href="/"
+                               hx-get="/"
+                               hx-target="#main-content"
+                               hx-push-url="true">Home</a></li>
+                        <!-- Add more SPA-ish nav links here as modules grow -->
+                    </ul>
+                </div>
+                <div class="navbar-end">
+                    <!-- Authentication/UI controls placeholder -->
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main id="main-content" class="container mx-auto p-4">
+        @RenderBody()
+    </main>
+
+    <footer class="footer footer-center p-4 bg-base-300 text-base-content mt-8">
+        <aside>
+            <p>Built with <strong>Swap</strong> - Event-driven web development</p>
+        </aside>
+    </footer>
+
+    @await Html.PartialAsync("_ToastContainer")
+
+    @await RenderSectionAsync("Scripts", required: false)
+    <script src="~/js/swap-events.js" asp-append-version="true"></script>
 </body>
 </html>

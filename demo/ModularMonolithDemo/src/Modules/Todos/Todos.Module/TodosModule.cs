@@ -24,29 +24,8 @@ public sealed class TodosModule : IModule
 
     public void ConfigureEventChains(IEventChainRegistrar registrar)
     {
-        // Map domain events to UI events for client refresh and toast
-        registrar.Register<object>(TodoEvents.TodoCreated, async (_, sp) =>
-        {
-            var bus = sp.GetRequiredService<ISwapEventBus>();
-            bus.Emit(TodoEvents.Ui.RefreshList);
-            bus.Emit(TodoEvents.Ui.ToastSuccess, new { text = "Todo created" });
-            await Task.CompletedTask;
-        });
-
-        registrar.Register<object>(TodoEvents.TodoDeleted, async (_, sp) =>
-        {
-            var bus = sp.GetRequiredService<ISwapEventBus>();
-            bus.Emit(TodoEvents.Ui.RefreshList);
-            bus.Emit(TodoEvents.Ui.ToastSuccess, new { text = "Todo deleted" });
-            await Task.CompletedTask;
-        });
-
-        registrar.Register<object>(TodoEvents.TodoToggled, async (_, sp) =>
-        {
-            var bus = sp.GetRequiredService<ISwapEventBus>();
-            bus.Emit(TodoEvents.Ui.StatsRefresh);
-            await Task.CompletedTask;
-        });
+        // No server-side chains for Todos in this demo.
+        // UI chains are declared via AddSwapHtmx in the host using the module-owned contributor.
     }
 }
 

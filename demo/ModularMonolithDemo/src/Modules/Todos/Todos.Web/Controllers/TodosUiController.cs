@@ -18,7 +18,8 @@ public class TodosUiController : Controller
     [HttpGet("list")]
     public IActionResult List()
     {
-        return ViewComponent("TodosList");
+    var items = _service.GetAll().ToList();
+    return PartialView("~/Views/TodosUi/_List.cshtml", items);
     }
 
     [HttpPost("add")]
@@ -26,8 +27,8 @@ public class TodosUiController : Controller
     {
         if (string.IsNullOrWhiteSpace(title)) return BadRequest();
         var item = _service.Add(title);
-        _bus.Emit(TodoEvents.TodoCreated, new { id = item.Id });
-        return Ok();
+        _bus.Emit(TodoEvents.Domain.Created, new { id = item.Id });
+        return NoContent();
     }
 
     [HttpPost("toggle/{id:int}")]
@@ -35,8 +36,8 @@ public class TodosUiController : Controller
     {
         var item = _service.Toggle(id);
         if (item is null) return NotFound();
-        _bus.Emit(TodoEvents.TodoToggled, new { id });
-        return PartialView("~/Modules/Todos/Todos.Web/Views/Shared/Components/TodosList/_TodoItem.cshtml", item);
+    _bus.Emit(TodoEvents.Domain.Toggled, new { id });
+    return PartialView("~/Views/TodosUi/_Item.cshtml", item);
     }
 
     [HttpDelete("delete/{id:int}")]
@@ -44,8 +45,8 @@ public class TodosUiController : Controller
     {
         if (_service.Delete(id))
         {
-            _bus.Emit(TodoEvents.TodoDeleted, new { id });
-            return Ok();
+            _bus.Emit(TodoEvents.Domain.Deleted, new { id });
+            return NoContent();
         }
         return NotFound();
     }

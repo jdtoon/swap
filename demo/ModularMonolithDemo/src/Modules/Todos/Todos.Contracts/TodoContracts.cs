@@ -2,10 +2,12 @@ namespace ModularMonolithDemo.Modules.Todos.Contracts;
 
 public static class TodoEvents
 {
-    // Domain events
-    public const string TodoCreated = "Todos.TodoCreated";
-    public const string TodoDeleted = "Todos.TodoDeleted";
-    public const string TodoToggled = "Todos.TodoToggled";
+    public static class Domain
+    {
+        public const string Created = "Todos.TodoCreated";
+        public const string Deleted = "Todos.TodoDeleted";
+        public const string Toggled = "Todos.TodoToggled";
+    }
 
     // UI events owned by the module
     public static class Ui
