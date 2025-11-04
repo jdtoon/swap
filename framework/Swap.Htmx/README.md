@@ -177,7 +177,7 @@ Swap.Htmx includes a minimal event bus that:
 - Builds an `HX-Trigger` header automatically at response time
 
 Usage recap:
-- Register: `builder.Services.AddSwapHtmx(opts => opts.Chain("product.created", "ui.refreshList"));`
+- Register: `builder.Services.AddSwapHtmx(opts => opts.Chain(SwapEvents.Entity.Created("product"), SwapEvents.UI.RefreshList));`
 - Middleware: `app.UseSwapHtmx();`
 - Emit in controller: `await _events.EmitAsync(SwapEvents.Entity.Created("product"), new { id });`
 
@@ -190,8 +190,10 @@ You can control how chains expand at runtime via an enum on options. Default is 
 ```csharp
 builder.Services.AddSwapHtmx(opts =>
 {
-    // Chains
-    opts.Chain("todo.created", "ui.todo.refreshList", "ui.stats.refresh");
+    // Chains (prefer typed backend keys)
+    opts.Chain(Swap.Htmx.Events.SwapEvents.Todo.Created,
+               Swap.Htmx.Events.SwapEvents.UI.Todo.RefreshList,
+               Swap.Htmx.Events.SwapEvents.UI.Stats.Refresh);
 
     // Resolution defaults to OneHop (immediate children only)
     opts.ResolutionMode = Swap.Htmx.Events.ChainResolutionMode.OneHop; // default
@@ -209,6 +211,34 @@ Semantics:
 - Transitive: A → B → C expands along edges up to the configured depth (depth=1 equals OneHop).
 
 Guardrails: `Validate()` checks for invalid names and cycles at startup (Development), regardless of mode.
+
+### Strongly-typed backend event keys
+
+Backend code can (and should) use typed event keys via `EventKey` and the typed overloads for `Chain(...)`, `Emit(...)`, and `EmitAsync(...)`:
+
+```csharp
+using Swap.Htmx.Events;
+
+builder.Services.AddSwapHtmx(events =>
+{
+    events.Chain(SwapEvents.Entity.Created("product"), SwapEvents.UI.RefreshList);
+});
+
+public class ArticlesController : SwapController
+{
+    private readonly ISwapEventBus _events;
+    public ArticlesController(ISwapEventBus events) => _events = events;
+
+    public async Task<IActionResult> Create(Article article)
+    {
+        // ...save...
+        await _events.EmitAsync(SwapEvents.Entity.Created("article"), new { id = article.Id });
+        return SwapView("Details", article);
+    }
+}
+```
+
+There is also a Roslyn analyzer (`Swap.Htmx.Analyzers`) wired repo-wide that flags raw string usage in backend calls to `Chain`/`Emit` to help you avoid magic strings. Tests are suppressed by default. Note: HTML remains plain HTMX; you do not need to change attributes in markup.
 
 
 #### Client helper (swap-events.js)

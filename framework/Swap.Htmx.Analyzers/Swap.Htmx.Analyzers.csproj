@@ -7,6 +7,7 @@
     <IncludeBuildOutput>false</IncludeBuildOutput>
     <RunAnalyzersDuringBuild>true</RunAnalyzersDuringBuild>
     <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
+    <NoWarn>$(NoWarn);RS2007</NoWarn>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="3.3.4" PrivateAssets="all" />
