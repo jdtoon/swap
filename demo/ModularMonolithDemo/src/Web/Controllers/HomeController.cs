@@ -1,8 +1,10 @@
 using Microsoft.AspNetCore.Mvc;
+using Swap.Htmx;
 
 namespace ModularMonolithDemo.Web.Controllers;
 
-public class HomeController : Controller
+public class HomeController : SwapController
 {
-    public IActionResult Index() => View();
+    [HttpGet]
+    public IActionResult Index() => SwapView();
 }
