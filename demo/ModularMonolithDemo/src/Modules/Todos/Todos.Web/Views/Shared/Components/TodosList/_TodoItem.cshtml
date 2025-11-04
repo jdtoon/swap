@@ -1,0 +1,15 @@
+@model ModularMonolithDemo.Modules.Todos.Contracts.TodoItemDto
+<li id="todo-item-@Model.Id" class="flex items-center gap-2 p-3 bg-base-200 rounded-lg">
+    <input type="checkbox"
+           class="checkbox checkbox-primary"
+           @(Model.IsComplete ? "checked" : "")
+           hx-post="/todos/ui/toggle/@Model.Id"
+           hx-target="#todo-item-@Model.Id"
+           hx-swap="outerHTML" />
+    <span class="flex-1 @(Model.IsComplete ? "line-through text-gray-500" : "")">@Model.Title</span>
+    <button class="btn btn-sm btn-error"
+            hx-delete="/todos/ui/delete/@Model.Id"
+            hx-target="#todos-list-panel"
+            hx-swap="outerHTML"
+            hx-confirm="Are you sure?">Delete</button>
+</li>

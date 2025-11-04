@@ -7,6 +7,10 @@
   <ItemGroup>
     <ProjectReference Include="..\Modules\Orders\Orders.Module\Orders.Module.csproj" />
     <ProjectReference Include="..\Modules\Inventory\Inventory.Module\Inventory.Module.csproj" />
+    <!-- New Todos module (Contracts, Module, and Web RCL) -->
+    <ProjectReference Include="..\Modules\Todos\Todos.Contracts\Todos.Contracts.csproj" />
+    <ProjectReference Include="..\Modules\Todos\Todos.Module\Todos.Module.csproj" />
+    <ProjectReference Include="..\Modules\Todos\Todos.Web\Todos.Web.csproj" />
     <!-- Directly reference module contracts used by Program.cs -->
     <ProjectReference Include="..\Modules\Orders\Orders.Contracts\Orders.Contracts.csproj" />
     <ProjectReference Include="..\Modules\Inventory\Inventory.Contracts\Inventory.Contracts.csproj" />

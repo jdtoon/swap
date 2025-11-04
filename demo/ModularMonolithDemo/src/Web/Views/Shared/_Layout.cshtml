@@ -1,0 +1,19 @@
+<!doctype html>
+<html data-theme="light">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@ViewData["Title"] - Modular Monolith Demo</title>
+    <script src="https://unpkg.com/htmx.org@2.0.3"></script>
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css" rel="stylesheet" type="text/css" />
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
+    <div class="container mx-auto p-6">
+        <header class="mb-6"><h1 class="text-3xl font-bold">Modular Monolith Demo</h1></header>
+        <main>
+            @RenderBody()
+        </main>
+    </div>
+</body>
+</html>

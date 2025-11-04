@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Todos.Contracts\Todos.Contracts.csproj" />
+    <ProjectReference Include="..\..\..\..\..\..\framework\Swap.Modularity\Swap.Modularity.csproj" />
+    <ProjectReference Include="..\..\..\..\..\..\framework\Swap.Htmx\Swap.Htmx.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+</Project>
