@@ -6,7 +6,6 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\Orders.Contracts\Orders.Contracts.csproj" />
-    <ProjectReference Include="..\..\..\Contracts\Demo.Contracts\Demo.Contracts.csproj" />
     <ProjectReference Include="..\..\..\..\..\..\framework\Swap.Modularity\Swap.Modularity.csproj" />
     <ProjectReference Include="..\..\..\..\..\..\framework\Swap.Htmx\Swap.Htmx.csproj" />
   </ItemGroup>

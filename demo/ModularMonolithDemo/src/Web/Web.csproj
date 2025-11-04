@@ -7,7 +7,9 @@
   <ItemGroup>
     <ProjectReference Include="..\Modules\Orders\Orders.Module\Orders.Module.csproj" />
     <ProjectReference Include="..\Modules\Inventory\Inventory.Module\Inventory.Module.csproj" />
-    <ProjectReference Include="..\Contracts\Demo.Contracts\Demo.Contracts.csproj" />
+    <!-- Directly reference module contracts used by Program.cs -->
+    <ProjectReference Include="..\Modules\Orders\Orders.Contracts\Orders.Contracts.csproj" />
+    <ProjectReference Include="..\Modules\Inventory\Inventory.Contracts\Inventory.Contracts.csproj" />
     <ProjectReference Include="..\..\..\..\framework\Swap.Modularity\Swap.Modularity.csproj" />
     <ProjectReference Include="..\..\..\..\framework\Swap.Htmx\Swap.Htmx.csproj" />
   </ItemGroup>

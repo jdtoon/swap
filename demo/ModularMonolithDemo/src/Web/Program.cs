@@ -2,11 +2,12 @@ using ModularMonolithDemo.Modules.Orders.Module;
 using ModularMonolithDemo.Modules.Inventory.Module;
 using ModularMonolithDemo.Web;
 using ModularMonolithDemo.Modules.Orders.Contracts;
+using ModularMonolithDemo.Modules.Inventory.Contracts;
 using Swap.Modularity.Abstractions;
 using Swap.Modularity.Hosting;
 using Swap.Htmx;
 using Swap.Htmx.Dev;
-using ModularMonolithDemo.Contracts;
+// removed root contracts; events are module-owned
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,8 +15,8 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddSingleton<IEventChainRegistrar, SimpleEventChainRegistrar>();
 builder.Services.AddSwapHtmx(opts =>
 {
-	// Example UI chain: when inventory changes, refresh the inventory panel
-	opts.Chain(AppEvents.UI.InventoryChanged, AppEvents.UI.InventoryRefresh);
+    // When an order is created, refresh the inventory panel
+    opts.Chain(OrderEvents.OrderCreated, InventoryUIEvents.Refresh);
 });
 
 // Register modules and explicitly include module assemblies so they're loaded for discovery
@@ -40,40 +41,41 @@ using (var scope = app.Services.CreateScope())
 
 app.MapGet("/", () =>
 {
-    var refresh = AppEvents.UI.InventoryRefresh;
-    var html = @"<!doctype html>
+		var refresh = InventoryUIEvents.Refresh;
+		var html = @"<!doctype html>
 <html>
 	<head>
 		<meta charset='utf-8' />
 		<title>Modular Monolith Demo</title>
 		<script src='https://unpkg.com/htmx.org@2.0.3'></script>
-		<style>
-			body { font-family: system-ui, sans-serif; padding: 1rem; }
-			.panel { border: 1px solid #ddd; padding: 1rem; margin-bottom: 1rem; border-radius: 8px; }
-			.row { display:flex; gap:1rem; }
-			.col { flex:1; }
-			button { padding: .5rem 1rem; }
-		</style>
+		<link href='https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css' rel='stylesheet' type='text/css' />
+		<script src='https://cdn.tailwindcss.com'></script>
 	</head>
 	<body>
-		<h1>Modular Monolith Demo</h1>
-		<div class='row'>
-			<div class='panel col'>
-				<h3>Orders</h3>
-				<div id='orders-panel' hx-get='/orders/ping' hx-trigger='load' hx-target='#orders-panel' hx-swap='innerHTML'>Loading Orders...</div>
-				<form hx-post='/orders/create' hx-swap='none' style='margin-top: .5rem;'>
-					<button type='submit'>Create Order (emit event)</button>
-				</form>
-			</div>
-			<div class='panel col'>
-				<h3>Inventory</h3>
-				<div id='inventory-panel' hx-get='/inventory/dashboard' hx-trigger='load, {REFRESH} from:body' hx-target='#inventory-panel' hx-swap='innerHTML'>Loading Inventory...</div>
+		<div class='container mx-auto p-6'>
+			<h1 class='text-3xl font-bold mb-6'>Modular Monolith Demo</h1>
+			<div class='grid grid-cols-1 md:grid-cols-2 gap-4'>
+				<div class='card bg-base-100 shadow'>
+					<div class='card-body'>
+						<h2 class='card-title'>Orders</h2>
+						<div id='orders-panel' class='min-h-[3rem]' hx-get='/orders/ping' hx-trigger='load' hx-target='#orders-panel' hx-swap='innerHTML'>Loading Orders...</div>
+						<form hx-post='/orders/create' hx-swap='none' class='mt-2'>
+							<button type='submit' class='btn btn-primary'>Create Order (emit event)</button>
+						</form>
+					</div>
+				</div>
+				<div class='card bg-base-100 shadow'>
+					<div class='card-body'>
+						<h2 class='card-title'>Inventory</h2>
+						<div id='inventory-panel' class='min-h-[3rem]' hx-get='/inventory/dashboard' hx-trigger='load, {REFRESH} from:body' hx-target='#inventory-panel' hx-swap='innerHTML'>Loading Inventory...</div>
+					</div>
+				</div>
 			</div>
 		</div>
 	</body>
 </html>";
-    html = html.Replace("{REFRESH}", refresh);
-    return Results.Content(html, "text/html");
+		html = html.Replace("{REFRESH}", refresh);
+		return Results.Content(html, "text/html");
 });
 
 app.Run();

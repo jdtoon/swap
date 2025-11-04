@@ -6,7 +6,6 @@ using Microsoft.Extensions.DependencyInjection;
 using ModularMonolithDemo.Modules.Orders.Contracts;
 using Swap.Modularity.Abstractions;
 using Swap.Htmx.Events;
-using ModularMonolithDemo.Contracts;
 
 namespace ModularMonolithDemo.Modules.Orders.Module;
 
@@ -31,9 +30,9 @@ public sealed class OrdersModule : IModule
             var svc = ctx.RequestServices.GetRequiredService<IOrdersService>();
             svc.SetLatest(new OrderSummaryDto(payload.OrderId, payload.Total));
             await registrar.PublishAsync(OrderEvents.OrderCreated, payload, ctx.RequestServices);
-            // Emit a UI event so HTMX panels can refresh via chains (ui.inventory.changed -> ui.inventory.refresh)
+            // Emit the domain event on the HTMX bus; chains map it to an Inventory UI refresh
             var bus = ctx.RequestServices.GetRequiredService<ISwapEventBus>();
-            bus.Emit(AppEvents.UI.InventoryChanged);
+            bus.Emit(OrderEvents.OrderCreated);
             return Results.Content("<div>Order created and event published. <a href=\"/inventory/dashboard\">Go to Inventory Dashboard</a></div>", "text/html");
         });
     }
