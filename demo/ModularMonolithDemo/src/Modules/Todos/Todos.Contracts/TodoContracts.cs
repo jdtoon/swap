@@ -12,9 +12,10 @@ public static class TodoEvents
     // UI events owned by the module
     public static class Ui
     {
-        public const string RefreshList = "ui.todos.refreshList";
-        public const string ToastSuccess = "ui.todos.toast.success";
-        public const string StatsRefresh = "ui.todos.stats.refresh";
+        public const string RefreshList = "ui.todo.refreshList";
+        public const string ToastSuccess = "ui.toast.success";
+        public const string StatsRefresh = "ui.stats.refresh";
+        public const string ActivityAppend = "ui.activity.append";
     }
 }
 

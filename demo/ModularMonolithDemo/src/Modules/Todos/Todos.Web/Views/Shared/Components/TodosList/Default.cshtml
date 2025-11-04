@@ -17,11 +17,9 @@
                        hx-target="#todo-item-@item.Id"
                        hx-swap="outerHTML" />
                 <span class="flex-1 @(item.IsComplete ? "line-through text-gray-500" : "")">@item.Title</span>
-                <button class="btn btn-sm btn-error"
-                        hx-delete="/todos/ui/delete/@item.Id"
-                        hx-target="#todo-list-container"
-                        hx-swap="innerHTML"
-                        hx-confirm="Are you sure?">Delete</button>
+        <button class="btn btn-sm btn-error"
+            hx-delete="/todos/ui/delete/@item.Id"
+            hx-confirm="Are you sure?">Delete</button>
             </li>
         }
     }

@@ -9,7 +9,5 @@
     <span class="flex-1 @(Model.IsComplete ? "line-through text-gray-500" : "")">@Model.Title</span>
     <button class="btn btn-sm btn-error"
             hx-delete="/todos/ui/delete/@Model.Id"
-            hx-target="#todos-list-container"
-            hx-swap="innerHTML"
             hx-confirm="Are you sure?">Delete</button>
 </li>
