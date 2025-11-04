@@ -21,7 +21,7 @@
         </form>
        <div id="todo-list"
            hx-get="/todos/ui/list"
-           hx-trigger="load, ui.todo.refreshList from:body"
+           hx-trigger="load, @TodoEvents.Ui.RefreshList from:body"
              hx-target="this"
              hx-swap="innerHTML">
             <div class="flex items-center justify-center py-4">

@@ -1,6 +1,6 @@
 <div id="bulk-todos"
   hx-get="/Demo/BulkTodos"
-  hx-trigger="load, ui.todo.refreshList from:body"
+  hx-trigger="load, @TodoEvents.Ui.RefreshList from:body"
      hx-target="this"
      hx-swap="innerHTML">
   <div class="loading loading-spinner"></div>

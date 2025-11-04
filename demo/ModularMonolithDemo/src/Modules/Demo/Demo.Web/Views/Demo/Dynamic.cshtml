@@ -5,11 +5,11 @@
   <div class="card bg-base-100 shadow">
     <div class="card-body">
       <h2 class="card-title">Summary</h2>
-      <div id="summary-panel"
-           hx-get="/Demo/Summary"
-           hx-trigger="load, ui.summary.refresh from:body"
-           hx-target="this"
-           hx-swap="innerHTML">
+   <div id="summary-panel"
+     hx-get="/Demo/Summary"
+     hx-trigger="load, @EventNames.Ui.SummaryRefresh from:body"
+     hx-target="this"
+     hx-swap="innerHTML">
         <div class="loading loading-spinner"></div>
       </div>
     </div>
@@ -17,11 +17,11 @@
   <div class="card bg-base-100 shadow">
     <div class="card-body">
       <h2 class="card-title">Details</h2>
-      <div id="details-panel"
-           hx-get="/Demo/Details"
-           hx-trigger="load, ui.details.refresh from:body"
-           hx-target="this"
-           hx-swap="innerHTML">
+   <div id="details-panel"
+     hx-get="/Demo/Details"
+     hx-trigger="load, @EventNames.Ui.DetailsRefresh from:body"
+     hx-target="this"
+     hx-swap="innerHTML">
         <div class="loading loading-spinner"></div>
       </div>
     </div>
