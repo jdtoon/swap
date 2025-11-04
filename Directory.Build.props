@@ -1,0 +1,11 @@
+<Project>
+  <!-- Add Swap.Htmx.Analyzers to all projects in this repo except the analyzer project itself -->
+  <PropertyGroup>
+    <RepoRoot>$(MSBuildThisFileDirectory)</RepoRoot>
+  </PropertyGroup>
+  <ItemGroup Condition="'$(MSBuildProjectName)' != 'Swap.Htmx.Analyzers'">
+    <ProjectReference Include="$(RepoRoot)framework\Swap.Htmx.Analyzers\Swap.Htmx.Analyzers.csproj"
+                      OutputItemType="Analyzer"
+                      ReferenceOutputAssembly="false" />
+  </ItemGroup>
+</Project>
