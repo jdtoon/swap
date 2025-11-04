@@ -3,6 +3,8 @@ using ModularMonolithDemo.Modules.Inventory.Module;
 using ModularMonolithDemo.Modules.Todos.Module;
 using ModularMonolithDemo.Modules.Todos.Web.Controllers;
 using ModularMonolithDemo.Modules.Todos.Web.Events;
+using ModularMonolithDemo.Modules.Demo.Module;
+using ModularMonolithDemo.Modules.Demo.Web.Controllers;
 using ModularMonolithDemo.Web;
 using ModularMonolithDemo.Modules.Orders.Contracts;
 using ModularMonolithDemo.Modules.Inventory.Contracts;
@@ -28,10 +30,11 @@ builder.Services.AddSwapHtmx(opts =>
 });
 
 // Register modules and explicitly include module assemblies so they're loaded for discovery
-builder.Services.AddSwapModules(builder.Configuration, new[] { typeof(OrdersModule).Assembly, typeof(InventoryModule).Assembly, typeof(TodosModule).Assembly });
+builder.Services.AddSwapModules(builder.Configuration, new[] { typeof(OrdersModule).Assembly, typeof(InventoryModule).Assembly, typeof(TodosModule).Assembly, typeof(DemoModule).Assembly });
 
 // Ensure MVC discovers controllers/views from module RCLs
 mvc.PartManager.ApplicationParts.Add(new AssemblyPart(typeof(TodosUiController).Assembly));
+mvc.PartManager.ApplicationParts.Add(new AssemblyPart(typeof(DemoController).Assembly));
 
 var app = builder.Build();
 

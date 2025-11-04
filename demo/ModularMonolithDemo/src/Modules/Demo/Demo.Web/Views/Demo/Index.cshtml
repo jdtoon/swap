@@ -1,0 +1,49 @@
+@{
+    ViewData["Title"] = "Demo";
+}
+
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+  <div class="card bg-base-100 shadow">
+    <div class="card-body">
+      <h2 class="card-title">Stats</h2>
+      <div id="stats-panel"
+           hx-get="/Demo/Stats"
+           hx-trigger="load, ui.stats.refresh from:body"
+           hx-target="this"
+           hx-swap="innerHTML">
+        <div class="loading loading-spinner"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card bg-base-100 shadow">
+    <div class="card-body">
+      <h2 class="card-title">Toasts</h2>
+      <div id="toasts-panel"
+           hx-get="/Demo/Toasts"
+           hx-trigger="load, ui.toast.success from:body"
+           hx-target="this"
+           hx-swap="innerHTML">
+        <div class="loading loading-spinner"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card bg-base-100 shadow">
+    <div class="card-body">
+      <h2 class="card-title">Activity</h2>
+      <div id="activity-panel"
+           hx-get="/Demo/ActivityLog"
+           hx-trigger="load, ui.activity.append from:body"
+           hx-target="this"
+           hx-swap="innerHTML">
+        <div class="loading loading-spinner"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="mt-8">
+  <a class="btn btn-secondary" href="/Demo/Dynamic" hx-get="/Demo/Dynamic" hx-target="#main-content" hx-push-url="true">Dynamic Components Demo</a>
+  <a class="btn btn-accent ml-2" href="/Demo/Bulk" hx-get="/Demo/Bulk" hx-target="#main-content" hx-push-url="true">Bulk Operations Demo</a>
+</div>

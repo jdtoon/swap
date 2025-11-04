@@ -1,0 +1,14 @@
+@model IReadOnlyList<string>
+<ul class="list-disc list-inside">
+  @if (Model == null || Model.Count == 0)
+  {
+    <li class="italic text-gray-500">No notes yet.</li>
+  }
+  else
+  {
+    @foreach (var n in Model)
+    {
+      <li>@n</li>
+    }
+  }
+</ul>
