@@ -7,6 +7,8 @@
   <ItemGroup>
     <ProjectReference Include="..\Modules\Orders\Orders.Module\Orders.Module.csproj" />
     <ProjectReference Include="..\Modules\Inventory\Inventory.Module\Inventory.Module.csproj" />
+    <ProjectReference Include="..\Contracts\Demo.Contracts\Demo.Contracts.csproj" />
     <ProjectReference Include="..\..\..\..\framework\Swap.Modularity\Swap.Modularity.csproj" />
+    <ProjectReference Include="..\..\..\..\framework\Swap.Htmx\Swap.Htmx.csproj" />
   </ItemGroup>
 </Project>
