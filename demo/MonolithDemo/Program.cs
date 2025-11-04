@@ -15,9 +15,9 @@ builder.Services.AddControllersWithViews(options =>
 builder.Services.AddSwapHtmx(events =>
 {
     // Chain domain events to UI notifications
-    events.Chain(Swap.Htmx.Events.SwapEvents.Entity.Created("product"),
-                 Swap.Htmx.Events.SwapEvents.UI.RefreshList,
-                 Swap.Htmx.Events.SwapEvents.UI.ShowToast);
+    events.Chain(Swap.Htmx.Events.SwapEvents.Entity.CreatedKey(MonolithDemo.AppEntities.Product),
+                 Swap.Htmx.Events.SwapEvents.UI.RefreshListKey,
+                 Swap.Htmx.Events.SwapEvents.UI.ShowToastKey);
 });
 
 // Add session support for server-side bulk operations

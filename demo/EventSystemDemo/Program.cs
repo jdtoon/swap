@@ -8,9 +8,9 @@ builder.Services.AddSwapHtmx(events =>
 {
     // When a product is created, refresh lists and optionally show a toast
     events.Chain(
-        Swap.Htmx.Events.SwapEvents.Entity.Created("product"),
-        Swap.Htmx.Events.SwapEvents.UI.RefreshList,
-        Swap.Htmx.Events.SwapEvents.UI.ShowToast);
+    Swap.Htmx.Events.SwapEvents.Entity.CreatedKey(EventSystemDemo.AppEntities.Product),
+    Swap.Htmx.Events.SwapEvents.UI.RefreshListKey,
+    Swap.Htmx.Events.SwapEvents.UI.ShowToastKey);
 });
 
 var app = builder.Build();

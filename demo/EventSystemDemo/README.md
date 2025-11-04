@@ -7,6 +7,17 @@ A minimal ASP.NET Core MVC app demonstrating the Swap.Htmx server-side event sys
 - Client advertises active subscriptions with the `X-Swap-Events` request header.
 - Middleware filters and merges events into the `HX-Trigger` response header (with merge if the action also sets `HX-Trigger`).
 
+Tip: In backend code, prefer typed events via `EventKey`:
+
+```csharp
+events.Chain(Swap.Htmx.Events.SwapEvents.Entity.CreatedKey("product"),
+             Swap.Htmx.Events.SwapEvents.UI.RefreshListKey);
+
+await _events.EmitAsync(Swap.Htmx.Events.SwapEvents.UI.RefreshListKey, new { id = 42 });
+```
+
+There’s an analyzer (SWAPHTMX001) that warns only on raw string literals passed to `Chain`/`Emit`. Constants and typed keys are fine. HTML remains pure HTMX.
+
 ## Endpoints
 - POST /Products/Create
   - Emits `product.created` -> chains to `ui.refreshList`.

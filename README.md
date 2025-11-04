@@ -55,6 +55,12 @@ swap events graph -p . --format mermaid
 
 Learn more: Event System → https://jdtoon.github.io/swap/docs/features/event-system
 
+### Backend typed events + analyzer
+
+- Prefer typed EventKey in backend: `events.Chain(SwapEvents.Entity.CreatedKey("product"), SwapEvents.UI.RefreshListKey)` and `await _events.EmitAsync(SwapEvents.UI.RefreshListKey, payload)`.
+- A Roslyn analyzer (SWAPHTMX001) flags raw string literals passed to `Chain`/`Emit` to help avoid magic strings. Constants and typed keys are allowed.
+- HTML stays plain HTMX. You don’t need any tag helpers or custom attributes.
+
 ## 🌟 Why Swap?
 
 - **⚡ Production-Ready Code** - Generate complete CRUD with modals, pagination, sorting, filtering, and search
