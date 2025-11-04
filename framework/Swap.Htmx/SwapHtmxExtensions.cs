@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System.Text.Json;
 
 namespace Swap.Htmx;
 
@@ -194,5 +195,32 @@ public static class SwapHtmxExtensions
     public static void HxReswap(this HttpResponse response, string swapStrategy)
     {
         response.Headers["HX-Reswap"] = swapStrategy;
+    }
+
+    /// <summary>
+    /// Client-side redirect without full page reload using HX-Location.
+    /// Accepts either a URL string or a JSON object with advanced options per htmx docs.
+    /// </summary>
+    public static void HxLocation(this HttpResponse response, string url)
+    {
+        response.Headers["HX-Location"] = url;
+    }
+
+    /// <summary>
+    /// Client-side redirect without full page reload using HX-Location with an options object.
+    /// Example: new { path = "/inbox", target = "#main", swap = "innerHTML" }
+    /// </summary>
+    public static void HxLocation(this HttpResponse response, object options)
+    {
+        response.Headers["HX-Location"] = JsonSerializer.Serialize(options);
+    }
+
+    /// <summary>
+    /// Select a sub-fragment from the response HTML using a CSS selector.
+    /// Sets the HX-Reselect response header.
+    /// </summary>
+    public static void HxReselect(this HttpResponse response, string selector)
+    {
+        response.Headers["HX-Reselect"] = selector;
     }
 }

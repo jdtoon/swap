@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Swap.Htmx.Events;
 using System.Text.Json;
+using Swap.Htmx;
 
 namespace EventSystemDemo.Controllers;
 
@@ -27,8 +28,8 @@ public class ProductsController : Controller
     [HttpPost]
     public async Task<IActionResult> CreateWithTrigger()
     {
-        // Pre-set an HX-Trigger header to verify merge behavior
-        Response.Headers["HX-Trigger"] = "{\"pre\":\"alpha\"}";
+    // Pre-set an HX-Trigger header to verify merge behavior (typed)
+    HtmxEvents.Trigger(Response, DemoEvents.Pre, "alpha");
 
         var id = 101;
         await _events.EmitAsync(SwapEvents.Entity.CreatedKey(EventSystemDemo.AppEntities.Product), new { id });
@@ -76,8 +77,8 @@ public class ProductsController : Controller
     [HttpPost]
     public IActionResult NoopWithPreTrigger()
     {
-        // Pre-set HX-Trigger but emit no events; should be preserved as-is
-        Response.Headers["HX-Trigger"] = "{\"preOnly\":\"gamma\"}";
+    // Pre-set HX-Trigger but emit no events; should be preserved as-is (typed)
+    HtmxEvents.Trigger(Response, DemoEvents.PreOnly, "gamma");
         return Content("No events but pre-trigger");
     }
 

@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Swap.Htmx.Events;
 using System.Text.Json;
+using Swap.Htmx;
 
 namespace MonolithDemo.Controllers;
 
@@ -24,7 +25,7 @@ public class ProductsController : Controller
     [HttpPost]
     public async Task<IActionResult> CreateWithTrigger()
     {
-        Response.Headers["HX-Trigger"] = "{\"pre\":\"alpha\"}";
+    HtmxEvents.Trigger(Response, MonolithDemo.DemoEvents.Pre, "alpha");
     var id = 8;
     await _events.EmitAsync(SwapEvents.Entity.CreatedKey(MonolithDemo.AppEntities.Product), new { id });
         return Content($"Created {id} with pre-trigger");
@@ -81,7 +82,7 @@ public class ProductsController : Controller
     public IActionResult NoopWithPreTrigger()
     {
         // Pre-set HX-Trigger but emit no events; should be preserved as-is
-        Response.Headers["HX-Trigger"] = "{\"preOnly\":\"gamma\"}";
+    HtmxEvents.Trigger(Response, MonolithDemo.DemoEvents.PreOnly, "gamma");
         return Content("No events but pre-trigger");
     }
 
