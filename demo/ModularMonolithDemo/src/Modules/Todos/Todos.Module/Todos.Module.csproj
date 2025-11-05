@@ -5,6 +5,10 @@
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
   <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.10" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="9.0.10" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\Todos.Contracts\Todos.Contracts.csproj" />
     <ProjectReference Include="..\..\..\..\..\..\framework\Swap.Modularity\Swap.Modularity.csproj" />
     <ProjectReference Include="..\..\..\..\..\..\framework\Swap.Htmx\Swap.Htmx.csproj" />

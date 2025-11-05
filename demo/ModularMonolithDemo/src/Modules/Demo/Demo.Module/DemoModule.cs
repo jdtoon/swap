@@ -14,9 +14,9 @@ public sealed class DemoModule : IModule
     public void ConfigureServices(IServiceCollection services, IConfiguration configuration)
     {
         services.AddSingleton<IDemoQueries, DemoQueries>();
-        services.AddSingleton<IStatsService, StatsService>();
+        services.AddScoped<IStatsService, StatsService>();
         services.AddSingleton<INotesService, NotesService>();
-        services.AddSingleton<IBulkService, BulkService>();
+        services.AddScoped<IBulkService, BulkService>();
         services.AddSingleton<IComponentsService, ComponentsService>();
     }
 
