@@ -22,9 +22,24 @@ public static class ServiceCollectionExtensions
             {
                 options.UseSqlite(conn);
             }
+            else if (string.Equals(provider, "SqlServer", StringComparison.OrdinalIgnoreCase) ||
+                     string.Equals(provider, "Sql Server", StringComparison.OrdinalIgnoreCase))
+            {
+                // Use SQL Server at runtime; point migrations to the shim project
+                options.UseSqlServer(conn, b => b.MigrationsAssembly("Todos.Migrations.SqlServer"));
+            }
+            else if (string.Equals(provider, "Postgres", StringComparison.OrdinalIgnoreCase) ||
+                     string.Equals(provider, "PostgreSQL", StringComparison.OrdinalIgnoreCase) ||
+                     string.Equals(provider, "Npgsql", StringComparison.OrdinalIgnoreCase))
+            {
+                // To enable Postgres at runtime, add: Npgsql.EntityFrameworkCore.PostgreSQL
+                // and switch to: options.UseNpgsql(conn, b => b.MigrationsAssembly("Todos.Migrations.Postgres"));
+                // For now, fall back to Sqlite in this template to avoid extra dependencies.
+                options.UseSqlite("Data Source=todos.db");
+            }
             else
             {
-                // Fallback for unsupported providers at runtime in this template. Keeps compile simple.
+                // Fallback for unsupported providers keeps compile simple.
                 options.UseSqlite("Data Source=todos.db");
             }
         });

@@ -11,6 +11,7 @@ using Swap.Htmx.ServerEvents;
 using Swap.Htmx.Dev;
 using Microsoft.AspNetCore.Mvc.ApplicationParts;
 using ModularMonolithDemo.Modules.Todos.Module.Persistence;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -60,7 +61,7 @@ using (var scope = app.Services.CreateScope())
 	var registrar = scope.ServiceProvider.GetRequiredService<IEventChainRegistrar>();
 	app.Services.ConfigureSwapModuleEventChains(registrar);
 
-	// Optional: apply module migrations/ensure created on startup (SQLite default)
+	// Optional: apply module migrations/ensure created on startup
 	var cfg = scope.ServiceProvider.GetRequiredService<IConfiguration>();
 	var migrate = bool.TryParse(cfg["Data:MigrateOnStartup"], out var m) && m;
 	if (migrate && Program.TryInitializeDatabase(scope.ServiceProvider))
@@ -68,8 +69,17 @@ using (var scope = app.Services.CreateScope())
 		var todosDb = scope.ServiceProvider.GetService<TodosDbContext>();
 		if (todosDb is not null)
 		{
-			// SQLite path uses EnsureCreated for speed; migrations shims can be added per provider later
-			todosDb.Database.EnsureCreated();
+			var provider = (cfg["Data:Provider"] ?? "Sqlite").Trim();
+			if (string.Equals(provider, "Sqlite", StringComparison.OrdinalIgnoreCase))
+			{
+				// SQLite path uses EnsureCreated for speed
+				todosDb.Database.EnsureCreated();
+			}
+			else
+			{
+				// Non-SQLite providers should use migrations
+				todosDb.Database.Migrate();
+			}
 		}
 	}
 }
