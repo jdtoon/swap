@@ -44,6 +44,9 @@ public static class ServiceCollectionExtensions
         // EF-backed service
         services.AddScoped<ITodoService, EfTodoService>();
 
+        // Ensure database is initialized on host startup
+        services.AddHostedService<TodosDatabaseInitializer>();
+
         return services;
     }
 }

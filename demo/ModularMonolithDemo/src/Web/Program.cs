@@ -63,13 +63,15 @@ using (var scope = app.Services.CreateScope())
 
 	// Optional: apply module migrations/ensure created on startup
 	var cfg = scope.ServiceProvider.GetRequiredService<IConfiguration>();
-	var migrate = bool.TryParse(cfg["Data:MigrateOnStartup"], out var m) && m;
+	var provider = (cfg["Data:Provider"] ?? "Sqlite").Trim();
+	var migrateConfigured = bool.TryParse(cfg["Data:MigrateOnStartup"], out var m) && m;
+	// Default to initializing the database for Sqlite even if the flag is missing
+	var migrate = migrateConfigured || string.Equals(provider, "Sqlite", StringComparison.OrdinalIgnoreCase);
 	if (migrate && Program.TryInitializeDatabase(scope.ServiceProvider))
 	{
 		var todosDb = scope.ServiceProvider.GetService<TodosDbContext>();
 		if (todosDb is not null)
 		{
-			var provider = (cfg["Data:Provider"] ?? "Sqlite").Trim();
 			if (string.Equals(provider, "Sqlite", StringComparison.OrdinalIgnoreCase))
 			{
 				// SQLite path uses EnsureCreated for speed
