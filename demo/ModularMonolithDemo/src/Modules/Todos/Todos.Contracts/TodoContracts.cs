@@ -20,3 +20,11 @@ public static class TodoEvents
 }
 
 public record TodoItemDto(int Id, string Title, bool IsComplete);
+
+// Typed server event payloads for AOT-friendly, unambiguous deserialization
+public static class TodoEventPayloads
+{
+    public record Created(int Id);
+    public record Deleted(int Id);
+    public record Toggled(int Id);
+}

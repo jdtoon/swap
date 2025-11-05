@@ -23,7 +23,10 @@ public sealed class InMemoryServerEventChainRegistrar : IEventChainRegistrar
         bag.Add(async (o, sp) =>
         {
             if (o is TEvent t)
-                await handler(t, sp).ConfigureAwait(false);
+            {
+                try { await handler(t, sp).ConfigureAwait(false); }
+                catch { /* swallow to avoid breaking pipeline in dev */ }
+            }
         });
     }
 

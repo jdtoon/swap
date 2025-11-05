@@ -11,7 +11,7 @@ namespace Swap.Htmx.ServerEvents;
 /// </summary>
 public sealed class DistributedServerEventChainRegistrar : IEventChainRegistrar, IDisposable
 {
-    private const string ClrTypeHeader = "ClrType";
+    private const string ClrTypeHeader = "ClrType"; // retained for future, not required at runtime
 
     private readonly IServiceProvider _rootServices;
     private readonly IServerEventTransport _transport;
@@ -44,21 +44,14 @@ public sealed class DistributedServerEventChainRegistrar : IEventChainRegistrar,
             if (!_handlers.TryGetValue(key, out var regs)) return;
             List<HandlerReg> snapshot; lock (_gate) { snapshot = regs.ToList(); }
 
-            // Try type-hint from headers
-            headers ??= new Dictionary<string, string>();
-            var typeName = headers.TryGetValue(ClrTypeHeader, out var tn) ? tn : null;
-            Type? hinted = null;
-            if (!string.IsNullOrWhiteSpace(typeName))
-            {
-                try { hinted = Type.GetType(typeName!, throwOnError: false); } catch { hinted = null; }
-            }
-
             foreach (var r in snapshot)
             {
                 object? payloadObj = null;
                 try
                 {
-                    var targetType = hinted ?? r.ExpectedType;
+                    // Always deserialize to the registered handler's expected type to avoid
+                    // ambiguity and improve AOT friendliness.
+                    var targetType = r.ExpectedType;
                     payloadObj = JsonSerializer.Deserialize(bytes.Span, targetType, _jsonOptions);
                     if (payloadObj is null) continue;
                 }
@@ -68,17 +61,9 @@ public sealed class DistributedServerEventChainRegistrar : IEventChainRegistrar,
                     continue;
                 }
 
-                try
-                {
-                    // Create a scope for handler execution
-                    using var scope = _rootServices.CreateScope();
-                    await r.Handler(payloadObj!, scope.ServiceProvider).ConfigureAwait(false);
-                }
-                catch (Exception ex)
-                {
-                    try { Console.Error.WriteLine($"[ServerEvents] Handler exception for {key}: {ex}"); } catch { }
-                    throw;
-                }
+                // Create a scope for handler execution; swallow exceptions to avoid perpetual redelivery
+                try { using var scope = _rootServices.CreateScope(); await r.Handler(payloadObj!, scope.ServiceProvider).ConfigureAwait(false); }
+                catch (Exception ex) { try { Console.Error.WriteLine($"[ServerEvents] Handler exception for {key}: {ex}"); } catch { } }
             }
         }));
     }
@@ -86,10 +71,7 @@ public sealed class DistributedServerEventChainRegistrar : IEventChainRegistrar,
     public Task PublishAsync<TEvent>(string eventKey, TEvent payload, IServiceProvider services, CancellationToken ct = default)
     {
         if (eventKey is null) throw new ArgumentNullException(nameof(eventKey));
-        var headers = new Dictionary<string, string>
-        {
-            [ClrTypeHeader] = typeof(TEvent).AssemblyQualifiedName ?? typeof(TEvent).FullName ?? typeof(TEvent).Name
-        };
+        var headers = new Dictionary<string, string>();
         var bytes = JsonSerializer.SerializeToUtf8Bytes(payload, typeof(TEvent), _jsonOptions);
         return _transport.PublishAsync(eventKey, bytes, headers, ct);
     }

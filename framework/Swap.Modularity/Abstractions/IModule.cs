@@ -23,3 +23,5 @@ public interface IEventChainRegistrar
     // Publish a typed event to all subscribers.
     Task PublishAsync<TEvent>(string eventKey, TEvent payload, IServiceProvider services, CancellationToken ct = default);
 }
+
+// Diagnostics types removed to keep abstractions minimal and avoid cross-lib coupling at this stage.

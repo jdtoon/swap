@@ -28,41 +28,24 @@ public sealed class DemoModule : IModule
     public void ConfigureEventChains(IEventChainRegistrar registrar)
     {
         // React to Todos domain events and update the activity log
-        registrar.Register<object>(TodoEvents.Domain.Created, async (payload, sp) =>
+        registrar.Register<ModularMonolithDemo.Modules.Todos.Contracts.TodoEventPayloads.Created>(TodoEvents.Domain.Created, async (payload, sp) =>
         {
-            Console.WriteLine("[Demo] Server event received: todo.created (no DI)");
+            var queries = sp.GetRequiredService<IDemoQueries>();
+            queries.AppendActivity($"Todo created #{payload.Id}");
             await Task.CompletedTask;
         });
 
-        registrar.Register<object>(TodoEvents.Domain.Deleted, async (payload, sp) =>
+        registrar.Register<ModularMonolithDemo.Modules.Todos.Contracts.TodoEventPayloads.Deleted>(TodoEvents.Domain.Deleted, async (payload, sp) =>
         {
-            try
-            {
-                Console.WriteLine("[Demo] Server event received: todo.deleted");
-                var queries = sp.GetRequiredService<IDemoQueries>();
-                queries.AppendActivity("Todo deleted");
-            }
-            catch (Exception ex)
-            {
-                try { Console.Error.WriteLine($"[Demo] Handler error (deleted): {ex}"); } catch { }
-                throw;
-            }
+            var queries = sp.GetRequiredService<IDemoQueries>();
+            queries.AppendActivity($"Todo deleted #{payload.Id}");
             await Task.CompletedTask;
         });
 
-        registrar.Register<object>(TodoEvents.Domain.Toggled, async (payload, sp) =>
+        registrar.Register<ModularMonolithDemo.Modules.Todos.Contracts.TodoEventPayloads.Toggled>(TodoEvents.Domain.Toggled, async (payload, sp) =>
         {
-            try
-            {
-                Console.WriteLine("[Demo] Server event received: todo.toggled");
-                var queries = sp.GetRequiredService<IDemoQueries>();
-                queries.AppendActivity("Todo toggled");
-            }
-            catch (Exception ex)
-            {
-                try { Console.Error.WriteLine($"[Demo] Handler error (toggled): {ex}"); } catch { }
-                throw;
-            }
+            var queries = sp.GetRequiredService<IDemoQueries>();
+            queries.AppendActivity($"Todo toggled #{payload.Id}");
             await Task.CompletedTask;
         });
     }

@@ -92,11 +92,13 @@ public sealed class RabbitMqServerEventTransport : IServerEventTransport, IDispo
         var queue = ch.QueueDeclare(queue: $"swap.events.{Sanitize(eventKey)}", durable: true, exclusive: false, autoDelete: false);
         ch.QueueBind(queue: queue.QueueName, exchange: _opts.ExchangeName, routingKey: eventKey);
 
-        var consumer = new AsyncEventingBasicConsumer(ch);
-        consumer.Received += async (model, ea) =>
+        // Use a synchronous consumer to avoid async ack edge-cases on some client versions
+        var consumer = new EventingBasicConsumer(ch);
+        consumer.Received += (model, ea) =>
         {
             try
             {
+                try { Console.WriteLine($"[RabbitMQ] Received {ea.RoutingKey} bytes={ea.Body.Length}"); } catch { }
                 var dict = new Dictionary<string, string>(StringComparer.Ordinal);
                 if (ea.BasicProperties?.Headers is { Count: > 0 })
                 {
@@ -112,16 +114,20 @@ public sealed class RabbitMqServerEventTransport : IServerEventTransport, IDispo
                         catch { }
                     }
                 }
-                await onMessage(ea.Body.ToArray(), dict, CancellationToken.None).ConfigureAwait(false);
-                ch.BasicAck(deliveryTag: ea.DeliveryTag, multiple: false);
+                onMessage(ea.Body.ToArray(), dict, CancellationToken.None).GetAwaiter().GetResult();
+                try { Console.WriteLine($"[RabbitMQ] onMessage completed for {ea.RoutingKey}, acking"); } catch { }
+                try { ch.BasicAck(deliveryTag: ea.DeliveryTag, multiple: false); Console.WriteLine($"[RabbitMQ] Acked {ea.RoutingKey}"); }
+                catch (Exception ackEx) { try { Console.Error.WriteLine($"[RabbitMQ] Ack failed for {ea.RoutingKey}: {ackEx}"); Console.WriteLine($"[RabbitMQ] Ack failed for {ea.RoutingKey}: {ackEx.Message}"); } catch { } throw; }
             }
-            catch
+            catch (Exception ex)
             {
+                try { Console.Error.WriteLine($"[RabbitMQ] onMessage exception: {ex}"); } catch { }
                 ch.BasicNack(deliveryTag: ea.DeliveryTag, multiple: false, requeue: true);
             }
         };
 
-        var consumerTag = ch.BasicConsume(queue: queue.QueueName, autoAck: false, consumer: consumer);
+    // Use explicit ack in normal runs; can switch to autoAck for diagnostics if needed
+    var consumerTag = ch.BasicConsume(queue: queue.QueueName, autoAck: false, consumer: consumer);
 
         return new Subscription(ch, _opts.ExchangeName, queue.QueueName, eventKey, consumerTag);
     }
