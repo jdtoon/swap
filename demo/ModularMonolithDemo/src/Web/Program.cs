@@ -11,6 +11,7 @@ using ModularMonolithDemo.Modules.Inventory.Contracts;
 using Swap.Modularity.Abstractions;
 using Swap.Modularity.Hosting;
 using Swap.Htmx;
+using Swap.Htmx.ServerEvents;
 using Swap.Htmx.Dev;
 using Microsoft.AspNetCore.Mvc.ApplicationParts;
 
@@ -19,8 +20,8 @@ var builder = WebApplication.CreateBuilder(args);
 // MVC + HTMX + Events
 var mvc = builder.Services.AddControllersWithViews();
 
-// Register our simple in-process event registrar
-builder.Services.AddSingleton<IEventChainRegistrar, SimpleEventChainRegistrar>();
+// Register the in-memory server event chain registrar (domain/server events)
+builder.Services.AddSwapServerEventChains();
 builder.Services.AddSwapHtmx(opts =>
 {
 	// Host-level chain example
