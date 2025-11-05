@@ -2,7 +2,7 @@ namespace ModularMonolithDemo.Modules.Orders.Contracts;
 
 public static class OrderEvents
 {
-    public const string OrderCreated = "Orders.OrderCreated";
+    public const string OrderCreated = "order.created";
 }
 
 public record OrderCreated(Guid OrderId, decimal Total);

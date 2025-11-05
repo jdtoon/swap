@@ -7,11 +7,8 @@
     <link rel="stylesheet" href="~/css/app.min.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/htmx-toast.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/htmx-transitions.css" asp-append-version="true" />
-    <!-- Temporary: include Tailwind + DaisyUI via CDN until local build pipeline is added -->
-    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css" rel="stylesheet" type="text/css" />
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Use CDN for HTMX to ensure availability -->
-    <script src="https://unpkg.com/htmx.org@2.0.3"></script>
+    <!-- Local HTMX via LibMan -->
+    <script src="~/lib/htmx/htmx.min.js" asp-append-version="true"></script>
 </head>
 <body>
     <header>

@@ -4,9 +4,9 @@ public static class TodoEvents
 {
     public static class Domain
     {
-        public const string Created = "Todos.TodoCreated";
-        public const string Deleted = "Todos.TodoDeleted";
-        public const string Toggled = "Todos.TodoToggled";
+        public const string Created = "todo.created";
+        public const string Deleted = "todo.deleted";
+        public const string Toggled = "todo.toggled";
     }
 
     // UI events owned by the module
