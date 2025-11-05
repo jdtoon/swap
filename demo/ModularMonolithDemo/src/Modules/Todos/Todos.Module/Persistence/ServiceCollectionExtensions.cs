@@ -32,10 +32,7 @@ public static class ServiceCollectionExtensions
                      string.Equals(provider, "PostgreSQL", StringComparison.OrdinalIgnoreCase) ||
                      string.Equals(provider, "Npgsql", StringComparison.OrdinalIgnoreCase))
             {
-                // To enable Postgres at runtime, add: Npgsql.EntityFrameworkCore.PostgreSQL
-                // and switch to: options.UseNpgsql(conn, b => b.MigrationsAssembly("Todos.Migrations.Postgres"));
-                // For now, fall back to Sqlite in this template to avoid extra dependencies.
-                options.UseSqlite("Data Source=todos.db");
+                options.UseNpgsql(conn, b => b.MigrationsAssembly("Todos.Migrations.Postgres"));
             }
             else
             {

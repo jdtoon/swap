@@ -12,8 +12,6 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <!-- To enable Postgres migrations, add the provider below to this project:
-         <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.x" />
-    -->
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.4" />
   </ItemGroup>
 </Project>

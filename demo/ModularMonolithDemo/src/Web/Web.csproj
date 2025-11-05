@@ -16,6 +16,9 @@
     <!-- Directly reference module contracts used by Program.cs -->
     <ProjectReference Include="..\..\..\..\framework\Swap.Modularity\Swap.Modularity.csproj" />
     <ProjectReference Include="..\..\..\..\framework\Swap.Htmx\Swap.Htmx.csproj" />
+    <!-- Bring provider-specific migrations assemblies to runtime output -->
+    <ProjectReference Include="..\Modules\Todos\Todos.Migrations.SqlServer\Todos.Migrations.SqlServer.csproj" />
+    <ProjectReference Include="..\Modules\Todos\Todos.Migrations.Postgres\Todos.Migrations.Postgres.csproj" />
   </ItemGroup>
 
   <!-- Build Tailwind CSS via NPM if available -->
