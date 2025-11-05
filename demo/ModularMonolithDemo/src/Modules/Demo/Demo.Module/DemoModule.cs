@@ -30,22 +30,39 @@ public sealed class DemoModule : IModule
         // React to Todos domain events and update the activity log
         registrar.Register<object>(TodoEvents.Domain.Created, async (payload, sp) =>
         {
-            var queries = sp.GetRequiredService<IDemoQueries>();
-            queries.AppendActivity("Todo created");
+            Console.WriteLine("[Demo] Server event received: todo.created (no DI)");
             await Task.CompletedTask;
         });
 
         registrar.Register<object>(TodoEvents.Domain.Deleted, async (payload, sp) =>
         {
-            var queries = sp.GetRequiredService<IDemoQueries>();
-            queries.AppendActivity("Todo deleted");
+            try
+            {
+                Console.WriteLine("[Demo] Server event received: todo.deleted");
+                var queries = sp.GetRequiredService<IDemoQueries>();
+                queries.AppendActivity("Todo deleted");
+            }
+            catch (Exception ex)
+            {
+                try { Console.Error.WriteLine($"[Demo] Handler error (deleted): {ex}"); } catch { }
+                throw;
+            }
             await Task.CompletedTask;
         });
 
         registrar.Register<object>(TodoEvents.Domain.Toggled, async (payload, sp) =>
         {
-            var queries = sp.GetRequiredService<IDemoQueries>();
-            queries.AppendActivity("Todo toggled");
+            try
+            {
+                Console.WriteLine("[Demo] Server event received: todo.toggled");
+                var queries = sp.GetRequiredService<IDemoQueries>();
+                queries.AppendActivity("Todo toggled");
+            }
+            catch (Exception ex)
+            {
+                try { Console.Error.WriteLine($"[Demo] Handler error (toggled): {ex}"); } catch { }
+                throw;
+            }
             await Task.CompletedTask;
         });
     }

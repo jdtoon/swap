@@ -32,6 +32,22 @@ This demo shows a clean module-first architecture:
 - Modules contribute UI chains via `ISwapUiChainContributor` found in their `.Web` assemblies.
 - Optionally map dev endpoints in Development: `/_swap/dev/events`.
 
+## Architecture rules (must follow)
+
+- Contracts-only dependencies across modules
+  - A module may depend on another module’s `*.Contracts` only.
+  - Never reference another module’s `*.Module` or `*.Web` from your module. This keeps boundaries clean and prevents tight coupling.
+- Events: domain/server vs UI
+  - Domain/server events are published on the server via `IEventChainRegistrar`. Use these for cross-module reactions and backend policies.
+  - UI events (Swap.Htmx) are best-effort client triggers for partial updates. They should not be used for cross-module business logic.
+  - Pattern: after a domain action, emit both:
+    - `_bus.Emit(TodoEvents.Domain.Created, ...)` for UI chains
+    - `await _events.PublishAsync(TodoEvents.Domain.Created, payload, services)` for server chains
+- Persistence is owned by the module
+  - Each module defines its own DbContext, provider selection, migrations, and initialization.
+
+These rules are enforced in this repo’s demo by making `Demo` depend only on `Todos.Contracts`, while reacting to `Todos` domain events via server event chains.
+
 ## Projects overview
 
 - Web (host): MVC shell, module discovery, event system runtime

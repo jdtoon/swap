@@ -12,6 +12,7 @@ Read the in-depth docs:
 - `docs/WEB-HOST.md` – host responsibilities and Program.cs wiring
 - `docs/MODULES.md` – how to author modules (persistence, UI, chains)
 - `docs/DATABASE-MIGRATIONS.md` – per-provider migrations for modules
+ - `docs/SERVER-EVENTS.md` – server vs UI events, distributed transport
 
 ## Prerequisites
 
@@ -44,6 +45,23 @@ Open http://localhost:8080
 
 Notes:
 - Compose sets `Data__Provider=Postgres` and applies migrations at startup. If no migrations existed yet, it would fall back to EnsureCreated() for dev convenience.
+
+## Run with RabbitMQ (Docker)
+
+The included compose file also starts RabbitMQ and configures the app to use the distributed server event registrar via RabbitMQ transport.
+
+Services:
+- Web app on http://localhost:8080
+- RabbitMQ Management UI on http://localhost:15672 (guest/guest)
+- RabbitMQ broker on amqp://localhost:5672
+
+Environment keys set for the web service:
+- `ServerEvents__Transport=RabbitMq`
+- `ServerEvents__RabbitMq__HostName=rabbitmq`
+- `ServerEvents__RabbitMq__UserName=guest`
+- `ServerEvents__RabbitMq__Password=guest`
+- `ServerEvents__RabbitMq__VirtualHost=/`
+- `ServerEvents__RabbitMq__ExchangeName=swap.events`
 
 ## Switch database providers
 

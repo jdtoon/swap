@@ -7,9 +7,9 @@ The host composes modules and provides the MVC shell and event system runtime.
 ```csharp
 var builder = WebApplication.CreateBuilder(args);
 
-// MVC + HTMX + in-memory server event registrar
+// MVC + HTMX + server event registrar (configurable)
 var mvc = builder.Services.AddControllersWithViews();
-builder.Services.AddSwapServerEventChains();
+builder.Services.AddSwapServerEventChainsFromConfiguration(builder.Configuration);
 builder.Services.AddSwapHtmx();
 
 // Module discovery (automatic – host references modules)
@@ -51,6 +51,11 @@ app.Run();
   - `Data:Provider` = `Sqlite` | `Postgres` | `SqlServer`
   - `ConnectionStrings:Todos` = provider-specific connection
   - `Data:MigrateOnStartup` = `true` to apply migrations
+
+- Server events transport:
+  - `ServerEvents:Transport` = `InMemory` (default) or `RabbitMq`
+  - RabbitMQ options (if `Transport=RabbitMq`):
+    - `ServerEvents:RabbitMq:HostName`, `Port`, `UserName`, `Password`, `VirtualHost`, `ExchangeName`
 
 ## Dev endpoints (Development only)
 

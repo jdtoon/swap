@@ -1,5 +1,3 @@
-using ModularMonolithDemo.Modules.Todos.Module;
-using ModularMonolithDemo.Modules.Demo.Module;
 using ModularMonolithDemo.Web;
 using Swap.Modularity.Abstractions;
 using Swap.Modularity.Hosting;
@@ -13,8 +11,8 @@ var builder = WebApplication.CreateBuilder(args);
 // MVC + HTMX + Events
 var mvc = builder.Services.AddControllersWithViews();
 
-// Register the in-memory server event chain registrar (domain/server events)
-builder.Services.AddSwapServerEventChains();
+// Choose in-memory (default) or RabbitMQ distributed based on configuration
+builder.Services.AddSwapServerEventChainsFromConfiguration(builder.Configuration);
 builder.Services.AddSwapHtmx();
 
 // Register modules – automatic discovery (host references modules so they're already loaded)

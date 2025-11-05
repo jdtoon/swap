@@ -62,11 +62,23 @@ public sealed class DistributedServerEventChainRegistrar : IEventChainRegistrar,
                     payloadObj = JsonSerializer.Deserialize(bytes.Span, targetType, _jsonOptions);
                     if (payloadObj is null) continue;
                 }
-                catch { continue; }
+                catch (Exception ex)
+                {
+                    try { Console.Error.WriteLine($"[ServerEvents] Deserialize failed for {key}: {ex.Message}"); } catch { }
+                    continue;
+                }
 
-                // Create a scope for handler execution
-                using var scope = _rootServices.CreateScope();
-                await r.Handler(payloadObj!, scope.ServiceProvider).ConfigureAwait(false);
+                try
+                {
+                    // Create a scope for handler execution
+                    using var scope = _rootServices.CreateScope();
+                    await r.Handler(payloadObj!, scope.ServiceProvider).ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {
+                    try { Console.Error.WriteLine($"[ServerEvents] Handler exception for {key}: {ex}"); } catch { }
+                    throw;
+                }
             }
         }));
     }

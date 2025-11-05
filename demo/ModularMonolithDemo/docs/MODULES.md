@@ -40,3 +40,11 @@ A module is a small unit that plugs into the host. Minimal shape:
 - Generate migrations into the shim project
 
 See `docs/DATABASE-MIGRATIONS.md` for exact commands.
+
+## Domain/server events
+
+- Emit domain events after state changes so other modules can react server-side:
+  - From controllers/services in your module, call `await IEventChainRegistrar.PublishAsync(eventKey, payload, services)`.
+  - Also emit the corresponding UI event via Swap.Htmx if the UI needs to update.
+- React to other modules’ events in your module’s `ConfigureEventChains(IEventChainRegistrar registrar)` by registering handlers.
+- Keep cross-module logic in these server-side handlers rather than tight compile-time references.

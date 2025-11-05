@@ -47,10 +47,24 @@ public sealed class RabbitMqServerEventTransport : IServerEventTransport, IDispo
                 VirtualHost = _opts.VirtualHost,
                 ClientProvidedName = _opts.ClientProvidedName ?? "Swap.Htmx.ServerEvents"
             };
-            _conn = factory.CreateConnection();
-            using var ch = _conn.CreateModel();
-            ch.ExchangeDeclare(exchange: _opts.ExchangeName, type: _opts.ExchangeKind, durable: _opts.DurableExchange, autoDelete: _opts.AutoDeleteExchange);
-            return _conn;
+            // Basic retry to avoid crashing when the broker is not yet ready (e.g., on container start)
+            const int maxAttempts = 10;
+            for (var attempt = 1; attempt <= maxAttempts; attempt++)
+            {
+                try
+                {
+                    _conn = factory.CreateConnection();
+                    using var ch = _conn.CreateModel();
+                    ch.ExchangeDeclare(exchange: _opts.ExchangeName, type: _opts.ExchangeKind, durable: _opts.DurableExchange, autoDelete: _opts.AutoDeleteExchange);
+                    return _conn;
+                }
+                catch
+                {
+                    if (attempt == maxAttempts) throw;
+                    try { System.Threading.Thread.Sleep(TimeSpan.FromSeconds(Math.Min(5, attempt))); } catch { }
+                }
+            }
+            return _conn!;
         }
     }
 
