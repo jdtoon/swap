@@ -1,8 +1,5 @@
 using ModularMonolithDemo.Modules.Todos.Module;
-using ModularMonolithDemo.Modules.Todos.Web.Controllers;
-using ModularMonolithDemo.Modules.Todos.Web.Events;
 using ModularMonolithDemo.Modules.Demo.Module;
-using ModularMonolithDemo.Modules.Demo.Web.Controllers;
 using ModularMonolithDemo.Web;
 using Swap.Modularity.Abstractions;
 using Swap.Modularity.Hosting;
@@ -10,8 +7,6 @@ using Swap.Htmx;
 using Swap.Htmx.ServerEvents;
 using Swap.Htmx.Dev;
 using Microsoft.AspNetCore.Mvc.ApplicationParts;
-using ModularMonolithDemo.Modules.Todos.Module.Persistence;
-using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -20,18 +15,13 @@ var mvc = builder.Services.AddControllersWithViews();
 
 // Register the in-memory server event chain registrar (domain/server events)
 builder.Services.AddSwapServerEventChains();
-builder.Services.AddSwapHtmx(opts =>
-{
-	// Module-owned UI chains registered here
-	TodosUiChains.Configure(opts);
-});
+builder.Services.AddSwapHtmx();
 
 // Register modules and explicitly include module assemblies so they're loaded for discovery
 builder.Services.AddSwapModules(builder.Configuration, new[] { typeof(TodosModule).Assembly, typeof(DemoModule).Assembly });
 
-// Ensure MVC discovers controllers/views from module RCLs
-mvc.PartManager.ApplicationParts.Add(new AssemblyPart(typeof(TodosUiController).Assembly));
-mvc.PartManager.ApplicationParts.Add(new AssemblyPart(typeof(DemoController).Assembly));
+// Auto-discover MVC parts from any *.Web RCL assemblies
+mvc.AddSwapModuleApplicationParts();
 
 var app = builder.Build();
 
@@ -55,35 +45,15 @@ if (app.Environment.IsDevelopment())
 	app.MapSwapHtmxDevEndpoints();
 }
 
-// After the app is built, allow modules to register event chains
+// After the app is built, allow modules to register event chains and UI chains
 using (var scope = app.Services.CreateScope())
 {
 	var registrar = scope.ServiceProvider.GetRequiredService<IEventChainRegistrar>();
 	app.Services.ConfigureSwapModuleEventChains(registrar);
 
-	// Optional: apply module migrations/ensure created on startup
-	var cfg = scope.ServiceProvider.GetRequiredService<IConfiguration>();
-	var provider = (cfg["Data:Provider"] ?? "Sqlite").Trim();
-	var migrateConfigured = bool.TryParse(cfg["Data:MigrateOnStartup"], out var m) && m;
-	// Default to initializing the database for Sqlite even if the flag is missing
-	var migrate = migrateConfigured || string.Equals(provider, "Sqlite", StringComparison.OrdinalIgnoreCase);
-	if (migrate && Program.TryInitializeDatabase(scope.ServiceProvider))
-	{
-		var todosDb = scope.ServiceProvider.GetService<TodosDbContext>();
-		if (todosDb is not null)
-		{
-			if (string.Equals(provider, "Sqlite", StringComparison.OrdinalIgnoreCase))
-			{
-				// SQLite path uses EnsureCreated for speed
-				todosDb.Database.EnsureCreated();
-			}
-			else
-			{
-				// Non-SQLite providers should use migrations
-				todosDb.Database.Migrate();
-			}
-		}
-	}
+    // Apply module-contributed HTMX UI chains
+    var swapOptions = scope.ServiceProvider.GetRequiredService<Swap.Htmx.Events.SwapEventBusOptions>();
+    app.Services.ConfigureSwapModuleUiChains(swapOptions);
 }
 
 app.Run();

@@ -17,6 +17,9 @@ public sealed class TodosModule : IModule
     {
         // Register EF Core SQLite by default (module-owned), falls back to in-memory when disabled
         services.AddTodosPersistence(configuration);
+
+    // Ensure MVC can discover controllers/views from the module's RCL automatically
+        // by relying on host-side auto ApplicationPart discovery for *.Web assemblies.
     }
 
     public void ConfigureEndpoints(IEndpointRouteBuilder endpoints)
@@ -27,7 +30,7 @@ public sealed class TodosModule : IModule
     public void ConfigureEventChains(IEventChainRegistrar registrar)
     {
         // No server-side chains for Todos in this demo.
-        // UI chains are declared via AddSwapHtmx in the host using the module-owned contributor.
+        // UI chains are contributed via ISwapUiChainContributor from this module.
     }
 }
 

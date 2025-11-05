@@ -24,7 +24,16 @@ internal class TodosDatabaseInitializer(IServiceProvider services, IConfiguratio
         }
         else
         {
-            await db.Database.MigrateAsync(cancellationToken);
+            // If no migrations are defined for this provider yet, fall back to EnsureCreated for dev
+            var hasMigrations = db.Database.GetMigrations().Any();
+            if (hasMigrations)
+            {
+                await db.Database.MigrateAsync(cancellationToken);
+            }
+            else
+            {
+                await db.Database.EnsureCreatedAsync(cancellationToken);
+            }
         }
     }
 
