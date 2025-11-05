@@ -1,7 +1,7 @@
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using Microsoft.Extensions.DependencyInjection;
-using ModularMonolithDemo.Modules.Todos.Module;
+using ModularMonolithDemo.Modules.Todos.Contracts;
 using Swap.Testing;
 using Xunit;
 

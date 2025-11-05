@@ -2,7 +2,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.Routing;
 using Swap.Modularity.Abstractions;
-using ModularMonolithDemo.Modules.Todos.Module;
+using ModularMonolithDemo.Modules.Todos.Contracts;
 
 namespace ModularMonolithDemo.Modules.Demo.Module;
 
@@ -27,7 +27,27 @@ public sealed class DemoModule : IModule
 
     public void ConfigureEventChains(IEventChainRegistrar registrar)
     {
-        // No server-side chains here; UI chains are emitted directly by controllers for this module.
+        // React to Todos domain events and update the activity log
+        registrar.Register<object>(TodoEvents.Domain.Created, async (payload, sp) =>
+        {
+            var queries = sp.GetRequiredService<IDemoQueries>();
+            queries.AppendActivity("Todo created");
+            await Task.CompletedTask;
+        });
+
+        registrar.Register<object>(TodoEvents.Domain.Deleted, async (payload, sp) =>
+        {
+            var queries = sp.GetRequiredService<IDemoQueries>();
+            queries.AppendActivity("Todo deleted");
+            await Task.CompletedTask;
+        });
+
+        registrar.Register<object>(TodoEvents.Domain.Toggled, async (payload, sp) =>
+        {
+            var queries = sp.GetRequiredService<IDemoQueries>();
+            queries.AppendActivity("Todo toggled");
+            await Task.CompletedTask;
+        });
     }
 }
 

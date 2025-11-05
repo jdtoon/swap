@@ -12,6 +12,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Demo.Module\Demo.Module.csproj" />
     <ProjectReference Include="..\Demo.Contracts\Demo.Contracts.csproj" />
+    <ProjectReference Include="..\..\Todos\Todos.Contracts\Todos.Contracts.csproj" />
     <ProjectReference Include="..\..\..\..\..\..\framework\Swap.Htmx\Swap.Htmx.csproj" />
   </ItemGroup>
 </Project>

@@ -63,7 +63,7 @@ public class DemoController : SwapController
     public IActionResult Bulk() => SwapView("~/Views/Demo/Bulk.cshtml");
 
     [HttpGet("BulkTodos")]
-    public async Task<IActionResult> BulkTodos([FromServices] ModularMonolithDemo.Modules.Todos.Module.ITodoService todos)
+    public async Task<IActionResult> BulkTodos([FromServices] ModularMonolithDemo.Modules.Todos.Contracts.ITodoService todos)
         => PartialView("~/Views/Demo/_BulkTodos.cshtml", await Task.FromResult(todos.GetAll().ToList()));
 
     [HttpPost("BulkComplete")]

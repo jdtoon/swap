@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using ModularMonolithDemo.Modules.Todos.Contracts;
 
 namespace ModularMonolithDemo.Modules.Todos.Module.Persistence;
 
@@ -41,8 +42,8 @@ public static class ServiceCollectionExtensions
             }
         });
 
-        // EF-backed service
-        services.AddScoped<ITodoService, EfTodoService>();
+    // EF-backed service
+    services.AddScoped<ITodoService, EfTodoService>();
 
         // Ensure database is initialized on host startup
         services.AddHostedService<TodosDatabaseInitializer>();

@@ -34,10 +34,3 @@ public sealed class TodosModule : IModule
     }
 }
 
-public interface ITodoService
-{
-    IReadOnlyList<TodoItemDto> GetAll();
-    TodoItemDto Add(string title);
-    TodoItemDto? Toggle(int id);
-    bool Delete(int id);
-}

@@ -9,7 +9,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Demo.Contracts\Demo.Contracts.csproj" />
-    <ProjectReference Include="..\..\Todos\Todos.Module\Todos.Module.csproj" />
+    <ProjectReference Include="..\..\Todos\Todos.Contracts\Todos.Contracts.csproj" />
     <ProjectReference Include="..\..\..\..\..\..\framework\Swap.Modularity\Swap.Modularity.csproj" />
   </ItemGroup>
 </Project>
