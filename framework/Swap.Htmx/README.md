@@ -296,6 +296,40 @@ This catches common mistakes:
 </a>
 ```
 
+## Server-side events (registrars and transports)
+
+Swap.Htmx supports a simple in-process registrar for domain/server events out of the box, and optional distributed delivery via a transport abstraction. Pick one of the DI setups below.
+
+### Local/dev (in-memory registrar)
+
+```csharp
+// Keeps everything in-process for demos and local development
+builder.Services.AddSwapServerEventChains();
+```
+
+### Distributed (uses a transport + distributed registrar)
+
+```csharp
+// 1) Choose a transport
+builder.Services.AddInMemoryServerEventTransport(); // local multi-registrar simulation
+// or RabbitMQ
+builder.Services.AddRabbitMqServerEventTransport(opts =>
+{
+    opts.HostName = "localhost";          // or broker host
+    opts.ExchangeName = "swap.events";    // topic exchange used for events
+    // opts.UserName = "guest"; opts.Password = "guest"; // as needed
+});
+
+// 2) Use the distributed registrar (publishes/consumes via transport)
+builder.Services.AddSwapServerEventChainsDistributed();
+```
+
+Notes:
+- Your modules still only depend on `Swap.Modularity.Abstractions.IEventChainRegistrar` and call `Register`/`PublishAsync` the same way.
+- The distributed registrar serializes payloads as JSON and includes a `ClrType` header to assist typed deserialization on the consumer side.
+- RabbitMQ transport uses a topic exchange (default `swap.events`) and a durable per-event-key queue by default.
+- You can switch between in-memory and distributed by changing only DI wiring; no module code changes required.
+
 Why explicit over hx-boost:
 - ✅ Clear intent - you see exactly what each link does
 - ✅ No conflicts between `hx-boost` and explicit `hx-target`
