@@ -1,33 +1,68 @@
-# Modular Monolith Demo (Preview)
+# Modular Monolith Demo
 
-This demo shows how modules plug into a host via `Swap.Modularity`.
+A production-friendly, module-first MVC + HTMX app using Swap.Modularity and Swap.Htmx.
 
-- Host: `src/Web` (minimal API)
-- Module: `src/Modules/Orders/Orders.Module` with `OrdersModule : IModule`
-- Contracts: `src/Modules/Orders/Orders.Contracts`
+- Host: `src/Web` – MVC shell, event system runtime, module discovery
+- Modules:
+	- `Todos` – Contracts, Module (services + persistence), Web (RCL UI), provider shims for migrations
+	- `Demo` – Contracts, Module, Web (RCL UI)
 
-Run (after adding these projects to a solution):
+Read the in-depth docs:
+- `docs/ARCHITECTURE.md` – overall design and composition
+- `docs/WEB-HOST.md` – host responsibilities and Program.cs wiring
+- `docs/MODULES.md` – how to author modules (persistence, UI, chains)
+- `docs/DATABASE-MIGRATIONS.md` – per-provider migrations for modules
+
+## Prerequisites
+
+- .NET 9 SDK
+- Node.js (for Tailwind build)
+- (Optional) Docker Desktop (for Postgres stack)
+
+## Run locally (SQLite)
 
 ```pwsh
-# From repo root, add projects to a solution (optional during preview)
-# dotnet new sln -n ModularMonolithDemo
-# dotnet sln add demo/ModularMonolithDemo/src/Web/Web.csproj
-# dotnet sln add demo/ModularMonolithDemo/src/Modules/Orders/Orders.Module/Orders.Module.csproj
-# dotnet sln add demo/ModularMonolithDemo/src/Modules/Orders/Orders.Contracts/Orders.Contracts.csproj
-
-# Restore/build/run
-# dotnet build
-# dotnet run --project demo/ModularMonolithDemo/src/Web/Web.csproj
+# From repo root
+dotnet build demo/ModularMonolithDemo/ModularMonolithDemo.sln
+dotnet run --project demo/ModularMonolithDemo/src/Web/Web.csproj
 ```
 
-Then visit:
-- http://localhost:5000
-- http://localhost:5000/orders/ping
+Open http://localhost:5000
 
 Notes:
-- The demo uses reflection-based module discovery. The host project references `Orders.Module`, which brings its assembly into the app domain.
-- `ConfigureEventChains` is a placeholder for the Swap Event System registrar; we’ll wire it next.
+- SQLite schema is created automatically via EnsureCreated().
+- HTMX event system is active; dev endpoints are enabled in Development.
 
-Troubleshooting:
-- If `/orders/ping` returns 404, ensure the host passes the module assembly to `AddSwapModules`:
-	- In `src/Web/Program.cs` we use: `AddSwapModules(builder.Configuration, new[] { typeof(OrdersModule).Assembly })` to guarantee the module assembly is loaded for discovery.
+## Run with Postgres (Docker)
+
+```pwsh
+cd demo/ModularMonolithDemo
+docker compose up -d --build --wait
+```
+
+Open http://localhost:8080
+
+Notes:
+- Compose sets `Data__Provider=Postgres` and applies migrations at startup. If no migrations existed yet, it would fall back to EnsureCreated() for dev convenience.
+
+## Switch database providers
+
+- Configure in `appsettings.*.json` or env vars:
+	- `Data:Provider` = `Sqlite` | `Postgres` | `SqlServer`
+	- `ConnectionStrings:Todos` = provider-specific connection
+	- `Data:MigrateOnStartup` = `true` to auto-apply migrations
+
+## How modules plug in
+
+- The host calls `AddSwapModules(configuration)` – modules are discovered automatically since the host references them.
+- MVC discovers RCLs ending with `.Web` via `AddSwapModuleApplicationParts()`.
+- Each module’s `.Web` project can contribute UI chains by implementing `ISwapUiChainContributor`.
+- Persistence is module-owned; per-provider migrations live in `<Module>.Migrations.<Provider>`.
+
+## Tests
+
+```pwsh
+dotnet test demo/ModularMonolithDemo/ModularMonolithDemo.sln
+```
+
+Includes module unit/integration tests and a small host smoke test suite.
