@@ -17,8 +17,8 @@ var mvc = builder.Services.AddControllersWithViews();
 builder.Services.AddSwapServerEventChains();
 builder.Services.AddSwapHtmx();
 
-// Register modules and explicitly include module assemblies so they're loaded for discovery
-builder.Services.AddSwapModules(builder.Configuration, new[] { typeof(TodosModule).Assembly, typeof(DemoModule).Assembly });
+// Register modules – automatic discovery (host references modules so they're already loaded)
+builder.Services.AddSwapModules(builder.Configuration);
 
 // Auto-discover MVC parts from any *.Web RCL assemblies
 mvc.AddSwapModuleApplicationParts();
