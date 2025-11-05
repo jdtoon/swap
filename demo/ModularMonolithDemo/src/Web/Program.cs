@@ -1,13 +1,9 @@
-using ModularMonolithDemo.Modules.Orders.Module;
-using ModularMonolithDemo.Modules.Inventory.Module;
 using ModularMonolithDemo.Modules.Todos.Module;
 using ModularMonolithDemo.Modules.Todos.Web.Controllers;
 using ModularMonolithDemo.Modules.Todos.Web.Events;
 using ModularMonolithDemo.Modules.Demo.Module;
 using ModularMonolithDemo.Modules.Demo.Web.Controllers;
 using ModularMonolithDemo.Web;
-using ModularMonolithDemo.Modules.Orders.Contracts;
-using ModularMonolithDemo.Modules.Inventory.Contracts;
 using Swap.Modularity.Abstractions;
 using Swap.Modularity.Hosting;
 using Swap.Htmx;
@@ -24,14 +20,12 @@ var mvc = builder.Services.AddControllersWithViews();
 builder.Services.AddSwapServerEventChains();
 builder.Services.AddSwapHtmx(opts =>
 {
-	// Host-level chain example
-	opts.Chain(OrderEvents.OrderCreated, InventoryUIEvents.Refresh);
 	// Module-owned UI chains registered here
 	TodosUiChains.Configure(opts);
 });
 
 // Register modules and explicitly include module assemblies so they're loaded for discovery
-builder.Services.AddSwapModules(builder.Configuration, new[] { typeof(OrdersModule).Assembly, typeof(InventoryModule).Assembly, typeof(TodosModule).Assembly, typeof(DemoModule).Assembly });
+builder.Services.AddSwapModules(builder.Configuration, new[] { typeof(TodosModule).Assembly, typeof(DemoModule).Assembly });
 
 // Ensure MVC discovers controllers/views from module RCLs
 mvc.PartManager.ApplicationParts.Add(new AssemblyPart(typeof(TodosUiController).Assembly));

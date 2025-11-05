@@ -3,7 +3,6 @@
     <TargetFramework>net9.0</TargetFramework>
     <IsPackable>false</IsPackable>
     <Nullable>enable</Nullable>
-    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
@@ -16,17 +15,8 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <!-- Ensure runtime deps present for testhost and HTML parsing -->
-    <PackageReference Include="AngleSharp" Version="1.1.2" />
-    <!-- RabbitMQ client is a transitive dep of Swap.Htmx server events; include to be safe in tests -->
-    <PackageReference Include="RabbitMQ.Client" Version="6.8.1" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Todos.Web\Todos.Web.csproj" />
-    <ProjectReference Include="..\Todos.Module\Todos.Module.csproj" />
-    <ProjectReference Include="..\Todos.Contracts\Todos.Contracts.csproj" />
-    <ProjectReference Include="..\..\..\Web\Web.csproj" />
-    <ProjectReference Include="..\..\..\..\..\..\framework\Swap.Testing\Swap.Testing.csproj" />
-    <ProjectReference Include="..\..\..\..\..\..\framework\Swap.Htmx\Swap.Htmx.csproj" />
+    <ProjectReference Include="..\..\Demo.Contracts\Demo.Contracts.csproj" />
   </ItemGroup>
 </Project>

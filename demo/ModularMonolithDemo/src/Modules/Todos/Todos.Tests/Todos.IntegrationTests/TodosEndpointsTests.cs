@@ -5,7 +5,7 @@ using ModularMonolithDemo.Modules.Todos.Module;
 using Swap.Testing;
 using Xunit;
 
-namespace ModularMonolithDemo.Modules.Todos.Tests;
+namespace ModularMonolithDemo.Modules.Todos.IntegrationTests;
 
 public class TodosEndpointsTests : IClassFixture<HtmxTestFixture<Program>>
 {

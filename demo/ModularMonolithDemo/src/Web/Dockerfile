@@ -15,10 +15,6 @@ WORKDIR /work
 
 # Copy project files for restore
 COPY ["demo/ModularMonolithDemo/src/Web/Web.csproj", "demo/ModularMonolithDemo/src/Web/"]
-COPY ["demo/ModularMonolithDemo/src/Modules/Orders/Orders.Module/Orders.Module.csproj", "demo/ModularMonolithDemo/src/Modules/Orders/Orders.Module/"]
-COPY ["demo/ModularMonolithDemo/src/Modules/Orders/Orders.Contracts/Orders.Contracts.csproj", "demo/ModularMonolithDemo/src/Modules/Orders/Orders.Contracts/"]
-COPY ["demo/ModularMonolithDemo/src/Modules/Inventory/Inventory.Module/Inventory.Module.csproj", "demo/ModularMonolithDemo/src/Modules/Inventory/Inventory.Module/"]
-COPY ["demo/ModularMonolithDemo/src/Modules/Inventory/Inventory.Contracts/Inventory.Contracts.csproj", "demo/ModularMonolithDemo/src/Modules/Inventory/Inventory.Contracts/"]
 COPY ["demo/ModularMonolithDemo/src/Modules/Todos/Todos.Contracts/Todos.Contracts.csproj", "demo/ModularMonolithDemo/src/Modules/Todos/Todos.Contracts/"]
 COPY ["demo/ModularMonolithDemo/src/Modules/Todos/Todos.Module/Todos.Module.csproj", "demo/ModularMonolithDemo/src/Modules/Todos/Todos.Module/"]
 COPY ["demo/ModularMonolithDemo/src/Modules/Todos/Todos.Web/Todos.Web.csproj", "demo/ModularMonolithDemo/src/Modules/Todos/Todos.Web/"]
