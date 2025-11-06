@@ -23,22 +23,12 @@ const FeatureList: FeatureItem[] = [
     ),
   },
   {
-    title: 'Production-Ready Code',
-    icon: '⚡',
-    description: (
-      <>
-        Generate complete CRUD with modals, pagination, sorting, filtering, and search.
-        Every pattern is extracted from real production applications.
-      </>
-    ),
-  },
-  {
     title: 'HTMX Simplicity',
     icon: '🎯',
     description: (
       <>
         Build modern, interactive web applications without JavaScript frameworks.
-        Server-rendered HTML with HTMX for dynamic updates.
+        Server-rendered HTML with HTMX for dynamic updates, plus a simple UI event bus to manage front-end updates.
       </>
     ),
   },
