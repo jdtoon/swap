@@ -10,9 +10,9 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "{{ProjectName}}.Domain", "s
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "{{ProjectName}}.Infrastructure", "src\Infrastructure\{{ProjectName}}.Infrastructure.csproj", "{44444444-4444-4444-4444-444444444444}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "{{ProjectName}}.Application.Tests", "test\Unit\{{ProjectName}}.Application.Tests.csproj", "{55555555-5555-5555-5555-555555555555}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "{{ProjectName}}.Application.Tests", "tests\Unit\{{ProjectName}}.Application.Tests.csproj", "{55555555-5555-5555-5555-555555555555}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "{{ProjectName}}.Web.Tests", "test\Integration\{{ProjectName}}.Web.Tests.csproj", "{66666666-6666-6666-6666-666666666666}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "{{ProjectName}}.Web.Tests", "tests\Integration\{{ProjectName}}.Web.Tests.csproj", "{66666666-6666-6666-6666-666666666666}"
 EndProject
 Global
     GlobalSection(SolutionConfigurationPlatforms) = preSolution

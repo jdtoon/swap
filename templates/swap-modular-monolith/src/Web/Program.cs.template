@@ -1,4 +1,4 @@
-using {{ProjectName}}.Web;
+using {{ProjectName}}.Web.Infrastructure;
 using Swap.Modularity.Abstractions;
 using Swap.Modularity.Hosting;
 using Swap.Htmx;
@@ -9,7 +9,11 @@ using Microsoft.AspNetCore.Mvc.ApplicationParts;
 var builder = WebApplication.CreateBuilder(args);
 
 // MVC + HTMX + Events
-var mvc = builder.Services.AddControllersWithViews();
+var mvc = builder.Services.AddControllersWithViews(options =>
+{
+    // Accept both 123.45 and 123,45 for decimal inputs
+    options.ModelBinderProviders.Insert(0, new {{ProjectName}}.Web.Infrastructure.InvariantDecimalModelBinderProvider());
+});
 
 // Choose in-memory (default) or RabbitMQ distributed based on configuration
 builder.Services.AddSwapServerEventChainsFromConfiguration(builder.Configuration);
