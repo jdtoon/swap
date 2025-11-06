@@ -956,3 +956,5 @@ public class HtmxShellMiddleware
         }
     }
 }
+
+#endregion
