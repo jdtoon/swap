@@ -425,7 +425,8 @@ public class HtmxShellMiddleware
         var raw = (template ?? "monolith").Trim().ToLowerInvariant();
         var selected = raw switch
         {
-            "monolith" => "monolith",
+            // Route both aliases to the single maintained template
+            "monolith" => "swap-monolith",
             "swap-monolith" => "swap-monolith",
             "layered" => "swap-layered",
             "swap-layered" => "swap-layered",
