@@ -1,0 +1,585 @@
+# Development Guide
+
+## Initial Setup
+
+### Prerequisites
+- .NET 9 SDK
+- Node.js (LTS version)
+- LibMan CLI: `dotnet tool install -g Microsoft.Web.LibraryManager.Cli`
+
+### First Run
+
+```bash
+cd src
+
+# Install frontend dependencies
+npm install
+
+# Restore client libraries (HTMX, DaisyUI)
+libman restore
+
+# Build Tailwind CSS
+npm run build:css
+
+# Apply database migrations
+dotnet ef database update
+
+# Run the app
+dotnet run
+```
+
+Open **http://localhost:5000**
+
+---
+
+## Development Workflows
+
+### Hot Reload
+
+ASP.NET Core hot reload is enabled by default:
+
+```bash
+dotnet watch run
+```
+
+Changes to `.cs` files trigger automatic recompilation.
+
+### CSS Development
+
+**Watch mode (recommended):**
+```bash
+npm run watch:css
+```
+
+Automatically rebuilds `wwwroot/css/app.css` when you modify:
+- Tailwind classes in `.cshtml` files
+- Custom styles in `wwwroot/css/site.css`
+- Tailwind config in `tailwind.config.js`
+
+**Manual build:**
+```bash
+npm run build:css
+```
+
+**Production build (minified):**
+```bash
+npm run build:css:prod
+```
+
+### Database Migrations
+
+**Create a new migration:**
+```bash
+dotnet ef migrations add AddProductTable
+```
+
+**Apply migrations:**
+```bash
+dotnet ef database update
+```
+
+**Rollback to a specific migration:**
+```bash
+dotnet ef database update PreviousMigrationName
+```
+
+**Remove last migration (if not applied):**
+```bash
+dotnet ef migrations remove
+```
+
+**Generate SQL script:**
+```bash
+dotnet ef migrations script --output migrations.sql
+```
+
+### Seeding Data
+
+Control seeding via environment variables:
+
+```bash
+# Linux/macOS
+export SEED_COUNT=200
+export SEED_LOCALE=fr
+export SEED_IFEMPTY=true
+
+# Windows PowerShell
+$env:SEED_COUNT=200
+$env:SEED_LOCALE="fr"
+$env:SEED_IFEMPTY="true"
+
+dotnet run
+```
+
+**Environment variables:**
+- `SEED_COUNT` — Number of records to generate (default: 50)
+- `SEED_LOCALE` — Faker locale (`en`, `fr`, `de`, `es`, etc.)
+- `SEED_IFEMPTY` — Only seed if database is empty (`true`/`false`, default: `true`)
+
+**Custom seeding:**
+
+Edit `Data/Seeders/SeedRunner.cs`:
+
+```csharp
+public static async Task RunAsync(
+    AppDbContext db, 
+    IServiceProvider services,
+    int count = 50,
+    string locale = "en",
+    bool seedIfEmpty = true)
+{
+    if (seedIfEmpty && db.TodoItems.Any())
+        return;
+    
+    var faker = new Faker<TodoItem>(locale)
+        .RuleFor(t => t.Title, f => f.Lorem.Sentence())
+        .RuleFor(t => t.IsComplete, f => f.Random.Bool(0.3f));
+    
+    var todos = faker.Generate(count);
+    db.TodoItems.AddRange(todos);
+    await db.SaveChangesAsync();
+}
+```
+
+---
+
+## Debugging
+
+### Visual Studio / Rider
+Press **F5** to start debugging with breakpoints.
+
+### VS Code
+1. Install C# Dev Kit extension
+2. Press **F5** to start debugging
+
+### Browser DevTools
+
+**View HTMX requests:**
+1. Open Network tab
+2. Filter by XHR
+3. Look for `HX-Request: true` header
+
+**Event debugging:**
+
+Add to your view temporarily:
+```html
+<script>
+document.body.addEventListener('htmx:afterRequest', (e) => {
+    console.log('HTMX Response:', e.detail);
+});
+</script>
+```
+
+### Swap Event Dashboard
+
+Visit **http://localhost:5000/_swap/dev/events** (Development only)
+
+Shows:
+- All registered event chains
+- Event flow visualization
+- Trigger/listener mapping
+
+---
+
+## Code Generation
+
+### Full CRUD Resource
+
+```bash
+swap g r Product --fields "Name:string Price:decimal InStock:bool:f"
+```
+
+Generates:
+- `Models/Product.cs`
+- `Controllers/ProductsController.cs`
+- `Views/Products/Index.cshtml`
+- `Views/Products/_ProductList.cshtml`
+- `Views/Products/_ProductForm.cshtml`
+- `Views/Products/_ProductItem.cshtml`
+- Event chain in `Events/SwapEventChains.cs`
+
+### Model Only
+
+```bash
+swap g m Category --fields "Name:string Slug:string Description:string?"
+```
+
+### Controller Only
+
+```bash
+swap g c Orders --fields "OrderNumber:string Total:decimal"
+```
+
+**Field syntax:**
+- `Name:string` — Required string
+- `Description:string?` — Optional string
+- `Price:decimal` — Required decimal
+- `InStock:bool:f` — Boolean with `false` default
+
+---
+
+## Testing
+
+### Run All Tests
+
+```bash
+dotnet test
+```
+
+### Run Specific Test
+
+```bash
+dotnet test --filter "FullyQualifiedName~TodoFlowTests"
+```
+
+### Watch Mode
+
+```bash
+dotnet watch test
+```
+
+### Writing HTMX Integration Tests
+
+```csharp
+public class MyFeatureTests : IClassFixture<HtmxTestFixture<Program>>
+{
+    private readonly HtmxTestClient<Program> _client;
+    
+    public MyFeatureTests(HtmxTestFixture<Program> fixture)
+    {
+        _client = fixture.Client;
+    }
+    
+    [Fact]
+    public async Task Should_Create_And_Display_Item()
+    {
+        // Arrange
+        var formData = new Dictionary<string, string>
+        {
+            ["title"] = "Test Item"
+        };
+        
+        // Act
+        var response = await _client.HtmxPostAsync("/Home/AddTodo", formData);
+        
+        // Assert
+        response.AssertSuccess();
+        response.AssertHasSwapEvent("entity.created:todo");
+        
+        var list = await _client.HtmxGetAsync("/Home/TodoList");
+        await list.AssertContainsAsync("Test Item");
+    }
+}
+```
+
+**Available assertions:**
+- `AssertSuccess()` — 2xx status code
+- `AssertPartialViewAsync()` — Response is a partial view
+- `AssertContainsAsync(text)` — HTML contains text
+- `AssertHasSwapEvent(name)` — Event was fired
+- `AssertHxRedirect(url)` — HTMX redirect header present
+
+---
+
+## Common Tasks
+
+### Add a New Page
+
+1. **Create controller action:**
+```csharp
+public IActionResult MyPage()
+{
+    return View();
+}
+```
+
+2. **Create view:**
+```
+Views/Home/MyPage.cshtml
+```
+
+3. **Add navigation link:**
+```html
+<a href="/Home/MyPage" class="btn">My Page</a>
+```
+
+### Add a New HTMX Partial
+
+1. **Controller:**
+```csharp
+[HttpGet]
+public IActionResult MyPartial()
+{
+    var data = _db.Items.ToList();
+    return PartialView("_MyPartial", data);
+}
+```
+
+2. **Partial view:**
+```
+Views/Home/_MyPartial.cshtml
+```
+
+3. **Trigger in HTML:**
+```html
+<div hx-get="/Home/MyPartial" 
+     hx-trigger="load, ui.refresh from:body">
+</div>
+```
+
+### Add a New Event Chain
+
+**1. Define event name in `Events/EventNames.cs`:**
+```csharp
+public static class UI
+{
+    public const string RefreshProducts = "ui.refreshProducts";
+}
+```
+
+**2. Register chain in `Events/SwapEventChains.cs`:**
+```csharp
+events.Chain(
+    SwapEvents.Entity.Created("product"),
+    SwapEvents.UI.RefreshProducts,
+    SwapEvents.UI.ShowToast);
+```
+
+**3. Fire event in controller:**
+```csharp
+_events.Fire(SwapEvents.Entity.Created("product"));
+```
+
+**4. Listen in view:**
+```html
+<div hx-get="/Products/List"
+     hx-trigger="ui.refreshProducts from:body">
+</div>
+```
+
+### Switch Database Provider
+
+**SQL Server:**
+
+1. Install package:
+```bash
+dotnet add package Microsoft.EntityFrameworkCore.SqlServer
+```
+
+2. Update `Program.cs`:
+```csharp
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseSqlServer(connectionString));
+```
+
+3. Update `appsettings.json`:
+```json
+{
+  "ConnectionStrings": {
+    "DefaultConnection": "Server=localhost;Database={{ProjectName}};Trusted_Connection=True;"
+  }
+}
+```
+
+4. Create new migrations:
+```bash
+dotnet ef migrations add InitialSqlServer
+dotnet ef database update
+```
+
+**PostgreSQL:**
+
+1. Install package:
+```bash
+dotnet add package Npgsql.EntityFrameworkCore.PostgreSQL
+```
+
+2. Update `Program.cs`:
+```csharp
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseNpgsql(connectionString));
+```
+
+3. Update `appsettings.json`:
+```json
+{
+  "ConnectionStrings": {
+    "DefaultConnection": "Host=localhost;Database={{ProjectName}};Username=postgres;Password=yourpassword"
+  }
+}
+```
+
+---
+
+## Performance Tips
+
+### Minimize Database Queries
+
+**Bad:**
+```csharp
+foreach (var todo in todos)
+{
+    var user = _db.Users.Find(todo.UserId); // N+1 query!
+}
+```
+
+**Good:**
+```csharp
+var todos = _db.TodoItems
+    .Include(t => t.User)  // Single join
+    .ToList();
+```
+
+### Use AsNoTracking for Read-Only Queries
+
+```csharp
+var todos = _db.TodoItems
+    .AsNoTracking()  // Faster, no change tracking
+    .ToList();
+```
+
+### Add Response Caching
+
+```csharp
+[ResponseCache(Duration = 60)]
+public IActionResult Stats()
+{
+    // Expensive query
+}
+```
+
+### Database Indexing
+
+In a migration:
+```csharp
+migrationBuilder.CreateIndex(
+    name: "IX_TodoItems_IsComplete",
+    table: "TodoItems",
+    column: "IsComplete");
+```
+
+---
+
+## Troubleshooting
+
+### CSS not updating?
+
+```bash
+# Clear build artifacts
+rm -rf wwwroot/css/app.css
+
+# Rebuild
+npm run build:css
+```
+
+### Database locked error (SQLite)?
+
+Stop all running instances:
+```bash
+pkill -f dotnet
+dotnet run
+```
+
+### Port already in use?
+
+Change port in `Properties/launchSettings.json`:
+```json
+{
+  "applicationUrl": "http://localhost:5001"
+}
+```
+
+### HTMX not triggering?
+
+1. Check browser console for errors
+2. Verify `HX-Request: true` header in Network tab
+3. Check event name spelling in views
+4. Use `/_swap/dev/events` dashboard
+
+---
+
+## IDE Setup
+
+### Visual Studio Code
+
+**Recommended extensions:**
+- C# Dev Kit
+- HTMX Attributes
+- Tailwind CSS IntelliSense
+- DotENV
+
+**.vscode/launch.json:**
+```json
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": ".NET Core Launch (web)",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build",
+      "program": "${workspaceFolder}/src/bin/Debug/net9.0/{{ProjectName}}.dll",
+      "args": [],
+      "cwd": "${workspaceFolder}/src",
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      }
+    }
+  ]
+}
+```
+
+### Visual Studio 2022
+
+1. Open `{{ProjectName}}.sln`
+2. Set startup project to `src/{{ProjectName}}.csproj`
+3. Press F5 to run with debugging
+
+### JetBrains Rider
+
+1. Open `{{ProjectName}}.sln`
+2. Right-click `Program.cs` → Run
+3. Breakpoints work automatically
+
+---
+
+## Environment Variables
+
+```bash
+# ASP.NET Core environment
+ASPNETCORE_ENVIRONMENT=Development
+
+# Database connection
+ConnectionStrings__DefaultConnection="Data Source=app.db"
+
+# Seeding
+SEED_COUNT=100
+SEED_LOCALE=en
+SEED_IFEMPTY=true
+
+# Logging
+Logging__LogLevel__Default=Information
+```
+
+---
+
+## Git Workflow
+
+### Ignore Generated Files
+
+Already configured in `.gitignore`:
+- `bin/`, `obj/`
+- `wwwroot/css/app.css` (generated)
+- `wwwroot/lib/` (restored via LibMan)
+- `node_modules/`
+- `*.db` (SQLite files)
+
+### Recommended Branches
+
+- `main` — Production-ready code
+- `develop` — Integration branch
+- `feature/*` — Feature branches
+
+---
+
+**Happy coding! 🚀**
