@@ -48,3 +48,16 @@ See `docs/DATABASE-MIGRATIONS.md` for exact commands.
   - Also emit the corresponding UI event via Swap.Htmx if the UI needs to update.
 - React to other modules’ events in your module’s `ConfigureEventChains(IEventChainRegistrar registrar)` by registering handlers.
 - Keep cross-module logic in these server-side handlers rather than tight compile-time references.
+
+### Tip: HTMX-only one-shot refresh for distributed mode
+
+When using the RabbitMQ transport, server-event handlers run after the HTTP response, so cross-module panels may lag briefly. You can smooth this with a pure HTMX pattern (no custom JS) by adding a delayed retrigger alongside the immediate one:
+
+```html
+<div hx-get="/Demo/ActivityLog"
+  hx-trigger="load, ui.activity.append from:body, ui.activity.append from:body delay:400ms"
+  hx-target="this"
+  hx-swap="innerHTML"></div>
+```
+
+This refreshes immediately and once again after ~400ms—usually enough for the distributed handler to complete. In single-process (InMemory) mode, the second refresh is redundant but harmless. See `docs/SERVER-EVENTS.md` for details.
