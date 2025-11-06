@@ -2,6 +2,7 @@
 
 [![GitHub License](https://img.shields.io/github/license/jdtoon/swap)](LICENSE)
 [![.NET Version](https://img.shields.io/badge/.NET-9.0+-512BD4?logo=dotnet)](https://dotnet.microsoft.com/download)
+[![NuGet Swap.CLI](https://img.shields.io/nuget/v/Swap.CLI?label=Swap.CLI&logo=nuget)](https://www.nuget.org/packages/Swap.CLI)
 [![NuGet Swap.Htmx](https://img.shields.io/nuget/v/Swap.Htmx?label=Swap.Htmx&logo=nuget)](https://www.nuget.org/packages/Swap.Htmx)
 [![NuGet Swap.Modularity](https://img.shields.io/nuget/v/Swap.Modularity?label=Swap.Modularity&logo=nuget)](https://www.nuget.org/packages/Swap.Modularity)
 [![NuGet Swap.Testing](https://img.shields.io/nuget/v/Swap.Testing?label=Swap.Testing&logo=nuget)](https://www.nuget.org/packages/Swap.Testing)
