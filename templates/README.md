@@ -13,6 +13,7 @@ templates/
 ├── monolith/          # Full project template (swap new)
 ├── swap-monolith/     # Monolith with Swap event system wired by default
 ├── swap-layered/      # Multi-project layered solution (Web, Application, Domain, Infrastructure)
+├── swap-modular-monolith/ # Modular monolith solution (host + modules with per-module ownership)
 └── generate/          # CRUD generation templates (swap generate)
     ├── auth/          # Authentication scaffolding
     ├── controller/    # CRUD controllers and views
@@ -93,7 +94,45 @@ Template Variables:
 Aliases:
 - `--template layered` and `--template swap-layered` are equivalent and point to `templates/swap-layered`.
 
-### 4. Generate Templates (`generate/`)
+### 4. Modular Monolith Template (`swap-modular-monolith/`)
+
+**Used by:** `swap new <ProjectName> --template swap-modular-monolith`
+
+**Purpose:** Single deployable with clear module boundaries. Each module owns its contracts, services/endpoints, UI, and database migrations. Built to scale teams and features without microservices.
+
+**Solution Shape:**
+- `src/Web/` — Host ASP.NET Core app
+    - Wires `AddSwapModules(...)` and `MapSwapModuleEndpoints()`
+    - HTMX-first UI via Swap.Htmx, Tailwind/DaisyUI via npm/libman
+    - Optional server events transport configured from appsettings (in-memory or RabbitMQ)
+- `src/Modules/<Name>/`
+    - `<Name>.Contracts/` — Public contracts and shared types
+    - `<Name>.Module/` — Module implementation (services, endpoints) implementing `IModule`
+    - `<Name>.Web/` — Razor Class Library for module UI (controllers/views)
+    - `<Name>.Migrations.SqlServer/` + `<Name>.Migrations.Postgres/` — Provider-specific EF Core migrations with design-time factories
+- `tests/` — Unit and integration tests pre-wired (Swap.Testing)
+- `docs/` — Architecture, module authoring, migrations, server events, and host wiring guides
+
+**Highlights:**
+- Deterministic module composition via `Swap.Modularity` (topological sort; cycles/missing deps guarded)
+- Per-module migrations to preserve ownership and clean deployment boundaries
+- UI auto-discovery for `.Web` RCLs (MVC ApplicationParts)
+- Optional distributed server events via RabbitMQ for cross-process event chains
+- Docker assets included (Postgres + RabbitMQ) for local development
+
+**Quickstart:**
+```powershell
+swap new MyModApp --template swap-modular-monolith
+cd MyModApp
+# Optional if using local builds of Swap packages
+# swap new MyModApp --template swap-modular-monolith --local-nuget
+```
+
+**Notes:**
+- The template uses NuGet packages (`Swap.Modularity`, `Swap.Htmx`, `Swap.Testing`) rather than project references.
+- Switch server events transport in `appsettings*.json` (in-memory or RabbitMQ) — the host reads config and wires it.
+
+### 5. Generate Templates (`generate/`)
 
 
 **Used by:** `swap generate <type>` commands
