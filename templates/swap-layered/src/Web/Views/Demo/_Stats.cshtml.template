@@ -1,0 +1,18 @@
+@model StatsModel
+<div class="stats shadow">
+  <div class="stat">
+    <div class="stat-title">Total</div>
+    <div class="stat-value">@Model.Total</div>
+    <div class="stat-desc">All todos</div>
+  </div>
+  <div class="stat">
+    <div class="stat-title">Completed</div>
+    <div class="stat-value text-success">@Model.Completed</div>
+    <div class="stat-desc">Done</div>
+  </div>
+  <div class="stat">
+    <div class="stat-title">Pending</div>
+    <div class="stat-value">@Model.Pending</div>
+    <div class="stat-desc">Remaining</div>
+  </div>
+</div>

@@ -1,0 +1,817 @@
+# Architecture Documentation
+
+**{{ProjectName}}** follows **Clean Architecture** principles with a layered approach that promotes separation of concerns, testability, and maintainability.
+
+---
+
+## High-Level Design
+
+```
+┌───────────────────────────────────────────────────────────┐
+│                    Web (Presentation)                     │
+│  ┌─────────────┐  ┌──────────┐  ┌──────────────────────┐ │
+│  │ Controllers │  │  Views   │  │  Event Chains        │ │
+│  │  (Thin)     │  │  (HTMX)  │  │  (Domain → UI)       │ │
+│  └──────┬──────┘  └────┬─────┘  └──────────┬───────────┘ │
+└─────────┼──────────────┼───────────────────┼─────────────┘
+          │              │                   │
+          │ Uses         │ Renders           │ Maps
+          ▼              ▼                   ▼
+┌───────────────────────────────────────────────────────────┐
+│              Application (Use Cases)                      │
+│  ┌────────────────┐  ┌─────────────┐  ┌────────────────┐ │
+│  │   Services     │  │    DTOs     │  │  IEventBus     │ │
+│  │ (Orchestrate)  │  │ (Transfer)  │  │  IRepository   │ │
+│  └───────┬────────┘  └─────────────┘  └────────┬───────┘ │
+└──────────┼────────────────────────────────────┼──────────┘
+           │ Depends on                         │
+           ▼                                    ▼
+┌───────────────────────────────────────────────────────────┐
+│                Domain (Core Business)                     │
+│  ┌───────────┐  ┌──────────────┐  ┌───────────────────┐  │
+│  │ Entities  │  │ Domain Events│  │   Interfaces      │  │
+│  │ (Models)  │  │ (Pure Names) │  │  (Contracts)      │  │
+│  └───────────┘  └──────────────┘  └───────────────────┘  │
+└───────────────────────────────────────────────────────────┘
+           ▲                                    ▲
+           │ Implements                         │
+┌──────────┴────────────────────────────────────┴──────────┐
+│            Infrastructure (Data Access)                   │
+│  ┌────────────┐  ┌──────────────┐  ┌──────────────────┐  │
+│  │ DbContext  │  │ Repositories │  │   Migrations     │  │
+│  └────────────┘  └──────────────┘  └──────────────────┘  │
+└───────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Project Responsibilities
+
+### 🌐 Web (Presentation Layer)
+
+**Purpose:** Handle HTTP requests, render views, coordinate UI updates via events.
+
+**Folder Structure:**
+
+```
+Web/
+├─ Controllers/          # Thin controllers (delegate to Application)
+│  └─ HomeController.cs
+├─ Views/                # Razor views + HTMX partials
+│  ├─ Home/
+│  │  ├─ Index.cshtml    # Full page
+│  │  ├─ _TodoList.cshtml # Partial (HTMX target)
+│  │  └─ _TodoItem.cshtml # Item partial
+│  └─ Shared/
+│     └─ _Layout.cshtml
+├─ wwwroot/              # Static assets
+│  ├─ css/
+│  ├─ js/
+│  └─ lib/
+├─ Events/               # Event chain registration
+│  └─ SwapEventChains.cs
+├─ Extensions/           # Service registration
+│  └─ ServiceCollectionExtensions.cs
+└─ Program.cs            # Startup configuration
+```
+
+**Controller Example:**
+
+```csharp
+// Web/Controllers/TodosController.cs
+public class TodosController : SwapController
+{
+    private readonly ITodoService _todoService;
+    
+    public TodosController(ITodoService todoService)
+    {
+        _todoService = todoService;
+    }
+    
+    [HttpGet]
+    public async Task<IActionResult> Index()
+    {
+        var todos = await _todoService.GetAllTodosAsync();
+        return View(todos);
+    }
+    
+    [HttpGet]
+    public async Task<IActionResult> List()
+    {
+        var todos = await _todoService.GetAllTodosAsync();
+        return PartialView("_TodoList", todos);
+    }
+    
+    [HttpPost]
+    public async Task<IActionResult> Create(string title)
+    {
+        await _todoService.CreateTodoAsync(title);
+        // Service fires domain event → event chain → UI updates
+        return Ok();
+    }
+}
+```
+
+**Key Responsibilities:**
+- Receive HTTP requests
+- Validate input (basic)
+- Delegate to Application services
+- Return views/partials
+- NO direct database access
+- NO business logic
+
+---
+
+### 🎯 Application (Use Cases & Business Logic)
+
+**Purpose:** Orchestrate domain operations, enforce business rules, fire domain events.
+
+**Folder Structure:**
+
+```
+Application/
+├─ Services/             # Application services (use cases)
+│  ├─ TodoService.cs
+│  └─ IEventBusAdapter.cs
+├─ Interfaces/           # Abstraction contracts
+│  ├─ ITodoService.cs
+│  └─ IEventBus.cs
+└─ DTOs/                 # Data transfer objects
+   └─ TodoDto.cs
+```
+
+**Service Example:**
+
+```csharp
+// Application/Services/TodoService.cs
+public class TodoService : ITodoService
+{
+    private readonly ITodoRepository _repository;
+    private readonly IEventBus _eventBus;
+    
+    public TodoService(ITodoRepository repository, IEventBus eventBus)
+    {
+        _repository = repository;
+        _eventBus = eventBus;
+    }
+    
+    public async Task<IEnumerable<TodoItem>> GetAllTodosAsync()
+    {
+        return await _repository.GetAllAsync();
+    }
+    
+    public async Task CreateTodoAsync(string title)
+    {
+        // Business rule: title required
+        if (string.IsNullOrWhiteSpace(title))
+            throw new ArgumentException("Title is required", nameof(title));
+        
+        var todo = new TodoItem
+        {
+            Title = title,
+            CreatedAt = DateTime.UtcNow,
+            IsComplete = false
+        };
+        
+        await _repository.AddAsync(todo);
+        await _repository.SaveChangesAsync();
+        
+        // Fire domain event
+        _eventBus.Fire(DomainEvents.TodoCreated);
+    }
+    
+    public async Task ToggleTodoAsync(int id)
+    {
+        var todo = await _repository.GetByIdAsync(id);
+        if (todo == null)
+            throw new KeyNotFoundException($"Todo {id} not found");
+        
+        todo.IsComplete = !todo.IsComplete;
+        await _repository.SaveChangesAsync();
+        
+        _eventBus.Fire(DomainEvents.TodoUpdated);
+    }
+}
+```
+
+**Key Responsibilities:**
+- Implement use cases (CreateTodo, ToggleTodo, etc.)
+- Enforce business rules
+- Orchestrate domain operations
+- Fire domain events via `IEventBus`
+- Coordinate repository calls
+- NO direct DbContext access
+- NO HTTP/view concerns
+
+---
+
+### 🧠 Domain (Core Business)
+
+**Purpose:** Define business entities, domain events, and repository contracts. Pure business logic with zero framework dependencies.
+
+**Folder Structure:**
+
+```
+Domain/
+├─ Entities/             # Domain models
+│  ├─ TodoItem.cs
+│  └─ BaseEntity.cs
+├─ Events/               # Domain event names
+│  └─ DomainEvents.cs
+└─ Interfaces/           # Repository contracts
+   └─ ITodoRepository.cs
+```
+
+**Entity Example:**
+
+```csharp
+// Domain/Entities/TodoItem.cs
+public class TodoItem
+{
+    public int Id { get; set; }
+    public string Title { get; set; } = string.Empty;
+    public bool IsComplete { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public DateTime? CompletedAt { get; set; }
+    
+    // Domain behavior
+    public void Complete()
+    {
+        if (!IsComplete)
+        {
+            IsComplete = true;
+            CompletedAt = DateTime.UtcNow;
+        }
+    }
+    
+    public void Uncomplete()
+    {
+        if (IsComplete)
+        {
+            IsComplete = false;
+            CompletedAt = null;
+        }
+    }
+}
+```
+
+**Domain Events:**
+
+```csharp
+// Domain/Events/DomainEvents.cs
+public static class DomainEvents
+{
+    public static string TodoCreated => "entity.created:todo";
+    public static string TodoUpdated => "entity.updated:todo";
+    public static string TodoDeleted => "entity.deleted:todo";
+    public static string TodoCompleted => "entity.completed:todo";
+}
+```
+
+**Repository Contract:**
+
+```csharp
+// Domain/Interfaces/ITodoRepository.cs
+public interface ITodoRepository
+{
+    Task<IEnumerable<TodoItem>> GetAllAsync();
+    Task<TodoItem?> GetByIdAsync(int id);
+    Task AddAsync(TodoItem todo);
+    Task UpdateAsync(TodoItem todo);
+    Task DeleteAsync(int id);
+    Task SaveChangesAsync();
+}
+```
+
+**Key Responsibilities:**
+- Define business entities
+- Define domain event names (pure strings)
+- Define repository interfaces
+- Contain domain behavior (methods like `Complete()`)
+- NO dependencies on other layers
+- NO infrastructure concerns
+- Pure C# classes
+
+---
+
+### 🔧 Infrastructure (Data Access)
+
+**Purpose:** Implement data access, database context, repository implementations.
+
+**Folder Structure:**
+
+```
+Infrastructure/
+├─ Data/                 # EF Core context
+│  ├─ AppDbContext.cs
+│  └─ Seeders/
+│     └─ SeedRunner.cs
+├─ Repositories/         # Repository implementations
+│  └─ TodoRepository.cs
+└─ Migrations/           # EF Core migrations
+   └─ 20250106_InitialCreate.cs
+```
+
+**DbContext Example:**
+
+```csharp
+// Infrastructure/Data/AppDbContext.cs
+public class AppDbContext : DbContext
+{
+    public AppDbContext(DbContextOptions<AppDbContext> options)
+        : base(options)
+    {
+    }
+    
+    public DbSet<TodoItem> TodoItems => Set<TodoItem>();
+    
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        base.OnModelCreating(modelBuilder);
+        
+        modelBuilder.Entity<TodoItem>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Title).IsRequired().HasMaxLength(500);
+            entity.HasIndex(e => e.IsComplete);
+        });
+    }
+}
+```
+
+**Repository Implementation:**
+
+```csharp
+// Infrastructure/Repositories/TodoRepository.cs
+public class TodoRepository : ITodoRepository
+{
+    private readonly AppDbContext _context;
+    
+    public TodoRepository(AppDbContext context)
+    {
+        _context = context;
+    }
+    
+    public async Task<IEnumerable<TodoItem>> GetAllAsync()
+    {
+        return await _context.TodoItems
+            .OrderByDescending(t => t.CreatedAt)
+            .ToListAsync();
+    }
+    
+    public async Task<TodoItem?> GetByIdAsync(int id)
+    {
+        return await _context.TodoItems.FindAsync(id);
+    }
+    
+    public async Task AddAsync(TodoItem todo)
+    {
+        await _context.TodoItems.AddAsync(todo);
+    }
+    
+    public async Task UpdateAsync(TodoItem todo)
+    {
+        _context.TodoItems.Update(todo);
+    }
+    
+    public async Task DeleteAsync(int id)
+    {
+        var todo = await GetByIdAsync(id);
+        if (todo != null)
+            _context.TodoItems.Remove(todo);
+    }
+    
+    public async Task SaveChangesAsync()
+    {
+        await _context.SaveChangesAsync();
+    }
+}
+```
+
+**Key Responsibilities:**
+- Implement `DbContext` (EF Core)
+- Implement repository interfaces from Domain
+- Handle database migrations
+- Data seeding
+- NO business logic
+- NO HTTP/view concerns
+
+---
+
+## Event System Flow
+
+### Domain Events → UI Updates
+
+**1. Domain layer defines event names:**
+
+```csharp
+// Domain/Events/DomainEvents.cs
+public static class DomainEvents
+{
+    public static string TodoCreated => "entity.created:todo";
+}
+```
+
+**2. Application layer fires events:**
+
+```csharp
+// Application/Services/TodoService.cs
+public async Task CreateTodoAsync(string title)
+{
+    // ... save todo
+    _eventBus.Fire(DomainEvents.TodoCreated);
+}
+```
+
+**3. Web layer maps domain events to UI events:**
+
+```csharp
+// Web/Events/SwapEventChains.cs
+public static class SwapEventChains
+{
+    public static void Register(ISwapEvents events)
+    {
+        events.Chain(
+            DomainEvents.TodoCreated,  // Domain event
+            "ui.refreshList",           // UI event
+            "ui.showToast");            // UI event
+    }
+}
+```
+
+**4. Views listen to UI events:**
+
+```html
+<!-- Web/Views/Home/_TodoList.cshtml -->
+<div id="todo-list"
+     hx-get="/Todos/List"
+     hx-trigger="ui.refreshList from:body"
+     hx-swap="outerHTML">
+    <!-- List content -->
+</div>
+```
+
+**Flow diagram:**
+
+```
+User submits form
+        ↓
+Controller → Service.CreateTodoAsync()
+                    ↓
+            Repository.AddAsync()
+                    ↓
+            _eventBus.Fire("entity.created:todo")
+                    ↓
+            Event Chain: entity.created:todo → ui.refreshList
+                    ↓
+            HX-Trigger header sent to browser
+                    ↓
+            HTMX elements with hx-trigger="ui.refreshList" fire
+                    ↓
+            Partial views re-fetch and update
+```
+
+---
+
+## Database Strategy
+
+### Entity Framework Core Configuration
+
+**Connection string:**
+
+```json
+// appsettings.json
+{
+  "ConnectionStrings": {
+    "DefaultConnection": "Data Source=app.db"
+  }
+}
+```
+
+**Registration:**
+
+```csharp
+// Web/Program.cs
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.Use{{DatabaseProvider}}(
+        builder.Configuration.GetConnectionString("DefaultConnection")));
+```
+
+### Migrations
+
+**Create migration:**
+
+```bash
+dotnet ef migrations add MigrationName -p src/Infrastructure -s src/Web
+```
+
+**Apply migration:**
+
+```bash
+dotnet ef database update -p src/Infrastructure -s src/Web
+```
+
+**Generate SQL script:**
+
+```bash
+dotnet ef migrations script -p src/Infrastructure -s src/Web --output migration.sql
+```
+
+### Auto-Migrations on Startup
+
+Configured in `Program.cs`:
+
+```csharp
+if (app.Environment.IsDevelopment())
+{
+    using var scope = app.Services.CreateScope();
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    
+    try
+    {
+        db.Database.Migrate();
+        await SeedRunner.RunAsync(db, scope.ServiceProvider);
+    }
+    catch (Exception ex)
+    {
+        var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+        logger.LogError(ex, "Migration or seeding failed");
+    }
+}
+```
+
+---
+
+## Dependency Injection
+
+### Service Registration
+
+```csharp
+// Web/Extensions/ServiceCollectionExtensions.cs
+public static class ServiceCollectionExtensions
+{
+    public static IServiceCollection AddApplicationServices(
+        this IServiceCollection services)
+    {
+        // Application services
+        services.AddScoped<ITodoService, TodoService>();
+        
+        // Infrastructure repositories
+        services.AddScoped<ITodoRepository, TodoRepository>();
+        
+        // Event bus adapter
+        services.AddScoped<IEventBus, SwapEventBusAdapter>();
+        
+        return services;
+    }
+}
+```
+
+**Usage in Program.cs:**
+
+```csharp
+builder.Services.AddApplicationServices();
+```
+
+### Dependency Flow
+
+```
+Controller (Web)
+    ↓ depends on
+ITodoService (Application interface)
+    ↓ implemented by
+TodoService (Application)
+    ↓ depends on
+ITodoRepository (Domain interface)
+    ↓ implemented by
+TodoRepository (Infrastructure)
+    ↓ depends on
+AppDbContext (Infrastructure)
+```
+
+**Benefits:**
+- Easy to mock for testing
+- Swap implementations without changing dependent code
+- Clear dependency direction (always inward toward Domain)
+
+---
+
+## Security Considerations
+
+### Input Validation
+
+**Model binding (automatic):**
+
+```csharp
+[HttpPost]
+public async Task<IActionResult> Create([FromForm] CreateTodoRequest request)
+{
+    if (!ModelState.IsValid)
+        return BadRequest(ModelState);
+    
+    await _todoService.CreateTodoAsync(request.Title);
+    return Ok();
+}
+```
+
+**Data annotations:**
+
+```csharp
+public class CreateTodoRequest
+{
+    [Required]
+    [StringLength(500, MinimumLength = 1)]
+    public string Title { get; set; } = string.Empty;
+}
+```
+
+### SQL Injection Protection
+
+EF Core uses parameterized queries automatically:
+
+```csharp
+// Safe - parameterized
+var todos = await _context.TodoItems
+    .Where(t => t.Title.Contains(searchTerm))
+    .ToListAsync();
+```
+
+### CSRF Protection
+
+Already enabled via ASP.NET Core:
+
+```html
+<form method="post">
+    @Html.AntiForgeryToken()
+    <!-- CSRF token included -->
+</form>
+```
+
+### Production Hardening
+
+```csharp
+// Program.cs
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHsts();
+    app.UseHttpsRedirection();
+    
+    // Remove dev tools
+    // app.MapSwapDevDashboard();
+}
+```
+
+---
+
+## Performance Patterns
+
+### Async/Await Throughout
+
+All database operations use async:
+
+```csharp
+public async Task<IEnumerable<TodoItem>> GetAllAsync()
+{
+    return await _context.TodoItems.ToListAsync();
+}
+```
+
+### Repository Pattern Benefits
+
+- Encapsulate data access logic
+- Easy to add caching layer
+- Swap data sources without changing Application layer
+
+**Example with caching:**
+
+```csharp
+public class CachedTodoRepository : ITodoRepository
+{
+    private readonly TodoRepository _inner;
+    private readonly IMemoryCache _cache;
+    
+    public async Task<IEnumerable<TodoItem>> GetAllAsync()
+    {
+        return await _cache.GetOrCreateAsync("todos", async entry =>
+        {
+            entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5);
+            return await _inner.GetAllAsync();
+        });
+    }
+}
+```
+
+### Database Indexing
+
+```csharp
+// Infrastructure/Data/AppDbContext.cs
+protected override void OnModelCreating(ModelBuilder modelBuilder)
+{
+    modelBuilder.Entity<TodoItem>(entity =>
+    {
+        entity.HasIndex(e => e.IsComplete);
+        entity.HasIndex(e => e.CreatedAt);
+    });
+}
+```
+
+---
+
+## Testing Architecture
+
+### Unit Tests (Application Layer)
+
+```csharp
+public class TodoServiceTests
+{
+    [Fact]
+    public async Task CreateTodoAsync_Should_Fire_Event()
+    {
+        // Arrange
+        var mockRepo = new Mock<ITodoRepository>();
+        var mockEventBus = new Mock<IEventBus>();
+        var service = new TodoService(mockRepo.Object, mockEventBus.Object);
+        
+        // Act
+        await service.CreateTodoAsync("Test");
+        
+        // Assert
+        mockEventBus.Verify(e => e.Fire(DomainEvents.TodoCreated), Times.Once);
+    }
+}
+```
+
+### Integration Tests (Web Layer)
+
+```csharp
+public class TodoFlowTests : IClassFixture<HtmxTestFixture<Program>>
+{
+    private readonly HtmxTestClient<Program> _client;
+    
+    public TodoFlowTests(HtmxTestFixture<Program> fixture)
+    {
+        _client = fixture.Client;
+    }
+    
+    [Fact]
+    public async Task Should_Create_And_Display_Todo()
+    {
+        var response = await _client.HtmxPostAsync("/Todos/Create", 
+            new Dictionary<string, string> { ["title"] = "Test" });
+        
+        response.AssertSuccess();
+        response.AssertHasSwapEvent(DomainEvents.TodoCreated);
+    }
+}
+```
+
+---
+
+## Deployment Considerations
+
+### Database Migration Strategy
+
+**Option 1: Auto-migrate (Development)**
+- Configured in `Program.cs`
+- Runs on app startup
+
+**Option 2: SQL Scripts (Production)**
+```bash
+dotnet ef migrations script --output migration.sql
+# Review and apply manually
+```
+
+**Option 3: Separate Migration Job (CI/CD)**
+```yaml
+# GitHub Actions example
+- name: Run migrations
+  run: |
+    dotnet ef database update -p src/Infrastructure -s src/Web
+```
+
+### Environment-Specific Configuration
+
+```json
+// appsettings.Production.json
+{
+  "ConnectionStrings": {
+    "DefaultConnection": "Server=prod-server;Database={{ProjectName}};..."
+  },
+  "Logging": {
+    "LogLevel": {
+      "Default": "Warning"
+    }
+  }
+}
+```
+
+### Scaling Considerations
+
+- **Stateless** — No session state (scales horizontally)
+- **Shared database** — Use cloud SQL (not SQLite in production)
+- **Connection pooling** — EF Core handles automatically
+- **Distributed cache** — Add Redis for multi-instance caching
+
+---
+
+**Clean Architecture ensures your codebase stays maintainable as it grows! 🏗️**

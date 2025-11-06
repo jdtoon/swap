@@ -1,159 +1,762 @@
-# {{ProjectName}} (Layered Solution)
+# {{ProjectName}}# {{ProjectName}} (Layered Solution)
 
-Production-ready architecture with four projects and HTMX-native events. Use this when you want a clean separation of concerns and a path to scale.
 
-## What you get
 
-- Four projects under `src/`: Web, Application, Domain, Infrastructure
+**Clean Architecture + HTMX + DaisyUI** — Production-ready layered solution with separation of concerns and event-driven UI updates.Production-ready architecture with four projects and HTMX-native events. Use this when you want a clean separation of concerns and a path to scale.
+
+
+
+---## What you get
+
+
+
+## 🚀 Quickstart- Four projects under `src/`: Web, Application, Domain, Infrastructure
+
 - Swap Event System wired with domain→ui chains
-- HTMX 2.x + DaisyUI/Tailwind setup
-- EF Core DbContext/repositories in Infrastructure
-- Real integration tests using Swap.Testing
-- Dockerfile and docker-compose.yml under Web
 
-## Solution layout
+```bash- HTMX 2.x + DaisyUI/Tailwind setup
 
-```
+cd src/Web- EF Core DbContext/repositories in Infrastructure
+
+npm install && libman restore && npm run build:css- Real integration tests using Swap.Testing
+
+cd ../..- Dockerfile and docker-compose.yml under Web
+
+dotnet run --project src/Web
+
+```## Solution layout
+
+
+
+Open **http://localhost:5000**```
+
 {{ProjectName}}/
-├─ {{ProjectName}}.sln
+
+---├─ {{ProjectName}}.sln
+
 ├─ src/
-│  ├─ Web/                 # ASP.NET Core MVC + HTMX + Swap
+
+## 📦 What's Inside│  ├─ Web/                 # ASP.NET Core MVC + HTMX + Swap
+
 │  │  ├─ Controllers/ Views/ wwwroot/ Events/ Extensions/
-│  │  ├─ appsettings*.json | Program.cs | {{ProjectName}}.Web.csproj
+
+### Project Structure│  │  ├─ appsettings*.json | Program.cs | {{ProjectName}}.Web.csproj
+
 │  │  ├─ Dockerfile | docker-compose.yml | libman.json | package.json
-│  │  └─ tailwind.config.js
-│  ├─ Application/         # Use cases + abstractions (IEventBus, repos)
-│  ├─ Domain/              # Entities + domain event names (pure)
-│  └─ Infrastructure/      # EF Core DbContext + repository impls
+
+```│  │  └─ tailwind.config.js
+
+{{ProjectName}}/│  ├─ Application/         # Use cases + abstractions (IEventBus, repos)
+
+├─ {{ProjectName}}.sln│  ├─ Domain/              # Entities + domain event names (pure)
+
+├─ src/│  └─ Infrastructure/      # EF Core DbContext + repository impls
+
+│  ├─ Web/                    # 🌐 Presentation Layer└─ test/
+
+│  │  ├─ Controllers/         # MVC controllers (thin, orchestrate use cases)   ├─ Unit/                # Application unit tests
+
+│  │  ├─ Views/               # Razor views + HTMX partials   └─ Integration/         # Web integration tests with Swap.Testing
+
+│  │  ├─ wwwroot/             # Static assets (CSS, JS, images)```
+
+│  │  ├─ Events/              # Swap event chains (domain → UI mapping)
+
+│  │  ├─ Extensions/          # Service registration, middleware## Architecture notes
+
+│  │  ├─ Program.cs           # App startup + middleware pipeline
+
+│  │  ├─ Dockerfile           # Multi-stage Docker build- Web talks to Application services (no DbContext in controllers)
+
+│  │  └─ docker-compose.yml   # Local dev orchestration- Application depends on Domain abstractions and raises events via IEventBus
+
+│  │- Web adapts IEventBus to Swap.Htmx, maps domain events to `ui.*` via chains
+
+│  ├─ Application/            # 🎯 Use Cases & Business Logic- UI listens via HTMX `hx-trigger` and swaps only the content area
+
+│  │  ├─ Services/            # Application services (orchestrate domain)
+
+│  │  ├─ Interfaces/          # Abstractions (IEventBus, ITodoService)In `Web/Program.cs` (excerpt):
+
+│  │  └─ DTOs/                # Data transfer objects
+
+│  │```csharp
+
+│  ├─ Domain/                 # 🧠 Core Business Domainbuilder.Services.AddSwapHtmx(events =>
+
+│  │  ├─ Entities/            # Domain models (TodoItem, etc.){
+
+│  │  ├─ Events/              # Domain event names (pure strings)	events.Chain(
+
+│  │  └─ Interfaces/          # Repository contracts		SwapEvents.Entity.Created("todo"),
+
+│  │		SwapEvents.UI.RefreshList,
+
+│  └─ Infrastructure/         # 🔧 Data Access & External Services		SwapEvents.UI.ShowToast);
+
+│     ├─ Data/                # EF Core DbContext});
+
+│     ├─ Repositories/        # Repository implementations```
+
+│     └─ Migrations/          # EF Core migrations
+
+│A view:
+
 └─ test/
-   ├─ Unit/                # Application unit tests
-   └─ Integration/         # Web integration tests with Swap.Testing
-```
 
-## Architecture notes
+   ├─ Unit/                   # Application logic unit tests```html
 
-- Web talks to Application services (no DbContext in controllers)
-- Application depends on Domain abstractions and raises events via IEventBus
-- Web adapts IEventBus to Swap.Htmx, maps domain events to `ui.*` via chains
-- UI listens via HTMX `hx-trigger` and swaps only the content area
+   └─ Integration/            # HTMX integration tests<div id="todo-list"
 
-In `Web/Program.cs` (excerpt):
+```	 hx-get="/Home/TodoList"
 
-```csharp
-builder.Services.AddSwapHtmx(events =>
-{
-	events.Chain(
-		SwapEvents.Entity.Created("todo"),
-		SwapEvents.UI.RefreshList,
-		SwapEvents.UI.ShowToast);
-});
-```
-
-A view:
-
-```html
-<div id="todo-list"
-	 hx-get="/Home/TodoList"
 	 hx-trigger="load, ui.refreshList from:body"
-	 hx-swap="outerHTML"></div>
+
+### The Stack	 hx-swap="outerHTML"></div>
+
 ```
 
-Dev endpoints (Development only): `/_swap/dev/events` shows active chains and emissions.
+| Layer | Tech |
 
-## Run it locally
+|-------|------|Dev endpoints (Development only): `/_swap/dev/events` shows active chains and emissions.
 
-From `src/Web/`:
+| **Frontend** | HTMX 2.x, DaisyUI, Tailwind CSS |
 
-```bash
+| **Backend** | ASP.NET Core 9 MVC |## Run it locally
+
+| **Database** | EF Core 9 ({{DatabaseProvider}}) |
+
+| **Events** | Swap Event System (decoupled UI updates) |From `src/Web/`:
+
+| **Testing** | xUnit, Swap.Testing (HTMX test helpers) |
+
+| **Containerization** | Docker multi-stage builds |```bash
+
 npm install
-libman restore
+
+---libman restore
+
 npm run build:css
-```
 
-From the solution root:
+## 🏗️ Architecture Overview```
 
-```bash
+
+
+### Clean Architecture PrinciplesFrom the solution root:
+
+
+
+**Dependency flow:** Web → Application → Domain ← Infrastructure```bash
+
 # Create DB (CLI usually does this for you)
-dotnet ef migrations add InitialCreate -p src/Infrastructure -s src/Web
-dotnet ef database update -p src/Infrastructure -s src/Web
 
-# Run the web app
-cd src/Web
-dotnet run
+```dotnet ef migrations add InitialCreate -p src/Infrastructure -s src/Web
+
+┌─────────────────────────────────────────────┐dotnet ef database update -p src/Infrastructure -s src/Web
+
+│              Web (Presentation)             │
+
+│  Controllers, Views, HTMX, Event Chains     │# Run the web app
+
+└──────────────────┬──────────────────────────┘cd src/Web
+
+                   │ depends ondotnet run
+
+                   ▼```
+
+┌─────────────────────────────────────────────┐
+
+│          Application (Use Cases)            │Open http://localhost:5000
+
+│   Services, DTOs, IEventBus, IRepository    │
+
+└──────────────────┬──────────────────────────┘Tip: `npm run watch:css` from `src/Web` will rebuild CSS during development.
+
+                   │ depends on
+
+                   ▼## Testing with Swap.Testing
+
+┌─────────────────────────────────────────────┐
+
+│           Domain (Core Business)            │Integration tests live under `test/Integration` and use the `HtmxTestFixture<TProgram>` and `HtmxTestClient<TProgram>` for HTMX-aware flows.
+
+│    Entities, Domain Events, Interfaces      │
+
+└─────────────────────────────────────────────┘Example (trimmed):
+
+                   ▲
+
+                   │ implements```csharp
+
+┌──────────────────┴──────────────────────────┐public class HtmxSmokeTests : IClassFixture<HtmxTestFixture<Program>>
+
+│        Infrastructure (Data Access)         │{
+
+│    DbContext, Repositories, Migrations      │	private readonly HtmxTestClient<Program> _client;
+
+└─────────────────────────────────────────────┘	public HtmxSmokeTests(HtmxTestFixture<Program> fixture) => _client = fixture.Client;
+
 ```
-
-Open http://localhost:5000
-
-Tip: `npm run watch:css` from `src/Web` will rebuild CSS during development.
-
-## Testing with Swap.Testing
-
-Integration tests live under `test/Integration` and use the `HtmxTestFixture<TProgram>` and `HtmxTestClient<TProgram>` for HTMX-aware flows.
-
-Example (trimmed):
-
-```csharp
-public class HtmxSmokeTests : IClassFixture<HtmxTestFixture<Program>>
-{
-	private readonly HtmxTestClient<Program> _client;
-	public HtmxSmokeTests(HtmxTestFixture<Program> fixture) => _client = fixture.Client;
 
 	[Fact]
-	public async Task Todo_Htmx_Flow_Adds_And_Shows_Item()
-	{
-		var list = await _client.HtmxGetAsync("/Home/TodoList");
-		list.AssertSuccess();
-		await list.AssertPartialViewAsync();
 
-		var added = await _client.HtmxPostAsync("/Home/AddTodo", new Dictionary<string,string>
+**Key benefits:**	public async Task Todo_Htmx_Flow_Adds_And_Shows_Item()
+
+- **Testable** — Mock repositories, test use cases in isolation	{
+
+- **Maintainable** — Clear separation, easy to navigate		var list = await _client.HtmxGetAsync("/Home/TodoList");
+
+- **Scalable** — Replace infrastructure without touching domain		list.AssertSuccess();
+
+- **Domain-focused** — Business logic isolated from framework concerns		await list.AssertPartialViewAsync();
+
+
+
+### How It Works		var added = await _client.HtmxPostAsync("/Home/AddTodo", new Dictionary<string,string>
+
 		{
-			["title"] = "HTMX integration test"
-		});
-		added.AssertSuccess();
 
-		var listAfter = await _client.HtmxGetAsync("/Home/TodoList");
-		await listAfter.AssertContainsAsync("HTMX integration test");
-	}
-}
+**1. User submits form (HTMX request):**			["title"] = "HTMX integration test"
+
+		});
+
+```html		added.AssertSuccess();
+
+<form hx-post="/Todos/Create" hx-swap="none">
+
+    <input name="title" />		var listAfter = await _client.HtmxGetAsync("/Home/TodoList");
+
+    <button>Add Todo</button>		await listAfter.AssertContainsAsync("HTMX integration test");
+
+</form>	}
+
+```}
+
 ```
+
+**2. Controller delegates to Application service:**
 
 Docs: /docs/features/testing-framework
 
-Run tests:
+```csharp
+
+// Web/Controllers/TodosController.csRun tests:
+
+[HttpPost]
+
+public async Task<IActionResult> Create(string title)```bash
+
+{dotnet test
+
+    await _todoService.CreateTodoAsync(title);```
+
+    return Ok();
+
+}## Docker
+
+```
+
+From `src/Web`:
+
+**3. Application service orchestrates domain + fires events:**
+
+```bash
+
+```csharpdocker build -t {{ProjectNameLower}}-web -f Dockerfile ..
+
+// Application/Services/TodoService.csdocker compose -f docker-compose.yml up --build
+
+public async Task CreateTodoAsync(string title)```
+
+{
+
+    var todo = new TodoItem { Title = title };Notes:
+
+    await _repository.AddAsync(todo);- Dockerfile builds/publishes Web with static assets and references Application/Infrastructure/Domain
+
+    await _repository.SaveChangesAsync();- Auto-migrations run on Development startup
+
+    - DataProtection keys are configured for container session state
+
+    _eventBus.Fire("entity.created:todo");
+
+}## Generate more with the CLI
+
+```
+
+```bash
+
+**4. Event chain triggers UI updates:**# Full resource (model+controller+views) in Web project
+
+swap g r Product --fields "Name:string Price:decimal InStock:bool:f"
+
+```csharp
+
+// Web/Events/SwapEventChains.cs# Add a migration
+
+events.Chain(dotnet ef migrations add AddProduct -p src/Infrastructure -s src/Web
+
+    "entity.created:todo",dotnet ef database update -p src/Infrastructure -s src/Web
+
+    "ui.refreshList",```
+
+    "ui.showToast");
+
+```## Learn more
+
+
+
+**5. HTMX partials listen and refresh:**- Templates: /docs/templates/overview
+
+- Event System: /docs/features/event-system
+
+```html- Testing: /docs/features/testing-framework
+
+<div id="todo-list"- Docker: /docs/deployment/docker
+
+     hx-get="/Todos/List"- CLI Reference: /docs/cli/overview
+
+     hx-trigger="ui.refreshList from:body">
+    <!-- Auto-refreshes when event fires -->
+</div>
+```
+
+---
+
+## 🎯 HTMX Event System
+
+### Why Events?
+
+Traditional HTMX tightly couples components:
+
+```html
+<!-- Form MUST know about list -->
+<form hx-post="/Todos/Create" hx-target="#todo-list">
+</form>
+```
+
+**Swap events decouple everything:**
+
+```html
+<!-- Form doesn't know about list -->
+<form hx-post="/Todos/Create" hx-swap="none"></form>
+
+<!-- List listens independently -->
+<div id="todo-list" 
+     hx-get="/Todos/List"
+     hx-trigger="ui.refreshList from:body">
+</div>
+
+<!-- Stats also listen (no form changes needed!) -->
+<div id="stats"
+     hx-get="/Todos/Stats"
+     hx-trigger="ui.refreshList from:body">
+</div>
+```
+
+### Event Chain Example
+
+**Define events:**
+
+```csharp
+// Domain/Events/DomainEvents.cs
+public static class DomainEvents
+{
+    public static string TodoCreated => "entity.created:todo";
+    public static string TodoUpdated => "entity.updated:todo";
+    public static string TodoDeleted => "entity.deleted:todo";
+}
+```
+
+**Register chains:**
+
+```csharp
+// Web/Events/SwapEventChains.cs
+events.Chain(
+    DomainEvents.TodoCreated,
+    "ui.refreshList",
+    "ui.showToast");
+```
+
+**Fire from Application layer:**
+
+```csharp
+// Application/Services/TodoService.cs
+_eventBus.Fire(DomainEvents.TodoCreated);
+```
+
+**Listen in views:**
+
+```html
+<div hx-get="/Todos/List"
+     hx-trigger="ui.refreshList from:body">
+</div>
+```
+
+---
+
+## 🧪 Testing
+
+### Integration Tests with Swap.Testing
+
+```csharp
+// test/Integration/TodoFlowTests.cs
+public class TodoFlowTests : IClassFixture<HtmxTestFixture<Program>>
+{
+    private readonly HtmxTestClient<Program> _client;
+    
+    public TodoFlowTests(HtmxTestFixture<Program> fixture)
+    {
+        _client = fixture.Client;
+    }
+    
+    [Fact]
+    public async Task Should_Create_Todo_And_Refresh_List()
+    {
+        // Arrange
+        var formData = new Dictionary<string, string>
+        {
+            ["title"] = "Test Todo"
+        };
+        
+        // Act
+        var response = await _client.HtmxPostAsync("/Todos/Create", formData);
+        
+        // Assert
+        response.AssertSuccess();
+        response.AssertHasSwapEvent("entity.created:todo");
+        
+        // Verify list updated
+        var list = await _client.HtmxGetAsync("/Todos/List");
+        await list.AssertContainsAsync("Test Todo");
+    }
+}
+```
+
+**Available assertions:**
+- `AssertSuccess()` — 2xx status code
+- `AssertHasSwapEvent(name)` — Event was fired
+- `AssertPartialViewAsync()` — Response is partial
+- `AssertContainsAsync(text)` — HTML contains text
+- `AssertHxRedirect(url)` — HTMX redirect header present
+
+### Unit Tests for Application Layer
+
+```csharp
+// test/Unit/TodoServiceTests.cs
+public class TodoServiceTests
+{
+    [Fact]
+    public async Task CreateTodoAsync_Should_Add_Todo_And_Fire_Event()
+    {
+        // Arrange
+        var mockRepo = new Mock<ITodoRepository>();
+        var mockEventBus = new Mock<IEventBus>();
+        var service = new TodoService(mockRepo.Object, mockEventBus.Object);
+        
+        // Act
+        await service.CreateTodoAsync("Test");
+        
+        // Assert
+        mockRepo.Verify(r => r.AddAsync(It.IsAny<TodoItem>()), Times.Once);
+        mockEventBus.Verify(e => e.Fire("entity.created:todo"), Times.Once);
+    }
+}
+```
+
+**Run tests:**
 
 ```bash
 dotnet test
 ```
 
-## Docker
+---
 
-From `src/Web`:
+## 🐳 Docker
+
+### Build and Run
 
 ```bash
-docker build -t {{ProjectNameLower}}-web -f Dockerfile ..
-docker compose -f docker-compose.yml up --build
+cd src
+docker compose up --build
 ```
 
-Notes:
-- Dockerfile builds/publishes Web with static assets and references Application/Infrastructure/Domain
-- Auto-migrations run on Development startup
-- DataProtection keys are configured for container session state
+Open **http://localhost:8080**
 
-## Generate more with the CLI
+### Multi-Stage Dockerfile
+
+The included `Dockerfile` optimizes for production:
+
+1. **Node stage** — Builds Tailwind CSS (minified)
+2. **Restore stage** — Restores NuGet packages
+3. **Build stage** — Compiles all projects
+4. **Publish stage** — Creates optimized output
+5. **Final stage** — Minimal runtime (~200MB)
+
+**docker-compose.yml features:**
+- Auto-migrations on startup (Development)
+- Volume for SQLite persistence
+- Health checks
+- Environment variable configuration
+
+### Production Deployment
 
 ```bash
-# Full resource (model+controller+views) in Web project
+docker build -t {{ProjectNameLower}}:latest -f src/Web/Dockerfile src
+docker run -p 8080:8080 -e ASPNETCORE_ENVIRONMENT=Production {{ProjectNameLower}}:latest
+```
+
+---
+
+## 🛠️ CLI Generators
+
+### Generate Full Resource
+
+```bash
 swap g r Product --fields "Name:string Price:decimal InStock:bool:f"
-
-# Add a migration
-dotnet ef migrations add AddProduct -p src/Infrastructure -s src/Web
-dotnet ef database update -p src/Infrastructure -s src/Web
 ```
 
-## Learn more
+Creates:
+- `Domain/Entities/Product.cs`
+- `Application/Services/ProductService.cs`
+- `Application/Interfaces/IProductService.cs`
+- `Infrastructure/Repositories/ProductRepository.cs`
+- `Web/Controllers/ProductsController.cs`
+- `Web/Views/Products/Index.cshtml`
+- `Web/Views/Products/_ProductList.cshtml`
+- `Web/Views/Products/_ProductForm.cshtml`
+- `Web/Views/Products/_ProductItem.cshtml`
+- Event chains in `Web/Events/SwapEventChains.cs`
 
-- Templates: /docs/templates/overview
-- Event System: /docs/features/event-system
-- Testing: /docs/features/testing-framework
-- Docker: /docs/deployment/docker
-- CLI Reference: /docs/cli/overview
+### Generate Model Only
+
+```bash
+swap g m Category --fields "Name:string Slug:string"
+```
+
+Creates:
+- `Domain/Entities/Category.cs`
+
+### Generate Controller Only
+
+```bash
+swap g c Orders --fields "OrderNumber:string Total:decimal"
+```
+
+Creates:
+- `Web/Controllers/OrdersController.cs`
+- Views (Index, _List, _Form, _Item)
+
+**Field syntax:**
+- `Name:string` — Required string
+- `Description:string?` — Nullable string
+- `Price:decimal` — Required decimal
+- `InStock:bool:f` — Boolean with `false` default
+- `Quantity:int` — Required integer
+
+---
+
+## 💅 Styling with DaisyUI
+
+### Prebuilt Components
+
+DaisyUI provides semantic component classes:
+
+```html
+<!-- Buttons -->
+<button class="btn btn-primary">Primary</button>
+<button class="btn btn-secondary">Secondary</button>
+<button class="btn btn-accent">Accent</button>
+
+<!-- Cards -->
+<div class="card bg-base-100 shadow-xl">
+    <div class="card-body">
+        <h2 class="card-title">Card Title</h2>
+        <p>Card content here</p>
+        <div class="card-actions justify-end">
+            <button class="btn btn-primary">Action</button>
+        </div>
+    </div>
+</div>
+
+<!-- Forms -->
+<input type="text" class="input input-bordered" />
+<select class="select select-bordered">
+    <option>Option 1</option>
+</select>
+<textarea class="textarea textarea-bordered"></textarea>
+
+<!-- Alerts -->
+<div class="alert alert-success">
+    <span>Success message!</span>
+</div>
+```
+
+### Theme Switching
+
+DaisyUI includes 30+ themes. Change in `_Layout.cshtml`:
+
+```html
+<html data-theme="dracula">
+```
+
+**Popular themes:** `light`, `dark`, `cupcake`, `cyberpunk`, `dracula`, `forest`, `luxury`
+
+### Custom Styles
+
+Add to `wwwroot/css/site.css`:
+
+```css
+/* Custom utility classes */
+.htmx-swapping {
+    opacity: 0.5;
+    transition: opacity 200ms;
+}
+
+/* Override DaisyUI variables */
+:root {
+    --rounded-box: 0.5rem;
+    --rounded-btn: 0.25rem;
+}
+```
+
+Rebuild CSS:
+
+```bash
+npm run build:css
+```
+
+---
+
+## 📚 Project Documentation
+
+| Document | Description |
+|----------|-------------|
+| [ARCHITECTURE.md](docs/ARCHITECTURE.md) | Deep dive on layered architecture, folder responsibilities, event flows |
+| [DEVELOPMENT.md](docs/DEVELOPMENT.md) | Development workflows, debugging, migrations, testing, common tasks |
+| [DEPLOYMENT.md](docs/DEPLOYMENT.md) | Docker, cloud platforms (Azure/AWS/GCP), CI/CD pipelines, scaling |
+| [EVENTS.md](docs/EVENTS.md) | Swap event system patterns, debugging, best practices, real-world examples |
+
+---
+
+## 🔥 Development Tips
+
+### Hot Reload
+
+```bash
+cd src/Web
+dotnet watch run
+```
+
+Changes to `.cs` files trigger automatic recompilation.
+
+### CSS Watch Mode
+
+```bash
+cd src/Web
+npm run watch:css
+```
+
+Auto-rebuilds Tailwind CSS when you modify views or add utility classes.
+
+### Database Migrations
+
+```bash
+# Create migration
+dotnet ef migrations add AddProductTable -p src/Infrastructure -s src/Web
+
+# Apply migration
+dotnet ef database update -p src/Infrastructure -s src/Web
+
+# Rollback
+dotnet ef database update PreviousMigrationName -p src/Infrastructure -s src/Web
+```
+
+### Seeding Data
+
+Control via environment variables:
+
+```bash
+$env:SEED_COUNT=200
+$env:SEED_LOCALE="fr"
+dotnet run --project src/Web
+```
+
+### Event Dashboard (Development)
+
+Visit **http://localhost:5000/_swap/dev/events**
+
+Shows:
+- All registered event chains
+- Event flow visualization
+- Active listeners
+
+### Debugging HTMX Requests
+
+1. Open browser DevTools → Network tab
+2. Filter by XHR
+3. Look for `HX-Request: true` header
+4. Check `HX-Trigger` response header for fired events
+
+---
+
+## 🚨 Troubleshooting
+
+### CSS not updating?
+
+```bash
+cd src/Web
+Remove-Item wwwroot/css/app.css
+npm run build:css
+```
+
+### Database locked (SQLite)?
+
+```bash
+# Stop all dotnet processes
+Get-Process -Name dotnet | Stop-Process
+dotnet run --project src/Web
+```
+
+### Migration errors in Docker?
+
+```bash
+# Clear volume and rebuild
+docker compose down -v
+docker compose up --build
+```
+
+### Port already in use?
+
+Change in `src/Web/Properties/launchSettings.json`:
+
+```json
+{
+  "applicationUrl": "http://localhost:5001"
+}
+```
+
+---
+
+## 🎓 Learn More
+
+- **Swap Templates:** [Template Overview](https://swap-docs.dev/templates)
+- **Event System:** [Event System Guide](https://swap-docs.dev/features/event-system)
+- **Testing Framework:** [Swap.Testing Documentation](https://swap-docs.dev/features/testing-framework)
+- **HTMX Official Docs:** [htmx.org](https://htmx.org)
+- **DaisyUI Components:** [daisyui.com](https://daisyui.com)
+
+---
+
+## 🎯 Next Steps
+
+1. **Explore the codebase** — Start with `src/Web/Controllers/HomeController.cs`
+2. **Generate a new resource** — `swap g r Product --fields "Name:string Price:decimal"`
+3. **Add a migration** — `dotnet ef migrations add AddProduct -p src/Infrastructure -s src/Web`
+4. **Customize the theme** — Change `data-theme` in `_Layout.cshtml`
+5. **Write tests** — Add integration tests in `test/Integration`
+6. **Deploy with Docker** — `docker compose up --build`
+
+---
+
+**Happy coding! 🚀**

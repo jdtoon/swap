@@ -13,23 +13,22 @@ ENV PATH="$PATH:/root/.dotnet/tools"
 
 WORKDIR /work
 
-# Copy project files for restore
-COPY ["demo/{{ProjectName}}/src/Web/Web.csproj", "demo/{{ProjectName}}/src/Web/"]
-COPY ["demo/{{ProjectName}}/src/Modules/Todos/Todos.Contracts/Todos.Contracts.csproj", "demo/{{ProjectName}}/src/Modules/Todos/Todos.Contracts/"]
-COPY ["demo/{{ProjectName}}/src/Modules/Todos/Todos.Module/Todos.Module.csproj", "demo/{{ProjectName}}/src/Modules/Todos/Todos.Module/"]
-COPY ["demo/{{ProjectName}}/src/Modules/Todos/Todos.Web/Todos.Web.csproj", "demo/{{ProjectName}}/src/Modules/Todos/Todos.Web/"]
-COPY ["demo/{{ProjectName}}/src/Modules/Demo/Demo.Contracts/Demo.Contracts.csproj", "demo/{{ProjectName}}/src/Modules/Demo/Demo.Contracts/"]
-COPY ["demo/{{ProjectName}}/src/Modules/Demo/Demo.Module/Demo.Module.csproj", "demo/{{ProjectName}}/src/Modules/Demo/Demo.Module/"]
-COPY ["demo/{{ProjectName}}/src/Modules/Demo/Demo.Web/Demo.Web.csproj", "demo/{{ProjectName}}/src/Modules/Demo/Demo.Web/"]
+# Copy project files for restore (build context is src)
+COPY ["Web/Web.csproj", "Web/"]
+COPY ["Modules/Todos/Todos.Contracts/Todos.Contracts.csproj", "Modules/Todos/Todos.Contracts/"]
+COPY ["Modules/Todos/Todos.Module/Todos.Module.csproj", "Modules/Todos/Todos.Module/"]
+COPY ["Modules/Todos/Todos.Web/Todos.Web.csproj", "Modules/Todos/Todos.Web/"]
+COPY ["Modules/Demo/Demo.Contracts/Demo.Contracts.csproj", "Modules/Demo/Demo.Contracts/"]
+COPY ["Modules/Demo/Demo.Module/Demo.Module.csproj", "Modules/Demo/Demo.Module/"]
+COPY ["Modules/Demo/Demo.Web/Demo.Web.csproj", "Modules/Demo/Demo.Web/"]
 
-
-RUN dotnet restore "demo/{{ProjectName}}/src/Web/Web.csproj"
+RUN dotnet restore "Web/Web.csproj"
 
 # Copy the rest of the source
-COPY . ./
+COPY . .
 
 # Build frontend assets
-WORKDIR /work/demo/{{ProjectName}}/src/Web
+WORKDIR /work/Web
 RUN npm install
 RUN libman restore
 RUN npm run build:css

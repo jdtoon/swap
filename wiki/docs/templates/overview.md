@@ -122,6 +122,45 @@ cd src/Web
 dotnet run
 ```
 
+## Modular Monolith layout
+
+```
+MyApp/
+├── MyApp.sln
+├── docker-compose.yml
+├── src/
+│   ├── MyApp.Host/                      # Host Application
+│   │   ├── MyApp.Host.csproj
+│   │   ├── Program.cs
+│   │   ├── appsettings.json
+│   │   └── wwwroot/
+│   └── Modules/
+│       ├── Products/
+│       │   ├── Products.Contracts/      # Public contracts
+│       │   ├── Products/                # Module implementation
+│       │   └── Products.Web/            # Razor Class Library (UI)
+│       └── Orders/
+│           ├── Orders.Contracts/
+│           ├── Orders/
+│           └── Orders.Web/
+└── tests/
+    └── MyApp.Tests/
+```
+
+Run:
+
+```bash
+# Start infrastructure (PostgreSQL, RabbitMQ)
+docker-compose up -d
+
+# Run migrations (per module)
+dotnet ef database update --project src/Modules/Products/Products --startup-project src/MyApp.Host --context ProductsDbContext
+dotnet ef database update --project src/Modules/Orders/Orders --startup-project src/MyApp.Host --context OrdersDbContext
+
+# Run host
+dotnet run --project src/MyApp.Host
+```
+
 ## Testing with Swap.Testing
 
 Both templates generate a working HTMX integration test using Swap.Testing. The library provides an HTMX-aware client and fluent assertions on partials, DOM, and HX headers.
@@ -155,10 +194,25 @@ Docs: /docs/features/testing-framework
 
 ## Docker
 
-- Monolith: Dockerfile + docker-compose live in `src/`
-- Layered: Dockerfile + docker-compose live in `src/Web`
+Each template includes Docker support with different configurations:
 
-See /docs/deployment/docker for details.
+**Monolith:**
+- Dockerfile + docker-compose.yml in `src/`
+- Includes optional database service (SQL Server or PostgreSQL)
+- Single-container deployment
+
+**Layered:**
+- Dockerfile + docker-compose.yml in `src/Web/`
+- Multi-stage build with layer-specific compilation
+- Includes optional database service
+
+**Modular Monolith:**
+- docker-compose.yml at solution root
+- PostgreSQL service (required for per-module databases)
+- RabbitMQ service (optional, for distributed events)
+- Multi-module database support
+
+See [Docker deployment guide](/docs/deployment/docker) for details.
 
 ## Event System
 

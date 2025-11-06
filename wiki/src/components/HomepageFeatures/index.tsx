@@ -11,12 +11,13 @@ type FeatureItem = {
 
 const FeatureList: FeatureItem[] = [
   {
-    title: 'Architecture Templates',
+    title: 'Three Production Templates',
     icon: '🏗️',
     description: (
       <>
-        Pick the right starting point: Monolith for rapid DX or Layered for clean boundaries.
-        Both are HTMX-native and ship with the Swap Event System and real integration tests.
+        Start with Monolith for MVPs, Layered for clean architecture, or 
+        Modular Monolith (recommended) for scalable module boundaries. All include 
+        HTMX, event system, and comprehensive tests.
       </>
     ),
   },
@@ -26,7 +27,8 @@ const FeatureList: FeatureItem[] = [
     description: (
       <>
         Build modern, interactive web applications without JavaScript frameworks.
-        Server-rendered HTML with HTMX for dynamic updates, plus a simple UI event bus to manage front-end updates.
+        Server-rendered HTML with HTMX for dynamic updates, plus a declarative event system 
+        to coordinate server actions and client reactions.
       </>
     ),
   },

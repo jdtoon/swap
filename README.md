@@ -355,11 +355,10 @@ All available on [NuGet](https://www.nuget.org/packages?q=owner:jdtoon).
 
 ## 📖 Documentation
 
-- **[PRODUCT-VISION.md](docs/PRODUCT-VISION.md)** — Why Swap exists, the three pillars, and the philosophy
-- **[FRAMEWORK-ARCHITECTURE.md](docs/FRAMEWORK-ARCHITECTURE.md)** — Deep dive into the architecture and expansion roadmap
-- **[EVENT-SYSTEM-DESIGN.md](docs/event-system/README.md)** — Complete event system specification and usage
-- **[Wiki](wiki/)** — Getting started guides, examples, and best practices
-- **Templates** — Each template includes a README with structure, setup, and examples
+- **[PRODUCT.md](docs/PRODUCT.md)** — What is Swap? The three pillars, key features, and why use it
+- **[EVENTS.md](docs/EVENTS.md)** — Complete guide to UI and Server Events, chain resolution, and RabbitMQ
+- **[TEMPLATES.md](docs/TEMPLATES.md)** — Template comparison, usage guide, and migration paths
+- **[Wiki](https://jdtoon.github.io/swap/)** — Getting started guides, tutorials, and examples
 
 ---
 
@@ -417,10 +416,9 @@ Each module in a modular monolith can be extended independently—add endpoints,
 ## 🚀 Next Steps
 
 1. **[Install Swap CLI](#installation)** and create an app
-2. **Read the [template README](templates/swap-modular-monolith/README.md.template)** to understand the structure
-3. **Explore [examples](testApps/)** for real patterns
-4. **Check the [event system reference](docs/event-system/README.md)** to use events effectively
-5. **Write your first test** using `Swap.Testing`
+2. **Read [TEMPLATES.md](docs/TEMPLATES.md)** to choose the right template for your needs
+3. **Check [EVENTS.md](docs/EVENTS.md)** to master the event system
+4. **Write your first test** using `Swap.Testing`
 
 ---
 
@@ -437,8 +435,8 @@ We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 ## 🔮 Roadmap
 
 - **0.3.x** — Event system consolidation, documentation, and template polish
-- **0.4.0** — Component scaffolding (copy partials, generate CRUD UI)
-- **0.5.0** — Authentication templates and built-in auth patterns
+- **0.4.x** — Template refinement, comprehensive documentation, security hardening
+- **0.5.x** — Component templates (authentication, CRUD forms, modals, data tables, file uploads, search/filter components)
 - **Future** — WebSocket/SignalR support, validation framework, form generation
 
 ---

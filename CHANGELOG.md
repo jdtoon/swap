@@ -11,6 +11,69 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.4.0] - 2025-11-06
+
+### Added - Template Documentation Suite
+- **Comprehensive Documentation**: Created epic developer experience documentation for all templates
+  - **swap-monolith**: 5 documentation files (README, ARCHITECTURE, DEVELOPMENT, DEPLOYMENT, EVENTS)
+  - **swap-layered**: 5 documentation files (README, ARCHITECTURE, DEVELOPMENT, DEPLOYMENT, EVENTS)
+  - Each README includes quickstart, stack overview, project structure, HTMX event system examples, testing guide, Docker setup, CLI generators, DaisyUI styling
+  - ARCHITECTURE.md covers high-level design, folder responsibilities, event system flow, database strategy, security, performance, testing, deployment
+  - DEVELOPMENT.md includes initial setup, hot reload, CSS development, database migrations, seeding, debugging, code generation, common tasks, environment configuration
+  - DEPLOYMENT.md covers Docker, cloud platforms (Azure/AWS/GCP/DigitalOcean), database migrations in production, HTTPS, monitoring, scaling, CI/CD pipelines
+  - EVENTS.md provides deep dive on Swap event system with naming conventions, event chains, real-world examples, debugging, performance, testing, best practices
+
+### Added - Template File Completeness
+- **Docker Support**: Fixed missing .dockerignore.template files
+  - Added .dockerignore.template to swap-monolith root
+  - Added .dockerignore.template to swap-layered root
+  - Added .dockerignore.template to swap-modular-monolith root
+  - Templates now properly exclude build artifacts, node_modules, etc.
+- **Git Support**: Fixed missing .gitignore.template files
+  - Added .gitignore.template to all three templates
+  - Proper exclusion of bin/, obj/, node_modules/, database files, etc.
+- **Template Whitelist Fix**: Updated NewCommand.cs to copy .dockerignore and .gitignore
+  - Added to root file whitelist in three locations
+  - Files now properly copied during template generation
+
+### Changed - NewCommand.cs Refactoring
+- **Code Organization**: Refactored 900+ line NewCommand.cs for better maintainability
+  - Extracted methods: ValidateInputs, DisplayProjectInfo, CheckPrerequisitesAsync, RunSetupCommandsAsync, GenerateProjectAsync
+  - Added regions: Validation, Display Messages, Template Helpers, Prerequisites, Setup Commands, Project Generation, Template Processing
+  - Template helper methods: IsLayeredTemplate, IsModularMonolithTemplate, ResolveTemplateFolder
+  - Improved readability and easier modification for future enhancements
+
+### Changed - Template Alias Support
+- **Modular Monolith Alias**: Added "modular-monolith" as alias for "swap-modular-monolith"
+  - Updated template resolution logic in 5 locations
+  - Consistent alias support across all template detection points
+  - Users can now use either "swap-modular-monolith" or "modular-monolith"
+
+### Fixed - Docker Configuration
+- **Build Context Issues**: Fixed Docker build failures for layered and modular-monolith templates
+  - Changed build context from "src/Web" to "src" in docker-compose.yml.template
+  - Updated Dockerfile.template COPY paths to match new build context
+  - Allows Docker to access all project layers (Web, Application, Infrastructure, Domain)
+  - Fixed "COPY failed: file not found" errors for Application/Infrastructure/Domain
+
+### Fixed - Migration Error Handling
+- **Database Migration Errors**: Added try-catch around db.Database.Migrate() in templates
+  - swap-monolith/src/Program.cs.template
+  - swap-layered/src/Web/Program.cs.template
+  - Helpful error message suggests "docker compose down -v" to clear volumes
+  - Prevents confusing SQLite "table already exists" errors in Docker
+
+### Validated
+- **Template Generation**: All three templates generate successfully
+  - swap-monolith builds and runs with Docker
+  - swap-layered builds and runs with Docker
+  - swap-modular-monolith builds and runs with Docker
+- **Docker Support**: Multi-stage builds work correctly with new build context
+- **Documentation Quality**: Comprehensive guides for developers at all levels
+- **Developer Experience**: Epic README files with emojis, clear examples, troubleshooting tips
+
+---
+
 ## [0.3.2] - 2025-11-06
 
 ### Added - Template: Modular Monolith (swap-modular-monolith)

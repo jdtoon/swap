@@ -1,0 +1,750 @@
+# Swap Event System Deep Dive
+
+The Swap event system is a **decoupled event-driven architecture** for HTMX applications, allowing you to orchestrate UI updates without tight coupling between components.
+
+---
+
+## Core Concepts
+
+### What is a Swap Event?
+
+A **Swap Event** is a custom browser event triggered by server responses that tells HTMX elements when to update.
+
+**Traditional approach (tightly coupled):**
+```html
+<!-- After adding todo, manually refresh list -->
+<form hx-post="/Home/AddTodo" 
+      hx-target="#todo-list">
+</form>
+```
+
+**Swap event approach (decoupled):**
+```html
+<!-- Form fires event, list listens independently -->
+<form hx-post="/Home/AddTodo"></form>
+
+<div id="todo-list" 
+     hx-get="/Home/TodoList"
+     hx-trigger="entity.created:todo from:body">
+</div>
+```
+
+**Benefits:**
+- Components don't need to know about each other
+- Multiple listeners can react to one action
+- Easy to add new behaviors without touching existing code
+
+---
+
+## Event Naming Convention
+
+Use **namespaced dot notation** for clarity:
+
+```
+category.action:entity
+```
+
+**Examples:**
+- `entity.created:todo` — A todo was created
+- `entity.updated:todo` — A todo was updated
+- `entity.deleted:todo` — A todo was deleted
+- `ui.refresh` — Generic UI refresh
+- `ui.showToast` — Show toast notification
+- `filter.changed:status` — Filter status changed
+
+**Defining events in `Events/EventNames.cs`:**
+
+```csharp
+public static class SwapEvents
+{
+    public static class Entity
+    {
+        public static string Created(string name) => $"entity.created:{name}";
+        public static string Updated(string name) => $"entity.updated:{name}";
+        public static string Deleted(string name) => $"entity.deleted:{name}";
+    }
+    
+    public static class UI
+    {
+        public const string Refresh = "ui.refresh";
+        public const string ShowToast = "ui.showToast";
+        public const string RefreshStats = "ui.refreshStats";
+    }
+    
+    public static class Filter
+    {
+        public static string Changed(string name) => $"filter.changed:{name}";
+    }
+}
+```
+
+---
+
+## Event Chains
+
+**Event chains** automatically fire secondary events when a primary event occurs.
+
+### Defining Event Chains
+
+**In `Events/SwapEventChains.cs`:**
+
+```csharp
+public static class SwapEventChains
+{
+    public static void Register(ISwapEvents events)
+    {
+        // When todo created → refresh UI + show toast
+        events.Chain(
+            SwapEvents.Entity.Created("todo"),
+            SwapEvents.UI.Refresh,
+            SwapEvents.UI.ShowToast);
+        
+        // When todo updated → refresh UI + show toast
+        events.Chain(
+            SwapEvents.Entity.Updated("todo"),
+            SwapEvents.UI.Refresh,
+            SwapEvents.UI.ShowToast);
+        
+        // When todo deleted → refresh UI + show toast + refresh stats
+        events.Chain(
+            SwapEvents.Entity.Deleted("todo"),
+            SwapEvents.UI.Refresh,
+            SwapEvents.UI.ShowToast,
+            SwapEvents.UI.RefreshStats);
+    }
+}
+```
+
+### How Chains Work
+
+When you fire `entity.created:todo` in a controller:
+
+```csharp
+_events.Fire(SwapEvents.Entity.Created("todo"));
+```
+
+The event chain automatically fires:
+1. `entity.created:todo` (primary event)
+2. `ui.refresh` (chained event)
+3. `ui.showToast` (chained event)
+
+**All listeners receive all events in the chain.**
+
+---
+
+## Firing Events in Controllers
+
+### Basic Event Fire
+
+```csharp
+[HttpPost]
+public IActionResult AddTodo(string title)
+{
+    var todo = new TodoItem { Title = title };
+    _db.TodoItems.Add(todo);
+    _db.SaveChanges();
+    
+    _events.Fire(SwapEvents.Entity.Created("todo"));
+    
+    return PartialView("_TodoItem", todo);
+}
+```
+
+### Fire with Toast Message
+
+```csharp
+[HttpDelete]
+public IActionResult Delete(int id)
+{
+    var todo = _db.TodoItems.Find(id);
+    if (todo == null) return NotFound();
+    
+    _db.TodoItems.Remove(todo);
+    _db.SaveChanges();
+    
+    _events.Fire(SwapEvents.Entity.Deleted("todo"));
+    _events.Toast(ToastType.Success, "Todo deleted!");
+    
+    return Ok();
+}
+```
+
+### Fire Multiple Events
+
+```csharp
+[HttpPut]
+public IActionResult ToggleTodo(int id)
+{
+    var todo = _db.TodoItems.Find(id);
+    if (todo == null) return NotFound();
+    
+    todo.IsComplete = !todo.IsComplete;
+    _db.SaveChanges();
+    
+    _events.Fire(SwapEvents.Entity.Updated("todo"));
+    _events.Fire(SwapEvents.UI.RefreshStats);
+    
+    return PartialView("_TodoItem", todo);
+}
+```
+
+---
+
+## Listening to Events in Views
+
+### Basic Listener
+
+```html
+<div id="todo-list"
+     hx-get="/Home/TodoList"
+     hx-trigger="entity.created:todo from:body">
+    <!-- List content -->
+</div>
+```
+
+**Explanation:**
+- `hx-trigger="entity.created:todo from:body"` — Listen for event on `<body>`
+- When event fires → `hx-get="/Home/TodoList"` fetches updated list
+- Response replaces `#todo-list` content
+
+### Multiple Event Triggers
+
+```html
+<div id="todo-list"
+     hx-get="/Home/TodoList"
+     hx-trigger="entity.created:todo from:body, 
+                 entity.updated:todo from:body,
+                 entity.deleted:todo from:body">
+</div>
+```
+
+Or use the chained event:
+
+```html
+<div id="todo-list"
+     hx-get="/Home/TodoList"
+     hx-trigger="ui.refresh from:body">
+    <!-- Listens to ALL entity changes via chain -->
+</div>
+```
+
+### Conditional Triggers
+
+```html
+<!-- Only refresh if not filtering -->
+<div hx-get="/Home/TodoList"
+     hx-trigger="ui.refresh from:body[!.filtering]">
+</div>
+```
+
+### Delayed Triggers
+
+```html
+<!-- Wait 500ms before refreshing (debounce) -->
+<div hx-get="/Home/TodoList"
+     hx-trigger="ui.refresh from:body delay:500ms">
+</div>
+```
+
+### Load + Event Trigger
+
+```html
+<!-- Load on page load AND when event fires -->
+<div hx-get="/Home/Stats"
+     hx-trigger="load, ui.refreshStats from:body">
+</div>
+```
+
+---
+
+## Real-World Examples
+
+### Product Management System
+
+**EventNames.cs:**
+```csharp
+public static class ProductEvents
+{
+    public const string InventoryLow = "product.inventoryLow";
+    public const string PriceChanged = "product.priceChanged";
+}
+
+public static class CartEvents
+{
+    public const string ItemAdded = "cart.itemAdded";
+    public const string ItemRemoved = "cart.itemRemoved";
+}
+```
+
+**SwapEventChains.cs:**
+```csharp
+events.Chain(
+    SwapEvents.Entity.Created("product"),
+    SwapEvents.UI.Refresh,
+    SwapEvents.UI.ShowToast);
+
+events.Chain(
+    ProductEvents.InventoryLow,
+    SwapEvents.UI.ShowToast,
+    SwapEvents.UI.RefreshStats);
+
+events.Chain(
+    CartEvents.ItemAdded,
+    SwapEvents.UI.RefreshStats);
+```
+
+**Controller:**
+```csharp
+[HttpPost]
+public IActionResult AddToCart(int productId)
+{
+    var product = _db.Products.Find(productId);
+    // ... add to cart logic
+    
+    _events.Fire(CartEvents.ItemAdded);
+    
+    if (product.Stock < 5)
+    {
+        _events.Fire(ProductEvents.InventoryLow);
+        _events.Toast(ToastType.Warning, "Low stock alert!");
+    }
+    
+    return PartialView("_CartItem", cartItem);
+}
+```
+
+**View:**
+```html
+<!-- Product list refreshes when inventory low -->
+<div id="product-list"
+     hx-get="/Products/List"
+     hx-trigger="product.inventoryLow from:body">
+</div>
+
+<!-- Cart badge updates when items added/removed -->
+<span id="cart-count"
+      hx-get="/Cart/Count"
+      hx-trigger="cart.itemAdded from:body, cart.itemRemoved from:body">
+    0
+</span>
+
+<!-- Stats panel refreshes on any cart change -->
+<div id="stats"
+     hx-get="/Dashboard/Stats"
+     hx-trigger="ui.refreshStats from:body">
+</div>
+```
+
+### Notification System
+
+**EventNames.cs:**
+```csharp
+public static class NotificationEvents
+{
+    public const string New = "notification.new";
+    public const string Read = "notification.read";
+}
+```
+
+**SwapEventChains.cs:**
+```csharp
+events.Chain(
+    NotificationEvents.New,
+    SwapEvents.UI.RefreshStats);
+
+events.Chain(
+    NotificationEvents.Read,
+    SwapEvents.UI.RefreshStats);
+```
+
+**Controller:**
+```csharp
+[HttpPost]
+public IActionResult SendNotification(int userId, string message)
+{
+    var notification = new Notification
+    {
+        UserId = userId,
+        Message = message,
+        CreatedAt = DateTime.UtcNow
+    };
+    
+    _db.Notifications.Add(notification);
+    _db.SaveChanges();
+    
+    _events.Fire(NotificationEvents.New);
+    
+    return Ok();
+}
+```
+
+**View:**
+```html
+<!-- Notification bell badge -->
+<span id="notification-count"
+      hx-get="/Notifications/UnreadCount"
+      hx-trigger="notification.new from:body, notification.read from:body"
+      class="badge badge-error">
+    0
+</span>
+
+<!-- Notification dropdown -->
+<div id="notification-list"
+     hx-get="/Notifications/List"
+     hx-trigger="notification.new from:body">
+    <!-- Notification items -->
+</div>
+```
+
+### Multi-Step Wizard
+
+**EventNames.cs:**
+```csharp
+public static class WizardEvents
+{
+    public const string StepCompleted = "wizard.stepCompleted";
+    public const string StepValidated = "wizard.stepValidated";
+}
+```
+
+**Controller:**
+```csharp
+[HttpPost]
+public IActionResult CompleteStep(int step)
+{
+    // Validation logic
+    _events.Fire(WizardEvents.StepCompleted);
+    _events.Fire(WizardEvents.StepValidated);
+    
+    return PartialView($"_Step{step + 1}");
+}
+```
+
+**View:**
+```html
+<!-- Progress bar updates on step completion -->
+<div id="progress"
+     hx-get="/Wizard/Progress"
+     hx-trigger="wizard.stepCompleted from:body">
+</div>
+
+<!-- Next step loads automatically -->
+<div id="current-step"
+     hx-get="/Wizard/NextStep"
+     hx-trigger="wizard.stepValidated from:body">
+</div>
+```
+
+---
+
+## Custom Event Data
+
+### Passing Data with Events
+
+You can pass custom data via event detail:
+
+**Controller:**
+```csharp
+_events.Fire("user.loggedIn", new { userId = user.Id, username = user.Name });
+```
+
+**JavaScript listener:**
+```html
+<script>
+document.body.addEventListener('user.loggedIn', (e) => {
+    console.log('User ID:', e.detail.userId);
+    console.log('Username:', e.detail.username);
+});
+</script>
+```
+
+**Practical example — update user widget:**
+
+```csharp
+[HttpPost]
+public IActionResult Login(string username, string password)
+{
+    var user = _db.Users.FirstOrDefault(u => u.Username == username);
+    // ... auth logic
+    
+    _events.Fire("user.loggedIn", new { userId = user.Id, name = user.Name });
+    
+    return RedirectToAction("Index");
+}
+```
+
+```html
+<div id="user-widget"
+     hx-get="/Account/Widget"
+     hx-trigger="user.loggedIn from:body">
+</div>
+```
+
+---
+
+## Event Debugging
+
+### Development Dashboard
+
+Visit **http://localhost:5000/_swap/dev/events**
+
+Shows:
+- All registered event chains
+- Primary events → chained events mapping
+- Live event flow visualization
+
+**Example output:**
+```
+Event Chains:
+  entity.created:todo
+    → ui.refresh
+    → ui.showToast
+
+  entity.deleted:todo
+    → ui.refresh
+    → ui.showToast
+    → ui.refreshStats
+```
+
+### Browser Console Debugging
+
+Add to your layout or view:
+
+```html
+<script>
+// Log all HTMX events
+document.body.addEventListener('htmx:afterRequest', (e) => {
+    console.log('HTMX Request:', {
+        url: e.detail.pathInfo.requestPath,
+        verb: e.detail.verb,
+        status: e.detail.xhr.status
+    });
+});
+
+// Log all Swap events
+['entity.created:todo', 'ui.refresh', 'ui.showToast'].forEach(eventName => {
+    document.body.addEventListener(eventName, (e) => {
+        console.log(`Event fired: ${eventName}`, e.detail);
+    });
+});
+</script>
+```
+
+### Network Tab Analysis
+
+1. Open browser DevTools → Network
+2. Filter by XHR
+3. Look for responses with `HX-Trigger` header
+
+**Example response headers:**
+```
+HX-Trigger: {"entity.created:todo":null,"ui.refresh":null,"ui.showToast":{"message":"Todo added!","type":"success"}}
+```
+
+---
+
+## Performance Considerations
+
+### Avoid Event Storms
+
+**Bad (causes infinite loop):**
+```html
+<div hx-get="/Home/TodoList"
+     hx-trigger="ui.refresh from:body"
+     hx-swap="innerHTML"
+     hx-on::after-swap="htmx.trigger('body', 'ui.refresh')">
+    <!-- Fires ui.refresh after swap, causing infinite loop -->
+</div>
+```
+
+**Good:**
+```html
+<div hx-get="/Home/TodoList"
+     hx-trigger="ui.refresh from:body">
+    <!-- Only listens, doesn't fire -->
+</div>
+```
+
+### Debounce Rapid Events
+
+```html
+<!-- Wait 500ms after last event -->
+<div hx-get="/Search/Results"
+     hx-trigger="filter.changed:search from:body delay:500ms">
+</div>
+```
+
+### Limit Chain Depth
+
+**Bad (too many chains):**
+```csharp
+events.Chain(
+    "event1", "event2", "event3", "event4", "event5", "event6");
+```
+
+Keep chains to **2-4 events** for maintainability.
+
+### Use Specific Events Over Generic
+
+**Bad:**
+```csharp
+_events.Fire("ui.refresh"); // Too generic, many listeners fire
+```
+
+**Good:**
+```csharp
+_events.Fire("ui.refreshTodoList"); // Specific, only todo list updates
+```
+
+---
+
+## Testing Event Flows
+
+### Integration Test Example
+
+```csharp
+[Fact]
+public async Task Creating_Todo_Should_Fire_Correct_Events()
+{
+    // Arrange
+    var formData = new Dictionary<string, string>
+    {
+        ["title"] = "Test Todo"
+    };
+    
+    // Act
+    var response = await _client.HtmxPostAsync("/Home/AddTodo", formData);
+    
+    // Assert
+    response.AssertSuccess();
+    response.AssertHasSwapEvent(SwapEvents.Entity.Created("todo"));
+    response.AssertHasSwapEvent(SwapEvents.UI.Refresh);
+    response.AssertHasSwapEvent(SwapEvents.UI.ShowToast);
+}
+```
+
+### Verify Event Chain Registration
+
+```csharp
+[Fact]
+public void Event_Chains_Should_Be_Registered()
+{
+    var services = new ServiceCollection();
+    services.AddSwapEvents();
+    
+    var sp = services.BuildServiceProvider();
+    var events = sp.GetRequiredService<ISwapEvents>();
+    
+    // Verify chains are registered
+    Assert.Contains(SwapEvents.Entity.Created("todo"), events.GetChains());
+}
+```
+
+---
+
+## Best Practices
+
+✅ **Do:**
+- Use namespaced naming (`entity.created:todo`, not `todoCreated`)
+- Define all event names in `EventNames.cs`
+- Keep event chains simple (2-4 events max)
+- Use specific events over generic ones
+- Document event flows in `SwapEventChains.cs`
+
+❌ **Don't:**
+- Hard-code event names in views (use constants)
+- Create circular event chains
+- Fire too many events from one action
+- Use events for synchronous logic (use method calls)
+- Forget to register chains in `SwapEventChains.cs`
+
+---
+
+## Advanced Patterns
+
+### Conditional Event Chains
+
+```csharp
+public static void Register(ISwapEvents events)
+{
+    events.Chain(
+        SwapEvents.Entity.Created("todo"),
+        SwapEvents.UI.Refresh);
+    
+    // Only in production
+    if (Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Production")
+    {
+        events.Chain(
+            SwapEvents.Entity.Created("todo"),
+            "analytics.track");
+    }
+}
+```
+
+### Event Aggregation
+
+Combine multiple events into one:
+
+```csharp
+public static class AggregatedEvents
+{
+    public const string DataChanged = "data.changed";
+}
+
+events.Chain(SwapEvents.Entity.Created("todo"), AggregatedEvents.DataChanged);
+events.Chain(SwapEvents.Entity.Updated("todo"), AggregatedEvents.DataChanged);
+events.Chain(SwapEvents.Entity.Deleted("todo"), AggregatedEvents.DataChanged);
+```
+
+Listeners use single event:
+
+```html
+<div hx-get="/Dashboard/Summary"
+     hx-trigger="data.changed from:body">
+</div>
+```
+
+### Event Priority
+
+Fire critical events first:
+
+```csharp
+_events.Fire(SwapEvents.Entity.Deleted("todo")); // Primary
+_events.Fire(SwapEvents.UI.RefreshStats); // Critical
+_events.Fire(SwapEvents.UI.Refresh); // Secondary
+```
+
+---
+
+## Migration from Traditional HTMX
+
+**Before (tightly coupled):**
+```html
+<form hx-post="/Home/AddTodo" 
+      hx-target="#todo-list">
+</form>
+
+<div id="todo-list">
+    <!-- Only this one list can refresh -->
+</div>
+```
+
+**After (event-driven):**
+```html
+<form hx-post="/Home/AddTodo"></form>
+
+<div id="todo-list"
+     hx-get="/Home/TodoList"
+     hx-trigger="ui.refresh from:body">
+</div>
+
+<div id="todo-count"
+     hx-get="/Home/TodoCount"
+     hx-trigger="ui.refresh from:body">
+    <!-- Both refresh independently -->
+</div>
+```
+
+---
+
+**Master the event system for scalable, maintainable HTMX apps! 🎯**

@@ -1,7 +1,0 @@
-# {{ProjectName}}.Web
-
-Presentation layer: ASP.NET Core MVC + HTMX + Swap.Htmx integration.
-
-- Controllers depend on Application services only.
-- Swap.Htmx adapter binds IEventBus to ISwapEventBus.
-- Event chains defined in `Web/Events/SwapEventChains.cs` map domain events to UI `ui.*` events.

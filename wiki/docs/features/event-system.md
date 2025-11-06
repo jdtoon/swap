@@ -76,9 +76,63 @@ Use `Swap.Testing` helpers with WebApplicationFactory:
 
 See full coverage in demo test projects.
 
+## Server Events (RabbitMQ)
+
+For modular monoliths or distributed deployments, Swap supports RabbitMQ-based server events that propagate across processes.
+
+### Configuration
+
+**appsettings.json:**
+```json
+{
+  "Swap": {
+    "ServerEvents": {
+      "Enabled": true,
+      "ConnectionString": "amqp://guest:guest@localhost:5672",
+      "ExchangeName": "swap.events",
+      "QueuePrefix": "MyApp"
+    }
+  }
+}
+```
+
+**Program.cs:**
+```csharp
+builder.Services.AddSwapServerEventChainsFromConfiguration(
+    builder.Configuration,
+    "Swap:ServerEvents"
+);
+```
+
+### Server Event Chains
+
+Modules can listen for events from RabbitMQ:
+
+```csharp
+public class OrdersModule : IModule
+{
+    public void ConfigureEventChains(IEventChainRegistrar registrar)
+    {
+        // Listen for server events
+        registrar.Register("order.created", async (OrderCreated evt) =>
+        {
+            await UpdateInventoryAsync(evt.ProductId, evt.Quantity);
+        });
+    }
+}
+```
+
+**Emitting Server Events:**
+```csharp
+// Events are automatically published to RabbitMQ when server events are enabled
+await _events.EmitAsync(SwapEvents.Custom("order.created"), order);
+```
+
 ## Learn more
 
+- **[Comprehensive Event Guide](https://github.com/jdtoon/swap/blob/main/docs/EVENTS.md)** — Full documentation on chain resolution, RabbitMQ integration, testing, and real-world examples
 - Reference: docs/event-system/README.md (repo)
 - CLI plan: docs/event-system/CLI-INTEGRATION.md (repo)
- - Dev Dashboard: `/_swap/dev/events` and `/_swap/dev/events.json`
- - CLI: `swap events list` and `swap events from-server --url http://localhost:5000`
+- Dev Dashboard: `/_swap/dev/events` and `/_swap/dev/events.json`
+- CLI: `swap events list` and `swap events from-server --url http://localhost:5000`
+

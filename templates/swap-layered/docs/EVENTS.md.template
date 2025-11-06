@@ -1,0 +1,815 @@
+# Swap Event System Deep Dive
+
+The Swap event system is a **decoupled event-driven architecture** for HTMX applications, allowing you to orchestrate UI updates without tight coupling between components.
+
+In a **layered architecture**, events flow from the **Domain layer** through the **Application layer** to the **Web layer**, enabling clean separation of concerns.
+
+---
+
+## Core Concepts
+
+### What is a Swap Event?
+
+A **Swap Event** is a custom browser event triggered by server responses that tells HTMX elements when to update.
+
+**Traditional approach (tightly coupled):**
+```html
+<!-- After adding todo, manually refresh list -->
+<form hx-post="/Todos/Create" 
+      hx-target="#todo-list">
+</form>
+```
+
+**Swap event approach (decoupled):**
+```html
+<!-- Form fires event, list listens independently -->
+<form hx-post="/Todos/Create" hx-swap="none"></form>
+
+<div id="todo-list" 
+     hx-get="/Todos/List"
+     hx-trigger="ui.refreshList from:body">
+</div>
+```
+
+**Benefits:**
+- Components don't need to know about each other
+- Multiple listeners can react to one action
+- Easy to add new behaviors without touching existing code
+- Domain layer stays pure (no HTTP/view concerns)
+
+---
+
+## Event Flow in Layered Architecture
+
+```
+┌─────────────────────────────────────────────────┐
+│  Domain Layer                                   │
+│  Defines event names (pure strings)             │
+│  DomainEvents.TodoCreated = "entity.created:todo"│
+└──────────────────┬──────────────────────────────┘
+                   │
+                   ▼
+┌─────────────────────────────────────────────────┐
+│  Application Layer                              │
+│  Fires domain events via IEventBus              │
+│  _eventBus.Fire(DomainEvents.TodoCreated)       │
+└──────────────────┬──────────────────────────────┘
+                   │
+                   ▼
+┌─────────────────────────────────────────────────┐
+│  Web Layer (Event Chains)                       │
+│  Maps domain events → UI events                 │
+│  events.Chain(                                  │
+│    DomainEvents.TodoCreated,                    │
+│    "ui.refreshList",                            │
+│    "ui.showToast")                              │
+└──────────────────┬──────────────────────────────┘
+                   │
+                   ▼
+┌─────────────────────────────────────────────────┐
+│  Browser (HTMX)                                 │
+│  Views listen to UI events                      │
+│  hx-trigger="ui.refreshList from:body"          │
+└─────────────────────────────────────────────────┘
+```
+
+---
+
+## Event Naming Convention
+
+Use **namespaced dot notation** for clarity:
+
+```
+category.action:entity
+```
+
+**Examples:**
+- `entity.created:todo` — A todo was created
+- `entity.updated:todo` — A todo was updated
+- `entity.deleted:todo` — A todo was deleted
+- `ui.refresh` — Generic UI refresh
+- `ui.refreshList` — Refresh specific list
+- `ui.showToast` — Show toast notification
+- `filter.changed:status` — Filter status changed
+
+---
+
+## Defining Events in Domain Layer
+
+**Domain layer defines pure event names:**
+
+```csharp
+// Domain/Events/DomainEvents.cs
+public static class DomainEvents
+{
+    // Todo events
+    public static string TodoCreated => "entity.created:todo";
+    public static string TodoUpdated => "entity.updated:todo";
+    public static string TodoDeleted => "entity.deleted:todo";
+    public static string TodoCompleted => "entity.completed:todo";
+    
+    // Product events (example)
+    public static string ProductCreated => "entity.created:product";
+    public static string ProductUpdated => "entity.updated:product";
+    public static string ProductDeleted => "entity.deleted:product";
+    
+    // Helper methods for dynamic entities
+    public static string EntityCreated(string entityName) => $"entity.created:{entityName}";
+    public static string EntityUpdated(string entityName) => $"entity.updated:{entityName}";
+    public static string EntityDeleted(string entityName) => $"entity.deleted:{entityName}";
+}
+```
+
+**Why in Domain?**
+- Domain events represent business occurrences
+- No dependencies on infrastructure or frameworks
+- Pure strings that Application layer can use
+
+---
+
+## Firing Events in Application Layer
+
+**Application services fire domain events via `IEventBus`:**
+
+```csharp
+// Application/Services/TodoService.cs
+public class TodoService : ITodoService
+{
+    private readonly ITodoRepository _repository;
+    private readonly IEventBus _eventBus;
+    
+    public TodoService(ITodoRepository repository, IEventBus eventBus)
+    {
+        _repository = repository;
+        _eventBus = eventBus;
+    }
+    
+    public async Task CreateTodoAsync(string title)
+    {
+        // Business rule validation
+        if (string.IsNullOrWhiteSpace(title))
+            throw new ArgumentException("Title is required", nameof(title));
+        
+        var todo = new TodoItem
+        {
+            Title = title,
+            CreatedAt = DateTime.UtcNow,
+            IsComplete = false
+        };
+        
+        await _repository.AddAsync(todo);
+        await _repository.SaveChangesAsync();
+        
+        // Fire domain event
+        _eventBus.Fire(DomainEvents.TodoCreated);
+    }
+    
+    public async Task ToggleTodoAsync(int id)
+    {
+        var todo = await _repository.GetByIdAsync(id);
+        if (todo == null)
+            throw new KeyNotFoundException($"Todo {id} not found");
+        
+        todo.IsComplete = !todo.IsComplete;
+        
+        if (todo.IsComplete)
+            todo.CompletedAt = DateTime.UtcNow;
+        else
+            todo.CompletedAt = null;
+        
+        await _repository.SaveChangesAsync();
+        
+        // Fire appropriate domain events
+        _eventBus.Fire(DomainEvents.TodoUpdated);
+        
+        if (todo.IsComplete)
+            _eventBus.Fire(DomainEvents.TodoCompleted);
+    }
+    
+    public async Task DeleteTodoAsync(int id)
+    {
+        await _repository.DeleteAsync(id);
+        await _repository.SaveChangesAsync();
+        
+        _eventBus.Fire(DomainEvents.TodoDeleted);
+    }
+}
+```
+
+**IEventBus abstraction:**
+
+```csharp
+// Application/Interfaces/IEventBus.cs
+public interface IEventBus
+{
+    void Fire(string eventName);
+    void Fire(string eventName, object data);
+}
+```
+
+---
+
+## Mapping Domain Events to UI Events (Web Layer)
+
+**Web layer bridges domain events to HTMX-friendly UI events:**
+
+```csharp
+// Web/Events/SwapEventChains.cs
+public static class SwapEventChains
+{
+    public static void Register(ISwapEvents events)
+    {
+        // Todo events
+        events.Chain(
+            DomainEvents.TodoCreated,
+            "ui.refreshList",
+            "ui.showToast");
+        
+        events.Chain(
+            DomainEvents.TodoUpdated,
+            "ui.refreshList",
+            "ui.showToast");
+        
+        events.Chain(
+            DomainEvents.TodoDeleted,
+            "ui.refreshList",
+            "ui.showToast",
+            "ui.refreshStats");
+        
+        events.Chain(
+            DomainEvents.TodoCompleted,
+            "ui.refreshStats");
+        
+        // Product events (example)
+        events.Chain(
+            DomainEvents.ProductCreated,
+            "ui.refreshProductList",
+            "ui.showToast");
+    }
+}
+```
+
+**IEventBus implementation (adapter):**
+
+```csharp
+// Web/Infrastructure/SwapEventBusAdapter.cs
+public class SwapEventBusAdapter : IEventBus
+{
+    private readonly ISwapEvents _swapEvents;
+    
+    public SwapEventBusAdapter(ISwapEvents swapEvents)
+    {
+        _swapEvents = swapEvents;
+    }
+    
+    public void Fire(string eventName)
+    {
+        _swapEvents.Fire(eventName);
+    }
+    
+    public void Fire(string eventName, object data)
+    {
+        _swapEvents.Fire(eventName, data);
+    }
+}
+```
+
+**Registration:**
+
+```csharp
+// Web/Program.cs
+builder.Services.AddScoped<IEventBus, SwapEventBusAdapter>();
+```
+
+---
+
+## Listening to Events in Views
+
+### Basic Listener
+
+```html
+<!-- Web/Views/Todos/_TodoList.cshtml -->
+<div id="todo-list"
+     hx-get="/Todos/List"
+     hx-trigger="ui.refreshList from:body"
+     hx-swap="outerHTML">
+    @foreach (var todo in Model)
+    {
+        <partial name="_TodoItem" model="todo" />
+    }
+</div>
+```
+
+**Explanation:**
+- `hx-trigger="ui.refreshList from:body"` — Listen for event on `<body>`
+- When event fires → `hx-get="/Todos/List"` fetches updated list
+- Response replaces entire `#todo-list` content
+
+### Multiple Event Triggers
+
+```html
+<div id="todo-list"
+     hx-get="/Todos/List"
+     hx-trigger="ui.refreshList from:body, 
+                 entity.created:todo from:body,
+                 entity.updated:todo from:body,
+                 entity.deleted:todo from:body">
+</div>
+```
+
+Or rely on event chain:
+
+```html
+<!-- Listens to ALL todo changes via chain -->
+<div id="todo-list"
+     hx-get="/Todos/List"
+     hx-trigger="ui.refreshList from:body">
+</div>
+```
+
+### Load + Event Trigger
+
+```html
+<!-- Load on page load AND when event fires -->
+<div id="stats"
+     hx-get="/Todos/Stats"
+     hx-trigger="load, ui.refreshStats from:body">
+</div>
+```
+
+---
+
+## Real-World Examples
+
+### Product Management System
+
+**Domain events:**
+
+```csharp
+// Domain/Events/DomainEvents.cs
+public static class DomainEvents
+{
+    // Product events
+    public static string ProductCreated => "entity.created:product";
+    public static string ProductUpdated => "entity.updated:product";
+    public static string ProductDeleted => "entity.deleted:product";
+    public static string ProductInventoryLow => "product.inventoryLow";
+    public static string ProductPriceChanged => "product.priceChanged";
+}
+```
+
+**Application service:**
+
+```csharp
+// Application/Services/ProductService.cs
+public async Task CreateProductAsync(string name, decimal price, int stock)
+{
+    var product = new Product
+    {
+        Name = name,
+        Price = price,
+        Stock = stock
+    };
+    
+    await _repository.AddAsync(product);
+    await _repository.SaveChangesAsync();
+    
+    _eventBus.Fire(DomainEvents.ProductCreated);
+    
+    if (stock < 10)
+        _eventBus.Fire(DomainEvents.ProductInventoryLow);
+}
+
+public async Task UpdatePriceAsync(int id, decimal newPrice)
+{
+    var product = await _repository.GetByIdAsync(id);
+    if (product == null)
+        throw new KeyNotFoundException();
+    
+    product.Price = newPrice;
+    await _repository.SaveChangesAsync();
+    
+    _eventBus.Fire(DomainEvents.ProductUpdated);
+    _eventBus.Fire(DomainEvents.ProductPriceChanged);
+}
+```
+
+**Event chains:**
+
+```csharp
+// Web/Events/SwapEventChains.cs
+events.Chain(
+    DomainEvents.ProductCreated,
+    "ui.refreshProductList",
+    "ui.showToast");
+
+events.Chain(
+    DomainEvents.ProductInventoryLow,
+    "ui.showWarningToast",
+    "ui.refreshStats");
+
+events.Chain(
+    DomainEvents.ProductPriceChanged,
+    "ui.refreshProductList");
+```
+
+**Views:**
+
+```html
+<!-- Product list -->
+<div id="product-list"
+     hx-get="/Products/List"
+     hx-trigger="ui.refreshProductList from:body">
+</div>
+
+<!-- Stats panel -->
+<div id="stats"
+     hx-get="/Dashboard/Stats"
+     hx-trigger="ui.refreshStats from:body">
+</div>
+```
+
+### Order Processing System
+
+**Domain events:**
+
+```csharp
+// Domain/Events/DomainEvents.cs
+public static string OrderCreated => "entity.created:order";
+public static string OrderPaid => "order.paid";
+public static string OrderShipped => "order.shipped";
+public static string OrderCancelled => "order.cancelled";
+```
+
+**Application service:**
+
+```csharp
+// Application/Services/OrderService.cs
+public async Task ProcessPaymentAsync(int orderId)
+{
+    var order = await _repository.GetByIdAsync(orderId);
+    if (order == null)
+        throw new KeyNotFoundException();
+    
+    // Process payment logic
+    order.Status = OrderStatus.Paid;
+    order.PaidAt = DateTime.UtcNow;
+    
+    await _repository.SaveChangesAsync();
+    
+    _eventBus.Fire(DomainEvents.OrderPaid);
+}
+
+public async Task ShipOrderAsync(int orderId, string trackingNumber)
+{
+    var order = await _repository.GetByIdAsync(orderId);
+    if (order == null)
+        throw new KeyNotFoundException();
+    
+    order.Status = OrderStatus.Shipped;
+    order.TrackingNumber = trackingNumber;
+    
+    await _repository.SaveChangesAsync();
+    
+    _eventBus.Fire(DomainEvents.OrderShipped);
+}
+```
+
+**Event chains:**
+
+```csharp
+// Web/Events/SwapEventChains.cs
+events.Chain(
+    DomainEvents.OrderCreated,
+    "ui.refreshOrderList",
+    "ui.refreshStats",
+    "ui.showToast");
+
+events.Chain(
+    DomainEvents.OrderPaid,
+    "ui.refreshOrderList",
+    "ui.showToast");
+
+events.Chain(
+    DomainEvents.OrderShipped,
+    "ui.refreshOrderList",
+    "ui.showToast",
+    "ui.sendEmailNotification");
+```
+
+---
+
+## Custom Event Data
+
+### Passing Data with Events
+
+You can pass custom data via event detail:
+
+```csharp
+// Application/Services/TodoService.cs
+_eventBus.Fire(DomainEvents.TodoCreated, new { id = todo.Id, title = todo.Title });
+```
+
+**JavaScript listener:**
+
+```html
+<script>
+document.body.addEventListener('entity.created:todo', (e) => {
+    console.log('Todo ID:', e.detail.id);
+    console.log('Todo Title:', e.detail.title);
+});
+</script>
+```
+
+---
+
+## Event Debugging
+
+### Development Dashboard
+
+Visit **http://localhost:5000/_swap/dev/events**
+
+Shows:
+- All registered event chains
+- Domain events → UI events mapping
+- Live event flow visualization
+
+**Example output:**
+```
+Event Chains:
+  entity.created:todo
+    → ui.refreshList
+    → ui.showToast
+
+  entity.deleted:todo
+    → ui.refreshList
+    → ui.showToast
+    → ui.refreshStats
+```
+
+### Browser Console Debugging
+
+Add to your layout or view:
+
+```html
+<script>
+// Log all HTMX events
+document.body.addEventListener('htmx:afterRequest', (e) => {
+    console.log('HTMX Request:', {
+        url: e.detail.pathInfo.requestPath,
+        verb: e.detail.verb,
+        status: e.detail.xhr.status
+    });
+});
+
+// Log specific Swap events
+['entity.created:todo', 'ui.refreshList', 'ui.showToast'].forEach(eventName => {
+    document.body.addEventListener(eventName, (e) => {
+        console.log(`Event fired: ${eventName}`, e.detail);
+    });
+});
+</script>
+```
+
+### Network Tab Analysis
+
+1. Open browser DevTools → Network
+2. Filter by XHR
+3. Look for responses with `HX-Trigger` header
+
+**Example response headers:**
+```
+HX-Trigger: {"entity.created:todo":null,"ui.refreshList":null,"ui.showToast":{"message":"Todo added!","type":"success"}}
+```
+
+---
+
+## Performance Considerations
+
+### Avoid Event Storms
+
+**Bad (causes infinite loop):**
+```html
+<div hx-get="/Todos/List"
+     hx-trigger="ui.refreshList from:body"
+     hx-swap="innerHTML"
+     hx-on::after-swap="htmx.trigger('body', 'ui.refreshList')">
+    <!-- Fires ui.refreshList after swap, causing infinite loop -->
+</div>
+```
+
+**Good:**
+```html
+<div hx-get="/Todos/List"
+     hx-trigger="ui.refreshList from:body">
+    <!-- Only listens, doesn't fire -->
+</div>
+```
+
+### Debounce Rapid Events
+
+```html
+<!-- Wait 500ms after last event -->
+<div hx-get="/Search/Results"
+     hx-trigger="filter.changed:search from:body delay:500ms">
+</div>
+```
+
+### Limit Chain Depth
+
+**Bad (too many chains):**
+```csharp
+events.Chain(
+    "event1", "event2", "event3", "event4", "event5", "event6");
+```
+
+Keep chains to **2-4 events** for maintainability.
+
+### Use Specific Events Over Generic
+
+**Bad:**
+```csharp
+_eventBus.Fire("ui.refresh"); // Too generic, many listeners fire
+```
+
+**Good:**
+```csharp
+_eventBus.Fire("ui.refreshTodoList"); // Specific, only todo list updates
+```
+
+---
+
+## Testing Event Flows
+
+### Unit Tests (Application Layer)
+
+```csharp
+// test/Unit/TodoServiceTests.cs
+public class TodoServiceTests
+{
+    [Fact]
+    public async Task CreateTodoAsync_Should_Fire_TodoCreated_Event()
+    {
+        // Arrange
+        var mockRepo = new Mock<ITodoRepository>();
+        var mockEventBus = new Mock<IEventBus>();
+        var service = new TodoService(mockRepo.Object, mockEventBus.Object);
+        
+        // Act
+        await service.CreateTodoAsync("Test Todo");
+        
+        // Assert
+        mockEventBus.Verify(e => e.Fire(DomainEvents.TodoCreated), Times.Once);
+    }
+    
+    [Fact]
+    public async Task DeleteTodoAsync_Should_Fire_TodoDeleted_Event()
+    {
+        // Arrange
+        var mockRepo = new Mock<ITodoRepository>();
+        var mockEventBus = new Mock<IEventBus>();
+        var service = new TodoService(mockRepo.Object, mockEventBus.Object);
+        
+        // Act
+        await service.DeleteTodoAsync(1);
+        
+        // Assert
+        mockEventBus.Verify(e => e.Fire(DomainEvents.TodoDeleted), Times.Once);
+    }
+}
+```
+
+### Integration Tests (Web Layer)
+
+```csharp
+// test/Integration/TodoFlowTests.cs
+public class TodoFlowTests : IClassFixture<HtmxTestFixture<Program>>
+{
+    private readonly HtmxTestClient<Program> _client;
+    
+    public TodoFlowTests(HtmxTestFixture<Program> fixture)
+    {
+        _client = fixture.Client;
+    }
+    
+    [Fact]
+    public async Task Creating_Todo_Should_Fire_Correct_Events()
+    {
+        // Arrange
+        var formData = new Dictionary<string, string>
+        {
+            ["title"] = "Test Todo"
+        };
+        
+        // Act
+        var response = await _client.HtmxPostAsync("/Todos/Create", formData);
+        
+        // Assert
+        response.AssertSuccess();
+        response.AssertHasSwapEvent(DomainEvents.TodoCreated);
+        response.AssertHasSwapEvent("ui.refreshList");
+        response.AssertHasSwapEvent("ui.showToast");
+    }
+}
+```
+
+---
+
+## Best Practices
+
+✅ **Do:**
+- Define domain events in Domain layer (pure strings)
+- Fire events from Application layer via `IEventBus`
+- Map domain events to UI events in Web layer (event chains)
+- Use namespaced naming (`entity.created:todo`, not `todoCreated`)
+- Keep event chains simple (2-4 events max)
+- Use specific events over generic ones
+- Document event flows in `SwapEventChains.cs`
+
+❌ **Don't:**
+- Fire events from Domain entities (no infrastructure dependencies)
+- Hard-code event names in views (use domain constants)
+- Create circular event chains
+- Fire too many events from one action
+- Use events for synchronous logic (use method calls)
+- Couple Application layer to Swap framework (use `IEventBus` abstraction)
+
+---
+
+## Advanced Patterns
+
+### Conditional Event Firing
+
+```csharp
+// Application/Services/ProductService.cs
+public async Task CreateProductAsync(string name, decimal price, int stock)
+{
+    var product = new Product { Name = name, Price = price, Stock = stock };
+    
+    await _repository.AddAsync(product);
+    await _repository.SaveChangesAsync();
+    
+    _eventBus.Fire(DomainEvents.ProductCreated);
+    
+    // Conditional event
+    if (stock < 10)
+        _eventBus.Fire(DomainEvents.ProductInventoryLow);
+}
+```
+
+### Event Aggregation
+
+Combine multiple domain events into one UI event:
+
+```csharp
+// Web/Events/SwapEventChains.cs
+events.Chain(DomainEvents.TodoCreated, "ui.dataChanged");
+events.Chain(DomainEvents.TodoUpdated, "ui.dataChanged");
+events.Chain(DomainEvents.TodoDeleted, "ui.dataChanged");
+```
+
+Listeners use single event:
+
+```html
+<div hx-get="/Dashboard/Summary"
+     hx-trigger="ui.dataChanged from:body">
+</div>
+```
+
+### Event Priority
+
+Fire critical events first:
+
+```csharp
+_eventBus.Fire(DomainEvents.OrderCreated); // Primary
+_eventBus.Fire(DomainEvents.InventoryReserved); // Secondary
+```
+
+---
+
+## Migration from Monolith
+
+**Monolith (event names in Web layer):**
+```csharp
+// Web/Events/EventNames.cs
+public static string TodoCreated => "entity.created:todo";
+
+// Web/Controllers/TodosController.cs
+_events.Fire(EventNames.TodoCreated);
+```
+
+**Layered (event names in Domain layer):**
+```csharp
+// Domain/Events/DomainEvents.cs
+public static string TodoCreated => "entity.created:todo";
+
+// Application/Services/TodoService.cs
+_eventBus.Fire(DomainEvents.TodoCreated);
+
+// Web/Events/SwapEventChains.cs
+events.Chain(DomainEvents.TodoCreated, "ui.refreshList", "ui.showToast");
+```
+
+---
+
+**Master the layered event system for scalable, testable, maintainable HTMX apps! 🎯**
