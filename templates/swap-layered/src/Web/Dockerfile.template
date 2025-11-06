@@ -23,7 +23,7 @@ COPY ["Domain/{{ProjectName}}.Domain.csproj", "Domain/"]
 RUN dotnet restore "Web/{{ProjectName}}.Web.csproj"
 
 # Copy the rest of the source code
-COPY . ./
+COPY . .
 
 # Build frontend assets
 WORKDIR /work/Web
