@@ -20,8 +20,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Swap.Modularity" Version="0.3.0" />
-    <PackageReference Include="Swap.Htmx" Version="0.3.0" />
+    <PackageReference Include="Swap.Modularity" Version="0.1.0" />
+    <PackageReference Include="Swap.Htmx" Version="0.3.1" />
   </ItemGroup>
 
   <!-- Build Tailwind CSS via NPM if available -->
