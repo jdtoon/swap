@@ -17,8 +17,6 @@ const FeatureList: FeatureItem[] = [
       <>
         Pick the right starting point: Monolith for rapid DX or Layered for clean boundaries.
         Both are HTMX-native and ship with the Swap Event System and real integration tests.
-        <br/>
-        <a href="/docs/templates/overview">Learn more →</a>
       </>
     ),
   },
