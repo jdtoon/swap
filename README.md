@@ -1,1255 +1,448 @@
-# Swap CLI
+# Swap
 
 [![GitHub License](https://img.shields.io/github/license/jdtoon/swap)](LICENSE)
-[![.NET Version](https://img.shields.io/badge/.NET-9.0-512BD4?logo=dotnet)](https://dotnet.microsoft.com/download)
-[![NuGet](https://img.shields.io/badge/NuGet-v0.3.1-blue?logo=nuget)](https://www.nuget.org/packages/Swap.CLI)
-[![GitHub Stars](https://img.shields.io/github/stars/jdtoon/swap?style=social)](https://github.com/jdtoon/swap/stargazers)
+[![.NET Version](https://img.shields.io/badge/.NET-9.0+-512BD4?logo=dotnet)](https://dotnet.microsoft.com/download)
+[![NuGet Swap.Htmx](https://img.shields.io/nuget/v/Swap.Htmx?label=Swap.Htmx&logo=nuget)](https://www.nuget.org/packages/Swap.Htmx)
+[![NuGet Swap.Modularity](https://img.shields.io/nuget/v/Swap.Modularity?label=Swap.Modularity&logo=nuget)](https://www.nuget.org/packages/Swap.Modularity)
+[![NuGet Swap.Testing](https://img.shields.io/nuget/v/Swap.Testing?label=Swap.Testing&logo=nuget)](https://www.nuget.org/packages/Swap.Testing)
 
-**Generate production-ready ASP.NET Core + HTMX applications with beautiful DaisyUI components.**
+**Build modern, interactive ASP.NET Core apps with HTMX—fast, modular, and testable. No JavaScript frameworks required.**
 
-Swap CLI is a code generator that creates complete, modern web applications using ASP.NET Core MVC, HTMX for interactivity, DaisyUI for UI components, and Entity Framework Core for data access. Generate full CRUD operations with pagination, search, sorting, filtering, and modal-based editing in seconds.
+Swap is a complete toolkit for building production-ready server-rendered web applications. It combines three focused libraries with battle-tested templates to let you build modular monoliths with HTMX in days, not months.
 
-## 🚧 Templates (HTMX-first)
+---
 
-Two first-class architecture templates ship with Swap. Both include HTMX 2.x, DaisyUI, the Swap Event System, Docker, and real integration tests using Swap.Testing.
+## 🎯 The Three Pillars
 
-- Monolith — Single project optimized for developer experience; move fast without ceremony
-- Layered — Multi-project architecture (Web, Application, Domain, Infrastructure) ready to scale
-- Modular Monolith — Coming soon (0.3.2): single deployable with clear module boundaries
+### 1. **Swap.Htmx** — HTMX Ergonomics + Event System
 
-Explore: Templates overview → https://jdtoon.github.io/swap/docs/templates/overview
+Make ASP.NET Core HTMX-native with minimal friction.
 
-Create from the CLI:
+```csharp
+// Automatic full page vs partial detection
+public class ArticlesController : SwapController
+{
+    public async Task<IActionResult> Index()
+    {
+        var articles = await _context.Articles.ToListAsync();
+        return SwapView(articles);  // Full page or partial—handled automatically
+    }
+}
+
+// Server-driven events for interactive UX
+await _events.EmitAsync(SwapEvents.Entity.Created("article"), new { id = 42 });
+Response.HxTrigger("articleRefreshed");
+Response.ShowSuccessToast("Article created!");
+```
+
+**What you get:**
+- **SwapController**: Auto-detects HTMX requests and returns appropriate views
+- **Fluent Header API**: Read/write HTMX headers with clean C# methods
+- **Event Bus**: Emit domain events; resolve them to HTMX UI reactions declaratively
+- **Server Events (RabbitMQ)**: Optional: distribute events across processes for modular deployments
+- **Zero Configuration**: Works out of the box with sensible defaults
+
+### 2. **Swap.Modularity** — Lightweight Module System
+
+Compose modules deterministically with dependency ordering and automatic discovery.
+
+```csharp
+// Define a module
+public sealed class OrdersModule : IModule
+{
+    public string Name => "Orders";
+    public IReadOnlyList<string> DependsOn => new[] { "Products" };
+
+    public void ConfigureServices(IServiceCollection services, IConfiguration config)
+    {
+        services.AddScoped<OrderService>();
+    }
+
+    public void ConfigureEndpoints(IEndpointRouteBuilder endpoints)
+    {
+        endpoints.MapGet("/orders", /* ... */);
+    }
+
+    public void ConfigureEventChains(IEventChainRegistrar registrar)
+    {
+        registrar.Register("order.created", async (OrderCreated e) => {
+            // Handle domain events
+        });
+    }
+}
+
+// Host discovers and wires everything
+var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddSwapModules(builder.Configuration);
+
+var app = builder.Build();
+app.MapSwapModuleEndpoints();
+app.Run();
+```
+
+**What you get:**
+- **IModule Contract**: Name, dependencies, and three hooks (services, endpoints, events)
+- **Automatic Discovery**: Scans loaded assemblies; validates dependencies; topological sort
+- **RCL Support**: Auto-loads UI assemblies and discovers `ISwapUiChainContributor` instances
+- **Clear Errors**: Missing dependencies, cycles, and ordering issues throw informative exceptions
+- **Event Integration**: Seamlessly wires domain events to the HTMX event system
+
+### 3. **Swap.Testing** — Fluent HTMX Testing
+
+Integration testing for server-rendered HTMX apps, with first-class support for partials and event headers.
+
+```csharp
+using Swap.Testing;
+
+public class ArticleTests : IClassFixture<HtmxTestFixture<Program>>
+{
+    private readonly HtmxTestClient<Program> _client;
+
+    public ArticleTests(HtmxTestFixture<Program> fixture) => _client = fixture.Client;
+
+    [Fact]
+    public async Task CreateArticle_WithHtmx_RefreshesListAndShowsToast()
+    {
+        // Act: Submit form as HTMX request
+        var form = await _client.GetAsync("/articles/create");
+        var response = await form.SubmitFormAsync(new { title = "Hello", content = "World" });
+
+        // Assert: Verify partial, DOM, and events
+        response.AssertSuccess();
+        await response.AssertPartialViewAsync();
+        await response.AssertHxTriggerAsync("articleCreated");
+        await response.AssertElementContainsAsync("h2", "Hello");
+    }
+}
+```
+
+**What you get:**
+- **Fluent API**: Chainable assertions for readable, maintainable tests
+- **HTMX-Aware**: Built-in support for HX-Request headers and HTMX attributes
+- **Partial View Testing**: Assert full vs partial responses
+- **Event Assertions**: Verify HX-Trigger headers and event payloads
+- **Form Submission**: Follow HX-Redirect, submit forms with attributes, test validation errors
+- **Snapshot Testing**: Built-in scrubbers for GUIDs, timestamps, and anti-forgery tokens
+
+---
+
+## 🚀 Production-Ready Templates
+
+Every template is a complete, runnable application with HTMX, Tailwind/DaisyUI, EF Core, Docker, and integration tests included.
+
+### Monolith (swap-monolith)
+Single deployable for rapid development. Perfect for MVPs and smaller projects.
 
 ```bash
-# Monolith (default)
-swap new MyApp
-
-# Explicit monolith
 swap new MyApp --template swap-monolith
+```
 
-# Layered architecture
+**Includes:**
+- ASP.NET Core MVC with Swap.Htmx event system wired
+- HTMX 2.x + DaisyUI components + Tailwind CSS
+- EF Core migrations (pick your database: SQLite, SQL Server, PostgreSQL)
+- Docker Compose (Postgres, RabbitMQ optional)
+- Integration tests with Swap.Testing
+- Example CRUD controllers and forms
+
+### Layered (swap-layered)
+Multi-project architecture (Web, Application, Domain, Infrastructure) for scaling and team organization.
+
+```bash
 swap new MyApp --template swap-layered
 ```
 
-Both templates automatically run setup (npm install, libman restore, Tailwind build) and auto-apply EF Core migrations on startup in Development.
+**Includes:**
+- Clean layering: Presentation → Application → Domain → Infrastructure
+- Swap.Htmx event system with domain layer integration
+- Provider-specific EF Core setup per project
+- Session support and development endpoints
+- Pre-built CRUD examples (Todos, Stats, Dynamic forms)
+- Full integration test suite
 
-## 🔔 Event System (built-in)
+### Modular Monolith (swap-modular-monolith) ⭐ **Recommended**
+Single deployable with module boundaries and per-module ownership. The sweet spot between monolith and microservices.
 
-The Swap Event System makes your UI and server flows declarative and testable. It wires HTMX UI events (like `ui.afterOnLoad`) to server-side chains you control.
+```bash
+swap new MyApp --template swap-modular-monolith
+```
 
-- Declarative server chains you can visualize and validate
-- HTMX-native UX: partials, toasts, and navigation out of the box
-- Dev dashboard in Development:
-  - `/_swap/dev/events` (HTML dashboard with Mermaid graph)
-  - `/_swap/dev/events.json` (chains JSON)
-  - `/_swap/dev/events.meta.json` (resolution mode/depth)
-  - `/_swap/dev/explain.json?event=...` (resolution preview)
-- CLI tooling:
+**Includes:**
+- Host app + modules as independent NuGet packages
+- **Per-module structure**: Contracts, Module (services/endpoints), Web RCL (UI)
+- **Provider-specific migrations**: Each module owns its database layer (SqlServer/Postgres)
+- Swap.Modularity for deterministic composition
+- Docker Compose: Postgres, RabbitMQ for distributed event chains
+- Example chains, migrations, and module authoring guides
+- Production-ready patterns extracted from real apps
 
+---
+
+## 🔔 Event System: Server-Driven Interactivity
+
+The Swap Event System is the secret sauce—it makes UX declarative and testable.
+
+**How it works:**
+1. Controllers emit domain events during request processing
+2. Configured chains map domain events → UI events
+3. Events resolve based on subscription filters and chain modes
+4. All active events are merged into the `HX-Trigger` response header
+5. Client handles `HX-Trigger` events (refresh, toast, redirect, etc.)
+
+**Example: Product Created**
+
+```csharp
+// Define chains once during startup
+builder.Services.AddSwapHtmx(events =>
+{
+    // When a product is created, also trigger these UI events
+    events.Chain(
+        SwapEvents.Entity.Created("product"),
+        SwapEvents.UI.RefreshList,
+        SwapEvents.UI.ShowToast
+    );
+});
+
+// In your controller, just emit the domain event
+public class ProductsController : SwapController
+{
+    public async Task<IActionResult> Create(CreateProductDto dto)
+    {
+        var product = await _service.CreateAsync(dto);
+        await _events.EmitAsync(SwapEvents.Entity.Created("product"), product);
+        return SwapView(product);
+    }
+}
+
+// Client receives HX-Trigger with all resolved events
+// Your HTMX markup handles them: hx-trigger="productRefreshed from:body"
+```
+
+**Chain Resolution Modes:**
+- `OneHop` (default): Only immediate chained events
+- `Bidirectional`: Event → dependency → event (reverse one-hop)
+- `Transitive`: BFS across the graph up to a configurable depth
+
+**Development Dashboard** (in Development environment):
+- `/_swap/dev/events` — Visual dashboard with Mermaid graph
+- `/_swap/dev/events.json` — Export chains as JSON
+- `/_swap/dev/explain.json?event=...` — Preview event resolution
+
+**CLI Tools:**
 ```bash
 swap events list -p .
 swap events validate -p .
 swap events graph -p . --format mermaid
 ```
 
-Learn more: Event System → https://jdtoon.github.io/swap/docs/features/event-system
+---
 
-### Backend typed events + analyzer
-
-- Prefer typed EventKey in backend: `events.Chain(SwapEvents.Entity.CreatedKey("product"), SwapEvents.UI.RefreshListKey)` and `await _events.EmitAsync(SwapEvents.UI.RefreshListKey, payload)`.
-- A Roslyn analyzer (SWAPHTMX001) flags raw string literals passed to `Chain`/`Emit` to help avoid magic strings. Constants and typed keys are allowed.
-- HTML stays plain HTMX. You don’t need any tag helpers or custom attributes.
-
-## 🌟 Why Swap?
-
-- **⚡ Production-Ready Code** - Generate complete CRUD with modals, pagination, sorting, filtering, and search
-- **🔗 Relationship Generation** - One-to-many, many-to-many, one-to-one with automatic UI (dropdowns, checkboxes)
-- **🎯 HTMX Simplicity** - Modern, interactive web apps without JavaScript frameworks
-- **🔔 Event-Driven UI** - Built-in Event System wires HTMX `ui.*` events to server-side chains for easy UI orchestration, visualization, and testing
-- **🎨 DaisyUI + Tailwind** - Beautiful, accessible components out of the box
-- **🗄️ Entity Framework Core** - Full database integration with migrations support
-- **🐳 Docker Ready** - Every project includes Dockerfile and docker-compose.yml with multi-stage builds
-- **💻 Developer Experience** - CLI-driven workflow, no manual boilerplate
-- **📦 Proven Patterns** - Every pattern extracted from real production applications
-
-## 🚀 Quick Start
+## ⚡ Quick Start
 
 ### Prerequisites
 
-Before installing Swap CLI, ensure you have:
-
-- **.NET 9.0 SDK** or later - [Download](https://dotnet.microsoft.com/download)
-- **Node.js (LTS)** - Includes npm for Tailwind CSS compilation
-  - Windows: `winget install OpenJS.NodeJS.LTS` or download from [nodejs.org](https://nodejs.org/)
-  - macOS: `brew install node`
-  - Linux: Use your package manager
-- **libman CLI** - Manages client libraries (HTMX, DaisyUI)
+- **.NET 9.0 SDK** or later — [Download](https://dotnet.microsoft.com/download)
+- **Node.js (LTS)** — For Tailwind CSS compilation
+- **libman CLI** — For client libraries
   ```bash
   dotnet tool install -g Microsoft.Web.LibraryManager.Cli
   ```
 
-Verify installations:
-```bash
-dotnet --version   # Should be 9.0 or higher
-npm --version      # Any recent version
-libman --version   # Any version
-```
-
 ### Installation
 
-```bash
-# Install the Swap CLI tool
-dotnet tool install --global Swap.CLI
+Install Swap CLI globally:
 
-# Verify installation
+```bash
+dotnet tool install -g Swap.CLI
+```
+
+Verify:
+```bash
 swap --version
 ```
 
-### Create Your First Project
+### Create Your First App
 
+#### 1. Monolith (Get Started Fast)
 ```bash
-# Create a new ASP.NET Core + HTMX application
 swap new MyApp
 cd MyApp
+dotnet watch
+```
 
-# Run the app (migrations auto-apply on startup in Development)
+Automatically runs npm install, builds CSS, applies migrations, and starts on `https://localhost:5001`.
+
+#### 2. Modular Monolith (Production Pattern)
+```bash
+swap new MyApp --template swap-modular-monolith
+cd MyApp
+docker-compose up -d  # Optional: Postgres + RabbitMQ
 dotnet run
 ```
 
-Visit `http://localhost:5000` - Your HTMX-powered application is running! 🎉
+Open `https://localhost:5001` → Explore examples, review module structure, extend with your own.
 
-**Notes:**
-- The CLI automatically runs `npm install`, `libman restore`, and `npm run build:css` during project creation.
-- Templates auto-apply EF Core migrations on startup in Development. In CI/production, you decide when to apply migrations.
-
-### Generate Your First CRUD
-
+#### 3. Add a New Module (Modular Monolith)
 ```bash
-# Generate a complete CRUD controller with all features
-swap generate controller Product --fields "Name:string Price:decimal InStock:bool:f"
+cd src/Modules
+dotnet new classlib -n MyModule.Contracts
+dotnet new classlib -n MyModule
+dotnet new razorclasslib -n MyModule.Web
 
-# Short alias with automatic navigation link
-swap g c Product --fields "Name:string Price:decimal InStock:bool:f" --add-nav
+# Wire it in the host's Program.cs
+builder.Services.AddSwapModules(builder.Configuration);
 ```
-
-Visit `http://localhost:5000/Product` - Full CRUD with pagination, search, sorting, and filtering! 🚀
-
-**No manual file creation. No boilerplate. Just CLI commands and business logic.**
-
-### Add Relationships
-
-```bash
-# Create related entities
-swap g m Category --fields "Name:string"
-swap g m Product --fields "Name:string Price:decimal CategoryId:int"
-
-# Add one-to-many relationship
-swap g rel --source Product --target Category --type many-to-one
-
-# Regenerate controller to get dropdown UI
-swap g c Product --force
-
-# Apply migrations
-dotnet ef database update
-```
-
-Visit `http://localhost:5000/Product` - Now with a Category dropdown instead of number input! 🎯
-
-**Automatic Features:**
-- ✅ Dropdown `<select>` for foreign keys
-- ✅ Checkbox lists for many-to-many relationships
-- ✅ Smart display field detection (Name, Title, Email, etc.)
-- ✅ ViewBag population
-- ✅ Eager loading with `.Include()`
-
-### Building a Blog (Complete Example)
-
-```bash
-# Create new project
-swap new Blog
-cd Blog
-
-# Create entities
-swap g m Author --fields "Name:string Email:string Bio:string?"
-swap g m Category --fields "Name:string Description:string?"
-swap g m Tag --fields "Name:string Color:string"
-swap g m Post --fields "Title:string Content:string PublishedAt:DateTime? AuthorId:int CategoryId:int"
-swap g m Comment --fields "Content:string AuthorName:string PostId:int CreatedAt:DateTime"
-
-# Create relationships
-swap g rel -s Post -t Author --type many-to-one      # Post → Author
-swap g rel -s Post -t Category --type many-to-one    # Post → Category  
-swap g rel -s Post -t Tag --type many-to-many        # Post ↔ Tags
-swap g rel -s Comment -t Post --type many-to-one     # Comment → Post
-
-# Generate controllers (with automatic relationship UI)
-swap g c Author
-swap g c Category
-swap g c Tag
-swap g c Post --force    # Regenerate to get dropdowns/checkboxes
-swap g c Comment --force
-
-# Apply migrations
-dotnet ef database update
-
-# Run the blog
-dotnet run
-```
-
-**What You Get:**
-- ✅ Author management with posts list
-- ✅ Category dropdown in post creation
-- ✅ Tag checkbox list for multiple selections
-- ✅ Comment forms tied to posts
-- ✅ All CRUD operations with modals
-- ✅ Search, pagination, sorting, filtering
-- ✅ Responsive UI with DaisyUI
-
-**Total time: ~2 minutes** ⚡
-
-> **Note:** Swap automatically creates migrations after generating models or controllers. The CLI builds your project first to verify there are no compilation errors before creating the migration. If the build fails, you'll see the error output and the migration won't be created. This prevents confusing EF Core errors and helps catch issues early.
-
-## 🔒 Build-Before-Migration Safety
-
-Swap CLI uses a **build-first approach** for all migration operations to ensure code quality and prevent cryptic Entity Framework errors.
-
-### How It Works
-
-When you generate:
-- A new project (`swap new`)
-- A controller (`swap g controller`)
-- A pattern (`swap g pattern`)
-- Auth scaffolding (`swap g auth`)
-
-The CLI will:
-1. Generate your model and controller code
-2. **Build the project** (`dotnet build`)
-3. If build succeeds → Create migration (e.g., `AddProduct`, `AddIdentity`)
-4. If build fails → Show compiler errors, stop (no migration created)
-
-### Why This Matters
-
-Without building first, EF Core migrations can fail with cryptic errors like:
-- "The entity type X cannot be mapped to a table because it is derived from Y"
-- "No suitable constructor found for entity type X"
-- "Unable to determine the relationship represented by navigation X"
-
-These errors often mask simple compiler issues like:
-- Nullable reference warnings (`DateTime?` without null-conditional operators)
-- Missing using statements
-- Typos in property names
-
-By building first, you see clear C# compiler messages instead of confusing EF Core errors.
-
-### Migration Workflow
-
-Swap **never** applies migrations automatically (`dotnet ef database update`). You always control when schema changes hit your database:
-
-```bash
-# After generating a controller, Swap creates the migration
-swap g c Product --fields "Name:string Price:decimal"
-# Output: ✓ Migration created: AddProduct
-
-# Review the migration file
-cat Migrations/20250129_AddProduct.cs
-
-# Apply when ready
-dotnet ef database update
-```
-
-This gives you the opportunity to:
-- Review migration code before applying
-- Modify migrations if needed (add indexes, seed data, etc.)
-- Run migrations in your CI/CD pipeline
-- Maintain strict control over schema changes
-
-## 🐳 Docker Support
-
-Every generated project is Docker-ready with production-optimized configurations.
-
-### Quick Start with Docker
-
-```bash
-# Create a new project
-swap new MyApp --database postgres
-
-# Build and run with Docker Compose
-cd MyApp
-docker-compose up --build
-
-# Visit http://localhost:5000
-```
-
-### What's Included
-
-Each project generates:
-
-**Dockerfile:**
-- Multi-stage build (Build stage: .NET SDK 9.0 + Node.js 20.x, Runtime stage: ASP.NET 9.0)
-- Automatic `libman restore` for HTMX/DaisyUI libraries
-- Tailwind CSS compilation with `npm run build:css`
-- Optimized layer caching for faster rebuilds
-- HTTP-only configuration for Development environment
-- Production-ready runtime image
-
-**docker-compose.yml:**
-- App service with environment-specific configuration
-- Database service (SQL Server, PostgreSQL, or SQLite with volumes)
-- Health checks ensuring database readiness before app starts
-- Persistent volumes for data and data protection keys
-- Network isolation for security
-- Port mappings (app: 5000, database: default port)
-
-**Features:**
-- ✅ Auto-apply migrations on container startup
-- ✅ Database health checks (SQL Server: 30s, PostgreSQL: 10s)
-- ✅ Data protection keys persist across container restarts
-- ✅ SQLite with persistent volume mount
-- ✅ Environment variable configuration
-- ✅ Production-ready Dockerfile optimizations
-
-### Database-Specific Configurations
-
-**SQL Server:**
-```bash
-swap new MyApp --database sqlserver
-cd MyApp
-docker-compose up --build
-# App: http://localhost:5000
-# SQL Server: localhost:1433
-```
-
-**PostgreSQL:**
-```bash
-swap new MyApp --database postgres
-cd MyApp
-docker-compose up --build
-# App: http://localhost:5000
-# PostgreSQL: localhost:5432
-```
-
-**SQLite:**
-```bash
-swap new MyApp --database sqlite
-cd MyApp
-docker-compose up --build
-# App: http://localhost:5000
-# Database: Persistent volume at /app/data
-```
-
-All database credentials are pre-configured in docker-compose.yml (change for production!).
-
-## 🎯 What You Get
-
-### Complete Feature Set
-
-Every generated controller includes:
-
-- ✅ **CRUD Operations** - Create, Read, Update, Delete via HTMX modals
-- ✅ **Pagination** - Configurable page sizes (10, 25, 50, 100)
-- ✅ **Real-Time Search** - 500ms debounced search across fields
-- ✅ **Column Sorting** - Ascending/descending toggle per field
-- ✅ **Boolean Filtering** - Dropdown filters (All/Yes/No) for bool fields
-- ✅ **Bulk Operations** - Select multiple items and bulk delete
-- ✅ **Toast Notifications** - Success/error messages with DaisyUI alerts
-- ✅ **Modal Editing** - No page reloads, smooth UX
-- ✅ **Validation** - Client and server-side with clear error messages
-- ✅ **Responsive Design** - Works perfectly on mobile and desktop
-
-### Generated Stack
-
-- **Backend:** ASP.NET Core 9.0 MVC
-- **Frontend:** HTMX + DaisyUI + Tailwind CSS
-- **Database:** Entity Framework Core (SQLite, SQL Server, PostgreSQL)
-- **UI Library:** DaisyUI 4.x components
-- **Styling:** Tailwind CSS 3.x utilities
-- **Containerization:** Docker with multi-stage builds and health checks
-
-## 📋 CLI Commands
-
-### `swap new <name>`
-
-Create a new ASP.NET Core + HTMX application with DaisyUI components.
-
-```bash
-# Create with SQLite (default)
-swap new MyApp
-
-# Create with SQL Server
-swap new MyApp --database sqlserver
-
-# Create with PostgreSQL
-swap new MyApp --database postgres
-
-# Specify output directory
-swap new MyApp --output path/to/directory
-
-# Use local NuGet packages (framework development only)
-swap new MyApp --local-nuget
-```
-
-**Options:**
-- `--database` or `-d` - Database provider: `sqlite` (default), `sqlserver`, `postgres`
-- `--template` - Project template: `swap-monolith` (recommended), `monolith`
-- `--output` or `-o` - Output directory (default: `./{name}`)
-- `--skip-setup` - Skip prerequisites check, npm/libman steps, and initial migration (useful for CI/tests)
-- `--local-nuget` - Use local NuGet feed for Swap packages (for framework development only)
-
-**Generates:**
-- Complete ASP.NET Core MVC project structure
-- Entity Framework Core with your chosen database
-- DaisyUI + Tailwind CSS configuration
-- Sample TodoItem model and CRUD
-- Database migrations with auto-apply on startup
-- **HTMX-First Layout** - `hx-boost="true"` on body, `id="main-content"` on main element
-- **DaisyUI Navbar** - Aligned with `navbar-start`/`navbar-end` components
-- **Dockerfile** with multi-stage build (Node.js + .NET SDK → ASP.NET runtime)
-- **docker-compose.yml** with database service and health checks
-- **.dockerignore** optimized for ASP.NET Core
-- Ready to run with `dotnet run` or `docker-compose up`
-
-To start with the Event System fully wired, use the DX-forward template:
-
-```bash
-# Recommended: event system + demos + dev dashboard
-swap new MyApp --template swap-monolith
-
-# Classic monolith
-swap new MyApp --template monolith
-```
-
-If you choose `--template swap-monolith` you also get:
-- Event system wired in Program.cs via `AddSwapHtmx(...)` + `UseSwapHtmx()`
-- Central event chains file at `Events/SwapEventChains.cs`
-- Dev dashboard endpoints (Development only):
-  - `/_swap/dev/events` (HTML dashboard with Mermaid graph)
-  - `/_swap/dev/events.json` (chains JSON)
-  - `/_swap/dev/events.meta.json` (resolution mode/depth)
-  - `/_swap/dev/explain.json?event=...` (server-side resolution preview)
-
-**HTMX Navigation:**
-
-All new projects are configured for HTMX-first navigation:
-- `hx-boost="true"` on the `<body>` element enables automatic AJAX navigation
-- Navigation links use `hx-target="#main-content"` to swap only the content area
-- `hx-push-url="true"` maintains browser history and back/forward navigation
-- Partials are returned for HTMX requests (via `HX-Request` header detection)
-- Controllers check `Request.Headers.ContainsKey("HX-Request")` to return partial vs full views
-
-> **Note:** For advanced HTMX debugging, consider adding the [Swap.Htmx](https://www.nuget.org/packages/Swap.Htmx) package which includes `SwapHtmxShellMiddleware` to enforce partial-only responses in development. The `swap-monolith` template already includes Swap.Htmx and the event system wiring out-of-the-box.
-
-**Docker Features:**
-- Multi-stage build optimized for production
-- libman restore for HTMX/DaisyUI dependencies
-- Automatic migration on container startup
-- Health checks for database readiness
-- Persistent volumes for data storage
-- Data protection keys configured for containers
-
-### `swap generate controller <name> --fields <fields>`
-### Event System Tooling
-
-Inspect, validate, and visualize your event chains from source or a running app.
-
-```bash
-# List events and chains from source
-swap events list -p .
-
-# Read chains from a running dev app
-swap events from-server --url http://localhost:5000
-
-# Validate names and detect cycles (non-zero exit on failures)
-swap events validate -p .
-
-# Output a graph (Mermaid or DOT)
-swap events graph -p . --format mermaid
-swap events graph -p . --format dot --output chains.dot
-```
-
-Dev dashboard (Development only):
-- `/_swap/dev/events` – HTML dashboard with chains table and Mermaid graph
-- `/_swap/dev/events.json` – chains JSON
-- `/_swap/dev/events.meta.json` – current resolution mode/depth
-- `/_swap/dev/explain.json?event=...` – server-side resolution preview under the current mode
-
-
-Generate a complete CRUD controller with all features.
-
-```bash
-# Generate Product controller with fields
-swap g c Product --fields "Name:string Price:decimal InStock:bool:f"
-
-# With nullable fields (use ? suffix for DateTime, decimal, etc.)
-swap g c Customer --fields "Name:string Email:string Notes:string?"
-swap g c Article --fields "Title:string Content:string PublishedAt:DateTime?"
-
-# Add navigation link automatically (includes HTMX attributes)
-swap g c Product --fields "Name:string Price:decimal" --add-nav
-
-# Control sorting and filtering per field (space or comma separated)
-swap g c Order --fields "OrderNumber:string:ns Total:decimal Date:DateTime Status:bool:f"
-swap g c Order --fields OrderNumber:string:ns,Total:decimal,Date:DateTime,Status:bool:f
-
-# Preview without writing files (dry-run)
-swap g c Product --fields "Name:string Price:decimal" --dry-run
-
-# Overwrite existing files without prompting
-swap g c Product --fields "Name:string Price:decimal" --force
-
-# Generate in a different project directory
-swap g c Product --fields "Name:string" --project path/to/project
-```
-
-**Options:**
-- `--fields` or `-f` - Field definitions (space or comma separated)
-- `--add-nav` - Automatically inject navigation link into `_Layout.cshtml` with HTMX attributes
-- `--dry-run` - Preview what would be generated without writing files
-- `--force` - Overwrite existing files without prompting
-- `--project` or `-p` - Path to project directory (default: current directory)
-
-**Field Flags:**
-- `:sortable` or `:s` - Enable sorting (default for all fields)
-- `:nosort` or `:ns` - Disable sorting
-- `:filterable` or `:f` - Enable filtering (bool fields only)
-
-**Generates:**
-- Controller with full CRUD operations
-- Model class with validation
-- View model for list operations
-- Views (Index, _List, _CreateModal, _EditModal, _DetailsModal)
-- Automatic DbContext updates
-- Database migration (`Add<Entity>` - auto-created after build verification)
-- Navigation link (when using `--add-nav`)
-
-### `swap generate model <name> --fields <fields>`
-
-Generate just a model class (no controller or views).
-
-```bash
-swap g m Category --fields "Name:string Description:string?"
-swap g m Category --fields Name:string,Description:string?
-
-# Preview the generated model
-swap g m Product --fields "Name:string Price:decimal" --dry-run
-
-# Overwrite without prompting
-swap g m Category --fields "Name:string" --force
-
-# Generate in a different project
-swap g m Category --fields "Name:string" --project path/to/project
-```
-
-**Options:**
-- `--fields` or `-f` - Field definitions (space or comma separated)
-- `--dry-run` - Preview what would be generated without writing files
-- `--force` - Overwrite existing files without prompting
-- `--project` or `-p` - Path to project directory (default: current directory)
-
-### `swap generate resource <name> --fields <fields>`
-
-Generate model + controller together (alias for backward compatibility).
-
-### `swap generate relationship <options>`
-
-**New in v0.2.0** - Generate relationships between entities with automatic UI generation.
-
-```bash
-# One-to-Many: Order → Customer (order belongs to one customer)
-swap g rel --source Order --target Customer --type many-to-one
-
-# Many-to-Many: Post ↔ Tags (posts have many tags, tags have many posts)
-swap g rel --source Post --target Tag --type many-to-many
-
-# One-to-One: User → Profile (each user has one profile)
-swap g rel --source Profile --target User --type one-to-one
-
-# Customize foreign key name
-swap g rel -s Order -t Customer --type many-to-one --fk CustomerId
-
-# Custom display field for dropdowns
-swap g rel -s Order -t Customer --type many-to-one --display Email
-
-# Required relationship (NOT NULL FK)
-swap g rel -s Order -t Customer --type many-to-one --required
-
-# Cascade delete
-swap g rel -s OrderItem -t Order --type many-to-one --on-delete cascade
-
-# Custom junction table for many-to-many
-swap g rel -s Student -t Course --type many-to-many --junction Enrollment
-```
-
-**Aliases:**
-- `swap g rel` - Short form
-- `swap generate relationship` - Long form
-
-**Required Options:**
-- `--source` or `-s` - Source entity name
-- `--target` or `-t` - Target entity name  
-- `--type` - Relationship type: `one-to-many`, `many-to-one`, `many-to-many`, `one-to-one`
-
-**Optional Flags:**
-- `--fk` - Custom foreign key property name (default: `{Target}Id`)
-- `--nav` - Custom navigation property name
-- `--inverse` - Custom inverse navigation property name
-- `--display` - Field to display in UI dropdowns/checkboxes (default: auto-detected)
-- `--required` - Make foreign key required (NOT NULL)
-- `--on-delete` - Delete behavior: `restrict` (default), `cascade`, `set-null`
-- `--junction` - Custom junction table name for many-to-many (default: alphabetical)
-- `--dry-run` - Preview without writing files
-- `--force` - Overwrite existing files
-- `--project` or `-p` - Path to project directory
-
-**What It Does:**
-- **One-to-Many/Many-to-One:**
-  - Adds foreign key property to source entity
-  - Adds navigation properties (both sides)
-  - Configures EF Core Fluent API
-  - Creates migration with FK constraint
-  - **Auto-generates dropdown UI** in forms
-  - Displays related entity name in list views
-  
-- **Many-to-Many:**
-  - Creates junction table entity with composite key
-  - Adds collection navigation properties (both sides)
-  - Configures EF Core with `UsingEntity<T>()`
-  - Creates migration with junction table
-  - **Auto-generates checkbox list UI** for selection
-  - Handles POST data with `Selected{Entity}Ids`
-  
-- **One-to-One:**
-  - Adds foreign key with unique constraint
-  - Adds single navigation properties (both sides)
-  - Configures principal/dependent entities
-  - Creates migration
-  - **Auto-generates dropdown UI** for FK selection
-
-**After Creating Relationship:**
-```bash
-# Regenerate controller to get UI (dropdowns/checkboxes)
-swap g c Order --force
-
-# Apply migration
-dotnet ef database update
-```
-
-**UI Features (Automatic):**
-- ✅ Dropdown `<select>` for many-to-one FKs (not number inputs)
-- ✅ Checkbox lists for many-to-many selections (scrollable, with display field)
-- ✅ Auto-detect display field (Name > Title > Description > Email > Code > Label > string > Id)
-- ✅ ViewBag population (`ViewBag.{Entity}List`)
-- ✅ Eager loading with `.Include()` for performance
-- ✅ Self-referential support (e.g., Category.ParentCategory)
-- ✅ POST handling for `Selected{Entity}Ids` arrays (many-to-many)
-
-**See Also:**
-- [Relationship Generation Guide](https://github.com/jdtoon/swap/blob/main/wiki/docs/cli/generate-relationship.md)
-- [Relationship Patterns](https://github.com/jdtoon/swap/blob/main/wiki/docs/features/relationships.md)
-
-### `swap generate auth`
-
-Generate ASP.NET Core Identity authentication scaffolding with login, registration, and user management.
-
-```bash
-# Generate complete auth system
-swap g auth
-```
-
-**Generates:**
-- `Models/AppUser.cs` - Extended IdentityUser with DisplayName, CreatedAt, LastLoginAt
-- `Controllers/AuthController.cs` - Login, Register, Logout actions with HTMX support
-- `Views/Auth/` - Login.cshtml, Register.cshtml with DaisyUI forms
-- `Views/Shared/_LoginPartial.cshtml` - Navigation bar auth state
-- Identity configuration in `Program.cs`
-- Database migration (`AddIdentity` - auto-created after build verification)
-
-**Features:**
-- Cookie-based authentication
-- DisplayName field for personalized UX
-- LastLoginAt tracking
-- HTMX-compatible forms (partial responses for validation errors)
-- DaisyUI styled forms with proper validation messages
-- Auto-wired into `_Layout.cshtml` navigation
-
-> **Note:** After generating auth, apply the migration: `dotnet ef database update`
-
-### `swap generate pattern <pattern> <entity>`
-
-Apply battle-tested entity patterns to your models. Patterns can be embedded (default) or use the Swap.Patterns NuGet package.
-
-```bash
-# Apply sluggable pattern (embedded code)
-swap g pattern sluggable BlogPost
-
-# Apply auditable pattern using Swap.Patterns package
-swap g pattern auditable Article --use-package
-
-# Available patterns
-swap g pattern softdelete <entity>      # Soft delete with IsDeleted flag
-swap g pattern auditable <entity>       # Audit trail (CreatedAt, CreatedBy, etc.)
-swap g pattern sluggable <entity>       # URL-friendly slugs
-swap g pattern timestampable <entity>   # CreatedAt, UpdatedAt timestamps
-swap g pattern publishable <entity>     # Publishing workflow (draft/published)
-swap g pattern orderable <entity>       # Display order sorting
-swap g pattern versionable <entity>     # Version tracking
-swap g pattern visibility <entity>      # Public/private visibility
-```
-
-**Options:**
-- `--use-package` - Use `Swap.Patterns` NuGet package (interface-based) instead of embedding code
-- `--force` - Overwrite existing files without prompting
-- `--project` or `-p` - Path to project directory
-
-**Generates:**
-- Pattern properties added to entity model
-- DbContext configuration (indexes, filters, etc.)
-- Database migration (e.g., `AddArticleSlug` - auto-created after build verification)
-- Controller updates (for slug generation, soft delete queries, etc.)
-
-**Embedded vs Package Mode:**
-
-- **Embedded (default):** Copies pattern code directly into your model (no external dependency)
-- **Package mode (`--use-package`):** Implements interfaces from `Swap.Patterns` NuGet package (v0.1.0)
-
-For full pattern documentation, see [`tools/Swap.CLI/README.md`](tools/Swap.CLI/README.md#-swappatterns-common-entity-patterns).
-
-### `swap generate test <controller>`
-
-Generate an integration test class scaffold for a controller using Swap.Testing.
-
-```bash
-# Generate tests for TodoItemController
-swap g test TodoItem
-
-# Overwrite without prompt
-swap g test TodoItem --force
-
-# Generate into a specific project/output folder
-swap g test TodoItem --project testApps/SeedersDemo --output Tests
-```
-
-**Options:**
-- `--force, -f` Overwrite existing file
-- `--project, -p` Path to project (default: current dir)
-- `--output, -o` Output folder (default: `Tests/`)
-
-Generates: `<Output>/<ControllerName>Tests.cs` with HTMX partial tests and a snapshot example.
-
-### `swap generate factory <entity>`
-
-Generate a Bogus-powered test data factory for an entity model.
-
-```bash
-# Generate a factory from Models/TodoItem.cs
-swap g factory TodoItem
-
-# Force overwrite
-swap g factory TodoItem --force
-```
-
-Generates: `Tests/Factories/<Entity>Factory.cs` with intelligent defaults inferred from property names and types.
-
-> Note: If Bogus/Swap.Testing packages are missing, the CLI will print the commands to add them.
-
-### `swap generate htmx-shell`
-
-Add HTMX shell middleware to your project for enforcing partial-only responses during development.
-
-```bash
-# Add middleware only
-swap g htmx-shell
-
-# Add middleware and enable global hx-boost
-swap g htmx-shell --add-boost
-
-# Generate in specific project
-swap g htmx-shell --project path/to/project
-```
-
-**Options:**
-- `--add-boost` - Inject `hx-boost="true"` into `_Layout.cshtml` `<body>` tag
-- `--project` or `-p` - Path to project directory (default: current directory)
-
-**Generates:**
-- `SwapHtmxShellMiddleware.cs` - Middleware that enforces partial views for HTMX requests
-- Wires middleware in `Program.cs`
-- Optionally enables global HTMX boost
-
-**Note:** This middleware is useful for development to catch cases where full pages are returned when partials are expected. The middleware is available in the `Swap.Htmx` NuGet package but can be generated directly into your project with this command.
-
-## 🧪 Swap.Testing (HTMX Testing Framework)
-
-Swap.Testing is a fluent testing library for asserting HTMX partials and headers.
-
-**NuGet Package:** `Swap.Testing` (v0.1.0)
-
-```bash
-dotnet add package Swap.Testing
-```
-
-Highlights:
-- HTMX-aware client: `HtmxTestClient` with `HtmxGetAsync/PostAsync/PutAsync/DeleteAsync`
-- Fluent assertions: status, elements, attributes, HTMX headers, CSS classes, partial view detection
-- Snapshot testing via `AssertMatchesSnapshotAsync` and `UPDATE_SNAPSHOTS=true`
-
-See `framework/Swap.Testing/README.md` for full API and examples.
-
-## 🎨 Swap.Htmx (HTMX Framework)
-
-Swap.Htmx provides base controllers and extensions for building HTMX applications.
-
-**NuGet Package:** `Swap.Htmx` (v0.1.0)
-
-```bash
-dotnet add package Swap.Htmx
-```
-
-Features:
-- `SwapController` base class with HTMX-aware routing
-- `SwapView()` helper for automatic partial/full view selection
-- Extension methods for common HTMX patterns
-- Middleware for enforcing partial responses
-
-See `framework/Swap.Htmx/README.md` for full API and usage.
-
-## 📦 Swap.Patterns (Entity Patterns Library)
-
-Swap.Patterns provides battle-tested interfaces and implementations for common entity patterns with **automatic wiring** and configuration tracking.
-
-**NuGet Package:** `Swap.Patterns` (v0.1.0)
-
-```bash
-dotnet add package Swap.Patterns
-```
-
-**Available Patterns:**
-- `ISoftDeletable` - Soft delete with `IsDeleted` flag and `DeletedAt` timestamp
-  - **Auto-wires:** Global query filter in DbContext
-- `IAuditable` - Full audit trail (`CreatedAt`, `CreatedBy`, `UpdatedAt`, `UpdatedBy`)
-  - **Auto-wires:** IHttpContextAccessor + audit interceptor in DbContext
-- `ITimestampable` - Created and updated timestamps
-  - **Auto-wires:** Timestamp interceptor in DbContext
-- `ISluggable` - SEO-friendly slugs with collision handling
-  - **Auto-wires:** Unique index on Slug column
-- `IPublishable` - Publishing workflow (`PublishedAt`, `IsPublished`)
-- `IOrderable` - Display order with `DisplayOrder` property
-- `IVersionable` - Version tracking with `Version` property
-- `IVisibility` - Public/private visibility with `IsPublic` flag
-
-**Automatic Wiring:**
-
-When you apply a pattern, Swap CLI automatically:
-1. Adds pattern interface and properties to your model
-2. Wires up required infrastructure (filters, interceptors, services)
-3. Tracks configuration in `swap-config.json`
-4. Creates database migration
-
-```bash
-# Apply soft delete - automatically adds global query filter
-swap g pattern softdelete Post
-
-# Apply auditable - automatically wires IHttpContextAccessor and interceptor
-swap g pattern auditable Product
-```
-
-**Pattern Removal:**
-
-Remove patterns safely with automatic cleanup:
-
-```bash
-# Remove a pattern from an entity
-swap g pattern remove Post softdelete
-
-# Smart cleanup: only removes shared wiring when safe
-# - Checks swap-config.json to see if other entities use the pattern
-# - Removes global filters/interceptors only when no entities need them
-# - Database columns are preserved by default (manual migration for drop)
-```
-
-**Configuration Tracking:**
-
-Swap maintains a `swap-config.json` file in your project root that tracks:
-- Which patterns are applied to which entities
-- Shared wiring state (filters, interceptors, services)
-- Pattern configuration history
-
-This enables safe removal and prevents duplicate wiring.
-
-**Usage:**
-
-Use `swap g pattern <pattern> <entity> --use-package` to apply patterns with the NuGet package:
-
-```bash
-# Install the package
-dotnet add package Swap.Patterns
-
-# Apply pattern using interface
-swap g pattern auditable Article --use-package
-```
-
-Or use the default embedded mode (no package dependency):
-
-```bash
-# Apply pattern with embedded code
-swap g pattern auditable Article
-```
-
-See `framework/Swap.Patterns/README.md` for full API, interceptors, and extension methods.
-
-
-```bash
-swap g r BlogPost --fields "Title:string Content:string PublishedDate:DateTime"
-swap g r BlogPost --fields Title:string,Content:string,PublishedDate:DateTime
-
-# With generator ergonomics options
-swap g r Order --fields "Total:decimal Status:string" --dry-run
-swap g r Order --fields "Total:decimal Status:string" --force --project path/to/project
-```
-
-**Options:**
-- `--fields` or `-f` - Field definitions (space or comma separated)
-- `--dry-run` - Preview what would be generated without writing files
-- `--force` - Overwrite existing files without prompting
-- `--project` or `-p` - Path to project directory (default: current directory)
-
-### `swap generate seed <name>`
-
-Generate database seeders with realistic fake data using Bogus.
-
-```bash
-# Generate a seeder for a single entity
-swap g seed Product --count 100 --locale en --if-empty
-
-# Generate seeders for all entities in your DbContext
-swap g seed all --count 50 --locale en --if-empty
-
-# Short alias
-swap g s all --count 50 --locale en --if-empty
-
-# Overwrite without prompting
-swap g s Product --force
-
-# Generate in a different project
-swap g s all --project path/to/project
-```
-
-**Options:**
-- `--count` (default: 50) - Number of records to generate
-- `--locale` (default: "en") - Bogus locale (en, en_GB, de, fr, etc.)
-- `--if-empty` - Only seed when the table is empty (idempotent)
-- `--force` - Overwrite existing seeder files without prompting
-- `--project` or `-p` - Path to project directory (default: current directory)
-
-**What it generates:**
-- `Data/Seeders/<Entity>Seeder.cs` with smart Bogus rules based on field names
-- `Data/Seeders/SeedRunner.cs` orchestrator (auto-registered)
-- Adds `Bogus` package reference if missing
-- Hooks into `Program.cs` for Development environment seeding
-
-**Field intelligence:**
-- Strings: emails, URLs, names, titles, descriptions, phone numbers, addresses
-- Numbers: realistic ranges based on field names (age, price, quantity)
-- Booleans: weighted probabilities (e.g., IsActive ~70% true)
-- Dates: distributed over the last 3 years
-- Foreign keys: picks from existing related entities
-
-**Environment control:**
-```bash
-# Control seeding via environment variables
-$env:SEED_COUNT = "200"
-$env:SEED_LOCALE = "en_GB"
-$env:SEED_IFEMPTY = "true"
-dotnet run
-```
-
-### `swap database` / `swap db`
-
-Database workflow commands for easier development.
-
-#### `swap db info`
-
-Display database configuration and migration status.
-
-```bash
-swap db info
-```
-
-Shows:
-- Project name
-- Database provider (SQLite, SQL Server, PostgreSQL)
-- Connection string (masked)
-- Number of migrations
-- Last applied migration
-- Seeder status
-
-#### `swap db migrate [name] [--apply]`
-
-Create and/or apply Entity Framework Core migrations.
-
-```bash
-# Create a new migration
-swap db migrate AddProductTable
-
-# Create and apply immediately
-swap db migrate AddProductTable --apply
-
-# Apply pending migrations (no name argument)
-swap db migrate --apply
-```
-
-**Options:**
-- `name` - Optional migration name (if omitted with --apply, applies pending migrations)
-- `--apply` or `-a` - Apply the migration after creating it
-
-#### `swap db reset [--force]`
-
-Drop and recreate the database for a fresh start.
-
-```bash
-# With confirmation prompt
-swap db reset
-
-# Skip confirmation
-swap db reset --force
-```
-
-**Options:**
-- `--force` or `-f` - Skip confirmation prompt
-
-**Warning:** This command drops all data!
-
-#### `swap db seed [--count] [--locale] [--if-empty]`
-
-Run database seeders via application startup.
-
-```bash
-# Run seeders with default settings
-swap db seed
-
-# Customize seeding
-swap db seed --count 100 --locale en_GB --if-empty
-```
-
-**Options:**
-- `--count` or `-c` - Number of records per seeder (default: 50)
-- `--locale` or `-l` - Bogus locale (default: "en")
-- `--if-empty` - Only seed empty tables
-
-**Note:** This runs `dotnet run` with environment variables set.
-
-### `swap doctor`
-
-Check your development environment and dependencies.
-
-```bash
-swap doctor
-```
-
-Checks:
-- ✅ .NET SDK installation and version
-- ✅ dotnet-ef tool installation
-- ⚠️ Node.js (optional, for Tailwind CSS)
-- ⚠️ npm (optional, comes with Node.js)
-- ⚠️ libman (optional, for client libraries)
-
-Displays a table with status, versions, and installation instructions for missing tools.
-
-### `swap list [--project]`
-
-List all resources (entities) in your project with their completeness status.
-
-```bash
-# List resources in current project
-swap list
-
-# List resources in another project
-swap list --project path/to/project
-```
-
-Shows a table with:
-- Entity names from DbContext
-- ✓/✗ Model file exists
-- ✓/✗ Controller file exists
-- ✓/✗ Seeder file exists
-
-**Options:**
-- `--project` or `-p` - Path to project directory (default: current directory)
-
-## 📚 Documentation
-
-### 🎯 Core Documentation
-- **[Container Architecture](docs/CONTAINER-ARCHITECTURE.md)** - ⭐ **START HERE** - The foundational pattern for Swap
-- **[Developer Experience Guide](docs/DEVELOPER-EXPERIENCE.md)** - Best practices and workflow
-- **[Pattern Library](docs/PATTERNS-LIBRARY.md)** - 30+ proven HTMX patterns from production apps
-- **[Testing Checklist](docs/TESTING-CHECKLIST.md)** - Comprehensive validation guide
-
-### 📖 Framework Documentation
-- **[Swap.Htmx Framework](framework/Swap.Htmx/README.md)** - SwapController, SwapView(), extensions
-- **[Swap.Patterns](framework/Swap.Patterns/README.md)** - Reusable model patterns
-- **[Swap.Testing](framework/Swap.Testing/README.md)** - HTMX testing utilities
-
-### 🌐 Online Resources
-- **[Getting Started](https://jdtoon.github.io/swap/)** - Complete setup guide
-- **[CLI Reference](https://jdtoon.github.io/swap/docs/cli/overview)** - All commands and options
-- **[Features Guide](https://jdtoon.github.io/swap/docs/features/pagination)** - Pagination, search, sorting, filtering
-- **[The Product Vision](docs/THE-PRODUCT.md)** - Philosophy and approach
-
-## 🛠️ Development
-
-### Prerequisites
-- .NET 9.0 SDK or later
-- Your favorite IDE (Visual Studio 2022, VS Code, Rider)
-
-### Building the CLI from Source
-
-```bash
-# Clone the repository
-git clone https://github.com/jdtoon/swap.git
-cd swap
-
-# Build the CLI tool
-cd tools/Swap.CLI
-dotnet build
-
-# Run tests
-cd ../Swap.CLI.Tests
-dotnet test
-
-# Install locally for testing
-cd ../Swap.CLI
-dotnet pack
-dotnet tool install --global --add-source ./nupkg Swap.CLI
-```
-
-### Project Structure
-
-```
-swap/
-├── tools/
-│   ├── Swap.CLI/              # CLI tool source code
-│   │   ├── Commands/          # Command implementations
-│   │   ├── Infrastructure/    # Template engine, helpers
-│   │   └── Program.cs         # CLI entry point
-│   └── Swap.CLI.Tests/        # 145 passing tests
-│       ├── Commands/          # Command tests
-│       └── Infrastructure/    # Template engine tests
-├── templates/                 # Code generation templates
-│   ├── monolith/             # New project template
-│   └── generate/             # CRUD generation templates
-│       ├── controller/       # Controller, views, view model
-│       └── model/            # Model class
-├── docs/                     # Documentation
-│   ├── THE-PRODUCT.md        # Product vision
-│   └── PATTERNS-LIBRARY.md   # HTMX patterns
-├── wiki/                     # Docusaurus documentation site
-└── README.md                 # This file
-```
-
-## 🤝 Contributing
-
-Contributions are welcome! Whether it's bug reports, feature requests, or code contributions.
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Make your changes and add tests
-4. Ensure all tests pass (`dotnet test`)
-5. Commit your changes (`git commit -m 'feat: Add amazing feature'`)
-6. Push to the branch (`git push origin feature/amazing-feature`)
-7. Open a Pull Request
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
-
-## 📄 License
-
-Swap CLI is [MIT licensed](LICENSE). Use it freely in your projects, commercial or otherwise.
-
-## 📊 Project Status
-
-**Current Version:** `0.1.0` (Release Candidate)
-
-### ✅ Phase 2C Complete
-
-- ✅ **New Project Generation** - `swap new` command with full ASP.NET Core setup
-- ✅ **Controller Generation** - `swap g c` with all CRUD operations
-- ✅ **Model Generation** - `swap g m` for entity classes
-- ✅ **Pagination** - Configurable page sizes (10, 25, 50, 100)
-- ✅ **Search** - Real-time search with 500ms debounce
-- ✅ **Sorting** - Column sorting with field-level control
-- ✅ **Filtering** - Boolean filters with dropdown UI
-- ✅ **Modal Editing** - Create, Edit, Details modals via HTMX
-- ✅ **Bulk Delete** - Select multiple items and delete
-- ✅ **Toast Notifications** - DaisyUI alerts for success/error
-- ✅ **DaisyUI Components** - Modern, accessible UI library
-- ✅ **Tailwind CSS** - Utility-first styling
-- ✅ **269 Passing Tests** - Comprehensive test coverage (197 CLI/Htmx + 72 Patterns)
-- ✅ **Documentation** - Complete wiki with examples
-- ✅ **Docker Support** - Multi-stage builds, health checks, all databases
-
-### ✅ Phase 2D Complete: Database Seeders
-
-- ✅ **Seeder Generation** - `swap g seed <entity>` and `swap g seed all`
-- ✅ **Bogus Integration** - Realistic fake data with smart field heuristics
-- ✅ **Environment Control** - SEED_COUNT, SEED_LOCALE, SEED_IFEMPTY
-- ✅ **Foreign Key Support** - Automatic relationship handling
-- ✅ **Development Startup** - Auto-seed on app launch in Development mode
-- ✅ **Idempotent Seeding** - `--if-empty` flag for safe repeated runs
-
-### ✅ Phase 2E Complete: Developer Experience
-
-- ✅ **Generator Ergonomics** - `--dry-run`, `--force`, `--project` options on all generators
-- ✅ **Database Commands** - `swap db info`, `db migrate`, `db seed`, `db reset`
-- ✅ **DX Utilities** - `swap doctor` for environment checks, `swap list` for resource inventory
-- ✅ **Field Delimiter Flexibility** - Support both space and comma-separated field definitions
-- ✅ **Consistent Aliases** - `-f` for fields, `-p` for project, `-a` for apply, `-c` for count
-- ✅ **Smart DbSet Scanning** - Handles both simple and fully-qualified entity types
-
-### ✅ Phase 2F Complete: HTMX-First & Safety Features
-
-- ✅ **Build-Before-Migration** - Rigid gates prevent cryptic EF errors, surface compiler issues early
-- ✅ **Auto-Migration Creation** - All generators (auth, controller, pattern) create migrations automatically
-- ✅ **HTMX-First Layout** - `hx-boost="true"`, `id="main-content"` target, `hx-push-url` navigation
-- ✅ **DaisyUI Navbar Alignment** - `navbar-start`/`navbar-end` structure for consistent layouts
-- ✅ **Auto-Nav Injection** - `--add-nav` flag injects navigation links with HTMX attributes
-- ✅ **ASP.NET Identity Scaffolding** - `swap g auth` with auto-migration and HTMX support
-- ✅ **Pattern Library** - 8 entity patterns (sluggable, auditable, soft delete, etc.) with `--use-package` option
-- ✅ **NuGet Packages** - Swap.CLI (v0.1.0), Swap.Htmx (v0.1.0), Swap.Patterns (v0.1.0), Swap.Testing (v0.1.0)
-- ✅ **DateTime? Nullable Support** - Null-conditional operators in views for clean code
-- ✅ **Local Development Workflow** - `--local-nuget` flag with automatic package building
-
-### 🎯 Phase 3: Publishing & Growth
-
-- 🚀 **NuGet Publishing** - Automated release workflow on PR merge to main
-- ⏳ **VS Code Extension** - Integrated CLI experience
-- ⏳ **Video Tutorials** - Getting started screencasts
-- ⏳ **Community Growth** - GitHub Discussions, Discord server
-- ⏳ **Production Release** (v1.0.0) - Q1 2026
-
-See the complete [roadmap](docs/ROADMAP.md) for details.
-
-## 💬 Community
-
-- **Documentation**: https://jdtoon.github.io/swap/
-- **GitHub Issues**: https://github.com/jdtoon/swap/issues
-- **GitHub Discussions**: Coming soon
-
-For questions or feedback, open an [issue](https://github.com/jdtoon/swap/issues)!
-
-## 🔗 Links
-
-- **Documentation**: https://jdtoon.github.io/swap/
-- **GitHub**: https://github.com/jdtoon/swap
-- **Issues**: https://github.com/jdtoon/swap/issues
-- **NuGet Packages**:
-  - [Swap.CLI](https://www.nuget.org/packages/Swap.CLI) (v0.1.0)
-  - [Swap.Htmx](https://www.nuget.org/packages/Swap.Htmx) (v0.1.0)
-  - [Swap.Patterns](https://www.nuget.org/packages/Swap.Patterns) (v0.1.0)
-  - [Swap.Testing](https://www.nuget.org/packages/Swap.Testing) (v0.1.0)
 
 ---
 
-**Built with ❤️ for the .NET community**
+## 📚 Architecture Overview
 
-*Swap CLI - Generate production-ready ASP.NET + HTMX applications in seconds.*
+```
+Swap/
+├── framework/
+│   ├── Swap.Htmx/              ✅ HTMX ergonomics + event system
+│   ├── Swap.Modularity/        ✅ Module discovery + composition
+│   ├── Swap.Patterns/          ✅ Reusable domain patterns
+│   ├── Swap.Testing/           ✅ Integration testing fluent API
+│   └── Swap.Htmx.Analyzers/   ✅ Roslyn analyzer (catches magic strings)
+├── templates/
+│   ├── swap-monolith/          ✅ Single project, HTMX-native
+│   ├── swap-layered/           ✅ Multi-project, clean layers
+│   ├── swap-modular-monolith/  ✅ Modular, per-module ownership
+│   └── generate/               📦 Component scaffolding (future)
+└── tools/
+    └── Swap.CLI/               ✅ Code generation + templates
+```
 
+---
 
+## 🎨 Key Concepts
+
+### SwapController + SwapView
+Eliminate boilerplate: one method decides whether to render full page or partial based on the `HX-Request` header.
+
+### Fluent Header API
+```csharp
+Response.HxTrigger("eventName");
+Response.HxRedirect("/products");
+Response.HxRefresh();
+Response.HxRetarget("#new-target");
+Response.HxReswap("beforebegin");
+Response.HxPushUrl("/products/123");
+Response.ShowSuccessToast("Done!");
+```
+
+### Module Discovery
+No manual wiring. Define `IModule`, place it in a loaded assembly, and it's discovered, validated, and ordered automatically.
+
+### Testable Events
+Every event chain is validated at startup; test event propagation without touching the DOM or JavaScript.
+
+---
+
+## 🔗 Framework Packages
+
+| Package | Version | Purpose |
+|---------|---------|---------|
+| **Swap.Htmx** | 0.3.1 | HTMX integration, event system, middleware |
+| **Swap.Modularity** | 0.3.1 | Module discovery, composition, dependency ordering |
+| **Swap.Patterns** | 0.3.1 | Reusable patterns (Auditable, Orderable, etc.) |
+| **Swap.Testing** | 0.3.1 | HTMX-aware integration testing |
+
+All available on [NuGet](https://www.nuget.org/packages?q=owner:jdtoon).
+
+---
+
+## 📖 Documentation
+
+- **[PRODUCT-VISION.md](docs/PRODUCT-VISION.md)** — Why Swap exists, the three pillars, and the philosophy
+- **[FRAMEWORK-ARCHITECTURE.md](docs/FRAMEWORK-ARCHITECTURE.md)** — Deep dive into the architecture and expansion roadmap
+- **[EVENT-SYSTEM-DESIGN.md](docs/event-system/README.md)** — Complete event system specification and usage
+- **[Wiki](wiki/)** — Getting started guides, examples, and best practices
+- **Templates** — Each template includes a README with structure, setup, and examples
+
+---
+
+## 🌟 Why Swap?
+
+| Feature | Benefit |
+|---------|---------|
+| **HTMX-First** | Modern interactivity without JavaScript framework complexity |
+| **Server-Driven Events** | Declarative UI reactions; testable; no magic strings |
+| **Modular Templates** | Production-ready starting points for any team size |
+| **Type-Safe** | Compile-time errors catch bugs early; full IntelliSense |
+| **Testable** | Fluent assertions on HTMX behavior; no DOM parsing hacks |
+| **Battle-Tested** | Patterns extracted from real production applications |
+| **Opinionated** | Sensible defaults; clear guidelines; less decision fatigue |
+| **Zero Hidden Magic** | Generated code is readable; you own and understand it |
+
+---
+
+## 🛠️ Common Tasks
+
+### Use an Event in a Template
+```html
+<button hx-post="/articles/create" 
+        hx-target="#list" 
+        hx-trigger="articleCreated from:body">
+    Create
+</button>
+```
+
+### Test Event Propagation
+```csharp
+[Fact]
+public async Task CreateProduct_EmitsCreatedChain()
+{
+    var response = await _client.PostAsync("/products", formData);
+    
+    response.AssertSuccess();
+    await response.AssertHxTriggerAsync("productRefreshed", "toastSuccess");
+}
+```
+
+### Add RabbitMQ for Distributed Events
+```csharp
+builder.Services.AddSwapServerEventChainsFromConfiguration(
+    builder.Configuration,
+    "Swap:ServerEvents"  // Reads RabbitMQ connection string
+);
+```
+
+### Extend a Module
+Each module in a modular monolith can be extended independently—add endpoints, services, UI without touching other modules.
+
+---
+
+## 🚀 Next Steps
+
+1. **[Install Swap CLI](#installation)** and create an app
+2. **Read the [template README](templates/swap-modular-monolith/README.md.template)** to understand the structure
+3. **Explore [examples](testApps/)** for real patterns
+4. **Check the [event system reference](docs/event-system/README.md)** to use events effectively
+5. **Write your first test** using `Swap.Testing`
+
+---
+
+## 📜 License
+
+Swap is open source under the [MIT License](LICENSE).
+
+## 🤝 Contributing
+
+We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+
+---
+
+## 🔮 Roadmap
+
+- **0.3.x** — Event system consolidation, documentation, and template polish
+- **0.4.0** — Component scaffolding (copy partials, generate CRUD UI)
+- **0.5.0** — Authentication templates and built-in auth patterns
+- **Future** — WebSocket/SignalR support, validation framework, form generation
+
+---
+
+**Built for developers who love ASP.NET Core and want to move fast without sacrificing code quality or team scalability.**
+
+[📖 Read the Docs](docs/) • [🐙 GitHub](https://github.com/jdtoon/swap) • [💬 Discussions](https://github.com/jdtoon/swap/discussions)
