@@ -1,0 +1,1 @@
+<div id="bulk-list" hx-get="/Demo/BulkTodos" hx-trigger="load, @(EventNames.Ui.TodoRefreshList) from:body" hx-target="this" hx-swap="innerHTML">Loading…</div>

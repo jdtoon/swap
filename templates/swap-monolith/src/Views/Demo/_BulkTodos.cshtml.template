@@ -1,0 +1,42 @@
+@model List<{{ProjectName}}.Dtos.TodoItemDto>
+<form hx-post="/Demo/BulkComplete" hx-target="#bulk-list">
+  <div class="overflow-x-auto">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Select</th>
+          <th>Id</th>
+          <th>Title</th>
+          <th>Complete</th>
+        </tr>
+      </thead>
+      <tbody>
+  @foreach (var t in Model)
+      {
+        <tr>
+          <td>
+            <input type="checkbox" name="ids" value="@t.Id" class="checkbox" />
+          </td>
+          <td>@t.Id</td>
+          <td>@t.Title</td>
+          <td>
+            @if (t.IsComplete)
+            {
+              <span class="badge badge-success">Yes</span>
+            }
+            else
+            {
+              <span class="badge">No</span>
+            }
+          </td>
+        </tr>
+      }
+      </tbody>
+    </table>
+  </div>
+  <div class="mt-3 flex gap-2">
+    <button type="submit" class="btn btn-primary">Complete selected</button>
+    <button type="reset" class="btn">Clear selection</button>
+    <button type="button" class="btn btn-ghost" hx-get="/Demo/BulkTodos" hx-target="#bulk-list">Reload list</button>
+  </div>
+</form>
