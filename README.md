@@ -355,11 +355,10 @@ All available on [NuGet](https://www.nuget.org/packages?q=owner:jdtoon).
 
 ## 📖 Documentation
 
-- **[PRODUCT-VISION.md](docs/PRODUCT-VISION.md)** — Why Swap exists, the three pillars, and the philosophy
-- **[FRAMEWORK-ARCHITECTURE.md](docs/FRAMEWORK-ARCHITECTURE.md)** — Deep dive into the architecture and expansion roadmap
-- **[EVENT-SYSTEM-DESIGN.md](docs/event-system/README.md)** — Complete event system specification and usage
-- **[Wiki](wiki/)** — Getting started guides, examples, and best practices
-- **Templates** — Each template includes a README with structure, setup, and examples
+- **[PRODUCT.md](docs/PRODUCT.md)** — What is Swap? The three pillars, key features, and why use it
+- **[EVENTS.md](docs/EVENTS.md)** — Complete guide to UI and Server Events, chain resolution, and RabbitMQ
+- **[TEMPLATES.md](docs/TEMPLATES.md)** — Template comparison, usage guide, and migration paths
+- **[Wiki](https://jdtoon.github.io/swap/)** — Getting started guides, tutorials, and examples
 
 ---
 
