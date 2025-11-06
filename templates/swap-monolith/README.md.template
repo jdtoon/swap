@@ -23,9 +23,10 @@ This template is a developer-friendly single-project app that still follows soli
 │  ├─ Dtos/ | Events/ | Extensions/ | Infrastructure/
 │  ├─ Models/ | Views/ | wwwroot/
 │  ├─ appsettings*.json | Program.cs | {{ProjectName}}.csproj
-│  ├─ Dockerfile | docker-compose.yml | libman.json | package.json
+│  ├─ Dockerfile | libman.json | package.json
 │  └─ tailwind.config.js
-└─ test/                      # Tests
+├─ docker-compose.yml         # Compose at root (builds from ./src)
+└─ tests/                     # Tests
    ├─ Unit/
    └─ Integration/            # Uses Swap.Testing
 ```
@@ -128,10 +129,10 @@ docker build -t {{ProjectNameLower}} .
 docker run -d -p 5000:8080 --name {{ProjectNameLower}} {{ProjectNameLower}}
 ```
 
-Or with compose (in `src/`):
+Or with compose (from the project root):
 
 ```bash
-docker-compose up --build
+docker compose up --build
 ```
 
 Notes:

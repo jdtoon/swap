@@ -477,7 +477,14 @@ public class HtmxShellMiddleware
                 }
 
                 // Copy and process all template files (.template-based)
-                await ProcessTemplateDirectoryAsync(templatePath, projectPath, variables, ctx, useSrcLayout ? "src" : null);
+                // If the template already contains a top-level 'src' folder, do not add another prefix
+                string? prefixFolder = null;
+                if (useSrcLayout)
+                {
+                    var hasSrcDir = Directory.Exists(Path.Combine(templatePath, "src"));
+                    prefixFolder = hasSrcDir ? null : "src";
+                }
+                await ProcessTemplateDirectoryAsync(templatePath, projectPath, variables, ctx, prefixFolder);
                 
                 // If using local NuGet, ensure packages are built and create nuget.config
                 if (localNuget)
@@ -530,6 +537,9 @@ public class HtmxShellMiddleware
         StatusContext ctx,
         string? prefixFolder)
     {
+        // If the template already contains a top-level 'src' folder, prefer it and ignore duplicate root app files
+        var hasTopLevelSrc = Directory.Exists(Path.Combine(sourcePath, "src"));
+
         // First process all .template (text) files with token replacement
         foreach (var file in Directory.GetFiles(sourcePath, "*.template", SearchOption.AllDirectories))
         {
@@ -542,13 +552,28 @@ public class HtmxShellMiddleware
             }
 
             var relativePath = Path.GetRelativePath(sourcePath, file);
-            var targetRelativePath = relativePath.Replace(".template", "");
-
-            // Skip legacy root-level PaginationDto; use Dtos/PaginationDto.cs instead
-            if (string.Equals(relativePath, "PaginationDto.cs.template", StringComparison.OrdinalIgnoreCase))
+            var relLowerForSkip = relativePath.Replace('\\','/').ToLowerInvariant();
+            // When a top-level src exists, skip root-level app files to avoid duplicates
+            if (hasTopLevelSrc)
+            {
+                var isUnderSrc = relLowerForSkip.StartsWith("src/");
+                var isTests = relLowerForSkip.StartsWith("tests/") || relLowerForSkip.StartsWith("test/");
+                var isDocs = relLowerForSkip.StartsWith("docs/");
+                var isSlnTmpl = relLowerForSkip.EndsWith(".sln.template");
+                var isReadmeTmpl = string.Equals(relLowerForSkip, "readme.md.template", StringComparison.OrdinalIgnoreCase);
+                var isComposeTmpl = string.Equals(relLowerForSkip, "docker-compose.yml.template", StringComparison.OrdinalIgnoreCase);
+                if (!isUnderSrc && !isTests && !isDocs && !isSlnTmpl && !isReadmeTmpl && !isComposeTmpl)
+                {
+                    // Skip any other root-level files (e.g., Program.cs.template, Project.csproj.template, Controllers/, etc.)
+                    continue;
+                }
+            }
+            // Skip legacy 'test/' folder to avoid duplicates now that we use 'tests/'
+            if (relLowerForSkip.StartsWith("test/"))
             {
                 continue;
             }
+            var targetRelativePath = relativePath.Replace(".template", "");
 
             // Apply variable substitution to the path (e.g., {{ProjectName}}.sln)
             targetRelativePath = TemplateEngine.Process(targetRelativePath, variables);
@@ -557,12 +582,14 @@ public class HtmxShellMiddleware
             if (!string.IsNullOrEmpty(prefixFolder))
             {
                 var relLower = relativePath.Replace('\\','/').ToLowerInvariant();
-                var isTest = relLower.StartsWith("test/");
+                var isTest = relLower.StartsWith("test/") || relLower.StartsWith("tests/");
+                var isDocs = relLower.StartsWith("docs/");
                 var isSln = targetRelativePath.EndsWith(".sln", StringComparison.OrdinalIgnoreCase);
                 var isRootFile = string.Equals(targetRelativePath, ".gitignore", StringComparison.OrdinalIgnoreCase) ||
                                  string.Equals(targetRelativePath, "nuget.config", StringComparison.OrdinalIgnoreCase) ||
-                                 string.Equals(targetRelativePath, "README.md", StringComparison.OrdinalIgnoreCase);
-                if (!isTest && !isSln && !isRootFile)
+                                 string.Equals(targetRelativePath, "README.md", StringComparison.OrdinalIgnoreCase) ||
+                                 string.Equals(targetRelativePath, "docker-compose.yml", StringComparison.OrdinalIgnoreCase);
+                if (!isTest && !isSln && !isRootFile && !isDocs)
                 {
                     targetRelativePath = Path.Combine(prefixFolder!, targetRelativePath);
                 }
@@ -607,18 +634,38 @@ public class HtmxShellMiddleware
                 continue;
 
             var relativePath = Path.GetRelativePath(sourcePath, file);
+            var relLowerForSkip = relativePath.Replace('\\','/').ToLowerInvariant();
+            // When a top-level src exists, skip root-level app files to avoid duplicates
+            if (hasTopLevelSrc)
+            {
+                var isUnderSrc = relLowerForSkip.StartsWith("src/");
+                var isTests = relLowerForSkip.StartsWith("tests/") || relLowerForSkip.StartsWith("test/");
+                var isDocs = relLowerForSkip.StartsWith("docs/");
+                var isSln = relLowerForSkip.EndsWith(".sln");
+                var isReadme = string.Equals(relLowerForSkip, "readme.md", StringComparison.OrdinalIgnoreCase);
+                var isCompose = string.Equals(relLowerForSkip, "docker-compose.yml", StringComparison.OrdinalIgnoreCase);
+                if (!isUnderSrc && !isTests && !isDocs && !isSln && !isReadme && !isCompose)
+                {
+                    // Skip any other root-level files (e.g., static assets, root .gitignore/.dockerignore duplicates)
+                    continue;
+                }
+            }
+            if (relLowerForSkip.StartsWith("test/"))
+                continue;
             var targetRelativePath = relativePath;
 
             // Apply the same prefixing rules as for templates
             if (!string.IsNullOrEmpty(prefixFolder))
             {
                 var relLower = relativePath.Replace('\\','/').ToLowerInvariant();
-                var isTest = relLower.StartsWith("test/");
+                var isTest = relLower.StartsWith("test/") || relLower.StartsWith("tests/");
+                var isDocs = relLower.StartsWith("docs/");
                 var isSln = targetRelativePath.EndsWith(".sln", StringComparison.OrdinalIgnoreCase);
                 var isRootFile = string.Equals(targetRelativePath, ".gitignore", StringComparison.OrdinalIgnoreCase) ||
                                  string.Equals(targetRelativePath, "nuget.config", StringComparison.OrdinalIgnoreCase) ||
-                                 string.Equals(targetRelativePath, "README.md", StringComparison.OrdinalIgnoreCase);
-                if (!isTest && !isSln && !isRootFile)
+                                 string.Equals(targetRelativePath, "README.md", StringComparison.OrdinalIgnoreCase) ||
+                                 string.Equals(targetRelativePath, "docker-compose.yml", StringComparison.OrdinalIgnoreCase);
+                if (!isTest && !isSln && !isRootFile && !isDocs)
                 {
                     targetRelativePath = Path.Combine(prefixFolder!, targetRelativePath);
                 }

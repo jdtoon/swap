@@ -64,6 +64,7 @@ Adds:
 - `Program.cs` registers both `UseSwapHtmxShell()` and `UseSwapHtmx()` and calls `AddSwapHtmx(opts => SwapEventChains.Configure(opts))`
 
 Notes:
+- Output structure uses `src/` and `tests/`, with `docker-compose.yml` at the project root (build context `./src`).
 - Existing `monolith` remains unchanged for parity and minimalism; `swap-monolith` is the DX-forward option.
 
 ### 3. Layered Solution Template (`swap-layered/`)

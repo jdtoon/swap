@@ -11,7 +11,7 @@
             <div class="badge badge-secondary ml-2">{{DatabaseType}}</div>
         </div>
     </div>
-</div>
+}</div>
 
 <div class="card bg-base-100 shadow-xl">
     <div class="card-body">
@@ -21,7 +21,7 @@
         @await Html.PartialAsync("~/Views/Home/_TodoForm.cshtml")
         @await Html.PartialAsync("~/Views/Home/_TodoListContainer.cshtml")
     </div>
-</div>
+}</div>
 
 <div class="alert alert-info mt-8">
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-current shrink-0 w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
@@ -32,4 +32,4 @@
             <li>Use: <code class="bg-base-300 px-2 py-1 rounded">swap generate feature Product</code> to scaffold CRUD operations</li>
         </ul>
     </div>
-</div>
+}</div>

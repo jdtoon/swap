@@ -4,9 +4,9 @@ VisualStudioVersion = 17.0.31912.275
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "{{ProjectName}}", "src\{{ProjectName}}.csproj", "{AAAAAAA1-0000-0000-0000-000000000001}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "{{ProjectName}}.Tests", "test\Unit\{{ProjectName}}.Tests.csproj", "{AAAAAAA2-0000-0000-0000-000000000002}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "{{ProjectName}}.Tests", "tests\Unit\{{ProjectName}}.Tests.csproj", "{AAAAAAA2-0000-0000-0000-000000000002}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "{{ProjectName}}.IntegrationTests", "test\Integration\{{ProjectName}}.IntegrationTests.csproj", "{AAAAAAA3-0000-0000-0000-000000000003}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "{{ProjectName}}.IntegrationTests", "tests\Integration\{{ProjectName}}.IntegrationTests.csproj", "{AAAAAAA3-0000-0000-0000-000000000003}"
 EndProject
 Global
     GlobalSection(SolutionConfigurationPlatforms) = preSolution
