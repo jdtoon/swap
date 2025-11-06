@@ -28,8 +28,9 @@ public class TodosUiController : Controller
     {
         if (string.IsNullOrWhiteSpace(title)) return BadRequest();
         var item = _service.Add(title);
-        _bus.Emit(TodoEvents.Domain.Created, new { id = item.Id });
+        // Publish server event first (distributed handlers may lag); UI events are flushed at end of response
         await _events.PublishAsync(TodoEvents.Domain.Created, new ModularMonolithDemo.Modules.Todos.Contracts.TodoEventPayloads.Created(item.Id), HttpContext.RequestServices);
+        _bus.Emit(TodoEvents.Domain.Created, new { id = item.Id });
         return NoContent();
     }
 
@@ -38,8 +39,8 @@ public class TodosUiController : Controller
     {
         var item = _service.Toggle(id);
         if (item is null) return NotFound();
-        _bus.Emit(TodoEvents.Domain.Toggled, new { id });
         await _events.PublishAsync(TodoEvents.Domain.Toggled, new ModularMonolithDemo.Modules.Todos.Contracts.TodoEventPayloads.Toggled(id), HttpContext.RequestServices);
+        _bus.Emit(TodoEvents.Domain.Toggled, new { id });
         return PartialView("~/Views/TodosUi/_Item.cshtml", item);
     }
 
@@ -48,8 +49,8 @@ public class TodosUiController : Controller
     {
         if (_service.Delete(id))
         {
-            _bus.Emit(TodoEvents.Domain.Deleted, new { id });
             await _events.PublishAsync(TodoEvents.Domain.Deleted, new ModularMonolithDemo.Modules.Todos.Contracts.TodoEventPayloads.Deleted(id), HttpContext.RequestServices);
+            _bus.Emit(TodoEvents.Domain.Deleted, new { id });
             return NoContent();
         }
         return NotFound();
