@@ -4,19 +4,19 @@
 
 We actively support the following versions with security updates:
 
-| Version | Supported          |
-| ------- | ------------------ |
-| 0.4.x   | :white_check_mark: |
-| 0.3.x   | :white_check_mark: |
-| 0.2.x   | :x:                |
-| 0.1.x   | :x:                |
-| < 0.1   | :x:                |
+| Version | Supported |
+| ------- | --------- |
+| 0.4.x   | ✅        |
+| 0.3.x   | ✅        |
+| 0.2.x   | ❌        |
+| 0.1.x   | ❌        |
+| < 0.1   | ❌        |
 
 ## Reporting a Vulnerability
 
 **Please do not report security vulnerabilities through public GitHub issues.**
 
-Instead, please report them via email to **security@swap-framework.dev** (or your configured security contact email).
+Instead, please report them via email to **junaidd0306@gmail.com**.
 
 You should receive a response within 48 hours. If for some reason you do not, please follow up via email to ensure we received your original message.
 
@@ -323,7 +323,7 @@ builder.Services.AddStackExchangeRedisCache(options =>
 ## Contact
 
 For security concerns or questions:
-- **Email:** security@swap-framework.dev
+- **Email:** junaidd0306@gmail.com
 - **GitHub Issues:** For non-security bugs only
 
 ---
