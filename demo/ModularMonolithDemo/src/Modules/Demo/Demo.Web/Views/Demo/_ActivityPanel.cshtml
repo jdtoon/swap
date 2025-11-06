@@ -1,6 +1,6 @@
 <div id="activity-panel"
   hx-get="/Demo/ActivityLog"
-  hx-trigger="load, @EventNames.Ui.ActivityAppend from:body"
+  hx-trigger="load, @EventNames.Ui.ActivityAppend from:body, @EventNames.Ui.ActivityAppend from:body delay:400ms"
   hx-target="this"
   hx-swap="innerHTML">
   <div class="loading loading-spinner"></div>
