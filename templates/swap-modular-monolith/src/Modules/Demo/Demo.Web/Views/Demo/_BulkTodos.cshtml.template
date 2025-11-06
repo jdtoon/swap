@@ -1,0 +1,15 @@
+@model List<{{ProjectName}}.Modules.Todos.Contracts.TodoItemDto>
+<form hx-post="/Demo/BulkComplete" hx-target="#bulk-todos" hx-swap="innerHTML">
+  <ul class="space-y-2">
+    @foreach (var item in Model)
+    {
+      <li class="flex items-center gap-2 p-2 bg-base-200 rounded">
+        <input type="checkbox" class="checkbox" name="ids" value="@item.Id" />
+        <span class="flex-1 @(item.IsComplete ? "line-through text-gray-500" : "")">@item.Title</span>
+      </li>
+    }
+  </ul>
+  <div class="mt-4 flex gap-2">
+    <button type="submit" class="btn btn-primary">Complete Selected</button>
+  </div>
+</form>

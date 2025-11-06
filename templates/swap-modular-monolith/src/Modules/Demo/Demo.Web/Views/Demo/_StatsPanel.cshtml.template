@@ -1,0 +1,7 @@
+<div id="stats-panel"
+  hx-get="/Demo/Stats"
+  hx-trigger="load, @EventNames.Ui.StatsRefresh from:body"
+  hx-target="this"
+  hx-swap="innerHTML">
+  <div class="loading loading-spinner"></div>
+</div>

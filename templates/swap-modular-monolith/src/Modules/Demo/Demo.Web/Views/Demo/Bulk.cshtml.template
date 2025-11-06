@@ -1,0 +1,27 @@
+@{
+    ViewData["Title"] = "Bulk Operations";
+}
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+  <section class="card bg-base-100 shadow lg:col-span-2">
+    <div class="card-body">
+      <h2 class="card-title">Bulk Complete Todos</h2>
+      @await Html.PartialAsync("~/Views/Demo/_BulkListPanel.cshtml")
+      <p class="text-sm text-base-content/60 mt-2">Completing items emits a bulk event which refreshes list, stats and shows a toast.</p>
+    </div>
+  </section>
+
+  <section class="card bg-base-100 shadow">
+    <div class="card-body">
+      <h2 class="card-title">Stats</h2>
+      @await Html.PartialAsync("~/Views/Demo/_StatsPanel.cshtml")
+    </div>
+  </section>
+
+  <section class="card bg-base-100 shadow">
+    <div class="card-body">
+      <h2 class="card-title">Toasts</h2>
+      @await Html.PartialAsync("~/Views/Demo/_ToastsPanel.cshtml")
+    </div>
+  </section>
+</div>

@@ -1,0 +1,52 @@
+# Build stage
+FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
+
+# Install Node.js for Tailwind CSS build
+RUN apt-get update && apt-get install -y curl && \
+    curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
+    apt-get install -y nodejs && \
+    rm -rf /var/lib/apt/lists/*
+
+# Install LibMan CLI
+RUN dotnet tool install -g Microsoft.Web.LibraryManager.Cli
+ENV PATH="$PATH:/root/.dotnet/tools"
+
+WORKDIR /work
+
+# Copy project files for restore
+COPY ["demo/{{ProjectName}}/src/Web/Web.csproj", "demo/{{ProjectName}}/src/Web/"]
+COPY ["demo/{{ProjectName}}/src/Modules/Todos/Todos.Contracts/Todos.Contracts.csproj", "demo/{{ProjectName}}/src/Modules/Todos/Todos.Contracts/"]
+COPY ["demo/{{ProjectName}}/src/Modules/Todos/Todos.Module/Todos.Module.csproj", "demo/{{ProjectName}}/src/Modules/Todos/Todos.Module/"]
+COPY ["demo/{{ProjectName}}/src/Modules/Todos/Todos.Web/Todos.Web.csproj", "demo/{{ProjectName}}/src/Modules/Todos/Todos.Web/"]
+COPY ["demo/{{ProjectName}}/src/Modules/Demo/Demo.Contracts/Demo.Contracts.csproj", "demo/{{ProjectName}}/src/Modules/Demo/Demo.Contracts/"]
+COPY ["demo/{{ProjectName}}/src/Modules/Demo/Demo.Module/Demo.Module.csproj", "demo/{{ProjectName}}/src/Modules/Demo/Demo.Module/"]
+COPY ["demo/{{ProjectName}}/src/Modules/Demo/Demo.Web/Demo.Web.csproj", "demo/{{ProjectName}}/src/Modules/Demo/Demo.Web/"]
+COPY ["framework/Swap.Modularity/Swap.Modularity.csproj", "framework/Swap.Modularity/"]
+COPY ["framework/Swap.Htmx/Swap.Htmx.csproj", "framework/Swap.Htmx/"]
+
+RUN dotnet restore "demo/{{ProjectName}}/src/Web/Web.csproj"
+
+# Copy the rest of the source
+COPY . ./
+
+# Build frontend assets
+WORKDIR /work/demo/{{ProjectName}}/src/Web
+RUN npm install
+RUN libman restore
+RUN npm run build:css
+
+# Publish app
+RUN dotnet publish "Web.csproj" -c Release -o /app/publish /p:UseAppHost=false
+
+# Runtime stage
+FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS runtime
+WORKDIR /app
+
+EXPOSE 8080
+
+COPY --from=build /app/publish .
+
+ENV ASPNETCORE_ENVIRONMENT=Production
+ENV ASPNETCORE_HTTP_PORTS=8080
+
+ENTRYPOINT ["dotnet", "Web.dll"]

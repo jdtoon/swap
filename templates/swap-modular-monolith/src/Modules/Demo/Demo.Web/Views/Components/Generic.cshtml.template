@@ -1,0 +1,29 @@
+@{
+  ViewData["Title"] = "Components";
+}
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+  <div class="card bg-base-100 shadow">
+    <div class="card-body">
+      <h2 class="card-title">Tile A</h2>
+   <div id="tile-a"
+     hx-get="/Components/Counter?name=a"
+     hx-trigger="load, @EventNames.Ui.ComponentARefresh from:body"
+     hx-target="this"
+     hx-swap="innerHTML">
+        <div class="loading loading-spinner"></div>
+      </div>
+    </div>
+  </div>
+  <div class="card bg-base-100 shadow">
+    <div class="card-body">
+      <h2 class="card-title">Tile B</h2>
+   <div id="tile-b"
+     hx-get="/Components/Counter?name=b"
+     hx-trigger="load, @EventNames.Ui.ComponentBRefresh from:body"
+     hx-target="this"
+     hx-swap="innerHTML">
+        <div class="loading loading-spinner"></div>
+      </div>
+    </div>
+  </div>
+</div>

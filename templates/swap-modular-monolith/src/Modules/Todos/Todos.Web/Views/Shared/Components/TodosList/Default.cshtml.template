@@ -1,0 +1,27 @@
+@model List<{{ProjectName}}.Modules.Todos.Contracts.TodoItemDto>
+<div id="todo-list-content">
+    <ul class="space-y-2">
+    @if (Model == null || !Model.Any())
+    {
+        <li class="text-gray-500 italic">No todos yet. Add one below.</li>
+    }
+    else
+    {
+        @foreach (var item in Model)
+        {
+            <li id="todo-item-@item.Id" class="flex items-center gap-2 p-3 bg-base-200 rounded-lg">
+                <input type="checkbox"
+                       class="checkbox checkbox-primary"
+                       @(item.IsComplete ? "checked" : "")
+                       hx-post="/todos/ui/toggle/@item.Id"
+                       hx-target="#todo-item-@item.Id"
+                       hx-swap="outerHTML" />
+                <span class="flex-1 @(item.IsComplete ? "line-through text-gray-500" : "")">@item.Title</span>
+        <button class="btn btn-sm btn-error"
+            hx-delete="/todos/ui/delete/@item.Id"
+            hx-confirm="Are you sure?">Delete</button>
+            </li>
+        }
+    }
+    </ul>
+</div>

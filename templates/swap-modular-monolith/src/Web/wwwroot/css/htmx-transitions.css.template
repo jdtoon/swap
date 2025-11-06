@@ -1,0 +1,10 @@
+/* Global HTMX transition - smooth fade-in effect */
+.htmx-swapping {
+    opacity: 0;
+    transition: opacity 200ms ease-out;
+}
+
+.htmx-settling {
+    opacity: 1;
+    transition: opacity 200ms ease-in;
+}

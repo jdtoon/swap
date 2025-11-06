@@ -1,0 +1,10 @@
+@model int
+<div class="flex items-center justify-between">
+  <div>
+    <div class="text-sm text-gray-500">Current value</div>
+    <div class="text-3xl font-bold">@Model</div>
+  </div>
+  <div>
+    <button class="btn btn-primary" hx-post="/Components/Increment?name=@(ViewData["Name"] ?? "a")">Increment</button>
+  </div>
+</div>
