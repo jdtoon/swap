@@ -63,6 +63,12 @@ Environment keys set for the web service:
 - `ServerEvents__RabbitMq__VirtualHost=/`
 - `ServerEvents__RabbitMq__ExchangeName=swap.events`
 
+### Diagnostics (Development)
+
+- Check which server-events implementation is active:
+	- `GET http://localhost:8080/dev/server-events/info` → shows registrar and transport types.
+- Explore UI chains via Swap HTMX dev endpoints (see `docs/WEB-HOST.md`).
+
 ## Switch database providers
 
 - Configure in `appsettings.*.json` or env vars:

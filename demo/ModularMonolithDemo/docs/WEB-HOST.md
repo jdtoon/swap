@@ -63,3 +63,4 @@ app.Run();
 - `/_swap/dev/events.json` – chains JSON
 - `/_swap/dev/events.meta.json` – resolution mode/depth
 - `/_swap/dev/explain.json?event=...` – server-side resolution preview
+- `/dev/server-events/info` – active server events registrar and transport

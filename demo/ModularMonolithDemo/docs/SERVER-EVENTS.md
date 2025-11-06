@@ -12,7 +12,7 @@ This app supports two event planes:
 
 ## Publishing server events
 
-From inside a controller or service in your module:
+From inside a controller or service in your module. Prefer typed payloads for AOT-friendly, unambiguous deserialization:
 
 ```csharp
 public class TodosUiController : Controller
@@ -21,7 +21,10 @@ public class TodosUiController : Controller
     public async Task<IActionResult> Add(string title)
     {
         var item = _service.Add(title);
-        await _events.PublishAsync(TodoEvents.Domain.Created, new { id = item.Id }, HttpContext.RequestServices);
+        await _events.PublishAsync(
+            TodoEvents.Domain.Created,
+            new ModularMonolithDemo.Modules.Todos.Contracts.TodoEventPayloads.Created(item.Id),
+            HttpContext.RequestServices);
         return NoContent();
     }
 }
@@ -31,17 +34,19 @@ Also emit a UI event for on-page updates as needed via `ISwapEventBus`.
 
 ## Subscribing to server events
 
-In your module implementation (IModule.ConfigureEventChains):
+In your module implementation (IModule.ConfigureEventChains). Use the same typed payloads you published:
 
 ```csharp
 public void ConfigureEventChains(IEventChainRegistrar registrar)
 {
-    registrar.Register<object>(TodoEvents.Domain.Created, async (payload, sp) =>
-    {
-        var queries = sp.GetRequiredService<IDemoQueries>();
-        queries.AppendActivity("Todo created");
-        await Task.CompletedTask;
-    });
+    registrar.Register<ModularMonolithDemo.Modules.Todos.Contracts.TodoEventPayloads.Created>(
+        TodoEvents.Domain.Created,
+        async (payload, sp) =>
+        {
+            var queries = sp.GetRequiredService<IDemoQueries>();
+            queries.AppendActivity($"Todo created #{payload.Id}");
+            await Task.CompletedTask;
+        });
 }
 ```
 
@@ -63,3 +68,8 @@ Configure in host settings or environment:
 The demo compose includes a `rabbitmq` service and sets environment variables for the web container. See `docker-compose.yml`.
 
 Open RabbitMQ Management at http://localhost:15672 (guest/guest) to observe exchanges and queues.
+
+## Diagnostics
+
+- Active registrar/transport: `GET /dev/server-events/info` (Development only) returns the registrar and transport types currently in use.
+- UI chain visuals: see Swap HTMX dev endpoints listed in `WEB-HOST.md` (Development only).
