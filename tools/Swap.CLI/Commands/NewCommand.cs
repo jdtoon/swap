@@ -7,23 +7,27 @@ namespace Swap.CLI.Commands;
 
 public static class NewCommand
 {
+    private const string TemplateMonolith = "monolith";
+    private const string TemplateLayered = "layered";
+    private const string TemplateModularMonolith = "modular-monolith";
+    
     public static Command Create()
     {
         var command = new Command("new", "Create a new Swap project");
         
         var nameArg = new Argument<string>("name", "The name of the project (e.g., MyApp)");
-    var dbOption = new Option<string>("--database", () => "sqlite", "Database provider (sqlite|sqlserver|postgres)");
-    var templateOption = new Option<string>("--template", () => "monolith", "Project template (monolith|layered|modular-monolith)");
+        var dbOption = new Option<string>("--database", () => "sqlite", "Database provider (sqlite|sqlserver|postgres)");
+        var templateOption = new Option<string>("--template", () => TemplateMonolith, "Project template (monolith|layered|modular-monolith)");
         var outOption = new Option<string?>("--output", "Output directory (default: ./{name})");
         var skipSetupOption = new Option<bool>("--skip-setup", description: "Skip prerequisites check, npm/libman steps, and initial migration (useful for CI/tests)");
         var localNugetOption = new Option<bool>("--local-nuget", description: "Use local NuGet feed for Swap packages (for framework development only)");
         
         command.AddArgument(nameArg);
         command.AddOption(dbOption);
-    command.AddOption(outOption);
-    command.AddOption(skipSetupOption);
-    command.AddOption(localNugetOption);
-    command.AddOption(templateOption);
+        command.AddOption(outOption);
+        command.AddOption(skipSetupOption);
+        command.AddOption(localNugetOption);
+        command.AddOption(templateOption);
         
         command.SetHandler(async (InvocationContext context) =>
         {
@@ -42,100 +46,16 @@ public static class NewCommand
     
     private static async Task<int> ExecuteAsync(string name, string database, string? output, bool skipSetup, bool localNuget, string template)
     {
-        // Validate project name
-        if (string.IsNullOrWhiteSpace(name))
-        {
-            AnsiConsole.MarkupLine($"[red]Error:[/] Project name cannot be empty.");
+        if (!ValidateInputs(name, database))
             return 1;
-        }
-        
-        if (name.Contains(' '))
-        {
-            AnsiConsole.MarkupLine($"[red]Error:[/] Project name cannot contain spaces. Use PascalCase (e.g., 'MyApp' instead of 'My App').");
-            return 1;
-        }
-        
-        if (!char.IsLetter(name[0]))
-        {
-            AnsiConsole.MarkupLine($"[red]Error:[/] Project name must start with a letter.");
-            return 1;
-        }
-        
-        // Validate database option
-        if (database != "sqlite" && database != "sqlserver" && database != "postgres")
-        {
-            AnsiConsole.MarkupLine($"[red]Error:[/] Invalid database option '{database}'. Must be: sqlite, sqlserver, or postgres");
-            return 1;
-        }
         
         var projectPath = Path.GetFullPath(output ?? name);
         
-        AnsiConsole.MarkupLine($"[bold cyan]Creating new Swap project:[/] {name}");
-        AnsiConsole.MarkupLine($"[dim]Database:[/] {database}");
-    AnsiConsole.MarkupLine($"[dim]Location:[/] {projectPath}");
-    AnsiConsole.MarkupLine($"[dim]Template:[/] {template}");
-        if (localNuget)
-        {
-            AnsiConsole.MarkupLine($"[dim]NuGet Source:[/] [yellow]Local feed (development mode)[/]");
-        }
-        AnsiConsole.WriteLine();
+        DisplayProjectInfo(name, database, projectPath, template, localNuget);
         
-        if (!skipSetup)
-        {
-            // Check prerequisites upfront
-            AnsiConsole.Status()
-                .Start("Checking prerequisites...", ctx => { });
-            
-            var hasNpm = await IsCommandAvailableAsync("npm");
-            var hasLibman = await IsCommandAvailableAsync("libman");
-            
-            if (!hasNpm || !hasLibman)
-            {
-                AnsiConsole.WriteLine();
-                AnsiConsole.MarkupLine("[red]✗ Prerequisites check failed[/]");
-                AnsiConsole.WriteLine();
-                
-                if (!hasNpm)
-                {
-                    AnsiConsole.MarkupLine("[red]  ✗ npm not found[/]");
-                    AnsiConsole.MarkupLine("    [dim]npm is required for Tailwind CSS and frontend dependencies[/]");
-                    AnsiConsole.WriteLine();
-                    AnsiConsole.MarkupLine("    [bold]Install Node.js (includes npm):[/]");
-                    AnsiConsole.MarkupLine("      • Download: [link]https://nodejs.org/[/] (LTS version recommended)");
-                    AnsiConsole.MarkupLine("      • Windows (winget): [cyan]winget install OpenJS.NodeJS.LTS[/]");
-                    AnsiConsole.MarkupLine("      • Windows (chocolatey): [cyan]choco install nodejs-lts[/]");
-                    AnsiConsole.MarkupLine("      • macOS (homebrew): [cyan]brew install node[/]");
-                    AnsiConsole.MarkupLine("      • Linux: Use your package manager (apt, yum, etc.)");
-                }
-                
-                if (!hasLibman)
-                {
-                    AnsiConsole.MarkupLine("[red]  ✗ libman not found[/]");
-                    AnsiConsole.MarkupLine("    [dim]libman manages client libraries (HTMX, DaisyUI)[/]");
-                    AnsiConsole.WriteLine();
-                    AnsiConsole.MarkupLine("    [bold]Install libman:[/]");
-                    AnsiConsole.MarkupLine("      [cyan]dotnet tool install -g Microsoft.Web.LibraryManager.Cli[/]");
-                }
-                
-                AnsiConsole.WriteLine();
-                AnsiConsole.MarkupLine("[yellow]After installing the above tools:[/]");
-                AnsiConsole.MarkupLine("  1. [bold]Restart your terminal[/] (to refresh PATH)");
-                AnsiConsole.MarkupLine("  2. Verify installations:");
-                if (!hasNpm)
-                    AnsiConsole.MarkupLine("     [cyan]npm --version[/]");
-                if (!hasLibman)
-                    AnsiConsole.MarkupLine("     [cyan]libman --version[/]");
-                AnsiConsole.MarkupLine($"  3. Run [cyan]swap new {name}[/] again");
-                AnsiConsole.WriteLine();
-                
-                return 1;
-            }
-            
-            AnsiConsole.MarkupLine("[green]✓[/] Prerequisites check passed");
-            AnsiConsole.WriteLine();
-        }
+        if (!skipSetup && !await CheckPrerequisitesAsync(name))
+            return 1;
         
-        // Check if directory exists
         if (Directory.Exists(projectPath))
         {
             AnsiConsole.MarkupLine($"[red]Error:[/] Directory '{projectPath}' already exists.");
@@ -145,162 +65,83 @@ public static class NewCommand
         try
         {
             await GenerateProjectAsync(name, database, projectPath, localNuget, template);
-
             AnsiConsole.WriteLine();
             AnsiConsole.MarkupLine("[green]✓[/] Project created successfully!");
             AnsiConsole.WriteLine();
             
             if (!skipSetup)
             {
-                // Run setup commands automatically (prerequisites already checked)
-                try
-                {
-                    await AnsiConsole.Status()
-                        .StartAsync("Running setup commands...", async ctx =>
-                        {
-                            var isLayered = string.Equals(template, "layered", StringComparison.OrdinalIgnoreCase) ||
-                                            string.Equals(template, "swap-layered", StringComparison.OrdinalIgnoreCase);
-                            var isModular = string.Equals(template, "modular-monolith", StringComparison.OrdinalIgnoreCase) ||
-                                            string.Equals(template, "swap-modular-monolith", StringComparison.OrdinalIgnoreCase);
-                            // New folder layout uses src/Web for layered and modular; monolith uses src
-                            var webDir = (isLayered || isModular) ? Path.Combine(projectPath, "src", "Web") : Path.Combine(projectPath, "src");
-                            try
-                            {
-                                ctx.Status("Running npm install...");
-                                await RunCommandAsync("npm", "install", webDir);
-                                AnsiConsole.MarkupLine("[green]✓[/] npm install completed");
-                            }
-                            catch (Exception ex)
-                            {
-                                AnsiConsole.MarkupLine($"[red]✗[/] npm install failed: {ex.Message}");
-                                throw;
-                            }
-                            
-                            try
-                            {
-                                ctx.Status("Running libman restore...");
-                                await RunCommandAsync("libman", "restore", webDir);
-                                AnsiConsole.MarkupLine("[green]✓[/] libman restore completed");
-                            }
-                            catch (Exception ex)
-                            {
-                                AnsiConsole.MarkupLine($"[red]✗[/] libman restore failed: {ex.Message}");
-                                throw;
-                            }
-                            
-                            try
-                            {
-                                ctx.Status("Building CSS...");
-                                await RunCommandAsync("npm", "run build:css", webDir);
-                                AnsiConsole.MarkupLine("[green]✓[/] CSS build completed");
-                            }
-                            catch (Exception ex)
-                            {
-                        AnsiConsole.MarkupLine($"[red]✗[/] CSS build failed: {ex.Message}");
-                        throw;
-                    }
-                });
-                
-                AnsiConsole.WriteLine();
-                AnsiConsole.MarkupLine("[green]✓[/] Setup completed!");
-                
-                // Build-first, then create initial migration and update the database
-                AnsiConsole.WriteLine();
-                var isModularTemplate = string.Equals(template, "modular-monolith", StringComparison.OrdinalIgnoreCase) ||
-                                        string.Equals(template, "swap-modular-monolith", StringComparison.OrdinalIgnoreCase);
-                if (!isModularTemplate)
-                {
-                    await AnsiConsole.Status()
-                        .StartAsync("Creating initial migration...", async ctx =>
-                        {
-                            try
-                            {
-                                ctx.Status("Building project before migration...");
-                                await RunCommandAsync("dotnet", "build", projectPath);
-
-                                var isLayered = string.Equals(template, "layered", StringComparison.OrdinalIgnoreCase) ||
-                                                string.Equals(template, "swap-layered", StringComparison.OrdinalIgnoreCase);
-                                ctx.Status("Creating initial migration...");
-                                if (isLayered)
-                                {
-                                    await RunCommandAsync("dotnet", "ef migrations add InitialCreate -p src/Infrastructure -s src/Web", projectPath);
-                                }
-                                else
-                                {
-                                    await RunCommandAsync("dotnet", "ef migrations add InitialCreate", Path.Combine(projectPath, "src"));
-                                }
-                                AnsiConsole.MarkupLine("[green]✓[/] Migration created");
-
-                                ctx.Status("Updating database...");
-                                if (isLayered)
-                                {
-                                    await RunCommandAsync("dotnet", "ef database update -p src/Infrastructure -s src/Web", projectPath);
-                                }
-                                else
-                                {
-                                    await RunCommandAsync("dotnet", "ef database update", Path.Combine(projectPath, "src"));
-                                }
-                                AnsiConsole.MarkupLine("[green]✓[/] Database updated");
-                            }
-                            catch (Exception ex)
-                            {
-                                AnsiConsole.MarkupLine($"[red]✗[/] Migration creation failed: {ex.Message}");
-                                throw;
-                            }
-                        });
-                }
-                else
-                {
-                    AnsiConsole.MarkupLine("[yellow]Skipping automatic EF migrations for modular monolith.[/]");
-                    AnsiConsole.MarkupLine("[dim]Provider-specific example migrations are included in module shim projects. See docs in the generated project for details.[/]");
-                }
-                    
-                AnsiConsole.WriteLine();
-                AnsiConsole.MarkupLine("[green]✓[/] Migrations applied and database ready!");
-                }
-                catch (Exception)
-                {
-                    AnsiConsole.WriteLine();
-                    AnsiConsole.MarkupLine("[red]✗ Setup failed. Please run the setup commands manually:[/]");
-                    var isLayered = string.Equals(template, "layered", StringComparison.OrdinalIgnoreCase) ||
-                                    string.Equals(template, "swap-layered", StringComparison.OrdinalIgnoreCase);
-                    var isModular = string.Equals(template, "modular-monolith", StringComparison.OrdinalIgnoreCase) ||
-                                    string.Equals(template, "swap-modular-monolith", StringComparison.OrdinalIgnoreCase);
-                    if (isLayered || isModular)
-                    {
-                        AnsiConsole.MarkupLine($"  cd {name}/src/Web");
-                        AnsiConsole.MarkupLine("  npm install");
-                        AnsiConsole.MarkupLine("  libman restore");
-                        AnsiConsole.MarkupLine("  npm run build:css");
-                        if (!isModular)
-                        {
-                            AnsiConsole.MarkupLine($"  cd ../..");
-                            AnsiConsole.MarkupLine("  dotnet ef migrations add InitialCreate -p src/Infrastructure -s src/Web");
-                            AnsiConsole.MarkupLine("  dotnet ef database update -p src/Infrastructure -s src/Web");
-                        }
-                    }
-                    else
-                    {
-                        AnsiConsole.MarkupLine($"  cd {name}/src");
-                        AnsiConsole.MarkupLine("  npm install");
-                        AnsiConsole.MarkupLine("  libman restore");
-                        AnsiConsole.MarkupLine("  npm run build:css");
-                        AnsiConsole.MarkupLine("  dotnet ef migrations add InitialCreate");
-                        AnsiConsole.MarkupLine("  dotnet ef database update");
-                    }
+                if (!await RunSetupCommandsAsync(projectPath, name, template))
                     return 1;
-                }
             }
 
+            DisplaySuccessMessage(name, template);
+            return 0;
+        }
+        catch (Exception)
+        {
+            DisplaySetupFailureInstructions(name, template);
+            return 1;
+        }
+    }
+    
+    #region Validation
+    
+    private static bool ValidateInputs(string name, string database)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            AnsiConsole.MarkupLine($"[red]Error:[/] Project name cannot be empty.");
+            return false;
+        }
+        
+        if (name.Contains(' '))
+        {
+            AnsiConsole.MarkupLine($"[red]Error:[/] Project name cannot contain spaces. Use PascalCase (e.g., 'MyApp' instead of 'My App').");
+            return false;
+        }
+        
+        if (!char.IsLetter(name[0]))
+        {
+            AnsiConsole.MarkupLine($"[red]Error:[/] Project name must start with a letter.");
+            return false;
+        }
+        
+        if (database != "sqlite" && database != "sqlserver" && database != "postgres")
+        {
+            AnsiConsole.MarkupLine($"[red]Error:[/] Invalid database option '{database}'. Must be: sqlite, sqlserver, or postgres");
+            return false;
+        }
+        
+        return true;
+    }
+    
+    #endregion
+    
+    #region Display Messages
+    
+    private static void DisplayProjectInfo(string name, string database, string projectPath, string template, bool localNuget)
+    {
+        AnsiConsole.MarkupLine($"[bold cyan]Creating new Swap project:[/] {name}");
+        AnsiConsole.MarkupLine($"[dim]Database:[/] {database}");
+        AnsiConsole.MarkupLine($"[dim]Location:[/] {projectPath}");
+        AnsiConsole.MarkupLine($"[dim]Template:[/] {template}");
+        if (localNuget)
+        {
+            AnsiConsole.MarkupLine($"[dim]NuGet Source:[/] [yellow]Local feed (development mode)[/]");
+        }
+        AnsiConsole.WriteLine();
+    }
+    
+    private static void DisplaySuccessMessage(string name, string template)
+    {
         AnsiConsole.WriteLine();
         AnsiConsole.MarkupLine("[bold green]🎉 Project ready![/]");
         AnsiConsole.WriteLine();
         AnsiConsole.MarkupLine("[bold]Run your application:[/]");
-        var layered = string.Equals(template, "layered", StringComparison.OrdinalIgnoreCase) ||
-                      string.Equals(template, "swap-layered", StringComparison.OrdinalIgnoreCase);
-        var modular = string.Equals(template, "modular-monolith", StringComparison.OrdinalIgnoreCase) ||
-                      string.Equals(template, "swap-modular-monolith", StringComparison.OrdinalIgnoreCase);
-        if (layered || modular)
+        
+        var isLayeredOrModular = IsLayeredTemplate(template) || IsModularMonolithTemplate(template);
+        if (isLayeredOrModular)
         {
             AnsiConsole.MarkupLine($"  cd {name}/src/Web");
             AnsiConsole.MarkupLine("  dotnet run");
@@ -310,18 +151,19 @@ public static class NewCommand
             AnsiConsole.MarkupLine($"  cd {name}/src");
             AnsiConsole.MarkupLine("  dotnet run");
         }
+        
         AnsiConsole.WriteLine();
         AnsiConsole.MarkupLine("[dim]Then visit: http://localhost:5000[/]");
-        return 0;
     }
-    catch (Exception)
+    
+    private static void DisplaySetupFailureInstructions(string name, string template)
     {
         AnsiConsole.WriteLine();
         AnsiConsole.MarkupLine("[red]✗ Setup failed. Please run the setup commands manually:[/]");
-        var isLayered = string.Equals(template, "layered", StringComparison.OrdinalIgnoreCase) ||
-                        string.Equals(template, "swap-layered", StringComparison.OrdinalIgnoreCase);
-        var isModular = string.Equals(template, "modular-monolith", StringComparison.OrdinalIgnoreCase) ||
-                        string.Equals(template, "swap-modular-monolith", StringComparison.OrdinalIgnoreCase);
+        
+        var isLayered = IsLayeredTemplate(template);
+        var isModular = IsModularMonolithTemplate(template);
+        
         if (isLayered || isModular)
         {
             AnsiConsole.MarkupLine($"  cd {name}/src/Web");
@@ -344,9 +186,232 @@ public static class NewCommand
             AnsiConsole.MarkupLine("  dotnet ef migrations add InitialCreate");
             AnsiConsole.MarkupLine("  dotnet ef database update");
         }
-        return 1;
     }
+    
+    #endregion
+    
+    #region Template Helpers
+    
+    private static bool IsLayeredTemplate(string template)
+    {
+        return string.Equals(template, TemplateLayered, StringComparison.OrdinalIgnoreCase) ||
+               string.Equals(template, "swap-layered", StringComparison.OrdinalIgnoreCase);
     }
+    
+    private static bool IsModularMonolithTemplate(string template)
+    {
+        return string.Equals(template, TemplateModularMonolith, StringComparison.OrdinalIgnoreCase) ||
+               string.Equals(template, "swap-modular-monolith", StringComparison.OrdinalIgnoreCase);
+    }
+    
+    private static string ResolveTemplateFolder(string template)
+    {
+        var normalized = template.Trim().ToLowerInvariant();
+        return normalized switch
+        {
+            "monolith" or "swap-monolith" => "swap-monolith",
+            "layered" or "swap-layered" => "swap-layered",
+            "modular-monolith" or "swap-modular-monolith" => "swap-modular-monolith",
+            _ => throw new ArgumentException($"Unknown template '{template}'. Use 'monolith', 'layered', or 'modular-monolith'.")
+        };
+    }
+    
+    #endregion
+    
+    #region Prerequisites
+    
+    private static async Task<bool> CheckPrerequisitesAsync(string projectName)
+    {
+        AnsiConsole.Status().Start("Checking prerequisites...", ctx => { });
+        
+        var hasNpm = await IsCommandAvailableAsync("npm");
+        var hasLibman = await IsCommandAvailableAsync("libman");
+        
+        if (hasNpm && hasLibman)
+        {
+            AnsiConsole.MarkupLine("[green]✓[/] Prerequisites check passed");
+            AnsiConsole.WriteLine();
+            return true;
+        }
+        
+        DisplayPrerequisiteFailure(hasNpm, hasLibman, projectName);
+        return false;
+    }
+    
+    private static void DisplayPrerequisiteFailure(bool hasNpm, bool hasLibman, string projectName)
+    {
+        AnsiConsole.WriteLine();
+        AnsiConsole.MarkupLine("[red]✗ Prerequisites check failed[/]");
+        AnsiConsole.WriteLine();
+        
+        if (!hasNpm)
+        {
+            AnsiConsole.MarkupLine("[red]  ✗ npm not found[/]");
+            AnsiConsole.MarkupLine("    [dim]npm is required for Tailwind CSS and frontend dependencies[/]");
+            AnsiConsole.WriteLine();
+            AnsiConsole.MarkupLine("    [bold]Install Node.js (includes npm):[/]");
+            AnsiConsole.MarkupLine("      • Download: [link]https://nodejs.org/[/] (LTS version recommended)");
+            AnsiConsole.MarkupLine("      • Windows (winget): [cyan]winget install OpenJS.NodeJS.LTS[/]");
+            AnsiConsole.MarkupLine("      • Windows (chocolatey): [cyan]choco install nodejs-lts[/]");
+            AnsiConsole.MarkupLine("      • macOS (homebrew): [cyan]brew install node[/]");
+            AnsiConsole.MarkupLine("      • Linux: Use your package manager (apt, yum, etc.)");
+        }
+        
+        if (!hasLibman)
+        {
+            AnsiConsole.MarkupLine("[red]  ✗ libman not found[/]");
+            AnsiConsole.MarkupLine("    [dim]libman manages client libraries (HTMX, DaisyUI)[/]");
+            AnsiConsole.WriteLine();
+            AnsiConsole.MarkupLine("    [bold]Install libman:[/]");
+            AnsiConsole.MarkupLine("      [cyan]dotnet tool install -g Microsoft.Web.LibraryManager.Cli[/]");
+        }
+        
+        AnsiConsole.WriteLine();
+        AnsiConsole.MarkupLine("[yellow]After installing the above tools:[/]");
+        AnsiConsole.MarkupLine("  1. [bold]Restart your terminal[/] (to refresh PATH)");
+        AnsiConsole.MarkupLine("  2. Verify installations:");
+        if (!hasNpm)
+            AnsiConsole.MarkupLine("     [cyan]npm --version[/]");
+        if (!hasLibman)
+            AnsiConsole.MarkupLine("     [cyan]libman --version[/]");
+        AnsiConsole.MarkupLine($"  3. Run [cyan]swap new {projectName}[/] again");
+        AnsiConsole.WriteLine();
+    }
+    
+    private static async Task<bool> IsCommandAvailableAsync(string command)
+    {
+        try
+        {
+            var isWindows = OperatingSystem.IsWindows();
+            var fileName = isWindows ? "cmd.exe" : command;
+            var arguments = isWindows ? $"/c {command} --version" : "--version";
+            
+            var processStartInfo = new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = fileName,
+                Arguments = arguments,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+            
+            using var process = System.Diagnostics.Process.Start(processStartInfo);
+            if (process == null) return false;
+            
+            await process.WaitForExitAsync();
+            return process.ExitCode == 0;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+    
+    #endregion
+    
+    #region Setup Commands
+    
+    private static async Task<bool> RunSetupCommandsAsync(string projectPath, string name, string template)
+    {
+        try
+        {
+            await RunFrontendSetupAsync(projectPath, template);
+            await RunDatabaseSetupAsync(projectPath, template);
+            
+            AnsiConsole.WriteLine();
+            AnsiConsole.MarkupLine("[green]✓[/] Migrations applied and database ready!");
+            return true;
+        }
+        catch (Exception)
+        {
+            DisplaySetupFailureInstructions(name, template);
+            return false;
+        }
+    }
+    
+    private static async Task RunFrontendSetupAsync(string projectPath, string template)
+    {
+        await AnsiConsole.Status().StartAsync("Running setup commands...", async ctx =>
+        {
+            var isLayeredOrModular = IsLayeredTemplate(template) || IsModularMonolithTemplate(template);
+            var webDir = isLayeredOrModular 
+                ? Path.Combine(projectPath, "src", "Web") 
+                : Path.Combine(projectPath, "src");
+            
+            await RunSetupStepAsync(ctx, "Running npm install...", () => 
+                RunCommandAsync("npm", "install", webDir), "npm install completed");
+            
+            await RunSetupStepAsync(ctx, "Running libman restore...", () => 
+                RunCommandAsync("libman", "restore", webDir), "libman restore completed");
+            
+            await RunSetupStepAsync(ctx, "Building CSS...", () => 
+                RunCommandAsync("npm", "run build:css", webDir), "CSS build completed");
+        });
+        
+        AnsiConsole.WriteLine();
+        AnsiConsole.MarkupLine("[green]✓[/] Setup completed!");
+        AnsiConsole.WriteLine();
+    }
+    
+    private static async Task RunDatabaseSetupAsync(string projectPath, string template)
+    {
+        if (IsModularMonolithTemplate(template))
+        {
+            AnsiConsole.MarkupLine("[yellow]Skipping automatic EF migrations for modular monolith.[/]");
+            AnsiConsole.MarkupLine("[dim]Provider-specific example migrations are included in module shim projects. See docs in the generated project for details.[/]");
+            return;
+        }
+        
+        await AnsiConsole.Status().StartAsync("Creating initial migration...", async ctx =>
+        {
+            ctx.Status("Building project before migration...");
+            await RunCommandAsync("dotnet", "build", projectPath);
+            
+            var isLayered = IsLayeredTemplate(template);
+            
+            ctx.Status("Creating initial migration...");
+            if (isLayered)
+            {
+                await RunCommandAsync("dotnet", "ef migrations add InitialCreate -p src/Infrastructure -s src/Web", projectPath);
+            }
+            else
+            {
+                await RunCommandAsync("dotnet", "ef migrations add InitialCreate", Path.Combine(projectPath, "src"));
+            }
+            AnsiConsole.MarkupLine("[green]✓[/] Migration created");
+            
+            ctx.Status("Updating database...");
+            if (isLayered)
+            {
+                await RunCommandAsync("dotnet", "ef database update -p src/Infrastructure -s src/Web", projectPath);
+            }
+            else
+            {
+                await RunCommandAsync("dotnet", "ef database update", Path.Combine(projectPath, "src"));
+            }
+            AnsiConsole.MarkupLine("[green]✓[/] Database updated");
+        });
+    }
+    
+    private static async Task RunSetupStepAsync(StatusContext ctx, string statusMessage, Func<Task> action, string successMessage)
+    {
+        try
+        {
+            ctx.Status(statusMessage);
+            await action();
+            AnsiConsole.MarkupLine($"[green]✓[/] {successMessage}");
+        }
+        catch (Exception ex)
+        {
+            AnsiConsole.MarkupLine($"[red]✗[/] {statusMessage.TrimEnd('.')} failed: {ex.Message}");
+            throw;
+        }
+    }
+    
+    #endregion
+    
+    #region Unused Legacy Methods
     
     private static async Task AddHtmxShellAsync(string workingDir, string projectName)
     {
@@ -425,117 +490,163 @@ public class HtmxShellMiddleware
         }
     }
     
+    #endregion
+    
+    #region Project Generation
+    
     private static async Task GenerateProjectAsync(string projectName, string database, string projectPath, bool localNuget, string template)
     {
-        var raw = (template ?? "monolith").Trim().ToLowerInvariant();
-        var selected = raw switch
-        {
-            // Route both aliases to the single maintained template
-            "monolith" => "swap-monolith",
-            "swap-monolith" => "swap-monolith",
-            "layered" => "swap-layered",
-            "swap-layered" => "swap-layered",
-            "modular-monolith" => "swap-modular-monolith",
-            "swap-modular-monolith" => "swap-modular-monolith",
-            _ => throw new ArgumentException($"Unknown template '{template}'. Use 'monolith', 'swap-monolith', 'layered', 'swap-layered', 'modular-monolith', or 'swap-modular-monolith'.")
-        };
-        // Allow tests and custom packaging to override templates base directory
-        var templatesBase = Environment.GetEnvironmentVariable("SWAP_TEMPLATES_DIR");
-        var templatePath = string.IsNullOrWhiteSpace(templatesBase)
-            ? Path.Combine(AppContext.BaseDirectory, "templates", selected)
-            : Path.Combine(templatesBase!, selected);
+        var selectedTemplate = ResolveTemplateFolder(template);
+        var templatePath = GetTemplatePath(selectedTemplate);
         
+        ValidateTemplatePath(templatePath, selectedTemplate);
+        
+        Directory.CreateDirectory(projectPath);
+        
+        var variables = CreateTemplateVariables(projectName, database, localNuget);
+        
+        await AnsiConsole.Status().StartAsync("Generating project...", async ctx =>
+        {
+            var useSrcLayout = selectedTemplate == "swap-monolith" || selectedTemplate == "swap-layered";
+            
+            if (selectedTemplate == "swap-modular-monolith")
+            {
+                ValidateModularMonolithTemplate(templatePath, selectedTemplate);
+            }
+            
+            var prefixFolder = DeterminePrefixFolder(useSrcLayout, templatePath);
+            await ProcessTemplateDirectoryAsync(templatePath, projectPath, variables, ctx, prefixFolder);
+            
+            if (localNuget)
+            {
+                await SetupLocalNuGetAsync(projectPath, ctx);
+            }
+        });
+    }
+    
+    private static string GetTemplatePath(string selectedTemplate)
+    {
+        var templatesBase = Environment.GetEnvironmentVariable("SWAP_TEMPLATES_DIR");
+        return string.IsNullOrWhiteSpace(templatesBase)
+            ? Path.Combine(AppContext.BaseDirectory, "templates", selectedTemplate)
+            : Path.Combine(templatesBase!, selectedTemplate);
+    }
+    
+    private static void ValidateTemplatePath(string templatePath, string selectedTemplate)
+    {
         if (!Directory.Exists(templatePath))
         {
             throw new DirectoryNotFoundException($"Template directory not found: {templatePath}");
         }
-        
-    // Create project directory
-    Directory.CreateDirectory(projectPath);
-        
-        // Setup template variables
-        var variables = new Dictionary<string, string>
+    }
+    
+    private static void ValidateModularMonolithTemplate(string templatePath, string selectedTemplate)
+    {
+        var hasTemplates = Directory.GetFiles(templatePath, "*.template", SearchOption.AllDirectories).Any();
+        if (!hasTemplates)
+        {
+            throw new InvalidOperationException(
+                $"Template '{selectedTemplate}' is not packaged. Expected .template files under: {templatePath}.\n" +
+                "Please vendor the Modular Monolith demo into templates/swap-modular-monolith or set SWAP_TEMPLATES_DIR to a packaged templates folder.");
+        }
+    }
+    
+    private static Dictionary<string, string> CreateTemplateVariables(string projectName, string database, bool localNuget)
+    {
+        return new Dictionary<string, string>
         {
             { "ProjectName", projectName },
             { "ProjectNameLower", projectName.ToLowerInvariant() },
             { "DatabaseProvider", database },
-            { "DatabaseType", database }, // Alias for use in display/UI
+            { "DatabaseType", database },
             { "UseLocalNuget", localNuget.ToString().ToLowerInvariant() }
         };
-        
-        await AnsiConsole.Status()
-            .StartAsync("Generating project...", async ctx =>
-            {
-                // Decide folder layout: place app under src, tests under test
-                var useSrcLayout = string.Equals(selected, "swap-monolith", StringComparison.OrdinalIgnoreCase) ||
-                                    string.Equals(selected, "swap-layered", StringComparison.OrdinalIgnoreCase);
-
-                // For all templates, use the packaged .template files only
-                // Enforce presence of .template files for swap-modular-monolith to avoid cloning raw demo files
-                if (string.Equals(selected, "swap-modular-monolith", StringComparison.OrdinalIgnoreCase))
-                {
-                    var hasTemplates = Directory.GetFiles(templatePath, "*.template", SearchOption.AllDirectories).Any();
-                    if (!hasTemplates)
-                    {
-                        throw new InvalidOperationException(
-                            $"Template '{selected}' is not packaged. Expected .template files under: {templatePath}.\n" +
-                            "Please vendor the Modular Monolith demo into templates/swap-modular-monolith or set SWAP_TEMPLATES_DIR to a packaged templates folder.");
-                    }
-                }
-
-                // Copy and process all template files (.template-based)
-                // If the template already contains a top-level 'src' folder, do not add another prefix
-                string? prefixFolder = null;
-                if (useSrcLayout)
-                {
-                    var hasSrcDir = Directory.Exists(Path.Combine(templatePath, "src"));
-                    prefixFolder = hasSrcDir ? null : "src";
-                }
-                await ProcessTemplateDirectoryAsync(templatePath, projectPath, variables, ctx, prefixFolder);
-                
-                // If using local NuGet, ensure packages are built and create nuget.config
-                if (localNuget)
-                {
-                    // Check if local feed exists, if not, offer to create it
-                    var swapRootPath = Path.GetFullPath(Path.Combine(projectPath, "..", ".."));
-                    var localFeedPath = Path.Combine(swapRootPath, ".nuget", "local");
-                    
-                    if (!Directory.Exists(localFeedPath) || !Directory.GetFiles(localFeedPath, "*.nupkg").Any())
-                    {
-                        ctx.Status("Local NuGet feed not found. Building packages...");
-                        
-                        // Run pack-local script
-                        var isWindows = OperatingSystem.IsWindows();
-                        var packScript = isWindows ? "pack-local.ps1" : "pack-local.sh";
-                        var packScriptPath = Path.Combine(swapRootPath, "scripts", packScript);
-                        
-                        if (File.Exists(packScriptPath))
-                        {
-                            AnsiConsole.MarkupLine("\n[yellow]Building local NuGet packages...[/]");
-                            try
-                            {
-                                if (isWindows)
-                                {
-                                    await RunCommandAsync("pwsh", $"-File \"{packScriptPath}\"", swapRootPath);
-                                }
-                                else
-                                {
-                                    await RunCommandAsync("bash", $"\"{packScriptPath}\"", swapRootPath);
-                                }
-                                AnsiConsole.MarkupLine("[green]✓[/] Local packages built successfully!");
-                            }
-                            catch (Exception ex)
-                            {
-                                AnsiConsole.MarkupLine($"[yellow]Warning:[/] Could not build local packages: {ex.Message}");
-                                AnsiConsole.MarkupLine($"[yellow]Run manually:[/] {packScript}");
-                            }
-                        }
-                    }
-                    
-                    await CreateLocalNugetConfigAsync(projectPath, ctx);
-                }
-            });
     }
+    
+    private static string? DeterminePrefixFolder(bool useSrcLayout, string templatePath)
+    {
+        if (!useSrcLayout)
+            return null;
+        
+        var hasSrcDir = Directory.Exists(Path.Combine(templatePath, "src"));
+        return hasSrcDir ? null : "src";
+    }
+    
+    private static async Task SetupLocalNuGetAsync(string projectPath, StatusContext ctx)
+    {
+        var swapRootPath = Path.GetFullPath(Path.Combine(projectPath, "..", ".."));
+        var localFeedPath = Path.Combine(swapRootPath, ".nuget", "local");
+        
+        if (!Directory.Exists(localFeedPath) || !Directory.GetFiles(localFeedPath, "*.nupkg").Any())
+        {
+            await BuildLocalNuGetPackagesAsync(swapRootPath, ctx);
+        }
+        
+        await CreateLocalNugetConfigAsync(projectPath, ctx);
+    }
+    
+    private static async Task BuildLocalNuGetPackagesAsync(string swapRootPath, StatusContext ctx)
+    {
+        ctx.Status("Local NuGet feed not found. Building packages...");
+        
+        var isWindows = OperatingSystem.IsWindows();
+        var packScript = isWindows ? "pack-local.ps1" : "pack-local.sh";
+        var packScriptPath = Path.Combine(swapRootPath, "scripts", packScript);
+        
+        if (!File.Exists(packScriptPath))
+            return;
+        
+        AnsiConsole.MarkupLine("\n[yellow]Building local NuGet packages...[/]");
+        try
+        {
+            if (isWindows)
+            {
+                await RunCommandAsync("pwsh", $"-File \"{packScriptPath}\"", swapRootPath);
+            }
+            else
+            {
+                await RunCommandAsync("bash", $"\"{packScriptPath}\"", swapRootPath);
+            }
+            AnsiConsole.MarkupLine("[green]✓[/] Local packages built successfully!");
+        }
+        catch (Exception ex)
+        {
+            AnsiConsole.MarkupLine($"[yellow]Warning:[/] Could not build local packages: {ex.Message}");
+            AnsiConsole.MarkupLine($"[yellow]Run manually:[/] {packScript}");
+        }
+    }
+    
+    private static async Task CreateLocalNugetConfigAsync(string projectPath, StatusContext ctx)
+    {
+        ctx.Status("Creating nuget.config for local feed...");
+        
+        var relativeLocalFeedPath = "../../.nuget/local";
+        var absoluteCheckPath = Path.GetFullPath(Path.Combine(projectPath, relativeLocalFeedPath));
+        
+        if (!Directory.Exists(absoluteCheckPath))
+        {
+            throw new DirectoryNotFoundException(
+                $"Local NuGet feed not found at: {absoluteCheckPath}\n" +
+                $"The --local-nuget flag is intended for development within the Swap repository.\n" +
+                $"Run pack-local.ps1 or pack-local.sh first to create local packages.");
+        }
+        
+        var nugetConfig = $@"<?xml version=""1.0"" encoding=""utf-8""?>
+<configuration>
+  <packageSources>
+    <clear />
+    <add key=""local"" value=""{relativeLocalFeedPath}"" />
+    <add key=""nuget.org"" value=""https://api.nuget.org/v3/index.json"" />
+  </packageSources>
+</configuration>";
+        
+        var nugetConfigPath = Path.Combine(projectPath, "nuget.config");
+        await File.WriteAllTextAsync(nugetConfigPath, nugetConfig);
+    }
+    
+    #endregion
+    
+    #region Template Processing
     
     private static async Task ProcessTemplateDirectoryAsync(
         string sourcePath,
@@ -775,37 +886,6 @@ public class HtmxShellMiddleware
         }
     }
     
-    private static async Task<bool> IsCommandAvailableAsync(string command)
-    {
-        try
-        {
-            // On Windows, npm is a PowerShell script, so we need to use cmd or pwsh to run it
-            var isWindows = OperatingSystem.IsWindows();
-            var fileName = isWindows ? "cmd.exe" : command;
-            var arguments = isWindows ? $"/c {command} --version" : "--version";
-            
-            var processStartInfo = new System.Diagnostics.ProcessStartInfo
-            {
-                FileName = fileName,
-                Arguments = arguments,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                UseShellExecute = false,
-                CreateNoWindow = true
-            };
-            
-            using var process = System.Diagnostics.Process.Start(processStartInfo);
-            if (process == null) return false;
-            
-            await process.WaitForExitAsync();
-            return process.ExitCode == 0;
-        }
-        catch
-        {
-            return false;
-        }
-    }
-    
     private static async Task RunCommandAsync(string command, string arguments, string workingDirectory)
     {
         // On Windows, npm/npx are PowerShell scripts, so we need to use cmd to run them
@@ -874,36 +954,5 @@ public class HtmxShellMiddleware
         {
             throw new InvalidOperationException($"{command} exited with code {process.ExitCode}");
         }
-    }
-    
-    private static async Task CreateLocalNugetConfigAsync(string projectPath, StatusContext ctx)
-    {
-        ctx.Status("Creating nuget.config for local feed...");
-        
-        // Use relative path that works for testApps within swap repo
-        // From testApps/ProjectName/ → ../../.nuget/local
-        var relativeLocalFeedPath = "../../.nuget/local";
-        
-        // Verify the path exists by resolving it
-        var absoluteCheckPath = Path.GetFullPath(Path.Combine(projectPath, relativeLocalFeedPath));
-        if (!Directory.Exists(absoluteCheckPath))
-        {
-            throw new DirectoryNotFoundException(
-                $"Local NuGet feed not found at: {absoluteCheckPath}\n" +
-                $"The --local-nuget flag is intended for development within the Swap repository.\n" +
-                $"Run pack-local.ps1 or pack-local.sh first to create local packages.");
-        }
-        
-        var nugetConfig = $@"<?xml version=""1.0"" encoding=""utf-8""?>
-<configuration>
-  <packageSources>
-    <clear />
-    <add key=""local"" value=""{relativeLocalFeedPath}"" />
-    <add key=""nuget.org"" value=""https://api.nuget.org/v3/index.json"" />
-  </packageSources>
-</configuration>";
-        
-        var nugetConfigPath = Path.Combine(projectPath, "nuget.config");
-        await File.WriteAllTextAsync(nugetConfigPath, nugetConfig);
     }
 }

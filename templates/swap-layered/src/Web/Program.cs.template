@@ -75,7 +75,16 @@ if (app.Environment.IsDevelopment())
     using (var scope = app.Services.CreateScope())
     {
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        db.Database.Migrate();
+        try
+        {
+            db.Database.Migrate();
+        }
+        catch (Exception ex)
+        {
+            // Log migration errors but don't crash on startup
+            var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+            logger.LogError(ex, "Error applying migrations. If using Docker volumes, try: docker compose down -v");
+        }
     }
     app.MapSwapHtmxDevEndpoints();
 }
