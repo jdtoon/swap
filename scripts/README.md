@@ -15,7 +15,7 @@ These scripts are used for **local development and testing only**. They help fra
 **What it does:**
 1. Cleans previous builds and packages
 2. Restores dependencies for all projects
-3. Builds all framework packages (Swap.Htmx, Swap.Patterns, Swap.Testing)
+3. Builds all framework packages (Swap.Htmx, Swap.Modularity, Swap.Patterns, Swap.Testing)
 4. Builds Swap.CLI
 5. Packs all projects as NuGet packages
 6. Copies packages to `.nuget/local/` directory
@@ -31,7 +31,7 @@ These scripts are used for **local development and testing only**. They help fra
 
 **Output:**
 - Creates `.nuget/local/` directory with all `.nupkg` files
-- Packages are versioned according to `.csproj` files (currently v0.1.0)
+- Packages are versioned according to each project's `.csproj` file
 
 ### `reinstall-cli.ps1` / `reinstall-cli.sh`
 
@@ -73,6 +73,11 @@ These scripts are used for **local development and testing only**. They help fra
    cd TestApp
    # Test your changes...
    ```
+   
+   For the new modular monolith template, ensure you use the local feed so the host and modules resolve local packages:
+   ```powershell
+   swap new MyModApp --template swap-modular-monolith --local-nuget
+   ```
 
 ## Local NuGet Feed
 
@@ -84,10 +89,11 @@ The `.nuget/local/` directory acts as a local NuGet feed:
 **Location:** `c:\jd\swap\.nuget\local\`
 
 **Contents:**
-- `Swap.CLI.0.1.0.nupkg`
-- `Swap.Htmx.0.1.0.nupkg`
-- `Swap.Patterns.0.1.0.nupkg`
-- `Swap.Testing.0.1.0.nupkg`
+- `Swap.CLI.<version>.nupkg`
+- `Swap.Htmx.<version>.nupkg`
+- `Swap.Modularity.<version>.nupkg`
+- `Swap.Patterns.<version>.nupkg`
+- `Swap.Testing.<version>.nupkg`
 
 ## Notes
 
