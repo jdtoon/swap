@@ -10,6 +10,8 @@
   <ItemGroup>
     <ProjectReference Include="..\Demo.Contracts\Demo.Contracts.csproj" />
     <ProjectReference Include="..\..\Todos\Todos.Contracts\Todos.Contracts.csproj" />
-    <ProjectReference Include="..\..\..\..\..\..\framework\Swap.Modularity\Swap.Modularity.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Swap.Modularity" Version="0.3.0" />
   </ItemGroup>
 </Project>

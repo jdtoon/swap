@@ -12,8 +12,10 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Todos.Contracts\Todos.Contracts.csproj" />
-    <ProjectReference Include="..\..\..\..\..\..\framework\Swap.Modularity\Swap.Modularity.csproj" />
-    <ProjectReference Include="..\..\..\..\..\..\framework\Swap.Htmx\Swap.Htmx.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Swap.Modularity" Version="0.3.0" />
+    <PackageReference Include="Swap.Htmx" Version="0.3.0" />
   </ItemGroup>
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />

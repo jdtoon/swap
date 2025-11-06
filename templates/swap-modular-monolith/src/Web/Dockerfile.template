@@ -21,8 +21,7 @@ COPY ["demo/{{ProjectName}}/src/Modules/Todos/Todos.Web/Todos.Web.csproj", "demo
 COPY ["demo/{{ProjectName}}/src/Modules/Demo/Demo.Contracts/Demo.Contracts.csproj", "demo/{{ProjectName}}/src/Modules/Demo/Demo.Contracts/"]
 COPY ["demo/{{ProjectName}}/src/Modules/Demo/Demo.Module/Demo.Module.csproj", "demo/{{ProjectName}}/src/Modules/Demo/Demo.Module/"]
 COPY ["demo/{{ProjectName}}/src/Modules/Demo/Demo.Web/Demo.Web.csproj", "demo/{{ProjectName}}/src/Modules/Demo/Demo.Web/"]
-COPY ["framework/Swap.Modularity/Swap.Modularity.csproj", "framework/Swap.Modularity/"]
-COPY ["framework/Swap.Htmx/Swap.Htmx.csproj", "framework/Swap.Htmx/"]
+
 
 RUN dotnet restore "demo/{{ProjectName}}/src/Web/Web.csproj"
 

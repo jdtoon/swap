@@ -17,10 +17,10 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="AngleSharp" Version="1.1.2" />
+    <PackageReference Include="Swap.Testing" Version="0.3.0" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\..\Web\Web.csproj" />
-      <ProjectReference Include="..\..\..\..\..\..\..\framework\Swap.Testing\Swap.Testing.csproj" />
     <ProjectReference Include="..\..\Todos.Module\Todos.Module.csproj" />
   </ItemGroup>
 </Project>

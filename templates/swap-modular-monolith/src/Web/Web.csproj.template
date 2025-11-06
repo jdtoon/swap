@@ -13,12 +13,15 @@
     <ProjectReference Include="..\Modules\Demo\Demo.Contracts\Demo.Contracts.csproj" />
     <ProjectReference Include="..\Modules\Demo\Demo.Module\Demo.Module.csproj" />
     <ProjectReference Include="..\Modules\Demo\Demo.Web\Demo.Web.csproj" />
-    <!-- Directly reference module contracts used by Program.cs -->
-    <ProjectReference Include="..\..\..\..\framework\Swap.Modularity\Swap.Modularity.csproj" />
-    <ProjectReference Include="..\..\..\..\framework\Swap.Htmx\Swap.Htmx.csproj" />
+    <!-- Use NuGet packages for Swap frameworks -->
     <!-- Bring provider-specific migrations assemblies to runtime output -->
     <ProjectReference Include="..\Modules\Todos\Todos.Migrations.SqlServer\Todos.Migrations.SqlServer.csproj" />
     <ProjectReference Include="..\Modules\Todos\Todos.Migrations.Postgres\Todos.Migrations.Postgres.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Swap.Modularity" Version="0.3.0" />
+    <PackageReference Include="Swap.Htmx" Version="0.3.0" />
   </ItemGroup>
 
   <!-- Build Tailwind CSS via NPM if available -->
