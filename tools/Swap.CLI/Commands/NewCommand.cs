@@ -567,7 +567,9 @@ public class HtmxShellMiddleware
                 var isSlnTmpl = relLowerForSkip.EndsWith(".sln.template");
                 var isReadmeTmpl = string.Equals(relLowerForSkip, "readme.md.template", StringComparison.OrdinalIgnoreCase);
                 var isComposeTmpl = string.Equals(relLowerForSkip, "docker-compose.yml.template", StringComparison.OrdinalIgnoreCase);
-                if (!isUnderSrc && !isTests && !isDocs && !isSlnTmpl && !isReadmeTmpl && !isComposeTmpl)
+                var isGitignoreTmpl = string.Equals(relLowerForSkip, ".gitignore.template", StringComparison.OrdinalIgnoreCase);
+                var isDockerignoreTmpl = string.Equals(relLowerForSkip, ".dockerignore.template", StringComparison.OrdinalIgnoreCase);
+                if (!isUnderSrc && !isTests && !isDocs && !isSlnTmpl && !isReadmeTmpl && !isComposeTmpl && !isGitignoreTmpl && !isDockerignoreTmpl)
                 {
                     // Skip any other root-level files (e.g., Program.cs.template, Project.csproj.template, Controllers/, etc.)
                     continue;
@@ -591,6 +593,7 @@ public class HtmxShellMiddleware
                 var isDocs = relLower.StartsWith("docs/");
                 var isSln = targetRelativePath.EndsWith(".sln", StringComparison.OrdinalIgnoreCase);
                 var isRootFile = string.Equals(targetRelativePath, ".gitignore", StringComparison.OrdinalIgnoreCase) ||
+                                 string.Equals(targetRelativePath, ".dockerignore", StringComparison.OrdinalIgnoreCase) ||
                                  string.Equals(targetRelativePath, "nuget.config", StringComparison.OrdinalIgnoreCase) ||
                                  string.Equals(targetRelativePath, "README.md", StringComparison.OrdinalIgnoreCase) ||
                                  string.Equals(targetRelativePath, "docker-compose.yml", StringComparison.OrdinalIgnoreCase);
@@ -651,7 +654,9 @@ public class HtmxShellMiddleware
                 var isSln = relLowerForSkip.EndsWith(".sln");
                 var isReadme = string.Equals(relLowerForSkip, "readme.md", StringComparison.OrdinalIgnoreCase);
                 var isCompose = string.Equals(relLowerForSkip, "docker-compose.yml", StringComparison.OrdinalIgnoreCase);
-                if (!isUnderSrc && !isTests && !isDocs && !isSln && !isReadme && !isCompose)
+                var isGitignore = string.Equals(relLowerForSkip, ".gitignore", StringComparison.OrdinalIgnoreCase);
+                var isDockerignore = string.Equals(relLowerForSkip, ".dockerignore", StringComparison.OrdinalIgnoreCase);
+                if (!isUnderSrc && !isTests && !isDocs && !isSln && !isReadme && !isCompose && !isGitignore && !isDockerignore)
                 {
                     // Skip any other root-level files (e.g., static assets, root .gitignore/.dockerignore duplicates)
                     continue;
@@ -669,6 +674,7 @@ public class HtmxShellMiddleware
                 var isDocs = relLower.StartsWith("docs/");
                 var isSln = targetRelativePath.EndsWith(".sln", StringComparison.OrdinalIgnoreCase);
                 var isRootFile = string.Equals(targetRelativePath, ".gitignore", StringComparison.OrdinalIgnoreCase) ||
+                                 string.Equals(targetRelativePath, ".dockerignore", StringComparison.OrdinalIgnoreCase) ||
                                  string.Equals(targetRelativePath, "nuget.config", StringComparison.OrdinalIgnoreCase) ||
                                  string.Equals(targetRelativePath, "README.md", StringComparison.OrdinalIgnoreCase) ||
                                  string.Equals(targetRelativePath, "docker-compose.yml", StringComparison.OrdinalIgnoreCase);
