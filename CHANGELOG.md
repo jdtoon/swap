@@ -11,6 +11,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.3.2] - 2025-11-06
+
+### Added - Template: Modular Monolith (swap-modular-monolith)
+- New production-lean template for modular monoliths: single deployable host with clearly bounded modules.
+- Per-module ownership: each module ships with `Contracts`, `Module` (services/endpoints), and a `Web` Razor Class Library for UI.
+- Provider-specific EF Core migrations as module-owned projects (SqlServer/Postgres) with design-time factories.
+- Uses NuGet packages (`Swap.Modularity`, `Swap.Htmx`, `Swap.Testing`) instead of project references.
+- Docker assets included (Postgres, optional RabbitMQ) with sensible defaults.
+- Example event chains, tests, and docs included to guide module authoring.
+
+### Added - CLI Support
+- `swap new MyApp --template swap-modular-monolith` generates the full modular monolith solution.
+- Host pre-wired with `AddSwapModules(...)`, `MapSwapModuleEndpoints()`, and optional event-chain configuration hook.
+- Server events transport selectable via configuration (in-memory or RabbitMQ) using `AddSwapServerEventChainsFromConfiguration`.
+
+### Added - Documentation
+- Template-level README and docs: architecture, module authoring, database migrations, server events, and host wiring.
+- Quickstarts added to template docs; links integrated into the main docs site.
+
+### Validated
+- Generated modular monolith builds and runs locally; example integration tests pass using `Swap.Testing`.
+
+---
+
 ## [0.3.1] - 2025-11-03
 
 ### Fixed - CLI Setup Hang
