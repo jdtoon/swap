@@ -140,3 +140,13 @@ Example generated view:
 - [Your First Project](./getting-started/first-project) - Build a simple CRUD app
 - [CLI Reference](./cli/overview) - Complete command documentation
 - [Entity Patterns](./features/patterns) - Soft delete, auditable, sluggable, and more
+
+## Comprehensive Guides
+
+For deeper dives into the framework, check out these comprehensive guides in the main repository:
+
+- **[PRODUCT.md](https://github.com/jdtoon/swap/blob/main/docs/PRODUCT.md)** — Complete framework overview: what is Swap, the three pillars, key features, and why use it
+- **[EVENTS.md](https://github.com/jdtoon/swap/blob/main/docs/EVENTS.md)** — Full event system guide: chain resolution modes, UI vs Server Events, RabbitMQ integration, testing
+- **[TEMPLATES.md](https://github.com/jdtoon/swap/blob/main/docs/TEMPLATES.md)** — Template comparison, detailed structures, migration paths, and choosing the right template
+- **[SECURITY.md](https://github.com/jdtoon/swap/blob/main/SECURITY.md)** — Security best practices for production deployments
+
