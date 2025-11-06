@@ -541,7 +541,9 @@ public class HtmxShellMiddleware
         // If the template already contains a top-level 'src' folder, prefer it and ignore duplicate root app files
         var hasTopLevelSrc = Directory.Exists(Path.Combine(sourcePath, "src"));
 
-        // First process all .template (text) files with token replacement
+    // First process all .template (text) files with token replacement
+    var hasTestsDir = Directory.Exists(Path.Combine(sourcePath, "tests"));
+    var hasLegacyTestDir = Directory.Exists(Path.Combine(sourcePath, "test"));
         foreach (var file in Directory.GetFiles(sourcePath, "*.template", SearchOption.AllDirectories))
         {
             // Skip legacy/non-tokenized solution templates to avoid duplicate .sln generation
@@ -554,6 +556,8 @@ public class HtmxShellMiddleware
 
             var relativePath = Path.GetRelativePath(sourcePath, file);
             var relLowerForSkip = relativePath.Replace('\\','/').ToLowerInvariant();
+            var isLegacyTestPath = relLowerForSkip.StartsWith("test/");
+            var shouldSkipLegacyTest = hasTestsDir && isLegacyTestPath;
             // When a top-level src exists, skip root-level app files to avoid duplicates
             if (hasTopLevelSrc)
             {
@@ -569,8 +573,8 @@ public class HtmxShellMiddleware
                     continue;
                 }
             }
-            // Skip legacy 'test/' folder to avoid duplicates now that we use 'tests/'
-            if (relLowerForSkip.StartsWith("test/"))
+            // Skip legacy 'test/' folder only when a parallel 'tests/' exists
+            if (shouldSkipLegacyTest)
             {
                 continue;
             }
@@ -636,6 +640,8 @@ public class HtmxShellMiddleware
 
             var relativePath = Path.GetRelativePath(sourcePath, file);
             var relLowerForSkip = relativePath.Replace('\\','/').ToLowerInvariant();
+            var isLegacyTestPath = relLowerForSkip.StartsWith("test/");
+            var shouldSkipLegacyTest = hasTestsDir && isLegacyTestPath;
             // When a top-level src exists, skip root-level app files to avoid duplicates
             if (hasTopLevelSrc)
             {
@@ -651,7 +657,7 @@ public class HtmxShellMiddleware
                     continue;
                 }
             }
-            if (relLowerForSkip.StartsWith("test/"))
+            if (shouldSkipLegacyTest)
                 continue;
             var targetRelativePath = relativePath;
 
