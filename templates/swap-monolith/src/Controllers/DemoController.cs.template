@@ -104,7 +104,13 @@ public class DemoController : SwapController
     [HttpGet]
     public IActionResult BulkTodos()
     {
-        var todos = _context.TodoItems.ToList();
+        var todos = _context.TodoItems
+            .Select(t => new {{ProjectName}}.Dtos.TodoItemDto {
+                Id = t.Id,
+                Title = t.Title,
+                IsComplete = t.IsComplete
+            })
+            .ToList();
         return PartialView("~/Views/Demo/_BulkTodos.cshtml", todos);
     }
 
