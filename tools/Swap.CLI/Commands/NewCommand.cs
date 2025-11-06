@@ -13,7 +13,7 @@ public static class NewCommand
         
         var nameArg = new Argument<string>("name", "The name of the project (e.g., MyApp)");
     var dbOption = new Option<string>("--database", () => "sqlite", "Database provider (sqlite|sqlserver|postgres)");
-    var templateOption = new Option<string>("--template", () => "monolith", "Project template (monolith|swap-monolith|layered|swap-layered|swap-modular-monolith)");
+    var templateOption = new Option<string>("--template", () => "monolith", "Project template (monolith|layered|modular-monolith)");
         var outOption = new Option<string?>("--output", "Output directory (default: ./{name})");
         var skipSetupOption = new Option<bool>("--skip-setup", description: "Skip prerequisites check, npm/libman steps, and initial migration (useful for CI/tests)");
         var localNugetOption = new Option<bool>("--local-nuget", description: "Use local NuGet feed for Swap packages (for framework development only)");
@@ -160,7 +160,8 @@ public static class NewCommand
                         {
                             var isLayered = string.Equals(template, "layered", StringComparison.OrdinalIgnoreCase) ||
                                             string.Equals(template, "swap-layered", StringComparison.OrdinalIgnoreCase);
-                            var isModular = string.Equals(template, "swap-modular-monolith", StringComparison.OrdinalIgnoreCase);
+                            var isModular = string.Equals(template, "modular-monolith", StringComparison.OrdinalIgnoreCase) ||
+                                            string.Equals(template, "swap-modular-monolith", StringComparison.OrdinalIgnoreCase);
                             // New folder layout uses src/Web for layered and modular; monolith uses src
                             var webDir = (isLayered || isModular) ? Path.Combine(projectPath, "src", "Web") : Path.Combine(projectPath, "src");
                             try
@@ -205,7 +206,8 @@ public static class NewCommand
                 
                 // Build-first, then create initial migration and update the database
                 AnsiConsole.WriteLine();
-                var isModularTemplate = string.Equals(template, "swap-modular-monolith", StringComparison.OrdinalIgnoreCase);
+                var isModularTemplate = string.Equals(template, "modular-monolith", StringComparison.OrdinalIgnoreCase) ||
+                                        string.Equals(template, "swap-modular-monolith", StringComparison.OrdinalIgnoreCase);
                 if (!isModularTemplate)
                 {
                     await AnsiConsole.Status()
@@ -262,7 +264,8 @@ public static class NewCommand
                     AnsiConsole.MarkupLine("[red]✗ Setup failed. Please run the setup commands manually:[/]");
                     var isLayered = string.Equals(template, "layered", StringComparison.OrdinalIgnoreCase) ||
                                     string.Equals(template, "swap-layered", StringComparison.OrdinalIgnoreCase);
-                    var isModular = string.Equals(template, "swap-modular-monolith", StringComparison.OrdinalIgnoreCase);
+                    var isModular = string.Equals(template, "modular-monolith", StringComparison.OrdinalIgnoreCase) ||
+                                    string.Equals(template, "swap-modular-monolith", StringComparison.OrdinalIgnoreCase);
                     if (isLayered || isModular)
                     {
                         AnsiConsole.MarkupLine($"  cd {name}/src/Web");
@@ -295,7 +298,8 @@ public static class NewCommand
         AnsiConsole.MarkupLine("[bold]Run your application:[/]");
         var layered = string.Equals(template, "layered", StringComparison.OrdinalIgnoreCase) ||
                       string.Equals(template, "swap-layered", StringComparison.OrdinalIgnoreCase);
-        var modular = string.Equals(template, "swap-modular-monolith", StringComparison.OrdinalIgnoreCase);
+        var modular = string.Equals(template, "modular-monolith", StringComparison.OrdinalIgnoreCase) ||
+                      string.Equals(template, "swap-modular-monolith", StringComparison.OrdinalIgnoreCase);
         if (layered || modular)
         {
             AnsiConsole.MarkupLine($"  cd {name}/src/Web");
@@ -316,7 +320,8 @@ public static class NewCommand
         AnsiConsole.MarkupLine("[red]✗ Setup failed. Please run the setup commands manually:[/]");
         var isLayered = string.Equals(template, "layered", StringComparison.OrdinalIgnoreCase) ||
                         string.Equals(template, "swap-layered", StringComparison.OrdinalIgnoreCase);
-        var isModular = string.Equals(template, "swap-modular-monolith", StringComparison.OrdinalIgnoreCase);
+        var isModular = string.Equals(template, "modular-monolith", StringComparison.OrdinalIgnoreCase) ||
+                        string.Equals(template, "swap-modular-monolith", StringComparison.OrdinalIgnoreCase);
         if (isLayered || isModular)
         {
             AnsiConsole.MarkupLine($"  cd {name}/src/Web");
@@ -430,8 +435,9 @@ public class HtmxShellMiddleware
             "swap-monolith" => "swap-monolith",
             "layered" => "swap-layered",
             "swap-layered" => "swap-layered",
+            "modular-monolith" => "swap-modular-monolith",
             "swap-modular-monolith" => "swap-modular-monolith",
-            _ => throw new ArgumentException($"Unknown template '{template}'. Use 'monolith', 'swap-monolith', 'layered', 'swap-layered', or 'swap-modular-monolith'.")
+            _ => throw new ArgumentException($"Unknown template '{template}'. Use 'monolith', 'swap-monolith', 'layered', 'swap-layered', 'modular-monolith', or 'swap-modular-monolith'.")
         };
         // Allow tests and custom packaging to override templates base directory
         var templatesBase = Environment.GetEnvironmentVariable("SWAP_TEMPLATES_DIR");

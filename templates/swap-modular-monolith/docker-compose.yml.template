@@ -1,8 +1,8 @@
 services:
   web:
     build:
-      context: src/Web
-      dockerfile: Dockerfile
+      context: src
+      dockerfile: Web/Dockerfile
     image: {{ProjectNameLower}}:web
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
