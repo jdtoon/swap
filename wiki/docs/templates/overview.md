@@ -4,23 +4,23 @@ sidebar_position: 2
 
 # Templates
 
-Swap ships two first-class templates. Both are HTMX-native and include the Swap Event System and real integration tests using Swap.Testing.
+Swap ships three first-class templates. All are HTMX-native and include the Swap Event System with real integration tests using Swap.Testing.
 
-- Monolith (swap-monolith) — Single project optimized for developer experience; move fast without ceremony.
-- Layered (swap-layered) — Multi-project architecture (Web, Application, Domain, Infrastructure) ready to scale.
- - Modular Monolith (swap-modular) — Coming soon. A single deployable with clear module boundaries and internal APIs.
+- Monolith (`swap-monolith`) — Single project optimized for developer experience; move fast without ceremony.
+- Layered (`swap-layered`) — Multi-project architecture (Web, Application, Domain, Infrastructure) ready to scale.
+- Modular Monolith (`swap-modular-monolith`) — Single deployable with clear module boundaries and per-module ownership.
 
 ## Quick compare
 
-| Capability | Monolith | Layered |
-| --- | --- | --- |
-| Project layout | Single web project under `src/` | 4 projects under `src/` |
-| Event system | Included | Included |
-| HTMX + DaisyUI | Included | Included |
-| EF Core | Included | DbContext/Repos in Infrastructure |
-| Tests | `test/Unit`, `test/Integration` | `test/Unit`, `test/Integration` |
-| Docker | Dockerfile + compose under `src/` | Dockerfile + compose under `src/Web` |
-| Best for | MVPs, prototypes, small/medium apps | Larger teams, long-lived apps, clear boundaries |
+| Capability | Monolith | Layered | Modular Monolith |
+| --- | --- | --- | --- |
+| Project layout | Single Web project under `src/` | Web, Application, Domain, Infrastructure | Host Web + Modules (`Contracts`, `Module`, `Web RCL`) + per-module migrations |
+| Event system | Included | Included | Included; module UI chains supported |
+| HTMX + DaisyUI | Included | Included | Included |
+| EF Core | Included | In Infrastructure | Per-module migrations (SqlServer/Postgres) |
+| Tests | `test/Unit`, `test/Integration` | `test/Unit`, `test/Integration` | Unit + Integration per module + host tests |
+| Docker | Dockerfile + compose in `src/` | Dockerfile + compose in `src/Web` | Compose with Postgres; RabbitMQ optional |
+| Best for | MVPs, prototypes, small/medium apps | Larger teams, long-lived apps | Growing teams needing module boundaries; single deployable |
 
 ## Choose a template
 
@@ -33,6 +33,9 @@ swap new MyApp --template swap-monolith
 
 # Layered
 swap new MyApp --template swap-layered
+
+# Modular Monolith
+swap new MyApp --template swap-modular-monolith
 ```
 
 Database options:
@@ -48,11 +51,18 @@ swap new MyApp --database sqlserver
 swap new MyApp --database postgres
 ```
 
-Planned:
+## Modular Monolith quickstart
 
 ```bash
-# Modular Monolith (coming soon)
-swap new MyApp --template swap-modular
+# Create the modular monolith
+swap new MyApp --template swap-modular-monolith
+
+cd MyApp
+# Optional: bring up infra (Postgres + RabbitMQ)
+docker-compose up -d
+
+# Run the host
+dotnet run --project src/Web/Web.csproj
 ```
 
 ## What’s included (both)
@@ -156,6 +166,4 @@ Templates wire server-side chains and HTMX UI listeners for you. Inspect and mod
 
 See /docs/features/event-system.
 
-## Modular Monolith (Coming soon)
-
-We’re building a modular monolith template with first-class module scaffolding and boundaries. Learn more: /docs/templates/modular-monolith
+Learn more: /docs/templates/modular-monolith
