@@ -23,6 +23,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Swap.Testing", "framework\S
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Swap.Modularity", "framework\Swap.Modularity\Swap.Modularity.csproj", "{0D2E6A19-9F5B-4E60-8A69-8B1B3CB6F9E3}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Swap.Modularity.Tests", "framework\Swap.Modularity.Tests\Swap.Modularity.Tests.csproj", "{E8C9D3E7-5C19-41F2-9D7F-5F4B8C9E1A23}"
+EndProject
  
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -130,6 +132,18 @@ Global
 		{0D2E6A19-9F5B-4E60-8A69-8B1B3CB6F9E3}.Release|x64.Build.0 = Release|Any CPU
 		{0D2E6A19-9F5B-4E60-8A69-8B1B3CB6F9E3}.Release|x86.ActiveCfg = Release|Any CPU
 		{0D2E6A19-9F5B-4E60-8A69-8B1B3CB6F9E3}.Release|x86.Build.0 = Release|Any CPU
+		{E8C9D3E7-5C19-41F2-9D7F-5F4B8C9E1A23}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E8C9D3E7-5C19-41F2-9D7F-5F4B8C9E1A23}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E8C9D3E7-5C19-41F2-9D7F-5F4B8C9E1A23}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{E8C9D3E7-5C19-41F2-9D7F-5F4B8C9E1A23}.Debug|x64.Build.0 = Debug|Any CPU
+		{E8C9D3E7-5C19-41F2-9D7F-5F4B8C9E1A23}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{E8C9D3E7-5C19-41F2-9D7F-5F4B8C9E1A23}.Debug|x86.Build.0 = Debug|Any CPU
+		{E8C9D3E7-5C19-41F2-9D7F-5F4B8C9E1A23}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E8C9D3E7-5C19-41F2-9D7F-5F4B8C9E1A23}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E8C9D3E7-5C19-41F2-9D7F-5F4B8C9E1A23}.Release|x64.ActiveCfg = Release|Any CPU
+		{E8C9D3E7-5C19-41F2-9D7F-5F4B8C9E1A23}.Release|x64.Build.0 = Release|Any CPU
+		{E8C9D3E7-5C19-41F2-9D7F-5F4B8C9E1A23}.Release|x86.ActiveCfg = Release|Any CPU
+		{E8C9D3E7-5C19-41F2-9D7F-5F4B8C9E1A23}.Release|x86.Build.0 = Release|Any CPU
 
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
@@ -144,6 +158,7 @@ Global
 		{2B9F5127-5969-4C89-B6AC-3B90FC6BBA67} = {9A0CCAB9-4303-13B4-2371-F1B97FF5B728}
 		{AF46FF94-C92A-413A-8ABF-4F7BF7AA2BE5} = {9A0CCAB9-4303-13B4-2371-F1B97FF5B728}
 		{0D2E6A19-9F5B-4E60-8A69-8B1B3CB6F9E3} = {9A0CCAB9-4303-13B4-2371-F1B97FF5B728}
+		{E8C9D3E7-5C19-41F2-9D7F-5F4B8C9E1A23} = {9A0CCAB9-4303-13B4-2371-F1B97FF5B728}
 
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
