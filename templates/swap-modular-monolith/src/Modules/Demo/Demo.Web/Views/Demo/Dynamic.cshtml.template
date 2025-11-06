@@ -1,0 +1,36 @@
+@{
+  ViewData["Title"] = "Dynamic";
+}
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+  <div class="card bg-base-100 shadow">
+    <div class="card-body">
+      <h2 class="card-title">Summary</h2>
+   <div id="summary-panel"
+     hx-get="/Demo/Summary"
+     hx-trigger="load, @EventNames.Ui.SummaryRefresh from:body"
+     hx-target="this"
+     hx-swap="innerHTML">
+        <div class="loading loading-spinner"></div>
+      </div>
+    </div>
+  </div>
+  <div class="card bg-base-100 shadow">
+    <div class="card-body">
+      <h2 class="card-title">Details</h2>
+   <div id="details-panel"
+     hx-get="/Demo/Details"
+     hx-trigger="load, @EventNames.Ui.DetailsRefresh from:body"
+     hx-target="this"
+     hx-swap="innerHTML">
+        <div class="loading loading-spinner"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="mt-6">
+  <form hx-post="/Demo/AddNote" hx-on::after-request="this.reset()" class="flex gap-2">
+    <input class="input input-bordered flex-1" name="text" placeholder="Add a note..." required />
+    <button class="btn btn-primary" type="submit">Add</button>
+  </form>
+</div>

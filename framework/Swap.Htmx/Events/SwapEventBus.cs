@@ -70,6 +70,14 @@ public class SwapEventBusOptions
     }
 
     /// <summary>
+    /// Strongly-typed overload: configure a chain from a trigger event to one or more chained events.
+    /// </summary>
+    public SwapEventBusOptions Chain(EventKey trigger, params EventKey[] chained)
+    {
+        return Chain(trigger.Name, chained?.Select(c => c.Name).ToArray() ?? Array.Empty<string>());
+    }
+
+    /// <summary>
     /// Returns an immutable snapshot of the current chains mapping.
     /// </summary>
     public IReadOnlyDictionary<string, IReadOnlyCollection<string>> GetChainsSnapshot()
@@ -162,6 +170,10 @@ public interface ISwapEventBus
     Task EmitAsync(string eventName, object? payload = null, CancellationToken ct = default);
     void Emit(string eventName, object? payload = null);
     void ClearPendingEvents();
+
+    // Strongly-typed overloads
+    Task EmitAsync(EventKey eventKey, object? payload = null, CancellationToken ct = default);
+    void Emit(EventKey eventKey, object? payload = null);
 }
 
 /// <summary>
@@ -187,6 +199,9 @@ public class SwapEventBus : ISwapEventBus
         return Task.CompletedTask;
     }
 
+    public Task EmitAsync(EventKey eventKey, object? payload = null, CancellationToken ct = default)
+        => EmitAsync(eventKey.Name, payload, ct);
+
     public void Emit(string eventName, object? payload = null)
     {
         var ctx = _http.HttpContext;
@@ -203,6 +218,8 @@ public class SwapEventBus : ISwapEventBus
         list.Add(new SwapPendingEvent(eventName, payload));
         _logger?.LogDebug("[SwapEvents] Emitted: {Event}", eventName);
     }
+
+    public void Emit(EventKey eventKey, object? payload = null) => Emit(eventKey.Name, payload);
 
     public void ClearPendingEvents()
     {

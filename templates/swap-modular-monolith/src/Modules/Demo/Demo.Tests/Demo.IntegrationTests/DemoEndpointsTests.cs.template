@@ -1,0 +1,30 @@
+using System.Threading.Tasks;
+using Swap.Testing;
+using Xunit;
+
+namespace {{ProjectName}}.Modules.Demo.IntegrationTests;
+
+public class DemoEndpointsTests : IClassFixture<HtmxTestFixture<Program>>
+{
+    private readonly HtmxTestClient<Program> _client;
+
+    public DemoEndpointsTests(HtmxTestFixture<Program> fixture)
+    {
+        _client = fixture.Client;
+    }
+
+    [Fact]
+    public async Task Home_Demo_Page_Loads()
+    {
+        var resp = await _client.GetAsync("/Demo");
+        resp.AssertSuccess();
+    }
+
+    [Fact]
+    public async Task Stats_Partial_Loads()
+    {
+        var resp = await _client.HtmxGetAsync("/Demo/Stats");
+        resp.AssertSuccess();
+        await resp.AssertPartialViewAsync();
+    }
+}

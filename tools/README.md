@@ -1,306 +1,533 @@
 # Swap CLI Tools
 
-This folder contains the Swap CLI tool and its test suite.
+[![NuGet: Swap.CLI](https://img.shields.io/nuget/v/Swap.CLI.svg?label=Swap.CLI&color=0078d4)](https://www.nuget.org/packages/Swap.CLI)
 
-## Overview
+The Swap CLI is a comprehensive code generation tool for creating and scaffolding ASP.NET Core + HTMX applications.
 
-The `tools/` directory houses the command-line interface (CLI) tool that powers code generation for Swap projects.
+---
 
-## Structure
+## 🎯 What Swap CLI Does
+
+Swap CLI generates complete, production-ready applications and features from templates. It's the fastest way to:
+
+- 📦 Create new projects from templates (Monolith, Layered, Modular Monolith)
+- 🏛️ Generate CRUD controllers with full feature set (search, pagination, sorting, filtering, modals)
+- 🔗 Add relationships and auto-generate UI (dropdowns, checkboxes)
+- 🗄️ Create database seeders and test factories
+- 🧪 Generate integration test scaffolds
+- 🔐 Scaffold authentication flows
+- 📐 Apply entity patterns (Soft Delete, Auditable, Sluggable, etc.)
+
+**No manual boilerplate. Just CLI commands.**
+
+---
+
+## ⚡ Quick Start
+
+### Install
+
+```bash
+dotnet tool install --global Swap.CLI
+swap --version
+```
+
+### Create Your First Project
+
+```bash
+swap new MyApp              # Monolith (default)
+cd MyApp
+dotnet run
+```
+
+Visit `http://localhost:5000` — your app is live! 🚀
+
+---
+
+## 🛠️ Command Reference
+
+### Project Generation
+
+```bash
+# Create new monolith project
+swap new MyApp
+
+# Create layered architecture project
+swap new MyApp --template swap-layered
+
+# Create modular monolith
+swap new MyApp --template swap-modular
+
+# Choose database provider
+swap new MyApp --database sqlserver     # SQL Server
+swap new MyApp --database postgres      # PostgreSQL
+# (default is sqlite)
+
+# Use local NuGet packages (dev only)
+swap new MyApp --local-nuget
+
+# Skip setup steps (npm, libman, migrations)
+swap new MyApp --skip-setup
+```
+
+### Model Generation
+
+```bash
+# Create a simple model
+swap generate model Product --fields "Name:string Price:decimal"
+
+# With nullable fields
+swap g m Post --fields "Title:string Content:string? Tags:string?"
+
+# Shorthand: swap g m
+swap g m Category --fields "Name:string Description:string?"
+```
+
+**Field Syntax:** `Name:Type` where Type is: `string`, `int`, `decimal`, `bool`, `DateTime`, etc.
+
+### Controller Generation
+
+```bash
+# Generate full CRUD controller
+swap generate controller Product --fields "Name:string Price:decimal"
+
+# With all features enabled
+swap g c Product --fields "Name:string Price:decimal InStock:bool:f" --add-nav
+
+# Regenerate existing controller (useful after adding relationships)
+swap g c Product --force
+
+# Shorthand: swap g c
+```
+
+**Features included:**
+- ✅ Index with search, pagination, sorting, filtering
+- ✅ Create modal with form validation
+- ✅ Edit modal with pre-filled form
+- ✅ Delete confirmation modal
+- ✅ Details view
+- ✅ Automatic relationship dropdowns
+
+### Relationship Management
+
+```bash
+# Many-to-one (Post → Category)
+swap generate rel -s Post -t Category --type many-to-one
+
+# One-to-many (Author has many Posts)
+swap generate rel -s Author -t Post --type one-to-many
+
+# Many-to-many (Post ↔ Tags)
+swap generate rel -s Post -t Tag --type many-to-many
+
+# One-to-one (User ↔ Profile)
+swap generate rel -s User -t Profile --type one-to-one
+```
+
+After adding relationships, regenerate controllers to get automatic dropdowns/checkboxes:
+```bash
+swap g c Post --force
+dotnet ef database update
+```
+
+### Entity Patterns
+
+```bash
+# Apply Soft Delete pattern
+swap generate pattern softdelete Post --use-package
+
+# Apply Auditable pattern
+swap g pattern auditable Post --use-package
+
+# Apply Sluggable pattern
+swap g pattern sluggable Post --use-package
+
+# Available patterns:
+# - softdelete     (Logical deletion with restore)
+# - auditable      (Track who created/modified/deleted)
+# - sluggable      (URL-friendly slugs)
+# - timestampable  (Auto CreatedAt/UpdatedAt)
+# - publishable    (Draft/published workflow)
+# - orderable      (Display order management)
+# - versionable    (Version tracking)
+# - visibility     (Public/private scheduling)
+```
+
+### Testing
+
+```bash
+# Generate integration test scaffold
+swap generate test Product
+swap g test Post
+
+# Generates test class using Swap.Testing with HTMX assertions
+```
+
+### Authentication
+
+```bash
+# Scaffold identity/auth
+swap generate auth
+swap g auth
+
+# Generates:
+# - ApplicationUser.cs
+# - AuthController with login/register/password reset
+# - Views for auth pages
+# - _LoginPartial for navbar
+```
+
+### Database Operations
+
+```bash
+# Show database configuration
+swap db info
+
+# Create and apply migrations
+swap db migrate
+
+# Run seeders
+swap db seed
+
+# Reset database (drop/recreate/seed)
+swap db reset
+```
+
+### Event System Tooling
+
+```bash
+# List all event chains in your project
+swap events list -p .
+
+# Validate chains for cycles and errors
+swap events validate -p .
+
+# Generate chain diagram (Mermaid format)
+swap events graph -p . --format mermaid
+
+# Export as GraphViz DOT
+swap events graph -p . --format dot --output diagram.dot
+
+# Query running app for active events
+swap events from-server --url http://localhost:5000
+```
+
+### Utilities
+
+```bash
+# List all entities in project
+swap list
+
+# Diagnose issues
+swap doctor
+
+# Show version
+swap --version
+```
+
+---
+
+## 📚 Project Structure
 
 ```
 tools/
-├── Swap.CLI/              # CLI tool source code
-│   ├── Commands/          # All CLI command implementations
-│   ├── Infrastructure/    # Template engine, helpers, utilities
-│   ├── Program.cs         # CLI entry point
-│   ├── Swap.CLI.csproj    # Project file
-│   └── README.md          # CLI documentation
-└── Swap.CLI.Tests/        # Test suite
-    ├── Commands/          # Command tests
-    ├── Infrastructure/    # Infrastructure tests
-    ├── Swap.CLI.Tests.csproj
-    └── README.md          # Test documentation
+├── Swap.CLI/               # CLI implementation
+│   ├── Commands/           # Command implementations
+│   │   ├── NewCommand.cs                    # swap new
+│   │   ├── GenerateModelCommand.cs          # swap g m
+│   │   ├── GenerateControllerCommand.cs     # swap g c
+│   │   ├── GenerateRelationshipCommand.cs   # swap g rel
+│   │   ├── GeneratePatternCommand.cs        # swap g pattern
+│   │   ├── GenerateAuthCommand.cs           # swap g auth
+│   │   ├── GenerateTestCommand.cs           # swap g test
+│   │   ├── EventsCommand.cs                 # swap events
+│   │   └── DatabaseCommand.cs               # swap db
+│   ├── Infrastructure/     # Core utilities
+│   │   ├── TemplateEngine.cs        # Template processing
+│   │   ├── FieldHelper.cs           # Field parsing
+│   │   ├── MigrationHelper.cs       # EF Core migration creation
+│   │   ├── ProjectScanner.cs        # Project analysis
+│   │   └── RelationshipHelper.cs    # Relationship logic
+│   ├── Program.cs          # CLI entry point
+│   └── README.md           # Detailed CLI reference
+└── Swap.CLI.Tests/         # Comprehensive test suite (160+ tests)
+    ├── Commands/           # Command tests
+    ├── Infrastructure/     # Infrastructure tests
+    └── README.md           # Test documentation
 ```
 
-## Projects
+---
 
-### Swap.CLI
+## 🔧 How It Works
 
-**The code generation engine for ASP.NET Core + HTMX applications.**
+### 1. Template Processing
 
-**What it does:**
-- Generate complete projects with `swap new`
-- Generate CRUD controllers with `swap generate controller`
-- Apply entity patterns with `swap generate pattern`
-- Scaffold authentication with `swap generate auth`
-- Manage database workflows with `swap db` commands
-- Generate tests, seeders, and factories
+All generated code comes from templates in `templates/`:
 
-**Installation:**
+- **`templates/monolith/`** — Single-project template
+- **`templates/swap-layered/`** — 4-project layered template
+- **`templates/swap-modular/`** — Modular monolith template
+- **`templates/generate/`** — CRUD and feature generation templates
+
+Templates use variable substitution: `{{ProjectName}}`, `{{EntityName}}`, etc.
+
+### 2. Variable Replacement
+
+The template engine replaces placeholders with your values:
+
+```csharp
+// Template
+namespace {{ProjectName}}.Controllers;
+public class {{EntityName}}Controller : SwapController { }
+
+// After processing
+namespace MyApp.Controllers;
+public class ProductController : SwapController { }
+```
+
+### 3. Conditional Generation
+
+Templates can include conditional blocks for database providers:
+
+```csharp
+{{#if_sqlite}}
+    options.UseSqlite(connectionString);
+{{/if_sqlite}}
+
+{{#if_sqlserver}}
+    options.UseSqlServer(connectionString);
+{{/if_sqlserver}}
+```
+
+### 4. Build-Before-Migration
+
+For quality assurance, the CLI:
+
+1. Generates your code
+2. **Builds the project** with `dotnet build`
+3. If build succeeds → Creates EF Core migration
+4. If build fails → Shows errors, stops (no migration created)
+
+This prevents cryptic EF Core errors and catches issues early.
+
+### 5. Post-Generation Setup
+
+After creating a project, the CLI automatically:
+- ✅ Runs `npm install` (for Tailwind)
+- ✅ Runs `libman restore` (for HTMX, DaisyUI)
+- ✅ Builds CSS with Tailwind
+- ✅ Creates and applies EF Core migrations
+- ✅ Applies development migrations on `dotnet run`
+
+---
+
+## 💡 Example Workflows
+
+### Complete Blog in 5 Minutes
+
+```bash
+swap new Blog
+cd Blog
+
+# Create entities
+swap g m Author --fields "Name:string Email:string"
+swap g m Category --fields "Name:string"
+swap g m Post --fields "Title:string Content:string AuthorId:int CategoryId:int"
+
+# Add relationships
+swap g rel -s Post -t Author --type many-to-one
+swap g rel -s Post -t Category --type many-to-one
+
+# Generate controllers
+swap g c Author
+swap g c Category
+swap g c Post --force  # Regenerate to get dropdowns
+
+# Add soft delete pattern
+swap g pattern softdelete Post --use-package
+
+# Run
+dotnet run
+```
+
+### Layered Architecture
+
+```bash
+swap new MyApp --template swap-layered
+cd MyApp
+
+# Create domain models in Domain/
+swap g m Product --fields "Name:string Price:decimal"
+swap g m Category --fields "Name:string"
+
+# Add relationships
+swap g rel -s Product -t Category --type many-to-one
+
+# Generate Web controllers
+swap g c Product
+swap g c Category
+
+# Test with auth
+swap g auth
+```
+
+### Modular Monolith
+
+```bash
+swap new MyApp --template swap-modular
+cd MyApp
+
+# Each module owns its features
+# Core module already has User entity
+
+# Generate for Todos module
+swap g m TodoItem --fields "Title:string Completed:bool" --module Todos
+swap g c TodoItem --module Todos
+
+# Generate for Demo module  
+swap g m DemoItem --fields "Name:string" --module Demo
+swap g c DemoItem --module Demo
+```
+
+---
+
+## 🏗️ Advanced Features
+
+### Local NuGet Development
+
+When working on framework changes (Swap.Htmx, Swap.Modularity, etc.):
+
+```bash
+# Pack all framework packages locally
+.\scripts\pack-local.ps1
+
+# Create test project with local packages
+swap new MyTestApp --local-nuget
+
+# Test your changes
+cd MyTestApp
+dotnet restore
+dotnet build
+```
+
+See [CONTRIBUTING.md](../CONTRIBUTING.md) for complete local development workflow.
+
+### Custom Templates
+
+To add custom generation templates:
+
+1. Create template file in `templates/generate/`
+2. Add variable placeholders (`{{VariableName}}`)
+3. Create corresponding command in `tools/Swap.CLI/Commands/`
+4. Register template in command's handler
+
+Example:
+```csharp
+// In your command
+var templatePath = Path.Combine(templatesDir, "generate", "mytype", "Template.cs.template");
+var content = File.ReadAllText(templatePath);
+var processed = TemplateEngine.Process(content, variables);
+```
+
+---
+
+## 🧪 Testing
+
+### Run All Tests
+
+```bash
+cd tools/Swap.CLI.Tests
+dotnet test
+```
+
+### Run Specific Tests
+
+```bash
+# Test model generation
+dotnet test --filter "FullyQualifiedName~ModelGeneration"
+
+# Test controller generation
+dotnet test --filter "FullyQualifiedName~ControllerGeneration"
+```
+
+### With Coverage
+
+```bash
+dotnet test --collect:"XPlat Code Coverage"
+```
+
+---
+
+## 🐛 Troubleshooting
+
+### "Tool 'swap.cli' is not installed"
+
+Install the CLI:
 ```bash
 dotnet tool install --global Swap.CLI
 ```
 
-**Documentation:** [Swap.CLI/README.md](./Swap.CLI/README.md)
-
-### Swap.CLI.Tests
-
-**Comprehensive test suite for the CLI tool.**
-
-**Test Coverage:**
-- 160+ tests for CLI commands
-- Command structure validation
-- Template processing tests
-- Integration tests
-- Error handling tests
-
-**Running Tests:**
+Or reinstall from local packages:
 ```bash
-cd Swap.CLI.Tests
-dotnet test
+.\scripts\reinstall-cli.ps1
 ```
 
-**Documentation:** [Swap.CLI.Tests/README.md](./Swap.CLI.Tests/README.md)
+### "Project is not a valid Swap project"
 
-## Commands Overview
+Make sure you're in a project directory created by `swap new` with:
+- `Project.csproj` file
+- `Program.cs` with Swap setup
+- Proper project structure
 
-The CLI provides the following commands:
+### "Build failed before migration"
 
-### Project Generation
-- `swap new <name>` - Create new project
-
-### Code Generation
-- `swap generate controller <entity>` - CRUD controller with views
-- `swap generate model <entity>` - Entity model
-- `swap generate pattern <pattern> <entity>` - Apply entity pattern
-- `swap generate auth` - Authentication scaffolding
-- `swap generate seed <entity>` - Database seeder
-- `swap generate factory <entity>` - Test data factory
-- `swap generate test <controller>` - Integration test
-
-### Database Workflows
-- `swap db info` - Database configuration info
-- `swap db migrate` - Apply migrations
-- `swap db seed` - Run seeders
-- `swap db reset` - Reset database
-
-### Utilities
-- `swap list` - List entities in project
-- `swap doctor` - Diagnose issues
-
-### Events (DX)
-- `swap events list [-p <dir>]` – Source-scan your project for chains in `Events/SwapEventChains.cs`, resolving `EventNames.*` constants.
-- `swap events from-server --url <http://host:port>` – Query a running app’s dev endpoint (`/_swap/dev/events.json`) and pretty-print Trigger → Chained.
- - `swap events validate [-p <dir>]` – Validate names and detect cycles from source; exits non‑zero on errors.
- - `swap events graph [-p <dir>] [--format mermaid|dot] [--output file]` – Output a graph of your chains.
-
-Tip: Run the app in one terminal and query from another so the process isn’t interrupted.
-
-**Full reference:** [Swap.CLI/README.md](./Swap.CLI/README.md)
-
-## Development
-
-### Building the CLI
-
+The CLI detected compilation errors. Fix them before retrying:
 ```bash
-cd Swap.CLI
 dotnet build
+# Fix errors...
+dotnet build  # Verify it compiles
 ```
 
-### Running Tests
+### "Template not found"
 
+Ensure Swap CLI is the latest version:
 ```bash
-cd Swap.CLI.Tests
-dotnet test
+dotnet tool update --global Swap.CLI
 ```
 
-### Local Installation
+### Local NuGet feed not working
 
-For testing CLI changes locally:
-
+Ensure packages are packed and CLI is reinstalled:
 ```bash
-# Build and pack
-.\scripts\pack-local.ps1  # Windows
-./scripts/pack-local.sh   # Linux/Mac
-
-# Install locally
-.\scripts\reinstall-cli.ps1  # Windows
-./scripts/reinstall-cli.sh   # Linux/Mac
+.\scripts\pack-local.ps1
+.\scripts\reinstall-cli.ps1
 ```
-
-### Debugging
-
-**Visual Studio / VS Code:**
-1. Open `swap.sln`
-2. Set `Swap.CLI` as startup project
-3. Add command-line arguments in project properties
-4. F5 to debug
-
-**Command-line arguments example:**
-```
-new TestApp --database sqlite
-```
-
-## Architecture
-
-### Command Structure
-
-Commands use `System.CommandLine` for parsing:
-
-```csharp
-public static class NewCommand
-{
-    public static Command Create()
-    {
-        var command = new Command("new", "Create a new project");
-        var nameArg = new Argument<string>("name");
-        command.AddArgument(nameArg);
-        
-        command.SetHandler(async (InvocationContext context) =>
-        {
-            var name = context.ParseResult.GetValueForArgument(nameArg);
-            await ExecuteAsync(name);
-        });
-        
-        return command;
-    }
-}
-```
-
-### Template Processing
-
-Templates use variable substitution and conditionals:
-
-```csharp
-var template = "namespace {{ProjectName}};";
-var variables = new Dictionary<string, string> 
-{
-    ["ProjectName"] = "MyApp"
-};
-var processed = TemplateEngine.Process(template, variables);
-// Result: "namespace MyApp;"
-```
-
-### File Structure
-
-**Commands:** `tools/Swap.CLI/Commands/`
-- `NewCommand.cs` - Project generation (542 LOC)
-- `GenerateControllerCommand.cs` - CRUD generation (691 LOC)
-- `GeneratePatternCommand.cs` - Pattern application (2,389 LOC) ⚠️ Refactor target
-- `GenerateAuthCommand.cs` - Auth scaffolding (654 LOC)
-- `DatabaseInfoCommand.cs` - DB information
-- And more...
-
-**Infrastructure:** `tools/Swap.CLI/Infrastructure/`
-- `TemplateEngine.cs` - Template processing
-- `FieldHelper.cs` - Field parsing
-- `MigrationHelper.cs` - Migration creation
-- `ProjectScanner.cs` - Project analysis
-
-**Templates:** `templates/`
-- All code generation templates
-- See [templates/README.md](../templates/README.md)
-
-## Code Generation Flow
-
-1. **Parse command** - Extract arguments and options
-2. **Validate input** - Check project structure, entity names
-3. **Load templates** - Read template files from `templates/`
-4. **Process variables** - Replace placeholders with actual values
-5. **Generate files** - Write processed templates to disk
-6. **Create migration** - Auto-generate EF Core migration
-7. **Report success** - Display generated files
-
-## Testing Strategy
-
-### Unit Tests
-Test individual methods and classes:
-```csharp
-[Fact]
-public void FieldHelper_ParsesFieldsCorrectly()
-{
-    var fields = FieldHelper.ParseFields("Name:string Age:int");
-    Assert.Equal(2, fields.Count);
-}
-```
-
-### Integration Tests
-Test complete command execution:
-```csharp
-[Fact]
-public async Task NewCommand_CreatesProject()
-{
-    await NewCommand.ExecuteAsync("TestApp", "sqlite", null, false, false, false);
-    Assert.True(Directory.Exists("TestApp"));
-}
-```
-
-### Template Tests
-Validate generated code compiles:
-```csharp
-[Fact]
-public void GeneratedController_Compiles()
-{
-    var code = GenerateController("Product", fields);
-    var compilation = CSharpCompilation.Create("Test")
-        .AddSyntaxTrees(CSharpSyntaxTree.ParseText(code));
-    Assert.Empty(compilation.GetDiagnostics());
-}
-```
-
-## Refactoring Plan (v0.2.0)
-
-Large command files will be refactored:
-
-**Priority 1: GeneratePatternCommand.cs (2,389 LOC)**
-- Split into: `PatternGenerator`, `PatternDetector`, `PatternMigrationBuilder`
-
-**Priority 2: GenerateControllerCommand.cs (691 LOC)**
-- Split into: `ControllerGenerator`, `ViewGenerator`, `ViewModelGenerator`
-
-**Priority 3: NewCommand.cs (542 LOC)**
-- Split into: `ProjectScaffolder`, `DependencyInstaller`, `MigrationRunner`
-
-**Goals:**
-- No class >300 LOC
-- Single Responsibility Principle
-- Improved testability
-- Zero logic changes (tests must pass)
-
-## Contributing
-
-See [CONTRIBUTING.md](../CONTRIBUTING.md) for:
-- Development environment setup
-- Coding standards
-- Pull request process
-- Testing requirements
-
-## CI/CD
-
-The CLI is automatically built, tested, and published:
-
-**Build:** `.github/workflows/ci-build.yml`
-- Build Swap.CLI
-- Run all tests (160+)
-- Pack as NuGet package
-
-**Publish:** `.github/workflows/nuget-publish.yml`
-- Publish to NuGet.org
-- Create GitHub release
-- Tag repository
-
-## Notes
-
-- **Production-ready:** Swap.CLI v0.1.0 is stable
-- **Well-tested:** 160+ tests covering core functionality
-- **Actively maintained:** Regular updates and improvements
-- **Documentation:** Comprehensive README and code comments
 
 ---
 
-**Related Documentation:**
-- [Swap.CLI/README.md](./Swap.CLI/README.md) - Detailed CLI reference
-- [Swap.CLI.Tests/README.md](./Swap.CLI.Tests/README.md) - Test documentation
-- [README.md](../README.md) - Main project README
-- [templates/README.md](../templates/README.md) - Template documentation
+## 📦 Release Notes
+
+See [CHANGELOG.md](../CHANGELOG.md) for version history and breaking changes.
+
+---
+
+## 🤝 Contributing
+
+See [CONTRIBUTING.md](../CONTRIBUTING.md) for:
+- Development setup
+- Running tests locally
+- Code style guidelines
+- Pull request process
+
+---
+
+## 📚 More Resources
+
+- **[Main README](../README.md)** — Swap Framework overview
+- **[framework/README.md](../framework/README.md)** — Library documentation
+- **[docs/](../docs/)** — Templates, architecture, patterns
+- **[templates/README.md](../templates/README.md)** — Template reference
+- **[CONTRIBUTING.md](../CONTRIBUTING.md)** — Development guide
+
+---
+
+**Questions?** Open an [issue](https://github.com/jdtoon/swap/issues) or start a [discussion](https://github.com/jdtoon/swap/discussions)!

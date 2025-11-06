@@ -17,18 +17,6 @@ const FeatureList: FeatureItem[] = [
       <>
         Pick the right starting point: Monolith for rapid DX or Layered for clean boundaries.
         Both are HTMX-native and ship with the Swap Event System and real integration tests.
-        <br/>
-        <a href="/docs/templates/overview">Learn more →</a>
-      </>
-    ),
-  },
-  {
-    title: 'Production-Ready Code',
-    icon: '⚡',
-    description: (
-      <>
-        Generate complete CRUD with modals, pagination, sorting, filtering, and search.
-        Every pattern is extracted from real production applications.
       </>
     ),
   },
@@ -38,7 +26,7 @@ const FeatureList: FeatureItem[] = [
     description: (
       <>
         Build modern, interactive web applications without JavaScript frameworks.
-        Server-rendered HTML with HTMX for dynamic updates.
+        Server-rendered HTML with HTMX for dynamic updates, plus a simple UI event bus to manage front-end updates.
       </>
     ),
   },

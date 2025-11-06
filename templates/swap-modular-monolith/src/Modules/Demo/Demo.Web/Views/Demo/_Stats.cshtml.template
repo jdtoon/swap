@@ -1,0 +1,15 @@
+@model {{ProjectName}}.Modules.Demo.Module.StatsModel
+<div class="stats shadow">
+  <div class="stat">
+    <div class="stat-title">Total</div>
+    <div class="stat-value">@Model.Total</div>
+  </div>
+  <div class="stat">
+    <div class="stat-title">Completed</div>
+    <div class="stat-value text-success">@Model.Completed</div>
+  </div>
+  <div class="stat">
+    <div class="stat-title">Pending</div>
+    <div class="stat-value text-warning">@Model.Pending</div>
+  </div>
+</div>

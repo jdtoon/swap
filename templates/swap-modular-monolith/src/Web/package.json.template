@@ -1,0 +1,14 @@
+{
+  "name": "{{ProjectNameLower}}-web",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Modular Monolith Demo (Swap) Web frontend",
+  "scripts": {
+    "build:css": "tailwindcss -i ./wwwroot/css/app.css -o ./wwwroot/css/app.min.css --minify",
+    "watch:css": "tailwindcss -i ./wwwroot/css/app.css -o ./wwwroot/css/app.min.css --watch"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.4.1",
+    "daisyui": "^4.12.14"
+  }
+}

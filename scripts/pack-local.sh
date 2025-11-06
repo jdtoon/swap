@@ -28,6 +28,12 @@ echo "📦 Packing Swap.Patterns..."
 cd "$ROOT_DIR/framework/Swap.Patterns"
 dotnet pack -c Release -o "$LOCAL_FEED"
 
+# Pack Swap.Modularity
+echo ""
+echo "📦 Packing Swap.Modularity..."
+cd "$ROOT_DIR/framework/Swap.Modularity"
+dotnet pack -c Release -o "$LOCAL_FEED"
+
 # Pack Swap.Testing
 echo ""
 echo "📦 Packing Swap.Testing..."

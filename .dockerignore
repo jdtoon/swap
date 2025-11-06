@@ -1,3 +1,27 @@
+# Global ignores to keep Docker build contexts small
+**/bin/
+**/obj/
+**/node_modules/
+**/.cache/
+**/.pytest_cache/
+**/.vs/
+**/.vscode/
+**/.DS_Store
+**/dist/
+**/build/
+**/coverage/
+**/*.user
+**/*.suo
+
+# NuGet caches
+**/packages/
+
+# Git
+.git
+.gitignore
+
+# LibMan cache (lib files will be restored in build)
+**/wwwroot/lib/
 **/.dockerignore
 **/.env
 **/.git

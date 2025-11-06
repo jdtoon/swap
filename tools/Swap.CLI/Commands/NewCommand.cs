@@ -13,7 +13,7 @@ public static class NewCommand
         
         var nameArg = new Argument<string>("name", "The name of the project (e.g., MyApp)");
     var dbOption = new Option<string>("--database", () => "sqlite", "Database provider (sqlite|sqlserver|postgres)");
-    var templateOption = new Option<string>("--template", () => "monolith", "Project template (monolith|swap-monolith|layered|swap-layered)");
+    var templateOption = new Option<string>("--template", () => "monolith", "Project template (monolith|swap-monolith|layered|swap-layered|swap-modular-monolith)");
         var outOption = new Option<string?>("--output", "Output directory (default: ./{name})");
         var skipSetupOption = new Option<bool>("--skip-setup", description: "Skip prerequisites check, npm/libman steps, and initial migration (useful for CI/tests)");
         var localNugetOption = new Option<bool>("--local-nuget", description: "Use local NuGet feed for Swap packages (for framework development only)");
@@ -160,8 +160,9 @@ public static class NewCommand
                         {
                             var isLayered = string.Equals(template, "layered", StringComparison.OrdinalIgnoreCase) ||
                                             string.Equals(template, "swap-layered", StringComparison.OrdinalIgnoreCase);
-                            // New folder layout uses src/ for app
-                            var webDir = isLayered ? Path.Combine(projectPath, "src", "Web") : Path.Combine(projectPath, "src");
+                            var isModular = string.Equals(template, "swap-modular-monolith", StringComparison.OrdinalIgnoreCase);
+                            // New folder layout uses src/Web for layered and modular; monolith uses src
+                            var webDir = (isLayered || isModular) ? Path.Combine(projectPath, "src", "Web") : Path.Combine(projectPath, "src");
                             try
                             {
                                 ctx.Status("Running npm install...");
@@ -204,44 +205,53 @@ public static class NewCommand
                 
                 // Build-first, then create initial migration and update the database
                 AnsiConsole.WriteLine();
-                await AnsiConsole.Status()
-                    .StartAsync("Creating initial migration...", async ctx =>
-                    {
-                        try
+                var isModularTemplate = string.Equals(template, "swap-modular-monolith", StringComparison.OrdinalIgnoreCase);
+                if (!isModularTemplate)
+                {
+                    await AnsiConsole.Status()
+                        .StartAsync("Creating initial migration...", async ctx =>
                         {
-                            ctx.Status("Building project before migration...");
-                            await RunCommandAsync("dotnet", "build", projectPath);
+                            try
+                            {
+                                ctx.Status("Building project before migration...");
+                                await RunCommandAsync("dotnet", "build", projectPath);
 
-                            var isLayered = string.Equals(template, "layered", StringComparison.OrdinalIgnoreCase) ||
-                                            string.Equals(template, "swap-layered", StringComparison.OrdinalIgnoreCase);
-                            ctx.Status("Creating initial migration...");
-                            if (isLayered)
-                            {
-                                await RunCommandAsync("dotnet", "ef migrations add InitialCreate -p src/Infrastructure -s src/Web", projectPath);
-                            }
-                            else
-                            {
-                                await RunCommandAsync("dotnet", "ef migrations add InitialCreate", Path.Combine(projectPath, "src"));
-                            }
-                            AnsiConsole.MarkupLine("[green]✓[/] Migration created");
+                                var isLayered = string.Equals(template, "layered", StringComparison.OrdinalIgnoreCase) ||
+                                                string.Equals(template, "swap-layered", StringComparison.OrdinalIgnoreCase);
+                                ctx.Status("Creating initial migration...");
+                                if (isLayered)
+                                {
+                                    await RunCommandAsync("dotnet", "ef migrations add InitialCreate -p src/Infrastructure -s src/Web", projectPath);
+                                }
+                                else
+                                {
+                                    await RunCommandAsync("dotnet", "ef migrations add InitialCreate", Path.Combine(projectPath, "src"));
+                                }
+                                AnsiConsole.MarkupLine("[green]✓[/] Migration created");
 
-                            ctx.Status("Updating database...");
-                            if (isLayered)
-                            {
-                                await RunCommandAsync("dotnet", "ef database update -p src/Infrastructure -s src/Web", projectPath);
+                                ctx.Status("Updating database...");
+                                if (isLayered)
+                                {
+                                    await RunCommandAsync("dotnet", "ef database update -p src/Infrastructure -s src/Web", projectPath);
+                                }
+                                else
+                                {
+                                    await RunCommandAsync("dotnet", "ef database update", Path.Combine(projectPath, "src"));
+                                }
+                                AnsiConsole.MarkupLine("[green]✓[/] Database updated");
                             }
-                            else
+                            catch (Exception ex)
                             {
-                                await RunCommandAsync("dotnet", "ef database update", Path.Combine(projectPath, "src"));
+                                AnsiConsole.MarkupLine($"[red]✗[/] Migration creation failed: {ex.Message}");
+                                throw;
                             }
-                            AnsiConsole.MarkupLine("[green]✓[/] Database updated");
-                        }
-                        catch (Exception ex)
-                        {
-                            AnsiConsole.MarkupLine($"[red]✗[/] Migration creation failed: {ex.Message}");
-                            throw;
-                        }
-                    });
+                        });
+                }
+                else
+                {
+                    AnsiConsole.MarkupLine("[yellow]Skipping automatic EF migrations for modular monolith.[/]");
+                    AnsiConsole.MarkupLine("[dim]Provider-specific example migrations are included in module shim projects. See docs in the generated project for details.[/]");
+                }
                     
                 AnsiConsole.WriteLine();
                 AnsiConsole.MarkupLine("[green]✓[/] Migrations applied and database ready!");
@@ -252,15 +262,19 @@ public static class NewCommand
                     AnsiConsole.MarkupLine("[red]✗ Setup failed. Please run the setup commands manually:[/]");
                     var isLayered = string.Equals(template, "layered", StringComparison.OrdinalIgnoreCase) ||
                                     string.Equals(template, "swap-layered", StringComparison.OrdinalIgnoreCase);
-                    if (isLayered)
+                    var isModular = string.Equals(template, "swap-modular-monolith", StringComparison.OrdinalIgnoreCase);
+                    if (isLayered || isModular)
                     {
                         AnsiConsole.MarkupLine($"  cd {name}/src/Web");
                         AnsiConsole.MarkupLine("  npm install");
                         AnsiConsole.MarkupLine("  libman restore");
                         AnsiConsole.MarkupLine("  npm run build:css");
-                        AnsiConsole.MarkupLine($"  cd ../..");
-                        AnsiConsole.MarkupLine("  dotnet ef migrations add InitialCreate -p src/Infrastructure -s src/Web");
-                        AnsiConsole.MarkupLine("  dotnet ef database update -p src/Infrastructure -s src/Web");
+                        if (!isModular)
+                        {
+                            AnsiConsole.MarkupLine($"  cd ../..");
+                            AnsiConsole.MarkupLine("  dotnet ef migrations add InitialCreate -p src/Infrastructure -s src/Web");
+                            AnsiConsole.MarkupLine("  dotnet ef database update -p src/Infrastructure -s src/Web");
+                        }
                     }
                     else
                     {
@@ -281,7 +295,8 @@ public static class NewCommand
         AnsiConsole.MarkupLine("[bold]Run your application:[/]");
         var layered = string.Equals(template, "layered", StringComparison.OrdinalIgnoreCase) ||
                       string.Equals(template, "swap-layered", StringComparison.OrdinalIgnoreCase);
-        if (layered)
+        var modular = string.Equals(template, "swap-modular-monolith", StringComparison.OrdinalIgnoreCase);
+        if (layered || modular)
         {
             AnsiConsole.MarkupLine($"  cd {name}/src/Web");
             AnsiConsole.MarkupLine("  dotnet run");
@@ -301,15 +316,19 @@ public static class NewCommand
         AnsiConsole.MarkupLine("[red]✗ Setup failed. Please run the setup commands manually:[/]");
         var isLayered = string.Equals(template, "layered", StringComparison.OrdinalIgnoreCase) ||
                         string.Equals(template, "swap-layered", StringComparison.OrdinalIgnoreCase);
-        if (isLayered)
+        var isModular = string.Equals(template, "swap-modular-monolith", StringComparison.OrdinalIgnoreCase);
+        if (isLayered || isModular)
         {
             AnsiConsole.MarkupLine($"  cd {name}/src/Web");
             AnsiConsole.MarkupLine("  npm install");
             AnsiConsole.MarkupLine("  libman restore");
             AnsiConsole.MarkupLine("  npm run build:css");
-            AnsiConsole.MarkupLine($"  cd ../..");
-            AnsiConsole.MarkupLine("  dotnet ef migrations add InitialCreate -p src/Infrastructure -s src/Web");
-            AnsiConsole.MarkupLine("  dotnet ef database update -p src/Infrastructure -s src/Web");
+            if (!isModular)
+            {
+                AnsiConsole.MarkupLine($"  cd ../..");
+                AnsiConsole.MarkupLine("  dotnet ef migrations add InitialCreate -p src/Infrastructure -s src/Web");
+                AnsiConsole.MarkupLine("  dotnet ef database update -p src/Infrastructure -s src/Web");
+            }
         }
         else
         {
@@ -410,7 +429,8 @@ public class HtmxShellMiddleware
             "swap-monolith" => "swap-monolith",
             "layered" => "swap-layered",
             "swap-layered" => "swap-layered",
-            _ => throw new ArgumentException($"Unknown template '{template}'. Use 'monolith', 'swap-monolith', 'layered', or 'swap-layered'.")
+            "swap-modular-monolith" => "swap-modular-monolith",
+            _ => throw new ArgumentException($"Unknown template '{template}'. Use 'monolith', 'swap-monolith', 'layered', 'swap-layered', or 'swap-modular-monolith'.")
         };
         // Allow tests and custom packaging to override templates base directory
         var templatesBase = Environment.GetEnvironmentVariable("SWAP_TEMPLATES_DIR");
@@ -423,8 +443,8 @@ public class HtmxShellMiddleware
             throw new DirectoryNotFoundException($"Template directory not found: {templatePath}");
         }
         
-        // Create project directory
-        Directory.CreateDirectory(projectPath);
+    // Create project directory
+    Directory.CreateDirectory(projectPath);
         
         // Setup template variables
         var variables = new Dictionary<string, string>
@@ -443,7 +463,20 @@ public class HtmxShellMiddleware
                 var useSrcLayout = string.Equals(selected, "swap-monolith", StringComparison.OrdinalIgnoreCase) ||
                                     string.Equals(selected, "swap-layered", StringComparison.OrdinalIgnoreCase);
 
-                // Copy and process all template files
+                // For all templates, use the packaged .template files only
+                // Enforce presence of .template files for swap-modular-monolith to avoid cloning raw demo files
+                if (string.Equals(selected, "swap-modular-monolith", StringComparison.OrdinalIgnoreCase))
+                {
+                    var hasTemplates = Directory.GetFiles(templatePath, "*.template", SearchOption.AllDirectories).Any();
+                    if (!hasTemplates)
+                    {
+                        throw new InvalidOperationException(
+                            $"Template '{selected}' is not packaged. Expected .template files under: {templatePath}.\n" +
+                            "Please vendor the Modular Monolith demo into templates/swap-modular-monolith or set SWAP_TEMPLATES_DIR to a packaged templates folder.");
+                    }
+                }
+
+                // Copy and process all template files (.template-based)
                 await ProcessTemplateDirectoryAsync(templatePath, projectPath, variables, ctx, useSrcLayout ? "src" : null);
                 
                 // If using local NuGet, ensure packages are built and create nuget.config
@@ -497,8 +530,17 @@ public class HtmxShellMiddleware
         StatusContext ctx,
         string? prefixFolder)
     {
+        // First process all .template (text) files with token replacement
         foreach (var file in Directory.GetFiles(sourcePath, "*.template", SearchOption.AllDirectories))
         {
+            // Skip legacy/non-tokenized solution templates to avoid duplicate .sln generation
+            var fileName = Path.GetFileName(file);
+            if (fileName.EndsWith(".sln.template", StringComparison.OrdinalIgnoreCase) &&
+                !fileName.Contains("{{ProjectName}}", StringComparison.Ordinal))
+            {
+                continue;
+            }
+
             var relativePath = Path.GetRelativePath(sourcePath, file);
             var targetRelativePath = relativePath.Replace(".template", "");
 
@@ -556,6 +598,114 @@ public class HtmxShellMiddleware
             await File.WriteAllTextAsync(targetFile, processedContent);
             
             await Task.Delay(50); // Small delay for visual feedback
+        }
+
+        // Then copy non-template files as passthrough (binary/static assets etc.)
+        foreach (var file in Directory.GetFiles(sourcePath, "*", SearchOption.AllDirectories))
+        {
+            if (file.EndsWith(".template", StringComparison.OrdinalIgnoreCase))
+                continue;
+
+            var relativePath = Path.GetRelativePath(sourcePath, file);
+            var targetRelativePath = relativePath;
+
+            // Apply the same prefixing rules as for templates
+            if (!string.IsNullOrEmpty(prefixFolder))
+            {
+                var relLower = relativePath.Replace('\\','/').ToLowerInvariant();
+                var isTest = relLower.StartsWith("test/");
+                var isSln = targetRelativePath.EndsWith(".sln", StringComparison.OrdinalIgnoreCase);
+                var isRootFile = string.Equals(targetRelativePath, ".gitignore", StringComparison.OrdinalIgnoreCase) ||
+                                 string.Equals(targetRelativePath, "nuget.config", StringComparison.OrdinalIgnoreCase) ||
+                                 string.Equals(targetRelativePath, "README.md", StringComparison.OrdinalIgnoreCase);
+                if (!isTest && !isSln && !isRootFile)
+                {
+                    targetRelativePath = Path.Combine(prefixFolder!, targetRelativePath);
+                }
+            }
+
+            var targetFile = Path.Combine(targetPath, targetRelativePath);
+
+            // If a .template already produced this file, skip
+            if (File.Exists(targetFile))
+                continue;
+
+            ctx.Status($"Creating {targetRelativePath}...");
+
+            var targetDir = Path.GetDirectoryName(targetFile)!;
+            Directory.CreateDirectory(targetDir);
+
+            // Copy as binary
+            File.Copy(file, targetFile, overwrite: true);
+
+            await Task.Delay(10);
+        }
+    }
+
+    private static async Task GenerateFromDemoAsync(
+        string sourceRoot,
+        string targetRoot,
+        string projectName,
+        StatusContext ctx)
+    {
+        // Copy everything from sourceRoot into targetRoot, excluding build artifacts, with simple replacements.
+        // Replacements:
+        // - File and directory names: ModularMonolithDemo -> {ProjectName}
+        // - File content: ModularMonolithDemo -> {ProjectName}
+        // - Docker image names: modular-monolith-demo -> {projectname-lower}
+
+        var projectNameLower = projectName.ToLowerInvariant();
+
+        bool ShouldExclude(string path)
+        {
+            var name = Path.GetFileName(path);
+            if (string.Equals(name, "bin", StringComparison.OrdinalIgnoreCase)) return true;
+            if (string.Equals(name, "obj", StringComparison.OrdinalIgnoreCase)) return true;
+            if (string.Equals(name, ".vs", StringComparison.OrdinalIgnoreCase)) return true;
+            if (string.Equals(name, "node_modules", StringComparison.OrdinalIgnoreCase)) return true;
+            if (string.Equals(name, "build", StringComparison.OrdinalIgnoreCase)) return true;
+            return false;
+        }
+
+        foreach (var dir in Directory.EnumerateDirectories(sourceRoot, "*", SearchOption.AllDirectories))
+        {
+            // Skip excluded directories
+            if (ShouldExclude(dir)) continue;
+            var rel = Path.GetRelativePath(sourceRoot, dir);
+            var replaced = rel.Replace("ModularMonolithDemo", projectName);
+            var targetDir = Path.Combine(targetRoot, replaced);
+            Directory.CreateDirectory(targetDir);
+        }
+
+        foreach (var file in Directory.EnumerateFiles(sourceRoot, "*", SearchOption.AllDirectories))
+        {
+            var parent = Path.GetDirectoryName(file)!;
+            if (ShouldExclude(parent)) continue;
+
+            var rel = Path.GetRelativePath(sourceRoot, file);
+            var replacedPath = rel.Replace("ModularMonolithDemo", projectName);
+            var targetPath = Path.Combine(targetRoot, replacedPath);
+            var targetDir = Path.GetDirectoryName(targetPath)!;
+            Directory.CreateDirectory(targetDir);
+
+            ctx.Status($"Creating {replacedPath}...");
+
+            // Binary files copy as-is; for text files, do string replacements
+            var ext = Path.GetExtension(file).ToLowerInvariant();
+            var textLike = ext is ".cs" or ".csproj" or ".sln" or ".json" or ".yml" or ".yaml" or ".xml" or ".md" or ".ts" or ".js" or ".css" or ".cshtml";
+            if (textLike)
+            {
+                var content = await File.ReadAllTextAsync(file);
+                content = content.Replace("ModularMonolithDemo", projectName);
+                content = content.Replace("modular-monolith-demo", projectNameLower);
+                await File.WriteAllTextAsync(targetPath, content);
+            }
+            else
+            {
+                File.Copy(file, targetPath, overwrite: true);
+            }
+
+            await Task.Delay(10);
         }
     }
     

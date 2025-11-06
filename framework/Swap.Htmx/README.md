@@ -177,7 +177,7 @@ Swap.Htmx includes a minimal event bus that:
 - Builds an `HX-Trigger` header automatically at response time
 
 Usage recap:
-- Register: `builder.Services.AddSwapHtmx(opts => opts.Chain("product.created", "ui.refreshList"));`
+- Register: `builder.Services.AddSwapHtmx(opts => opts.Chain(SwapEvents.Entity.Created("product"), SwapEvents.UI.RefreshList));`
 - Middleware: `app.UseSwapHtmx();`
 - Emit in controller: `await _events.EmitAsync(SwapEvents.Entity.Created("product"), new { id });`
 
@@ -190,8 +190,10 @@ You can control how chains expand at runtime via an enum on options. Default is 
 ```csharp
 builder.Services.AddSwapHtmx(opts =>
 {
-    // Chains
-    opts.Chain("todo.created", "ui.todo.refreshList", "ui.stats.refresh");
+    // Chains (prefer typed backend keys)
+    opts.Chain(Swap.Htmx.Events.SwapEvents.Todo.Created,
+               Swap.Htmx.Events.SwapEvents.UI.Todo.RefreshList,
+               Swap.Htmx.Events.SwapEvents.UI.Stats.Refresh);
 
     // Resolution defaults to OneHop (immediate children only)
     opts.ResolutionMode = Swap.Htmx.Events.ChainResolutionMode.OneHop; // default
@@ -209,6 +211,34 @@ Semantics:
 - Transitive: A → B → C expands along edges up to the configured depth (depth=1 equals OneHop).
 
 Guardrails: `Validate()` checks for invalid names and cycles at startup (Development), regardless of mode.
+
+### Strongly-typed backend event keys
+
+Backend code can (and should) use typed event keys via `EventKey` and the typed overloads for `Chain(...)`, `Emit(...)`, and `EmitAsync(...)`:
+
+```csharp
+using Swap.Htmx.Events;
+
+builder.Services.AddSwapHtmx(events =>
+{
+    events.Chain(SwapEvents.Entity.Created("product"), SwapEvents.UI.RefreshList);
+});
+
+public class ArticlesController : SwapController
+{
+    private readonly ISwapEventBus _events;
+    public ArticlesController(ISwapEventBus events) => _events = events;
+
+    public async Task<IActionResult> Create(Article article)
+    {
+        // ...save...
+        await _events.EmitAsync(SwapEvents.Entity.Created("article"), new { id = article.Id });
+        return SwapView("Details", article);
+    }
+}
+```
+
+There is also a Roslyn analyzer (`Swap.Htmx.Analyzers`) wired repo-wide that flags raw string usage in backend calls to `Chain`/`Emit` to help you avoid magic strings. Tests are suppressed by default. Note: HTML remains plain HTMX; you do not need to change attributes in markup.
 
 
 #### Client helper (swap-events.js)
@@ -266,6 +296,40 @@ This catches common mistakes:
 </a>
 ```
 
+## Server-side events (registrars and transports)
+
+Swap.Htmx supports a simple in-process registrar for domain/server events out of the box, and optional distributed delivery via a transport abstraction. Pick one of the DI setups below.
+
+### Local/dev (in-memory registrar)
+
+```csharp
+// Keeps everything in-process for demos and local development
+builder.Services.AddSwapServerEventChains();
+```
+
+### Distributed (uses a transport + distributed registrar)
+
+```csharp
+// 1) Choose a transport
+builder.Services.AddInMemoryServerEventTransport(); // local multi-registrar simulation
+// or RabbitMQ
+builder.Services.AddRabbitMqServerEventTransport(opts =>
+{
+    opts.HostName = "localhost";          // or broker host
+    opts.ExchangeName = "swap.events";    // topic exchange used for events
+    // opts.UserName = "guest"; opts.Password = "guest"; // as needed
+});
+
+// 2) Use the distributed registrar (publishes/consumes via transport)
+builder.Services.AddSwapServerEventChainsDistributed();
+```
+
+Notes:
+- Your modules still only depend on `Swap.Modularity.Abstractions.IEventChainRegistrar` and call `Register`/`PublishAsync` the same way.
+- The distributed registrar serializes payloads as JSON and includes a `ClrType` header to assist typed deserialization on the consumer side.
+- RabbitMQ transport uses a topic exchange (default `swap.events`) and a durable per-event-key queue by default.
+- You can switch between in-memory and distributed by changing only DI wiring; no module code changes required.
+
 Why explicit over hx-boost:
 - ✅ Clear intent - you see exactly what each link does
 - ✅ No conflicts between `hx-boost` and explicit `hx-target`
@@ -314,8 +378,17 @@ if (Request.IsHtmxBoosted())
 
 // Get HTMX headers
 var currentUrl = Request.GetHtmxCurrentUrl();
+var currentUri = Request.GetHtmxCurrentUrlUri();
 var target = Request.GetHtmxTarget();
 var trigger = Request.GetHtmxTrigger();
+var triggerName = Request.GetHtmxTriggerName();
+var promptValue = Request.GetHtmxPrompt();
+
+// Navigation via back/forward (history restore)
+if (Request.IsHtmxHistoryRestoreRequest())
+{
+    // e.g., return cached fragment or fast path
+}
 ```
 
 ### Response Headers
@@ -326,6 +399,9 @@ Response.HxTrigger("itemCreated");
 
 // Trigger with JSON details
 Response.HxTriggerWithDetails("{\"showMessage\": {\"level\": \"info\"}}");
+
+// Or typed trigger with details (auto-serializes to { "event": { ...details... } })
+Response.HxTrigger("showMessage", new { level = "info", text = "Saved" });
 
 // Push URL to browser history
 Response.HxPushUrl($"/articles/{article.Id}");
@@ -344,6 +420,39 @@ Response.HxRetarget("#notification-area");
 
 // Change swap strategy
 Response.HxReswap("beforebegin");
+
+// Or typed reswap options
+Response.HxReswap(new Swap.Htmx.Models.HxReswapOptions
+{
+    Style = Swap.Htmx.Models.HxSwapStyle.innerHTML,
+    Transition = true,
+    SwapDelay = 50,
+    SettleDelay = 50
+});
+
+// HX-Location: string or typed options object
+Response.HxLocation("/inbox");
+Response.HxLocation(new Swap.Htmx.Models.HxLocationOptions
+{
+    Path = "/inbox",
+    Target = "#main",
+    Select = "#main",
+}.WithSwap(new Swap.Htmx.Models.HxReswapOptions { Style = Swap.Htmx.Models.HxSwapStyle.outerHTML }));
+
+// Stop polling this endpoint
+Response.HxStopPolling(); // returns HTTP 286
+
+// If content differs for HTMX vs non-HTMX, set Vary header
+Response.EnsureVaryHxRequest();
+
+// Fire events at specific lifecycle moments
+Response.HxTriggerAfterSwap("listRefreshed");
+Response.HxTriggerAfterSwapWithDetails("{\"listRefreshed\": { \"count\": 42 }}");
+Response.HxTriggerAfterSwap("listRefreshed", new { count = 42 });
+
+Response.HxTriggerAfterSettle("toast");
+Response.HxTriggerAfterSettleWithDetails("{\"toast\": { \"level\": \"success\" }}");
+Response.HxTriggerAfterSettle("toast", new { level = "success" });
 ```
 
 ## Architecture Benefits

@@ -53,7 +53,10 @@ public abstract class SwapController : Controller
     /// </example>
     protected IActionResult SwapView(string? viewName, object? model = null)
     {
-        bool isHtmxRequest = Request.Headers.ContainsKey("HX-Request");
+        // Content varies based on HX-Request; communicate this for caches/CDNs
+        Response.EnsureVaryHxRequest();
+
+        bool isHtmxRequest = Request.IsHtmxRequest();
 
         if (isHtmxRequest)
         {

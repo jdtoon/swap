@@ -4,7 +4,7 @@
     <TargetFramework>net9.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-  <Version>0.3.0</Version>
+  <Version>0.3.1</Version>
     <Authors>JD Toon</Authors>
     <Company>Swap Framework</Company>
     <Description>HTMX navigation framework for ASP.NET Core MVC applications. Provides SwapController base class, middleware, and extension methods for seamless HTMX integration.</Description>
@@ -17,6 +17,14 @@
 
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="RabbitMQ.Client" Version="6.8.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Swap.Modularity\Swap.Modularity.csproj" />
   </ItemGroup>
 
   <ItemGroup>

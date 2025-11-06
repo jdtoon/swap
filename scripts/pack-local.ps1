@@ -29,6 +29,12 @@ Set-Location "$rootDir\framework\Swap.Patterns"
 dotnet pack -c Release -o $localFeed
 if ($LASTEXITCODE -ne 0) { throw "Failed to pack Swap.Patterns" }
 
+# Pack Swap.Modularity
+Write-Host "`n📦 Packing Swap.Modularity..." -ForegroundColor Green
+Set-Location "$rootDir\framework\Swap.Modularity"
+dotnet pack -c Release -o $localFeed
+if ($LASTEXITCODE -ne 0) { throw "Failed to pack Swap.Modularity" }
+
 # Pack Swap.Testing
 Write-Host "`n📦 Packing Swap.Testing..." -ForegroundColor Green
 Set-Location "$rootDir\framework\Swap.Testing"

@@ -21,9 +21,10 @@ swap new <name> [options]
 - `--output <path>` or `-o` - Output directory (default: `./{name}`)
 - `--skip-setup` - Skip prerequisites check, npm/libman steps, and initial migration (useful for CI/tests)
 - `--local-nuget` - Use local NuGet feed for Swap packages (for framework development only)
- - `--template <name>` - Choose template:
-     - `swap-monolith` - Single-project DX-forward template with Event System wired
-     - `layered` / `swap-layered` - Multi-project solution (Web, Application, Domain, Infrastructure)
+- `--template <name>` - Choose template:
+    - `swap-monolith` - Single-project DX-forward template with Event System wired
+    - `layered` / `swap-layered` - Multi-project solution (Web, Application, Domain, Infrastructure)
+    - `swap-modular-monolith` - Modular monolith (host + modules with per-module ownership)
 
 ## Description
 
@@ -90,6 +91,14 @@ docker-compose up --build
 swap new MyApp --db postgres
 cd MyApp
 docker-compose up --build
+
+# Create a modular monolith (host + modules)
+swap new MyApp --template swap-modular-monolith
+cd MyApp
+dotnet run --project src/Web/Web.csproj
+
+# Framework development: use local packages when testing the template
+swap new MyApp --template swap-modular-monolith --local-nuget
 ```
 
 Navigate to `http://localhost:5000` to see the Todo CRUD interface.

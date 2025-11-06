@@ -1,0 +1,3 @@
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@using {{ProjectName}}.Modules.Demo.Contracts
+@using {{ProjectName}}.Modules.Todos.Contracts

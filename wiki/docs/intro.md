@@ -5,35 +5,41 @@ slug: /
 
 # Swap
 
-An HTMX-native .NET framework and CLI for generating production-ready ASP.NET Core applications.
+Build modern, interactive ASP.NET Core apps with HTMX—fast, modular, and testable. No JavaScript frameworks required.
 
 ## What is Swap?
 
 Swap has two parts that work together:
 
-- The framework (`Swap.*` packages), especially `Swap.Htmx`, which extends ASP.NET Core with HTMX-native features and an intelligent event system.
-- The CLI (`swap`) that scaffolds complete projects and patterns using those features.
+- The framework (`Swap.*` packages) — three pillars:
+    - `Swap.Htmx`: HTMX ergonomics + event system
+    - `Swap.Modularity`: lightweight module system for modular monoliths
+    - `Swap.Testing`: fluent, HTMX-aware integration testing
+- The CLI (`swap`) that scaffolds complete projects and patterns powered by the framework.
 
 It generates ASP.NET Core projects with HTMX-powered views using proven patterns from real applications. You write business logic; Swap wires the rest.
 
 ## Templates
 
-Swap ships with two first-class templates (both HTMX-native and event-driven):
+Swap ships with three first-class templates (HTMX-native and event-driven):
 
 - Monolith (single project) — optimized DX, move fast without ceremony
 - Layered (Web, Application, Domain, Infrastructure) — clean architecture for teams and long-lived apps
+- Modular Monolith (host + modules) — recommended for teams that want clear boundaries within a single deployable
 
 Start here to choose: [Templates](./templates/overview)
 
 **Core Features:**
 
-- **Generate complete projects** with `swap new` - Full ASP.NET Core + HTMX stack (includes the event system)
+- **Generate complete projects** with `swap new` — Full ASP.NET Core + HTMX stack (includes the event system)
+- **Modular monolith support** — Compose modules deterministically with `Swap.Modularity`
 - **Scaffold models** with custom fields and 11 data types
 - **Create CRUD controllers** with modals, pagination, sorting, and filtering
 - **DaisyUI + Tailwind CSS** for modern, accessible UI components
 - **Entity Framework Core** integration included
 - **Docker-ready** - Every project includes Dockerfile and docker-compose.yml
 - **Event System** - Server-driven, filtered events with chain resolution (zero wasted triggers)
+- **Generate integration tests** with `Swap.Testing`
 
 ## Event System at a glance
 

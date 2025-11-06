@@ -1,0 +1,8 @@
+root = true
+
+[*.cs]
+dotnet_diagnostic.SWAPHTMX001.severity = warning
+
+# Suppress SWAPHTMX001 in test projects where string literals are used intentionally
+[**/*Tests*/**.cs]
+dotnet_diagnostic.SWAPHTMX001.severity = none

@@ -1,0 +1,89 @@
+# Database Migrations – Module-owned, per Provider
+
+This demo uses per-module persistence. Each module owns its DbContext and migrations.
+
+Out of the box:
+- SQLite (dev): schema is created with EnsureCreated() automatically.
+- PostgreSQL / SQL Server: on startup we try to apply migrations; if none exist yet, we fall back to EnsureCreated() so you can run locally and in Docker without blocking.
+
+For teams, we recommend creating migrations for non-SQLite providers and letting the app apply them on startup.
+
+## Create migrations (Todos module)
+
+You can generate provider-specific migrations into the shim projects:
+
+### PostgreSQL
+
+1) Optional: set a connection string for design-time generation
+
+```pwsh
+$env:TODOS_POSTGRES_CONNECTION = "Host=localhost;Port=5432;Database=todosdb;Username=postgres;Password=postgres"
+```
+
+2) Add a migration into `Todos.Migrations.Postgres`
+
+```pwsh
+# from repo root
+ dotnet ef migrations add InitialCreate `
+   --project demo/{{ProjectName}}/src/Modules/Todos/Todos.Migrations.Postgres/Todos.Migrations.Postgres.csproj `
+   --context {{ProjectName}}.Modules.Todos.Module.Persistence.TodosDbContext
+```
+
+3) Repeat to evolve the schema as the model changes:
+
+```pwsh
+ dotnet ef migrations add AddCompletedFlag `
+   --project demo/{{ProjectName}}/src/Modules/Todos/Todos.Migrations.Postgres/Todos.Migrations.Postgres.csproj `
+   --context {{ProjectName}}.Modules.Todos.Module.Persistence.TodosDbContext
+```
+
+### SQL Server
+
+1) Optional: set a connection string for design-time generation
+
+```pwsh
+$env:TODOS_SQLSERVER_CONNECTION = "Server=localhost,1433;Database=TodosDb;User Id=sa;Password=Your_password123;TrustServerCertificate=True"
+```
+
+2) Add a migration into `Todos.Migrations.SqlServer`
+
+```pwsh
+ dotnet ef migrations add InitialCreate `
+   --project demo/{{ProjectName}}/src/Modules/Todos/Todos.Migrations.SqlServer/Todos.Migrations.SqlServer.csproj `
+   --context {{ProjectName}}.Modules.Todos.Module.Persistence.TodosDbContext
+```
+
+## How the app picks a provider
+
+- Configure via appsettings or env vars:
+  - `Data:Provider` = `Sqlite` | `Postgres` | `SqlServer`
+  - `ConnectionStrings:Todos` = provider-specific connection string
+  - `Data:MigrateOnStartup` = `true` to apply migrations (default true in dev)
+
+At startup:
+- Sqlite → EnsureCreated()
+- Postgres/SqlServer → If migrations exist, Migrate(); if not, EnsureCreated() (dev-friendly fallback)
+
+## Docker (PostgreSQL)
+
+`docker-compose.yml` sets `Data__Provider=Postgres` and `Data__MigrateOnStartup=true` with a ready connection string.
+
+- If you haven’t created migrations yet, the fallback will create the schema so the app runs.
+- For teams, add an initial migration to `Todos.Migrations.Postgres` and rebuild:
+
+```pwsh
+# Generate migration once
+ dotnet ef migrations add InitialCreate `
+   --project demo/{{ProjectName}}/src/Modules/Todos/Todos.Migrations.Postgres/Todos.Migrations.Postgres.csproj `
+   --context {{ProjectName}}.Modules.Todos.Module.Persistence.TodosDbContext
+
+# Rebuild images
+ docker compose build --no-cache
+ docker compose up -d --wait
+```
+
+## Notes
+
+- Migrations are module-owned. Repeat the same pattern per module.
+- Multiple providers are supported; generate migrations in each shim you care about.
+- The fallback is intended for local/dev convenience; favor migrations in shared environments.
