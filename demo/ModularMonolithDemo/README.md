@@ -13,6 +13,7 @@ Read the in-depth docs:
 - `docs/MODULES.md` – how to author modules (persistence, UI, chains)
 - `docs/DATABASE-MIGRATIONS.md` – per-provider migrations for modules
  - `docs/SERVER-EVENTS.md` – server vs UI events, distributed transport
+	- Tip: see “Smoothing eventual consistency (HTMX-only one-shot refresh)” in that doc for a clean UX pattern when using RabbitMQ.
 
 ## Prerequisites
 

@@ -73,3 +73,27 @@ Open RabbitMQ Management at http://localhost:15672 (guest/guest) to observe exch
 
 - Active registrar/transport: `GET /dev/server-events/info` (Development only) returns the registrar and transport types currently in use.
 - UI chain visuals: see Swap HTMX dev endpoints listed in `WEB-HOST.md` (Development only).
+
+## Smoothing eventual consistency (HTMX-only one-shot refresh)
+
+When using the RabbitMQ transport, server-event handlers run asynchronously after the HTTP response, so cross-module panels may lag briefly. A clean, JavaScript-free way to reconcile is to add a delayed HTMX retrigger alongside the immediate one.
+
+Example for the Demo Activity Log panel:
+
+```html
+<div id="activity-panel"
+    hx-get="/Demo/ActivityLog"
+    hx-trigger="load, @EventNames.Ui.ActivityAppend from:body, @EventNames.Ui.ActivityAppend from:body delay:400ms"
+    hx-target="this"
+    hx-swap="innerHTML">
+    <div class="loading loading-spinner"></div>
+</div>
+```
+
+How it works:
+- The panel refreshes on page load and immediately on the UI event.
+- The same UI event also triggers a one-shot delayed refresh (400ms), giving the distributed handler time to complete.
+
+Notes:
+- In InMemory mode (single process), the delayed refresh is typically redundant but harmless.
+- You can tune or remove the delayed refresh per panel without touching server code.
