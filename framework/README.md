@@ -51,7 +51,7 @@ dotnet add package Swap.Modularity
 
 **Get Started:**
 - [Swap.Modularity/README.md](./Swap.Modularity/README.md) — Full documentation and examples
-- Use with modular monolith template: `swap new MyApp --template swap-modular`
+- Use with modular monolith template: `swap new MyApp --template swap-modular-monolith`
 
 ---
 
@@ -111,13 +111,13 @@ dotnet add package Swap.Patterns
 
 ```
 framework/
-├── Swap.Htmx/              # HTMX navigation framework (280 LOC)
-├── Swap.Htmx.Tests/        # 35 comprehensive tests
-├── Swap.Modularity/        # Module discovery & coordination (240 LOC)
-├── Swap.Modularity.Tests/  # Module tests
-├── Swap.Patterns/          # Entity patterns library (480 LOC)
-├── Swap.Patterns.Tests/    # 72 pattern tests
-├── Swap.Testing/           # Integration test utilities (320 LOC)
+├── Swap.Htmx/              # HTMX navigation framework
+├── Swap.Htmx.Tests/        # Test suite for Swap.Htmx
+├── Swap.Modularity/        # Module discovery & coordination
+├── Swap.Modularity.Tests/  # Test suite for Swap.Modularity
+├── Swap.Patterns/          # Entity patterns library
+├── Swap.Patterns.Tests/    # Test suite for Swap.Patterns
+├── Swap.Testing/           # Integration test utilities
 └── README.md               # This file
 ```
 
@@ -130,8 +130,8 @@ framework/
 All Swap CLI templates ship with these libraries pre-configured:
 
 ```bash
-# Create a modular monolith (uses all three libraries)
-swap new MyApp --template swap-modular
+# Create a modular monolith (uses Swap.Htmx + Swap.Modularity + Swap.Testing)
+swap new MyApp --template swap-modular-monolith
 
 # Or a layered app (uses Swap.Htmx + Swap.Testing)
 swap new MyApp --template swap-layered
@@ -214,19 +214,9 @@ dotnet run
 
 ---
 
-## 🧪 Test Coverage
+## 🧪 Tests
 
-Current test coverage across framework packages:
-
-| Package | Tests | Focus |
-|---------|-------|-------|
-| **Swap.Htmx.Tests** | 35 | Controllers, extensions, middleware, event chains |
-| **Swap.Modularity.Tests** | 24 | Discovery, ordering, endpoint mapping |
-| **Swap.Patterns.Tests** | 72 | All 8 patterns with edge cases |
-| **Swap.Testing.Tests** | TBD | Test client, assertions, snapshots |
-| **TOTAL** | 131+ | Comprehensive coverage |
-
-**Quality Goal:** 80%+ code coverage across all packages.
+Each framework package includes a dedicated test project in this folder. The suites cover controllers and middleware (Swap.Htmx), discovery and ordering (Swap.Modularity), and all entity patterns (Swap.Patterns). Our quality goal is strong coverage across public APIs; run everything with `dotnet test`.
 
 ---
 
