@@ -31,11 +31,11 @@ node_modules/
 *.db-wal
 
 # Tailwind output
-wwwroot/css/app.min.css
-wwwroot/css/app.min.css.map
+**/wwwroot/css/app.min.css
+**/wwwroot/css/app.min.css.map
 
 # Library Manager (libman)
-wwwroot/lib/
+**/wwwroot/lib/
 
 # IDE
 .vscode/
