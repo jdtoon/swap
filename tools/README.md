@@ -2,23 +2,19 @@
 
 [![NuGet: Swap.CLI](https://img.shields.io/nuget/v/Swap.CLI.svg?label=Swap.CLI&color=0078d4)](https://www.nuget.org/packages/Swap.CLI)
 
-The Swap CLI is a comprehensive code generation tool for creating and scaffolding ASP.NET Core + HTMX applications.
+The Swap CLI is a tool for creating ASP.NET Core + HTMX applications from templates.
 
 ---
 
 ## 🎯 What Swap CLI Does
 
-Swap CLI generates complete, production-ready applications and features from templates. It's the fastest way to:
+Swap CLI helps you create production-ready HTMX-first applications:
 
 - 📦 Create new projects from templates (Monolith, Layered, Modular Monolith)
-- 🏛️ Generate CRUD controllers with full feature set (search, pagination, sorting, filtering, modals)
-- 🔗 Add relationships and auto-generate UI (dropdowns, checkboxes)
-- 🗄️ Create database seeders and test factories
-- 🧪 Generate integration test scaffolds
-- 🔐 Scaffold authentication flows
-- 📐 Apply entity patterns (Soft Delete, Auditable, Sluggable, etc.)
+- � Generate HTMX shell middleware for your app
+- � Analyze and validate event chains
 
-**No manual boilerplate. Just CLI commands.**
+**Get started fast with proven patterns.**
 
 ---
 
@@ -129,69 +125,6 @@ swap g c Post --force
 dotnet ef database update
 ```
 
-### Entity Patterns
-
-```bash
-# Apply Soft Delete pattern
-swap generate pattern softdelete Post --use-package
-
-# Apply Auditable pattern
-swap g pattern auditable Post --use-package
-
-# Apply Sluggable pattern
-swap g pattern sluggable Post --use-package
-
-# Available patterns:
-# - softdelete     (Logical deletion with restore)
-# - auditable      (Track who created/modified/deleted)
-# - sluggable      (URL-friendly slugs)
-# - timestampable  (Auto CreatedAt/UpdatedAt)
-# - publishable    (Draft/published workflow)
-# - orderable      (Display order management)
-# - versionable    (Version tracking)
-# - visibility     (Public/private scheduling)
-```
-
-### Testing
-
-```bash
-# Generate integration test scaffold
-swap generate test Product
-swap g test Post
-
-# Generates test class using Swap.Testing with HTMX assertions
-```
-
-### Authentication
-
-```bash
-# Scaffold identity/auth
-swap generate auth
-swap g auth
-
-# Generates:
-# - ApplicationUser.cs
-# - AuthController with login/register/password reset
-# - Views for auth pages
-# - _LoginPartial for navbar
-```
-
-### Database Operations
-
-```bash
-# Show database configuration
-swap db info
-
-# Create and apply migrations
-swap db migrate
-
-# Run seeders
-swap db seed
-
-# Reset database (drop/recreate/seed)
-swap db reset
-```
-
 ### Event System Tooling
 
 ```bash
@@ -211,19 +144,6 @@ swap events graph -p . --format dot --output diagram.dot
 swap events from-server --url http://localhost:5000
 ```
 
-### Utilities
-
-```bash
-# List all entities in project
-swap list
-
-# Diagnose issues
-swap doctor
-
-# Show version
-swap --version
-```
-
 ---
 
 ## 📚 Project Structure
@@ -233,20 +153,11 @@ tools/
 ├── Swap.CLI/               # CLI implementation
 │   ├── Commands/           # Command implementations
 │   │   ├── NewCommand.cs                    # swap new
-│   │   ├── GenerateModelCommand.cs          # swap g m
-│   │   ├── GenerateControllerCommand.cs     # swap g c
-│   │   ├── GenerateRelationshipCommand.cs   # swap g rel
-│   │   ├── GeneratePatternCommand.cs        # swap g pattern
-│   │   ├── GenerateAuthCommand.cs           # swap g auth
-│   │   ├── GenerateTestCommand.cs           # swap g test
 │   │   ├── EventsCommand.cs                 # swap events
-│   │   └── DatabaseCommand.cs               # swap db
+│   │   └── GenerateHtmxShellCommand.cs      # swap generate htmx-shell
 │   ├── Infrastructure/     # Core utilities
 │   │   ├── TemplateEngine.cs        # Template processing
-│   │   ├── FieldHelper.cs           # Field parsing
-│   │   ├── MigrationHelper.cs       # EF Core migration creation
 │   │   ├── ProjectScanner.cs        # Project analysis
-│   │   └── RelationshipHelper.cs    # Relationship logic
 │   ├── Program.cs          # CLI entry point
 │   └── README.md           # Detailed CLI reference
 └── Swap.CLI.Tests/         # Comprehensive test suite (160+ tests)

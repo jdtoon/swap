@@ -576,95 +576,6 @@ public IActionResult ManageUsers()
 }
 ```
 
-### `swap generate resource <name> --fields <fields>`
-
-Generate model + controller together (alias for backward compatibility).
-### `swap generate test <controller>`
-
-Generate an integration test class scaffold for a controller using Swap.Testing.
-
-```bash
-# Generate tests for TodoItemController
-swap g test TodoItem
-
-# Short alias
-swap g t TodoItem
-
-# Force overwrite
-swap g test TodoItem --force
-
-# Specify project/output
-swap g test TodoItem --project path/to/project --output Tests
-```
-
-**Options:**
-- `--force, -f` Overwrite existing file
-- `--project, -p` Path to project (default: current dir)
-- `--output, -o` Output folder (default: `Tests/`)
-
-**What it generates:**
-- `<Output>/<ControllerName>Tests.cs` with HTMX partial assertions
-- Common test scenarios: index partial, create/edit forms, snapshot example
-- References `Swap.Testing` package
-
-**Example test:**
-```csharp
-[Fact]
-public async Task Index_AsHtmx_ReturnsPartial()
-{
-    var resp = await _client.HtmxGetAsync("/todos");
-    resp.AssertSuccess();
-    await resp.AssertPartialViewAsync();
-    await resp.AssertElementCountAsync(".todo-item", 3);
-}
-```
-
-### `swap generate factory <entity>`
-
-Generate a Bogus-powered test data factory for an entity model.
-
-```bash
-# Generate a factory from Models/Post.cs
-swap g factory Post
-
-# Short alias
-swap g f Post
-
-# Force overwrite
-swap g factory Post --force
-
-# Specify project/output
-swap g factory Post --project path/to/project --output Tests/Factories
-```
-
-**Options:**
-- `--force` Overwrite existing file
-- `--project, -p` Path to project (default: current dir)
-- `--output, -o` Output folder (default: `Tests/Factories/`)
-
-**What it generates:**
-- `<Output>/<Entity>Factory.cs` with intelligent property mappings
-- Bogus rules based on property names (Email → f.Internet.Email(), etc.)
-- Navigation properties skipped
-- Nullable type support
-
-**Example factory:**
-```csharp
-public static class PostFactory
-{
-    public static Post Generate()
-    {
-        var faker = new Faker<Post>()
-            .RuleFor(p => p.Title, f => f.Lorem.Sentence())
-            .RuleFor(p => p.Body, f => f.Lorem.Paragraphs(2))
-            .RuleFor(p => p.PublishedAt, f => f.Date.Past());
-        return faker.Generate();
-    }
-}
-```
-
-> If Bogus/Swap.Testing packages are missing, the CLI prints the commands to install them.
-
 ## 🧪 Swap.Testing (HTMX Testing Framework)
 
 A fluent testing library purpose-built for HTMX applications, included with Swap.
@@ -701,93 +612,9 @@ public class PostControllerTests : IClassFixture<HtmxTestFixture<Program>>
 - [Testing Framework Wiki](https://jdtoon.github.io/swap/docs/features/testing-framework)
 - Demo app: `testApps/HtmxTestingDemo/`
 
-## 📦 Generate Resource
+## � Event System
 
-```bash
-swap g r BlogPost --fields "Title:string Content:string PublishedDate:DateTime"
-swap g r BlogPost --fields Title:string,Content:string,PublishedDate:DateTime
-
-# With generator ergonomics options
-swap g r Order --fields "Total:decimal Status:string" --dry-run
-swap g r Order --fields "Total:decimal Status:string" --force --project path/to/project
-```
-
-**Options:**
-- `--fields` or `-f` - Field definitions (space or comma separated)
-- `--dry-run` - Preview what would be generated without writing files
-- `--force` - Overwrite existing files without prompting
-- `--project` or `-p` - Path to project directory (default: current directory)
-
-### `swap generate seed <name>`
-
-Generate database seeders with realistic fake data using Bogus.
-
-```bash
-# Generate a seeder for a single entity
-swap g seed Product --count 100 --locale en --if-empty
-
-# Generate seeders for all entities in your DbContext
-swap g seed all --count 50 --locale en --if-empty
-
-# Short alias
-swap g s all --count 50 --locale en --if-empty
-
-# Overwrite without prompting
-swap g s Product --force
-
-# Generate in a different project
-swap g s all --project path/to/project
-```
-
-**Options:**
-- `--count` (default: 50) - Number of records to generate
-- `--locale` (default: "en") - Bogus locale (en, en_GB, de, fr, etc.)
-- `--if-empty` - Only seed when the table is empty (idempotent)
-- `--force` - Overwrite existing seeder files without prompting
-- `--project` or `-p` - Path to project directory (default: current directory)
-
-**What it generates:**
-- `Data/Seeders/<Entity>Seeder.cs` with smart Bogus rules based on field names
-- `Data/Seeders/SeedRunner.cs` orchestrator (auto-registered)
-- Adds `Bogus` package reference if missing
-- Hooks into `Program.cs` for Development environment seeding
-
-**Field intelligence:**
-- **Strings**: emails, URLs, names, titles, descriptions, phone numbers, addresses
-- **Numbers**: realistic ranges based on field names (age, price, quantity)
-- **Booleans**: weighted probabilities (e.g., IsActive ~70% true)
-- **Dates**: distributed over the last 3 years
-- **Foreign keys**: picks from existing related entities with null safety
-- **Slugs**: unique slugs with random suffix for collision avoidance
-
-**Pattern integration (v0.0.14+):**
-- **Auto-excludes** pattern properties managed by EF Core interceptors:
-  - `CreatedAt`, `CreatedBy`, `UpdatedAt`, `UpdatedBy` (IAuditable)
-  - `IsDeleted`, `DeletedAt`, `DeletedBy` (ISoftDeletable)
-  - `Version` (IVersionable)
-  - `IsVisible`, `VisibleFrom`, `VisibleUntil` (IVisibility)
-  - `Position` (IOrderable)
-- **Smart defaults**: Generates appropriate rules for application-managed properties like `PublishedAt`, `Slug`, etc.
-- **Relationship handling**: Preloads foreign key IDs and safely handles empty tables
-
-**Environment control:**
-```bash
-# Control seeding via environment variables
-$env:SEED_COUNT = "200"
-$env:SEED_LOCALE = "en_GB"
-$env:SEED_IFEMPTY = "true"
-dotnet run
-```
-
-### `swap database` / `swap db`
-
-Database workflow commands for easier development.
-
-#### `swap db info`
-
-Display database configuration and migration status.
-
-```bash
+The Swap event system enables declarative UI reactions to domain events
 swap db info
 ```
 
@@ -810,47 +637,11 @@ swap db migrate --apply
 
 Drop and recreate the database for a fresh start.
 
-```bash
-swap db reset
-swap db reset --force
-```
-
-#### `swap db seed [--count] [--locale] [--if-empty]`
-
-Run database seeders via application startup.
-
-```bash
-swap db seed --count 100 --locale en_GB --if-empty
-```
-
-### `swap doctor`
-
-Check your development environment and dependencies.
-
-```bash
-swap doctor
-```
-
-Checks .NET SDK, dotnet-ef, Node.js, npm, and libman installations.
-
-### `swap list [--project]`
-
-List all resources (entities) in your project with their completeness status.
-
-```bash
-swap list
-swap list --project path/to/project
-```
-
-Shows which entities have models, controllers, and seeders.
-
 ## 📚 Documentation
 
 - **[Getting Started](https://jdtoon.github.io/swap/)** - Complete setup guide
 - **[CLI Reference](https://jdtoon.github.io/swap/docs/cli/overview)** - All commands and options
-- **[Features Guide](https://jdtoon.github.io/swap/docs/features/pagination)** - Pagination, search, sorting, filtering
-- **[Pattern Library](docs/PATTERNS-LIBRARY.md)** - 30+ proven HTMX patterns
-- **[The Product Vision](docs/THE-PRODUCT.md)** - Philosophy and approach
+- **[Features Guide](https://jdtoon.github.io/swap/docs/features/event-system)** - Event system and HTMX integration
 
 ## 🛠️ Development
 

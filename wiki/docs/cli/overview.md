@@ -4,7 +4,7 @@ sidebar_position: 1
 
 # CLI Overview
 
-Swap CLI scaffolds ASP.NET Core applications with HTMX views.
+Swap CLI creates ASP.NET Core applications with HTMX from templates.
 
 ## Command Structure
 
@@ -16,21 +16,11 @@ swap <command> [subcommand] [arguments] [options]
 
 | Command | Description | Aliases |
 |---------|-------------|---------|
-| `swap new` | Create a new project | - |
-| `swap generate model` | Generate an entity model | `g m`, `generate m` |
-| `swap generate controller` | Generate a CRUD controller | `g c`, `generate c` |
-| `swap generate resource` | Generate model + controller + views | `g r`, `generate r` |
-| `swap generate pattern` | Apply entity patterns (soft delete, etc.) | `g pattern`, `g p` |
-| `swap generate auth` | Scaffold ASP.NET Identity authentication | `g auth` |
-| `swap generate seed` | Generate database seeders | `g s`, `generate s`, `g seed` |
-| `swap generate test` | Generate integration test scaffold | `g test`, `g t` |
-| `swap generate factory` | Generate Bogus test data factory | `g factory`, `g f` |
-| `swap database info` | Show database configuration and status | `db info` |
-| `swap database migrate` | Create and apply EF migrations | `db migrate` |
-| `swap database seed` | Run database seeders | `db seed` |
-| `swap database reset` | Drop and recreate database | `db reset` |
-| `swap doctor` | Check development environment | - |
-| `swap list` | List all resources in project | - |
+| `swap new` | Create a new project from template | - |
+| `swap generate htmx-shell` | Generate HTMX shell middleware | `g htmx-shell` |
+| `swap events list` | List all event chains in project | - |
+| `swap events validate` | Validate event chains for cycles/errors | - |
+| `swap events graph` | Generate event chain diagram | - |
 
 ## Quick Examples
 
@@ -38,116 +28,40 @@ swap <command> [subcommand] [arguments] [options]
 
 ```bash
 swap new MyApp
+
+# Choose template
+swap new MyApp --template swap-modular-monolith
+
+# Choose database provider
+swap new MyApp --database postgres
 ```
 
-### Generate Model
+### Generate HTMX Shell
 
 ```bash
-swap g m Product --fields "Name:string Price:decimal Stock:int"
-swap g m Product --fields Name:string,Price:decimal,Stock:int
+swap generate htmx-shell
 
-# Preview without writing files
-swap g m Product --fields "Name:string Price:decimal" --dry-run
-
-# Overwrite existing file
-swap g m Product --fields "Name:string Price:decimal" --force
-```
-
-### Generate Controller
-
-```bash
-swap g c Product --fields "Name:string Price:decimal Stock:int"
-swap g c Product --fields Name:string,Price:decimal,Stock:int
-
-# Preview what would be generated
-swap g c Product --fields "Name:string" --dry-run
-
-# Overwrite without prompting
-swap g c Product --fields "Name:string" --force
-
-# Generate in different directory
-swap g c Product --fields "Name:string" --project path/to/project
-```
-
-### Generate Complete Resource
-
-```bash
-swap g r Order --fields "CustomerId:int Total:decimal OrderDate:datetime"
-swap g r Order --fields CustomerId:int,Total:decimal,OrderDate:datetime
-
-# With generator options
-swap g r Order --fields "Total:decimal" --dry-run --project path/to/project
-```
-
-### Generate Seeders
-
-```bash
-# Single entity
-swap g seed Product --count 100 --locale en --if-empty
-# All entities
-swap g seed all --count 50 --locale en --if-empty
 # Short alias
-swap g s all --count 50 --locale en --if-empty
-# Overwrite existing seeder
-swap g s Product --force
+swap g htmx-shell
 ```
 
-### Generate Tests and Factories
+### Event System Commands
 
 ```bash
-# Generate integration test scaffold
-swap g test TodoItem
-swap g t TodoItem  # short alias
+# List all event chains
+swap events list -p .
 
-# Generate Bogus test data factory
-swap g factory Post
-swap g f Post  # short alias
+# Validate chains
+swap events validate -p .
 
-# In different project
-swap g test TodoItem --project testApps/MyApp --output Tests
-swap g factory Post --project testApps/MyApp --output Tests/Factories
+# Generate Mermaid diagram
+swap events graph -p . --format mermaid
+
+# Generate DOT format
+swap events graph -p . --format dot --output diagram.dot
 ```
 
-### Apply Entity Patterns
-
-```bash
-# Add soft delete pattern to entity
-swap g pattern softdelete Post
-swap g p soft Post  # aliases
-
-# Apply to specific project
-swap g pattern softdelete Product --project path/to/project
-
-# Force overwrite
-swap g pattern softdelete Order --force
-```
-
-### Database Commands
-
-```bash
-# Show database info
-swap db info
-
-# Create migration
-swap db migrate AddProductTable
-
-# Create and apply migration
-swap db migrate AddProductTable --apply
-
-# Apply pending migrations
-swap db migrate --apply
-
-# Reset database (with confirmation)
-swap db reset
-
-# Reset database (skip confirmation)
-swap db reset --force
-
-# Run seeders
-swap db seed --count 100 --locale en_GB --if-empty
-```
-
-### Developer Utilities
+## Global Options
 
 ```bash
 # Check environment and dependencies
@@ -223,99 +137,15 @@ swap g r Product --fields Name:string:s,f,Price:decimal:s,Stock:int:ns,IsActive:
 ```
 
 This creates:
-- **Name** - Sortable column with filter (note: string filters not yet implemented)
-- **Price** - Sortable column (has sort arrows)
-- **Stock** - Non-sortable column (plain text header)
-- **IsActive** - Filterable boolean (dropdown with Yes/No/All options)
+## Global Options
 
-### Examples
+Common options available across commands:
 
-```bash
-swap g r Post --fields "Title:string:s Content:string:ns PublishedAt:datetime:s"
-swap g r Post --fields Title:string:s,Content:string:ns,PublishedAt:datetime:s
-
-swap g r Task --fields "Title:string Done:bool:f Priority:int:s"
-swap g r Task --fields Title:string,Done:bool:f,Priority:int:s
-
-swap g r Product --fields "Name:string:s,f Price:decimal:s InStock:bool:f"
-swap g r Product --fields Name:string:s,f,Price:decimal:s,InStock:bool:f
-```
-
-## Common Workflows
-
-### Simple CRUD
-
-```bash
-# Create project
-swap new MyApp
-cd MyApp
-
-# Generate resource
-swap g r Product --fields Name:string,Price:decimal
-
-# Create migration
-dotnet ef migrations add AddProduct
-dotnet ef database update
-
-# Run
-dotnet run
-```
-
-### Multiple Resources
-
-```bash
-# Customer
-swap g r Customer --fields Name:string,Email:string
-
-# Order
-swap g r Order --fields CustomerId:int,Total:decimal
-
-# OrderItem  
-swap g r OrderItem --fields OrderId:int,ProductId:int,Quantity:int
-
-# Migrate
-dotnet ef migrations add AddECommerce
-dotnet ef database update
-```
-
-## Project Structure
-
-Generated projects follow this structure:
-
-```
-MyApp/
-├── Controllers/
-│   ├── HomeController.cs
-│   └── ProductController.cs
-├── Models/
-│   └── Product.cs
-├── Views/
-│   ├── Product/
-│   │   ├── Index.cshtml          # Main view
-│   │   ├── _List.cshtml          # HTMX partial for table
-│   │   ├── _AddModal.cshtml      # Create form modal
-│   │   └── _EditModal.cshtml     # Edit form modal
-│   └── Shared/
-│       ├── _Layout.cshtml        # DaisyUI layout
-│       └── _Pagination.cshtml    # Pagination component
-├── Data/
-│   ├── AppDbContext.cs
-│   └── Migrations/
-├── wwwroot/
-│   ├── lib/
-│   │   ├── htmx/                 # HTMX library
-│   │   └── toastify-js/          # Toast notifications
-│   └── css/
-│       ├── tailwind.css          # Tailwind output
-│       └── site.css              # Custom styles
-├── tailwind.config.js            # Tailwind + DaisyUI config
-├── Program.cs
-└── MyApp.csproj
-```
+- `--help, -h` - Show help for a command
+- `--version` - Show CLI version
 
 ## Next Steps
 
-- [swap new](./new) - Project scaffolding options
-- [swap generate model](./generate-model) - Model generation details
-- [swap generate controller](./generate-controller) - Controller generation details
-- [swap generate resource](./generate-resource) - Combined generation
+- [swap new](./new) - Create new projects from templates
+- [swap generate htmx-shell](./generate-htmx-shell) - Add HTMX shell middleware
+- [swap events](./events) - Event system commands
