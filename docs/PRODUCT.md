@@ -12,7 +12,7 @@ Swap is an opinionated framework for ASP.NET Core that makes HTMX a first-class 
 
 1. **Three Core Libraries** — Purpose-built packages that solve real problems
 2. **Production-Ready Templates** — Complete, runnable applications with HTMX, Tailwind, Docker, and tests
-3. **Developer Tools** — CLI for scaffolding, event validation, and code generation
+3. **Developer Tools** — CLI for template instantiation and event validation
 4. **Event-Driven Architecture** — Declarative UI reactions without JavaScript complexity
 
 **The Philosophy:**
@@ -371,9 +371,8 @@ swap events list -p .
 swap events validate -p .
 swap events graph -p . --format mermaid
 
-# Generate code (planned for v0.4.0)
-swap generate controller Products
-swap generate module Orders
+# Generate HTMX shell middleware
+swap generate htmx-shell
 ```
 
 ### Development Dashboard
@@ -404,10 +403,9 @@ Swap/
 ├── templates/
 │   ├── swap-monolith/          ✅ Single project, HTMX-native
 │   ├── swap-layered/           ✅ Multi-project, clean layers
-│   ├── swap-modular-monolith/  ✅ Modular, per-module ownership
-│   └── generate/               📦 Component scaffolding (future)
+│   └── swap-modular-monolith/  ✅ Modular, per-module ownership
 └── tools/
-    └── Swap.CLI/               ✅ Code generation + templates
+    └── Swap.CLI/               ✅ Template instantiation + utilities
 ```
 
 ---
@@ -449,9 +447,8 @@ Swap/
 ## 🔮 Roadmap
 
 - **0.3.x** — Event system consolidation, documentation, and template polish
-- **0.4.0** — Template documentation, security audit, component scaffolding
-- **0.5.0** — Authentication templates and built-in auth patterns
-- **Future** — WebSocket/SignalR support, validation framework, form generation
+- **0.4.x** — Template refinement, comprehensive documentation, security hardening
+- **Future** — Additional templates, WebSocket/SignalR support, validation framework
 
 ---
 

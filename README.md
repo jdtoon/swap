@@ -308,10 +308,9 @@ Swap/
 ├── templates/
 │   ├── swap-monolith/          ✅ Single project, HTMX-native
 │   ├── swap-layered/           ✅ Multi-project, clean layers
-│   ├── swap-modular-monolith/  ✅ Modular, per-module ownership
-│   └── generate/               📦 Component scaffolding (future)
+│   └── swap-modular-monolith/  ✅ Modular, per-module ownership
 └── tools/
-    └── Swap.CLI/               ✅ Code generation + templates
+    └── Swap.CLI/               ✅ Template instantiation + utilities
 ```
 
 ---
@@ -435,8 +434,7 @@ We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 - **0.3.x** — Event system consolidation, documentation, and template polish
 - **0.4.x** — Template refinement, comprehensive documentation, security hardening
-- **0.5.x** — Component templates (authentication, CRUD forms, modals, data tables, file uploads, search/filter components)
-- **Future** — WebSocket/SignalR support, validation framework, form generation
+- **Future** — Additional templates, WebSocket/SignalR support, validation framework
 
 ---
 

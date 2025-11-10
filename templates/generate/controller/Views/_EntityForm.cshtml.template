@@ -1,5 +1,0 @@
-@model {{EntityName}}
-
-<div asp-validation-summary="All" class="alert alert-error mb-4" style="@(ViewData.ModelState.IsValid ? "display:none" : "")"></div>
-
-{{FormFields}}

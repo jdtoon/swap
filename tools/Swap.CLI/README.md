@@ -1,242 +1,481 @@
-# Swap CLI
+# Swap CLI# Swap CLI
 
-[![GitHub License](https://img.shields.io/github/license/jdtoon/swap)](LICENSE)
-[![.NET Version](https://img.shields.io/badge/.NET-9.0-512BD4?logo=dotnet)](https://dotnet.microsoft.com/download)
-[![NuGet](https://img.shields.io/badge/NuGet-coming_soon-blue?logo=nuget)](https://www.nuget.org/packages/Swap.CLI)
+
+
+[![GitHub License](https://img.shields.io/github/license/jdtoon/swap)](LICENSE)[![GitHub License](https://img.shields.io/github/license/jdtoon/swap)](LICENSE)
+
+[![.NET Version](https://img.shields.io/badge/.NET-9.0-512BD4?logo=dotnet)](https://dotnet.microsoft.com/download)[![.NET Version](https://img.shields.io/badge/.NET-9.0-512BD4?logo=dotnet)](https://dotnet.microsoft.com/download)
+
+[![NuGet](https://img.shields.io/badge/NuGet-coming_soon-blue?logo=nuget)](https://www.nuget.org/packages/Swap.CLI)[![NuGet](https://img.shields.io/badge/NuGet-coming_soon-blue?logo=nuget)](https://www.nuget.org/packages/Swap.CLI)
+
 [![GitHub Stars](https://img.shields.io/github/stars/jdtoon/swap?style=social)](https://github.com/jdtoon/swap/stargazers)
+
+**HTMX-first framework for building modern ASP.NET Core applications.**
 
 **Generate production-ready ASP.NET Core + HTMX applications with beautiful DaisyUI components.**
 
+Swap CLI helps you create production-ready ASP.NET Core projects with the Swap framework libraries (Swap.Htmx, Swap.Modularity, Swap.Testing) pre-configured and ready to use.
+
 Swap CLI is a code generator that creates complete, modern web applications using ASP.NET Core MVC, HTMX for interactivity, DaisyUI for UI components, and Entity Framework Core for data access. Generate full CRUD operations with pagination, search, sorting, filtering, and modal-based editing in seconds.
+
+---
+
+## 🌟 Why Swap?
 
 ## 🌟 Why Swap?
 
 - **⚡ Production-Ready Code** - Generate complete CRUD with modals, pagination, sorting, filtering, and search
-- **🎯 HTMX Simplicity** - Modern, interactive web apps without JavaScript frameworks
-- **� DaisyUI + Tailwind** - Beautiful, accessible components out of the box
-- **🗄️ Entity Framework Core** - Full database integration with migrations support
-- **💻 Developer Experience** - CLI-driven workflow, no manual boilerplate
+
+- **🎯 HTMX-First** - Server-rendered interactivity without JavaScript complexity- **🎯 HTMX Simplicity** - Modern, interactive web apps without JavaScript frameworks
+
+- **📦 Modular Architecture** - Build scalable monoliths with clear module boundaries- **� DaisyUI + Tailwind** - Beautiful, accessible components out of the box
+
+- **✅ Testing Built-In** - HTMX-aware testing utilities included- **🗄️ Entity Framework Core** - Full database integration with migrations support
+
+- **⚡ Production-Ready** - Battle-tested patterns from real applications- **💻 Developer Experience** - CLI-driven workflow, no manual boilerplate
+
 - **📦 Proven Patterns** - Every pattern extracted from real production applications
 
+---
+
 ## 🚀 Quick Start
+
+## 🚀 Quick Start
+
+### Prerequisites
 
 ### Prerequisites
 
 Before installing Swap CLI, ensure you have:
 
 - **.NET 9.0 SDK** or later - [Download](https://dotnet.microsoft.com/download)
-- **Node.js (LTS)** - Includes npm for Tailwind CSS compilation
-  - Windows: `winget install OpenJS.NodeJS.LTS` or download from [nodejs.org](https://nodejs.org/)
-  - macOS: `brew install node`
+
+- **Node.js (LTS)** - For Tailwind CSS compilation- **.NET 9.0 SDK** or later - [Download](https://dotnet.microsoft.com/download)
+
+  - Windows: `winget install OpenJS.NodeJS.LTS`- **Node.js (LTS)** - Includes npm for Tailwind CSS compilation
+
+  - macOS: `brew install node`  - Windows: `winget install OpenJS.NodeJS.LTS` or download from [nodejs.org](https://nodejs.org/)
+
+  - Linux: Use your package manager  - macOS: `brew install node`
+
   - Linux: Use your package manager
-- **libman CLI** - Manages client libraries (HTMX, DaisyUI)
+
+### Installation- **libman CLI** - Manages client libraries (HTMX, DaisyUI)
+
   ```bash
-  dotnet tool install -g Microsoft.Web.LibraryManager.Cli
-  ```
 
-Verify installations:
-```bash
-dotnet --version   # Should be 9.0 or higher
-npm --version      # Any recent version
-libman --version   # Any version
-```
+```bash  dotnet tool install -g Microsoft.Web.LibraryManager.Cli
 
-### Installation
+# Install the Swap CLI tool  ```
 
-```bash
-# Install the Swap CLI tool
 dotnet tool install --global Swap.CLI
 
-# Verify installation
-swap --version
-```
+Verify installations:
 
-### Create Your First Project
+# Verify installation```bash
 
-```bash
+swap --versiondotnet --version   # Should be 9.0 or higher
+
+```npm --version      # Any recent version
+
+libman --version   # Any version
+
+### Create Your First Project```
+
+
+
+```bash### Installation
+
+# Create a new project
+
+swap new MyApp```bash
+
+# Install the Swap CLI tool
+
+cd MyAppdotnet tool install --global Swap.CLI
+
+
+
+# Run the application# Verify installation
+
+dotnet runswap --version
+
+``````
+
+
+
+Visit `https://localhost:5001` - Your HTMX-powered application is running! 🎉### Create Your First Project
+
+
+
+---```bash
+
 # Create a new ASP.NET Core + HTMX application
-swap new MyApp
+
+## 📋 CLI Commandsswap new MyApp
+
 cd MyApp
-
-# Apply migrations and run
-dotnet ef database update
-dotnet run
-```
-
-Visit `http://localhost:5000` - Your HTMX-powered application is running! 🎉
-
-**Note:** The CLI automatically runs `npm install`, `libman restore`, and `npm run build:css` during project creation.
-
-### Generate Your First CRUD
-
-```bash
-# Generate a complete CRUD controller with all features
-swap generate controller Product --fields "Name:string Price:decimal InStock:bool:f"
-
-# Short alias
-swap g c Product --fields "Name:string Price:decimal InStock:bool:f"
-
-# Update database
-dotnet ef migrations add AddProduct
-dotnet ef database update
-```
-
-Visit `http://localhost:5000/Product` - Full CRUD with pagination, search, sorting, and filtering! 🚀
-
-**No manual file creation. No boilerplate. Just CLI commands and business logic.**
-
-## 🎯 What You Get
-
-### Complete Feature Set
-
-Every generated controller includes:
-
-- ✅ **CRUD Operations** - Create, Read, Update, Delete via HTMX modals
-- ✅ **Pagination** - Configurable page sizes (10, 25, 50, 100)
-- ✅ **Real-Time Search** - 500ms debounced search across fields
-- ✅ **Column Sorting** - Ascending/descending toggle per field
-- ✅ **Boolean Filtering** - Dropdown filters (All/Yes/No) for bool fields
-- ✅ **Bulk Operations** - Select multiple items and bulk delete
-- ✅ **Toast Notifications** - Success/error messages with DaisyUI alerts
-- ✅ **Modal Editing** - No page reloads, smooth UX
-- ✅ **Validation** - Client and server-side with clear error messages
-- ✅ **Responsive Design** - Works perfectly on mobile and desktop
-
-### Generated Stack
-
-- **Backend:** ASP.NET Core 9.0 MVC
-- **Frontend:** HTMX + DaisyUI + Tailwind CSS
-- **Database:** Entity Framework Core (SQLite, SQL Server, PostgreSQL)
-- **UI Library:** DaisyUI 4.x components
-- **Styling:** Tailwind CSS 3.x utilities
-
-## 📋 CLI Commands
 
 ### `swap new <name>`
 
-Create a new ASP.NET Core + HTMX application with DaisyUI components.
+# Apply migrations and run
+
+Create a new ASP.NET Core application with Swap framework libraries pre-configured.dotnet ef database update
+
+dotnet run
+
+```bash```
+
+swap new MyApp
+
+```Visit `http://localhost:5000` - Your HTMX-powered application is running! 🎉
+
+
+
+**Choose from three templates:****Note:** The CLI automatically runs `npm install`, `libman restore`, and `npm run build:css` during project creation.
+
+- `swap-monolith` - Single project, fast MVPs (default)
+
+- `swap-layered` - 4-project architecture for teams### Generate Your First CRUD
+
+- `swap-modular-monolith` - Full modular architecture with independent modules
 
 ```bash
-swap new MyApp
+
+**Options:**# Generate a complete CRUD controller with all features
+
+```bashswap generate controller Product --fields "Name:string Price:decimal InStock:bool:f"
+
+# Specify template
+
+swap new MyApp --template swap-modular-monolith# Short alias
+
+swap g c Product --fields "Name:string Price:decimal InStock:bool:f"
+
+# Choose database
+
+swap new MyApp --database sqlite     # SQLite (default)# Update database
+
+swap new MyApp --database sqlserver  # SQL Serverdotnet ef migrations add AddProduct
+
+swap new MyApp --database postgres   # PostgreSQLdotnet ef database update
+
+```
+
+# Use local NuGet feed (for framework development)
+
+swap new MyApp --local-nugetVisit `http://localhost:5000/Product` - Full CRUD with pagination, search, sorting, and filtering! 🚀
+
+```
+
+**No manual file creation. No boilerplate. Just CLI commands and business logic.**
+
+---
+
+## 🎯 What You Get
+
+### `swap generate htmx-shell`
+
+### Complete Feature Set
+
+Add HTMX shell middleware to enforce partial responses for HTMX requests.
+
+Every generated controller includes:
+
+```bash
+
+# Add middleware- ✅ **CRUD Operations** - Create, Read, Update, Delete via HTMX modals
+
+swap g htmx-shell- ✅ **Pagination** - Configurable page sizes (10, 25, 50, 100)
+
+- ✅ **Real-Time Search** - 500ms debounced search across fields
+
+# Add middleware with global hx-boost- ✅ **Column Sorting** - Ascending/descending toggle per field
+
+swap g htmx-shell --add-boost- ✅ **Boolean Filtering** - Dropdown filters (All/Yes/No) for bool fields
+
+```- ✅ **Bulk Operations** - Select multiple items and bulk delete
+
+- ✅ **Toast Notifications** - Success/error messages with DaisyUI alerts
+
+**What it does:**- ✅ **Modal Editing** - No page reloads, smooth UX
+
+- Adds `SwapHtmxShellMiddleware` to catch full-page responses to HTMX requests- ✅ **Validation** - Client and server-side with clear error messages
+
+- Optionally adds `hx-boost="true"` to layout for progressive enhancement- ✅ **Responsive Design** - Works perfectly on mobile and desktop
+
+- Helps prevent common HTMX mistakes during development
+
+### Generated Stack
+
+---
+
+- **Backend:** ASP.NET Core 9.0 MVC
+
+### `swap events`- **Frontend:** HTMX + DaisyUI + Tailwind CSS
+
+- **Database:** Entity Framework Core (SQLite, SQL Server, PostgreSQL)
+
+Inspect and validate event chains in your application.- **UI Library:** DaisyUI 4.x components
+
+- **Styling:** Tailwind CSS 3.x utilities
+
+```bash
+
+# List all event chains from source## 📋 CLI Commands
+
+swap events list
+
+### `swap new <name>`
+
+# Validate event chains (check for cycles, undefined events)
+
+swap events validateCreate a new ASP.NET Core + HTMX application with DaisyUI components.
+
+
+
+# Export event chain graph```bash
+
+swap events graph --format mermaidswap new MyApp
+
+swap events graph --format dot --output chains.dot```
+
 ```
 
 **Generates:**
-- Complete ASP.NET Core MVC project structure
-- Entity Framework Core with SQLite (configurable)
-- DaisyUI + Tailwind CSS configuration
-- Sample TodoItem model and CRUD
-- Database migrations
+
+**Event Commands:**- Complete ASP.NET Core MVC project structure
+
+- `list` - Show all registered event chains- Entity Framework Core with SQLite (configurable)
+
+- `validate` - Check for undefined events and circular dependencies- DaisyUI + Tailwind CSS configuration
+
+- `graph` - Generate visual representation of event chains- Sample TodoItem model and CRUD
+
+- `from-server` - Query running application for live event chains- Database migrations
+
 - Ready to run immediately
+
+---
 
 ### `swap generate controller <name> --fields <fields>`
 
+## 🏗️ Architecture
+
 Generate a complete CRUD controller with all features.
 
-```bash
-# Generate Product controller with fields
-swap g c Product --fields "Name:string Price:decimal InStock:bool:f"
+Swap provides three core framework libraries:
 
-# With nullable fields
-swap g c Customer --fields "Name:string Email:string Notes:string?"
+```bash
+
+### **Swap.Htmx** - HTMX Integration & Event System# Generate Product controller with fields
+
+- `SwapController` - Auto-detects HTMX vs full-page requestsswap g c Product --fields "Name:string Price:decimal InStock:bool:f"
+
+- `SwapView()` - Returns partial or full view automatically
+
+- Event bus with declarative chain resolution# With nullable fields
+
+- Fluent header API for HTMX headersswap g c Customer --fields "Name:string Email:string Notes:string?"
+
+- Toast notifications built-in
 
 # Control sorting and filtering per field (space or comma separated)
-swap g c Order --fields "OrderNumber:string:ns Total:decimal Date:DateTime Status:bool:f"
-swap g c Order --fields OrderNumber:string:ns,Total:decimal,Date:DateTime,Status:bool:f
 
-# Preview without writing files (dry-run)
-swap g c Product --fields "Name:string Price:decimal" --dry-run
+### **Swap.Modularity** - Modular Monolith Systemswap g c Order --fields "OrderNumber:string:ns Total:decimal Date:DateTime Status:bool:f"
 
-# Overwrite existing files without prompting
-swap g c Product --fields "Name:string Price:decimal" --force
+- `IModule` contract for defining modulesswap g c Order --fields OrderNumber:string:ns,Total:decimal,Date:DateTime,Status:bool:f
 
-# Generate in a different project directory
-swap g c Product --fields "Name:string" --project path/to/project
+- Automatic discovery and dependency ordering
+
+- Per-module endpoints, services, and event chains# Preview without writing files (dry-run)
+
+- RCL (Razor Class Library) supportswap g c Product --fields "Name:string Price:decimal" --dry-run
+
+
+
+### **Swap.Testing** - HTMX Testing Framework# Overwrite existing files without prompting
+
+- `HtmxTestClient` for HTMX-aware requestsswap g c Product --fields "Name:string Price:decimal" --force
+
+- DOM assertions with CSS selectors
+
+- Header assertions (`HX-Trigger`, `HX-Redirect`, etc.)# Generate in a different project directory
+
+- Snapshot testing with scrubbersswap g c Product --fields "Name:string" --project path/to/project
+
 ```
 
+---
+
 **Options:**
-- `--fields` or `-f` - Field definitions (space or comma separated)
+
+## 📦 Templates- `--fields` or `-f` - Field definitions (space or comma separated)
+
 - `--dry-run` - Preview what would be generated without writing files
-- `--force` - Overwrite existing files without prompting
-- `--project` or `-p` - Path to project directory (default: current directory)
 
-**Field Flags:**
-- `:sortable` or `:s` - Enable sorting (default for all fields)
+### Monolith (swap-monolith)- `--force` - Overwrite existing files without prompting
+
+**Single deployable for rapid development**- `--project` or `-p` - Path to project directory (default: current directory)
+
+- 1 project
+
+- Best for: MVPs, solo developers, prototypes**Field Flags:**
+
+- Includes: Swap.Htmx- `:sortable` or `:s` - Enable sorting (default for all fields)
+
 - `:nosort` or `:ns` - Disable sorting
-- `:filterable` or `:f` - Enable filtering (bool fields only)
 
-**Generates:**
-- Controller with full CRUD operations
-- Model class with validation
+### Layered (swap-layered)- `:filterable` or `:f` - Enable filtering (bool fields only)
+
+**Multi-project architecture for teams**
+
+- 4 projects (Web, Application, Domain, Infrastructure)**Generates:**
+
+- Best for: Teams of 3-5, enterprise apps- Controller with full CRUD operations
+
+- Includes: Swap.Htmx- Model class with validation
+
 - View model for list operations
-- Views (Index, _List, _CreateModal, _EditModal, _DetailsModal)
-- Automatic DbContext updates
 
-### `swap generate model <name> --fields <fields>`
+### Modular Monolith (swap-modular-monolith)- Views (Index, _List, _CreateModal, _EditModal, _DetailsModal)
 
-Generate just a model class (no controller or views).
+**Full modular architecture**- Automatic DbContext updates
 
-```bash
+- Host + independent module projects
+
+- Best for: Large teams (5+), complex domains### `swap generate model <name> --fields <fields>`
+
+- Includes: Swap.Htmx, Swap.Modularity, Swap.Testing
+
+- Features: Per-module databases, RabbitMQ event distributionGenerate just a model class (no controller or views).
+
+
+
+---```bash
+
 swap g m Category --fields "Name:string Description:string?"
-swap g m Category --fields Name:string,Description:string?
 
-# Preview the generated model
+## 🛠️ Developmentswap g m Category --fields Name:string,Description:string?
+
+
+
+### Building from Source# Preview the generated model
+
 swap g m Product --fields "Name:string Price:decimal" --dry-run
 
-# Overwrite without prompting
-swap g m Category --fields "Name:string" --force
+```bash
+
+# Clone the repository# Overwrite without prompting
+
+git clone https://github.com/jdtoon/swap.gitswap g m Category --fields "Name:string" --force
+
+cd swap
 
 # Generate in a different project
-swap g m Category --fields "Name:string" --project path/to/project
-```
+
+# Pack framework and CLI locallyswap g m Category --fields "Name:string" --project path/to/project
+
+./scripts/pack-local.ps1   # Windows```
+
+./scripts/pack-local.sh    # Linux/Mac
 
 **Options:**
-- `--fields` or `-f` - Field definitions (space or comma separated)
-- `--dry-run` - Preview what would be generated without writing files
-- `--force` - Overwrite existing files without prompting
-- `--project` or `-p` - Path to project directory (default: current directory)
 
-### `swap generate auth`
+# Install CLI from local feed- `--fields` or `-f` - Field definitions (space or comma separated)
 
-Generate a complete authentication system with ASP.NET Core Identity, including login, registration, and password reset functionality.
+./scripts/reinstall-cli.ps1   # Windows- `--dry-run` - Preview what would be generated without writing files
 
-```bash
-# Generate authentication system
-swap generate auth
+./scripts/reinstall-cli.sh    # Linux/Mac- `--force` - Overwrite existing files without prompting
 
-# Short alias
-swap g auth
+```- `--project` or `-p` - Path to project directory (default: current directory)
 
-# Preview what would be generated
-swap g auth --dry-run
 
-# Force overwrite existing files
+
+### Project Structure### `swap generate auth`
+
+
+
+```Generate a complete authentication system with ASP.NET Core Identity, including login, registration, and password reset functionality.
+
+swap/
+
+├── framework/              # Framework libraries```bash
+
+│   ├── Swap.Htmx/         # HTMX integration & events# Generate authentication system
+
+│   ├── Swap.Modularity/   # Module systemswap generate auth
+
+│   └── Swap.Testing/      # Testing utilities
+
+├── templates/             # Project templates# Short alias
+
+│   ├── swap-monolith/swap g auth
+
+│   ├── swap-layered/
+
+│   └── swap-modular-monolith/# Preview what would be generated
+
+└── tools/swap g auth --dry-run
+
+    └── Swap.CLI/          # CLI tool
+
+```# Force overwrite existing files
+
 swap g auth --force
 
+---
+
 # Generate in a different project
-swap g auth --project path/to/project
+
+## 📚 Documentationswap g auth --project path/to/project
+
 ```
 
-**Options:**
-- `--dry-run` - Preview what would be generated without writing files
-- `--force` - Overwrite existing files without prompting
+- **[Framework Libraries](../../framework/README.md)** - Deep dive into Swap.Htmx, Swap.Modularity, Swap.Testing
+
+- **[Event System](../../docs/EVENTS.md)** - Event-driven architecture guide**Options:**
+
+- **[Templates](../../docs/TEMPLATES.md)** - Template comparison and selection- `--dry-run` - Preview what would be generated without writing files
+
+- **[Product Vision](../../docs/PRODUCT.md)** - Philosophy and architecture- `--force` - Overwrite existing files without prompting
+
 - `--project` or `-p` - Path to project directory (default: current directory)
 
+---
+
 **What it generates:**
-- `Models/ApplicationUser.cs` - Extended Identity user with DisplayName, CreatedAt, LastLoginAt
+
+## 🤝 Contributing- `Models/ApplicationUser.cs` - Extended Identity user with DisplayName, CreatedAt, LastLoginAt
+
 - `ViewModels/` - LoginViewModel, RegisterViewModel, ForgotPasswordViewModel, ResetPasswordViewModel
-- `Controllers/AuthController.cs` - Complete auth controller with all operations
+
+Contributions welcome! See [CONTRIBUTING.md](../../CONTRIBUTING.md) for guidelines.- `Controllers/AuthController.cs` - Complete auth controller with all operations
+
 - `Views/Auth/` - Login, Register, ForgotPassword, ResetPassword, AccessDenied, and confirmation pages
-- `Views/Shared/_LoginPartial.cshtml` - Reusable login/logout navigation component
+
+---- `Views/Shared/_LoginPartial.cshtml` - Reusable login/logout navigation component
+
 - Adds `Microsoft.AspNetCore.Identity.EntityFrameworkCore` package reference
 
+## 📄 License
+
 **Features included:**
-- ✅ User registration with email validation
+
+Swap CLI is [MIT licensed](../../LICENSE).- ✅ User registration with email validation
+
 - ✅ Login with "Remember Me" functionality
-- ✅ Password reset with token-based flow
+
+---- ✅ Password reset with token-based flow
+
 - ✅ Account lockout after failed attempts
-- ✅ Last login tracking
+
+**Built with ❤️ for the .NET community**- ✅ Last login tracking
+
 - ✅ Access denied page
-- ✅ Tailwind CSS styled views
+
+*Swap CLI - HTMX-first framework for ASP.NET Core*- ✅ Tailwind CSS styled views
+
 - ✅ HTMX-compatible markup
 
 **After generation - Manual configuration required:**

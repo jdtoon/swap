@@ -39,18 +39,8 @@ const sidebars: SidebarsConfig = {
       items: [
         'cli/overview',
         'cli/new',
-        'cli/generate-model',
-        'cli/generate-controller',
-        'cli/generate-relationship',
-        'cli/generate-resource',
-        'cli/generate-auth',
         'cli/generate-htmx-shell',
         'cli/events',
-        'cli/generate-test',
-        'cli/generate-factory',
-        'cli/seeders',
-        'cli/database',
-        'cli/utilities',
       ],
     },
     {
