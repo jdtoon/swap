@@ -123,8 +123,8 @@ Example HTMX pattern:
 ## Next Steps
 
 - [Installation](./getting-started/installation) - Set up Swap CLI
-- [Your First Project](./getting-started/first-project) - Build your first HTMX app
 - [CLI Reference](./cli/overview) - Complete command documentation
+- [Templates](./templates/overview) - Choose the right template for your project
 
 ## Comprehensive Guides
 
