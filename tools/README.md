@@ -65,64 +65,17 @@ swap new MyApp --local-nuget
 swap new MyApp --skip-setup
 ```
 
-### Model Generation
+### HTMX Shell Middleware
 
 ```bash
-# Create a simple model
-swap generate model Product --fields "Name:string Price:decimal"
+# Add HTMX shell middleware to your app
+swap generate htmx-shell
 
-# With nullable fields
-swap g m Post --fields "Title:string Content:string? Tags:string?"
+# With hx-boost enabled globally
+swap generate htmx-shell --add-boost
 
-# Shorthand: swap g m
-swap g m Category --fields "Name:string Description:string?"
-```
-
-**Field Syntax:** `Name:Type` where Type is: `string`, `int`, `decimal`, `bool`, `DateTime`, etc.
-
-### Controller Generation
-
-```bash
-# Generate full CRUD controller
-swap generate controller Product --fields "Name:string Price:decimal"
-
-# With all features enabled
-swap g c Product --fields "Name:string Price:decimal InStock:bool:f" --add-nav
-
-# Regenerate existing controller (useful after adding relationships)
-swap g c Product --force
-
-# Shorthand: swap g c
-```
-
-**Features included:**
-- ✅ Index with search, pagination, sorting, filtering
-- ✅ Create modal with form validation
-- ✅ Edit modal with pre-filled form
-- ✅ Delete confirmation modal
-- ✅ Details view
-- ✅ Automatic relationship dropdowns
-
-### Relationship Management
-
-```bash
-# Many-to-one (Post → Category)
-swap generate rel -s Post -t Category --type many-to-one
-
-# One-to-many (Author has many Posts)
-swap generate rel -s Author -t Post --type one-to-many
-
-# Many-to-many (Post ↔ Tags)
-swap generate rel -s Post -t Tag --type many-to-many
-
-# One-to-one (User ↔ Profile)
-swap generate rel -s User -t Profile --type one-to-one
-```
-
-After adding relationships, regenerate controllers to get automatic dropdowns/checkboxes:
-```bash
-swap g c Post --force
-dotnet ef database update
+# Shorthand
+swap g htmx-shell
 ```
 
 ### Event System Tooling
@@ -147,7 +100,6 @@ swap events from-server --url http://localhost:5000
 ---
 
 ## 📚 Project Structure
-
 ```
 tools/
 ├── Swap.CLI/               # CLI implementation

@@ -29,7 +29,6 @@ const sidebars: SidebarsConfig = {
       label: 'Getting Started',
       items: [
         'getting-started/installation',
-        'getting-started/first-project',
         'getting-started/layered-solution',
       ],
     },
@@ -48,14 +47,7 @@ const sidebars: SidebarsConfig = {
       label: 'Features',
       items: [
         'features/event-system',
-        'features/relationships',
         'features/testing-framework',
-        'features/pagination',
-        'features/search',
-        'features/sorting',
-        'features/filtering',
-        'features/bulk-operations',
-        'features/htmx-navigation',
       ],
     },
     {

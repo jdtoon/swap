@@ -311,21 +311,7 @@ docker-compose down
 
 **Note:** With Docker, migrations run automatically on startup - no manual steps needed!
 
-### Generate More Resources
-
-```bash
-# Generate a new CRUD feature
-swap g r Product --fields "Name:string Price:decimal InStock:bool:f"
-
-# Without Docker: Create and apply migration
-dotnet ef migrations add AddProduct
-dotnet ef database update
-
-# With Docker: Just rebuild
-docker-compose up --build
-```
-
 ## See Also
 
-- [Your First Project](../getting-started/first-project) - Complete tutorial
-- [swap generate resource](./generate-resource) - Generate models and controllers
+- [Getting Started](../getting-started/installation) - Installation guide
+- [Templates Overview](../templates/overview) - Compare all templates
