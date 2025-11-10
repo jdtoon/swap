@@ -127,7 +127,6 @@ Example generated view:
 - [swap new](./cli/new) - Create new projects
 - [swap generate model](./cli/generate-model) - Generate entity models
 - [swap generate controller](./cli/generate-controller) - Generate CRUD controllers with HTMX views
-- [swap generate pattern](./cli/generate-pattern) - Apply entity patterns (soft delete, auditable, etc.)
 - [swap generate auth](./cli/generate-auth) - Scaffold ASP.NET Identity authentication
 - [swap generate seed](./cli/seeders) - Generate database seeders
 - [swap generate factory](./cli/generate-factory) - Generate test data factories
@@ -139,7 +138,6 @@ Example generated view:
 - [Installation](./getting-started/installation) - Set up Swap CLI
 - [Your First Project](./getting-started/first-project) - Build a simple CRUD app
 - [CLI Reference](./cli/overview) - Complete command documentation
-- [Entity Patterns](./features/patterns) - Soft delete, auditable, sluggable, and more
 
 ## Comprehensive Guides
 

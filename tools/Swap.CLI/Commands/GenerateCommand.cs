@@ -18,7 +18,6 @@ public static class GenerateCommand
         command.AddCommand(GenerateSeedCommand.Create());
         command.AddCommand(GenerateTestCommand.Create());
         command.AddCommand(GenerateFactoryCommand.Create());
-        command.AddCommand(GeneratePatternCommand.Create());
         command.AddCommand(GenerateHtmxShellCommand.Create());
         command.AddCommand(GenerateRelationshipCommand.Create());
         

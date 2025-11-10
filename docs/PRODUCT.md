@@ -210,7 +210,6 @@ dotnet add package Swap.Testing
 |---------|---------|---------|
 | **Swap.Htmx** | 0.3.1 | HTMX integration, event system, middleware |
 | **Swap.Modularity** | 0.3.1 | Module discovery, composition, dependency ordering |
-| **Swap.Patterns** | 0.3.1 | Reusable patterns (Auditable, Orderable, etc.) |
 | **Swap.Testing** | 0.3.1 | HTMX-aware integration testing |
 | **Swap.Htmx.Analyzers** | 0.3.1 | Roslyn analyzer (catches magic strings) |
 
@@ -400,7 +399,6 @@ Swap/
 ├── framework/
 │   ├── Swap.Htmx/              ✅ HTMX ergonomics + event system
 │   ├── Swap.Modularity/        ✅ Module discovery + composition
-│   ├── Swap.Patterns/          ✅ Reusable domain patterns
 │   ├── Swap.Testing/           ✅ Integration testing fluent API
 │   └── Swap.Htmx.Analyzers/   ✅ Roslyn analyzer (catches magic strings)
 ├── templates/

@@ -758,5 +758,4 @@ dotnet ef database update
 
 - [Generate Model](../cli/generate-model.md)
 - [Generate Controller](../cli/generate-controller.md)
-- [Entity Patterns](../features/patterns.md)
 - [Testing Framework](../features/testing-framework.md)

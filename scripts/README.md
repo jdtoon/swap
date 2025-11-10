@@ -15,7 +15,7 @@ These scripts are used for **local development and testing only**. They help fra
 **What it does:**
 1. Cleans previous builds and packages
 2. Restores dependencies for all projects
-3. Builds all framework packages (Swap.Htmx, Swap.Modularity, Swap.Patterns, Swap.Testing)
+3. Builds all framework packages (Swap.Htmx, Swap.Modularity, Swap.Testing)
 4. Builds Swap.CLI
 5. Packs all projects as NuGet packages
 6. Copies packages to `.nuget/local/` directory
@@ -57,7 +57,7 @@ These scripts are used for **local development and testing only**. They help fra
 
 ## Typical Development Workflow
 
-1. **Make changes to framework code** (Swap.Htmx, Swap.Patterns, etc.) or CLI code
+1. **Make changes to framework code** (Swap.Htmx, Swap.Modularity, etc.) or CLI code
 2. **Build and pack locally:**
    ```powershell
    .\scripts\pack-local.ps1
@@ -92,7 +92,6 @@ The `.nuget/local/` directory acts as a local NuGet feed:
 - `Swap.CLI.<version>.nupkg`
 - `Swap.Htmx.<version>.nupkg`
 - `Swap.Modularity.<version>.nupkg`
-- `Swap.Patterns.<version>.nupkg`
 - `Swap.Testing.<version>.nupkg`
 
 ## Notes

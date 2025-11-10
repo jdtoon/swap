@@ -22,12 +22,6 @@ echo "📦 Packing Swap.Htmx..."
 cd "$ROOT_DIR/framework/Swap.Htmx"
 dotnet pack -c Release -o "$LOCAL_FEED"
 
-# Pack Swap.Patterns
-echo ""
-echo "📦 Packing Swap.Patterns..."
-cd "$ROOT_DIR/framework/Swap.Patterns"
-dotnet pack -c Release -o "$LOCAL_FEED"
-
 # Pack Swap.Modularity
 echo ""
 echo "📦 Packing Swap.Modularity..."
