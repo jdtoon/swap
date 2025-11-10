@@ -39,7 +39,6 @@ jobs:
     - name: Pack framework packages to local feed
       run: |
         dotnet pack framework/Swap.Htmx/Swap.Htmx.csproj --configuration Release --output ./.nuget/local
-        dotnet pack framework/Swap.Patterns/Swap.Patterns.csproj --configuration Release --output ./.nuget/local
         dotnet pack framework/Swap.Modularity/Swap.Modularity.csproj --configuration Release --output ./.nuget/local
         dotnet pack framework/Swap.Testing/Swap.Testing.csproj --configuration Release --output ./.nuget/local
       env:
@@ -57,7 +56,6 @@ jobs:
     - name: Pack packages (artifacts)
       run: |
         dotnet pack framework/Swap.Htmx/Swap.Htmx.csproj --configuration Release --no-restore --output ./nupkg
-        dotnet pack framework/Swap.Patterns/Swap.Patterns.csproj --configuration Release --no-restore --output ./nupkg
         dotnet pack framework/Swap.Modularity/Swap.Modularity.csproj --configuration Release --no-restore --output ./nupkg
         dotnet pack framework/Swap.Testing/Swap.Testing.csproj --configuration Release --no-restore --output ./nupkg
         dotnet pack tools/Swap.CLI/Swap.CLI.csproj --configuration Release --no-restore --output ./nupkg

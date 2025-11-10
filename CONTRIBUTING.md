@@ -28,15 +28,15 @@ When reporting bugs, please include:
 
 **Example:**
 ```markdown
-### Bug: Generated controller has syntax error
+### Bug: Template generation fails with error
 
 **Steps:**
 1. `swap new TestApp`
-2. `swap g c Product --fields "Name:string Price:decimal"`
+2. `cd TestApp`
 3. Run: `dotnet build`
 
 **Expected:** Clean build ✅
-**Actual:** CS1002: ; expected on line 45 ❌
+**Actual:** Build fails with missing reference error ❌
 
 **Environment:**
 - OS: Windows 11
@@ -91,7 +91,7 @@ swap --version
 
 ## 📦 Working with Framework Packages
 
-When modifying framework packages (Swap.Htmx, Swap.Modularity, Swap.Testing, Swap.Patterns), you need to test them in a real project.
+When modifying framework packages (Swap.Htmx, Swap.Modularity, Swap.Testing), you need to test them in a real project.
 
 ### Local NuGet Workflow (Recommended)
 
@@ -106,7 +106,7 @@ This workflow lets you test unreleased framework changes without publishing to N
 
 # What it does:
 # - Restores dependencies
-# - Builds Swap.Htmx, Swap.Modularity, Swap.Testing, Swap.Patterns, Swap.CLI
+# - Builds Swap.Htmx, Swap.Modularity, Swap.Testing, Swap.CLI
 # - Packs each as .nupkg
 # - Copies to .nuget/local/ directory
 # - Clears NuGet caches
@@ -117,7 +117,6 @@ This workflow lets you test unreleased framework changes without publishing to N
 # - Swap.Htmx.0.3.1
 # - Swap.Modularity.0.1.0
 # - Swap.Testing.0.3.0
-# - Swap.Patterns.0.3.0
 ```
 
 #### Step 2: Create a Test Project with Local Packages
@@ -242,9 +241,8 @@ dotnet test --filter "FullyQualifiedName~ControllerGeneration"
 Framework Tests:
 - Swap.Htmx.Tests: 35 tests
 - Swap.Modularity.Tests: 24 tests
-- Swap.Patterns.Tests: 72 tests
 - Swap.Testing.Tests: (in progress)
-Total: 131+ tests
+Total: 59+ tests
 ```
 
 ---
@@ -381,19 +379,19 @@ dotnet run
 
 ### 2. Test Edge Cases
 
-- Nullable fields
-- Special characters in names
-- Relationships (one-to-many, many-to-many)
-- Different database providers
+- Different template options
+- Database providers (SQLite, SQL Server, PostgreSQL)
+- Local NuGet package references
+- Build and migration steps
 
 ### 3. Update Tests
 
 Add integration tests for new template features:
 ```csharp
 [Fact]
-public async Task GenerateController_WithRelationship_CreatesDropdown()
+public async Task NewCommand_WithTemplate_GeneratesExpectedStructure()
 {
-    // Test that controller with foreign key generates dropdown
+    // Test that template generates correct project structure
 }
 ```
 
@@ -425,14 +423,16 @@ When updating documentation:
 - [ ] No breaking changes (or documented)
 - [ ] Local NuGet tested (if framework change)
 
-### Example: Adding a New Pattern
+### Example: Adding a New Feature
 
-1. **Implement in framework** — Add pattern class to `Swap.Patterns`
-2. **Add tests** — Test the pattern in `Swap.Patterns.Tests`
-3. **Add generation** — Update `GeneratePatternCommand`
-4. **Add template** — Create template in `templates/generate/pattern/`
-5. **Test end-to-end** — `swap g pattern mypattern Entity --use-package`
-6. **Update docs** — Add to `framework/Swap.Patterns/README.md`
+Follow these general steps when adding new features to the framework:
+
+1. **Implement in framework** — Add code to the appropriate package (Swap.Htmx, Swap.Modularity, etc.)
+2. **Add tests** — Create comprehensive tests in the corresponding test project
+3. **Update CLI** — If applicable, add CLI command or generation support
+4. **Add templates** — Create necessary templates in `templates/generate/`
+5. **Test end-to-end** — Test the complete workflow
+6. **Update docs** — Document in README and wiki
 
 ---
 

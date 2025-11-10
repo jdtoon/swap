@@ -10,7 +10,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ---
+## [0.4.1] - 2025-11-07
 
+### Changed - Framework Focus
+- **Removed Code Generation**: Eliminated all CLI code generation commands and infrastructure
+  - Removed `swap generate controller`, `swap generate seeder`, `swap generate test`, `swap generate factory`
+  - Removed `swap generate pattern`, `swap generate relationship`, `swap generate auth`
+  - Removed all code generation classes: EntityGenerator, DtoGenerator, ServiceGenerator, ControllerGenerator, ViewGenerator, SeederGenerator
+  - Removed PropertyParser, FieldDefinition, and related parsing infrastructure
+  - Removed template system and .template files
+- **Framework-Only CLI**: Simplified CLI to focus on Swap framework capabilities
+  - Retained `swap new` for project scaffolding from templates
+  - Retained `swap events` commands for event system introspection
+  - Retained `swap db` commands for database operations
+- **Philosophy Shift**: Swap is now purely a framework, not a code generator
+  - Templates provide complete, working applications
+  - Developers modify generated code directly
+  - No ongoing code generation workflow
+  - Focus on HTMX patterns, event chains, and testing utilities
+
+### Removed
+- All code generation commands and infrastructure (~8,000 lines)
+- Template processing system for controller/view/service generation
+- PropertyParser and field definition models
+- SeederGenerator, EntityGenerator, DtoGenerator, ServiceGenerator, ControllerGenerator, ViewGenerator
+- Test projects for removed generators
+
+### Validated
+- `swap new` creates complete working applications
+- `swap events` commands work with existing event system
+- `swap db` commands work with EF Core migrations
+- All three templates (monolith, layered, modular-monolith) generate successfully
+
+---
 ## [0.4.0] - 2025-11-06
 
 ### Added - Template Documentation Suite

@@ -29,7 +29,6 @@ const sidebars: SidebarsConfig = {
       label: 'Getting Started',
       items: [
         'getting-started/installation',
-        'getting-started/first-project',
         'getting-started/layered-solution',
       ],
     },
@@ -39,19 +38,8 @@ const sidebars: SidebarsConfig = {
       items: [
         'cli/overview',
         'cli/new',
-        'cli/generate-model',
-        'cli/generate-controller',
-        'cli/generate-relationship',
-        'cli/generate-resource',
-        'cli/generate-pattern',
-        'cli/generate-auth',
         'cli/generate-htmx-shell',
         'cli/events',
-        'cli/generate-test',
-        'cli/generate-factory',
-        'cli/seeders',
-        'cli/database',
-        'cli/utilities',
       ],
     },
     {
@@ -59,15 +47,7 @@ const sidebars: SidebarsConfig = {
       label: 'Features',
       items: [
         'features/event-system',
-        'features/relationships',
-        'features/patterns',
         'features/testing-framework',
-        'features/pagination',
-        'features/search',
-        'features/sorting',
-        'features/filtering',
-        'features/bulk-operations',
-        'features/htmx-navigation',
       ],
     },
     {

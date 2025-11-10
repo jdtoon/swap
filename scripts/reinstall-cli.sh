@@ -43,7 +43,7 @@ echo "🧽 Removing any previously installed package versions..."
 DOTNET_TOOLS="$HOME/.dotnet/tools"
 DOTNET_STORE="$DOTNET_TOOLS/.store"
 NUGET_PACKAGES="$HOME/.nuget/packages"
-PACKAGES=("swap.cli" "swap.htmx" "swap.patterns" "swap.modularity" "swap.testing")
+PACKAGES=("swap.cli" "swap.htmx" "swap.modularity" "swap.testing")
 
 for pkg in "${PACKAGES[@]}"; do
     rm -rf "$DOTNET_STORE/$pkg" "$NUGET_PACKAGES/$pkg"
@@ -56,7 +56,6 @@ echo ""
 echo "📦 Packing Framework Packages..."
 FRAMEWORK_PROJECTS=(
     "framework/Swap.Htmx/Swap.Htmx.csproj"
-    "framework/Swap.Patterns/Swap.Patterns.csproj"
     "framework/Swap.Modularity/Swap.Modularity.csproj"
     "framework/Swap.Testing/Swap.Testing.csproj"
 )

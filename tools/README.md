@@ -2,23 +2,19 @@
 
 [![NuGet: Swap.CLI](https://img.shields.io/nuget/v/Swap.CLI.svg?label=Swap.CLI&color=0078d4)](https://www.nuget.org/packages/Swap.CLI)
 
-The Swap CLI is a comprehensive code generation tool for creating and scaffolding ASP.NET Core + HTMX applications.
+The Swap CLI is a tool for creating ASP.NET Core + HTMX applications from templates.
 
 ---
 
 ## 🎯 What Swap CLI Does
 
-Swap CLI generates complete, production-ready applications and features from templates. It's the fastest way to:
+Swap CLI helps you create production-ready HTMX-first applications:
 
 - 📦 Create new projects from templates (Monolith, Layered, Modular Monolith)
-- 🏛️ Generate CRUD controllers with full feature set (search, pagination, sorting, filtering, modals)
-- 🔗 Add relationships and auto-generate UI (dropdowns, checkboxes)
-- 🗄️ Create database seeders and test factories
-- 🧪 Generate integration test scaffolds
-- 🔐 Scaffold authentication flows
-- 📐 Apply entity patterns (Soft Delete, Auditable, Sluggable, etc.)
+- � Generate HTMX shell middleware for your app
+- � Analyze and validate event chains
 
-**No manual boilerplate. Just CLI commands.**
+**Get started fast with proven patterns.**
 
 ---
 
@@ -69,127 +65,17 @@ swap new MyApp --local-nuget
 swap new MyApp --skip-setup
 ```
 
-### Model Generation
+### HTMX Shell Middleware
 
 ```bash
-# Create a simple model
-swap generate model Product --fields "Name:string Price:decimal"
+# Add HTMX shell middleware to your app
+swap generate htmx-shell
 
-# With nullable fields
-swap g m Post --fields "Title:string Content:string? Tags:string?"
+# With hx-boost enabled globally
+swap generate htmx-shell --add-boost
 
-# Shorthand: swap g m
-swap g m Category --fields "Name:string Description:string?"
-```
-
-**Field Syntax:** `Name:Type` where Type is: `string`, `int`, `decimal`, `bool`, `DateTime`, etc.
-
-### Controller Generation
-
-```bash
-# Generate full CRUD controller
-swap generate controller Product --fields "Name:string Price:decimal"
-
-# With all features enabled
-swap g c Product --fields "Name:string Price:decimal InStock:bool:f" --add-nav
-
-# Regenerate existing controller (useful after adding relationships)
-swap g c Product --force
-
-# Shorthand: swap g c
-```
-
-**Features included:**
-- ✅ Index with search, pagination, sorting, filtering
-- ✅ Create modal with form validation
-- ✅ Edit modal with pre-filled form
-- ✅ Delete confirmation modal
-- ✅ Details view
-- ✅ Automatic relationship dropdowns
-
-### Relationship Management
-
-```bash
-# Many-to-one (Post → Category)
-swap generate rel -s Post -t Category --type many-to-one
-
-# One-to-many (Author has many Posts)
-swap generate rel -s Author -t Post --type one-to-many
-
-# Many-to-many (Post ↔ Tags)
-swap generate rel -s Post -t Tag --type many-to-many
-
-# One-to-one (User ↔ Profile)
-swap generate rel -s User -t Profile --type one-to-one
-```
-
-After adding relationships, regenerate controllers to get automatic dropdowns/checkboxes:
-```bash
-swap g c Post --force
-dotnet ef database update
-```
-
-### Entity Patterns
-
-```bash
-# Apply Soft Delete pattern
-swap generate pattern softdelete Post --use-package
-
-# Apply Auditable pattern
-swap g pattern auditable Post --use-package
-
-# Apply Sluggable pattern
-swap g pattern sluggable Post --use-package
-
-# Available patterns:
-# - softdelete     (Logical deletion with restore)
-# - auditable      (Track who created/modified/deleted)
-# - sluggable      (URL-friendly slugs)
-# - timestampable  (Auto CreatedAt/UpdatedAt)
-# - publishable    (Draft/published workflow)
-# - orderable      (Display order management)
-# - versionable    (Version tracking)
-# - visibility     (Public/private scheduling)
-```
-
-### Testing
-
-```bash
-# Generate integration test scaffold
-swap generate test Product
-swap g test Post
-
-# Generates test class using Swap.Testing with HTMX assertions
-```
-
-### Authentication
-
-```bash
-# Scaffold identity/auth
-swap generate auth
-swap g auth
-
-# Generates:
-# - ApplicationUser.cs
-# - AuthController with login/register/password reset
-# - Views for auth pages
-# - _LoginPartial for navbar
-```
-
-### Database Operations
-
-```bash
-# Show database configuration
-swap db info
-
-# Create and apply migrations
-swap db migrate
-
-# Run seeders
-swap db seed
-
-# Reset database (drop/recreate/seed)
-swap db reset
+# Shorthand
+swap g htmx-shell
 ```
 
 ### Event System Tooling
@@ -211,42 +97,19 @@ swap events graph -p . --format dot --output diagram.dot
 swap events from-server --url http://localhost:5000
 ```
 
-### Utilities
-
-```bash
-# List all entities in project
-swap list
-
-# Diagnose issues
-swap doctor
-
-# Show version
-swap --version
-```
-
 ---
 
 ## 📚 Project Structure
-
 ```
 tools/
 ├── Swap.CLI/               # CLI implementation
 │   ├── Commands/           # Command implementations
 │   │   ├── NewCommand.cs                    # swap new
-│   │   ├── GenerateModelCommand.cs          # swap g m
-│   │   ├── GenerateControllerCommand.cs     # swap g c
-│   │   ├── GenerateRelationshipCommand.cs   # swap g rel
-│   │   ├── GeneratePatternCommand.cs        # swap g pattern
-│   │   ├── GenerateAuthCommand.cs           # swap g auth
-│   │   ├── GenerateTestCommand.cs           # swap g test
 │   │   ├── EventsCommand.cs                 # swap events
-│   │   └── DatabaseCommand.cs               # swap db
+│   │   └── GenerateHtmxShellCommand.cs      # swap generate htmx-shell
 │   ├── Infrastructure/     # Core utilities
 │   │   ├── TemplateEngine.cs        # Template processing
-│   │   ├── FieldHelper.cs           # Field parsing
-│   │   ├── MigrationHelper.cs       # EF Core migration creation
 │   │   ├── ProjectScanner.cs        # Project analysis
-│   │   └── RelationshipHelper.cs    # Relationship logic
 │   ├── Program.cs          # CLI entry point
 │   └── README.md           # Detailed CLI reference
 └── Swap.CLI.Tests/         # Comprehensive test suite (160+ tests)
@@ -317,76 +180,6 @@ After creating a project, the CLI automatically:
 - ✅ Builds CSS with Tailwind
 - ✅ Creates and applies EF Core migrations
 - ✅ Applies development migrations on `dotnet run`
-
----
-
-## 💡 Example Workflows
-
-### Complete Blog in 5 Minutes
-
-```bash
-swap new Blog
-cd Blog
-
-# Create entities
-swap g m Author --fields "Name:string Email:string"
-swap g m Category --fields "Name:string"
-swap g m Post --fields "Title:string Content:string AuthorId:int CategoryId:int"
-
-# Add relationships
-swap g rel -s Post -t Author --type many-to-one
-swap g rel -s Post -t Category --type many-to-one
-
-# Generate controllers
-swap g c Author
-swap g c Category
-swap g c Post --force  # Regenerate to get dropdowns
-
-# Add soft delete pattern
-swap g pattern softdelete Post --use-package
-
-# Run
-dotnet run
-```
-
-### Layered Architecture
-
-```bash
-swap new MyApp --template swap-layered
-cd MyApp
-
-# Create domain models in Domain/
-swap g m Product --fields "Name:string Price:decimal"
-swap g m Category --fields "Name:string"
-
-# Add relationships
-swap g rel -s Product -t Category --type many-to-one
-
-# Generate Web controllers
-swap g c Product
-swap g c Category
-
-# Test with auth
-swap g auth
-```
-
-### Modular Monolith
-
-```bash
-swap new MyApp --template swap-modular
-cd MyApp
-
-# Each module owns its features
-# Core module already has User entity
-
-# Generate for Todos module
-swap g m TodoItem --fields "Title:string Completed:bool" --module Todos
-swap g c TodoItem --module Todos
-
-# Generate for Demo module  
-swap g m DemoItem --fields "Name:string" --module Demo
-swap g c DemoItem --module Demo
-```
 
 ---
 

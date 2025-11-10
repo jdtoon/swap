@@ -49,7 +49,7 @@ $dotnetToolsPath = Join-Path $env:USERPROFILE ".dotnet\tools"
 $dotnetStorePath = Join-Path $env:USERPROFILE ".dotnet\tools\.store"
 $nugetGlobalPath = Join-Path $env:USERPROFILE ".nuget\packages"
 
-$packageNames = @("swap.cli", "swap.htmx", "swap.patterns", "swap.modularity", "swap.testing")
+$packageNames = @("swap.cli", "swap.htmx", "swap.modularity", "swap.testing")
 
 foreach ($pkg in $packageNames) {
     $pkgPaths = @(
@@ -72,7 +72,6 @@ Write-Host "📦 Packing Framework Packages..." -ForegroundColor Yellow
 
 $frameworkProjects = @(
     "framework\Swap.Htmx\Swap.Htmx.csproj",
-    "framework\Swap.Patterns\Swap.Patterns.csproj",
     "framework\Swap.Modularity\Swap.Modularity.csproj",
     "framework\Swap.Testing\Swap.Testing.csproj"
 )

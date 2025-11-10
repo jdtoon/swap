@@ -217,7 +217,7 @@ app.UseAuthorization();
 ## Related Commands
 
 - [swap new](./new) - Create new project (middleware not included by default)
-- [swap generate controller](./generate-controller) - Controllers work with middleware
+- [swap events](./events) - Analyze event chains in your app
 
 ## Related Packages
 

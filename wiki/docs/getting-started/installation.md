@@ -149,6 +149,7 @@ dotnet tool install -g Swap.CLI
 
 ## Next Steps
 
-- [Your First Project](./first-project) - Build a simple CRUD app
 - [CLI Reference](../cli/overview) - Complete command documentation
+- [Templates](../templates/overview) - Choose the right template for your project
+- [Create Your First App](../cli/new) - Get started with swap new
 

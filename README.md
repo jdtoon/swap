@@ -7,17 +7,17 @@
 [![NuGet Swap.Modularity](https://img.shields.io/nuget/v/Swap.Modularity?label=Swap.Modularity&logo=nuget)](https://www.nuget.org/packages/Swap.Modularity)
 [![NuGet Swap.Testing](https://img.shields.io/nuget/v/Swap.Testing?label=Swap.Testing&logo=nuget)](https://www.nuget.org/packages/Swap.Testing)
 
-**Build modern, interactive ASP.NET Core apps with HTMX—fast, modular, and testable. No JavaScript frameworks required.**
+**Build modern, interactive ASP.NET Core apps with HTMX—fast, modular, and testable.**
 
-Swap is a complete toolkit for building production-ready server-rendered web applications. It combines three focused libraries with battle-tested templates to let you build modular monoliths with HTMX in days, not months.
+Swap is an HTMX-first framework for ASP.NET Core. Three focused libraries plus production-ready templates help you build modular, server-rendered applications without JavaScript framework complexity.
 
 ---
 
-## 🎯 The Three Pillars
+## Core Libraries
 
-### 1. **Swap.Htmx** — HTMX Ergonomics + Event System
+### Swap.Htmx — HTMX Integration + Event System
 
-Make ASP.NET Core HTMX-native with minimal friction.
+HTMX-aware controllers, fluent headers, and declarative event chains for server-driven interactivity.
 
 ```csharp
 // Automatic full page vs partial detection
@@ -36,16 +36,16 @@ Response.HxTrigger("articleRefreshed");
 Response.ShowSuccessToast("Article created!");
 ```
 
-**What you get:**
-- **SwapController**: Auto-detects HTMX requests and returns appropriate views
-- **Fluent Header API**: Read/write HTMX headers with clean C# methods
-- **Event Bus**: Emit domain events; resolve them to HTMX UI reactions declaratively
-- **Server Events (RabbitMQ)**: Optional: distribute events across processes for modular deployments
-- **Zero Configuration**: Works out of the box with sensible defaults
+**Features:**
+- `SwapController` — auto-detect HTMX requests, return full page or partial automatically
+- Fluent header API — clean methods for HX-Trigger, HX-Redirect, HX-Refresh, etc.
+- Event chains — map domain events → UI events declaratively
+- Server events (RabbitMQ) — optional distributed events for modular deployments
+- Zero config — works out of the box
 
-### 2. **Swap.Modularity** — Lightweight Module System
+### Swap.Modularity — Lightweight Module System
 
-Compose modules deterministically with dependency ordering and automatic discovery.
+Compose independent modules with automatic discovery and dependency ordering.
 
 ```csharp
 // Define a module
@@ -81,16 +81,15 @@ app.MapSwapModuleEndpoints();
 app.Run();
 ```
 
-**What you get:**
-- **IModule Contract**: Name, dependencies, and three hooks (services, endpoints, events)
-- **Automatic Discovery**: Scans loaded assemblies; validates dependencies; topological sort
-- **RCL Support**: Auto-loads UI assemblies and discovers `ISwapUiChainContributor` instances
-- **Clear Errors**: Missing dependencies, cycles, and ordering issues throw informative exceptions
-- **Event Integration**: Seamlessly wires domain events to the HTMX event system
+**Features:**
+- `IModule` contract — name, dependencies, three hooks (services, endpoints, events)
+- Automatic discovery — scans assemblies, validates dependencies, topological sort
+- RCL support — auto-loads UI assemblies and event contributors
+- Clear errors — missing dependencies and cycles fail fast with helpful messages
 
-### 3. **Swap.Testing** — Fluent HTMX Testing
+### Swap.Testing — HTMX-Aware Integration Testing
 
-Integration testing for server-rendered HTMX apps, with first-class support for partials and event headers.
+Fluent testing API for HTMX requests, partials, events, and DOM assertions.
 
 ```csharp
 using Swap.Testing;
@@ -117,80 +116,51 @@ public class ArticleTests : IClassFixture<HtmxTestFixture<Program>>
 }
 ```
 
-**What you get:**
-- **Fluent API**: Chainable assertions for readable, maintainable tests
-- **HTMX-Aware**: Built-in support for HX-Request headers and HTMX attributes
-- **Partial View Testing**: Assert full vs partial responses
-- **Event Assertions**: Verify HX-Trigger headers and event payloads
-- **Form Submission**: Follow HX-Redirect, submit forms with attributes, test validation errors
-- **Snapshot Testing**: Built-in scrubbers for GUIDs, timestamps, and anti-forgery tokens
+**Features:**
+- Fluent assertions — chainable, readable test syntax
+- HTMX headers — automatic HX-Request, verify HX-Trigger events
+- Partial testing — assert full page vs partial response
+- Form submission — follow redirects, submit with attributes, test validation
+- Snapshot testing — scrubbers for GUIDs, timestamps, anti-forgery tokens
 
 ---
 
-## 🚀 Production-Ready Templates
+## Production Templates
 
-Every template is a complete, runnable application with HTMX, Tailwind/DaisyUI, EF Core, Docker, and integration tests included.
+Complete, runnable applications with HTMX, Tailwind CSS, EF Core, Docker, and tests.
 
-### Monolith (swap-monolith)
-Single deployable for rapid development. Perfect for MVPs and smaller projects.
+### swap-monolith
+Single-project app for rapid development. Perfect for MVPs and small teams.
 
 ```bash
-swap new MyApp --template swap-monolith
+swap new MyApp
 ```
 
-**Includes:**
-- ASP.NET Core MVC with Swap.Htmx event system wired
-- HTMX 2.x + DaisyUI components + Tailwind CSS
-- EF Core migrations (pick your database: SQLite, SQL Server, PostgreSQL)
-- Docker Compose (Postgres, RabbitMQ optional)
-- Integration tests with Swap.Testing
-- Example CRUD controllers and forms
+Includes: ASP.NET Core MVC + Swap.Htmx + HTMX 2.x + Tailwind/DaisyUI + EF Core migrations + Docker Compose + integration tests + example CRUD.
 
-### Layered (swap-layered)
-Multi-project architecture (Web, Application, Domain, Infrastructure) for scaling and team organization.
+### swap-layered
+Multi-project clean architecture (Web, Application, Domain, Infrastructure).
 
 ```bash
 swap new MyApp --template swap-layered
 ```
 
-**Includes:**
-- Clean layering: Presentation → Application → Domain → Infrastructure
-- Swap.Htmx event system with domain layer integration
-- Provider-specific EF Core setup per project
-- Session support and development endpoints
-- Pre-built CRUD examples (Todos, Stats, Dynamic forms)
-- Full integration test suite
+Includes: Clean layers + Swap.Htmx event system + provider-specific EF Core + session support + full test suite + example domain models.
 
-### Modular Monolith (swap-modular-monolith) ⭐ **Recommended**
-Single deployable with module boundaries and per-module ownership. The sweet spot between monolith and microservices.
+### swap-modular-monolith ⭐ **Recommended**
+Single deployable with module boundaries. Sweet spot between monolith and microservices.
 
 ```bash
 swap new MyApp --template swap-modular-monolith
 ```
 
-**Includes:**
-- Host app + modules as independent NuGet packages
-- **Per-module structure**: Contracts, Module (services/endpoints), Web RCL (UI)
-- **Provider-specific migrations**: Each module owns its database layer (SqlServer/Postgres)
-- Swap.Modularity for deterministic composition
-- Docker Compose: Postgres, RabbitMQ for distributed event chains
-- Example chains, migrations, and module authoring guides
-- Production-ready patterns extracted from real apps
+Includes: Host + independent modules (Contracts, Module, Web RCL) + per-module migrations + Swap.Modularity + Docker Compose (Postgres, RabbitMQ) + distributed events + production-ready structure.
 
 ---
 
-## 🔔 Event System: Server-Driven Interactivity
+## Event System
 
-The Swap Event System is the secret sauce—it makes UX declarative and testable.
-
-**How it works:**
-1. Controllers emit domain events during request processing
-2. Configured chains map domain events → UI events
-3. Events resolve based on subscription filters and chain modes
-4. All active events are merged into the `HX-Trigger` response header
-5. Client handles `HX-Trigger` events (refresh, toast, redirect, etc.)
-
-**Example: Product Created**
+Declarative, server-driven UI reactions. Emit domain events; chains resolve them to HTMX triggers.
 
 ```csharp
 // Define chains once during startup
@@ -215,233 +185,57 @@ public class ProductsController : SwapController
     }
 }
 
-// Client receives HX-Trigger with all resolved events
-// Your HTMX markup handles them: hx-trigger="productRefreshed from:body"
+// Client receives HX-Trigger with all chained events
+// HTMX markup handles them: hx-trigger="productRefreshed from:body"
 ```
 
-**Chain Resolution Modes:**
-- `OneHop` (default): Only immediate chained events
-- `Bidirectional`: Event → dependency → event (reverse one-hop)
-- `Transitive`: BFS across the graph up to a configurable depth
-
-**Development Dashboard** (in Development environment):
-- `/_swap/dev/events` — Visual dashboard with Mermaid graph
-- `/_swap/dev/events.json` — Export chains as JSON
-- `/_swap/dev/explain.json?event=...` — Preview event resolution
-
-**CLI Tools:**
-```bash
-swap events list -p .
-swap events validate -p .
-swap events graph -p . --format mermaid
-```
+**Resolution modes:** OneHop (default), Bidirectional, Transitive  
+**Dev tools:** `/_swap/dev/events` (visual dashboard), `swap events list/validate/graph` (CLI)
 
 ---
 
-## ⚡ Quick Start
+## Quick Start
 
-### Prerequisites
-
-- **.NET 9.0 SDK** or later — [Download](https://dotnet.microsoft.com/download)
-- **Node.js (LTS)** — For Tailwind CSS compilation
-- **libman CLI** — For client libraries
-  ```bash
-  dotnet tool install -g Microsoft.Web.LibraryManager.Cli
-  ```
-
-### Installation
-
-Install Swap CLI globally:
+**Prerequisites:** .NET 9.0 SDK, Node.js (LTS), libman CLI
 
 ```bash
+# Install
 dotnet tool install -g Swap.CLI
-```
 
-Verify:
-```bash
-swap --version
-```
-
-### Create Your First App
-
-#### 1. Monolith (Get Started Fast)
-```bash
+# Create app
 swap new MyApp
 cd MyApp
 dotnet watch
 ```
 
-Automatically runs npm install, builds CSS, applies migrations, and starts on `https://localhost:5001`.
-
-#### 2. Modular Monolith (Production Pattern)
-```bash
-swap new MyApp --template swap-modular-monolith
-cd MyApp
-docker-compose up -d  # Optional: Postgres + RabbitMQ
-dotnet run
-```
-
-Open `https://localhost:5001` → Explore examples, review module structure, extend with your own.
-
-#### 3. Add a New Module (Modular Monolith)
-```bash
-cd src/Modules
-dotnet new classlib -n MyModule.Contracts
-dotnet new classlib -n MyModule
-dotnet new razorclasslib -n MyModule.Web
-
-# Wire it in the host's Program.cs
-builder.Services.AddSwapModules(builder.Configuration);
-```
+Runs npm install, builds CSS, applies migrations, starts at `https://localhost:5001`.
 
 ---
 
-## 📚 Architecture Overview
+## Key Features
 
-```
-Swap/
-├── framework/
-│   ├── Swap.Htmx/              ✅ HTMX ergonomics + event system
-│   ├── Swap.Modularity/        ✅ Module discovery + composition
-│   ├── Swap.Patterns/          ✅ Reusable domain patterns
-│   ├── Swap.Testing/           ✅ Integration testing fluent API
-│   └── Swap.Htmx.Analyzers/   ✅ Roslyn analyzer (catches magic strings)
-├── templates/
-│   ├── swap-monolith/          ✅ Single project, HTMX-native
-│   ├── swap-layered/           ✅ Multi-project, clean layers
-│   ├── swap-modular-monolith/  ✅ Modular, per-module ownership
-│   └── generate/               📦 Component scaffolding (future)
-└── tools/
-    └── Swap.CLI/               ✅ Code generation + templates
-```
+**SwapController** — one method returns full page or partial based on HX-Request header  
+**Fluent headers** — `Response.HxTrigger()`, `HxRedirect()`, `ShowSuccessToast()`, etc.  
+**Auto discovery** — define `IModule`, it's found and wired automatically  
+**Testable events** — chains validated at startup, test without DOM/JavaScript
 
 ---
 
-## 🎨 Key Concepts
+## Documentation
 
-### SwapController + SwapView
-Eliminate boilerplate: one method decides whether to render full page or partial based on the `HX-Request` header.
-
-### Fluent Header API
-```csharp
-Response.HxTrigger("eventName");
-Response.HxRedirect("/products");
-Response.HxRefresh();
-Response.HxRetarget("#new-target");
-Response.HxReswap("beforebegin");
-Response.HxPushUrl("/products/123");
-Response.ShowSuccessToast("Done!");
-```
-
-### Module Discovery
-No manual wiring. Define `IModule`, place it in a loaded assembly, and it's discovered, validated, and ordered automatically.
-
-### Testable Events
-Every event chain is validated at startup; test event propagation without touching the DOM or JavaScript.
+- **[EVENTS.md](docs/EVENTS.md)** — Event chains, resolution modes, RabbitMQ, dev tools
+- **[TEMPLATES.md](docs/TEMPLATES.md)** — Template comparison, usage, migration paths
+- **[PRODUCT.md](docs/PRODUCT.md)** — Architecture, design decisions, philosophy
+- **[Wiki](https://jdtoon.github.io/swap/)** — Getting started, guides, examples
 
 ---
 
-## 🔗 Framework Packages
+## License & Contributing
 
-| Package | Version | Purpose |
-|---------|---------|---------|
-| **Swap.Htmx** | 0.3.1 | HTMX integration, event system, middleware |
-| **Swap.Modularity** | 0.3.1 | Module discovery, composition, dependency ordering |
-| **Swap.Patterns** | 0.3.1 | Reusable patterns (Auditable, Orderable, etc.) |
-| **Swap.Testing** | 0.3.1 | HTMX-aware integration testing |
-
-All available on [NuGet](https://www.nuget.org/packages?q=owner:jdtoon).
+MIT License. Contributions welcome—see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ---
 
-## 📖 Documentation
+**Build fast, stay modular, ship quality.**
 
-- **[PRODUCT.md](docs/PRODUCT.md)** — What is Swap? The three pillars, key features, and why use it
-- **[EVENTS.md](docs/EVENTS.md)** — Complete guide to UI and Server Events, chain resolution, and RabbitMQ
-- **[TEMPLATES.md](docs/TEMPLATES.md)** — Template comparison, usage guide, and migration paths
-- **[Wiki](https://jdtoon.github.io/swap/)** — Getting started guides, tutorials, and examples
-
----
-
-## 🌟 Why Swap?
-
-| Feature | Benefit |
-|---------|---------|
-| **HTMX-First** | Modern interactivity without JavaScript framework complexity |
-| **Server-Driven Events** | Declarative UI reactions; testable; no magic strings |
-| **Modular Templates** | Production-ready starting points for any team size |
-| **Type-Safe** | Compile-time errors catch bugs early; full IntelliSense |
-| **Testable** | Fluent assertions on HTMX behavior; no DOM parsing hacks |
-| **Battle-Tested** | Patterns extracted from real production applications |
-| **Opinionated** | Sensible defaults; clear guidelines; less decision fatigue |
-| **Zero Hidden Magic** | Generated code is readable; you own and understand it |
-
----
-
-## 🛠️ Common Tasks
-
-### Use an Event in a Template
-```html
-<button hx-post="/articles/create" 
-        hx-target="#list" 
-        hx-trigger="articleCreated from:body">
-    Create
-</button>
-```
-
-### Test Event Propagation
-```csharp
-[Fact]
-public async Task CreateProduct_EmitsCreatedChain()
-{
-    var response = await _client.PostAsync("/products", formData);
-    
-    response.AssertSuccess();
-    await response.AssertHxTriggerAsync("productRefreshed", "toastSuccess");
-}
-```
-
-### Add RabbitMQ for Distributed Events
-```csharp
-builder.Services.AddSwapServerEventChainsFromConfiguration(
-    builder.Configuration,
-    "Swap:ServerEvents"  // Reads RabbitMQ connection string
-);
-```
-
-### Extend a Module
-Each module in a modular monolith can be extended independently—add endpoints, services, UI without touching other modules.
-
----
-
-## 🚀 Next Steps
-
-1. **[Install Swap CLI](#installation)** and create an app
-2. **Read [TEMPLATES.md](docs/TEMPLATES.md)** to choose the right template for your needs
-3. **Check [EVENTS.md](docs/EVENTS.md)** to master the event system
-4. **Write your first test** using `Swap.Testing`
-
----
-
-## 📜 License
-
-Swap is open source under the [MIT License](LICENSE).
-
-## 🤝 Contributing
-
-We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
-
----
-
-## 🔮 Roadmap
-
-- **0.3.x** — Event system consolidation, documentation, and template polish
-- **0.4.x** — Template refinement, comprehensive documentation, security hardening
-- **0.5.x** — Component templates (authentication, CRUD forms, modals, data tables, file uploads, search/filter components)
-- **Future** — WebSocket/SignalR support, validation framework, form generation
-
----
-
-**Built for developers who love ASP.NET Core and want to move fast without sacrificing code quality or team scalability.**
-
-[📖 Read the Docs](docs/) • [🐙 GitHub](https://github.com/jdtoon/swap) • [💬 Discussions](https://github.com/jdtoon/swap/discussions)
+[📖 Docs](docs/) • [🐙 GitHub](https://github.com/jdtoon/swap) • [💬 Discussions](https://github.com/jdtoon/swap/discussions)

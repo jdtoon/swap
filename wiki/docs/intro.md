@@ -9,41 +9,49 @@ Build modern, interactive ASP.NET Core apps with HTMX—fast, modular, and testa
 
 ## What is Swap?
 
-Swap has two parts that work together:
+Swap is an HTMX-first framework for ASP.NET Core built on three core libraries:
 
-- The framework (`Swap.*` packages) — three pillars:
-    - `Swap.Htmx`: HTMX ergonomics + event system
-    - `Swap.Modularity`: lightweight module system for modular monoliths
-    - `Swap.Testing`: fluent, HTMX-aware integration testing
-- The CLI (`swap`) that scaffolds complete projects and patterns powered by the framework.
+- **`Swap.Htmx`**: HTMX ergonomics + declarative event system
+- **`Swap.Modularity`**: Lightweight module system for modular monoliths
+- **`Swap.Testing`**: Fluent, HTMX-aware integration testing
 
-It generates ASP.NET Core projects with HTMX-powered views using proven patterns from real applications. You write business logic; Swap wires the rest.
+The framework includes project templates to get started quickly with proven patterns.
 
 ## Templates
 
 Swap ships with three first-class templates (HTMX-native and event-driven):
 
-- Monolith (single project) — optimized DX, move fast without ceremony
-- Layered (Web, Application, Domain, Infrastructure) — clean architecture for teams and long-lived apps
-- Modular Monolith (host + modules) — recommended for teams that want clear boundaries within a single deployable
+- **Monolith** (single project) — Optimized DX, move fast without ceremony
+- **Layered** (Web, Application, Domain, Infrastructure) — Clean architecture for teams and long-lived apps
+- **Modular Monolith** (host + modules) — Recommended for teams that want clear boundaries within a single deployable
 
 Start here to choose: [Templates](./templates/overview)
 
-**Core Features:**
+## Core Features
 
-- **Generate complete projects** with `swap new` — Full ASP.NET Core + HTMX stack (includes the event system)
-- **Modular monolith support** — Compose modules deterministically with `Swap.Modularity`
-- **Scaffold models** with custom fields and 11 data types
-- **Create CRUD controllers** with modals, pagination, sorting, and filtering
-- **DaisyUI + Tailwind CSS** for modern, accessible UI components
-- **Entity Framework Core** integration included
-- **Docker-ready** - Every project includes Dockerfile and docker-compose.yml
-- **Event System** - Server-driven, filtered events with chain resolution (zero wasted triggers)
-- **Generate integration tests** with `Swap.Testing`
+### Swap.Htmx
+
+- **SwapController base class** — Automatic partial/full-page detection with `IsHtmxRequest` and `IsHtmxPartial`
+- **Declarative event system** — Server-driven events with chain resolution and smart filtering
+- **Fluent HTMX headers** — Type-safe API for `HX-Trigger`, `HX-Retarget`, `HX-Reswap`, etc.
+- **Toast notifications** — Built-in support via `SwapToast()` extension methods
+
+### Swap.Modularity
+
+- **IModule contract** — Define modules with dependencies and service registration
+- **Automatic discovery** — Finds and loads modules at startup
+- **Dependency ordering** — Deterministic initialization based on module dependencies
+- **Modular monolith support** — Clear boundaries within a single deployable
+
+### Swap.Testing
+
+- **HtmxTestClient** — HTMX-aware test client extending WebApplicationFactory
+- **Fluent assertions** — Assert on HTMX headers, DOM elements, and response content
+- **Snapshot testing** — Verify HTML output with built-in scrubbers for dynamic content
 
 ## Event System at a glance
 
-Generated apps include the Swap event system out of the box. Components declare UI listeners in `hx-trigger`, the browser sends active UI subscriptions via `X-Swap-Events`, and the server only emits events that have listeners.
+All templates include the Swap event system. Components declare UI listeners in `hx-trigger`, the browser sends active subscriptions via `X-Swap-Events`, and the server only emits events that have listeners.
 
 Configure once in Program.cs:
 
@@ -86,19 +94,11 @@ dotnet ef database update
 dotnet run
 ```
 
-Generate a controller with custom fields:
-
-```bash
-swap g controller Product --fields "Name:string Price:decimal InStock:bool:f"
-```
-
-Navigate to `http://localhost:5000/Product` to see your working CRUD interface with pagination, search, sorting, and filtering.
-
-**Note:** Swap automatically creates migrations after generating controllers. The CLI builds your project first to verify compilation before creating the migration.
+Navigate to `http://localhost:5000` to see your HTMX-first ASP.NET Core application.
 
 ## Why HTMX?
 
-HTMX lets you build modern, interactive web applications without complex JavaScript frameworks. The CLI generates views with:
+HTMX lets you build modern, interactive web applications without complex JavaScript frameworks:
 
 - **Server-rendered HTML** - No JSON APIs, just HTML over the wire
 - **HTMX attributes** for dynamic updates without page reloads
@@ -106,40 +106,25 @@ HTMX lets you build modern, interactive web applications without complex JavaScr
 - **DaisyUI components** for beautiful, accessible UI
 - **Tailwind CSS** utilities for rapid styling
 
-**Generated patterns include:**
-- Modal CRUD operations
-- Real-time search with debouncing
-- Pagination with page size selection
-- Sortable columns with visual indicators
-- Boolean filtering with dropdowns
-- Toast notifications for user feedback
-
-Example generated view:
+Example HTMX pattern:
 
 ```html
-<div hx-get="/Product/List" hx-trigger="load" hx-target="#product-list">
-    <div id="product-list">Loading...</div>
+<div hx-get="/Todo/List" hx-trigger="load" hx-target="#todo-list">
+    <div id="todo-list">Loading...</div>
 </div>
 ```
 
 ## Commands
 
-- [swap new](./cli/new) - Create new projects
-- [swap generate model](./cli/generate-model) - Generate entity models
-- [swap generate controller](./cli/generate-controller) - Generate CRUD controllers with HTMX views
-- [swap generate pattern](./cli/generate-pattern) - Apply entity patterns (soft delete, auditable, etc.)
-- [swap generate auth](./cli/generate-auth) - Scaffold ASP.NET Identity authentication
-- [swap generate seed](./cli/seeders) - Generate database seeders
-- [swap generate factory](./cli/generate-factory) - Generate test data factories
-- [swap generate test](./cli/generate-test) - Generate integration tests
-- [swap db](./cli/database) - Database workflow commands
+- [swap new](./cli/new) - Create new projects from templates
+- [swap generate htmx-shell](./cli/generate-htmx-shell) - Add HTMX shell middleware
+- [swap events](./cli/events) - List registered event chains
 
 ## Next Steps
 
 - [Installation](./getting-started/installation) - Set up Swap CLI
-- [Your First Project](./getting-started/first-project) - Build a simple CRUD app
 - [CLI Reference](./cli/overview) - Complete command documentation
-- [Entity Patterns](./features/patterns) - Soft delete, auditable, sluggable, and more
+- [Templates](./templates/overview) - Choose the right template for your project
 
 ## Comprehensive Guides
 
@@ -149,4 +134,3 @@ For deeper dives into the framework, check out these comprehensive guides in the
 - **[EVENTS.md](https://github.com/jdtoon/swap/blob/main/docs/EVENTS.md)** — Full event system guide: chain resolution modes, UI vs Server Events, RabbitMQ integration, testing
 - **[TEMPLATES.md](https://github.com/jdtoon/swap/blob/main/docs/TEMPLATES.md)** — Template comparison, detailed structures, migration paths, and choosing the right template
 - **[SECURITY.md](https://github.com/jdtoon/swap/blob/main/SECURITY.md)** — Security best practices for production deployments
-
