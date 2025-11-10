@@ -28,15 +28,15 @@ When reporting bugs, please include:
 
 **Example:**
 ```markdown
-### Bug: Generated controller has syntax error
+### Bug: Template generation fails with error
 
 **Steps:**
 1. `swap new TestApp`
-2. `swap g c Product --fields "Name:string Price:decimal"`
+2. `cd TestApp`
 3. Run: `dotnet build`
 
 **Expected:** Clean build ✅
-**Actual:** CS1002: ; expected on line 45 ❌
+**Actual:** Build fails with missing reference error ❌
 
 **Environment:**
 - OS: Windows 11
@@ -379,19 +379,19 @@ dotnet run
 
 ### 2. Test Edge Cases
 
-- Nullable fields
-- Special characters in names
-- Relationships (one-to-many, many-to-many)
-- Different database providers
+- Different template options
+- Database providers (SQLite, SQL Server, PostgreSQL)
+- Local NuGet package references
+- Build and migration steps
 
 ### 3. Update Tests
 
 Add integration tests for new template features:
 ```csharp
 [Fact]
-public async Task GenerateController_WithRelationship_CreatesDropdown()
+public async Task NewCommand_WithTemplate_GeneratesExpectedStructure()
 {
-    // Test that controller with foreign key generates dropdown
+    // Test that template generates correct project structure
 }
 ```
 
