@@ -344,41 +344,6 @@ docker-compose down
 docker-compose up --build -d
 ```
 
-## Cloud Deployment
-
-### Azure Container Instances
-
-```bash
-# Build and push to Azure Container Registry
-az acr build --registry myregistry --image myapp:latest .
-
-# Deploy to Azure Container Instances
-az container create \
-  --resource-group mygroup \
-  --name myapp \
-  --image myregistry.azurecr.io/myapp:latest \
-  --dns-name-label myapp \
-  --ports 8080
-```
-
-### AWS ECS
-
-```bash
-# Build and push to ECR
-aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 123456789.dkr.ecr.us-east-1.amazonaws.com
-docker build -t myapp .
-docker tag myapp:latest 123456789.dkr.ecr.us-east-1.amazonaws.com/myapp:latest
-docker push 123456789.dkr.ecr.us-east-1.amazonaws.com/myapp:latest
-```
-
-### Google Cloud Run
-
-```bash
-# Build and deploy
-gcloud builds submit --tag gcr.io/PROJECT-ID/myapp
-gcloud run deploy myapp --image gcr.io/PROJECT-ID/myapp --platform managed
-```
-
 ## Performance Tips
 
 ### Image Size Optimization
@@ -501,12 +466,6 @@ docker-compose logs app | grep libman
 ✅ **Use environment variables** for configuration  
 ✅ **Run as non-root user** in production (add to Dockerfile)  
 ✅ **Scan images** for vulnerabilities regularly  
-
-## Next Steps
-
-- [Deploy to Azure App Service](./azure)
-- [Deploy to AWS Elastic Beanstalk](./aws)
-- [Configure CI/CD Pipelines](./cicd)
 
 ---
 

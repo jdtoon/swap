@@ -1,302 +1,177 @@
-# Swap CLI Documentation# Swap CLI Documentation
+# Swap Documentation
 
+User-facing documentation for Swap, built with [Docusaurus](https://docusaurus.io/).
 
+**Live Site:** https://jdtoon.github.io/swap/
 
-This directory contains the complete user-facing documentation for Swap CLI, built with [Docusaurus](https://docusaurus.io/).This directory contains the complete user-facing documentation for Swap CLI, built with [Docusaurus](https://docusaurus.io/).
-
-
-
-**Live Site:** https://jdtoon.github.io/swap/**Live Site:** https://jdtoon.github.io/swap/
-
-
-
-## Overview## Overview
-
-
-
-The wiki is a static documentation website that serves as the primary resource for Swap CLI users. It includes installation guides, tutorials, CLI reference, and feature documentation.The wiki is a static documentation website that serves as the primary resource for Swap CLI users. It includes installation guides, tutorials, CLI reference, and feature documentation.
-
-
-
-## Structure## Structure
-
-
-
-``````
-
-wiki/wiki/
-
-├── docs/                          # Documentation content (Markdown)├── docs/                          # Documentation content (Markdown)
-
-│   ├── intro.md                  # Homepage/landing page│   ├── intro.md                  # Homepage/landing page
-
-│   ├── getting-started/          # Installation and quickstart│   ├── getting-started/          # Installation and quickstart
-
-│   │   ├── installation.md│   │   ├── installation.md
-
-│   │   └── first-project.md│   │   └── first-project.md
-
-│   ├── cli/                      # CLI command reference│   ├── cli/                      # CLI command reference
-
-│   │   ├── overview.md│   │   ├── overview.md
-
-│   │   ├── new.md│   │   ├── new.md
-
-│   │   ├── generate-model.md│   │   ├── generate-model.md
-
-│   │   ├── generate-controller.md│   │   ├── generate-controller.md
-
-│   │   ├── generate-resource.md│   │   ├── generate-resource.md
-
-│   │   ├── generate-factory.md│   │   ├── generate-factory.md
-
-│   │   ├── generate-pattern.md│   │   ├── generate-pattern.md
-
-│   │   ├── generate-test.md│   │   ├── generate-test.md
-
-│   │   ├── database.md│   │   ├── database.md
-
-│   │   ├── seeders.md│   │   ├── seeders.md
-
-│   │   └── utilities.md│   │   └── utilities.md
-
-│   ├── features/                 # Feature deep-dives│   ├── features/                 # Feature deep-dives
-
-│   │   ├── htmx-navigation.md│   │   ├── htmx-navigation.md
-
-│   │   ├── pagination.md│   │   ├── pagination.md
-
-│   │   ├── filtering.md│   │   ├── filtering.md
-
-│   │   ├── sorting.md│   │   ├── sorting.md
-
-│   │   ├── search.md│   │   ├── search.md
-
-│   │   ├── patterns.md│   │   ├── patterns.md
-
-│   │   ├── bulk-operations.md│   │   ├── bulk-operations.md
-
-│   │   └── testing-framework.md│   │   └── testing-framework.md
-
-│   └── deployment/               # Deployment guides│   └── deployment/               # Deployment guides
-
-├── src/                          # React components and custom pages├── src/                          # React components and custom pages
-
-│   ├── components/               # Reusable React components│   ├── components/               # Reusable React components
-
-│   ├── css/                      # Custom styles│   ├── css/                      # Custom styles
-
-│   └── pages/                    # Custom pages (not in docs/)│   └── pages/                    # Custom pages (not in docs/)
-
-├── static/                       # Static assets├── static/                       # Static assets
-
-│   ├── img/                      # Images, screenshots, icons│   ├── img/                      # Images, screenshots, icons
-
-│   └── ...                       # Other static files│   └── ...                       # Other static files
-
-├── docusaurus.config.ts          # Site configuration├── docusaurus.config.ts          # Site configuration
-
-├── sidebars.ts                   # Sidebar navigation structure├── sidebars.ts                   # Sidebar navigation structure
-
-├── package.json                  # Dependencies and scripts├── package.json                  # Dependencies and scripts
-
-└── tsconfig.json                 # TypeScript configuration└── tsconfig.json                 # TypeScript configuration
-
-``````
-
-
-
-## Development## Development
-
-
-
-### Prerequisites### Prerequisites
-
-
-
-- **Node.js 18+** (LTS recommended)- **Node.js 18+** (LTS recommended)
-
-- **npm** (comes with Node.js) or **yarn**- **npm** (comes with Node.js) or **yarn**
-
-
-
-Verify installation:Verify installation:
-
-```bash```bash
-
-node --version   # Should be 18.x or highernode --version   # Should be 18.x or higher
-
-npm --version    # Any recent versionnpm --version    # Any recent version
-
-``````
-
-
-
-### Installation### Installation
-
-
-
-Install dependencies:Install dependencies:
-
-```bash```bash
-
-cd wikicd wiki
-
-npm installnpm install
-
-``````
-
-
-
-### Local Development### Local Development
-
-
-
-Start the development server:Start the development server:
-
-```bash```bash
-
-npm startnpm start
-
-``````
-
-
-
-The site will be available at: **http://localhost:3000/swap/**The site will be available at: **http://localhost:3000/swap/**
-
-
-
-Features:Features:
-
-- 🔥 **Hot reload** - Changes appear instantly- 🔥 **Hot reload** - Changes appear instantly
-
-- 📝 **Live editing** - Edit markdown and see updates- 📝 **Live editing** - Edit markdown and see updates
-
-- 🔍 **Search** - Full-text search across documentation- 🔍 **Search** - Full-text search across documentation
-
-- 🌙 **Dark mode** - Toggle light/dark themes- 🌙 **Dark mode** - Toggle light/dark themes
-
-
-
-### Build for Production### Build for Production
-
-
-
-Build static files:Build static files:
-
-```bash```bash
-
-npm run build
-
-```npm run build
-
-
-
-This generates static content in the `build/` directory, ready for deployment.```
-
-
-
-### Serve Production Build Locally### Prerequisites│       ├── overview.mdwiki/yarn
-
-
-
-Test the production build before deploying:This generates static content into the `build` directory.
-
-```bash
-
-npm run serve
+## Structure
 
 ```
+wiki/
+├── docs/                    # Documentation content (Markdown)
+│   ├── intro.md            # Homepage
+│   ├── templates/          # Template guides
+│   ├── getting-started/    # Installation and quickstart
+│   ├── cli/                # CLI command reference
+│   ├── features/           # Feature deep-dives
+│   └── deployment/         # Deployment guides
+├── src/                    # React components and custom pages
+├── static/                 # Static assets (images, icons)
+├── docusaurus.config.ts    # Site configuration
+├── sidebars.ts            # Sidebar navigation
+└── package.json           # Dependencies and scripts
+```
 
-### Serve Production Build Locally
+## Local Development
+
+### Prerequisites
+
+- Node.js 18+ (LTS recommended)
+- npm or yarn
+
+### Installation
+
+```bash
+cd wiki
+npm install
+```
+
+### Development Server
+
+```bash
+npm start
+```
+
+Available at **http://localhost:3000/swap/** with hot reload.
+
+### Build for Production
+
+```bash
+npm run build
+```
+
+Generates static content in `build/` directory.
+
+### Test Production Build
+
+```bash
+npm run serve
+```
 
 ## Deployment
 
-- Node.js 18+│       ├── new.md
+The site deploys to GitHub Pages at `https://jdtoon.github.io/swap/`.
 
-### GitHub Pages (Automatic)
-
+**Manual deploy:**
 ```bash
-
-The site is configured to deploy to GitHub Pages at `https://jdtoon.github.io/swap/`.
-
-npm run serve- npm or yarn
-
-**Manual deployment:**
-
-```bash```
-
 npm run deploy
+```
 
-```│       ├── generate-model.md├── docs/                       # Documentation content```
+This builds and pushes to `gh-pages` branch.
 
+## Writing Documentation
 
+### Guidelines
 
-This command:## Documentation Guidelines
+- **Clear and concise** — target all skill levels
+- **Code examples** — include working snippets with syntax highlighting
+- **CLI commands** — show exact syntax with expected output
+- **HTMX focus** — emphasize HTMX-first approach
+- **Screenshots** — add visuals for UI features (store in `static/img/`)
 
-1. Builds the static site
-
-2. Pushes to the `gh-pages` branch### Install Dependencies
-
-3. GitHub Pages automatically publishes the update
-
-### Writing Documentation
-
-**Automatic deployment:**
-
-- Set up in `.github/workflows/` (if configured)│       ├── generate-controller.md
-
-- Deploys on push to `main` branch
-
-- Use clear, concise language
-
-### Custom Domain
-
-- Include code examples with proper syntax highlighting```bash
-
-To use a custom domain:
-
-1. Add `CNAME` file to `static/` directory- Add command examples for CLI commands
-
-2. Configure DNS records with your domain provider
-
-3. Update `docusaurus.config.ts` with your domain- Focus on HTMX patterns and integrationnpm install│       └── generate-resource.md│   ├── intro.md               # Homepage
-
-
-
-## Documentation Guidelines
-
-
-
-### Writing Documentation### File Organization```
-
-
-
-- **Clear and concise** - Target developers of all skill levels
-
-- **Code examples** - Include working code snippets with syntax highlighting
-
-- **CLI commands** - Show exact command syntax with expected output- `intro.md` - Main landing page for documentation├── src/                       # React components and pages
-
-- **HTMX patterns** - Emphasize HTMX-first approach
-
-- **Screenshots** - Add visuals for UI features (store in `static/img/`)- `getting-started/` - Installation and tutorials
-
-
-
-### Markdown Features- `cli/` - Command reference documentation### Start Development Server
-
-
+### Markdown Features
 
 Docusaurus supports enhanced markdown:
 
-
-
-**Admonitions (callouts):**### Links├── static/                    # Static assets│   ├── getting-started/       # Installation and first project guides## Local Development
-
+**Admonitions:**
 ```markdown
-
 :::tip
+This is a helpful tip!
+:::
+
+:::warning
+This is a warning!
+:::
+
+:::danger
+This is dangerous!
+:::
+```
+
+**Code blocks with highlighting:**
+```markdown
+```csharp {2-4}
+public class Example
+{
+    // These lines will be highlighted
+    public string Name { get; set; }
+}
+``` 
+```
+
+**Tabs:**
+```markdown
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+<Tabs>
+  <TabItem value="sqlite" label="SQLite">
+    Code for SQLite
+  </TabItem>
+  <TabItem value="postgres" label="PostgreSQL">
+    Code for PostgreSQL
+  </TabItem>
+</Tabs>
+```
+
+## File Organization
+
+### Homepage (`intro.md`)
+Main landing page. Keep it concise with quick links to key areas.
+
+### Getting Started
+Installation, prerequisites, and first project tutorials.
+
+### CLI Reference
+One page per command with syntax, options, and examples.
+
+### Features
+Deep dives into event system, testing, modularity, etc.
+
+### Templates
+Template comparisons, guides, and migration paths.
+
+### Deployment
+Docker setup and best practices.
+
+## Sidebar Navigation
+
+Edit `sidebars.ts` to change navigation structure:
+
+```typescript
+const sidebars: SidebarsConfig = {
+  tutorialSidebar: [
+    'intro',
+    {
+      type: 'category',
+      label: 'Getting Started',
+      items: ['getting-started/installation'],
+    },
+  ],
+};
+```
+
+## Search
+
+Docusaurus includes built-in search powered by Lunr.js. All markdown content is automatically indexed.
+
+## Dark Mode
+
+Dark mode toggle is enabled by default. No configuration needed.
+
+---
+
+**Questions?** Open an issue on [GitHub](https://github.com/jdtoon/swap/issues)
 
 Use `--dry-run` to preview generated files!
 
