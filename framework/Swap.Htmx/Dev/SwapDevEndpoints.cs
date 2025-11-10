@@ -15,8 +15,7 @@ public static class SwapDevEndpoints
     /// Maps development-only endpoints for inspecting Swap event chains.
     /// - GET /_swap/dev/events (HTML view)
     /// - GET /_swap/dev/events.json (JSON of chains)
-    /// - GET /_swap/dev/events.meta.json (JSON of resolution mode/depth)
-    /// - GET /_swap/dev/explain.json?event=xyz (resolve set under current mode/depth)
+    /// - GET /_swap/dev/explain.json?event=xyz (resolve set with simple one-hop chains)
     /// </summary>
     public static IEndpointRouteBuilder MapSwapHtmxDevEndpoints(this IEndpointRouteBuilder endpoints)
     {
@@ -35,18 +34,6 @@ public static class SwapDevEndpoints
             context.Response.ContentType = "application/json";
             await context.Response.WriteAsJsonAsync(chains);
         }).WithDisplayName("Swap Events (JSON)");
-
-        endpoints.MapGet("/_swap/dev/events.meta.json", async context =>
-        {
-            var options = context.RequestServices.GetRequiredService<SwapEventBusOptions>();
-            var meta = new
-            {
-                resolutionMode = options.ResolutionMode.ToString(),
-                maxTransitiveDepth = options.MaxTransitiveDepth
-            };
-            context.Response.ContentType = "application/json";
-            await context.Response.WriteAsJsonAsync(meta);
-        }).WithDisplayName("Swap Events Meta (JSON)");
 
         endpoints.MapGet("/_swap/dev/explain.json", async context =>
         {
@@ -88,8 +75,7 @@ public static class SwapDevEndpoints
         sb.AppendLine("<script>if(window.mermaid){mermaid.initialize({startOnLoad:true});}</script>");
         sb.AppendLine("</head><body>");
         sb.AppendLine("<h1>Swap Event Chains <span class=\"muted\">(development)</span></h1>");
-        sb.AppendLine($"<p class=\"muted\">ResolutionMode: <code>{enc.Encode(options.ResolutionMode.ToString())}</code> · MaxTransitiveDepth: <code>{options.MaxTransitiveDepth}</code></p>");
-        sb.AppendLine("<p class=\"muted\">This page reflects the currently configured event chains. It updates automatically when you change chains and refresh.</p>");
+        sb.AppendLine("<p class=\"muted\">This page reflects the currently configured event chains (simple one-hop resolution).</p>");
 
         // Summary (dedupe duplicate edges per trigger)
         var edgeCount = chains.Sum(kv => kv.Value
@@ -97,7 +83,7 @@ public static class SwapDevEndpoints
             .Count());
         sb.AppendLine($"<div class=\"grid\"><div class=\"card\"><div><strong>Triggers</strong></div><div>{chains.Count}</div></div>" +
                       $"<div class=\"card\"><div><strong>Edges</strong></div><div>{edgeCount}</div></div>" +
-                      $"<div class=\"card\"><div><strong>Endpoints</strong></div><div><a href=\"/_swap/dev/events.json\">events.json</a> · <a href=\"/_swap/dev/events.meta.json\">events.meta.json</a></div></div></div>");
+                      $"<div class=\"card\"><div><strong>Endpoints</strong></div><div><a href=\"/_swap/dev/events.json\">events.json</a></div></div></div>");
 
         // Table view (show distinct chained events per trigger)
         sb.AppendLine("<h2>Chains</h2>");
@@ -128,11 +114,11 @@ public static class SwapDevEndpoints
 
     // Explain form + legend
     sb.AppendLine("<div class=\"section\"><h2>Explain</h2>"
-        + "<p class=\"muted\">Explains server-side resolution for a single event under the current ResolutionMode/MaxTransitiveDepth. Actual runtime still filters by client subscriptions (hx-trigger on the page). Use this to understand what the server would emit before client-side filtering.</p>"
-        + "<div class=\"row\"><input id=\"ev\" placeholder=\"event name e.g. todo.created\" style=\"width:340px;padding:6px;border:1px solid #ccc;border-radius:6px\"/><button id=\"btn\" style=\"padding:6px 10px\">Resolve</button><span class=\"muted\">under current mode/depth</span></div><div id=\"out\" class=\"section\"></div></div>");
-        sb.AppendLine("<script>document.getElementById('btn').addEventListener('click',async()=>{const ev=document.getElementById('ev').value; if(!ev) return; const res=await fetch('/_swap/dev/explain.json?event='+encodeURIComponent(ev)); const data=await res.json(); const out=document.getElementById('out'); if(data.error){out.innerHTML='<span style=\\'color:red\\'>'+data.error+'</span>';return;} out.innerHTML='<div><strong>Resolved ('+data.resolved.length+')</strong></div>'+data.resolved.map(e=>'\n<span class=\\'pill\\'><code>'+e+'</code></span>').join('');});</script>");
+        + "<p class=\"muted\">Shows which events will be emitted when a given event is triggered (includes immediate chain expansions).</p>"
+        + "<div class=\"row\"><input id=\"ev\" placeholder=\"event name e.g. todo.created\" style=\"width:340px;padding:6px;border:1px solid #ccc;border-radius:6px\"/><button id=\"btn\" style=\"padding:6px 10px\">Resolve</button></div><div id=\"out\" class=\"section\"></div></div>");
+        sb.AppendLine("<script>document.getElementById('btn').addEventListener('click',async()=>{const ev=document.getElementById('ev').value; if(!ev) return; const res=await fetch('/_swap/dev/explain.json?event='+encodeURIComponent(ev)); const data=await res.json(); const out=document.getElementById('out'); if(data.error){out.innerHTML='<span style=\\'color:red\\'>'+data.error+'</span>';return;} out.innerHTML='<div><strong>Resolved ('+data.resolved.length+')</strong></div>'+data.resolved.map(e=>'<span class=\\'pill\\'><code>'+e+'</code></span>').join('');});</script>");
 
-        sb.AppendLine("<p class=\"muted\">JSON: <a href=\"/_swap/dev/events.json\">/_swap/dev/events.json</a> · Meta: <a href=\"/_swap/dev/events.meta.json\">/_swap/dev/events.meta.json</a> · Explain: <code>/_swap/dev/explain.json?event=...</code></p>");
+        sb.AppendLine("<p class=\"muted\">JSON: <a href=\"/_swap/dev/events.json\">/_swap/dev/events.json</a> · Explain: <code>/_swap/dev/explain.json?event=...</code></p>");
         sb.AppendLine("</body></html>");
         return sb.ToString();
     }
@@ -140,43 +126,16 @@ public static class SwapDevEndpoints
     private static IEnumerable<string> ExplainResolve(string root, SwapEventBusOptions options)
     {
         var set = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { root };
-        switch (options.ResolutionMode)
+        
+        // Simple one-hop chain resolution
+        if (options.Chains.TryGetValue(root, out var nexts))
         {
-            case Swap.Htmx.Events.ChainResolutionMode.OneHop:
-                if (options.Chains.TryGetValue(root, out var nexts))
-                {
-                    foreach (var n in nexts) set.Add(n);
-                }
-                break;
-            case Swap.Htmx.Events.ChainResolutionMode.Bidirectional:
-                if (options.Chains.TryGetValue(root, out var nextsB))
-                {
-                    foreach (var n in nextsB) set.Add(n);
-                }
-                foreach (var kv in options.Chains)
-                {
-                    if (kv.Value.Contains(root)) set.Add(kv.Key);
-                }
-                break;
-            case Swap.Htmx.Events.ChainResolutionMode.Transitive:
-                int max = Math.Max(1, options.MaxTransitiveDepth);
-                var visited = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { root };
-                var q = new Queue<(string node,int depth)>();
-                q.Enqueue((root,0));
-                while (q.Count>0)
-                {
-                    var (node, depth) = q.Dequeue();
-                    if (depth>=max) continue;
-                    if (options.Chains.TryGetValue(node, out var nx))
-                    {
-                        foreach (var n in nx)
-                        {
-                            if (visited.Add(n)) { set.Add(n); q.Enqueue((n, depth+1)); }
-                        }
-                    }
-                }
-                break;
+            foreach (var n in nexts)
+            {
+                set.Add(n);
+            }
         }
+        
         return set;
     }
 
