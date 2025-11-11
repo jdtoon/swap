@@ -1,0 +1,17 @@
+<div hx-ext="sse" sse-connect="/test/sse/stream" id="sse-controls">
+    <div class="notification is-info">
+        <strong>Connected!</strong>
+        <p>Listening for live notifications...</p>
+    </div>
+
+    <div id="notification-area" sse-swap="notification" hx-swap="afterbegin">
+        <!-- Notifications will appear here -->
+    </div>
+
+    <div class="buttons mt-4">
+        <button class="button is-warning" 
+                onclick="window.location.reload()">
+            Stop & Reset
+        </button>
+    </div>
+</div>

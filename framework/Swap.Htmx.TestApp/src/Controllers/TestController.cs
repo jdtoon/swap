@@ -107,19 +107,10 @@ public class TestController : SwapController
         return SwapView();
     }
 
-    [HttpGet("/test/sse/connect")]
-    public IActionResult SseConnect()
+    [HttpGet("/test/sse/start")]
+    public IActionResult SseStart()
     {
-        var html = """
-            <div hx-sse="connect:/test/sse/stream" id="sse-container" data-test-id="sse-container">
-                <div class="notification is-info">
-                    <strong>Connected!</strong>
-                    <p>Listening for live notifications...</p>
-                </div>
-                <div id="sse-notifications" hx-sse="swap:notification" hx-swap="afterbegin"></div>
-            </div>
-            """;
-        return Content(html, "text/html");
+        return SwapView();
     }
 
     [HttpGet("/test/sse/stream")]
@@ -140,26 +131,13 @@ public class TestController : SwapController
             {
                 if (ct.IsCancellationRequested) break;
 
-                var html = $"""
-                    <div class="notification is-info is-light" data-test-id="sse-notification-{i}">
-                        <button class="delete"></button>
-                        <strong>Notification #{i + 1}</strong>
-                        <p>{notifications[i]}</p>
-                        <small class="has-text-grey">Just now</small>
-                    </div>
-                    """;
-
+                var html = await this.RenderPartialToStringAsync("_SseNotification", (i, notifications[i]));
                 await stream.SendEventAsync("notification", html);
                 await stream.SendKeepAliveAsync();
                 await Task.Delay(1000, ct);
             }
 
-            var finalHtml = """
-                <div class="notification is-success" data-test-id="sse-complete">
-                    <strong>All caught up!</strong>
-                    <p>No more notifications</p>
-                </div>
-                """;
+            var finalHtml = await this.RenderPartialToStringAsync<object?>("_SseComplete", null);
             await stream.SendEventAsync("notification", finalHtml);
         });
     }

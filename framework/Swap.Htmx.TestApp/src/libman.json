@@ -6,7 +6,8 @@
       "library": "htmx@2.0.7",
       "destination": "wwwroot/lib/htmx",
       "files": [
-        "htmx.min.js"
+        "htmx.min.js",
+        "ext/sse.js"
       ]
     },
     {

@@ -1,4 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.AspNetCore.Mvc.ViewEngines;
+using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Swap.Htmx.ServerSentEvents;
 
 namespace Swap.Htmx;
@@ -131,5 +134,37 @@ public abstract class SwapController : Controller
     protected IActionResult ServerSentEvents(Func<ServerSentEventStream, CancellationToken, Task> handler)
     {
         return new ServerSentEventsResult(handler);
+    }
+
+    /// <summary>
+    /// Renders a partial view to a string for use in SSE or other scenarios.
+    /// </summary>
+    protected async Task<string> RenderPartialToStringAsync<TModel>(string viewName, TModel model)
+    {
+        if (string.IsNullOrEmpty(viewName))
+            viewName = ControllerContext.ActionDescriptor.ActionName;
+
+        ViewData.Model = model;
+
+        using var writer = new StringWriter();
+        var viewEngine = HttpContext.RequestServices.GetService(typeof(ICompositeViewEngine)) as ICompositeViewEngine;
+        var viewResult = viewEngine!.FindView(ControllerContext, viewName, false);
+
+        if (!viewResult.Success)
+        {
+            throw new InvalidOperationException($"Could not find view '{viewName}'");
+        }
+
+        var viewContext = new ViewContext(
+            ControllerContext,
+            viewResult.View,
+            ViewData,
+            TempData,
+            writer,
+            new HtmlHelperOptions()
+        );
+
+        await viewResult.View.RenderAsync(viewContext);
+        return writer.ToString();
     }
 }
