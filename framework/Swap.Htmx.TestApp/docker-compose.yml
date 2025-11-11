@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: src
+      dockerfile: Dockerfile
+    ports:
+      - "5000:8080"
+
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:8080
+      - DOTNET_RUNNING_IN_CONTAINER=true
+    volumes:
+      # Persist SQLite database
+      - sqlite-data:/app/data
+      # Persist data protection keys
+      - key-storage:/app/keys
+
+volumes:
+  sqlite-data:
+  key-storage:
+
+
+
+
+
+

@@ -1,0 +1,24 @@
+@model string
+
+<div class="notification is-success" data-test-id="oob-triggered">
+    <button class="delete"></button>
+    @Model
+    @if (ViewData["OobSecondary"] != null)
+    {
+        @Html.Raw(ViewData["OobSecondary"])
+    }
+    @if (ViewData["OobPanel1"] != null)
+    {
+        @Html.Raw(ViewData["OobPanel1"])
+        @Html.Raw(ViewData["OobPanel2"])
+        @Html.Raw(ViewData["OobPanel3"])
+    }
+    @if (ViewData["OobCounter"] != null)
+    {
+        @Html.Raw(ViewData["OobCounter"])
+    }
+    @if (ViewData["OobStatus"] != null)
+    {
+        @Html.Raw(ViewData["OobStatus"])
+    }
+</div>
