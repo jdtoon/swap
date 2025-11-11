@@ -29,7 +29,7 @@ public class OobSwapTests : PageTest
         // Assert - Wait for HTMX to complete and verify content changed
         await Page.WaitForTimeoutAsync(1000);
         var updatedText = await Page.Locator("[data-test-id='secondary-panel']").TextContentAsync();
-        Assert.That(updatedText, Does.Contain("Updated"));
+        Assert.That(updatedText, Does.Contain("updated via OOB"));
     }
 
     [Test]
