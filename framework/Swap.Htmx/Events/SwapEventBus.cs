@@ -21,28 +21,20 @@ public class SwapEventBusOptions
     /// Configure a chain from a trigger event to one or more chained events.
     /// When the trigger event is emitted, all chained events will also be included in the HX-Trigger response.
     /// </summary>
-    public SwapEventBusOptions Chain(string trigger, params string[] chained)
+    public SwapEventBusOptions Chain(EventKey trigger, params EventKey[] chained)
     {
-        if (string.IsNullOrWhiteSpace(trigger)) return this;
-        if (!Chains.TryGetValue(trigger, out var set))
+        if (string.IsNullOrWhiteSpace(trigger.Name)) return this;
+        if (!Chains.TryGetValue(trigger.Name, out var set))
         {
             set = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            Chains[trigger] = set;
+            Chains[trigger.Name] = set;
         }
-        foreach (var e in chained ?? Array.Empty<string>())
+        foreach (var e in chained ?? Array.Empty<EventKey>())
         {
-            if (!string.IsNullOrWhiteSpace(e)) set.Add(e);
+            if (!string.IsNullOrWhiteSpace(e.Name)) set.Add(e.Name);
         }
         _snapshot = null; // invalidate snapshot
         return this;
-    }
-
-    /// <summary>
-    /// Strongly-typed overload: configure a chain from a trigger event to one or more chained events.
-    /// </summary>
-    public SwapEventBusOptions Chain(EventKey trigger, params EventKey[] chained)
-    {
-        return Chain(trigger.Name, chained?.Select(c => c.Name).ToArray() ?? Array.Empty<string>());
     }
 
     /// <summary>
@@ -134,13 +126,9 @@ internal static class SwapEventKeys
 
 public interface ISwapEventBus
 {
-    Task EmitAsync(string eventName, object? payload = null, CancellationToken ct = default);
-    void Emit(string eventName, object? payload = null);
-    void ClearPendingEvents();
-
-    // Strongly-typed overloads
     Task EmitAsync(EventKey eventKey, object? payload = null, CancellationToken ct = default);
     void Emit(EventKey eventKey, object? payload = null);
+    void ClearPendingEvents();
 }
 
 /// <summary>
@@ -160,20 +148,17 @@ public class SwapEventBus : ISwapEventBus
         _logger = logger;
     }
 
-    public Task EmitAsync(string eventName, object? payload = null, CancellationToken ct = default)
+    public Task EmitAsync(EventKey eventKey, object? payload = null, CancellationToken ct = default)
     {
-        Emit(eventName, payload);
+        Emit(eventKey, payload);
         return Task.CompletedTask;
     }
 
-    public Task EmitAsync(EventKey eventKey, object? payload = null, CancellationToken ct = default)
-        => EmitAsync(eventKey.Name, payload, ct);
-
-    public void Emit(string eventName, object? payload = null)
+    public void Emit(EventKey eventKey, object? payload = null)
     {
         var ctx = _http.HttpContext;
         if (ctx is null) return;
-        if (string.IsNullOrWhiteSpace(eventName)) return;
+        if (string.IsNullOrWhiteSpace(eventKey.Name)) return;
 
         var list = ctx.Items[SwapEventKeys.PendingEvents] as List<SwapPendingEvent>;
         if (list is null)
@@ -182,11 +167,9 @@ public class SwapEventBus : ISwapEventBus
             ctx.Items[SwapEventKeys.PendingEvents] = list;
         }
 
-        list.Add(new SwapPendingEvent(eventName, payload));
-        _logger?.LogDebug("[SwapEvents] Emitted: {Event}", eventName);
+        list.Add(new SwapPendingEvent(eventKey.Name, payload));
+        _logger?.LogDebug("[SwapEvents] Emitted: {Event}", eventKey.Name);
     }
-
-    public void Emit(EventKey eventKey, object? payload = null) => Emit(eventKey.Name, payload);
 
     public void ClearPendingEvents()
     {

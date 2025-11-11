@@ -11,6 +11,26 @@ namespace Swap.Htmx.Tests;
 /// </summary>
 public class SwapEventChainResolutionTests
 {
+    // Test event keys (following pattern that apps would use)
+    private static class TestEvents
+    {
+        public static readonly EventKey EventHappened = new("event.happened");
+        public static readonly EventKey DomainCreated = new("domain.created");
+        public static readonly EventKey UiRefresh = new("ui.refresh");
+        public static readonly EventKey UiToast = new("ui.toast");
+        public static readonly EventKey UiUpdateCount = new("ui.updateCount");
+        public static readonly EventKey A = new("A");
+        public static readonly EventKey B = new("B");
+        public static readonly EventKey C = new("C");
+        public static readonly EventKey EventA = new("event.a");
+        public static readonly EventKey EventB = new("event.b");
+        public static readonly EventKey UiX = new("ui.x");
+        public static readonly EventKey UiY = new("ui.y");
+        public static readonly EventKey DomainCreatedUpper = new("DOMAIN.CREATED");
+        public static readonly EventKey DomainCreatedMixed = new("domain.Created");
+        public static readonly EventKey UiRefreshMixed = new("UI.Refresh");
+    }
+
     private static DefaultHttpContext CreateContext()
     {
         var ctx = new DefaultHttpContext();
@@ -28,7 +48,7 @@ public class SwapEventChainResolutionTests
         var bus = new SwapEventBus(accessor, options, NullLogger<SwapEventBus>.Instance);
 
         // Act
-        bus.Emit("event.happened");
+        bus.Emit(TestEvents.EventHappened);
         var resolved = bus.ResolveChains(context);
 
         // Assert
@@ -43,11 +63,11 @@ public class SwapEventChainResolutionTests
         var context = CreateContext();
         var accessor = new HttpContextAccessor { HttpContext = context };
         var options = new SwapEventBusOptions()
-            .Chain("domain.created", "ui.refresh");
+            .Chain(TestEvents.DomainCreated, TestEvents.UiRefresh);
         var bus = new SwapEventBus(accessor, options, NullLogger<SwapEventBus>.Instance);
 
         // Act
-        bus.Emit("domain.created");
+        bus.Emit(TestEvents.DomainCreated);
         var resolved = bus.ResolveChains(context);
 
         // Assert
@@ -63,11 +83,11 @@ public class SwapEventChainResolutionTests
         var context = CreateContext();
         var accessor = new HttpContextAccessor { HttpContext = context };
         var options = new SwapEventBusOptions()
-            .Chain("domain.created", "ui.refresh", "ui.toast", "ui.updateCount");
+            .Chain(TestEvents.DomainCreated, TestEvents.UiRefresh, TestEvents.UiToast, TestEvents.UiUpdateCount);
         var bus = new SwapEventBus(accessor, options, NullLogger<SwapEventBus>.Instance);
 
         // Act
-        bus.Emit("domain.created");
+        bus.Emit(TestEvents.DomainCreated);
         var resolved = bus.ResolveChains(context);
 
         // Assert
@@ -85,12 +105,12 @@ public class SwapEventChainResolutionTests
         var context = CreateContext();
         var accessor = new HttpContextAccessor { HttpContext = context };
         var options = new SwapEventBusOptions()
-            .Chain("A", "B")
-            .Chain("B", "C");
+            .Chain(TestEvents.A, TestEvents.B)
+            .Chain(TestEvents.B, TestEvents.C);
         var bus = new SwapEventBus(accessor, options, NullLogger<SwapEventBus>.Instance);
 
         // Act: Emit A
-        bus.Emit("A");
+        bus.Emit(TestEvents.A);
         var resolved = bus.ResolveChains(context);
 
         // Assert: Should get A and B, but NOT C (no transitive resolution)
@@ -107,13 +127,13 @@ public class SwapEventChainResolutionTests
         var context = CreateContext();
         var accessor = new HttpContextAccessor { HttpContext = context };
         var options = new SwapEventBusOptions()
-            .Chain("event.a", "ui.x")
-            .Chain("event.b", "ui.y");
+            .Chain(TestEvents.EventA, TestEvents.UiX)
+            .Chain(TestEvents.EventB, TestEvents.UiY);
         var bus = new SwapEventBus(accessor, options, NullLogger<SwapEventBus>.Instance);
 
         // Act
-        bus.Emit("event.a");
-        bus.Emit("event.b");
+        bus.Emit(TestEvents.EventA);
+        bus.Emit(TestEvents.EventB);
         var resolved = bus.ResolveChains(context);
 
         // Assert
@@ -131,12 +151,12 @@ public class SwapEventChainResolutionTests
         var context = CreateContext();
         var accessor = new HttpContextAccessor { HttpContext = context };
         var options = new SwapEventBusOptions()
-            .Chain("event.a", "ui.refresh");
+            .Chain(TestEvents.EventA, TestEvents.UiRefresh);
         var bus = new SwapEventBus(accessor, options, NullLogger<SwapEventBus>.Instance);
 
         // Act
-        bus.Emit("event.a");
-        bus.Emit("ui.refresh", new { message = "explicit" });
+        bus.Emit(TestEvents.EventA);
+        bus.Emit(TestEvents.UiRefresh, new { message = "explicit" });
         var resolved = bus.ResolveChains(context);
 
         // Assert: ui.refresh appears only once, with the explicit payload
@@ -152,11 +172,11 @@ public class SwapEventChainResolutionTests
         var context = CreateContext();
         var accessor = new HttpContextAccessor { HttpContext = context };
         var options = new SwapEventBusOptions()
-            .Chain("domain.created", "ui.refresh");
+            .Chain(TestEvents.DomainCreated, TestEvents.UiRefresh);
         var bus = new SwapEventBus(accessor, options, NullLogger<SwapEventBus>.Instance);
 
         // Act
-        bus.Emit("domain.created", new { id = 123 });
+        bus.Emit(TestEvents.DomainCreated, new { id = 123 });
         var resolved = bus.ResolveChains(context);
 
         // Assert
@@ -172,7 +192,7 @@ public class SwapEventChainResolutionTests
         var context = CreateContext();
         var accessor = new HttpContextAccessor { HttpContext = context };
         var options = new SwapEventBusOptions()
-            .Chain("event.a", "ui.x");
+            .Chain(TestEvents.EventA, TestEvents.UiX);
         var bus = new SwapEventBus(accessor, options, NullLogger<SwapEventBus>.Instance);
 
         // Act: Don't emit anything
@@ -189,11 +209,11 @@ public class SwapEventChainResolutionTests
         var context = CreateContext();
         var accessor = new HttpContextAccessor { HttpContext = context };
         var options = new SwapEventBusOptions()
-            .Chain("domain.Created", "UI.Refresh");
+            .Chain(TestEvents.DomainCreatedMixed, TestEvents.UiRefreshMixed);
         var bus = new SwapEventBus(accessor, options, NullLogger<SwapEventBus>.Instance);
 
         // Act
-        bus.Emit("DOMAIN.CREATED");
+        bus.Emit(TestEvents.DomainCreatedUpper);
         var resolved = bus.ResolveChains(context);
 
         // Assert: Case-insensitive matching
@@ -209,13 +229,13 @@ public class SwapEventChainResolutionTests
         var context = CreateContext();
         var accessor = new HttpContextAccessor { HttpContext = context };
         var options = new SwapEventBusOptions()
-            .Chain("event.a", "ui.refresh")
-            .Chain("event.b", "ui.refresh");
+            .Chain(TestEvents.EventA, TestEvents.UiRefresh)
+            .Chain(TestEvents.EventB, TestEvents.UiRefresh);
         var bus = new SwapEventBus(accessor, options, NullLogger<SwapEventBus>.Instance);
 
         // Act
-        bus.Emit("event.a");
-        bus.Emit("event.b");
+        bus.Emit(TestEvents.EventA);
+        bus.Emit(TestEvents.EventB);
         var resolved = bus.ResolveChains(context);
 
         // Assert: ui.refresh appears only once
@@ -233,11 +253,11 @@ public class SwapEventChainResolutionTests
         var context = CreateContext();
         var accessor = new HttpContextAccessor { HttpContext = context };
         var options = new SwapEventBusOptions()
-            .Chain("domain.created", "ui.refresh", "ui.toast");
+            .Chain(TestEvents.DomainCreated, TestEvents.UiRefresh, TestEvents.UiToast);
         var bus = new SwapEventBus(accessor, options, NullLogger<SwapEventBus>.Instance);
 
         // Act: Emit event (no X-Swap-Events header present)
-        bus.Emit("domain.created");
+        bus.Emit(TestEvents.DomainCreated);
         var resolved = bus.ResolveChains(context);
 
         // Assert: ALL events returned (no filtering)
