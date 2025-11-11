@@ -4,12 +4,17 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Swap.Modularity.Hosting;
 
+/// <summary>
+/// Extension methods for configuring MVC with Swap module support.
+/// </summary>
 public static class MvcBuilderExtensions
 {
     /// <summary>
     /// Adds ApplicationParts for any loaded assemblies whose simple name ends with ".Web".
     /// This enables MVC discovery for module Razor Class Libraries without explicit host wiring.
     /// </summary>
+    /// <param name="mvc">The MVC builder to add application parts to.</param>
+    /// <returns>The MVC builder for chaining.</returns>
     public static IMvcBuilder AddSwapModuleApplicationParts(this IMvcBuilder mvc)
     {
         var loaded = AppDomain.CurrentDomain.GetAssemblies();

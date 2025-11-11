@@ -8,8 +8,19 @@ using Swap.Modularity.Internal;
 
 namespace Swap.Modularity.Hosting;
 
+/// <summary>
+/// Extension methods for registering and configuring Swap modules in the application host.
+/// </summary>
 public static class ModuleHostExtensions
 {
+    /// <summary>
+    /// Registers all Swap modules and their services into the dependency injection container.
+    /// Modules are discovered from the specified assemblies and loaded in dependency order.
+    /// </summary>
+    /// <param name="services">The service collection to add modules to.</param>
+    /// <param name="configuration">Application configuration for passing to module initialization.</param>
+    /// <param name="assemblies">Optional collection of assemblies to scan for modules. If null, scans all loaded assemblies.</param>
+    /// <returns>The service collection for chaining.</returns>
     public static IServiceCollection AddSwapModules(this IServiceCollection services, IConfiguration configuration, IEnumerable<Assembly>? assemblies = null)
     {
         var catalog = BuildCatalog(configuration, assemblies);
@@ -21,12 +32,24 @@ public static class ModuleHostExtensions
         return services;
     }
 
+    /// <summary>
+    /// Registers Swap module middleware into the application pipeline.
+    /// Currently reserved for future middleware functionality.
+    /// </summary>
+    /// <param name="app">The application builder.</param>
+    /// <returns>The application builder for chaining.</returns>
     public static IApplicationBuilder UseSwapModules(this IApplicationBuilder app)
     {
         // Endpoint routing happens via MapSwapModuleEndpoints in Program.cs
         return app;
     }
 
+    /// <summary>
+    /// Maps HTTP endpoints for all registered Swap modules.
+    /// Call this after UseRouting() and before UseEndpoints() in your application startup.
+    /// </summary>
+    /// <param name="endpoints">The endpoint route builder.</param>
+    /// <returns>The endpoint route builder for chaining.</returns>
     public static IEndpointRouteBuilder MapSwapModuleEndpoints(this IEndpointRouteBuilder endpoints)
     {
         var catalog = endpoints.ServiceProvider.GetRequiredService<ModuleCatalog>();
@@ -37,6 +60,12 @@ public static class ModuleHostExtensions
         return endpoints;
     }
 
+    /// <summary>
+    /// Configures event chains for all registered Swap modules.
+    /// This connects domain events to UI events for each module.
+    /// </summary>
+    /// <param name="provider">The service provider for resolving module dependencies.</param>
+    /// <param name="registrar">The event chain registrar for subscribing modules to events.</param>
     public static void ConfigureSwapModuleEventChains(this IServiceProvider provider, IEventChainRegistrar registrar)
     {
         var catalog = provider.GetRequiredService<ModuleCatalog>();

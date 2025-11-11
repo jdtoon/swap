@@ -8,6 +8,7 @@
 ## Features
 
 - ✅ **SwapController** - Automatic page vs partial rendering based on HX-Request header
+- ✅ **Server-Sent Events (SSE)** - Real-time HTML streaming with first-class support
 - ✅ **Toast Notifications** - Built-in success/error/warning/info toasts with zero JavaScript
 - ✅ **Out-of-Band Swaps** - Update multiple page sections in one response
 - ✅ **Event System** - Chain domain events to UI updates with static typing
@@ -277,6 +278,7 @@ dotnet test
 ### Features
 - [Toast Notifications](./TOASTS.md) - Complete toast API and examples
 - [Out-of-Band Swaps](./OOB-SWAPS.md) - Multiple element updates
+- [Server-Sent Events](./SERVER-SENT-EVENTS.md) - Real-time HTML streaming
 - [Event System](./EVENTS.md) - Domain event → UI event chains
 
 ### Reference
