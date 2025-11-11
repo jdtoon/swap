@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.AspNetCore.Mvc.ViewEngines;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
@@ -144,8 +145,6 @@ public abstract class SwapController : Controller
         if (string.IsNullOrEmpty(viewName))
             viewName = ControllerContext.ActionDescriptor.ActionName;
 
-        ViewData.Model = model;
-
         using var writer = new StringWriter();
         var viewEngine = HttpContext.RequestServices.GetService(typeof(ICompositeViewEngine)) as ICompositeViewEngine;
         var viewResult = viewEngine!.FindView(ControllerContext, viewName, false);
@@ -155,10 +154,16 @@ public abstract class SwapController : Controller
             throw new InvalidOperationException($"Could not find view '{viewName}'");
         }
 
+        var metadataProvider = HttpContext.RequestServices.GetService(typeof(IModelMetadataProvider)) as IModelMetadataProvider;
+        var viewData = new ViewDataDictionary(metadataProvider!, new ModelStateDictionary())
+        {
+            Model = model
+        };
+
         var viewContext = new ViewContext(
             ControllerContext,
             viewResult.View,
-            ViewData,
+            viewData,
             TempData,
             writer,
             new HtmlHelperOptions()

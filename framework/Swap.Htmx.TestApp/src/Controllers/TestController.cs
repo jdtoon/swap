@@ -137,7 +137,7 @@ public class TestController : SwapController
                 await Task.Delay(1000, ct);
             }
 
-            var finalHtml = await this.RenderPartialToStringAsync<object?>("_SseComplete", null);
+            var finalHtml = await this.RenderPartialToStringAsync("_SseComplete", (object?)null);
             await stream.SendEventAsync("notification", finalHtml);
         });
     }

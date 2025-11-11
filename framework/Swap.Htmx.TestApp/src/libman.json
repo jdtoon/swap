@@ -6,8 +6,15 @@
       "library": "htmx@2.0.7",
       "destination": "wwwroot/lib/htmx",
       "files": [
-        "htmx.min.js",
-        "ext/sse.js"
+        "htmx.min.js"
+      ]
+    },
+    {
+      "library": "htmx-ext-sse@2.2.4",
+      "destination": "wwwroot/lib/htmx-ext-sse",
+      "provider": "jsdelivr",
+      "files": [
+        "dist/sse.min.js"
       ]
     },
     {
