@@ -16,39 +16,32 @@ public class DebugTests : PageTest
     }
 
     [Test]
-    public async Task Debug_OobSwapResponse()
+    public async Task Debug_CheckOobSwapHtml()
     {
         await Page.GotoAsync("http://localhost:5000/test", new() { WaitUntil = WaitUntilState.NetworkIdle });
         
-        // Set up response listener
-        Page.Response += (_, response) =>
-        {
-            if (response.Url.Contains("/test/oob/single"))
-            {
-                Console.WriteLine($"Response status: {response.Status}");
-                var task = response.BodyAsync();
-                task.Wait();
-                var body = task.Result;
-                var bodyText = System.Text.Encoding.UTF8.GetString(body);
-                Console.WriteLine($"Response body:\n{bodyText}");
-            }
-        };
+        // Check initial state
+        var initialHtml = await Page.Locator("#secondary-panel").InnerHTMLAsync();
+        Console.WriteLine($"Initial HTML:\n{initialHtml}");
         
-        // Trigger OOB swap
+        var initialTestId = await Page.Locator("#secondary-panel").GetAttributeAsync("data-test-id");
+        Console.WriteLine($"Initial data-test-id: {initialTestId}");
+        
+        // Click OOB button
         await Page.Locator("[data-test-id='oob-single']").ClickAsync(new() { Force = true });
         await Page.WaitForTimeoutAsync(2000);
         
-        // Check if secondary-panel exists with data-test-id
-        var secondaryPanel = Page.Locator("#secondary-panel");
-        var exists = await secondaryPanel.CountAsync() > 0;
-        Console.WriteLine($"Secondary panel exists: {exists}");
+        // Check updated state
+        var afterCount = await Page.Locator("#secondary-panel").CountAsync();
+        Console.WriteLine($"Element count after swap: {afterCount}");
         
-        if (exists)
+        if (afterCount > 0)
         {
-            var testId = await secondaryPanel.GetAttributeAsync("data-test-id");
-            Console.WriteLine($"Secondary panel data-test-id: {testId}");
-            var content = await secondaryPanel.TextContentAsync();
-            Console.WriteLine($"Secondary panel content: {content}");
+            var updatedOuterHtml = await Page.Locator("#secondary-panel").EvaluateAsync<string>("el => el.outerHTML");
+            Console.WriteLine($"Updated outer HTML:\n{updatedOuterHtml}");
+            
+            var updatedTestId = await Page.Locator("#secondary-panel").GetAttributeAsync("data-test-id");
+            Console.WriteLine($"Updated data-test-id: {updatedTestId}");
         }
     }
 }
