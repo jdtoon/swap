@@ -9,6 +9,46 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Planned / In Progress
+- WebSocket Chat Demo completion: front-end OOB swap rendering & E2E Playwright tests still in progress
+- Additional HTMX real-time patterns (presence, notifications) pending stabilization of WebSocket infrastructure
+
+---
+
+## [0.4.3] - 2025-11-11
+
+### Added - Server-Sent Events (SSE)
+- Introduced SSE utilities with `MapSwapServerSentEvents` patterns for streaming UI updates.
+- Razor partial rendering helpers used to broadcast OOB fragments (`hx-swap-oob`) for live list updates.
+- Demo endpoints & partials: notifications stream, incremental list append, completion markers.
+- Documentation: `SERVER-SENT-EVENTS.md` detailing setup, rendering pipeline, error handling & reconnection strategies.
+
+### Added - WebSockets (Incomplete)
+- Initial WebSocket handler framework: `SwapWebSocketHandler`, `WebSocketConnection` lifecycle (connect, message, disconnect).
+- Dynamic Razor partial rendering over sockets via `RenderPartialToStringAsync`.
+- Chat demo scaffold (`/ws/chat`) broadcasting HTML fragments.
+- HTMX WebSocket extension integrated (connection + form `ws-send`).
+- OOB swap partial `_ChatMessage` prepared with `hx-swap-oob="beforeend:#chat-messages"`.
+- Known Gaps (feature incomplete):
+  - Messages currently not rendering in browser (OOB swap target investigation ongoing).
+  - Missing automated E2E Playwright coverage (infra conflict w/ running app).
+  - Needs connection state indicator & retry UX.
+  - Additional samples (presence count, system notifications) deferred.
+
+### Documentation
+- `WEBSOCKETS.md` draft published: architecture, handler lifecycle, broadcasting patterns, troubleshooting.
+- Real-time section expanded to compare SSE vs WebSockets trade-offs and recommended usage scenarios.
+
+### Internal
+- Rendering pipeline reused between SSE & WebSockets for consistent partial composition.
+- Extension event hooks (`htmx:ws*`) evaluated for future diagnostics instrumentation.
+
+### Status
+- SSE: Complete & validated.
+- WebSockets: Partially implemented (handler + transport ok) — UI integration & tests pending.
+
+---
+
 ---
 
 ## [0.4.2] - 2025-11-11

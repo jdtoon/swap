@@ -10,6 +10,22 @@
       ]
     },
     {
+      "library": "htmx-ext-sse@2.2.4",
+      "destination": "wwwroot/lib/htmx-ext-sse",
+      "provider": "jsdelivr",
+      "files": [
+        "dist/sse.min.js"
+      ]
+    },
+    {
+      "library": "htmx-ext-ws@2.0.1",
+      "destination": "wwwroot/lib/htmx-ext-ws",
+      "provider": "jsdelivr",
+      "files": [
+        "ws.js"
+      ]
+    },
+    {
       "library": "bulma@1.0.4",
       "destination": "wwwroot/lib/bulma",
       "files": [

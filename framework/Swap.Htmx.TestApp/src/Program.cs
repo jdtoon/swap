@@ -1,4 +1,6 @@
 using Swap.Htmx;
+using Swap.Htmx.WebSockets;
+using Swap.Htmx.TestApp.WebSockets;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -15,6 +17,10 @@ if (!app.Environment.IsDevelopment())
 
 app.UseStaticFiles();
 app.UseRouting();
+
+// Register WebSocket handler
+app.MapSwapWebSocket<ChatWebSocketHandler>("/ws/chat");
+
 app.UseSwapHtmxShell();
 app.UseSwapHtmx();
 app.UseAuthorization();

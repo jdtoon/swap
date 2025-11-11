@@ -49,6 +49,7 @@ const sidebars: SidebarsConfig = {
         'features/event-system',
         'features/toast-notifications',
         'features/oob-swaps',
+        'features/server-sent-events',
         'features/testing-framework',
         'features/e2e-testing',
       ],

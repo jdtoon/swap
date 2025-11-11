@@ -98,4 +98,58 @@ public class TestController : SwapController
             <p class=""has-text-centered"">{content}</p>
         </div>";
     }
+
+    // Server-Sent Events Tests
+
+    [HttpGet("/test/sse")]
+    public IActionResult SseDemo()
+    {
+        return SwapView();
+    }
+
+    [HttpGet("/test/sse/start")]
+    public IActionResult SseStart()
+    {
+        return SwapView();
+    }
+
+    [HttpGet("/test/sse/stream")]
+    public IActionResult SseStream()
+    {
+        return ServerSentEvents(async (stream, ct) =>
+        {
+            var notifications = new[]
+            {
+                "System update completed",
+                "New message from Admin",
+                "Your report is ready",
+                "Scheduled task finished",
+                "Database backup completed"
+            };
+
+            for (int i = 0; i < notifications.Length; i++)
+            {
+                if (ct.IsCancellationRequested) break;
+
+                var html = await this.RenderPartialToStringAsync("_SseNotification", (i, notifications[i]));
+                await stream.SendEventAsync("notification", html);
+                await stream.SendKeepAliveAsync();
+                await Task.Delay(1000, ct);
+            }
+
+            var finalHtml = await this.RenderPartialToStringAsync("_SseComplete", (object?)null);
+            await stream.SendEventAsync("notification", finalHtml);
+            
+            // Send close event to tell HTMX to close the connection gracefully
+            await stream.SendEventAsync("close", "done");
+        });
+    }
+
+    // WebSocket Tests
+    
+    [HttpGet("/test/websocket")]
+    public IActionResult WebSocketDemo()
+    {
+        return SwapView();
+    }
 }

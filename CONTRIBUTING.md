@@ -41,7 +41,7 @@ When reporting bugs, please include:
 **Environment:**
 - OS: Windows 11
 - .NET: 9.0.0
-- Swap CLI: 0.3.2
+- Swap CLI: 0.4.1
 ```
 
 ---

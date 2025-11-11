@@ -32,6 +32,7 @@ Start here to choose: [Templates](./templates/overview)
 ### Swap.Htmx
 
 - **SwapController base class** — Automatic partial/full-page detection with `IsHtmxRequest` and `IsHtmxPartial`
+- **Server-Sent Events (SSE)** — Real-time HTML streaming with first-class support
 - **Declarative event system** — Server-driven events with chain resolution and smart filtering
 - **Fluent HTMX headers** — Type-safe API for `HX-Trigger`, `HX-Retarget`, `HX-Reswap`, etc.
 - **Toast notifications** — Built-in support via `SwapToast()` extension methods

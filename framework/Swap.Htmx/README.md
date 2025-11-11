@@ -1,133 +1,263 @@
-# Swap.Htmx
+# Swap.Htmx# Swap.Htmx
 
-[![NuGet](https://img.shields.io/nuget/v/Swap.Htmx.svg)](https://www.nuget.org/packages/Swap.Htmx/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-**Minimal HTMX framework for ASP.NET Core MVC** that provides automatic page/partial detection, toast notifications, out-of-band swaps, and a powerful event system for decoupling domain logic from UI updates.
 
-## Features
+[![NuGet](https://img.shields.io/nuget/v/Swap.Htmx.svg)](https://www.nuget.org/packages/Swap.Htmx/)[![NuGet](https://img.shields.io/nuget/v/Swap.Htmx.svg)](https://www.nuget.org/packages/Swap.Htmx/)
 
-- ✅ **SwapController** - Automatic page vs partial rendering based on HX-Request header
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+
+
+A minimal HTMX framework for ASP.NET Core MVC that makes building modern, dynamic web applications simple and intuitive.**Minimal HTMX framework for ASP.NET Core MVC** that provides automatic page/partial detection, toast notifications, out-of-band swaps, and a powerful event system for decoupling domain logic from UI updates.
+
+
+
+## What is Swap.Htmx?## Features
+
+
+
+Swap.Htmx provides the missing pieces between HTMX and ASP.NET Core MVC:- ✅ **SwapController** - Automatic page vs partial rendering based on HX-Request header
+
 - ✅ **Toast Notifications** - Built-in success/error/warning/info toasts with zero JavaScript
-- ✅ **Out-of-Band Swaps** - Update multiple page sections in one response
-- ✅ **Event System** - Chain domain events to UI updates with static typing
-- ✅ **Middleware** - Validates responses and headers automatically
-- ✅ **Extension Methods** - Fluent API for HTMX headers and responses
+
+- **Automatic page/partial detection** - Returns full pages or partials based on request type- ✅ **Out-of-Band Swaps** - Update multiple page sections in one response
+
+- **Real-time streaming** - Server-Sent Events (SSE) support for live updates- ✅ **Event System** - Chain domain events to UI updates with static typing
+
+- **Toast notifications** - User feedback without writing JavaScript- ✅ **Middleware** - Validates responses and headers automatically
+
+- **Out-of-band swaps** - Update multiple page sections in one response- ✅ **Extension Methods** - Fluent API for HTMX headers and responses
+
+- **Event system** - Decouple domain logic from UI updates with typed events
 
 ## Installation
 
+## Quick Example
+
 ```bash
-dotnet add package Swap.Htmx
-```
 
-> **📖 [Complete Setup Guide](./GETTING-STARTED.md)** - Step-by-step instructions for setting up toasts, OOB swaps, and all features
+```csharpdotnet add package Swap.Htmx
 
-## Quick Start
+// Controller```
 
-### 1. Register Services & Middleware
+public class TodoController : SwapController
 
-```csharp
-var builder = WebApplication.CreateBuilder(args);
+{> **📖 [Complete Setup Guide](./GETTING-STARTED.md)** - Step-by-step instructions for setting up toasts, OOB swaps, and all features
 
-builder.Services.AddControllersWithViews();
-builder.Services.AddSwapHtmx();
+    public async Task<IActionResult> Create(TodoDto dto)
 
-var app = builder.Build();
+    {## Quick Start
 
-app.UseSwapHtmxShell(); // Validates HTMX responses
-app.UseSwapHtmx();      // Adds event handling middleware
-
-app.MapControllerRoute(
-    name: "default",
-    pattern: "{controller=Home}/{action=Index}/{id?}");
-
-app.Run();
-```
-
-### 2. Create Controller
-
-```csharp
-public class ProductController : SwapController
-{
-    public async Task<IActionResult> Index()
-    {
-        var products = await _service.GetAllAsync();
-        return SwapView(products); // Auto-detects page vs partial
-    }
-    
-    public async Task<IActionResult> Create(ProductDto dto)
-    {
         await _service.CreateAsync(dto);
+
+        ### 1. Register Services & Middleware
+
+        Response.ShowSuccessToast("Todo created!");
+
+        return SwapView("TodoList", await _service.GetAllAsync());```csharp
+
+    }var builder = WebApplication.CreateBuilder(args);
+
+    
+
+    // Real-time updates with SSEbuilder.Services.AddControllersWithViews();
+
+    public IActionResult Stream() => ServerSentEvents(async (stream, ct) =>builder.Services.AddSwapHtmx();
+
+    {
+
+        await foreach (var update in GetUpdatesAsync(ct))var app = builder.Build();
+
+        {
+
+            var html = await this.RenderPartialToStringAsync("_TodoItem", update);app.UseSwapHtmxShell(); // Validates HTMX responses
+
+            await stream.SendEventAsync("todo-added", html);app.UseSwapHtmx();      // Adds event handling middleware
+
+        }
+
+    });app.MapControllerRoute(
+
+}    name: "default",
+
+```    pattern: "{controller=Home}/{action=Index}/{id?}");
+
+
+
+```htmlapp.Run();
+
+<!-- View - Works for both full page loads and HTMX requests -->```
+
+<div hx-ext="sse" sse-connect="/todos/stream">
+
+    <div id="todo-list" sse-swap="todo-added" hx-swap="afterbegin">### 2. Create Controller
+
+        @foreach (var todo in Model)
+
+        {```csharp
+
+            <div class="todo-item">public class ProductController : SwapController
+
+                <input type="checkbox" hx-post="/todos/@todo.Id/toggle" />{
+
+                <span>@todo.Title</span>    public async Task<IActionResult> Index()
+
+            </div>    {
+
+        }        var products = await _service.GetAllAsync();
+
+    </div>        return SwapView(products); // Auto-detects page vs partial
+
+</div>    }
+
+```    
+
+    public async Task<IActionResult> Create(ProductDto dto)
+
+## Installation    {
+
+        await _service.CreateAsync(dto);
+
+```bash        
+
+dotnet add package Swap.Htmx        // Show success toast
+
+```        Response.ShowSuccessToast("Product created!");
+
         
-        // Show success toast
-        Response.ShowSuccessToast("Product created!");
-        
-        return SwapView("Success");
+
+Then register in `Program.cs`:        return SwapView("Success");
+
     }
-}
+
+```csharp}
+
+builder.Services.AddSwapHtmx();```
+
+
+
+// ...### 3. Create View
+
+
+
+app.UseSwapHtmxShell();```razor
+
+app.UseSwapHtmx();@model List<Product>
+
 ```
-
-### 3. Create View
-
-```razor
-@model List<Product>
 
 <div id="product-list">
-    <h1>Products</h1>
+
+## Documentation    <h1>Products</h1>
+
     
-    @foreach (var product in Model)
-    {
+
+### Getting Started    @foreach (var product in Model)
+
+- **[Complete Setup Guide](./Docs/GETTING-STARTED.md)** - Step-by-step setup for new projects    {
+
         <div class="product-card">
-            <h3>@product.Name</h3>
-            <p>$@product.Price</p>
-            
-            <button hx-post="/products/delete/@product.Id" 
-                    hx-target="#product-list"
+
+### Core Features            <h3>@product.Name</h3>
+
+- **[Toast Notifications](./Docs/TOASTS.md)** - User feedback without JavaScript            <p>$@product.Price</p>
+
+- **[Out-of-Band Swaps](./Docs/OOB-SWAPS.md)** - Update multiple elements at once            
+
+- **[Server-Sent Events](./Docs/SERVER-SENT-EVENTS.md)** - Real-time HTML streaming            <button hx-post="/products/delete/@product.Id" 
+
+- **[Event System](./Docs/EVENTS.md)** - Domain events → UI updates                    hx-target="#product-list"
+
                     hx-confirm="Delete this product?">
-                Delete
-            </button>
-        </div>
-    }
+
+### Reference                Delete
+
+- **[Templates](./Docs/TEMPLATES.md)** - Project templates and patterns            </button>
+
+- **[Detailed API Reference](./Docs/README.md)** - Complete framework documentation        </div>
+
+- **[E2E Testing Guide](./Swap.Htmx.E2ETests/README.md)** - Browser-based testing    }
+
 </div>
-```
 
-## Core Concepts
+## Philosophy```
 
-### SwapView() - Automatic Rendering
 
-`SwapView()` automatically returns the correct response type:
+
+Swap.Htmx embraces simplicity:## Core Concepts
+
+
+
+1. **Minimal abstraction** - Leverage HTMX's power, don't hide it### SwapView() - Automatic Rendering
+
+2. **Convention over configuration** - Sensible defaults, minimal setup
+
+3. **Type safety** - No magic strings for events or view names`SwapView()` automatically returns the correct response type:
+
+4. **Progressive enhancement** - Works as a traditional MVC app, HTMX adds interactivity
 
 ```csharp
-public async Task<IActionResult> Details(int id)
-{
-    var product = await _service.GetAsync(id);
-    
-    // Initial page load: Returns View() with layout
-    // HTMX request: Returns PartialView() without layout
-    return SwapView("Details", product);
-}
-```
 
-**How it works:**
-- Checks for `HX-Request` header
-- HTMX request → `PartialView()` (no layout)
-- Normal request → `View()` (with layout)
-- Adds `Vary: HX-Request` header for caching
+## Examplespublic async Task<IActionResult> Details(int id)
+
+{
+
+See the test app for complete working examples:    var product = await _service.GetAsync(id);
+
+    
+
+```bash    // Initial page load: Returns View() with layout
+
+cd framework/Swap.Htmx.TestApp/src    // HTMX request: Returns PartialView() without layout
+
+dotnet run    return SwapView("Details", product);
+
+# Visit http://localhost:5000/test}
+
+``````
+
+
+
+Examples include:**How it works:**
+
+- Toast notifications- Checks for `HX-Request` header
+
+- Out-of-band swaps- HTMX request → `PartialView()` (no layout)
+
+- Server-Sent Events (real-time updates)- Normal request → `View()` (with layout)
+
+- Form handling- Adds `Vary: HX-Request` header for caching
+
+- Partial rendering
 
 ### Toast Notifications
 
+## Requirements
+
 Show user feedback with simple extension methods:
 
-```csharp
-Response.ShowSuccessToast("Product saved!");
-Response.ShowErrorToast("Something went wrong!");
-Response.ShowWarningToast("Please review your changes.");
-Response.ShowInfoToast("Processing in background...");
-```
+- .NET 9.0 or higher
 
-**Features:**
+- ASP.NET Core MVC```csharp
+
+- HTMX 2.0+ (via CDN or npm)Response.ShowSuccessToast("Product saved!");
+
+Response.ShowErrorToast("Something went wrong!");
+
+## LicenseResponse.ShowWarningToast("Please review your changes.");
+
+Response.ShowInfoToast("Processing in background...");
+
+MIT - See [LICENSE](../../LICENSE) for details```
+
+
+
+## Contributing**Features:**
+
 - 4 toast types with different colors
-- Auto-dismiss after 3 seconds
+
+See [CONTRIBUTING.md](../../CONTRIBUTING.md) for guidelines.- Auto-dismiss after 3 seconds
+
 - Configurable positioning (top-right, bottom-right, etc.)
 - Multiple toasts stack vertically
 - Pure HTMX - no JavaScript required
