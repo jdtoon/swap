@@ -1,7 +1,7 @@
-@model IReadOnlyList<string>
-<ul class="list-disc list-inside">
-  @foreach (var msg in Model)
-  {
-    <li>@msg</li>
-  }
+@model List<string>
+<ul>
+@foreach (var item in Model)
+{
+  <li>@item</li>
+}
 </ul>

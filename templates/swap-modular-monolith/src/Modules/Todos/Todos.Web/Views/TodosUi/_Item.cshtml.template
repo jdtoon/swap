@@ -1,13 +1,15 @@
 @model {{ProjectName}}.Modules.Todos.Contracts.TodoItemDto
-<li id="todo-item-@Model.Id" class="flex items-center gap-2 p-3 bg-base-200 rounded-lg">
-    <input type="checkbox"
-           class="checkbox checkbox-primary"
-           @(Model.IsComplete ? "checked" : "")
-           hx-post="/todos/ui/toggle/@Model.Id"
-           hx-target="#todo-item-@Model.Id"
-           hx-swap="outerHTML" />
-    <span class="flex-1 @(Model.IsComplete ? "line-through text-gray-500" : "")">@Model.Title</span>
-    <button class="btn btn-sm btn-error"
-            hx-delete="/todos/ui/delete/@Model.Id"
-            hx-confirm="Are you sure?">Delete</button>
+<li id="todo-item-@Model.Id" class="box mb-2 p-3">
+    <div class="is-flex is-align-items-center">
+        <input type="checkbox"
+               class="mr-3"
+               @(Model.IsComplete ? "checked" : "")
+               hx-post="/todos/ui/toggle/@Model.Id"
+               hx-target="#todo-item-@Model.Id"
+               hx-swap="outerHTML" />
+        <span class="is-flex-grow-1 @(Model.IsComplete ? "has-text-grey-light" : "")" style="@(Model.IsComplete ? "text-decoration: line-through" : "")">@Model.Title</span>
+        <button class="button is-danger is-small"
+                hx-delete="/todos/ui/delete/@Model.Id"
+                hx-confirm="Are you sure?">Delete</button>
+    </div>
 </li>

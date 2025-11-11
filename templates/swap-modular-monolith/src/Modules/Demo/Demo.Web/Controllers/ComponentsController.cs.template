@@ -32,7 +32,7 @@ public class ComponentsController : SwapController
         var key = (name ?? "a").Equals("b", StringComparison.OrdinalIgnoreCase)
             ? EventNames.Ui.ComponentBRefresh
             : EventNames.Ui.ComponentARefresh;
-        _bus.Emit(key);
+        _bus.Emit(new EventKey(key));
         return NoContent();
     }
 }

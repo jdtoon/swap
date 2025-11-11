@@ -1,7 +1,1 @@
-<div id="bulk-todos"
-  hx-get="/Demo/BulkTodos"
-  hx-trigger="load, @TodoEvents.Ui.RefreshList from:body"
-     hx-target="this"
-     hx-swap="innerHTML">
-  <div class="loading loading-spinner"></div>
-</div>
+<div id="bulk-list" hx-get="/Demo/BulkList" hx-trigger="load, @(TodoEvents.Ui.RefreshList) from:body" hx-target="this" hx-swap="innerHTML">Loading…</div>

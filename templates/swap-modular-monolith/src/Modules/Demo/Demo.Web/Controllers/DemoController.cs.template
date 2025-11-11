@@ -52,8 +52,8 @@ public class DemoController : SwapController
     {
         if (string.IsNullOrWhiteSpace(text)) return BadRequest();
         await _notes.AddAsync(text);
-        _bus.Emit(EventNames.Ui.DetailsRefresh);
-        _bus.Emit(EventNames.Ui.SummaryRefresh);
+        _bus.Emit(new EventKey(EventNames.Ui.DetailsRefresh));
+        _bus.Emit(new EventKey(EventNames.Ui.SummaryRefresh));
         Response.ShowSuccessToast($"Note added: {text}");
         return NoContent();
     }
@@ -71,8 +71,8 @@ public class DemoController : SwapController
     {
         var count = await _bulk.CompleteAsync(ids);
         if (count == 0) { Response.ShowSuccessToast("No items selected"); return NoContent(); }
-        _bus.Emit({{ProjectName}}.Modules.Todos.Contracts.TodoEvents.Ui.RefreshList);
-        _bus.Emit(EventNames.Ui.StatsRefresh);
+        _bus.Emit(new EventKey({{ProjectName}}.Modules.Todos.Contracts.TodoEvents.Ui.RefreshList));
+        _bus.Emit(new EventKey(EventNames.Ui.StatsRefresh));
         Response.ShowSuccessToast($"Completed {count} todos");
         return NoContent();
     }

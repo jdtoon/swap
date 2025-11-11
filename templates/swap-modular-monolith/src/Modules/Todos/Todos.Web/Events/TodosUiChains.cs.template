@@ -8,9 +8,9 @@ public static class TodosUiChains
     public static void Configure(SwapEventBusOptions events)
     {
         events
-            .Chain(TodoEvents.Domain.Created, TodoEvents.Ui.RefreshList, TodoEvents.Ui.ToastSuccess, TodoEvents.Ui.StatsRefresh, TodoEvents.Ui.ActivityAppend)
-            .Chain(TodoEvents.Domain.Deleted, TodoEvents.Ui.RefreshList, TodoEvents.Ui.ToastSuccess, TodoEvents.Ui.StatsRefresh, TodoEvents.Ui.ActivityAppend)
+            .Chain(new EventKey(TodoEvents.Domain.Created), new EventKey(TodoEvents.Ui.RefreshList), new EventKey(TodoEvents.Ui.ToastSuccess), new EventKey(TodoEvents.Ui.StatsRefresh), new EventKey(TodoEvents.Ui.ActivityAppend))
+            .Chain(new EventKey(TodoEvents.Domain.Deleted), new EventKey(TodoEvents.Ui.RefreshList), new EventKey(TodoEvents.Ui.ToastSuccess), new EventKey(TodoEvents.Ui.StatsRefresh), new EventKey(TodoEvents.Ui.ActivityAppend))
             // Toggle returns the updated row directly; we still refresh stats via UI event
-            .Chain(TodoEvents.Domain.Toggled, TodoEvents.Ui.StatsRefresh);
+            .Chain(new EventKey(TodoEvents.Domain.Toggled), new EventKey(TodoEvents.Ui.StatsRefresh));
     }
 }

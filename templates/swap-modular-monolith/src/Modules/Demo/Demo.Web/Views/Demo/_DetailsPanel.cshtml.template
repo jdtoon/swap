@@ -1,0 +1,4 @@
+<div>
+  <button class="button is-outlined" hx-get="/Demo/Details" hx-target="#details" hx-swap="innerHTML">Show details</button>
+  <div id="details" class="mt-4" hx-trigger="@(EventNames.Ui.DetailsRefresh) from:body"></div>
+</div>

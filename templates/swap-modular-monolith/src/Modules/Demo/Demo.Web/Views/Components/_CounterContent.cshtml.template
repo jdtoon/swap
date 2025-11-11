@@ -1,10 +1,14 @@
 @model int
-<div class="flex items-center justify-between">
-  <div>
-    <div class="text-sm text-gray-500">Current value</div>
-    <div class="text-3xl font-bold">@Model</div>
+@{
+  var name = (string)(ViewData["Name"] ?? "a");
+}
+<div class="is-flex is-align-items-center">
+  <div class="mr-4">
+    <p class="heading">Value</p>
+    <p class="title is-3">@Model</p>
   </div>
-  <div>
-    <button class="btn btn-primary" hx-post="/Components/Increment?name=@(ViewData["Name"] ?? "a")">Increment</button>
-  </div>
+  <button class="button is-primary"
+          hx-post="/Components/Increment?name=@name">
+    Increment @name.ToUpper()
+  </button>
 </div>
