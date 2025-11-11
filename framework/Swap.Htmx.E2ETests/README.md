@@ -9,6 +9,7 @@ These tests verify that framework features work correctly in actual browser envi
 - **ToastTests**: Toast notification display and behavior
 - **OobSwapTests**: Out-of-band swap functionality
 - **CombinedTests**: Toast + OOB working together
+- **SseTests**: Server-Sent Events real-time streaming
 
 ## Prerequisites
 
