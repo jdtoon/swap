@@ -1,0 +1,3 @@
+@using {{ProjectName}}
+@using {{ProjectName}}.Controllers
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
