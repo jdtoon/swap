@@ -165,12 +165,20 @@ public static class NewCommand
         var isLayered = IsLayeredTemplate(template);
         var isModular = IsModularMonolithTemplate(template);
         var isMinimal = template == "swap-minimal";
+        var isMonolith = template == "swap-monolith" || template == "monolith";
         
         if (isMinimal)
         {
             AnsiConsole.MarkupLine($"  cd {name}/src");
             AnsiConsole.MarkupLine("  libman restore");
             AnsiConsole.MarkupLine("  dotnet run");
+        }
+        else if (isMonolith)
+        {
+            AnsiConsole.MarkupLine($"  cd {name}/src");
+            AnsiConsole.MarkupLine("  libman restore");
+            AnsiConsole.MarkupLine("  dotnet ef migrations add InitialCreate");
+            AnsiConsole.MarkupLine("  dotnet ef database update");
         }
         else if (isLayered || isModular)
         {
@@ -349,8 +357,10 @@ public static class NewCommand
                 ? Path.Combine(projectPath, "src", "Web") 
                 : Path.Combine(projectPath, "src");
             
-            // Minimal template only needs LibMan, no NPM/Tailwind
-            if (!isMinimal)
+            // Templates without NPM: minimal and monolith (now using Bulma via LibMan)
+            var hasNpm = !isMinimal && template != "swap-monolith" && template != "monolith";
+            
+            if (hasNpm)
             {
                 await RunSetupStepAsync(ctx, "Running npm install...", () => 
                     RunCommandAsync("npm", "install", webDir), "npm install completed");
@@ -359,7 +369,7 @@ public static class NewCommand
             await RunSetupStepAsync(ctx, "Running libman restore...", () => 
                 RunCommandAsync("libman", "restore", webDir), "libman restore completed");
             
-            if (!isMinimal)
+            if (hasNpm)
             {
                 await RunSetupStepAsync(ctx, "Building CSS...", () => 
                     RunCommandAsync("npm", "run build:css", webDir), "CSS build completed");
