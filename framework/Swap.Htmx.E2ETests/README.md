@@ -83,7 +83,7 @@ await Expect(toast).ToBeVisibleAsync();
 - ✅ Toast dismissal doesn't affect OOB content
 - ✅ Multiple combined actions accumulate toasts
 
-**Total: 15 E2E tests**
+**Total: 16 E2E tests** (15 feature tests + 1 debug test)
 
 ## Browser Support
 
