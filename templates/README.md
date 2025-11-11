@@ -6,12 +6,25 @@ Project templates for Swap CLI. Used by `swap new` to create new applications.
 
 ```
 templates/
+├── swap-minimal/           # Minimal starter (Bulma, zero-NPM)
 ├── swap-monolith/          # Single-project app (default)
 ├── swap-layered/           # Multi-project layered architecture
 ├── swap-modular-monolith/  # Modular monolith with per-module ownership
 └── generate/               # Code generation templates
     └── htmx-shell/         # HTMX shell middleware
 ```
+
+### swap-minimal ⚡
+
+Minimal ASP.NET Core app with HTMX, Bulma CSS, and toast notifications. Zero NPM dependencies.
+
+```bash
+swap new MyApp --template swap-minimal
+```
+
+**Includes:** Single controller, toast demo, Bulma 1.0.4 via LibMan, HTMX 2.0.7, SwapController pattern, minimal setup (25-line Program.cs).
+
+**Perfect for:** Learning Swap.Htmx, prototypes, small projects, reference implementation.
 
 ### swap-monolith (Default)
 

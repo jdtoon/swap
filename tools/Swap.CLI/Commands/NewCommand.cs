@@ -10,6 +10,7 @@ public static class NewCommand
     private const string TemplateMonolith = "monolith";
     private const string TemplateLayered = "layered";
     private const string TemplateModularMonolith = "modular-monolith";
+    private const string TemplateMinimal = "minimal";
     
     public static Command Create()
     {
@@ -17,7 +18,7 @@ public static class NewCommand
         
         var nameArg = new Argument<string>("name", "The name of the project (e.g., MyApp)");
         var dbOption = new Option<string>("--database", () => "sqlite", "Database provider (sqlite|sqlserver|postgres)");
-        var templateOption = new Option<string>("--template", () => TemplateMonolith, "Project template (monolith|layered|modular-monolith)");
+        var templateOption = new Option<string>("--template", () => TemplateMonolith, "Project template (minimal|monolith|layered|modular-monolith)");
         var outOption = new Option<string?>("--output", "Output directory (default: ./{name})");
         var skipSetupOption = new Option<bool>("--skip-setup", description: "Skip prerequisites check, npm/libman steps, and initial migration (useful for CI/tests)");
         var localNugetOption = new Option<bool>("--local-nuget", description: "Use local NuGet feed for Swap packages (for framework development only)");
@@ -209,10 +210,11 @@ public static class NewCommand
         var normalized = template.Trim().ToLowerInvariant();
         return normalized switch
         {
+            "minimal" or "swap-minimal" => "swap-minimal",
             "monolith" or "swap-monolith" => "swap-monolith",
             "layered" or "swap-layered" => "swap-layered",
             "modular-monolith" or "swap-modular-monolith" => "swap-modular-monolith",
-            _ => throw new ArgumentException($"Unknown template '{template}'. Use 'monolith', 'layered', or 'modular-monolith'.")
+            _ => throw new ArgumentException($"Unknown template '{template}'. Use 'minimal', 'monolith', 'layered', or 'modular-monolith'.")
         };
     }
     
@@ -507,7 +509,7 @@ public class HtmxShellMiddleware
         
         await AnsiConsole.Status().StartAsync("Generating project...", async ctx =>
         {
-            var useSrcLayout = selectedTemplate == "swap-monolith" || selectedTemplate == "swap-layered";
+            var useSrcLayout = selectedTemplate == "swap-monolith" || selectedTemplate == "swap-layered" || selectedTemplate == "swap-minimal";
             
             if (selectedTemplate == "swap-modular-monolith")
             {

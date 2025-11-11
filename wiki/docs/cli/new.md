@@ -22,6 +22,7 @@ swap new <name> [options]
 - `--skip-setup` - Skip prerequisites check, npm/libman steps, and initial migration (useful for CI/tests)
 - `--local-nuget` - Use local NuGet feed for Swap packages (for framework development only)
 - `--template <name>` - Choose template:
+    - `minimal` / `swap-minimal` - Minimal starter (single file, Bulma CSS, toast demos)
     - `swap-monolith` - Single-project DX-forward template with Event System wired
     - `layered` / `swap-layered` - Multi-project solution (Web, Application, Domain, Infrastructure)
     - `swap-modular-monolith` - Modular monolith (host + modules with per-module ownership)
