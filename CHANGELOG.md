@@ -10,6 +10,52 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ---
+
+## [0.4.2] - 2025-11-11
+
+### Changed - Bulma Migration
+- **Zero NPM Dependencies**: Migrated all templates from Tailwind/DaisyUI/NPM to Bulma CSS via LibMan
+  - **swap-monolith**: Removed package.json, tailwind.config.js, npm scripts; added Bulma 1.0.4 via LibMan
+  - **swap-layered**: Removed all NPM infrastructure; added Bulma 1.0.4 via LibMan
+  - **swap-modular-monolith**: Removed NPM/Tailwind from host and all modules; added Bulma 1.0.4 via LibMan
+  - **swap-minimal**: Already using Bulma, no changes needed
+- **Simplified Development**: No build step required for CSS
+  - Removed `npm install`, `npm run build:css`, `npm run watch:css` from all workflows
+  - LibMan restore is the only frontend dependency management step
+  - Dockerfile updates: Removed Node.js stages, kept LibMan restoration only
+- **View Modernization**: Converted all Razor views to Bulma class syntax
+  - Tailwind utility classes → Bulma semantic classes (e.g., `btn-primary` → `button is-primary`)
+  - DaisyUI components → Bulma components (cards, forms, navbar, notifications)
+  - Maintained responsive design and accessibility features
+- **Documentation Updates**: Refreshed all READMEs to reflect Bulma architecture
+  - Removed Tailwind/DaisyUI references and theming instructions
+  - Updated quickstart guides to remove npm commands
+  - Simplified production deployment (no CSS build required)
+  - New main README with clear template comparison and feature highlights
+
+### Fixed - swap-modular-monolith
+- **Routing Issues**: Fixed controller endpoint mismatches in Demo module
+  - Fixed `/Demo/BulkList` → `/Demo/BulkTodos` in `_BulkListPanel.cshtml`
+  - Fixed Details component auto-loading: added `load` trigger to `hx-trigger` in `_DetailsPanel.cshtml`
+  - Fixed Home controller routes: `/Home/AddTodo` → `/todos/ui/add`, `/Home/TodoList` → `/todos/ui/list`
+- **Module Namespacing**: Corrected namespace patterns for module contracts
+  - Demo.Contracts: `{{ProjectName}}.Modules.Demo.Contracts`
+  - Todos.Contracts: `{{ProjectName}}.Modules.Todos.Contracts`
+- **EventKey Migration**: Wrapped all string event constants in `new EventKey()` for type safety
+
+### Documentation
+- **Main README**: Complete redesign with modern, engaging presentation
+  - Clear template comparison (minimal → monolith → layered → modular-monolith)
+  - Feature highlights with code examples
+  - Quick start guide for all 4 templates
+  - Technology stack summary
+- **Template READMEs**: Modernized all template documentation
+  - Updated swap-monolith README (removed Tailwind/DaisyUI sections, added Bulma)
+  - Updated swap-layered README (clean architecture focus, zero NPM)
+  - swap-modular-monolith and swap-minimal READMEs already current
+
+---
+
 ## [0.4.1] - 2025-11-07
 
 ### Changed - Framework Focus

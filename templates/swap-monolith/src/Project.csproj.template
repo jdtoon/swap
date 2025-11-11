@@ -7,7 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-  <PackageReference Include="Swap.Htmx" Version="0.3.1" />
+  <PackageReference Include="Swap.Htmx" Version="0.3.2" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.10" />
 {{#if_sqlite}}
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="9.0.10" />
@@ -28,9 +28,5 @@
     </PackageReference>
     <PackageReference Include="Bogus" Version="35.5.0" />
   </ItemGroup>
-
-  <Target Name="BuildCSS" BeforeTargets="Compile" Condition="Exists('package.json') and Exists('node_modules')">
-    <Exec Command="npm run build:css" />
-  </Target>
 
 </Project>

@@ -36,7 +36,7 @@ public class SwapEventResponseMiddleware
         {
             var httpContext = (HttpContext)state!;
             var bus = new SwapEventBus(_http, _options, null);
-            var (resolved, beforeFilter) = bus.ResolveAndFilterFor(httpContext);
+            var resolved = bus.ResolveChains(httpContext);
 
             if (resolved.Count == 0)
             {
@@ -85,9 +85,7 @@ public class SwapEventResponseMiddleware
                     }
                 }
 
-                var active = httpContext.Items[SwapEventKeys.ActiveEvents] as HashSet<string>;
-                var activeCount = active?.Count ?? 0;
-                _logger?.LogInformation("[SwapEvents] Emitted={Emitted} Filtered={Filtered} Active={Active}", beforeFilter, resolved.Count, activeCount);
+                _logger?.LogInformation("[SwapEvents] Resolved {Count} events for HX-Trigger", resolved.Count);
                 httpContext.Items.Remove(SwapEventKeys.PendingEvents);
             }
             catch
@@ -107,7 +105,7 @@ public class SwapEventResponseMiddleware
             try
             {
                 var bus = new SwapEventBus(_http, _options, null);
-                var (resolved, beforeFilter) = bus.ResolveAndFilterFor(context);
+                var resolved = bus.ResolveChains(context);
                 if (resolved.Count > 0)
                 {
                     var json = JsonSerializer.Serialize(resolved);
@@ -143,9 +141,7 @@ public class SwapEventResponseMiddleware
                         }
                     }
 
-                    var active = context.Items[SwapEventKeys.ActiveEvents] as HashSet<string>;
-                    var activeCount = active?.Count ?? 0;
-                    _logger?.LogInformation("[SwapEvents] Emitted={Emitted} Filtered={Filtered} Active={Active}", beforeFilter, resolved.Count, activeCount);
+                    _logger?.LogInformation("[SwapEvents] Resolved {Count} events for HX-Trigger", resolved.Count);
                 }
             }
             catch

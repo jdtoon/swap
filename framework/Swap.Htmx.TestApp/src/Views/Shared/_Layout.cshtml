@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Swap.Htmx Test App</title>
+    <link rel="stylesheet" href="~/lib/bulma/css/bulma.min.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/htmx-toast.css" asp-append-version="true" />
+    <script src="~/lib/htmx/htmx.min.js" asp-append-version="true"></script>
+</head>
+<body>
+    <header>
+        <nav class="navbar is-dark" role="navigation" aria-label="main navigation">
+            <div class="container">
+                <div class="navbar-brand">
+                    <a class="navbar-item" href="/">
+                        <strong>Swap.Htmx Test App</strong>
+                    </a>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main id="main-content" class="section">
+        <div class="container">
+            @RenderBody()
+        </div>
+    </main>
+
+    <footer class="footer has-background-light mt-6">
+        <div class="content has-text-centered">
+            <p>
+                Minimal test app for <strong>Swap.Htmx</strong> framework features
+            </p>
+        </div>
+    </footer>
+
+    @await Html.PartialAsync("_ToastContainer")
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>
+

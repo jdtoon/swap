@@ -10,6 +10,7 @@ public static class NewCommand
     private const string TemplateMonolith = "monolith";
     private const string TemplateLayered = "layered";
     private const string TemplateModularMonolith = "modular-monolith";
+    private const string TemplateMinimal = "minimal";
     
     public static Command Create()
     {
@@ -17,7 +18,7 @@ public static class NewCommand
         
         var nameArg = new Argument<string>("name", "The name of the project (e.g., MyApp)");
         var dbOption = new Option<string>("--database", () => "sqlite", "Database provider (sqlite|sqlserver|postgres)");
-        var templateOption = new Option<string>("--template", () => TemplateMonolith, "Project template (monolith|layered|modular-monolith)");
+        var templateOption = new Option<string>("--template", () => TemplateMonolith, "Project template (minimal|monolith|layered|modular-monolith)");
         var outOption = new Option<string?>("--output", "Output directory (default: ./{name})");
         var skipSetupOption = new Option<bool>("--skip-setup", description: "Skip prerequisites check, npm/libman steps, and initial migration (useful for CI/tests)");
         var localNugetOption = new Option<bool>("--local-nuget", description: "Use local NuGet feed for Swap packages (for framework development only)");
@@ -163,19 +164,37 @@ public static class NewCommand
         
         var isLayered = IsLayeredTemplate(template);
         var isModular = IsModularMonolithTemplate(template);
+        var isMinimal = template == "swap-minimal";
+        var isMonolith = template == "swap-monolith" || template == "monolith";
         
-        if (isLayered || isModular)
+        if (isMinimal)
+        {
+            AnsiConsole.MarkupLine($"  cd {name}/src");
+            AnsiConsole.MarkupLine("  libman restore");
+            AnsiConsole.MarkupLine("  dotnet run");
+        }
+        else if (isMonolith)
+        {
+            AnsiConsole.MarkupLine($"  cd {name}/src");
+            AnsiConsole.MarkupLine("  libman restore");
+            AnsiConsole.MarkupLine("  dotnet ef migrations add InitialCreate");
+            AnsiConsole.MarkupLine("  dotnet ef database update");
+        }
+        else if (isLayered)
         {
             AnsiConsole.MarkupLine($"  cd {name}/src/Web");
-            AnsiConsole.MarkupLine("  npm install");
             AnsiConsole.MarkupLine("  libman restore");
-            AnsiConsole.MarkupLine("  npm run build:css");
-            if (!isModular)
-            {
-                AnsiConsole.MarkupLine($"  cd ../..");
-                AnsiConsole.MarkupLine("  dotnet ef migrations add InitialCreate -p src/Infrastructure -s src/Web");
-                AnsiConsole.MarkupLine("  dotnet ef database update -p src/Infrastructure -s src/Web");
-            }
+            AnsiConsole.MarkupLine($"  cd ../..");
+            AnsiConsole.MarkupLine("  dotnet ef migrations add InitialCreate -p src/Infrastructure -s src/Web");
+            AnsiConsole.MarkupLine("  dotnet ef database update -p src/Infrastructure -s src/Web");
+        }
+        else if (isModular)
+        {
+            AnsiConsole.MarkupLine($"  cd {name}/src/Web");
+            AnsiConsole.MarkupLine("  libman restore");
+            AnsiConsole.MarkupLine($"  cd ../..");
+            AnsiConsole.MarkupLine("  dotnet ef migrations add InitialCreate -p Modules/Todos/Todos.Migrations.SqlServer -s Web");
+            AnsiConsole.MarkupLine("  dotnet ef database update -p Modules/Todos/Todos.Migrations.SqlServer -s Web");
         }
         else
         {
@@ -209,10 +228,11 @@ public static class NewCommand
         var normalized = template.Trim().ToLowerInvariant();
         return normalized switch
         {
+            "minimal" or "swap-minimal" => "swap-minimal",
             "monolith" or "swap-monolith" => "swap-monolith",
             "layered" or "swap-layered" => "swap-layered",
             "modular-monolith" or "swap-modular-monolith" => "swap-modular-monolith",
-            _ => throw new ArgumentException($"Unknown template '{template}'. Use 'monolith', 'layered', or 'modular-monolith'.")
+            _ => throw new ArgumentException($"Unknown template '{template}'. Use 'minimal', 'monolith', 'layered', or 'modular-monolith'.")
         };
     }
     
@@ -335,18 +355,31 @@ public static class NewCommand
         await AnsiConsole.Status().StartAsync("Running setup commands...", async ctx =>
         {
             var isLayeredOrModular = IsLayeredTemplate(template) || IsModularMonolithTemplate(template);
+            var isMinimal = template == "swap-minimal";
             var webDir = isLayeredOrModular 
                 ? Path.Combine(projectPath, "src", "Web") 
                 : Path.Combine(projectPath, "src");
             
-            await RunSetupStepAsync(ctx, "Running npm install...", () => 
-                RunCommandAsync("npm", "install", webDir), "npm install completed");
+            // Templates without NPM: minimal, monolith, layered, and modular-monolith (now using Bulma via LibMan)
+            var hasNpm = !isMinimal 
+                && template != "swap-monolith" && template != "monolith"
+                && template != "swap-layered" && template != "layered"
+                && template != "swap-modular-monolith" && template != "modular-monolith";
+            
+            if (hasNpm)
+            {
+                await RunSetupStepAsync(ctx, "Running npm install...", () => 
+                    RunCommandAsync("npm", "install", webDir), "npm install completed");
+            }
             
             await RunSetupStepAsync(ctx, "Running libman restore...", () => 
                 RunCommandAsync("libman", "restore", webDir), "libman restore completed");
             
-            await RunSetupStepAsync(ctx, "Building CSS...", () => 
-                RunCommandAsync("npm", "run build:css", webDir), "CSS build completed");
+            if (hasNpm)
+            {
+                await RunSetupStepAsync(ctx, "Building CSS...", () => 
+                    RunCommandAsync("npm", "run build:css", webDir), "CSS build completed");
+            }
         });
         
         AnsiConsole.WriteLine();
@@ -360,6 +393,12 @@ public static class NewCommand
         {
             AnsiConsole.MarkupLine("[yellow]Skipping automatic EF migrations for modular monolith.[/]");
             AnsiConsole.MarkupLine("[dim]Provider-specific example migrations are included in module shim projects. See docs in the generated project for details.[/]");
+            return;
+        }
+        
+        if (template == "swap-minimal")
+        {
+            // Minimal template has no database/EF Core
             return;
         }
         
@@ -507,7 +546,7 @@ public class HtmxShellMiddleware
         
         await AnsiConsole.Status().StartAsync("Generating project...", async ctx =>
         {
-            var useSrcLayout = selectedTemplate == "swap-monolith" || selectedTemplate == "swap-layered";
+            var useSrcLayout = selectedTemplate == "swap-monolith" || selectedTemplate == "swap-layered" || selectedTemplate == "swap-minimal";
             
             if (selectedTemplate == "swap-modular-monolith")
             {

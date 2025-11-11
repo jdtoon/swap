@@ -12,6 +12,8 @@ public class SwapControllerTests
     {
         public IActionResult TestSwapView(object? model = null) => SwapView(model);
         public IActionResult TestSwapViewWithName(string? viewName, object? model = null) => SwapView(viewName, model);
+        public IActionResult TestSwapOobView(string targetId, string? viewName = null, object? model = null, string swapStrategy = "true") 
+            => SwapOobView(targetId, viewName, model, swapStrategy);
     }
 
     private static TestSwapController CreateControllerWithRequest(bool includeHxRequestHeader = false)
@@ -125,5 +127,104 @@ public class SwapControllerTests
         // Assert
         var viewResult = Assert.IsType<ViewResult>(result);
         Assert.Null(viewResult.ViewName); // Null means use conventional name
+    }
+
+    [Fact]
+    public void SwapOobView_ReturnsPartialViewResult()
+    {
+        // Arrange
+        var controller = CreateControllerWithRequest();
+        var model = new { Count = 5 };
+
+        // Act
+        var result = controller.TestSwapOobView("my-target", "MyView", model);
+
+        // Assert
+        var partialViewResult = Assert.IsType<PartialViewResult>(result);
+        Assert.Equal("MyView", partialViewResult.ViewName);
+        Assert.Equal(model, partialViewResult.Model);
+    }
+
+    [Fact]
+    public void SwapOobView_SetsViewDataWithOobAttributes()
+    {
+        // Arrange
+        var controller = CreateControllerWithRequest();
+
+        // Act
+        var result = controller.TestSwapOobView("cart-total");
+
+        // Assert
+        var partialViewResult = Assert.IsType<PartialViewResult>(result);
+        Assert.Equal("true", partialViewResult.ViewData["HxSwapOob"]);
+        Assert.Equal("cart-total", partialViewResult.ViewData["OobTargetId"]);
+    }
+
+    [Fact]
+    public void SwapOobView_WithCustomSwapStrategy_SetsCorrectViewData()
+    {
+        // Arrange
+        var controller = CreateControllerWithRequest();
+
+        // Act
+        var result = controller.TestSwapOobView("notifications", swapStrategy: "beforeend");
+
+        // Assert
+        var partialViewResult = Assert.IsType<PartialViewResult>(result);
+        Assert.Equal("beforeend", partialViewResult.ViewData["HxSwapOob"]);
+        Assert.Equal("notifications", partialViewResult.ViewData["OobTargetId"]);
+    }
+
+    [Fact]
+    public void SwapOobView_WithNullViewName_UsesConventionalName()
+    {
+        // Arrange
+        var controller = CreateControllerWithRequest();
+
+        // Act
+        var result = controller.TestSwapOobView("target-id", viewName: null);
+
+        // Assert
+        var partialViewResult = Assert.IsType<PartialViewResult>(result);
+        Assert.Null(partialViewResult.ViewName);
+    }
+
+    [Fact]
+    public void SwapOobView_WithNullModel_WorksCorrectly()
+    {
+        // Arrange
+        var controller = CreateControllerWithRequest();
+
+        // Act
+        var result = controller.TestSwapOobView("target-id", model: null);
+
+        // Assert
+        var partialViewResult = Assert.IsType<PartialViewResult>(result);
+        Assert.Null(partialViewResult.Model);
+        Assert.NotNull(partialViewResult.ViewData["HxSwapOob"]);
+        Assert.NotNull(partialViewResult.ViewData["OobTargetId"]);
+    }
+
+    [Theory]
+    [InlineData("true")]
+    [InlineData("innerHTML")]
+    [InlineData("outerHTML")]
+    [InlineData("beforebegin")]
+    [InlineData("afterbegin")]
+    [InlineData("beforeend")]
+    [InlineData("afterend")]
+    [InlineData("delete")]
+    [InlineData("none")]
+    public void SwapOobView_WithVariousSwapStrategies_SetsCorrectViewData(string strategy)
+    {
+        // Arrange
+        var controller = CreateControllerWithRequest();
+
+        // Act
+        var result = controller.TestSwapOobView("target", swapStrategy: strategy);
+
+        // Assert
+        var partialViewResult = Assert.IsType<PartialViewResult>(result);
+        Assert.Equal(strategy, partialViewResult.ViewData["HxSwapOob"]);
     }
 }

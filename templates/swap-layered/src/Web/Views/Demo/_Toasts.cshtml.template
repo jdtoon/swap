@@ -1,4 +1,4 @@
 @model string
-<div class="alert alert-success">
+<div class="notification is-success is-light">
   <span>@Model</span>
 </div>

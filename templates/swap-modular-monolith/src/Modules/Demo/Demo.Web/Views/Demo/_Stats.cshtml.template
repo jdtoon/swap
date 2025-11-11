@@ -1,15 +1,24 @@
-@model {{ProjectName}}.Modules.Demo.Module.StatsModel
-<div class="stats shadow">
-  <div class="stat">
-    <div class="stat-title">Total</div>
-    <div class="stat-value">@Model.Total</div>
+@model StatsModel
+<div class="level">
+  <div class="level-item has-text-centered">
+    <div>
+      <p class="heading">Total</p>
+      <p class="title">@Model.Total</p>
+      <p class="help">All todos</p>
+    </div>
   </div>
-  <div class="stat">
-    <div class="stat-title">Completed</div>
-    <div class="stat-value text-success">@Model.Completed</div>
+  <div class="level-item has-text-centered">
+    <div>
+      <p class="heading">Completed</p>
+      <p class="title has-text-success">@Model.Completed</p>
+      <p class="help">Done</p>
+    </div>
   </div>
-  <div class="stat">
-    <div class="stat-title">Pending</div>
-    <div class="stat-value text-warning">@Model.Pending</div>
+  <div class="level-item has-text-centered">
+    <div>
+      <p class="heading">Pending</p>
+      <p class="title">@Model.Pending</p>
+      <p class="help">Remaining</p>
+    </div>
   </div>
 </div>

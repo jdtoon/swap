@@ -5,25 +5,6 @@ using Microsoft.Extensions.Logging;
 namespace Swap.Htmx.Events;
 
 /// <summary>
-/// Chain resolution strategies controlling how configured edges are expanded at runtime.
-/// </summary>
-public enum ChainResolutionMode
-{
-    /// <summary>
-    /// Only immediate chained events are emitted (default).
-    /// </summary>
-    OneHop = 0,
-    /// <summary>
-    /// Treat edges as bidirectional for a single hop: if X→Y is configured, emitting Y also emits X.
-    /// </summary>
-    Bidirectional = 1,
-    /// <summary>
-    /// Expand directed edges transitively (breadth-first) up to MaxTransitiveDepth.
-    /// </summary>
-    Transitive = 2
-}
-
-/// <summary>
 /// Pending event captured during a request.
 /// </summary>
 internal sealed record SwapPendingEvent(string Name, object? Payload);
@@ -37,44 +18,23 @@ public class SwapEventBusOptions
     private IReadOnlyDictionary<string, IReadOnlyCollection<string>>? _snapshot;
 
     /// <summary>
-    /// Controls how chains are expanded at runtime.
-    /// OneHop (default): Only immediate chained events are emitted.
-    /// Bidirectional: Also emit reverse one-hop edges (if X->Y configured, Y emits X too).
-    /// Transitive: Expand directed edges breadth-first up to MaxTransitiveDepth.
-    /// </summary>
-    public ChainResolutionMode ResolutionMode { get; set; } = ChainResolutionMode.OneHop;
-
-    /// <summary>
-    /// Maximum depth for transitive expansion (>=1). Depth=1 equals OneHop semantics.
-    /// Only used when ResolutionMode is Transitive. Default: 2.
-    /// </summary>
-    public int MaxTransitiveDepth { get; set; } = 2;
-
-    /// <summary>
     /// Configure a chain from a trigger event to one or more chained events.
-    /// </summary>
-    public SwapEventBusOptions Chain(string trigger, params string[] chained)
-    {
-        if (string.IsNullOrWhiteSpace(trigger)) return this;
-        if (!Chains.TryGetValue(trigger, out var set))
-        {
-            set = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            Chains[trigger] = set;
-        }
-        foreach (var e in chained ?? Array.Empty<string>())
-        {
-            if (!string.IsNullOrWhiteSpace(e)) set.Add(e);
-        }
-        _snapshot = null; // invalidate snapshot
-        return this;
-    }
-
-    /// <summary>
-    /// Strongly-typed overload: configure a chain from a trigger event to one or more chained events.
+    /// When the trigger event is emitted, all chained events will also be included in the HX-Trigger response.
     /// </summary>
     public SwapEventBusOptions Chain(EventKey trigger, params EventKey[] chained)
     {
-        return Chain(trigger.Name, chained?.Select(c => c.Name).ToArray() ?? Array.Empty<string>());
+        if (string.IsNullOrWhiteSpace(trigger.Name)) return this;
+        if (!Chains.TryGetValue(trigger.Name, out var set))
+        {
+            set = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            Chains[trigger.Name] = set;
+        }
+        foreach (var e in chained ?? Array.Empty<EventKey>())
+        {
+            if (!string.IsNullOrWhiteSpace(e.Name)) set.Add(e.Name);
+        }
+        _snapshot = null; // invalidate snapshot
+        return this;
     }
 
     /// <summary>
@@ -161,19 +121,14 @@ public sealed class SwapEventDiagnostics
 
 internal static class SwapEventKeys
 {
-    public const string ActiveEvents = "Swap.ActiveEvents"; // HashSet<string>
     public const string PendingEvents = "Swap.PendingEvents"; // List<SwapPendingEvent>
 }
 
 public interface ISwapEventBus
 {
-    Task EmitAsync(string eventName, object? payload = null, CancellationToken ct = default);
-    void Emit(string eventName, object? payload = null);
-    void ClearPendingEvents();
-
-    // Strongly-typed overloads
     Task EmitAsync(EventKey eventKey, object? payload = null, CancellationToken ct = default);
     void Emit(EventKey eventKey, object? payload = null);
+    void ClearPendingEvents();
 }
 
 /// <summary>
@@ -193,20 +148,17 @@ public class SwapEventBus : ISwapEventBus
         _logger = logger;
     }
 
-    public Task EmitAsync(string eventName, object? payload = null, CancellationToken ct = default)
+    public Task EmitAsync(EventKey eventKey, object? payload = null, CancellationToken ct = default)
     {
-        Emit(eventName, payload);
+        Emit(eventKey, payload);
         return Task.CompletedTask;
     }
 
-    public Task EmitAsync(EventKey eventKey, object? payload = null, CancellationToken ct = default)
-        => EmitAsync(eventKey.Name, payload, ct);
-
-    public void Emit(string eventName, object? payload = null)
+    public void Emit(EventKey eventKey, object? payload = null)
     {
         var ctx = _http.HttpContext;
         if (ctx is null) return;
-        if (string.IsNullOrWhiteSpace(eventName)) return;
+        if (string.IsNullOrWhiteSpace(eventKey.Name)) return;
 
         var list = ctx.Items[SwapEventKeys.PendingEvents] as List<SwapPendingEvent>;
         if (list is null)
@@ -215,11 +167,9 @@ public class SwapEventBus : ISwapEventBus
             ctx.Items[SwapEventKeys.PendingEvents] = list;
         }
 
-        list.Add(new SwapPendingEvent(eventName, payload));
-        _logger?.LogDebug("[SwapEvents] Emitted: {Event}", eventName);
+        list.Add(new SwapPendingEvent(eventKey.Name, payload));
+        _logger?.LogDebug("[SwapEvents] Emitted: {Event}", eventKey.Name);
     }
-
-    public void Emit(EventKey eventKey, object? payload = null) => Emit(eventKey.Name, payload);
 
     public void ClearPendingEvents()
     {
@@ -228,104 +178,34 @@ public class SwapEventBus : ISwapEventBus
         ctx.Items.Remove(SwapEventKeys.PendingEvents);
     }
 
-    internal (IReadOnlyDictionary<string, object?> resolved, int beforeFilterCount) ResolveAndFilterFor(HttpContext context)
+    internal IReadOnlyDictionary<string, object?> ResolveChains(HttpContext context)
     {
         var pending = context.Items[SwapEventKeys.PendingEvents] as List<SwapPendingEvent>;
-        var active = context.Items[SwapEventKeys.ActiveEvents] as HashSet<string>;
 
         if (pending is null || pending.Count == 0)
         {
-            return (new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase), 0);
+            return new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
         }
 
-        // Resolve chains according to resolution mode
+        // Resolve chains: emit event + immediate chained events
         var resolved = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
 
-        switch (_options.ResolutionMode)
+        foreach (var p in pending)
         {
-            case ChainResolutionMode.OneHop:
-            default:
-                foreach (var p in pending)
-                {
-                    resolved[p.Name] = p.Payload; // last write wins
-                    if (_options.Chains.TryGetValue(p.Name, out var chained))
-                    {
-                        foreach (var c in chained)
-                        {
-                            if (!resolved.ContainsKey(c)) resolved[c] = null;
-                        }
-                    }
-                }
-                break;
-
-            case ChainResolutionMode.Bidirectional:
-                // One-hop in both directions: for an emitted event E,
-                // include Chains[E] and any triggers T where Chains[T] contains E.
-                foreach (var p in pending)
-                {
-                    resolved[p.Name] = p.Payload;
-
-                    if (_options.Chains.TryGetValue(p.Name, out var chained))
-                    {
-                        foreach (var c in chained)
-                        {
-                            if (!resolved.ContainsKey(c)) resolved[c] = null;
-                        }
-                    }
-
-                    // Reverse lookup (on the fly)
-                    foreach (var kv in _options.Chains)
-                    {
-                        if (kv.Value.Contains(p.Name))
-                        {
-                            if (!resolved.ContainsKey(kv.Key)) resolved[kv.Key] = null;
-                        }
-                    }
-                }
-                break;
-
-            case ChainResolutionMode.Transitive:
-                int maxDepth = Math.Max(1, _options.MaxTransitiveDepth);
-                foreach (var p in pending)
-                {
-                    resolved[p.Name] = p.Payload;
-
-                    var visited = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { p.Name };
-                    var queue = new Queue<(string node, int depth)>();
-                    queue.Enqueue((p.Name, 0));
-
-                    while (queue.Count > 0)
-                    {
-                        var (node, depth) = queue.Dequeue();
-                        if (depth >= maxDepth) continue;
-
-                        if (_options.Chains.TryGetValue(node, out var nexts))
-                        {
-                            foreach (var n in nexts)
-                            {
-                                if (!visited.Add(n)) continue;
-                                if (!resolved.ContainsKey(n)) resolved[n] = null;
-                                queue.Enqueue((n, depth + 1));
-                            }
-                        }
-                    }
-                }
-                break;
-        }
-
-        var beforeFilter = resolved.Count;
-
-        // Filter by active subscriptions if present
-        if (active is { Count: > 0 })
-        {
-            var filtered = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
-            foreach (var kvp in resolved)
+            resolved[p.Name] = p.Payload; // last write wins for duplicate events
+            
+            if (_options.Chains.TryGetValue(p.Name, out var chained))
             {
-                if (active.Contains(kvp.Key)) filtered[kvp.Key] = kvp.Value;
+                foreach (var c in chained)
+                {
+                    if (!resolved.ContainsKey(c))
+                    {
+                        resolved[c] = null; // chained events default to null payload
+                    }
+                }
             }
-            resolved = filtered;
         }
 
-        return (resolved, beforeFilter);
+        return resolved;
     }
 }

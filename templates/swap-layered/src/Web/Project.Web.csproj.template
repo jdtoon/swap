@@ -6,7 +6,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-  <PackageReference Include="Swap.Htmx" Version="0.3.1" />
+  <PackageReference Include="Swap.Htmx" Version="0.3.2" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.10">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -17,8 +17,4 @@
     <ProjectReference Include="..\Application\{{ProjectName}}.Application.csproj" />
     <ProjectReference Include="..\Infrastructure\{{ProjectName}}.Infrastructure.csproj" />
   </ItemGroup>
-
-  <Target Name="BuildCSS" BeforeTargets="Compile" Condition="Exists('package.json') and Exists('node_modules')">
-    <Exec Command="npm run build:css" />
-  </Target>
 </Project>

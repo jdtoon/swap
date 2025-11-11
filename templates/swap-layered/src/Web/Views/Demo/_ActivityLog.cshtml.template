@@ -1,5 +1,5 @@
 @model List<string>
-<ul class="list-disc pl-6">
+<ul>
 @foreach (var item in Model)
 {
   <li>@item</li>

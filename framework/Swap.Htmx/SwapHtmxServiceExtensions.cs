@@ -89,15 +89,11 @@ public static class SwapHtmxServiceExtensions
     }
 
     /// <summary>
-    /// Registers the Swap event middlewares. Must be added before MVC endpoints.
-    /// This wires:
-    /// - SwapEventContextMiddleware (reads X-Swap-Events and stores active subscriptions)
-    /// - SwapEventResponseMiddleware (builds HX-Trigger from pending events at end of pipeline)
+    /// Registers the Swap event middleware. Must be added before MVC endpoints.
+    /// This builds HX-Trigger headers from emitted events at the end of the request pipeline.
     /// </summary>
     public static IApplicationBuilder UseSwapHtmx(this IApplicationBuilder app)
     {
-        return app
-            .UseMiddleware<SwapEventContextMiddleware>()
-            .UseMiddleware<SwapEventResponseMiddleware>();
+        return app.UseMiddleware<SwapEventResponseMiddleware>();
     }
 }

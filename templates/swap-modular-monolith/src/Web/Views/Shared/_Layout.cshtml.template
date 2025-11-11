@@ -1,60 +1,70 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="light">
+<html lang="en">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - Modular Monolith Demo</title>
-    <link rel="stylesheet" href="~/css/app.min.css" asp-append-version="true" />
+    <title>@ViewData["Title"] - {{ProjectName}}</title>
+    <link rel="stylesheet" href="~/lib/bulma/css/bulma.min.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/htmx-toast.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/htmx-transitions.css" asp-append-version="true" />
-    <!-- Local HTMX via LibMan -->
     <script src="~/lib/htmx/htmx.min.js" asp-append-version="true"></script>
 </head>
 <body>
     <header>
-        <nav class="navbar bg-base-100 shadow-lg">
-            <div class="container mx-auto">
-                <div class="navbar-start">
-              <a class="btn btn-ghost text-xl"
-              href="/Home/Index"
-              hx-get="/Home/Index"
-                       hx-target="#main-content"
-                       hx-push-url="true">{{ProjectName}}</a>
-                    <ul class="menu menu-horizontal px-1 ml-2">
-               <li><a href="/Home/Index"
-                   hx-get="/Home/Index"
-                               hx-target="#main-content"
-                               hx-push-url="true">Home</a></li>
-               <li><a href="/Demo"
-                   hx-get="/Demo"
-                   hx-target="#main-content"
-                   hx-push-url="true">Demo</a></li>
-               <li><a href="/Components/Generic"
-                   hx-get="/Components/Generic"
-                   hx-target="#main-content"
-                   hx-push-url="true">Components</a></li>
-                    </ul>
+        <nav class="navbar is-dark" role="navigation" aria-label="main navigation">
+            <div class="container">
+                <div class="navbar-brand">
+                    <a class="navbar-item" 
+                       href="/" 
+                       hx-get="/" 
+                       hx-target="#main-content" 
+                       hx-push-url="true">
+                        <strong>{{ProjectName}}</strong>
+                    </a>
                 </div>
-                <div class="navbar-end">
-                    <!-- Authentication/UI controls placeholder -->
+                <div class="navbar-menu">
+                    <div class="navbar-start">
+                        <a class="navbar-item" 
+                           href="/" 
+                           hx-get="/" 
+                           hx-target="#main-content" 
+                           hx-push-url="true">Home</a>
+                        <a class="navbar-item" 
+                           href="/Demo" 
+                           hx-get="/Demo" 
+                           hx-target="#main-content" 
+                           hx-push-url="true">Demo</a>
+                        <a class="navbar-item" 
+                           href="/Components/Generic" 
+                           hx-get="/Components/Generic" 
+                           hx-target="#main-content" 
+                           hx-push-url="true">Components</a>
+                    </div>
+                    <div class="navbar-end">
+                        <!-- Authentication UI will go here -->
+                    </div>
                 </div>
             </div>
         </nav>
     </header>
 
-    <main id="main-content" class="container mx-auto p-4">
-        @RenderBody()
+    <main id="main-content" class="section">
+        <div class="container">
+            @RenderBody()
+        </div>
     </main>
 
-    <footer class="footer footer-center p-4 bg-base-300 text-base-content mt-8">
-        <aside>
-            <p>Built with <strong>Swap</strong> - Event-driven web development</p>
-        </aside>
+    <footer class="footer has-background-light mt-6">
+        <div class="content has-text-centered">
+            <p>
+                Built with <strong>Swap</strong> - Event-driven web development
+            </p>
+        </div>
     </footer>
 
     @await Html.PartialAsync("_ToastContainer")
 
     @await RenderSectionAsync("Scripts", required: false)
-    <script src="~/js/swap-events.js" asp-append-version="true"></script>
+    <script src="~/js/swap-toast.js" asp-append-version="true"></script>
 </body>
 </html>

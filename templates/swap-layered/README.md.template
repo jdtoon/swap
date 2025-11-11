@@ -1,108 +1,27 @@
-# {{ProjectName}}# {{ProjectName}} (Layered Solution)
+# {{ProjectName}} (Layered Solution)
 
+**Clean Architecture + HTMX + Bulma** — Production-ready layered solution with separation of concerns and event-driven UI updates.
 
+Use this when you want a clean separation of concerns, testable architecture, and a path to scale.
 
-**Clean Architecture + HTMX + DaisyUI** — Production-ready layered solution with separation of concerns and event-driven UI updates.Production-ready architecture with four projects and HTMX-native events. Use this when you want a clean separation of concerns and a path to scale.
+---
 
+## 🚀 Quickstart
 
-
----## What you get
-
-
-
-## 🚀 Quickstart- Four projects under `src/`: Web, Application, Domain, Infrastructure
-
-- Swap Event System wired with domain→ui chains
-
-```bash- HTMX 2.x + DaisyUI/Tailwind setup
-
-cd src/Web- EF Core DbContext/repositories in Infrastructure
-
-npm install && libman restore && npm run build:css- Real integration tests using Swap.Testing
-
-cd ../..- Dockerfile and docker-compose.yml under Web
-
+```bash
+cd src/Web
+libman restore
+cd ../..
 dotnet run --project src/Web
+```
 
-```## Solution layout
+Open **http://localhost:5000**
 
+---
 
+## 📦 What's Inside
 
-Open **http://localhost:5000**```
-
-{{ProjectName}}/
-
----├─ {{ProjectName}}.sln
-
-├─ src/
-
-## 📦 What's Inside│  ├─ Web/                 # ASP.NET Core MVC + HTMX + Swap
-
-│  │  ├─ Controllers/ Views/ wwwroot/ Events/ Extensions/
-
-### Project Structure│  │  ├─ appsettings*.json | Program.cs | {{ProjectName}}.Web.csproj
-
-│  │  ├─ Dockerfile | docker-compose.yml | libman.json | package.json
-
-```│  │  └─ tailwind.config.js
-
-{{ProjectName}}/│  ├─ Application/         # Use cases + abstractions (IEventBus, repos)
-
-├─ {{ProjectName}}.sln│  ├─ Domain/              # Entities + domain event names (pure)
-
-├─ src/│  └─ Infrastructure/      # EF Core DbContext + repository impls
-
-│  ├─ Web/                    # 🌐 Presentation Layer└─ test/
-
-│  │  ├─ Controllers/         # MVC controllers (thin, orchestrate use cases)   ├─ Unit/                # Application unit tests
-
-│  │  ├─ Views/               # Razor views + HTMX partials   └─ Integration/         # Web integration tests with Swap.Testing
-
-│  │  ├─ wwwroot/             # Static assets (CSS, JS, images)```
-
-│  │  ├─ Events/              # Swap event chains (domain → UI mapping)
-
-│  │  ├─ Extensions/          # Service registration, middleware## Architecture notes
-
-│  │  ├─ Program.cs           # App startup + middleware pipeline
-
-│  │  ├─ Dockerfile           # Multi-stage Docker build- Web talks to Application services (no DbContext in controllers)
-
-│  │  └─ docker-compose.yml   # Local dev orchestration- Application depends on Domain abstractions and raises events via IEventBus
-
-│  │- Web adapts IEventBus to Swap.Htmx, maps domain events to `ui.*` via chains
-
-│  ├─ Application/            # 🎯 Use Cases & Business Logic- UI listens via HTMX `hx-trigger` and swaps only the content area
-
-│  │  ├─ Services/            # Application services (orchestrate domain)
-
-│  │  ├─ Interfaces/          # Abstractions (IEventBus, ITodoService)In `Web/Program.cs` (excerpt):
-
-│  │  └─ DTOs/                # Data transfer objects
-
-│  │```csharp
-
-│  ├─ Domain/                 # 🧠 Core Business Domainbuilder.Services.AddSwapHtmx(events =>
-
-│  │  ├─ Entities/            # Domain models (TodoItem, etc.){
-
-│  │  ├─ Events/              # Domain event names (pure strings)	events.Chain(
-
-│  │  └─ Interfaces/          # Repository contracts		SwapEvents.Entity.Created("todo"),
-
-│  │		SwapEvents.UI.RefreshList,
-
-│  └─ Infrastructure/         # 🔧 Data Access & External Services		SwapEvents.UI.ShowToast);
-
-│     ├─ Data/                # EF Core DbContext});
-
-│     ├─ Repositories/        # Repository implementations```
-
-│     └─ Migrations/          # EF Core migrations
-
-│A view:
-
-└─ test/
+### Project Structure
 
    ├─ Unit/                   # Application logic unit tests```html
 

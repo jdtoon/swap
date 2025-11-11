@@ -7,5 +7,5 @@ public class SwapEventBusAdapter : IEventBus
 {
     private readonly ISwapEventBus _inner;
     public SwapEventBusAdapter(ISwapEventBus inner) { _inner = inner; }
-    public void Emit(string eventName, object? payload = null) => _inner.Emit(eventName, payload);
+    public void Emit(string eventName, object? payload = null) => _inner.Emit(new EventKey(eventName), payload);
 }

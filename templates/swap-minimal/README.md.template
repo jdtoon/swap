@@ -1,0 +1,115 @@
+# {{ProjectName}}
+
+> ⚡ **Minimal HTMX starter** — Zero NPM, zero config, pure velocity
+
+The simplest way to build modern web apps with ASP.NET Core + HTMX + Bulma. No build step, no node_modules, just pure server-rendered interactivity.
+
+## Features
+
+- ✅ **Zero NPM Dependencies** — Bulma & HTMX via LibMan (one command restore)
+- ✅ **Toast Notifications** — Built-in user feedback system
+- ✅ **Out-of-Band Swaps** — Update multiple page sections from one response
+- ✅ **Event System** — Declarative event chains for reactive UI
+- ✅ **SwapController** — Automatic full page vs partial detection
+
+## Getting Started
+
+### Prerequisites
+
+- .NET 9.0 or higher
+- LibMan CLI (optional, can use VS Code extension)
+
+### Run the Application
+
+```bash
+cd src
+dotnet restore
+libman restore
+dotnet run
+```
+
+Visit `https://localhost:5001` or `http://localhost:5000`
+
+## Project Structure
+
+```
+src/
+├── Controllers/          # MVC controllers inheriting from SwapController
+├── Views/               # Razor views
+│   ├── Home/
+│   ├── Shared/
+│   │   ├── _Layout.cshtml
+│   │   └── _ToastContainer.cshtml
+├── wwwroot/
+│   ├── css/
+│   │   └── htmx-toast.css
+│   └── lib/             # LibMan-managed libraries (Bulma, HTMX)
+├── Program.cs           # Application entry point
+├── libman.json          # Frontend dependencies
+└── appsettings.json
+```
+
+## Key Concepts
+
+### SwapController
+
+All controllers inherit from `SwapController`:
+
+```csharp
+public class HomeController : SwapController
+{
+    public IActionResult Index()
+    {
+        return SwapView(); // Auto-detects page vs partial
+    }
+}
+```
+
+### Toast Notifications
+
+```csharp
+Response.ShowSuccessToast("Item created!");
+Response.ShowErrorToast("Something went wrong");
+Response.ShowWarningToast("Please review");
+Response.ShowInfoToast("FYI...");
+```
+
+### Out-of-Band Swaps
+
+Update multiple elements in one response:
+
+```csharp
+// Main content
+var main = SwapView("Success");
+
+// Update badge in header
+ViewData["OobBadge"] = $@"
+    <span id=""badge"" hx-swap-oob=""innerHTML"">
+        {count}
+    </span>";
+
+return main;
+```
+
+### Event Chains
+
+Configure in `Program.cs`:
+
+```csharp
+builder.Services.AddSwapHtmx(events =>
+{
+    events.Chain(MyEvents.ItemCreated, 
+                 UiEvents.RefreshList, 
+                 UiEvents.ShowToast);
+});
+```
+
+## Documentation
+
+- [Swap.Htmx Documentation](https://github.com/jdtoon/swap)
+- [HTMX](https://htmx.org/)
+- [Bulma CSS](https://bulma.io/)
+
+## License
+
+MIT

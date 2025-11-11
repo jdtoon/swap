@@ -8,6 +8,13 @@
       "files": [
         "htmx.min.js"
       ]
+    },
+    {
+      "library": "bulma@1.0.4",
+      "destination": "wwwroot/lib/bulma",
+      "files": [
+        "css/bulma.min.css"
+      ]
     }
   ]
 }

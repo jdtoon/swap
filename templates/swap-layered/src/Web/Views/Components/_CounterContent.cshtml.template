@@ -2,12 +2,12 @@
 @{
   var name = (string)(ViewData["Name"] ?? "a");
 }
-<div class="flex items-center gap-3">
-  <div class="stat">
-    <div class="stat-title">Value</div>
-    <div class="stat-value">@Model</div>
+<div class="is-flex is-align-items-center">
+  <div class="mr-4">
+    <p class="heading">Value</p>
+    <p class="title is-3">@Model</p>
   </div>
-  <button class="btn btn-primary"
+  <button class="button is-primary"
           hx-post="/Components/Increment?name=@name">
     Increment @name.ToUpper()
   </button>

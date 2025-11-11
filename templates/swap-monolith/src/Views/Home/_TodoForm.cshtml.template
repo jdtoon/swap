@@ -1,12 +1,16 @@
 <form hx-post="/Home/AddTodo"
       hx-on::after-request="this.reset()"
-      class="flex gap-2 mb-4">
-  <input type="text"
-         name="title"
-         placeholder="What needs to be done?"
-         class="input input-bordered flex-1"
-         required />
-  <button type="submit" class="btn btn-primary">
-    Add
-  </button>
+      class="field has-addons mb-4">
+  <div class="control is-expanded">
+    <input type="text"
+           name="title"
+           placeholder="What needs to be done?"
+           class="input"
+           required />
+  </div>
+  <div class="control">
+    <button type="submit" class="button is-primary">
+      Add
+    </button>
+  </div>
 </form>

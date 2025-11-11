@@ -3,15 +3,16 @@
 [![NuGet](https://img.shields.io/nuget/v/Swap.Htmx.svg)](https://www.nuget.org/packages/Swap.Htmx/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-HTMX navigation framework for ASP.NET Core MVC applications. Provides a rigid, opinionated structure for building HTMX-powered applications with automatic page/partial detection, middleware enforcement, and extension methods.
+**Minimal HTMX framework for ASP.NET Core MVC** that provides automatic page/partial detection, toast notifications, out-of-band swaps, and a powerful event system for decoupling domain logic from UI updates.
 
 ## Features
 
-- **SwapController Base Class**: Automatically handles page vs partial rendering based on HX-Request header
-- **SwapView() Helper**: Single method that returns full page or partial view based on request type
-- **Middleware Enforcement**: Catches and reports full page responses when partials are expected
-- **Extension Methods**: Fluent API for working with HTMX request/response headers
-- **Zero Configuration**: Works out of the box with sensible defaults
+- ✅ **SwapController** - Automatic page vs partial rendering based on HX-Request header
+- ✅ **Toast Notifications** - Built-in success/error/warning/info toasts with zero JavaScript
+- ✅ **Out-of-Band Swaps** - Update multiple page sections in one response
+- ✅ **Event System** - Chain domain events to UI updates with static typing
+- ✅ **Middleware** - Validates responses and headers automatically
+- ✅ **Extension Methods** - Fluent API for HTMX headers and responses
 
 ## Installation
 
@@ -19,30 +20,22 @@ HTMX navigation framework for ASP.NET Core MVC applications. Provides a rigid, o
 dotnet add package Swap.Htmx
 ```
 
+> **📖 [Complete Setup Guide](./GETTING-STARTED.md)** - Step-by-step instructions for setting up toasts, OOB swaps, and all features
+
 ## Quick Start
 
-### 1. Register Services and Middleware
-
-In your `Program.cs`:
+### 1. Register Services & Middleware
 
 ```csharp
 var builder = WebApplication.CreateBuilder(args);
 
-// Add MVC and Swap.Htmx
 builder.Services.AddControllersWithViews();
-builder.Services.AddSwapHtmx(events =>
-{
-    // Example chain: when a product is created, refresh any list listening
-    events.Chain(Swap.Htmx.Events.SwapEvents.Entity.Created("product"),
-                 Swap.Htmx.Events.SwapEvents.UI.RefreshList);
-});
+builder.Services.AddSwapHtmx();
 
 var app = builder.Build();
 
-// Add middleware (after UseRouting, before MapControllers)
-app.UseRouting();
-app.UseSwapHtmx();       // Event context + response header builder
-app.UseSwapHtmxShell(); // Enforces partial responses for HTMX requests
+app.UseSwapHtmxShell(); // Validates HTMX responses
+app.UseSwapHtmx();      // Adds event handling middleware
 
 app.MapControllerRoute(
     name: "default",
@@ -51,571 +44,276 @@ app.MapControllerRoute(
 app.Run();
 ```
 
-### 2. Update Controllers
-
-Change your controllers to inherit from `SwapController` and use `SwapView()`:
+### 2. Create Controller
 
 ```csharp
-using Microsoft.AspNetCore.Mvc;
-using Swap.Htmx;
-
-public class ArticlesController : SwapController
+public class ProductController : SwapController
 {
-    private readonly Swap.Htmx.Events.ISwapEventBus _events;
-    private readonly AppDbContext _context;
-
-    public ArticlesController(AppDbContext context, Swap.Htmx.Events.ISwapEventBus events)
-    {
-        _context = context;
-        _events = events;
-    }
-
     public async Task<IActionResult> Index()
     {
-        var articles = await _context.Articles.ToListAsync();
-        return SwapView(articles); // Automatically returns partial or full view
+        var products = await _service.GetAllAsync();
+        return SwapView(products); // Auto-detects page vs partial
     }
-
-    public async Task<IActionResult> Details(int id)
+    
+    public async Task<IActionResult> Create(ProductDto dto)
     {
-        var article = await _context.Articles.FindAsync(id);
-        if (article == null) return NotFound();
+        await _service.CreateAsync(dto);
         
-        return SwapView(article); // Works for any action
-    }
-
-    [HttpPost]
-    public async Task<IActionResult> Create(Article article)
-    {
-        if (!ModelState.IsValid)
-            return SwapView("Create", article);
-
-        _context.Articles.Add(article);
-        await _context.SaveChangesAsync();
-        await _events.EmitAsync(Swap.Htmx.Events.SwapEvents.Entity.Created("article"), new { id = article.Id });
-        return SwapView("Details", article);
+        // Show success toast
+        Response.ShowSuccessToast("Product created!");
+        
+        return SwapView("Success");
     }
 }
 ```
 
-### 3. Update Views
+### 3. Create View
 
-**Index.cshtml** (Shell with nested loading):
-```html
-@model IEnumerable<Article>
+```razor
+@model List<Product>
 
-<div id="articles-container">
-    <h1>Articles</h1>
+<div id="product-list">
+    <h1>Products</h1>
     
-    <!-- Nested loading: content loads via HTMX -->
-    <div hx-get="/Articles/List" 
-         hx-trigger="load" 
-         hx-target="#articles-list"
-         hx-indicator="#loading">
-        <div id="loading">Loading articles...</div>
-    </div>
-    
-    <div id="articles-list"></div>
+    @foreach (var product in Model)
+    {
+        <div class="product-card">
+            <h3>@product.Name</h3>
+            <p>$@product.Price</p>
+            
+            <button hx-post="/products/delete/@product.Id" 
+                    hx-target="#product-list"
+                    hx-confirm="Delete this product?">
+                Delete
+            </button>
+        </div>
+    }
 </div>
 ```
 
-**List.cshtml** (Partial content):
-```html
-@model IEnumerable<Article>
+## Core Concepts
 
-@foreach (var article in Model)
+### SwapView() - Automatic Rendering
+
+`SwapView()` automatically returns the correct response type:
+
+```csharp
+public async Task<IActionResult> Details(int id)
 {
-    <div class="article-card">
-        <h2>
-            <a href="/Articles/Details/@article.Id"
-               hx-get="/Articles/Details/@article.Id"
-               hx-target="#main-content"
-               hx-push-url="true">
-                @article.Title
-            </a>
-        </h2>
-        <p>@article.Summary</p>
-    </div>
+    var product = await _service.GetAsync(id);
+    
+    // Initial page load: Returns View() with layout
+    // HTMX request: Returns PartialView() without layout
+    return SwapView("Details", product);
 }
 ```
 
-**_Layout.cshtml** (No hx-boost, explicit targets):
-```html
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="utf-8" />
-    <title>@ViewData["Title"] - My App</title>
-    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
-</head>
-<body>
-    <nav>
-        <a href="/" 
-           hx-get="/" 
-           hx-target="#main-content" 
-           hx-push-url="true">Home</a>
-        <a href="/Articles" 
-           hx-get="/Articles" 
-           hx-target="#main-content" 
-           hx-push-url="true">Articles</a>
-    </nav>
-    
-    <main id="main-content">
-        @RenderBody()
-    </main>
-</body>
-</html>
-```
+**How it works:**
+- Checks for `HX-Request` header
+- HTMX request → `PartialView()` (no layout)
+- Normal request → `View()` (with layout)
+- Adds `Vary: HX-Request` header for caching
 
-## How It Works
-### Event System (Filtered + Chained)
+### Toast Notifications
 
-Swap.Htmx includes a minimal event bus that:
-- Captures events you emit in controllers during a request
-- Resolves configured chains (e.g., product.created → ui.refreshList)
-- Filters to active client subscriptions from `X-Swap-Events`
-- Builds an `HX-Trigger` header automatically at response time
-
-Usage recap:
-- Register: `builder.Services.AddSwapHtmx(opts => opts.Chain(SwapEvents.Entity.Created("product"), SwapEvents.UI.RefreshList));`
-- Middleware: `app.UseSwapHtmx();`
-- Emit in controller: `await _events.EmitAsync(SwapEvents.Entity.Created("product"), new { id });`
-
-Client side, ensure your components declare the events they listen to and send the `X-Swap-Events` header with active subscriptions (a small helper script can do this automatically; see docs). If the header is missing, no filtering occurs and all emitted+chained events are sent.
-
-#### Chain resolution modes
-
-You can control how chains expand at runtime via an enum on options. Default is safest.
+Show user feedback with simple extension methods:
 
 ```csharp
-builder.Services.AddSwapHtmx(opts =>
+Response.ShowSuccessToast("Product saved!");
+Response.ShowErrorToast("Something went wrong!");
+Response.ShowWarningToast("Please review your changes.");
+Response.ShowInfoToast("Processing in background...");
+```
+
+**Features:**
+- 4 toast types with different colors
+- Auto-dismiss after 3 seconds
+- Configurable positioning (top-right, bottom-right, etc.)
+- Multiple toasts stack vertically
+- Pure HTMX - no JavaScript required
+
+[📖 Full Toast Documentation](./TOASTS.md)
+
+### Out-of-Band (OOB) Swaps
+
+Update multiple page sections in a single response:
+
+```csharp
+public async Task<IActionResult> AddToCart(int productId)
 {
-    // Chains (prefer typed backend keys)
-    opts.Chain(Swap.Htmx.Events.SwapEvents.Todo.Created,
-               Swap.Htmx.Events.SwapEvents.UI.Todo.RefreshList,
-               Swap.Htmx.Events.SwapEvents.UI.Stats.Refresh);
-
-    // Resolution defaults to OneHop (immediate children only)
-    opts.ResolutionMode = Swap.Htmx.Events.ChainResolutionMode.OneHop; // default
-
-    // Other strategies:
-    // opts.ResolutionMode = ChainResolutionMode.Bidirectional; // reverse one-hop (Y emits X when X->Y configured)
-    // opts.ResolutionMode = ChainResolutionMode.Transitive;    // expand breadth-first up to MaxTransitiveDepth
-    // opts.MaxTransitiveDepth = 2; // depth limit when Transitive
-});
+    await _cartService.AddItemAsync(productId);
+    
+    // Main content
+    var main = SwapView("ItemAdded");
+    
+    // Also update cart total in header (out-of-band)
+    var total = await _cartService.GetTotalAsync();
+    ViewData["OobCartTotal"] = $@"
+        <div id=""cart-total"" hx-swap-oob=""true"">
+            {total.ItemCount} items - ${total.Total}
+        </div>";
+    
+    return main;
+}
 ```
 
-Semantics:
-- OneHop: A → {B,C} means emitting A includes B and C only.
-- Bidirectional: A → B means emitting A includes B, and emitting B also includes A (one hop each way).
-- Transitive: A → B → C expands along edges up to the configured depth (depth=1 equals OneHop).
+**Common use cases:**
+- Update header badge counts
+- Refresh sidebar panels
+- Update multiple dashboard widgets
+- Sync item in list after editing details
 
-Guardrails: `Validate()` checks for invalid names and cycles at startup (Development), regardless of mode.
+[📖 Full OOB Swap Documentation](./OOB-SWAPS.md)
 
-### Strongly-typed backend event keys
+### Event System
 
-Backend code can (and should) use typed event keys via `EventKey` and the typed overloads for `Chain(...)`, `Emit(...)`, and `EmitAsync(...)`:
+Chain domain events to UI updates without coupling:
 
 ```csharp
-using Swap.Htmx.Events;
+// Define event keys (static typing enforced)
+public static class ProductEvents
+{
+    public static readonly EventKey Created = new("product.created");
+    public static readonly EventKey Updated = new("product.updated");
+}
 
+public static class UiEvents
+{
+    public static readonly EventKey RefreshList = new("ui.refreshList");
+    public static readonly EventKey ShowToast = new("ui.toast.success");
+}
+
+// Configure event chains
 builder.Services.AddSwapHtmx(events =>
 {
-    events.Chain(SwapEvents.Entity.Created("product"), SwapEvents.UI.RefreshList);
+    // When product is created, refresh list and show toast
+    events.Chain(ProductEvents.Created, 
+                 UiEvents.RefreshList, 
+                 UiEvents.ShowToast);
 });
 
-public class ArticlesController : SwapController
+// In controller, emit domain event
+public async Task<IActionResult> Create(ProductDto dto)
 {
-    private readonly ISwapEventBus _events;
-    public ArticlesController(ISwapEventBus events) => _events = events;
-
-    public async Task<IActionResult> Create(Article article)
-    {
-        // ...save...
-        await _events.EmitAsync(SwapEvents.Entity.Created("article"), new { id = article.Id });
-        return SwapView("Details", article);
-    }
+    await _service.CreateAsync(dto);
+    
+    // Emit domain event (triggers UI events via chain)
+    await _publisher.EmitAsync(ProductEvents.Created);
+    
+    return SwapView("Success");
 }
 ```
 
-There is also a Roslyn analyzer (`Swap.Htmx.Analyzers`) wired repo-wide that flags raw string usage in backend calls to `Chain`/`Emit` to help you avoid magic strings. Tests are suppressed by default. Note: HTML remains plain HTMX; you do not need to change attributes in markup.
-
-
-#### Client helper (swap-events.js)
-
-If you used the monolith template, include `/wwwroot/js/swap-events.js`. Otherwise, copy it from `templates/monolith/wwwroot/js/swap-events.js.template` into your app (rename to `swap-events.js`) and add it to your layout:
-
-```html
-<script src="/js/swap-events.js"></script>
-<script>
-    // Opt-in to events you care about on this page
-    SwapEvents.activate('ui.refreshList');
-    // Later: SwapEvents.deactivate('ui.refreshList');
-    // Advanced: SwapEvents.set(['ui.refreshList', 'ui.showToast']);
-    // Inspect current: SwapEvents.list()
-    // Clear all: SwapEvents.clear()
-    // The script will automatically set X-Swap-Events on HTMX requests.
-    </script>
-```
-
-
-### Automatic Page/Partial Detection
-
-`SwapView()` checks for the `HX-Request` header:
-
-- **HTMX Request** (header present): Returns `PartialView()` - no layout
-- **Normal Request** (initial load, refresh): Returns `View()` - with layout
-
-This means:
-- First page load → Full page with layout
-- Navigation via HTMX → Partial view swapped into target
-- Browser refresh → Full page with layout again
-- No manual detection needed in every action
-
-### Middleware Enforcement
-
-`SwapHtmxShellMiddleware` intercepts responses and checks:
-- If request has `HX-Request` header (excluding boosted requests)
-- If response is full HTML page (contains `<!DOCTYPE>`, `<html>`, `<head>`)
-- If so, returns helpful error message instead
-
-This catches common mistakes:
-- Using `View()` instead of `SwapView()`
-- Error pages returning full layout for HTMX requests
-- Accidental layout rendering
-
-### Navigation Pattern
-
-**Explicit HTMX Attributes** (not hx-boost):
-```html
-<a href="/Articles/Details/1"
-   hx-get="/Articles/Details/1"
-   hx-target="#main-content"
-   hx-push-url="true">
-    View Article
-</a>
-```
-
-## Server-side events (registrars and transports)
-
-Swap.Htmx supports a simple in-process registrar for domain/server events out of the box, and optional distributed delivery via a transport abstraction. Pick one of the DI setups below.
-
-### Local/dev (in-memory registrar)
-
-```csharp
-// Keeps everything in-process for demos and local development
-builder.Services.AddSwapServerEventChains();
-```
-
-### Distributed (uses a transport + distributed registrar)
-
-```csharp
-// 1) Choose a transport
-builder.Services.AddInMemoryServerEventTransport(); // local multi-registrar simulation
-// or RabbitMQ
-builder.Services.AddRabbitMqServerEventTransport(opts =>
-{
-    opts.HostName = "localhost";          // or broker host
-    opts.ExchangeName = "swap.events";    // topic exchange used for events
-    // opts.UserName = "guest"; opts.Password = "guest"; // as needed
-});
-
-// 2) Use the distributed registrar (publishes/consumes via transport)
-builder.Services.AddSwapServerEventChainsDistributed();
-```
-
-Notes:
-- Your modules still only depend on `Swap.Modularity.Abstractions.IEventChainRegistrar` and call `Register`/`PublishAsync` the same way.
-- The distributed registrar serializes payloads as JSON and includes a `ClrType` header to assist typed deserialization on the consumer side.
-- RabbitMQ transport uses a topic exchange (default `swap.events`) and a durable per-event-key queue by default.
-- You can switch between in-memory and distributed by changing only DI wiring; no module code changes required.
-
-Why explicit over hx-boost:
-- ✅ Clear intent - you see exactly what each link does
-- ✅ No conflicts between `hx-boost` and explicit `hx-target`
-- ✅ Per-link control over targets and behavior
-- ✅ Easier to debug and reason about
-
-### Nested Loading Pattern
-
-For progressive enhancement:
-
-```html
-<!-- Index page loads immediately -->
-<div id="articles-container">
-    <h1>Articles</h1>
-    
-    <!-- Content loads after page renders -->
-    <div hx-get="/Articles/List" 
-         hx-trigger="load">
-        Loading...
-    </div>
-</div>
-```
-
-Benefits:
-- Fast initial page load
-- Progressive content loading
-- Better perceived performance
-- Graceful degradation (content still loads without JS)
+[📖 Full Event System Documentation](./EVENTS.md)
 
 ## Extension Methods
 
-### Request Detection
+### Request Extensions
 
 ```csharp
-// Check if request is from HTMX
 if (Request.IsHtmxRequest())
 {
-    // Handle HTMX-specific logic
+    // Handle HTMX request
 }
 
-// Check if request is boosted
-if (Request.IsHtmxBoosted())
+if (Request.IsBoosted())
 {
     // Handle boosted request
 }
 
-// Get HTMX headers
-var currentUrl = Request.GetHtmxCurrentUrl();
-var currentUri = Request.GetHtmxCurrentUrlUri();
+var currentUrl = Request.GetCurrentUrl();
 var target = Request.GetHtmxTarget();
-var trigger = Request.GetHtmxTrigger();
-var triggerName = Request.GetHtmxTriggerName();
-var promptValue = Request.GetHtmxPrompt();
-
-// Navigation via back/forward (history restore)
-if (Request.IsHtmxHistoryRestoreRequest())
-{
-    // e.g., return cached fragment or fast path
-}
 ```
 
-### Response Headers
+### Response Extensions
 
 ```csharp
-// Trigger client-side event
-Response.HxTrigger("itemCreated");
+// Set HX-Redirect
+Response.HxRedirect("/products");
 
-// Trigger with JSON details
-Response.HxTriggerWithDetails("{\"showMessage\": {\"level\": \"info\"}}");
-
-// Or typed trigger with details (auto-serializes to { "event": { ...details... } })
-Response.HxTrigger("showMessage", new { level = "info", text = "Saved" });
-
-// Push URL to browser history
-Response.HxPushUrl($"/articles/{article.Id}");
-
-// Replace URL in history
-Response.HxReplaceUrl($"/articles/{article.Id}");
-
-// Client-side redirect
-Response.HxRedirect("/login");
-
-// Force full page refresh
+// Set HX-Refresh
 Response.HxRefresh();
 
-// Change target element
-Response.HxRetarget("#notification-area");
+// Set HX-Location with context
+Response.HxLocation("/products/details/1", new { target = "#main" });
 
-// Change swap strategy
-Response.HxReswap("beforebegin");
+// Trigger client-side events
+Response.HxTrigger("productUpdated");
+Response.HxTrigger(new { showModal = new { id = 123 } });
 
-// Or typed reswap options
-Response.HxReswap(new Swap.Htmx.Models.HxReswapOptions
-{
-    Style = Swap.Htmx.Models.HxSwapStyle.innerHTML,
-    Transition = true,
-    SwapDelay = 50,
-    SettleDelay = 50
-});
+// Set HX-Retarget
+Response.HxRetarget("#different-element");
 
-// HX-Location: string or typed options object
-Response.HxLocation("/inbox");
-Response.HxLocation(new Swap.Htmx.Models.HxLocationOptions
-{
-    Path = "/inbox",
-    Target = "#main",
-    Select = "#main",
-}.WithSwap(new Swap.Htmx.Models.HxReswapOptions { Style = Swap.Htmx.Models.HxSwapStyle.outerHTML }));
-
-// Stop polling this endpoint
-Response.HxStopPolling(); // returns HTTP 286
-
-// If content differs for HTMX vs non-HTMX, set Vary header
-Response.EnsureVaryHxRequest();
-
-// Fire events at specific lifecycle moments
-Response.HxTriggerAfterSwap("listRefreshed");
-Response.HxTriggerAfterSwapWithDetails("{\"listRefreshed\": { \"count\": 42 }}");
-Response.HxTriggerAfterSwap("listRefreshed", new { count = 42 });
-
-Response.HxTriggerAfterSettle("toast");
-Response.HxTriggerAfterSettleWithDetails("{\"toast\": { \"level\": \"success\" }}");
-Response.HxTriggerAfterSettle("toast", new { level = "success" });
+// Set HX-Reswap
+Response.HxReswap("outerHTML");
 ```
 
-## Architecture Benefits
+## Testing
 
-### Rigid Framework (Good Thing!)
+The framework includes comprehensive test coverage:
 
-Unlike copying code, using this package as a framework provides:
+- **38 Unit Tests** - Verify methods, headers, event chains
+- **16 E2E Tests** - Playwright tests in real browsers
+  - 6 toast tests
+  - 5 OOB swap tests  
+  - 4 combined feature tests
+  - 1 debug test
 
-1. **Consistency**: All controllers work the same way
-2. **Upgrades**: Bug fixes and improvements via package updates
-3. **Best Practices**: Enforces correct HTMX patterns
-4. **Team Alignment**: Everyone uses same approach
-5. **Less Boilerplate**: No repeated HX-Request checks
+```bash
+# Run unit tests
+cd framework/Swap.Htmx.Tests
+dotnet test
 
-### When to Use Embedded Code
-
-Use `--embed-htmx` flag in Swap CLI if you need:
-- Custom behavior beyond framework capabilities
-- Full control over every detail
-- No package dependencies
-- Maximum flexibility
-
-But for most apps, the package is better:
-- Less code to maintain
-- Automatic improvements
-- Proven patterns
-- Easier onboarding
-
-## Common Patterns
-
-### Form Submission
-
-```csharp
-[HttpPost]
-public async Task<IActionResult> Create(Article article)
-{
-    if (!ModelState.IsValid)
-    {
-        return SwapView("Create", article); // Re-render form with errors
-    }
-
-    _context.Articles.Add(article);
-    await _context.SaveChangesAsync();
-
-    Response.HxTrigger("articleCreated"); // Notify client
-    Response.HxPushUrl($"/articles/{article.Id}");
-    
-    return SwapView("Details", article);
-}
+# Run E2E tests (requires test app running)
+cd framework/Swap.Htmx.E2ETests
+dotnet test
 ```
 
-### Delete with Confirmation
+## Documentation
 
-```csharp
-[HttpDelete]
-public async Task<IActionResult> Delete(int id)
-{
-    var article = await _context.Articles.FindAsync(id);
-    if (article == null) return NotFound();
+### Getting Started
+- [Complete Setup Guide](./GETTING-STARTED.md) - Step-by-step setup for new projects
 
-    _context.Articles.Remove(article);
-    await _context.SaveChangesAsync();
+### Features
+- [Toast Notifications](./TOASTS.md) - Complete toast API and examples
+- [Out-of-Band Swaps](./OOB-SWAPS.md) - Multiple element updates
+- [Event System](./EVENTS.md) - Domain event → UI event chains
 
-    Response.HxTrigger("articleDeleted");
-    Response.HxRedirect("/articles"); // Redirect after delete
-    
-    return Ok();
-}
+### Reference
+- [Templates](./TEMPLATES.md) - Project templates and patterns
+- [E2E Testing](../Swap.Htmx.E2ETests/README.md) - Browser-based testing guide
+
+## Examples
+
+See the test app for complete working examples:
+
+```bash
+cd framework/Swap.Htmx.TestApp/src
+dotnet run
+# Visit http://localhost:5000/test
 ```
 
-### Inline Editing
+## Philosophy
 
-```csharp
-public async Task<IActionResult> EditInline(int id)
-{
-    var article = await _context.Articles.FindAsync(id);
-    return SwapView("_EditForm", article); // Return form partial
-}
+Swap.Htmx is **minimal by design**:
 
-[HttpPut]
-public async Task<IActionResult> UpdateInline(int id, Article article)
-{
-    if (!ModelState.IsValid)
-        return SwapView("_EditForm", article);
+1. **Automatic View Rendering** - `SwapView()` handles page vs partial logic
+2. **Domain→UI Event Mapping** - Emit domain events, UI updates follow
+3. **HTMX-Native** - Leverage HTMX's capabilities, don't fight them
+4. **Static Typing** - No magic strings for event names
 
-    _context.Update(article);
-    await _context.SaveChangesAsync();
+Everything else is just sensible defaults and extension methods.
 
-    Response.HxTrigger("articleUpdated");
-    return SwapView("_ArticleCard", article); // Return updated card
-}
-```
+## Requirements
 
-## Debugging
-
-### Middleware Error
-
-If you see "HTMX Shell Middleware Error", check:
-
-1. Controller inherits from `SwapController`
-2. Using `SwapView()` instead of `View()`
-3. Partial views don't specify layout
-4. Error handling returns partials for HTMX requests
-
-### Full Page Returned
-
-If HTMX requests get full pages:
-
-1. Check `HX-Request` header in browser DevTools
-2. Verify middleware is registered: `app.UseSwapHtmxShell()`
-3. Ensure middleware comes after `UseRouting()`
-4. Check controller inherits `SwapController`
-
-### Content Not Swapping
-
-If links don't work:
-
-1. Verify HTMX script is loaded
-2. Check `hx-target` selector is correct
-3. Ensure target element exists in DOM
-4. Check browser console for HTMX errors
-
-## Migration from Manual Implementation
-
-If you have existing code checking `HX-Request`:
-
-**Before:**
-```csharp
-public async Task<IActionResult> Index()
-{
-    var articles = await _context.Articles.ToListAsync();
-    
-    if (Request.Headers.ContainsKey("HX-Request"))
-        return PartialView(articles);
-    else
-        return View(articles);
-}
-```
-
-**After:**
-```csharp
-public async Task<IActionResult> Index()
-{
-    var articles = await _context.Articles.ToListAsync();
-    return SwapView(articles); // That's it!
-}
-```
-
-Change:
-1. Controller: `Controller` → `SwapController`
-2. Return: `View()` / `PartialView()` → `SwapView()`
-3. Remove: Manual `HX-Request` checks
-
-## Contributing
-
-Contributions are welcome! Please see the [main Swap repository](https://github.com/jdtoon/swap) for contribution guidelines.
+- .NET 8.0 or higher
+- ASP.NET Core MVC
+- HTMX 2.0+ (via CDN or npm)
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](https://github.com/jdtoon/swap/blob/main/LICENSE) file for details.
+MIT License - see [LICENSE](../../LICENSE) file for details.
 
-## Support
+## Contributing
 
-- 📖 [Documentation](https://github.com/jdtoon/swap/wiki)
-- 🐛 [Issue Tracker](https://github.com/jdtoon/swap/issues)
-- 💬 [Discussions](https://github.com/jdtoon/swap/discussions)
+See [CONTRIBUTING.md](../../CONTRIBUTING.md) for guidelines.

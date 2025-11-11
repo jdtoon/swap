@@ -1,8 +1,8 @@
 # {{ProjectName}}
 
-> 🚀 **Ready-to-ship HTMX powerhouse** — built with [Swap](https://github.com/jdtoon/swap)
+> 🚀 **Production-ready HTMX monolith** — built with [Swap](https://github.com/jdtoon/swap)
 
-Zero config. Zero ceremony. **Pure velocity.** This is ASP.NET Core + HTMX + DaisyUI done right, with a real event system, production-ready patterns, and tests that actually test your HTMX flows.
+Zero config. Zero ceremony. **Pure velocity.** This is ASP.NET Core + HTMX + Bulma done right, with a real event system, production-ready patterns, and tests that actually test your HTMX flows.
 
 Built for developers who want **maximum productivity** without sacrificing quality.
 
@@ -12,15 +12,11 @@ Built for developers who want **maximum productivity** without sacrificing quali
 
 ```bash
 cd src
+libman restore
 dotnet run
 ```
 
 Open **http://localhost:5000** and you're live. Everything just works.
-
-Want live CSS updates while you build?
-```bash
-npm run watch:css
-```
 
 ---
 
@@ -31,7 +27,7 @@ This isn't just another template. You get:
 ### **Core Stack**
 - 🎨 **ASP.NET Core 9 MVC** — Server-rendered, fast, reliable
 - ⚡ **HTMX 2.x** — Modern interactions without JavaScript complexity
-- 🌸 **DaisyUI + Tailwind** — Beautiful UI, zero custom CSS needed
+- 🌸 **Bulma CSS** — Beautiful UI, zero build step, zero NPM
 - 💾 **Entity Framework Core 9** — SQLite by default (swap to SQL Server/Postgres in seconds)
 
 ### **Developer Experience**
@@ -39,6 +35,7 @@ This isn't just another template. You get:
 - ✅ **Real Integration Tests** — Test your HTMX partials like a user would
 - 🐳 **Docker Ready** — `docker compose up` and you're in production mode
 - 🛠️ **CLI Generators** — Scaffold models, controllers, full CRUD in one command
+- 📦 **Zero NPM** — LibMan manages HTMX & Bulma, no node_modules bloat
 
 ### **Production Ready**
 - 📦 Containerized builds with multi-stage Dockerfile
@@ -46,6 +43,7 @@ This isn't just another template. You get:
 - 🗄️ Auto-migrations on startup (Development only)
 - 🌱 Smart seeding system with locale support
 - 📊 Built-in health checks and diagnostics
+- 🎨 Bulma CSS via LibMan (no build step required)
 
 ---
 
@@ -68,17 +66,15 @@ Clean. Organized. **No mystery folders.**
 │  │  ├─ Demo/                   # Event system playground
 │  │  └─ Components/             # Generic components (counter, panels)
 │  ├─ wwwroot/                   # Static files (CSS, JS, images)
-│  │  ├─ css/app.css             # 👈 Tailwind output (generated)
+│  │  ├─ css/                    # Custom styles
 │  │  ├─ js/                     # Client-side helpers
-│  │  └─ lib/                    # HTMX, DaisyUI (managed by LibMan)
+│  │  └─ lib/                    # HTMX, Bulma (managed by LibMan)
 │  ├─ Extensions/                # Helper methods (Session, etc.)
 │  ├─ Infrastructure/            # Framework plumbing (model binders, etc.)
 │  ├─ Program.cs                 # 👈 App entry point
 │  ├─ appsettings.json           # Configuration
 │  ├─ {{ProjectName}}.csproj     # Project file
-│  ├─ package.json               # npm (Tailwind build)
-│  ├─ libman.json                # LibMan (HTMX, DaisyUI)
-│  ├─ tailwind.config.js         # Tailwind + DaisyUI config
+│  ├─ libman.json                # LibMan (HTMX, Bulma)
 │  └─ Dockerfile                 # Production container
 │
 ├─ tests/                        # 👈 Real tests
@@ -217,8 +213,7 @@ docker run -d \
 ```
 
 **Multi-stage Dockerfile** includes:
-- ✅ Node.js for Tailwind CSS build
-- ✅ LibMan for HTMX/DaisyUI
+- ✅ LibMan for HTMX/Bulma restoration
 - ✅ Optimized production build
 - ✅ Non-root runtime user
 - ✅ Health checks
@@ -259,46 +254,44 @@ swap g c Orders --fields "OrderNumber:string Total:decimal Status:string"
 
 ---
 
-## 🎨 Styling with DaisyUI
+## 🎨 Styling with Bulma
 
-Beautiful UI out of the box. **No design skills required.**
+Beautiful UI out of the box. **No design skills required. No build step.**
 
-### Pre-configured themes:
-- 🌞 `light` (default)
-- 🌙 `dark`
-- 🌸 `cupcake`
-- 🎃 `halloween`
-- ...and 20+ more
+Bulma is a modern CSS framework with clean, semantic class names and responsive design built-in.
 
-Change theme in `tailwind.config.js`:
+### Common Components
 
-```js
-module.exports = {
-  daisyui: {
-    themes: ["light", "dark", "cyberpunk"], // 👈 Add your favorites
-  },
-}
-```
-
-### Theme switcher (built-in):
 ```html
-<div class="navbar">
-  <select class="select" data-choose-theme>
-    <option value="light">Light</option>
-    <option value="dark">Dark</option>
-    <option value="cyberpunk">Cyberpunk</option>
-  </select>
+<!-- Buttons -->
+<button class="button is-primary">Primary Action</button>
+<button class="button is-success">Success</button>
+
+<!-- Cards -->
+<div class="card">
+  <div class="card-content">
+    <p class="title">Card Title</p>
+    <p class="subtitle">Card subtitle</p>
+  </div>
+</div>
+
+<!-- Forms -->
+<div class="field">
+  <label class="label">Email</label>
+  <div class="control">
+    <input class="input" type="email" placeholder="email@example.com">
+  </div>
 </div>
 ```
 
-**Components you get:**
-- Buttons, cards, modals, badges, alerts
-- Form inputs with built-in validation styles
+**What you get:**
 - Responsive navbar and footer
-- Toast notifications
-- Loading states
+- Form inputs with built-in validation styles
+- Buttons, cards, modals, notifications
+- Flexbox-based columns and layout
+- Toast notifications (custom + Bulma styled)
 
-Browse all components: [daisyui.com/components](https://daisyui.com/components/)
+Browse all components: [bulma.io/documentation](https://bulma.io/documentation/)
 
 ---
 
@@ -316,11 +309,6 @@ Deep dives on architecture, patterns, and workflows:
 ---
 
 ## 🔥 Development Tips
-
-### Auto-rebuild CSS on save:
-```bash
-npm run watch:css
-```
 
 ### View live event chains:
 Visit **http://localhost:5000/_swap/dev/events** (Development only)

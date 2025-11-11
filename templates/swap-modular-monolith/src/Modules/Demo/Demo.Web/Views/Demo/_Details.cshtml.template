@@ -1,14 +1,27 @@
-@model IReadOnlyList<string>
-<ul class="list-disc list-inside">
-  @if (Model == null || Model.Count == 0)
-  {
-    <li class="italic text-gray-500">No notes yet.</li>
-  }
-  else
-  {
-    @foreach (var n in Model)
+@model List<string>
+<div>
+  <form class="field has-addons" hx-post="/Demo/AddNote" hx-target="#details">
+    <div class="control is-expanded">
+      <input type="text" name="text" class="input" placeholder="New note..." required />
+    </div>
+    <div class="control">
+      <button type="submit" class="button is-primary">Add Note</button>
+    </div>
+  </form>
+
+  <div class="mt-4 content">
+    @if (Model.Count == 0)
     {
-      <li>@n</li>
+      <p class="has-text-grey">No notes yet.</p>
     }
-  }
-</ul>
+    else
+    {
+      <ul>
+        @foreach (var n in Model)
+        {
+          <li>@n</li>
+        }
+      </ul>
+    }
+  </div>
+</div>

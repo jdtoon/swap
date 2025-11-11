@@ -1,12 +1,6 @@
 # Build stage
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 
-# Install Node.js for Tailwind CSS build
-RUN apt-get update && apt-get install -y curl && \
-    curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
-    apt-get install -y nodejs && \
-    rm -rf /var/lib/apt/lists/*
-
 # Install LibMan CLI globally
 RUN dotnet tool install -g Microsoft.Web.LibraryManager.Cli
 
@@ -25,11 +19,9 @@ RUN dotnet restore "Web/{{ProjectName}}.Web.csproj"
 # Copy the rest of the source code
 COPY . .
 
-# Build frontend assets
+# Build frontend assets (LibMan only - Bulma + HTMX)
 WORKDIR /work/Web
-RUN npm install
 RUN libman restore
-RUN npm run build:css
 
 # Build and publish the application
 RUN dotnet publish "{{ProjectName}}.Web.csproj" -c Release -o /app/publish /p:UseAppHost=false
