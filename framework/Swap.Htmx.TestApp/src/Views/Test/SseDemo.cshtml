@@ -1,0 +1,23 @@
+@{
+    ViewData["Title"] = "SSE Test";
+}
+
+<div class="container">
+    <section class="section">
+        <h1 class="title">Server-Sent Events (SSE) Test</h1>
+        <p class="subtitle">Real-time HTML streaming with HTMX</p>
+
+        <div class="box">
+            <div class="buttons">
+                <button class="button is-primary" 
+                        id="start-sse"
+                        hx-get="/test/sse/connect"
+                        hx-swap="outerHTML">
+                    Start SSE Stream
+                </button>
+            </div>
+        </div>
+
+        <div id="sse-notifications"></div>
+    </section>
+</div>

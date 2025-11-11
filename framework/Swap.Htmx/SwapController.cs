@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Swap.Htmx.ServerSentEvents;
 
 namespace Swap.Htmx;
 
@@ -99,5 +100,36 @@ public abstract class SwapController : Controller
         ViewData["HxSwapOob"] = swapStrategy;
         ViewData["OobTargetId"] = targetId;
         return PartialView(viewName, model);
+    }
+
+    /// <summary>
+    /// Creates a Server-Sent Events (SSE) connection for streaming real-time HTML updates to the client.
+    /// Use with HTMX's hx-sse attribute to receive live updates.
+    /// </summary>
+    /// <param name="handler">The async function that streams events using the ServerSentEventStream.</param>
+    /// <returns>An IActionResult that establishes and maintains an SSE connection.</returns>
+    /// <example>
+    /// <code>
+    /// public IActionResult LiveFeed()
+    /// {
+    ///     return ServerSentEvents(async (stream, ct) =>
+    ///     {
+    ///         // Send initial state
+    ///         await stream.SendEventAsync("initial", "&lt;div&gt;Connected&lt;/div&gt;");
+    ///         
+    ///         // Stream updates periodically
+    ///         while (!ct.IsCancellationRequested)
+    ///         {
+    ///             await Task.Delay(1000, ct);
+    ///             var html = $"&lt;div&gt;Update at {DateTime.Now}&lt;/div&gt;";
+    ///             await stream.SendEventAsync("update", html);
+    ///         }
+    ///     });
+    /// }
+    /// </code>
+    /// </example>
+    protected IActionResult ServerSentEvents(Func<ServerSentEventStream, CancellationToken, Task> handler)
+    {
+        return new ServerSentEventsResult(handler);
     }
 }
