@@ -6,7 +6,7 @@
   <div class="column is-half">
     <section class="box">
       <h2 class="title is-4">Create Todo (emits todo.created)</h2>
-      <form hx-post="/Home/AddTodo" hx-target="#todo-list" class="field has-addons">
+      <form hx-post="/todos/ui/add" hx-target="#todo-list" class="field has-addons">
         <div class="control is-expanded">
           <input type="text" name="title" class="input" placeholder="New task title" required />
         </div>
