@@ -1,3 +1,5 @@
+using Swap.Htmx.Events;
+
 namespace {{ProjectName}}.Web.Events;
 
 public static class EventNames
@@ -5,13 +7,13 @@ public static class EventNames
     // UI event names belong to the Web layer
     public static class Ui
     {
-        public const string TodoRefreshList = "ui.todo.refreshList";
-        public const string ToastSuccess = "ui.toast.success";
-        public const string StatsRefresh = "ui.stats.refresh";
-        public const string ActivityAppend = "ui.activity.append";
-        public const string DetailsRefresh = "ui.details.refresh";
-        public const string SummaryRefresh = "ui.summary.refresh";
-        public const string ComponentARefresh = "ui.components.a.refresh";
-        public const string ComponentBRefresh = "ui.components.b.refresh";
+        public static readonly EventKey TodoRefreshList = new("ui.todo.refreshList");
+        public static readonly EventKey ToastSuccess = new("ui.toast.success");
+        public static readonly EventKey StatsRefresh = new("ui.stats.refresh");
+        public static readonly EventKey ActivityAppend = new("ui.activity.append");
+        public static readonly EventKey DetailsRefresh = new("ui.details.refresh");
+        public static readonly EventKey SummaryRefresh = new("ui.summary.refresh");
+        public static readonly EventKey ComponentARefresh = new("ui.components.a.refresh");
+        public static readonly EventKey ComponentBRefresh = new("ui.components.b.refresh");
     }
 }

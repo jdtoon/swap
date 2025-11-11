@@ -1,10 +1,10 @@
-@model List<{{ProjectName}}.Application.Dtos.TodoItemDto>
+@model List<TodoItem>
 
 <div id="todo-list">
-    <ul class="space-y-2">
+    <ul>
         @if (Model == null || !Model.Any())
         {
-            <li class="text-gray-500 italic">No todos yet. Add one above!</li>
+            <li class="has-text-grey-light is-italic">No todos yet. Add one above!</li>
         }
         else
         {

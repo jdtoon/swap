@@ -1,22 +1,24 @@
-@model {{ProjectName}}.Application.Dtos.TodoItemDto
+@model TodoItem
 
-<li id="todo-item-@Model.Id" class="flex items-center gap-2 p-3 bg-base-200 rounded-lg">
-    <input type="checkbox" 
-           class="checkbox checkbox-primary"
-           @(Model.IsComplete ? "checked" : "")
-           hx-post="@Url.Action("ToggleItem", new { id = Model.Id })"
-           hx-target="closest li"
-           hx-swap="outerHTML" />
-    
-    <span class="flex-1 @(Model.IsComplete ? "line-through text-gray-500" : "")">
-        @Model.Title
-    </span>
-    
-    <button class="btn btn-sm btn-error" type="button"
-            hx-delete="@Url.Action("DeleteItem", new { id = Model.Id })"
-            hx-target="closest li"
-            hx-swap="delete"
-            hx-confirm="Are you sure?">
-        Delete
-    </button>
+<li id="todo-item-@Model.Id" class="box mb-2 p-3">
+    <div class="is-flex is-align-items-center">
+        <input type="checkbox" 
+               class="mr-3"
+               @(Model.IsComplete ? "checked" : "")
+               hx-post="@Url.Action("ToggleItem", new { id = Model.Id })"
+               hx-target="closest li"
+               hx-swap="outerHTML" />
+        
+        <span class="is-flex-grow-1 @(Model.IsComplete ? "has-text-grey" : "")" style="@(Model.IsComplete ? "text-decoration: line-through;" : "")">
+            @Model.Title
+        </span>
+        
+        <button class="button is-small is-danger" type="button"
+                hx-delete="@Url.Action("DeleteItem", new { id = Model.Id })"
+                hx-target="closest li"
+                hx-swap="delete"
+                hx-confirm="Are you sure?">
+            Delete
+        </button>
+    </div>
 </li>

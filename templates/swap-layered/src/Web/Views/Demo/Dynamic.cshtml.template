@@ -2,20 +2,20 @@
     ViewData["Title"] = "Dynamic Components";
 }
 
-<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-  <section class="card bg-base-100 shadow">
-    <div class="card-body">
-  <h2 class="card-title">Summary</h2>
-  @await Html.PartialAsync("~/Views/Demo/_SummaryPanel.cshtml")
-      <p class="text-sm text-base-content/60 mt-2">Updates when notes are added in the Details panel.</p>
-    </div>
-  </section>
+<div class="columns is-multiline">
+  <div class="column is-half">
+    <section class="box">
+      <h2 class="title is-4">Summary</h2>
+      @await Html.PartialAsync("~/Views/Demo/_SummaryPanel.cshtml")
+      <p class="help has-text-grey mt-2">Updates when notes are added in the Details panel.</p>
+    </section>
+  </div>
 
-  <section class="card bg-base-100 shadow">
-    <div class="card-body">
-  <h2 class="card-title">Details</h2>
-  @await Html.PartialAsync("~/Views/Demo/_DetailsPanel.cshtml")
-      <p class="text-sm text-base-content/60 mt-2">This panel is injected after page load and listens for <code>ui.details.refresh</code>.</p>
-    </div>
-  </section>
+  <div class="column is-half">
+    <section class="box">
+      <h2 class="title is-4">Details</h2>
+      @await Html.PartialAsync("~/Views/Demo/_DetailsPanel.cshtml")
+      <p class="help has-text-grey mt-2">This panel is injected after page load and listens for <code>ui.details.refresh</code>.</p>
+    </section>
+  </div>
 </div>

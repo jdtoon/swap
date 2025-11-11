@@ -1,1 +1,1 @@
-<div id="activity" hx-get="/Demo/ActivityLog" hx-trigger="load, ui.activity.append from:body" hx-target="this" hx-swap="innerHTML" class="space-y-1">Loading…</div>
+<div id="activity" hx-get="/Demo/ActivityLog" hx-trigger="load, ui.activity.append from:body" hx-target="this" hx-swap="innerHTML" class="content">Loading…</div>

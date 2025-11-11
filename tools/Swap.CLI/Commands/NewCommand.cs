@@ -180,18 +180,20 @@ public static class NewCommand
             AnsiConsole.MarkupLine("  dotnet ef migrations add InitialCreate");
             AnsiConsole.MarkupLine("  dotnet ef database update");
         }
-        else if (isLayered || isModular)
+        else if (isLayered)
+        {
+            AnsiConsole.MarkupLine($"  cd {name}/src/Web");
+            AnsiConsole.MarkupLine("  libman restore");
+            AnsiConsole.MarkupLine($"  cd ../..");
+            AnsiConsole.MarkupLine("  dotnet ef migrations add InitialCreate -p src/Infrastructure -s src/Web");
+            AnsiConsole.MarkupLine("  dotnet ef database update -p src/Infrastructure -s src/Web");
+        }
+        else if (isModular)
         {
             AnsiConsole.MarkupLine($"  cd {name}/src/Web");
             AnsiConsole.MarkupLine("  npm install");
             AnsiConsole.MarkupLine("  libman restore");
             AnsiConsole.MarkupLine("  npm run build:css");
-            if (!isModular)
-            {
-                AnsiConsole.MarkupLine($"  cd ../..");
-                AnsiConsole.MarkupLine("  dotnet ef migrations add InitialCreate -p src/Infrastructure -s src/Web");
-                AnsiConsole.MarkupLine("  dotnet ef database update -p src/Infrastructure -s src/Web");
-            }
         }
         else
         {
@@ -357,8 +359,10 @@ public static class NewCommand
                 ? Path.Combine(projectPath, "src", "Web") 
                 : Path.Combine(projectPath, "src");
             
-            // Templates without NPM: minimal and monolith (now using Bulma via LibMan)
-            var hasNpm = !isMinimal && template != "swap-monolith" && template != "monolith";
+            // Templates without NPM: minimal, monolith, and layered (now using Bulma via LibMan)
+            var hasNpm = !isMinimal 
+                && template != "swap-monolith" && template != "monolith"
+                && template != "swap-layered" && template != "layered";
             
             if (hasNpm)
             {
