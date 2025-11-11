@@ -1,4 +1,4 @@
-@model List<TodoItem>
+@model List<{{ProjectName}}.Application.Dtos.TodoItemDto>
 
 <div id="todo-list">
     <ul>
