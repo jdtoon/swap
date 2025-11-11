@@ -4,16 +4,29 @@
 
 <div class="content">
     <h1 class="title is-1">Swap.Htmx Framework Tests</h1>
-    <p class="subtitle">Manual testing for toasts, OOB swaps, SSE, and other features</p>
+    <p class="subtitle">Manual testing for toasts, OOB swaps, SSE, WebSockets, and other features</p>
 
     <!-- Server-Sent Events -->
     <section class="section">
         <h2 class="title is-3">Server-Sent Events (SSE)</h2>
         <div class="box">
-            <p class="mb-4">Real-time HTML streaming from server to client using SSE.</p>
+            <p class="mb-4">Real-time HTML streaming from server to client using SSE (server → client only).</p>
             <div class="buttons">
                 <a class="button is-primary" href="/test/sse">
                     Go to SSE Demo
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- WebSockets -->
+    <section class="section">
+        <h2 class="title is-3">WebSockets</h2>
+        <div class="box">
+            <p class="mb-4">Bidirectional real-time communication with WebSockets (client ↔ server).</p>
+            <div class="buttons">
+                <a class="button is-link" href="/test/websocket">
+                    Go to WebSocket Chat Demo
                 </a>
             </div>
         </div>

@@ -144,4 +144,12 @@ public class TestController : SwapController
             await stream.SendEventAsync("close", "done");
         });
     }
+
+    // WebSocket Tests
+    
+    [HttpGet("/test/websocket")]
+    public IActionResult WebSocketDemo()
+    {
+        return SwapView();
+    }
 }
