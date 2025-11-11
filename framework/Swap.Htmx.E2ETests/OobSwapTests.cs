@@ -36,13 +36,9 @@ public class OobSwapTests : PageTest
     public async Task OobMultiple_UpdatesAllTargetElements()
     {
         // Arrange - Verify initial states
-        var panel1 = Page.Locator("[data-test-id='panel-1']");
-        var panel2 = Page.Locator("[data-test-id='panel-2']");
-        var panel3 = Page.Locator("[data-test-id='panel-3']");
-
-        var initial1 = await panel1.TextContentAsync();
-        var initial2 = await panel2.TextContentAsync();
-        var initial3 = await panel3.TextContentAsync();
+        var initial1 = await Page.Locator("[data-test-id='panel-1']").TextContentAsync();
+        var initial2 = await Page.Locator("[data-test-id='panel-2']").TextContentAsync();
+        var initial3 = await Page.Locator("[data-test-id='panel-3']").TextContentAsync();
 
         Assert.That(initial1, Does.Contain("Panel 1"));
         Assert.That(initial2, Does.Contain("Panel 2"));
@@ -51,16 +47,16 @@ public class OobSwapTests : PageTest
         // Act - Click update button
         await Page.Locator("[data-test-id='oob-multiple']").ClickAsync(new() { Force = true });
 
-        // Assert - Wait for all panels to update
-        await Task.Delay(500);
+        // Assert - Wait for HTMX to complete and verify all panels updated
+        await Page.WaitForTimeoutAsync(1000);
 
-        var updated1 = await panel1.TextContentAsync();
-        var updated2 = await panel2.TextContentAsync();
-        var updated3 = await panel3.TextContentAsync();
+        var updated1 = await Page.Locator("[data-test-id='panel-1']").TextContentAsync();
+        var updated2 = await Page.Locator("[data-test-id='panel-2']").TextContentAsync();
+        var updated3 = await Page.Locator("[data-test-id='panel-3']").TextContentAsync();
 
-        Assert.That(updated1, Does.Contain("Panel 1 Updated"));
-        Assert.That(updated2, Does.Contain("Panel 2 Updated"));
-        Assert.That(updated3, Does.Contain("Panel 3 Updated"));
+        Assert.That(updated1, Does.Contain("Panel 1 updated"));
+        Assert.That(updated2, Does.Contain("Panel 2 updated"));
+        Assert.That(updated3, Does.Contain("Panel 3 updated"));
     }
 
     [Test]
@@ -88,20 +84,19 @@ public class OobSwapTests : PageTest
     public async Task OobCounter_IncrementMultipleTimes()
     {
         // Arrange - Get initial value
-        var counter = Page.Locator("[data-test-id='counter-display']");
-        var initialValueText = await counter.TextContentAsync();
+        var initialValueText = await Page.Locator("[data-test-id='counter-display']").TextContentAsync();
         var initialValue = int.Parse(initialValueText!.Replace("Count:", "").Trim());
 
         // Act - Click button 3 times
         for (int i = 0; i < 3; i++)
         {
             await Page.Locator("[data-test-id='oob-counter']").ClickAsync(new() { Force = true });
-            await Task.Delay(300);
+            await Page.WaitForTimeoutAsync(500);
         }
 
         // Assert - Counter should be +3
-        var finalValueText = await counter.TextContentAsync();
-        var finalValue = int.Parse(finalValueText!.Replace("Counter:", "").Trim());
+        var finalValueText = await Page.Locator("[data-test-id='counter-display']").TextContentAsync();
+        var finalValue = int.Parse(finalValueText!.Replace("Count:", "").Trim());
 
         Assert.That(finalValue, Is.EqualTo(initialValue + 3));
     }
@@ -109,20 +104,16 @@ public class OobSwapTests : PageTest
     [Test]
     public async Task OobSwap_DoesNotAffectMainSwapTarget()
     {
-        // Arrange - Get main content area (oob-result div)
-        var mainContent = Page.Locator("[data-test-id='oob-result']");
-        
         // Act - Trigger OOB update (single update)
         await Page.Locator("[data-test-id='oob-single']").ClickAsync(new() { Force = true });
-        await Task.Delay(500);
+        await Page.WaitForTimeoutAsync(1000);
 
         // Assert - Main target should have content
-        var mainText = await mainContent.TextContentAsync();
+        var mainText = await Page.Locator("[data-test-id='oob-result']").TextContentAsync();
         Assert.That(mainText, Does.Contain("Primary content"));
 
         // OOB target should have changed independently
-        var oobTarget = Page.Locator("[data-test-id='secondary-panel']");
-        var oobContent = await oobTarget.TextContentAsync();
-        Assert.That(oobContent, Does.Contain("Updated"));
+        var oobContent = await Page.Locator("[data-test-id='secondary-panel']").TextContentAsync();
+        Assert.That(oobContent, Does.Contain("updated"));
     }
 }

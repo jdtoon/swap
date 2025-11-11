@@ -20,8 +20,7 @@ public class CombinedTests : PageTest
     public async Task Combined_ShowsToastAndUpdatesOob()
     {
         // Arrange - Get OOB target initial state
-        var oobTarget = Page.Locator("[data-test-id='status-panel']");
-        var initialOobContent = await oobTarget.TextContentAsync();
+        var initialOobContent = await Page.Locator("[data-test-id='status-panel']").TextContentAsync();
         Assert.That(initialOobContent, Does.Contain("Status: Ready"));
 
         // Act - Click combined action button
@@ -33,29 +32,25 @@ public class CombinedTests : PageTest
         var toastContent = await toast.TextContentAsync();
         Assert.That(toastContent, Does.Contain("Both toast"));
 
-        // Assert - OOB target should update
-        await Task.Delay(500);
-        var updatedOobContent = await oobTarget.TextContentAsync();
+        // Assert - OOB target should update (query fresh after HTMX swap)
+        await Page.WaitForTimeoutAsync(1000);
+        var updatedOobContent = await Page.Locator("[data-test-id='status-panel']").TextContentAsync();
         Assert.That(updatedOobContent, Does.Contain("Last updated"));
     }
 
     [Test]
     public async Task Combined_MainSwapTargetAndOobBothUpdate()
     {
-        // Arrange - Verify initial main target content
-        var mainTarget = Page.Locator("[data-test-id='oob-result']");
-        
         // Act - Click combined button
         await Page.Locator("[data-test-id='combined']").ClickAsync(new() { Force = true });
-        await Task.Delay(500);
+        await Page.WaitForTimeoutAsync(1000);
 
-        // Assert - Main target should show result
-        var mainContent = await mainTarget.TextContentAsync();
+        // Assert - Main target should show result (query fresh after HTMX swap)
+        var mainContent = await Page.Locator("[data-test-id='oob-result']").TextContentAsync();
         Assert.That(mainContent, Does.Contain("Combined"));
 
         // Assert - OOB target should also update
-        var oobTarget = Page.Locator("[data-test-id='status-panel']");
-        var oobContent = await oobTarget.TextContentAsync();
+        var oobContent = await Page.Locator("[data-test-id='status-panel']").TextContentAsync();
         Assert.That(oobContent, Does.Contain("Last updated"));
     }
 
@@ -71,16 +66,16 @@ public class CombinedTests : PageTest
         var toast = Page.Locator(".toast").First;
         await Expect(toast).ToBeVisibleAsync(new() { Timeout = 5000 });
 
-        var oobTarget = Page.Locator("[data-test-id='status-panel']");
-        var oobContent = await oobTarget.TextContentAsync();
+        await Page.WaitForTimeoutAsync(1000);
+        var oobContent = await Page.Locator("[data-test-id='status-panel']").TextContentAsync();
         Assert.That(oobContent, Does.Contain("Last updated"));
 
         // Wait for toast to auto-dismiss
-        await Task.Delay(4000);
+        await Page.WaitForTimeoutAsync(4000);
         await Expect(toast).Not.ToBeVisibleAsync();
 
-        // OOB content should still be there
-        var oobContentAfter = await oobTarget.TextContentAsync();
+        // OOB content should still be there (query fresh)
+        var oobContentAfter = await Page.Locator("[data-test-id='status-panel']").TextContentAsync();
         Assert.That(oobContentAfter, Does.Contain("Last updated"));
     }
 
@@ -89,16 +84,16 @@ public class CombinedTests : PageTest
     {
         // Act - Trigger combined action twice
         await Page.Locator("[data-test-id='combined']").ClickAsync(new() { Force = true });
-        await Task.Delay(200);
+        await Page.WaitForTimeoutAsync(200);
         await Page.Locator("[data-test-id='combined']").ClickAsync(new() { Force = true });
 
         // Assert - Should have 2 toasts visible
         var toasts = Page.Locator(".toast");
         await Expect(toasts).ToHaveCountAsync(2, new() { Timeout = 5000 });
 
-        // OOB target should show latest update (not duplicated)
-        var oobTarget = Page.Locator("[data-test-id='status-panel']");
-        var oobContent = await oobTarget.TextContentAsync();
+        // OOB target should show latest update (not duplicated) - query fresh
+        await Page.WaitForTimeoutAsync(1000);
+        var oobContent = await Page.Locator("[data-test-id='status-panel']").TextContentAsync();
         Assert.That(oobContent, Does.Contain("Last updated"));
     }
 }

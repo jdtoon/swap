@@ -16,37 +16,39 @@ public class DebugTests : PageTest
     }
 
     [Test]
-    public async Task Debug_PageLoads()
+    public async Task Debug_OobSwapResponse()
     {
         await Page.GotoAsync("http://localhost:5000/test", new() { WaitUntil = WaitUntilState.NetworkIdle });
         
-        // Take screenshot
-        await Page.ScreenshotAsync(new() { Path = "debug-page.png" });
-        
-        // Get page content
-        var content = await Page.ContentAsync();
-        Console.WriteLine($"Page content length: {content.Length}");
-        Console.WriteLine($"Page title: {await Page.TitleAsync()}");
-        
-        // Try to find buttons
-        var buttons = await Page.Locator("button").AllAsync();
-        Console.WriteLine($"Found {buttons.Count} buttons");
-        
-        // Try to find by test ID
-        var toastButton = Page.GetByTestId("toast-success");
-        var isVisible = await toastButton.IsVisibleAsync();
-        Console.WriteLine($"Toast button visible: {isVisible}");
-        
-        if (!isVisible)
+        // Set up response listener
+        Page.Response += (_, response) =>
         {
-            // Print all elements with data-test-id
-            var testIds = await Page.Locator("[data-test-id]").AllAsync();
-            Console.WriteLine($"Found {testIds.Count} elements with data-test-id");
-            foreach (var element in testIds)
+            if (response.Url.Contains("/test/oob/single"))
             {
-                var testId = await element.GetAttributeAsync("data-test-id");
-                Console.WriteLine($"  - {testId}");
+                Console.WriteLine($"Response status: {response.Status}");
+                var task = response.BodyAsync();
+                task.Wait();
+                var body = task.Result;
+                var bodyText = System.Text.Encoding.UTF8.GetString(body);
+                Console.WriteLine($"Response body:\n{bodyText}");
             }
+        };
+        
+        // Trigger OOB swap
+        await Page.Locator("[data-test-id='oob-single']").ClickAsync(new() { Force = true });
+        await Page.WaitForTimeoutAsync(2000);
+        
+        // Check if secondary-panel exists with data-test-id
+        var secondaryPanel = Page.Locator("#secondary-panel");
+        var exists = await secondaryPanel.CountAsync() > 0;
+        Console.WriteLine($"Secondary panel exists: {exists}");
+        
+        if (exists)
+        {
+            var testId = await secondaryPanel.GetAttributeAsync("data-test-id");
+            Console.WriteLine($"Secondary panel data-test-id: {testId}");
+            var content = await secondaryPanel.TextContentAsync();
+            Console.WriteLine($"Secondary panel content: {content}");
         }
     }
 }

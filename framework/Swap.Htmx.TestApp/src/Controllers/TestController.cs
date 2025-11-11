@@ -94,7 +94,7 @@ public class TestController : SwapController
     
     private string RenderOobPanel(string targetId, string content, string strategy = "true")
     {
-        return $@"<div id=""{targetId}"" hx-swap-oob=""{strategy}"" class=""box has-background-info-light"">
+        return $@"<div id=""{targetId}"" data-test-id=""{targetId}"" hx-swap-oob=""{strategy}"" class=""box has-background-info-light"">
             <p class=""has-text-centered"">{content}</p>
         </div>";
     }
