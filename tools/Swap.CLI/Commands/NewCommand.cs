@@ -164,8 +164,15 @@ public static class NewCommand
         
         var isLayered = IsLayeredTemplate(template);
         var isModular = IsModularMonolithTemplate(template);
+        var isMinimal = template == "swap-minimal";
         
-        if (isLayered || isModular)
+        if (isMinimal)
+        {
+            AnsiConsole.MarkupLine($"  cd {name}/src");
+            AnsiConsole.MarkupLine("  libman restore");
+            AnsiConsole.MarkupLine("  dotnet run");
+        }
+        else if (isLayered || isModular)
         {
             AnsiConsole.MarkupLine($"  cd {name}/src/Web");
             AnsiConsole.MarkupLine("  npm install");
@@ -337,18 +344,26 @@ public static class NewCommand
         await AnsiConsole.Status().StartAsync("Running setup commands...", async ctx =>
         {
             var isLayeredOrModular = IsLayeredTemplate(template) || IsModularMonolithTemplate(template);
+            var isMinimal = template == "swap-minimal";
             var webDir = isLayeredOrModular 
                 ? Path.Combine(projectPath, "src", "Web") 
                 : Path.Combine(projectPath, "src");
             
-            await RunSetupStepAsync(ctx, "Running npm install...", () => 
-                RunCommandAsync("npm", "install", webDir), "npm install completed");
+            // Minimal template only needs LibMan, no NPM/Tailwind
+            if (!isMinimal)
+            {
+                await RunSetupStepAsync(ctx, "Running npm install...", () => 
+                    RunCommandAsync("npm", "install", webDir), "npm install completed");
+            }
             
             await RunSetupStepAsync(ctx, "Running libman restore...", () => 
                 RunCommandAsync("libman", "restore", webDir), "libman restore completed");
             
-            await RunSetupStepAsync(ctx, "Building CSS...", () => 
-                RunCommandAsync("npm", "run build:css", webDir), "CSS build completed");
+            if (!isMinimal)
+            {
+                await RunSetupStepAsync(ctx, "Building CSS...", () => 
+                    RunCommandAsync("npm", "run build:css", webDir), "CSS build completed");
+            }
         });
         
         AnsiConsole.WriteLine();
@@ -362,6 +377,12 @@ public static class NewCommand
         {
             AnsiConsole.MarkupLine("[yellow]Skipping automatic EF migrations for modular monolith.[/]");
             AnsiConsole.MarkupLine("[dim]Provider-specific example migrations are included in module shim projects. See docs in the generated project for details.[/]");
+            return;
+        }
+        
+        if (template == "swap-minimal")
+        {
+            // Minimal template has no database/EF Core
             return;
         }
         
