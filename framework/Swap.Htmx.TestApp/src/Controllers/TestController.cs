@@ -139,6 +139,9 @@ public class TestController : SwapController
 
             var finalHtml = await this.RenderPartialToStringAsync("_SseComplete", (object?)null);
             await stream.SendEventAsync("notification", finalHtml);
+            
+            // Send close event to tell HTMX to close the connection gracefully
+            await stream.SendEventAsync("close", "done");
         });
     }
 }
