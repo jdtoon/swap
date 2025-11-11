@@ -1,8 +1,8 @@
 @model int
-<div class="stats shadow">
-  <div class="stat">
-    <div class="stat-title">Notes</div>
-    <div class="stat-value">@Model</div>
-    <div class="stat-desc">Total notes added</div>
+<div class="level-item has-text-centered">
+  <div>
+    <p class="heading">Notes</p>
+    <p class="title">@Model</p>
+    <p class="help">Total notes added</p>
   </div>
 </div>

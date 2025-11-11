@@ -19,6 +19,7 @@
             }
             
             const toast = document.createElement('div');
+            // Use custom toast classes (defined in htmx-toast.css) instead of Bulma notification
             toast.className = 'toast toast-' + (detail.type || 'info');
             toast.textContent = detail.message || 'Operation completed';
             container.appendChild(toast);
