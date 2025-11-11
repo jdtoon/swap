@@ -1,4 +1,4 @@
-@model TodoItem
+@model {{ProjectName}}.Application.Dtos.TodoItemDto
 
 <li id="todo-item-@Model.Id" class="box mb-2 p-3">
     <div class="is-flex is-align-items-center">
