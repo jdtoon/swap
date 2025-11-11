@@ -16,19 +16,16 @@
 
     <div class="grid grid-cols-1 gap-4">
         <!-- Chat Messages -->
-        <div class="bg-white rounded-lg shadow-lg p-4">
+        <div class="bg-white rounded-lg shadow-lg p-4" hx-ext="ws" ws-connect="/ws/chat">
             <h2 class="text-xl font-semibold mb-4">Messages</h2>
             
             <div id="chat-messages" 
-                 class="h-96 overflow-y-auto border border-gray-300 rounded p-4 mb-4"
-                 hx-ext="ws" 
-                 ws-connect="/ws/chat"
-                 hx-swap="beforeend">
+                 class="h-96 overflow-y-auto border border-gray-300 rounded p-4 mb-4">
                 <!-- Messages will appear here -->
             </div>
 
             <!-- Send Message Form -->
-            <form id="chat-form" hx-ext="ws" ws-send>
+            <form id="chat-form" ws-send>
                 <div class="flex gap-2">
                     <input type="text" 
                            name="username" 
@@ -52,12 +49,17 @@
 </div>
 
 <script>
-// Clear message input after sending
-document.getElementById('chat-form').addEventListener('submit', function(e) {
-    e.preventDefault();
-    setTimeout(() => {
-        const messageInput = document.querySelector('input[name="message"]');
+// Clear the message input after HTMX ws send, and keep the chat scrolled to the bottom.
+document.body.addEventListener('htmx:wsAfterSend', function (evt) {
+    const form = document.getElementById('chat-form');
+    if (form && (evt.target === form || form.contains(evt.target))) {
+        const messageInput = form.querySelector('input[name="message"]');
         if (messageInput) messageInput.value = '';
-    }, 10);
+    }
+});
+
+document.body.addEventListener('htmx:wsAfterMessage', function () {
+    const chat = document.getElementById('chat-messages');
+    if (chat) chat.scrollTop = chat.scrollHeight;
 });
 </script>
