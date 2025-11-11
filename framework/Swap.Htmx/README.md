@@ -20,6 +20,8 @@
 dotnet add package Swap.Htmx
 ```
 
+> **📖 [Complete Setup Guide](./GETTING-STARTED.md)** - Step-by-step instructions for setting up toasts, OOB swaps, and all features
+
 ## Quick Start
 
 ### 1. Register Services & Middleware
@@ -269,10 +271,17 @@ dotnet test
 
 ## Documentation
 
+### Getting Started
+- [Complete Setup Guide](./GETTING-STARTED.md) - Step-by-step setup for new projects
+
+### Features
 - [Toast Notifications](./TOASTS.md) - Complete toast API and examples
 - [Out-of-Band Swaps](./OOB-SWAPS.md) - Multiple element updates
 - [Event System](./EVENTS.md) - Domain event → UI event chains
+
+### Reference
 - [Templates](./TEMPLATES.md) - Project templates and patterns
+- [E2E Testing](../Swap.Htmx.E2ETests/README.md) - Browser-based testing guide
 
 ## Examples
 
