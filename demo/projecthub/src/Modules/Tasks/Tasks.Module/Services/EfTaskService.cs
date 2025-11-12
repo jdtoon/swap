@@ -156,8 +156,16 @@ internal class EfTaskService(TasksDbContext db, IProjectService projectService) 
 
     private async Task<TaskDto> MapToDtoAsync(Models.Task task)
     {
-        var project = await projectService.GetByIdAsync(task.ProjectId);
-        var projectName = project?.Name ?? "Unknown Project";
+        string projectName;
+        try
+        {
+            var project = await projectService.GetByIdAsync(task.ProjectId);
+            projectName = project?.Name ?? "Unknown Project";
+        }
+        catch
+        {
+            projectName = "Unknown Project";
+        }
 
         return new TaskDto(
             task.Id,

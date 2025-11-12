@@ -103,28 +103,20 @@ document.body.addEventListener('htmx:load', function(evt) {
             dragClass: 'sortable-drag',
             onEnd: function(evt) {
                 const taskId = evt.item.dataset.taskId;
-                const newStatus = evt.to.dataset.status;
+                const newStatusString = evt.to.dataset.status;
                 const newPosition = evt.newIndex;
                 
-                // Create a temporary form for HTMX to process
-                const form = document.createElement('form');
-                form.style.display = 'none';
+                // Map status string to enum integer
+                const statusMap = {
+                    'Backlog': 0,
+                    'Todo': 1,
+                    'InProgress': 2,
+                    'Review': 3,
+                    'Done': 4
+                };
+                const newStatus = statusMap[newStatusString];
                 
-                const statusInput = document.createElement('input');
-                statusInput.type = 'hidden';
-                statusInput.name = 'newStatus';
-                statusInput.value = newStatus;
-                form.appendChild(statusInput);
-                
-                const positionInput = document.createElement('input');
-                positionInput.type = 'hidden';
-                positionInput.name = 'newPosition';
-                positionInput.value = newPosition;
-                form.appendChild(positionInput);
-                
-                document.body.appendChild(form);
-                
-                // Use htmx.ajax with proper JSON encoding
+                // Use fetch with proper JSON encoding
                 fetch(`/tasks/${taskId}/move`, {
                     method: 'POST',
                     headers: {
