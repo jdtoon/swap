@@ -20,7 +20,7 @@ public class TasksController(ITaskService taskService, IProjectService projectSe
         ViewBag.Projects = projects;
         ViewBag.SelectedProjectId = projectId;
 
-        return View(tasks);
+        return SwapView(tasks);
     }
 
     [HttpGet("create")]
@@ -30,7 +30,7 @@ public class TasksController(ITaskService taskService, IProjectService projectSe
         ViewBag.Projects = projects;
         ViewBag.SelectedProjectId = projectId;
 
-        return View();
+        return SwapView();
     }
 
     [HttpPost("create")]
@@ -40,12 +40,13 @@ public class TasksController(ITaskService taskService, IProjectService projectSe
         {
             var projects = await projectService.GetAllAsync();
             ViewBag.Projects = projects;
-            return View(dto);
+            return SwapView(dto);
         }
 
         var task = await taskService.CreateAsync(dto);
 
-        return RedirectToAction(nameof(Index), new { projectId = task.ProjectId });
+        Response.HxRedirect($"/tasks?projectId={task.ProjectId}");
+        return Ok();
     }
 
     [HttpGet("{id}")]
@@ -54,7 +55,7 @@ public class TasksController(ITaskService taskService, IProjectService projectSe
         var task = await taskService.GetByIdAsync(id);
         if (task is null) return NotFound();
 
-        return View(task);
+        return SwapView(task);
     }
 
     [HttpGet("{id}/edit")]
@@ -66,7 +67,7 @@ public class TasksController(ITaskService taskService, IProjectService projectSe
         var projects = await projectService.GetAllAsync();
         ViewBag.Projects = projects;
 
-        return View(task);
+        return SwapView(task);
     }
 
     [HttpPost("{id}/edit")]
@@ -77,12 +78,13 @@ public class TasksController(ITaskService taskService, IProjectService projectSe
             var task = await taskService.GetByIdAsync(id);
             var projects = await projectService.GetAllAsync();
             ViewBag.Projects = projects;
-            return View(task);
+            return SwapView(task);
         }
 
         await taskService.UpdateAsync(id, dto);
 
-        return RedirectToAction(nameof(Details), new { id });
+        Response.HxRedirect($"/tasks/{id}");
+        return Ok();
     }
 
     [HttpPost("{id}/delete")]
@@ -90,7 +92,8 @@ public class TasksController(ITaskService taskService, IProjectService projectSe
     {
         await taskService.DeleteAsync(id);
 
-        return RedirectToAction(nameof(Index));
+        Response.HxRedirect("/tasks");
+        return Ok();
     }
 
     [HttpPost("{id}/move")]
