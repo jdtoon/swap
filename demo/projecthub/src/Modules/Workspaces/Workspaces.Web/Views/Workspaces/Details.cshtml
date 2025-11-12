@@ -1,6 +1,7 @@
 @model ProjectHub.Modules.Workspaces.Contracts.WorkspaceDto
 @{
     ViewData["Title"] = Model.Name;
+    var recentProjects = ViewBag.RecentProjects as IEnumerable<ProjectHub.Modules.Projects.Contracts.ProjectDto>;
 }
 
 <section class="section">
@@ -77,15 +78,42 @@
                     </div>
                 </div>
             </div>
-            
-            <a href="/projects/workspace/@Model.Id"
-               hx-get="/projects/workspace/@Model.Id"
-               hx-target="#main-content"
-               hx-push-url="true"
-               class="button is-light is-fullwidth">
-                <span class="icon"><i class="fas fa-eye"></i></span>
-                <span>View All Projects in this Workspace</span>
-            </a>
+
+            @if (recentProjects?.Any() == true)
+            {
+                <div class="columns is-multiline">
+                    @foreach (var project in recentProjects)
+                    {
+                        <div class="column is-one-third">
+                            @* Cross-module UI composition: rendering Projects module partial *@
+                            @await Html.PartialAsync("/Views/Projects/_ProjectCard.cshtml", project)
+                        </div>
+                    }
+                </div>
+                
+                @if (recentProjects.Count() >= 6)
+                {
+                    <a href="/projects/workspace/@Model.Id"
+                       hx-get="/projects/workspace/@Model.Id"
+                       hx-target="#main-content"
+                       hx-push-url="true"
+                       class="button is-light is-fullwidth mt-3">
+                        <span class="icon"><i class="fas fa-eye"></i></span>
+                        <span>View All Projects in this Workspace</span>
+                    </a>
+                }
+            }
+            else
+            {
+                <div class="notification is-light">
+                    <p class="has-text-centered has-text-grey">
+                        No projects yet. <a href="/projects/create?workspaceId=@Model.Id"
+                                           hx-get="/projects/create?workspaceId=@Model.Id"
+                                           hx-target="#main-content"
+                                           hx-push-url="true">Create your first project</a>
+                    </p>
+                </div>
+            }
         </div>
 
         <div class="notification is-light mt-4">

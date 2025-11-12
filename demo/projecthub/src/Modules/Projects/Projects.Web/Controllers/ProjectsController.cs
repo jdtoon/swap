@@ -1,7 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
 using ProjectHub.Modules.Projects.Contracts;
 using ProjectHub.Modules.Workspaces.Contracts;
+using ProjectHub.Modules.Tasks.Contracts;
 using Swap.Htmx;
+using TaskStatus = ProjectHub.Modules.Tasks.Contracts.TaskStatus;
 
 namespace ProjectHub.Modules.Projects.Web.Controllers;
 
@@ -10,11 +12,16 @@ public class ProjectsController : SwapController
 {
     private readonly IProjectService _projectService;
     private readonly IWorkspaceService _workspaceService;
+    private readonly ITaskService _taskService;
 
-    public ProjectsController(IProjectService projectService, IWorkspaceService workspaceService)
+    public ProjectsController(
+        IProjectService projectService, 
+        IWorkspaceService workspaceService,
+        ITaskService taskService)
     {
         _projectService = projectService;
         _workspaceService = workspaceService;
+        _taskService = taskService;
     }
 
     [HttpGet]
@@ -60,6 +67,19 @@ public class ProjectsController : SwapController
         var project = await _projectService.GetByIdAsync(id);
         if (project is null)
             return NotFound();
+
+        // Cross-module service call to get tasks for this project
+        var tasks = await _taskService.GetByProjectIdAsync(id);
+        ViewBag.Tasks = tasks;
+        ViewBag.TaskStats = new
+        {
+            Total = tasks.Count(),
+            Completed = tasks.Count(t => t.Status == TaskStatus.Done),
+            InProgress = tasks.Count(t => t.Status == TaskStatus.InProgress),
+            Todo = tasks.Count(t => t.Status == TaskStatus.Todo),
+            Backlog = tasks.Count(t => t.Status == TaskStatus.Backlog),
+            Review = tasks.Count(t => t.Status == TaskStatus.Review)
+        };
 
         return SwapView(project);
     }

@@ -1,6 +1,8 @@
 @model ProjectHub.Modules.Projects.Contracts.ProjectDto
 @{
     ViewData["Title"] = Model.Name;
+    var tasks = ViewBag.Tasks as IEnumerable<ProjectHub.Modules.Tasks.Contracts.TaskDto>;
+    var taskStats = ViewBag.TaskStats;
     var statusColor = Model.Status switch
     {
         "Active" => "is-success",
@@ -80,18 +82,70 @@
         <div class="columns">
             <div class="column is-8">
                 <div class="box">
-                    <h2 class="title is-5">
-                        <span class="icon"><i class="fas fa-tasks"></i></span>
-                        <span>Tasks</span>
-                    </h2>
-                    <p class="has-text-centered has-text-grey">
-                        <span class="icon is-large">
-                            <i class="fas fa-clipboard-list fa-3x"></i>
-                        </span>
-                    </p>
-                    <p class="has-text-centered has-text-grey">
-                        Tasks module coming soon!
-                    </p>
+                    <div class="level mb-4">
+                        <div class="level-left">
+                            <div class="level-item">
+                                <h2 class="title is-5">
+                                    <span class="icon"><i class="fas fa-tasks"></i></span>
+                                    <span>Tasks</span>
+                                </h2>
+                            </div>
+                        </div>
+                        <div class="level-right">
+                            <div class="level-item">
+                                <div class="tags">
+                                    @if (taskStats.Completed > 0)
+                                    {
+                                        <span class="tag is-success">@taskStats.Completed Completed</span>
+                                    }
+                                    @if (taskStats.InProgress > 0)
+                                    {
+                                        <span class="tag is-info">@taskStats.InProgress In Progress</span>
+                                    }
+                                    @if (taskStats.Review > 0)
+                                    {
+                                        <span class="tag is-warning">@taskStats.Review Review</span>
+                                    }
+                                    <span class="tag is-light">@taskStats.Total Total</span>
+                                </div>
+                            </div>
+                            <div class="level-item">
+                                <a href="/tasks/create?projectId=@Model.Id"
+                                   hx-get="/tasks/create?projectId=@Model.Id"
+                                   hx-target="#main-content"
+                                   hx-push-url="true"
+                                   class="button is-primary is-small">
+                                    <span class="icon"><i class="fas fa-plus"></i></span>
+                                    <span>New Task</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    @* Cross-module UI composition: rendering Tasks module partial *@
+                    @await Html.PartialAsync("/Views/Tasks/_TaskListCompact.cshtml", tasks)
+
+                    @if (tasks?.Any() == true)
+                    {
+                        <div class="buttons is-centered mt-4">
+                            <a href="/tasks?projectId=@Model.Id"
+                               hx-get="/tasks?projectId=@Model.Id"
+                               hx-target="#main-content"
+                               hx-push-url="true"
+                               class="button is-light">
+                                <span class="icon"><i class="fas fa-list"></i></span>
+                                <span>View All Tasks</span>
+                            </a>
+                            <a href="/tasks/kanban?projectId=@Model.Id"
+                               hx-get="/tasks/kanban?projectId=@Model.Id"
+                               hx-target="#main-content"
+                               hx-push-url="true"
+                               class="button is-primary">
+                                <span class="icon"><i class="fas fa-columns"></i></span>
+                                <span>Kanban Board</span>
+                            </a>
+                        </div>
+                    }
                 </div>
             </div>
 

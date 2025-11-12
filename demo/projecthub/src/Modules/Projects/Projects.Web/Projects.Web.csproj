@@ -13,6 +13,7 @@
     <ProjectReference Include="..\Projects.Module\Projects.Module.csproj" />
     <ProjectReference Include="..\Projects.Contracts\Projects.Contracts.csproj" />
     <ProjectReference Include="..\..\Workspaces\Workspaces.Contracts\Workspaces.Contracts.csproj" />
+    <ProjectReference Include="..\..\Tasks\Tasks.Contracts\Tasks.Contracts.csproj" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Swap.Htmx" Version="0.3.3" />

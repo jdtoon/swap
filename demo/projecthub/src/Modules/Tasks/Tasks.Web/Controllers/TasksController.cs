@@ -133,12 +133,19 @@ public class TasksController(ITaskService taskService, IProjectService projectSe
         eventBus.Emit(TaskEvents.Moved, new { taskId = id, newStatus = dto.NewStatus });
         Response.ShowSuccessToast($"Task moved to {dto.NewStatus}");
 
-        // Return the updated Kanban columns partial
+        // Primary response: Return the updated Kanban columns partial
         var tasks = await taskService.GetAllAsync();
         var projects = await projectService.GetAllAsync();
         ViewBag.Projects = projects;
         ViewBag.SelectedProjectId = (int?)null;
 
+        // Demonstrate OOB swap for multi-target updates
+        // This updates a task count badge elsewhere on the page
+        ViewData["HxSwapOob"] = "true";
+        ViewData["OobTargetId"] = "task-total-count";
+        var oobHtml = await this.RenderPartialToStringAsync("_TaskCountBadge", tasks.Count());
+        ViewData["OobTaskCount"] = oobHtml;
+        
         return PartialView("_KanbanColumns", tasks);
     }
 }

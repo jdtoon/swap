@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using ProjectHub.Modules.Workspaces.Contracts;
+using ProjectHub.Modules.Projects.Contracts;
 using Swap.Htmx;
 
 namespace ProjectHub.Modules.Workspaces.Web.Controllers;
@@ -8,10 +9,12 @@ namespace ProjectHub.Modules.Workspaces.Web.Controllers;
 public class WorkspacesController : SwapController
 {
     private readonly IWorkspaceService _service;
+    private readonly IProjectService _projectService;
 
-    public WorkspacesController(IWorkspaceService service)
+    public WorkspacesController(IWorkspaceService service, IProjectService projectService)
     {
         _service = service;
+        _projectService = projectService;
     }
 
     [HttpGet]
@@ -44,6 +47,10 @@ public class WorkspacesController : SwapController
         var workspace = await _service.GetByIdAsync(id);
         if (workspace is null)
             return NotFound();
+
+        // Cross-module service call to get projects in this workspace
+        var projects = await _projectService.GetByWorkspaceAsync(id);
+        ViewBag.RecentProjects = projects.OrderByDescending(p => p.CreatedAt).Take(6);
 
         return SwapView(workspace);
     }

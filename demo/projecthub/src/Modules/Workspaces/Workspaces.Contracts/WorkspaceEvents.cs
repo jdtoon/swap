@@ -1,21 +1,13 @@
+using Swap.Htmx.Events;
+
 namespace ProjectHub.Modules.Workspaces.Contracts;
 
 public static class WorkspaceEvents
 {
-    public static class Domain
-    {
-        public const string Created = "workspace.created";
-        public const string Updated = "workspace.updated";
-        public const string Archived = "workspace.archived";
-        public const string Unarchived = "workspace.unarchived";
-    }
-
-    public static class Ui
-    {
-        public const string RefreshList = "ui.workspace.refreshList";
-        public const string ToastSuccess = "ui.toast.success";
-        public const string StatsRefresh = "ui.stats.refresh";
-    }
+    public static readonly EventKey Created = new("workspace.created");
+    public static readonly EventKey Updated = new("workspace.updated");
+    public static readonly EventKey Archived = new("workspace.archived");
+    public static readonly EventKey Unarchived = new("workspace.unarchived");
 }
 
 public static class WorkspaceEventPayloads

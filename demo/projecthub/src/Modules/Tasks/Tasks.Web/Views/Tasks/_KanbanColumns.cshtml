@@ -111,3 +111,9 @@
         </div>
     </div>
 </div>
+
+@* Render OOB swaps if any are set in ViewData *@
+@if (ViewData["OobTaskCount"] is string oobHtml)
+{
+    @Html.Raw(oobHtml)
+}
