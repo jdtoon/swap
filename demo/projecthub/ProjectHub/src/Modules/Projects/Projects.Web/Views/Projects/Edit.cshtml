@@ -1,0 +1,80 @@
+@model ProjectHub.Modules.Projects.Contracts.ProjectDto
+@{
+    ViewData["Title"] = $"Edit {Model.Name}";
+}
+
+<div class="container">
+    <h1 class="title">Edit Project</h1>
+
+    <form method="post" action="/projects/@Model.Id/edit" hx-post="/projects/@Model.Id/edit" hx-target="#main-content" hx-swap="outerHTML">
+        <div class="field">
+            <label class="label">Workspace</label>
+            <div class="control">
+                <p class="has-text-weight-semibold">@Model.WorkspaceName</p>
+                <p class="help">Workspace cannot be changed after project creation</p>
+            </div>
+        </div>
+
+        <div class="field">
+            <label class="label" for="Name">Name</label>
+            <div class="control">
+                <input class="input" type="text" name="Name" id="Name" value="@Model.Name" required maxlength="200" />
+            </div>
+        </div>
+
+        <div class="field">
+            <label class="label" for="Description">Description</label>
+            <div class="control">
+                <textarea class="textarea" name="Description" id="Description" rows="4">@Model.Description</textarea>
+            </div>
+        </div>
+
+        <div class="field">
+            <label class="label" for="Status">Status</label>
+            <div class="control">
+                <div class="select is-fullwidth">
+                    <select name="Status" id="Status">
+                        <option value="Planning" selected="@(Model.Status == "Planning")">Planning</option>
+                        <option value="Active" selected="@(Model.Status == "Active")">Active</option>
+                        <option value="OnHold" selected="@(Model.Status == "OnHold")">On Hold</option>
+                        <option value="Completed" selected="@(Model.Status == "Completed")">Completed</option>
+                        <option value="Cancelled" selected="@(Model.Status == "Cancelled")">Cancelled</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="columns">
+            <div class="column">
+                <div class="field">
+                    <label class="label" for="StartDate">Start Date</label>
+                    <div class="control">
+                        <input class="input" type="date" name="StartDate" id="StartDate" value="@Model.StartDate?.ToString("yyyy-MM-dd")" />
+                    </div>
+                </div>
+            </div>
+            <div class="column">
+                <div class="field">
+                    <label class="label" for="DueDate">Due Date</label>
+                    <div class="control">
+                        <input class="input" type="date" name="DueDate" id="DueDate" value="@Model.DueDate?.ToString("yyyy-MM-dd")" />
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="field is-grouped">
+            <div class="control">
+                <button type="submit" class="button is-primary">
+                    <span class="icon"><i class="fas fa-save"></i></span>
+                    <span>Save Changes</span>
+                </button>
+            </div>
+            <div class="control">
+                <a href="/projects/@Model.Id" class="button is-light" hx-get="/projects/@Model.Id" hx-target="#main-content" hx-push-url="true">
+                    Cancel
+                </a>
+            </div>
+        </div>
+    </form>
+</div>

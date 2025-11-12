@@ -37,13 +37,15 @@
             <div class="level-right">
                 <div class="level-item">
                     <div class="buttons">
-                        <button class="button is-light">
-                            <span class="icon"><i class="fas fa-cog"></i></span>
-                            <span>Settings</span>
-                        </button>
+                        <a href="/workspaces/@Model.Id/edit" class="button is-light" hx-get="/workspaces/@Model.Id/edit" hx-target="#main-content" hx-push-url="true">
+                            <span class="icon"><i class="fas fa-edit"></i></span>
+                            <span>Edit</span>
+                        </a>
                         <button class="button is-danger is-light"
                                 hx-post="/workspaces/archive/@Model.Id"
-                                hx-confirm="Archive this workspace?">
+                                hx-confirm="Archive this workspace?"
+                                hx-target="#main-content"
+                                hx-swap="outerHTML">
                             <span class="icon"><i class="fas fa-archive"></i></span>
                             <span>Archive</span>
                         </button>

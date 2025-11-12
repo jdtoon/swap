@@ -47,6 +47,26 @@ public class WorkspacesController : SwapController
         return SwapView(workspace);
     }
 
+    [HttpGet("{id}/edit")]
+    public async Task<IActionResult> Edit(int id)
+    {
+        var workspace = await _service.GetByIdAsync(id);
+        if (workspace is null)
+            return NotFound();
+
+        return SwapView(workspace);
+    }
+
+    [HttpPost("{id}/edit")]
+    public async Task<IActionResult> EditPost(int id, [FromForm] UpdateWorkspaceDto dto)
+    {
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+
+        await _service.UpdateAsync(id, dto);
+        return RedirectToAction(nameof(Details), new { id });
+    }
+
     [HttpPost("archive/{id}")]
     public async Task<IActionResult> Archive(int id)
     {
