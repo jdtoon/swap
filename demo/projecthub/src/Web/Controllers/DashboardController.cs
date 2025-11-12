@@ -32,6 +32,16 @@ public class DashboardController : SwapController
     }
 
     /// <summary>
+    /// HTMX polling endpoint for dashboard metrics partial
+    /// </summary>
+    [HttpGet("metrics")]
+    public async Task<IActionResult> Metrics()
+    {
+        var stats = await GetDashboardStatsAsync();
+        return PartialView("_DashboardMetrics", stats);
+    }
+
+    /// <summary>
     /// Server-Sent Events endpoint for live dashboard metrics
     /// </summary>
     [HttpGet("live")]

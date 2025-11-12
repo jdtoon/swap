@@ -28,16 +28,16 @@
                         <span>Live Metrics</span>
                         <span class="tag is-success is-light ml-2">
                             <span class="icon"><i class="fas fa-circle-dot"></i></span>
-                            <span>Streaming</span>
+                            <span>Live SSE</span>
                         </span>
                     </span>
                 </h2>
                 
-                <div id="live-metrics" 
-                     hx-ext="sse" 
-                     sse-connect="/dashboard/live"
-                     sse-swap="metrics-update">
-                    @await Html.PartialAsync("_DashboardMetrics", Model)
+                <!-- SSE connection for live metrics -->
+                <div hx-ext="sse" sse-connect="/dashboard/live">
+                    <div id="live-metrics" sse-swap="metrics-update">
+                        @await Html.PartialAsync("_DashboardMetrics", Model)
+                    </div>
                 </div>
             </div>
 
@@ -96,12 +96,11 @@
                     </span>
                 </h2>
                 
-                <div id="activity-feed"
-                     hx-ext="sse"
-                     sse-connect="/dashboard/activity"
-                     sse-swap="activity"
-                     hx-swap="afterbegin">
-                    <!-- Activity items will be prepended here -->
+                <!-- SSE connection for activity feed -->
+                <div hx-ext="sse" sse-connect="/dashboard/activity">
+                    <div id="activity-feed" sse-swap="activity" hx-swap="afterbegin settle:200ms">
+                        <!-- Activity items will be prepended here -->
+                    </div>
                 </div>
             </div>
 
