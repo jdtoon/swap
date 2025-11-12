@@ -42,6 +42,8 @@
         <a href="#" 
            hx-post="/workspaces/archive/@Model.Id"
            hx-confirm="Archive this workspace?"
+           hx-target="#main-content"
+           hx-swap="innerHTML"
            class="card-footer-item has-text-danger">
             <span class="icon is-small"><i class="fas fa-archive"></i></span>
             <span>Archive</span>
