@@ -14,7 +14,7 @@
     <ProjectReference Include="..\Workspaces.Contracts\Workspaces.Contracts.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Swap.Htmx" Version="0.3.2" />
+    <PackageReference Include="Swap.Htmx" Version="0.3.3" />
   </ItemGroup>
 </Project>
 
