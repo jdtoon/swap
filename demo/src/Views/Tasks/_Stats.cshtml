@@ -2,39 +2,39 @@
 
 <div class="columns is-multiline has-text-centered">
     <div class="column is-2">
-        <div class="box has-background-primary-light">
+        <div class="stats-box">
             <p class="heading">Total Tasks</p>
             <p class="title is-3">@Model.TotalTasks</p>
         </div>
     </div>
     <div class="column is-2">
-        <div class="box has-background-warning-light">
+        <div class="stats-box" style="border-left: 3px solid #5e6c84;">
             <p class="heading">To Do</p>
-            <p class="title is-3">@Model.TodoCount</p>
+            <p class="title is-3 has-text-grey">@Model.TodoCount</p>
         </div>
     </div>
     <div class="column is-2">
-        <div class="box has-background-info-light">
+        <div class="stats-box" style="border-left: 3px solid #0079bf;">
             <p class="heading">In Progress</p>
-            <p class="title is-3">@Model.InProgressCount</p>
+            <p class="title is-3 has-text-primary">@Model.InProgressCount</p>
         </div>
     </div>
     <div class="column is-2">
-        <div class="box has-background-success-light">
+        <div class="stats-box" style="border-left: 3px solid #61bd4f;">
             <p class="heading">Done</p>
-            <p class="title is-3">@Model.DoneCount</p>
+            <p class="title is-3 has-text-success">@Model.DoneCount</p>
         </div>
     </div>
     <div class="column is-2">
-        <div class="box has-background-danger-light">
+        <div class="stats-box" style="border-left: 3px solid #eb5a46;">
             <p class="heading">High Priority</p>
-            <p class="title is-3">@Model.HighPriorityCount</p>
+            <p class="title is-3 has-text-danger">@Model.HighPriorityCount</p>
         </div>
     </div>
     <div class="column is-2">
-        <div class="box has-background-grey-light">
+        <div class="stats-box" style="border-left: 3px solid #f2d600;">
             <p class="heading">Overdue</p>
-            <p class="title is-3">@Model.OverdueCount</p>
+            <p class="title is-3 has-text-warning">@Model.OverdueCount</p>
         </div>
     </div>
 </div>

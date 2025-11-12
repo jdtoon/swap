@@ -119,10 +119,15 @@
         <div class="columns is-variable is-3">
             <!-- Todo Column -->
             <div class="column">
-                <div class="box has-background-light" style="min-height: 500px;">
-                    <h2 class="title is-4 has-text-centered mb-4">
-                        <span class="tag is-warning is-light is-large">To Do</span>
-                    </h2>
+                <div class="kanban-column" style="min-height: 500px;">
+                    <div class="kanban-column-header">
+                        <span class="icon-text">
+                            <span class="icon has-text-grey">
+                                <i class="fas fa-circle"></i>
+                            </span>
+                            <span>TO DO</span>
+                        </span>
+                    </div>
                     <div id="task-column-todo" 
                          hx-get="/Tasks/TaskColumn?status=0" 
                          hx-trigger="load, ui.taskTodo.refresh from:body, ui.taskBoard.refresh from:body"
@@ -134,10 +139,15 @@
 
             <!-- In Progress Column -->
             <div class="column">
-                <div class="box has-background-light" style="min-height: 500px;">
-                    <h2 class="title is-4 has-text-centered mb-4">
-                        <span class="tag is-info is-light is-large">In Progress</span>
-                    </h2>
+                <div class="kanban-column" style="min-height: 500px;">
+                    <div class="kanban-column-header">
+                        <span class="icon-text">
+                            <span class="icon has-text-primary">
+                                <i class="fas fa-circle-half-stroke"></i>
+                            </span>
+                            <span>IN PROGRESS</span>
+                        </span>
+                    </div>
                     <div id="task-column-inprogress" 
                          hx-get="/Tasks/TaskColumn?status=1" 
                          hx-trigger="load, ui.taskInProgress.refresh from:body, ui.taskBoard.refresh from:body"
@@ -149,10 +159,15 @@
 
             <!-- Done Column -->
             <div class="column">
-                <div class="box has-background-light" style="min-height: 500px;">
-                    <h2 class="title is-4 has-text-centered mb-4">
-                        <span class="tag is-success is-light is-large">Done</span>
-                    </h2>
+                <div class="kanban-column" style="min-height: 500px;">
+                    <div class="kanban-column-header">
+                        <span class="icon-text">
+                            <span class="icon has-text-success">
+                                <i class="fas fa-check-circle"></i>
+                            </span>
+                            <span>DONE</span>
+                        </span>
+                    </div>
                     <div id="task-column-done" 
                          hx-get="/Tasks/TaskColumn?status=2" 
                          hx-trigger="load, ui.taskDone.refresh from:body, ui.taskBoard.refresh from:body"

@@ -3,10 +3,10 @@
 @{
     var priorityClass = Model.Priority switch
     {
-        TaskFlow.Models.TaskPriority.Low => "is-info",
-        TaskFlow.Models.TaskPriority.Medium => "is-warning",
-        TaskFlow.Models.TaskPriority.High => "is-danger",
-        TaskFlow.Models.TaskPriority.Critical => "is-dark",
+        TaskFlow.Models.TaskPriority.Low => "is-priority-low",
+        TaskFlow.Models.TaskPriority.Medium => "is-priority-medium",
+        TaskFlow.Models.TaskPriority.High => "is-priority-high",
+        TaskFlow.Models.TaskPriority.Critical => "is-priority-critical",
         _ => "is-light"
     };
 
@@ -17,14 +17,17 @@
     <div class="card-content">
         <div class="media">
             <div class="media-content">
-                <p class="title is-5 mb-2">@Model.Title</p>
-                <p class="subtitle is-6 has-text-grey">@Model.Description</p>
+                <p class="title is-6 mb-2">@Model.Title</p>
+                @if (!string.IsNullOrEmpty(Model.Description))
+                {
+                    <p class="subtitle is-7 has-text-grey mb-3">@Model.Description</p>
+                }
             </div>
         </div>
 
         <div class="content">
-            <div class="tags mb-2">
-                <span class="tag @priorityClass">
+            <div class="tags mb-3">
+                <span class="tag @priorityClass is-small">
                     <span class="icon is-small">
                         <i class="fas fa-flag"></i>
                     </span>
@@ -33,7 +36,7 @@
                 
                 @if (Model.DueDate.HasValue)
                 {
-                    <span class="tag @(isOverdue ? "is-danger" : "is-light")">
+                    <span class="tag is-small @(isOverdue ? "is-danger" : "is-light")">
                         <span class="icon is-small">
                             <i class="fas fa-calendar"></i>
                         </span>
@@ -43,7 +46,7 @@
 
                 @if (!string.IsNullOrEmpty(Model.AssignedTo))
                 {
-                    <span class="tag is-light">
+                    <span class="tag is-light is-small">
                         <span class="icon is-small">
                             <i class="fas fa-user"></i>
                         </span>
@@ -52,77 +55,69 @@
                 }
             </div>
 
-            <div class="field is-grouped is-grouped-multiline">
-                <div class="control">
-                    <div class="buttons are-small">
-                        @if (Model.Status != TaskFlow.Models.TaskItemStatus.Todo)
-                        {
-                            <button class="button is-warning is-light"
-                                    hx-patch="/Tasks/ChangeStatus?id=@Model.Id&newStatus=0"
-                                    hx-target="#task-card-@Model.Id"
-                                    hx-swap="outerHTML">
-                                <span class="icon is-small">
-                                    <i class="fas fa-arrow-left"></i>
-                                </span>
-                                <span>To Do</span>
-                            </button>
-                        }
+            <div class="buttons are-small">
+                @if (Model.Status != TaskFlow.Models.TaskItemStatus.Todo)
+                {
+                    <button class="button is-light is-small"
+                            hx-patch="/Tasks/ChangeStatus?id=@Model.Id&newStatus=0"
+                            hx-target="#task-card-@Model.Id"
+                            hx-swap="outerHTML">
+                        <span class="icon is-small">
+                            <i class="fas fa-arrow-left"></i>
+                        </span>
+                        <span>To Do</span>
+                    </button>
+                }
 
-                        @if (Model.Status != TaskFlow.Models.TaskItemStatus.InProgress)
-                        {
-                            <button class="button is-info is-light"
-                                    hx-patch="/Tasks/ChangeStatus?id=@Model.Id&newStatus=1"
-                                    hx-target="#task-card-@Model.Id"
-                                    hx-swap="outerHTML">
-                                <span class="icon is-small">
-                                    <i class="fas fa-play"></i>
-                                </span>
-                                <span>In Progress</span>
-                            </button>
-                        }
+                @if (Model.Status != TaskFlow.Models.TaskItemStatus.InProgress)
+                {
+                    <button class="button is-light is-small"
+                            hx-patch="/Tasks/ChangeStatus?id=@Model.Id&newStatus=1"
+                            hx-target="#task-card-@Model.Id"
+                            hx-swap="outerHTML">
+                        <span class="icon is-small">
+                            <i class="fas fa-play"></i>
+                        </span>
+                        <span>Start</span>
+                    </button>
+                }
 
-                        @if (Model.Status != TaskFlow.Models.TaskItemStatus.Done)
-                        {
-                            <button class="button is-success is-light"
-                                    hx-patch="/Tasks/ChangeStatus?id=@Model.Id&newStatus=2"
-                                    hx-target="#task-card-@Model.Id"
-                                    hx-swap="outerHTML">
-                                <span class="icon is-small">
-                                    <i class="fas fa-check"></i>
-                                </span>
-                                <span>Done</span>
-                            </button>
-                        }
-                    </div>
-                </div>
+                @if (Model.Status != TaskFlow.Models.TaskItemStatus.Done)
+                {
+                    <button class="button is-light is-small"
+                            hx-patch="/Tasks/ChangeStatus?id=@Model.Id&newStatus=2"
+                            hx-target="#task-card-@Model.Id"
+                            hx-swap="outerHTML">
+                        <span class="icon is-small">
+                            <i class="fas fa-check"></i>
+                        </span>
+                        <span>Done</span>
+                    </button>
+                }
 
-                <div class="control">
-                    <div class="buttons are-small">
-                        <button class="button is-light"
-                                hx-get="/Tasks/EditForm?id=@Model.Id"
-                                hx-target="#edit-task-modal-content"
-                                onclick="document.getElementById('edit-task-modal').classList.add('is-active')">
-                            <span class="icon is-small">
-                                <i class="fas fa-edit"></i>
-                            </span>
-                        </button>
+                <button class="button is-light is-small"
+                        hx-get="/Tasks/EditForm?id=@Model.Id"
+                        hx-target="#edit-task-modal-content"
+                        onclick="document.getElementById('edit-task-modal').classList.add('is-active')">
+                    <span class="icon is-small">
+                        <i class="fas fa-pencil"></i>
+                    </span>
+                </button>
 
-                        <button class="button is-danger is-light"
-                                hx-delete="/Tasks/Delete?id=@Model.Id"
-                                hx-target="#task-card-@Model.Id"
-                                hx-swap="outerHTML swap:1s"
-                                hx-confirm="Are you sure you want to delete this task?">
-                            <span class="icon is-small">
-                                <i class="fas fa-trash"></i>
-                            </span>
-                        </button>
-                    </div>
-                </div>
+                <button class="button is-light is-small has-text-danger"
+                        hx-delete="/Tasks/Delete?id=@Model.Id"
+                        hx-target="#task-card-@Model.Id"
+                        hx-swap="outerHTML swap:1s"
+                        hx-confirm="Are you sure you want to delete this task?">
+                    <span class="icon is-small">
+                        <i class="fas fa-trash"></i>
+                    </span>
+                </button>
             </div>
 
             @if (Model.CompletedAt.HasValue)
             {
-                <p class="help has-text-grey-light">
+                <p class="help has-text-grey-light mt-2">
                     <span class="icon is-small">
                         <i class="fas fa-check-circle"></i>
                     </span>
