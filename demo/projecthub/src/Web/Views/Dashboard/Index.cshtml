@@ -1,0 +1,161 @@
+@model ProjectHub.Web.Controllers.DashboardStatsViewModel
+@{
+    ViewData["Title"] = "Live Dashboard";
+}
+
+<section class="hero is-primary">
+    <div class="hero-body">
+        <div class="container">
+            <h1 class="title">
+                <span class="icon-text">
+                    <span class="icon"><i class="fas fa-chart-line"></i></span>
+                    <span>Live Dashboard</span>
+                </span>
+            </h1>
+            <p class="subtitle">Real-time metrics powered by Server-Sent Events</p>
+        </div>
+    </div>
+</section>
+
+<div class="container mt-5">
+    <div class="columns">
+        <!-- Live Metrics Column -->
+        <div class="column is-8">
+            <div class="box">
+                <h2 class="title is-4">
+                    <span class="icon-text">
+                        <span class="icon has-text-success"><i class="fas fa-signal"></i></span>
+                        <span>Live Metrics</span>
+                        <span class="tag is-success is-light ml-2">
+                            <span class="icon"><i class="fas fa-circle-dot"></i></span>
+                            <span>Live SSE</span>
+                        </span>
+                    </span>
+                </h2>
+                
+                <!-- SSE connection for live metrics -->
+                <div hx-ext="sse" sse-connect="/dashboard/live">
+                    <div id="live-metrics" sse-swap="metrics-update">
+                        @await Html.PartialAsync("_DashboardMetrics", Model)
+                    </div>
+                </div>
+            </div>
+
+            <!-- Task Distribution Chart -->
+            <div class="box mt-4">
+                <h2 class="title is-5">Task Distribution</h2>
+                <div class="columns is-multiline">
+                    <div class="column is-one-fifth has-text-centered">
+                        <div class="box has-background-light">
+                            <p class="heading">Backlog</p>
+                            <p class="title is-4">@Model.BacklogTaskCount</p>
+                        </div>
+                    </div>
+                    <div class="column is-one-fifth has-text-centered">
+                        <div class="box has-background-light">
+                            <p class="heading">Todo</p>
+                            <p class="title is-4">@Model.TodoTaskCount</p>
+                        </div>
+                    </div>
+                    <div class="column is-one-fifth has-text-centered">
+                        <div class="box has-background-info-light">
+                            <p class="heading">In Progress</p>
+                            <p class="title is-4 has-text-info">@Model.InProgressTaskCount</p>
+                        </div>
+                    </div>
+                    <div class="column is-one-fifth has-text-centered">
+                        <div class="box has-background-warning-light">
+                            <p class="heading">Review</p>
+                            <p class="title is-4 has-text-warning">@Model.ReviewTaskCount</p>
+                        </div>
+                    </div>
+                    <div class="column is-one-fifth has-text-centered">
+                        <div class="box has-background-success-light">
+                            <p class="heading">Done</p>
+                            <p class="title is-4 has-text-success">@Model.CompletedTaskCount</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Progress Bar -->
+                <div class="mt-4">
+                    <p class="heading mb-2">Overall Completion</p>
+                    <progress class="progress is-success is-large" value="@Model.CompletedTaskCount" max="@Model.TaskCount">@Model.CompletionPercentage%</progress>
+                    <p class="has-text-centered has-text-weight-bold is-size-5">@Model.CompletionPercentage%</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Activity Feed Column -->
+        <div class="column is-4">
+            <div class="box" style="max-height: 600px; overflow-y: auto;">
+                <h2 class="title is-5">
+                    <span class="icon-text">
+                        <span class="icon"><i class="fas fa-rss"></i></span>
+                        <span>Recent Activity</span>
+                    </span>
+                </h2>
+                
+                <!-- SSE connection for activity feed -->
+                <div hx-ext="sse" sse-connect="/dashboard/activity">
+                    <div id="activity-feed" sse-swap="activity" hx-swap="afterbegin settle:200ms">
+                        <!-- Activity items will be prepended here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="box mt-4">
+                <h3 class="title is-6">Quick Actions</h3>
+                <div class="buttons is-flex is-flex-direction-column">
+                    <a href="/tasks/kanban" 
+                       hx-get="/tasks/kanban" 
+                       hx-target="#main-content"
+                       hx-push-url="true"
+                       class="button is-fullwidth is-primary">
+                        <span class="icon"><i class="fas fa-columns"></i></span>
+                        <span>Open Kanban</span>
+                    </a>
+                    <a href="/workspaces" 
+                       hx-get="/workspaces"
+                       hx-target="#main-content"
+                       hx-push-url="true"
+                       class="button is-fullwidth is-light">
+                        <span class="icon"><i class="fas fa-layer-group"></i></span>
+                        <span>Manage Workspaces</span>
+                    </a>
+                    <a href="/projects" 
+                       hx-get="/projects"
+                       hx-target="#main-content"
+                       hx-push-url="true"
+                       class="button is-fullwidth is-light">
+                        <span class="icon"><i class="fas fa-project-diagram"></i></span>
+                        <span>View Projects</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    #activity-feed .notification {
+        margin-bottom: 0.5rem;
+        animation: slideIn 0.3s ease-out;
+    }
+
+    @@keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translateX(-20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
+
+    .progress.is-large {
+        height: 1.5rem;
+    }
+</style>

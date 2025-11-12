@@ -1,0 +1,178 @@
+@{
+    ViewData["Title"] = "ProjectHub";
+    var stats = ViewBag.Stats;
+    var recentProjects = ViewBag.RecentProjects as IEnumerable<ProjectHub.Modules.Projects.Contracts.ProjectDto>;
+}
+
+<section class="hero is-primary">
+    <div class="hero-body">
+        <div class="container has-text-centered">
+            <h1 class="title is-1">
+                <span class="icon-text">
+                    <span class="icon">
+                        <i class="fas fa-project-diagram"></i>
+                    </span>
+                    <span>ProjectHub</span>
+                </span>
+            </h1>
+            <p class="subtitle is-4">Full-stack project management. Zero JavaScript frameworks. Pure HTMX velocity.</p>
+            <div class="tags are-medium is-centered mt-4">
+                <span class="tag is-light">ASP.NET Core 9</span>
+                <span class="tag is-light">HTMX 2.0</span>
+                <span class="tag is-light">Bulma CSS</span>
+                <span class="tag is-light">Swap Framework</span>
+            </div>
+        </div>
+    </div>
+</section>
+
+<div class="container mt-6">
+    <div class="columns">
+        <div class="column is-8">
+            <div class="box">
+                <h2 class="title is-4">Welcome to ProjectHub</h2>
+                <p class="content">
+                    This is a production-ready project management system built with <strong>Swap's modular monolith architecture</strong>.
+                </p>
+                <p class="content">
+                    Features include:
+                </p>
+                <ul class="content">
+                    <li>📊 Kanban boards with drag-and-drop</li>
+                    <li>💬 Real-time collaboration and comments</li>
+                    <li>⏱️ Time tracking and analytics</li>
+                    <li>📎 File attachments</li>
+                    <li>🔔 In-app notifications</li>
+                    <li>📈 Project dashboards and reporting</li>
+                </ul>
+            </div>
+
+            @if (recentProjects?.Any() == true)
+            {
+                <div class="box">
+                    <h3 class="title is-5">Recent Projects</h3>
+                    <div class="columns is-multiline">
+                        @foreach (var project in recentProjects.Take(6))
+                        {
+                            <div class="column is-one-third">
+                                <div class="card">
+                                    <div class="card-content">
+                                        <p class="title is-6">
+                                            <a href="/projects/@project.Id"
+                                               hx-get="/projects/@project.Id"
+                                               hx-target="#main-content"
+                                               hx-push-url="true">
+                                                @project.Name
+                                            </a>
+                                        </p>
+                                        <p class="subtitle is-7 has-text-grey">@project.WorkspaceName</p>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                    <div class="has-text-centered mt-3">
+                        <a href="/projects"
+                           hx-get="/projects"
+                           hx-target="#main-content"
+                           hx-push-url="true"
+                           class="button is-light">
+                            View All Projects
+                        </a>
+                    </div>
+                </div>
+            }
+        </div>
+        
+        <div class="column is-4">
+            <div class="box has-background-light">
+                <h3 class="title is-5">Quick Stats</h3>
+                <div class="content">
+                    <div class="level">
+                        <div class="level-item has-text-centered">
+                            <div>
+                                <p class="heading">Workspaces</p>
+                                <p class="title is-4">@stats.WorkspaceCount</p>
+                            </div>
+                        </div>
+                        <div class="level-item has-text-centered">
+                            <div>
+                                <p class="heading">Projects</p>
+                                <p class="title is-4">@stats.ProjectCount</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="level mt-3">
+                        <div class="level-item has-text-centered">
+                            <div>
+                                <p class="heading">Total Tasks</p>
+                                <p class="title is-4">@stats.TaskCount</p>
+                            </div>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="level">
+                        <div class="level-item has-text-centered">
+                            <div>
+                                <p class="heading">Completed</p>
+                                <p class="title is-5 has-text-success">@stats.CompletedTaskCount</p>
+                            </div>
+                        </div>
+                        <div class="level-item has-text-centered">
+                            <div>
+                                <p class="heading">In Progress</p>
+                                <p class="title is-5 has-text-info">@stats.InProgressTaskCount</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="box">
+                <h3 class="title is-6">Quick Links</h3>
+                <div class="buttons is-flex is-flex-direction-column">
+                    <a href="/dashboard"
+                       hx-get="/dashboard"
+                       hx-target="#main-content"
+                       hx-push-url="true"
+                       class="button is-fullwidth is-success">
+                        <span class="icon"><i class="fas fa-chart-line"></i></span>
+                        <span>Live Dashboard</span>
+                    </a>
+                    <a href="/workspaces"
+                       hx-get="/workspaces"
+                       hx-target="#main-content"
+                       hx-push-url="true"
+                       class="button is-fullwidth is-light">
+                        <span class="icon"><i class="fas fa-layer-group"></i></span>
+                        <span>Workspaces</span>
+                    </a>
+                    <a href="/projects"
+                       hx-get="/projects"
+                       hx-target="#main-content"
+                       hx-push-url="true"
+                       class="button is-fullwidth is-light">
+                        <span class="icon"><i class="fas fa-project-diagram"></i></span>
+                        <span>Projects</span>
+                    </a>
+                    <a href="/tasks"
+                       hx-get="/tasks"
+                       hx-target="#main-content"
+                       hx-push-url="true"
+                       class="button is-fullwidth is-light">
+                        <span class="icon"><i class="fas fa-tasks"></i></span>
+                        <span>Tasks</span>
+                    </a>
+                    <a href="/tasks/kanban"
+                       hx-get="/tasks/kanban"
+                       hx-target="#main-content"
+                       hx-push-url="true"
+                       class="button is-fullwidth is-primary">
+                        <span class="icon"><i class="fas fa-columns"></i></span>
+                        <span>Kanban Board</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

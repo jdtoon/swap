@@ -1,0 +1,78 @@
+@model IEnumerable<ProjectHub.Modules.Projects.Contracts.ProjectDto>
+@{
+    ViewData["Title"] = "Projects";
+    var workspace = ViewBag.Workspace as ProjectHub.Modules.Workspaces.Contracts.WorkspaceDto;
+}
+
+<section class="section">
+    <div class="container">
+        @if (workspace != null)
+        {
+            <nav class="breadcrumb" aria-label="breadcrumbs">
+                <ul>
+                    <li>
+                        <a href="/workspaces"
+                           hx-get="/workspaces"
+                           hx-target="#main-content"
+                           hx-push-url="true">Workspaces</a>
+                    </li>
+                    <li>
+                        <a href="/workspaces/@workspace.Id"
+                           hx-get="/workspaces/@workspace.Id"
+                           hx-target="#main-content"
+                           hx-push-url="true">@workspace.Name</a>
+                    </li>
+                    <li class="is-active"><a href="#" aria-current="page">Projects</a></li>
+                </ul>
+            </nav>
+        }
+
+        <div class="level">
+            <div class="level-left">
+                <div class="level-item">
+                    <div>
+                        <h1 class="title">@(workspace != null ? $"{workspace.Name} Projects" : "All Projects")</h1>
+                        <p class="subtitle">Manage and track your projects</p>
+                    </div>
+                </div>
+            </div>
+            <div class="level-right">
+                <div class="level-item">
+                    <a href="/projects/create@(workspace != null ? $"?workspaceId={workspace.Id}" : "")" 
+                       hx-get="/projects/create@(workspace != null ? $"?workspaceId={workspace.Id}" : "")"
+                       hx-target="#main-content"
+                       hx-push-url="true"
+                       class="button is-primary">
+                        <span class="icon"><i class="fas fa-plus"></i></span>
+                        <span>New Project</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        @if (Model == null || !Model.Any())
+        {
+            <div class="notification is-light">
+                <p class="has-text-centered has-text-grey">
+                    <span class="icon is-large">
+                        <i class="fas fa-project-diagram fa-3x"></i>
+                    </span>
+                </p>
+                <p class="has-text-centered has-text-grey">
+                    No projects yet. Create one to get started!
+                </p>
+            </div>
+        }
+        else
+        {
+            <div class="columns is-multiline">
+                @foreach (var project in Model)
+                {
+                    <div class="column is-one-third">
+                        @await Html.PartialAsync("_ProjectCard", project)
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</section>

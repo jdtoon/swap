@@ -1,0 +1,87 @@
+@model TaskFlow.Dtos.TaskStatsDto
+
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="media">
+            <div class="media-left">
+                <span class="icon is-large">
+                    <i class="fas fa-clipboard-list fa-2x"></i>
+                </span>
+            </div>
+            <div class="media-content">
+                <p class="stat-value">@Model.TotalTasks</p>
+                <p class="stat-label">Total Tasks</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="media">
+            <div class="media-left">
+                <span class="icon is-large has-text-grey">
+                    <i class="fas fa-circle fa-2x"></i>
+                </span>
+            </div>
+            <div class="media-content">
+                <p class="stat-value">@Model.TodoCount</p>
+                <p class="stat-label">To Do</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="media">
+            <div class="media-left">
+                <span class="icon is-large has-text-primary">
+                    <i class="fas fa-circle-half-stroke fa-2x"></i>
+                </span>
+            </div>
+            <div class="media-content">
+                <p class="stat-value">@Model.InProgressCount</p>
+                <p class="stat-label">In Progress</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="media">
+            <div class="media-left">
+                <span class="icon is-large has-text-success">
+                    <i class="fas fa-check-circle fa-2x"></i>
+                </span>
+            </div>
+            <div class="media-content">
+                <p class="stat-value">@Model.DoneCount</p>
+                <p class="stat-label">Done</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="media">
+            <div class="media-left">
+                <span class="icon is-large has-text-warning">
+                    <i class="fas fa-flag fa-2x"></i>
+                </span>
+            </div>
+            <div class="media-content">
+                <p class="stat-value">@Model.HighPriorityCount</p>
+                <p class="stat-label">High Priority</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="media">
+            <div class="media-left">
+                <span class="icon is-large has-text-danger">
+                    <i class="fas fa-exclamation-triangle fa-2x"></i>
+                </span>
+            </div>
+            <div class="media-content">
+                <p class="stat-value">@Model.OverdueCount</p>
+                <p class="stat-label">Overdue</p>
+            </div>
+        </div>
+    </div>
+</div>

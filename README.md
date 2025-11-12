@@ -191,6 +191,35 @@ public class ArticleTests : IClassFixture<HtmxTestFixture<Program>>
 
 ---
 
+## 🎮 Live Demos
+
+Explore **two production-quality demo applications** showcasing different architectural patterns:
+
+### [ProjectHub](demo/projecthub/) — Modular Monolith ⭐
+
+Modular architecture with SSE streaming, cross-module events, per-module migrations, and Docker stack.
+
+```bash
+cd demo/projecthub
+docker compose up -d
+dotnet run --project src/Web
+# Open http://localhost:5073
+```
+
+### [TaskFlow](demo/taskflow/) — HTMX Patterns
+
+Core HTMX patterns, event chains, and integration testing in a focused demo.
+
+```bash
+cd demo/taskflow/src
+libman restore && dotnet run
+# Open http://localhost:5000
+```
+
+**See [demo/README.md](demo/README.md) for detailed comparison.**
+
+---
+
 ## 🛠️ What's Included
 
 ### Swap.Htmx

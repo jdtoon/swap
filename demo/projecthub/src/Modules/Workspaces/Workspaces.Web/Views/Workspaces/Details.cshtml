@@ -1,0 +1,128 @@
+@model ProjectHub.Modules.Workspaces.Contracts.WorkspaceDto
+@{
+    ViewData["Title"] = Model.Name;
+    var recentProjects = ViewBag.RecentProjects as IEnumerable<ProjectHub.Modules.Projects.Contracts.ProjectDto>;
+}
+
+<section class="section">
+    <div class="container">
+        <nav class="breadcrumb" aria-label="breadcrumbs">
+            <ul>
+                <li>
+                    <a href="/workspaces"
+                       hx-get="/workspaces"
+                       hx-target="#main-content"
+                       hx-push-url="true">Workspaces</a>
+                </li>
+                <li class="is-active"><a href="#" aria-current="page">@Model.Name</a></li>
+            </ul>
+        </nav>
+
+        <div class="level">
+            <div class="level-left">
+                <div class="level-item">
+                    <div>
+                        <h1 class="title">
+                            <span class="icon has-text-primary">
+                                <i class="fas fa-folder" style="color: @(Model.Color ?? "var(--ph-primary)")"></i>
+                            </span>
+                            @Model.Name
+                        </h1>
+                        @if (!string.IsNullOrWhiteSpace(Model.Description))
+                        {
+                            <p class="subtitle">@Model.Description</p>
+                        }
+                    </div>
+                </div>
+            </div>
+            <div class="level-right">
+                <div class="level-item">
+                    <div class="buttons">
+                        <a href="/workspaces/@Model.Id/edit" class="button is-light" hx-get="/workspaces/@Model.Id/edit" hx-target="#main-content" hx-push-url="true">
+                            <span class="icon"><i class="fas fa-edit"></i></span>
+                            <span>Edit</span>
+                        </a>
+                        <button class="button is-danger is-light"
+                                hx-post="/workspaces/archive/@Model.Id"
+                                hx-confirm="Archive this workspace?"
+                                hx-target="#main-content"
+                                hx-swap="innerHTML">
+                            <span class="icon"><i class="fas fa-archive"></i></span>
+                            <span>Archive</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="box">
+            <div class="level mb-4">
+                <div class="level-left">
+                    <div class="level-item">
+                        <h2 class="title is-5">
+                            <span class="icon"><i class="fas fa-project-diagram"></i></span>
+                            <span>Projects</span>
+                        </h2>
+                    </div>
+                </div>
+                <div class="level-right">
+                    <div class="level-item">
+                        <a href="/projects/create?workspaceId=@Model.Id"
+                           hx-get="/projects/create?workspaceId=@Model.Id"
+                           hx-target="#main-content"
+                           hx-push-url="true"
+                           class="button is-primary is-small">
+                            <span class="icon"><i class="fas fa-plus"></i></span>
+                            <span>New Project</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            @if (recentProjects?.Any() == true)
+            {
+                <div class="columns is-multiline">
+                    @foreach (var project in recentProjects)
+                    {
+                        <div class="column is-one-third">
+                            @* Cross-module UI composition: rendering Projects module partial *@
+                            @await Html.PartialAsync("/Views/Projects/_ProjectCard.cshtml", project)
+                        </div>
+                    }
+                </div>
+                
+                @if (recentProjects.Count() >= 6)
+                {
+                    <a href="/projects/workspace/@Model.Id"
+                       hx-get="/projects/workspace/@Model.Id"
+                       hx-target="#main-content"
+                       hx-push-url="true"
+                       class="button is-light is-fullwidth mt-3">
+                        <span class="icon"><i class="fas fa-eye"></i></span>
+                        <span>View All Projects in this Workspace</span>
+                    </a>
+                }
+            }
+            else
+            {
+                <div class="notification is-light">
+                    <p class="has-text-centered has-text-grey">
+                        No projects yet. <a href="/projects/create?workspaceId=@Model.Id"
+                                           hx-get="/projects/create?workspaceId=@Model.Id"
+                                           hx-target="#main-content"
+                                           hx-push-url="true">Create your first project</a>
+                    </p>
+                </div>
+            }
+        </div>
+
+        <div class="notification is-light mt-4">
+            <p><strong>Created:</strong> @Model.CreatedAt.ToString("MMMM dd, yyyy 'at' h:mm tt")</p>
+            @if (Model.UpdatedAt.HasValue)
+            {
+                <p><strong>Last updated:</strong> @Model.UpdatedAt.Value.ToString("MMMM dd, yyyy 'at' h:mm tt")</p>
+            }
+        </div>
+    </div>
+</section>
+

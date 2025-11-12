@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.AspNetCore.Mvc.ViewEngines;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
+using Microsoft.AspNetCore.Routing;
 using Swap.Htmx.ServerSentEvents;
 
 namespace Swap.Htmx;
@@ -107,6 +108,73 @@ public abstract class SwapController : Controller
     }
 
     /// <summary>
+    /// Redirects to another action method while preserving ViewData setup from the target action.
+    /// Useful for POST-Redirect-GET pattern where the POST action needs to show the same view
+    /// as the GET action with all its ViewBag/ViewData populated correctly.
+    /// </summary>
+    /// <param name="actionName">The name of the action method to invoke.</param>
+    /// <param name="routeValues">Route values to pass to the target action.</param>
+    /// <returns>The result from executing the target action.</returns>
+    /// <example>
+    /// <code>
+    /// [HttpPost]
+    /// public async Task&lt;IActionResult&gt; Create(CreateDto dto)
+    /// {
+    ///     var item = await _service.CreateAsync(dto);
+    ///     // Calls Details(item.Id) action, which populates all ViewBag data
+    ///     return SwapRedirectToAction(nameof(Details), new { id = item.Id });
+    /// }
+    /// </code>
+    /// </example>
+    protected async Task<IActionResult> SwapRedirectToAction(string actionName, object? routeValues = null)
+    {
+        // Get the target action descriptor
+        var actionDescriptor = ControllerContext.ActionDescriptor;
+        var controllerName = actionDescriptor.ControllerName;
+        
+        // Invoke the target action using reflection
+        var method = GetType().GetMethod(actionName);
+        if (method == null)
+        {
+            throw new InvalidOperationException($"Action method '{actionName}' not found on controller '{controllerName}'");
+        }
+
+        // Build parameters from route values
+        var parameters = method.GetParameters();
+        var args = new object?[parameters.Length];
+        
+        if (routeValues != null)
+        {
+            var routeDict = new RouteValueDictionary(routeValues);
+            for (int i = 0; i < parameters.Length; i++)
+            {
+                var param = parameters[i];
+                if (routeDict.TryGetValue(param.Name!, out var value))
+                {
+                    args[i] = Convert.ChangeType(value, param.ParameterType);
+                }
+            }
+        }
+
+        // Invoke the action method
+        var result = method.Invoke(this, args);
+        
+        // Handle async results
+        if (result is Task<IActionResult> taskResult)
+        {
+            return await taskResult;
+        }
+        else if (result is IActionResult actionResult)
+        {
+            return actionResult;
+        }
+        else
+        {
+            throw new InvalidOperationException($"Action method '{actionName}' did not return IActionResult");
+        }
+    }
+
+    /// <summary>
     /// Creates a Server-Sent Events (SSE) connection for streaming real-time HTML updates to the client.
     /// Use with HTMX's hx-sse attribute to receive live updates.
     /// </summary>
@@ -171,5 +239,22 @@ public abstract class SwapController : Controller
 
         await viewResult.View.RenderAsync(viewContext);
         return writer.ToString();
+    }
+
+    /// <summary>
+    /// Renders an out-of-band swap as HTML string with hx-swap-oob attribute.
+    /// Used internally by the fluent OOB API.
+    /// </summary>
+    protected async Task<string> RenderOobSwapAsync(string targetId, string viewName, object? model, string swapMode = "true")
+    {
+        var partialHtml = await RenderPartialToStringAsync(viewName, model);
+        
+        // Wrap in div with hx-swap-oob attribute if not already present
+        if (!partialHtml.Contains("hx-swap-oob"))
+        {
+            return $"<div id=\"{targetId}\" hx-swap-oob=\"{swapMode}\">{partialHtml}</div>";
+        }
+        
+        return partialHtml;
     }
 }
