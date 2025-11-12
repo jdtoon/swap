@@ -9,7 +9,6 @@ public class AppDbContext : DbContext
     {
     }
 
-    public DbSet<TodoItem> TodoItems => Set<TodoItem>();
     public DbSet<TaskItem> Tasks => Set<TaskItem>();
     public DbSet<ActivityLog> ActivityLogs => Set<ActivityLog>();
 
@@ -26,12 +25,6 @@ public class AppDbContext : DbContext
                     v => v.Split(',', StringSplitOptions.RemoveEmptyEntries).ToList()
                 );
         });
-
-        // Seed example data
-        modelBuilder.Entity<TodoItem>().HasData(
-            new TodoItem { Id = 1, Title = "Welcome to Swap!", IsComplete = false },
-            new TodoItem { Id = 2, Title = "Build something amazing", IsComplete = false }
-        );
         
         // Seed task examples
         modelBuilder.Entity<TaskItem>().HasData(

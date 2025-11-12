@@ -13,58 +13,55 @@
 </head>
 <body>
     <header>
-        <nav class="navbar is-dark" role="navigation" aria-label="main navigation">
+        <nav class="navbar" role="navigation" aria-label="main navigation">
             <div class="container">
                 <div class="navbar-brand">
-                    <a class="navbar-item" 
-                       href="/" 
-                       hx-get="/" 
-                       hx-target="#main-content" 
-                       hx-push-url="true">
-                        <strong>TaskFlow</strong>
+                    <a class="navbar-item" href="/">
+                        <strong>
+                            <span class="icon-text">
+                                <span class="icon has-text-primary">
+                                    <i class="fas fa-tasks"></i>
+                                </span>
+                                <span>TaskFlow</span>
+                            </span>
+                        </strong>
                     </a>
                 </div>
                 <div class="navbar-menu">
                     <div class="navbar-start">
-                        <a class="navbar-item" 
-                           href="/" 
-                           hx-get="/" 
-                           hx-target="#main-content" 
-                           hx-push-url="true">Home</a>
-                        <a class="navbar-item" 
-                           href="/Tasks" 
-                           hx-get="/Tasks" 
-                           hx-target="#main-content" 
-                           hx-push-url="true">Task Board</a>
-                        <a class="navbar-item" 
-                           href="/Demo" 
-                           hx-get="/Demo" 
-                           hx-target="#main-content" 
-                           hx-push-url="true">Demo</a>
-                        <a class="navbar-item" 
-                           href="/Components/Generic" 
-                           hx-get="/Components/Generic" 
-                           hx-target="#main-content" 
-                           hx-push-url="true">Components</a>
-                    </div>
-                    <div class="navbar-end">
-                        <!-- Authentication UI will go here -->
+                        <a class="navbar-item" href="/">
+                            <span class="icon-text">
+                                <span class="icon">
+                                    <i class="fas fa-home"></i>
+                                </span>
+                                <span>Home</span>
+                            </span>
+                        </a>
+                        <a class="navbar-item" href="/Tasks">
+                            <span class="icon-text">
+                                <span class="icon">
+                                    <i class="fas fa-clipboard-list"></i>
+                                </span>
+                                <span>Task Board</span>
+                            </span>
+                        </a>
                     </div>
                 </div>
             </div>
         </nav>
     </header>
 
-    <main id="main-content" class="section">
-        <div class="container">
-            @RenderBody()
-        </div>
+    <main>
+        @RenderBody()
     </main>
 
     <footer class="footer has-background-light mt-6">
         <div class="content has-text-centered">
-            <p>
-                Built with <strong>Swap</strong> - Event-driven web development
+            <p class="has-text-secondary">
+                <strong>TaskFlow</strong> - Built with <a href="https://github.com/your-repo/swap" class="has-text-primary">Swap.Htmx</a>
+            </p>
+            <p class="is-size-7 has-text-muted">
+                Pure server-driven development. Zero JavaScript frameworks.
             </p>
         </div>
     </footer>

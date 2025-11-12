@@ -1,159 +1,128 @@
 @{
-    ViewData["Title"] = "Home";
+    ViewData["Title"] = "TaskFlow - Smart Task Management";
 }
 
-<div class="hero is-primary is-medium">
+<section class="hero is-primary is-medium">
     <div class="hero-body">
         <div class="container has-text-centered">
             <h1 class="title is-1">
-                Welcome to TaskFlow
+                <span class="icon is-large">
+                    <i class="fas fa-tasks fa-2x"></i>
+                </span>
+                <br>
+                TaskFlow
             </h1>
-            <h2 class="subtitle is-3">
-                A comprehensive demo of Swap.Htmx framework features
+            <h2 class="subtitle is-4">
+                Organize your work with a simple, powerful task board
             </h2>
-            <p class="block is-size-5">
-                Pure server-driven development. Zero JavaScript. Maximum productivity.
-            </p>
             <div class="buttons is-centered mt-5">
-                <a class="button is-large is-light" 
-                   href="/Tasks" 
-                   hx-get="/Tasks" 
-                   hx-target="#main-content" 
-                   hx-push-url="true">
+                <a href="/Tasks" class="button is-light is-large">
                     <span class="icon">
-                        <i class="fas fa-tasks"></i>
+                        <i class="fas fa-arrow-right"></i>
                     </span>
-                    <span>View Task Board</span>
-                </a>
-                <a class="button is-large is-light is-outlined" 
-                   href="/Demo" 
-                   hx-get="/Demo" 
-                   hx-target="#main-content" 
-                   hx-push-url="true">
-                    <span class="icon">
-                        <i class="fas fa-flask"></i>
-                    </span>
-                    <span>Explore Demo Features</span>
+                    <span>Go to Task Board</span>
                 </a>
             </div>
         </div>
     </div>
-</div>
+</section>
 
 <section class="section">
     <div class="container">
-        <h2 class="title is-2 has-text-centered mb-6">
-            What This Demo Showcases
-        </h2>
-
         <div class="columns is-multiline">
-            <div class="column is-one-third">
-                <div class="box has-text-centered" style="height: 100%;">
-                    <span class="icon is-large has-text-primary mb-3">
-                        <i class="fas fa-3x fa-bolt"></i>
+            <div class="column is-4">
+                <div class="box has-text-centered">
+                    <span class="icon is-large has-text-primary">
+                        <i class="fas fa-columns fa-3x"></i>
                     </span>
-                    <h3 class="title is-4">Event System</h3>
-                    <p>Declarative event chains that automatically handle UI updates. Emit one domain event, trigger multiple UI refreshes.</p>
+                    <h3 class="title is-4 mt-4">Kanban Board</h3>
+                    <p class="has-text-secondary">
+                        Visualize your workflow with an intuitive kanban board. Drag tasks through To Do, In Progress, and Done columns.
+                    </p>
                 </div>
             </div>
 
-            <div class="column is-one-third">
-                <div class="box has-text-centered" style="height: 100%;">
-                    <span class="icon is-large has-text-info mb-3">
-                        <i class="fas fa-3x fa-exchange-alt"></i>
+            <div class="column is-4">
+                <div class="box has-text-centered">
+                    <span class="icon is-large has-text-primary">
+                        <i class="fas fa-chart-line fa-3x"></i>
                     </span>
-                    <h3 class="title is-4">Out-of-Band Swaps</h3>
-                    <p>Update multiple DOM elements in a single response. Task board columns, stats, and activity feed all refresh independently.</p>
+                    <h3 class="title is-4 mt-4">Real-Time Stats</h3>
+                    <p class="has-text-secondary">
+                        Track your progress with live statistics. See task counts, priorities, and completion rates at a glance.
+                    </p>
                 </div>
             </div>
 
-            <div class="column is-one-third">
-                <div class="box has-text-centered" style="height: 100%;">
-                    <span class="icon is-large has-text-success mb-3">
-                        <i class="fas fa-3x fa-bell"></i>
+            <div class="column is-4">
+                <div class="box has-text-centered">
+                    <span class="icon is-large has-text-primary">
+                        <i class="fas fa-bolt fa-3x"></i>
                     </span>
-                    <h3 class="title is-4">Toast Notifications</h3>
-                    <p>Server-triggered toast messages that appear automatically. Success, error, warning, and info variants built-in.</p>
+                    <h3 class="title is-4 mt-4">Instant Updates</h3>
+                    <p class="has-text-secondary">
+                        Experience server-driven real-time updates with HTMX. No page refreshes, no JavaScript frameworks needed.
+                    </p>
                 </div>
             </div>
 
-            <div class="column is-one-third">
-                <div class="box has-text-centered" style="height: 100%;">
-                    <span class="icon is-large has-text-warning mb-3">
-                        <i class="fas fa-3x fa-server"></i>
+            <div class="column is-4">
+                <div class="box has-text-centered">
+                    <span class="icon is-large has-text-primary">
+                        <i class="fas fa-search fa-3x"></i>
                     </span>
-                    <h3 class="title is-4">Pure Server-Side</h3>
-                    <p>Zero client-side JavaScript required. All logic lives in C# controllers. Type-safe and testable.</p>
+                    <h3 class="title is-4 mt-4">Smart Search</h3>
+                    <p class="has-text-secondary">
+                        Filter tasks instantly as you type. Search by title, description, assignee, or tags with real-time results.
+                    </p>
                 </div>
             </div>
 
-            <div class="column is-one-third">
-                <div class="box has-text-centered" style="height: 100%;">
-                    <span class="icon is-large has-text-danger mb-3">
-                        <i class="fas fa-3x fa-search"></i>
+            <div class="column is-4">
+                <div class="box has-text-centered">
+                    <span class="icon is-large has-text-primary">
+                        <i class="fas fa-flag fa-3x"></i>
                     </span>
-                    <h3 class="title is-4">Real-Time Search</h3>
-                    <p>Instant search and filtering with debounced input. Results update live as you type, all server-rendered.</p>
+                    <h3 class="title is-4 mt-4">Priority Management</h3>
+                    <p class="has-text-secondary">
+                        Set priorities from Low to Critical. Visual badges help you focus on what matters most.
+                    </p>
                 </div>
             </div>
 
-            <div class="column is-one-third">
-                <div class="box has-text-centered" style="height: 100%;">
-                    <span class="icon is-large has-text-link mb-3">
-                        <i class="fas fa-3x fa-columns"></i>
+            <div class="column is-4">
+                <div class="box has-text-centered">
+                    <span class="icon is-large has-text-primary">
+                        <i class="fas fa-history fa-3x"></i>
                     </span>
-                    <h3 class="title is-4">Kanban Board</h3>
-                    <p>Full task management with drag-free status updates. Create, edit, delete, and organize tasks across columns.</p>
+                    <h3 class="title is-4 mt-4">Activity Feed</h3>
+                    <p class="has-text-secondary">
+                        Never miss a change. The activity feed shows all task updates in real-time with a beautiful timeline view.
+                    </p>
                 </div>
-            </div>
-        </div>
-
-        <div class="has-text-centered mt-6">
-            <h3 class="title is-3 mb-4">Tech Stack</h3>
-            <div class="tags are-large is-centered">
-                <span class="tag is-primary is-light">ASP.NET Core 9</span>
-                <span class="tag is-info is-light">HTMX 2.x</span>
-                <span class="tag is-success is-light">Bulma CSS</span>
-                <span class="tag is-warning is-light">EF Core 9</span>
-                <span class="tag is-danger is-light">SQLite</span>
-                <span class="tag is-link is-light">Swap.Htmx</span>
             </div>
         </div>
     </div>
 </section>
 
 <section class="section has-background-light">
-    <div class="container">
-        <h2 class="title is-2 has-text-centered mb-6">
-            Quick Start
-        </h2>
-
-        <div class="columns">
-            <div class="column is-half is-offset-one-quarter">
-                <div class="content is-size-5">
-                    <ol>
-                        <li>Navigate to <strong>Task Board</strong> in the menu</li>
-                        <li>Click <strong>New Task</strong> to create a task</li>
-                        <li>Watch as the board, stats, and activity feed update automatically</li>
-                        <li>Change task status with quick action buttons</li>
-                        <li>Use search & filters to find specific tasks</li>
-                        <li>Edit or delete tasks inline</li>
-                    </ol>
-                </div>
+    <div class="container has-text-centered">
+        <h2 class="title is-3">Built with Swap.Htmx</h2>
+        <p class="subtitle is-5 has-text-secondary">
+            A demonstration of pure server-driven development using the Swap framework
+        </p>
+        <div class="content mt-5">
+            <p class="has-text-secondary">
+                <strong>Features Showcased:</strong>
+            </p>
+            <div class="tags are-medium is-centered">
+                <span class="tag">Event-Driven Architecture</span>
+                <span class="tag">Out-of-Band Swaps</span>
+                <span class="tag">Toast Notifications</span>
+                <span class="tag">Real-Time Updates</span>
+                <span class="tag">Server-Side Search</span>
+                <span class="tag">HTMX Integration</span>
             </div>
-        </div>
-
-        <div class="has-text-centered mt-5">
-            <a class="button is-primary is-large" 
-               href="/Tasks" 
-               hx-get="/Tasks" 
-               hx-target="#main-content" 
-               hx-push-url="true">
-                <span class="icon">
-                    <i class="fas fa-rocket"></i>
-                </span>
-                <span>Get Started</span>
-            </a>
         </div>
     </div>
 </section>

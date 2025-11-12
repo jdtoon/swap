@@ -1,344 +1,377 @@
-/* Task Board Custom Styles - Trello-Inspired Theme */
+/* ===== TaskFlow - Clean Light Theme ===== */
 
 :root {
-    /* Trello-inspired color palette */
-    --kanban-bg: #f5f6f8;
-    --column-bg: #ebecf0;
-    --card-bg: #ffffff;
-    --primary-blue: #0079bf;
-    --primary-blue-hover: #026aa7;
-    --success-green: #61bd4f;
-    --warning-orange: #f2d600;
-    --danger-red: #eb5a46;
-    --info-blue: #00c2e0;
-    --purple: #c377e0;
-    --pink: #ff80ce;
-    --navy: #344563;
-    --text-dark: #172b4d;
-    --text-gray: #5e6c84;
-    --border-gray: #dfe1e6;
+    /* Primary Colors */
+    --primary: #4A90E2;
+    --primary-light: #E8F2FB;
+    --primary-hover: #357ABD;
+    
+    /* Status Colors */
+    --success: #5CB85C;
+    --success-light: #E8F5E8;
+    --warning: #F0AD4E;
+    --warning-light: #FFF4E5;
+    --danger: #D9534F;
+    --danger-light: #FDE7E7;
+    
+    /* Neutral Colors */
+    --bg-body: #F5F7FA;
+    --bg-surface: #FFFFFF;
+    --bg-hover: #F8F9FA;
+    --bg-subtle: #E9ECEF;
+    
+    /* Text Colors */
+    --text-primary: #2C3E50;
+    --text-secondary: #6C757D;
+    --text-muted: #95A5A6;
+    
+    /* Borders */
+    --border-color: #DEE2E6;
+    --border-light: #E9ECEF;
+    
+    /* Shadows */
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    
+    /* Spacing */
+    --radius: 8px;
+    --radius-sm: 4px;
+    --radius-lg: 12px;
 }
 
-/* Override Bulma primary color */
-.has-background-primary,
+/* ===== Global Overrides ===== */
+
+body {
+    background-color: var(--bg-body);
+    color: var(--text-primary);
+}
+
+/* ===== Buttons ===== */
+
 .button.is-primary {
-    background-color: var(--primary-blue) !important;
+    background-color: var(--primary);
+    border-color: var(--primary);
+    color: white;
 }
 
 .button.is-primary:hover {
-    background-color: var(--primary-blue-hover) !important;
-}
-
-.hero.is-primary {
-    background: linear-gradient(135deg, var(--primary-blue) 0%, #005a87 100%);
-}
-
-.navbar.is-dark {
-    background-color: var(--navy) !important;
-}
-
-.task-cards {
-    min-height: 100px;
-}
-
-.card {
-    background-color: var(--card-bg);
-    border-radius: 8px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
-    transition: all 0.2s ease;
-    border: none;
-}
-
-.card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15), 0 2px 4px rgba(0, 0, 0, 0.12);
-}
-
-/* HTMX Loading States */
-.htmx-request .htmx-indicator {
-    display: inline-block !important;
-}
-
-.htmx-indicator {
-    display: none;
-}
-
-/* Smooth transitions for HTMX swaps */
-.htmx-swapping {
-    opacity: 0;
-    transition: opacity 0.3s ease-out;
-}
-
-.htmx-settling {
-    opacity: 1;
-    transition: opacity 0.3s ease-in;
-}
-
-/* Kanban columns styling */
-.kanban-column {
-    background-color: var(--column-bg);
-    border-radius: 8px;
-    padding: 12px;
-}
-
-.kanban-column-header {
-    font-weight: 600;
-    color: var(--text-dark);
-    padding: 8px 12px;
-    margin-bottom: 12px;
-    border-radius: 6px;
-}
-
-/* Priority badges with better colors */
-.tag.is-priority-low {
-    background-color: var(--info-blue) !important;
-    color: white !important;
-}
-
-.tag.is-priority-medium {
-    background-color: var(--warning-orange) !important;
-    color: var(--text-dark) !important;
-}
-
-.tag.is-priority-high {
-    background-color: var(--danger-red) !important;
-    color: white !important;
-}
-
-.tag.is-priority-critical {
-    background-color: #000000 !important;
-    color: white !important;
-    font-weight: 600;
-}
-
-/* Status tags */
-.tag.is-status-todo {
-    background-color: var(--text-gray) !important;
-    color: white !important;
-}
-
-.tag.is-status-inprogress {
-    background-color: var(--primary-blue) !important;
-    color: white !important;
-}
-
-.tag.is-status-done {
-    background-color: var(--success-green) !important;
-    color: white !important;
-}
-
-/* Modal animations */
-.modal.is-active {
-    animation: fadeIn 0.2s ease;
-}
-
-@keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
-}
-
-/* Card delete animation */
-.htmx-swapping.card {
-    opacity: 0;
-    transform: scale(0.8);
-    transition: opacity 0.3s ease, transform 0.3s ease;
-}
-
-/* Button loading state */
-button.htmx-request {
-    position: relative;
-    color: transparent !important;
-}
-
-button.htmx-request::after {
-    content: "";
-    position: absolute;
-    width: 16px;
-    height: 16px;
-    top: 50%;
-    left: 50%;
-    margin-left: -8px;
-    margin-top: -8px;
-    border: 2px solid transparent;
-    border-radius: 50%;
-    border-top-color: currentColor;
-    animation: button-loading-spinner 0.6s ease infinite;
-}
-
-@keyframes button-loading-spinner {
-    from {
-        transform: rotate(0turn);
-    }
-    to {
-        transform: rotate(1turn);
-    }
-}
-
-/* Empty state styling */
-.task-column-empty {
-    text-align: center;
-    padding: 3rem 1rem;
-    color: #b5b5b5;
-}
-
-/* Responsive columns */
-@media screen and (max-width: 768px) {
-    .columns.is-variable.is-3 {
-        display: block;
-    }
-}
-
-/* Focus states */
-.input:focus,
-.textarea:focus,
-.select select:focus {
-    border-color: #3e8ed0;
-    box-shadow: 0 0 0 0.125em rgba(62, 142, 208, 0.25);
-}
-
-/* Stats boxes */
-.stats-box {
-    background: white;
-    border-radius: 8px;
-    padding: 20px;
-    text-align: center;
-    transition: all 0.2s ease;
-    border: 2px solid transparent;
-}
-
-.stats-box:hover {
-    border-color: var(--primary-blue);
-    transform: translateY(-2px);
-}
-
-.stats-box .heading {
-    color: var(--text-gray);
-    text-transform: uppercase;
-    font-size: 0.75rem;
-    font-weight: 600;
-    letter-spacing: 0.5px;
-}
-
-.stats-box .title {
-    color: var(--text-dark);
-    margin-top: 8px;
-}
-
-/* Button improvements */
-.button {
-    border-radius: 6px;
-    font-weight: 500;
-    transition: all 0.2s ease;
+    background-color: var(--primary-hover);
+    border-color: var(--primary-hover);
 }
 
 .button.is-light {
-    background-color: rgba(9, 30, 66, 0.04);
-    color: var(--text-dark);
+    background-color: var(--bg-surface);
+    border-color: var(--border-color);
+    color: var(--text-secondary);
 }
 
 .button.is-light:hover {
-    background-color: rgba(9, 30, 66, 0.08);
+    background-color: var(--bg-hover);
+    border-color: var(--border-color);
 }
 
-/* Modal styling */
+/* ===== Cards ===== */
+
+.card {
+    background-color: var(--bg-surface);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-sm);
+    transition: all 0.2s ease;
+}
+
+.card:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+}
+
+.card-content {
+    padding: 1.25rem;
+}
+
+/* ===== Kanban Board ===== */
+
+.kanban-board {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+    padding: 1.5rem;
+}
+
+.kanban-column {
+    background-color: var(--bg-subtle);
+    border-radius: var(--radius-lg);
+    padding: 1rem;
+    min-height: 500px;
+}
+
+.kanban-column-header {
+    font-size: 0.875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-secondary);
+    margin-bottom: 1rem;
+    padding: 0.5rem;
+}
+
+.kanban-column-header .icon {
+    margin-right: 0.5rem;
+}
+
+/* ===== Task Cards ===== */
+
+.task-card {
+    background-color: var(--bg-surface);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius);
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+    box-shadow: var(--shadow-sm);
+    transition: all 0.2s ease;
+}
+
+.task-card:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-1px);
+}
+
+.task-card .title {
+    color: var(--text-primary);
+    font-size: 0.95rem;
+    margin-bottom: 0.5rem;
+}
+
+.task-card .subtitle {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+}
+
+/* ===== Priority Tags ===== */
+
+.tag.is-priority-low {
+    background-color: var(--success-light);
+    color: var(--success);
+    border: 1px solid var(--success);
+}
+
+.tag.is-priority-medium {
+    background-color: var(--primary-light);
+    color: var(--primary);
+    border: 1px solid var(--primary);
+}
+
+.tag.is-priority-high {
+    background-color: var(--warning-light);
+    color: #D68910;
+    border: 1px solid var(--warning);
+}
+
+.tag.is-priority-critical {
+    background-color: var(--danger-light);
+    color: var(--danger);
+    border: 1px solid var(--danger);
+}
+
+/* ===== Stats Dashboard ===== */
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.stat-card {
+    background-color: var(--bg-surface);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius);
+    padding: 1.25rem;
+    box-shadow: var(--shadow-sm);
+}
+
+.stat-card .stat-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 0.25rem;
+}
+
+.stat-card .stat-label {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.stat-card .icon {
+    color: var(--primary);
+}
+
+/* ===== Activity Feed ===== */
+
+.activity-feed {
+    background-color: var(--bg-surface);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius);
+    padding: 1.25rem;
+    box-shadow: var(--shadow-sm);
+}
+
+.activity-item {
+    padding: 0.75rem 0;
+    border-bottom: 1px solid var(--border-light);
+}
+
+.activity-item:last-child {
+    border-bottom: none;
+}
+
+.activity-item .icon {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background-color: var(--primary-light);
+    color: var(--primary);
+}
+
+.activity-item .activity-text {
+    color: var(--text-primary);
+    font-size: 0.9rem;
+}
+
+.activity-item .activity-time {
+    color: var(--text-muted);
+    font-size: 0.8rem;
+}
+
+/* ===== Forms ===== */
+
+.input,
+.textarea,
+.select select {
+    border-color: var(--border-color);
+    background-color: var(--bg-surface);
+    color: var(--text-primary);
+    transition: all 0.2s ease;
+}
+
+.input:focus,
+.textarea:focus,
+.select select:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 0.125em rgba(74, 144, 226, 0.25);
+}
+
+.label {
+    color: var(--text-primary);
+    font-weight: 600;
+    font-size: 0.875rem;
+    margin-bottom: 0.5rem;
+}
+
+/* ===== Modal ===== */
+
 .modal-card {
-    border-radius: 8px;
+    border-radius: var(--radius-lg);
     overflow: hidden;
 }
 
 .modal-card-head {
-    background-color: var(--column-bg);
-    border-bottom: 1px solid var(--border-gray);
+    background-color: var(--bg-surface);
+    border-bottom: 1px solid var(--border-light);
 }
 
 .modal-card-title {
-    color: var(--text-dark);
-    font-weight: 600;
+    color: var(--text-primary);
 }
 
-/* Form inputs */
-.input,
-.textarea,
-.select select {
-    border-radius: 6px;
-    border-color: var(--border-gray);
-    transition: all 0.2s ease;
+.modal-card-body {
+    background-color: var(--bg-surface);
 }
 
-.input:focus,
-.textarea:focus,
-.select select:focus {
-    border-color: var(--primary-blue);
-    box-shadow: 0 0 0 3px rgba(0, 121, 191, 0.1);
+.modal-card-foot {
+    background-color: var(--bg-surface);
+    border-top: 1px solid var(--border-light);
 }
 
-/* Timeline/Activity feed */
-.timeline-marker.is-success {
-    background-color: var(--success-green) !important;
-    border-color: var(--success-green) !important;
+/* ===== Hero Section ===== */
+
+.hero.is-primary {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
 }
 
-.timeline-marker.is-info {
-    background-color: var(--primary-blue) !important;
-    border-color: var(--primary-blue) !important;
+.hero .title,
+.hero .subtitle {
+    color: white;
 }
 
-.timeline-marker.is-warning {
-    background-color: var(--warning-orange) !important;
-    border-color: var(--warning-orange) !important;
+/* ===== Navbar ===== */
+
+.navbar {
+    background-color: var(--bg-surface);
+    border-bottom: 1px solid var(--border-light);
+    box-shadow: var(--shadow-sm);
 }
 
-.timeline-marker.is-danger {
-    background-color: var(--danger-red) !important;
-    border-color: var(--danger-red) !important;
+.navbar-item {
+    color: var(--text-primary);
 }
 
-/* Task card improvements */
-.card-content {
-    padding: 16px;
+.navbar-item:hover {
+    background-color: var(--bg-hover);
+    color: var(--primary);
 }
 
-.card .title {
-    color: var(--text-dark);
-    margin-bottom: 8px;
+/* ===== Search ===== */
+
+.search-container {
+    margin-bottom: 1.5rem;
 }
 
-.card .subtitle {
-    color: var(--text-gray);
+.search-container .control.has-icons-left .input {
+    padding-left: 2.5rem;
 }
 
-/* Hero section */
-.hero.is-primary .title,
-.hero.is-primary .subtitle {
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+.search-container .icon {
+    color: var(--text-muted);
 }
 
-/* Box elements */
+/* ===== Utilities ===== */
+
+.has-text-muted {
+    color: var(--text-muted) !important;
+}
+
+.has-text-secondary {
+    color: var(--text-secondary) !important;
+}
+
 .box {
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
-    border: 1px solid var(--border-gray);
+    background-color: var(--bg-surface);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-sm);
 }
 
-/* Feature boxes on homepage */
-.feature-box {
-    height: 100%;
-    transition: all 0.3s ease;
-    border: 2px solid transparent;
+/* ===== Responsive ===== */
+
+@media screen and (max-width: 1024px) {
+    .kanban-board {
+        grid-template-columns: 1fr;
+    }
+    
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
 }
 
-.feature-box:hover {
-    border-color: var(--primary-blue);
-    transform: translateY(-4px);
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
-}
-
-/* Drag and drop hints (for future enhancement) */
-.task-card-dragging {
-    opacity: 0.5;
-}
-
-.task-column-dragover {
-    background-color: rgba(0, 121, 191, 0.1);
-    border: 2px dashed var(--primary-blue);
+@media screen and (max-width: 768px) {
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
 }

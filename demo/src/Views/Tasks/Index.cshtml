@@ -10,7 +10,7 @@
                     <h1 class="title is-2">
                         <span class="icon-text">
                             <span class="icon has-text-primary">
-                                <i class="fas fa-tasks"></i>
+                                <i class="fas fa-clipboard-list"></i>
                             </span>
                             <span>Task Board</span>
                         </span>
@@ -34,155 +34,95 @@
 
         <!-- Stats Row -->
         <div id="task-stats" 
-             class="box mb-5"
+             class="mb-5"
              hx-get="/Tasks/Stats" 
              hx-trigger="load, ui.taskStats.refresh from:body"
              hx-swap="innerHTML">
             @await Html.PartialAsync("_Stats", new TaskFlow.Dtos.TaskStatsDto())
         </div>
 
-        <!-- Search / Filter Bar -->
-        <div class="box mb-5">
-            <h2 class="title is-5 mb-3">
-                <span class="icon-text">
-                    <span class="icon">
-                        <i class="fas fa-filter"></i>
+        <!-- Search Bar -->
+        <div class="box mb-5 search-container">
+            <div class="field">
+                <p class="control has-icons-left">
+                    <input class="input" 
+                           type="text" 
+                           placeholder="Search tasks by title, description, or assignee..."
+                           hx-get="/Tasks/Search" 
+                           hx-target="#search-results" 
+                           hx-trigger="input delay:500ms changed"
+                           hx-include="this"
+                           hx-swap="innerHTML">
+                    <span class="icon is-left">
+                        <i class="fas fa-search"></i>
                     </span>
-                    <span>Search & Filter</span>
-                </span>
-            </h2>
-            <form hx-get="/Tasks/Search" 
-                  hx-target="#search-results" 
-                  hx-trigger="input delay:500ms, change"
-                  hx-swap="innerHTML">
-                <div class="field is-horizontal">
-                    <div class="field-body">
-                        <div class="field">
-                            <p class="control has-icons-left">
-                                <input class="input" 
-                                       type="text" 
-                                       name="Search" 
-                                       placeholder="Search tasks...">
-                                <span class="icon is-left">
-                                    <i class="fas fa-search"></i>
-                                </span>
-                            </p>
-                        </div>
-
-                        <div class="field">
-                            <p class="control">
-                                <span class="select is-fullwidth">
-                                    <select name="Status">
-                                        <option value="">All Statuses</option>
-                                        <option value="0">To Do</option>
-                                        <option value="1">In Progress</option>
-                                        <option value="2">Done</option>
-                                    </select>
-                                </span>
-                            </p>
-                        </div>
-
-                        <div class="field">
-                            <p class="control">
-                                <span class="select is-fullwidth">
-                                    <select name="Priority">
-                                        <option value="">All Priorities</option>
-                                        <option value="0">Low</option>
-                                        <option value="1">Medium</option>
-                                        <option value="2">High</option>
-                                        <option value="3">Critical</option>
-                                    </select>
-                                </span>
-                            </p>
-                        </div>
-
-                        <div class="field">
-                            <p class="control has-icons-left">
-                                <input class="input" 
-                                       type="text" 
-                                       name="AssignedTo" 
-                                       placeholder="Assigned to...">
-                                <span class="icon is-left">
-                                    <i class="fas fa-user"></i>
-                                </span>
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            </form>
-            <div id="search-results" class="mt-4">
-                <!-- Search results appear here -->
+                </p>
             </div>
+            <div id="search-results"></div>
         </div>
 
         <!-- Task Board (Kanban Columns) -->
-        <div class="columns is-variable is-3">
+        <div class="kanban-board">
             <!-- Todo Column -->
-            <div class="column">
-                <div class="kanban-column" style="min-height: 500px;">
-                    <div class="kanban-column-header">
-                        <span class="icon-text">
-                            <span class="icon has-text-grey">
-                                <i class="fas fa-circle"></i>
-                            </span>
-                            <span>TO DO</span>
+            <div class="kanban-column">
+                <div class="kanban-column-header">
+                    <span class="icon-text">
+                        <span class="icon">
+                            <i class="fas fa-circle"></i>
                         </span>
-                    </div>
-                    <div id="task-column-todo" 
-                         hx-get="/Tasks/TaskColumn?status=0" 
-                         hx-trigger="load, ui.taskTodo.refresh from:body, ui.taskBoard.refresh from:body"
-                         hx-swap="innerHTML">
-                        Loading...
-                    </div>
+                        <span>TO DO</span>
+                    </span>
+                </div>
+                <div id="task-column-todo" 
+                     hx-get="/Tasks/TaskColumn?status=0" 
+                     hx-trigger="load, ui.taskTodo.refresh from:body, ui.taskBoard.refresh from:body"
+                     hx-swap="innerHTML">
+                    <p class="has-text-centered has-text-muted">Loading...</p>
                 </div>
             </div>
 
             <!-- In Progress Column -->
-            <div class="column">
-                <div class="kanban-column" style="min-height: 500px;">
-                    <div class="kanban-column-header">
-                        <span class="icon-text">
-                            <span class="icon has-text-primary">
-                                <i class="fas fa-circle-half-stroke"></i>
-                            </span>
-                            <span>IN PROGRESS</span>
+            <div class="kanban-column">
+                <div class="kanban-column-header">
+                    <span class="icon-text">
+                        <span class="icon">
+                            <i class="fas fa-circle-half-stroke"></i>
                         </span>
-                    </div>
-                    <div id="task-column-inprogress" 
-                         hx-get="/Tasks/TaskColumn?status=1" 
-                         hx-trigger="load, ui.taskInProgress.refresh from:body, ui.taskBoard.refresh from:body"
-                         hx-swap="innerHTML">
-                        Loading...
-                    </div>
+                        <span>IN PROGRESS</span>
+                    </span>
+                </div>
+                <div id="task-column-inprogress" 
+                     hx-get="/Tasks/TaskColumn?status=1" 
+                     hx-trigger="load, ui.taskInProgress.refresh from:body, ui.taskBoard.refresh from:body"
+                     hx-swap="innerHTML">
+                    <p class="has-text-centered has-text-muted">Loading...</p>
                 </div>
             </div>
 
             <!-- Done Column -->
-            <div class="column">
-                <div class="kanban-column" style="min-height: 500px;">
-                    <div class="kanban-column-header">
-                        <span class="icon-text">
-                            <span class="icon has-text-success">
-                                <i class="fas fa-check-circle"></i>
-                            </span>
-                            <span>DONE</span>
+            <div class="kanban-column">
+                <div class="kanban-column-header">
+                    <span class="icon-text">
+                        <span class="icon">
+                            <i class="fas fa-check-circle"></i>
                         </span>
-                    </div>
-                    <div id="task-column-done" 
-                         hx-get="/Tasks/TaskColumn?status=2" 
-                         hx-trigger="load, ui.taskDone.refresh from:body, ui.taskBoard.refresh from:body"
-                         hx-swap="innerHTML">
-                        Loading...
-                    </div>
+                        <span>DONE</span>
+                    </span>
+                </div>
+                <div id="task-column-done" 
+                     hx-get="/Tasks/TaskColumn?status=2" 
+                     hx-trigger="load, ui.taskDone.refresh from:body, ui.taskBoard.refresh from:body"
+                     hx-swap="innerHTML">
+                    <p class="has-text-centered has-text-muted">Loading...</p>
                 </div>
             </div>
         </div>
 
         <!-- Activity Feed -->
-        <div class="box mt-5">
+        <div class="activity-feed mt-5">
             <h2 class="title is-4 mb-4">
                 <span class="icon-text">
-                    <span class="icon has-text-info">
+                    <span class="icon">
                         <i class="fas fa-history"></i>
                     </span>
                     <span>Recent Activity</span>
@@ -192,7 +132,7 @@
                  hx-get="/Tasks/ActivityFeed" 
                  hx-trigger="load, ui.taskActivity.refresh from:body"
                  hx-swap="innerHTML">
-                Loading activity...
+                <p class="has-text-centered has-text-muted">Loading activity...</p>
             </div>
         </div>
     </div>
