@@ -15,7 +15,7 @@ public static class ServiceCollectionExtensions
         var provider = (config[ProviderKey] ?? "Sqlite").Trim();
         var conn = config.GetConnectionString("Workspaces")
                    ?? config.GetConnectionString("Default")
-                   ?? "Data Source=projecthub.db";
+                   ?? "Data Source=workspaces.db";
 
         services.AddDbContext<WorkspacesDbContext>(options =>
         {
@@ -36,7 +36,7 @@ public static class ServiceCollectionExtensions
             }
             else
             {
-                options.UseSqlite("Data Source=projecthub.db");
+                options.UseSqlite("Data Source=workspaces.db");
             }
         });
 
