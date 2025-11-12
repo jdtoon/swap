@@ -15,6 +15,6 @@
 
   <ItemGroup>
     <PackageReference Include="Swap.Modularity" Version="0.1.0" />
-    <PackageReference Include="Swap.Htmx" Version="0.3.3" />
+    <PackageReference Include="Swap.Htmx" Version="0.3.4" />
   </ItemGroup>
 </Project>

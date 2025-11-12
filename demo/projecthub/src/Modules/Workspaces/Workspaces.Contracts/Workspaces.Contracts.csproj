@@ -5,7 +5,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Swap.Htmx" Version="0.3.3" />
+    <PackageReference Include="Swap.Htmx" Version="0.3.4" />
   </ItemGroup>
 </Project>
 
