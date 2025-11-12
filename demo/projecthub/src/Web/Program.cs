@@ -6,9 +6,6 @@ using Swap.Htmx.ServerEvents;
 using Swap.Htmx.Dev;
 using Swap.Htmx.Events;
 using Microsoft.AspNetCore.Mvc.ApplicationParts;
-using ProjectHub.Modules.Workspaces.Web.Infrastructure;
-using ProjectHub.Modules.Projects.Web.Infrastructure;
-using ProjectHub.Modules.Tasks.Web.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -26,12 +23,8 @@ builder.Services.AddSwapHtmx();
 // Register modules – automatic discovery (host references modules so they're already loaded)
 builder.Services.AddSwapModules(builder.Configuration);
 
-// Register UI chain contributors from all modules
-builder.Services.AddTransient<ISwapUiChainContributor, WorkspacesUiChainContributor>();
-builder.Services.AddTransient<ISwapUiChainContributor, ProjectsUiChainContributor>();
-builder.Services.AddTransient<ISwapUiChainContributor, TasksUiChainContributor>();
-
 // Auto-discover MVC parts from any *.Web RCL assemblies
+// This also auto-registers ISwapUiChainContributor implementations
 mvc.AddSwapModuleApplicationParts();
 
 var app = builder.Build();
