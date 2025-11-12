@@ -16,7 +16,11 @@
                 Organize your work with a simple, powerful task board
             </h2>
             <div class="buttons is-centered mt-5">
-                <a href="/Tasks" class="button is-light is-large">
+                <a href="/Tasks" 
+                   class="button is-light is-large"
+                   hx-get="/Tasks"
+                   hx-target="main"
+                   hx-push-url="true">
                     <span class="icon">
                         <i class="fas fa-arrow-right"></i>
                     </span>

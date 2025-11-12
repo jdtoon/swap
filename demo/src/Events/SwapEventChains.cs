@@ -22,7 +22,8 @@ public static class SwapEventChains
                 EventNames.Ui.ToastSuccess)
             
             .Chain(EventNames.Domain.TaskUpdated, 
-                EventNames.Ui.TaskBoardRefresh, 
+                EventNames.Ui.TaskBoardRefresh,
+                EventNames.Ui.TaskStatsRefresh, 
                 EventNames.Ui.TaskActivityRefresh, 
                 EventNames.Ui.ToastSuccess)
             
@@ -42,11 +43,13 @@ public static class SwapEventChains
             
             .Chain(EventNames.Domain.TaskPriorityChanged, 
                 EventNames.Ui.TaskBoardRefresh, 
+                EventNames.Ui.TaskStatsRefresh,
                 EventNames.Ui.TaskActivityRefresh, 
                 EventNames.Ui.ToastSuccess)
             
             .Chain(EventNames.Domain.TaskAssigned, 
-                EventNames.Ui.TaskBoardRefresh, 
+                EventNames.Ui.TaskBoardRefresh,
+                EventNames.Ui.TaskStatsRefresh, 
                 EventNames.Ui.TaskActivityRefresh, 
                 EventNames.Ui.ToastSuccess)
             
