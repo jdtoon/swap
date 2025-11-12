@@ -9,6 +9,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added - Demo Applications
+- **ProjectHub** — Modular monolith demo showcasing Swap.Modularity patterns
+  - 3 independent modules (Workspaces, Projects, Tasks) with Contracts/Module/Web RCL structure
+  - Server-Sent Events (SSE) live dashboard with real-time metrics streaming
+  - Per-module EF Core migrations (Postgres + SQLite support)
+  - Docker Compose stack (Postgres + RabbitMQ)
+  - Cross-module communication via contracts and distributed events
+  - SwapRedirectToAction helper for internal action invocation
+  - Fluent OOB API (`.WithOobSwap()`) for out-of-band updates
+  - Integration tests covering HTMX flows and module interactions
+- **TaskFlow** — HTMX patterns demo (existing, now documented)
+  - Core SwapController patterns and automatic partial detection
+  - Declarative event chains (domain → UI)
+  - Toast notifications and form validation
+  - HTMX integration testing examples
+- Added `/demo/README.md` with feature comparison and architecture overview
+- Updated main README with "Live Demos" section
+
 ### Planned / In Progress
 - WebSocket Chat Demo completion: front-end OOB swap rendering & E2E Playwright tests still in progress
 - Additional HTMX real-time patterns (presence, notifications) pending stabilization of WebSocket infrastructure
