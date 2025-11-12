@@ -131,6 +131,14 @@
             <div class="box">
                 <h3 class="title is-6">Quick Links</h3>
                 <div class="buttons is-flex is-flex-direction-column">
+                    <a href="/dashboard"
+                       hx-get="/dashboard"
+                       hx-target="#main-content"
+                       hx-push-url="true"
+                       class="button is-fullwidth is-success">
+                        <span class="icon"><i class="fas fa-chart-line"></i></span>
+                        <span>Live Dashboard</span>
+                    </a>
                     <a href="/workspaces"
                        hx-get="/workspaces"
                        hx-target="#main-content"
