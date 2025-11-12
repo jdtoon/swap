@@ -50,8 +50,8 @@ public class ProjectsController : SwapController
             return BadRequest(ModelState);
 
         var project = await _projectService.CreateAsync(dto);
-        Response.HxRedirect($"/projects/{project.Id}");
-        return Ok();
+        var detailsProject = await _projectService.GetByIdAsync(project.Id);
+        return SwapView("Details", detailsProject);
     }
 
     [HttpGet("{id}")]
@@ -81,23 +81,23 @@ public class ProjectsController : SwapController
             return BadRequest(ModelState);
 
         var project = await _projectService.UpdateAsync(id, dto);
-        Response.HxRedirect($"/projects/{project.Id}");
-        return Ok();
+        var detailsProject = await _projectService.GetByIdAsync(project.Id);
+        return SwapView("Details", detailsProject);
     }
 
     [HttpPost("archive/{id}")]
     public async Task<IActionResult> Archive(int id)
     {
         await _projectService.ArchiveAsync(id);
-        Response.HxRedirect("/projects");
-        return Ok();
+        var projects = await _projectService.GetAllAsync();
+        return SwapView("Index", projects);
     }
 
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(int id)
     {
         await _projectService.DeleteAsync(id);
-        Response.HxRedirect("/projects");
-        return Ok();
+        var projects = await _projectService.GetAllAsync();
+        return SwapView("Index", projects);
     }
 }

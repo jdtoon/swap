@@ -7,7 +7,7 @@
         <h1 class="title">Create Workspace</h1>
         <p class="subtitle">Set up a new workspace to organize your projects</p>
 
-        <form hx-post="/workspaces/create" hx-target="#main-content">
+        <form hx-post="/workspaces/create" hx-target="#main-content" hx-push-url="true">
             <div class="field">
                 <label class="label">Workspace Name</label>
                 <div class="control has-icons-left">

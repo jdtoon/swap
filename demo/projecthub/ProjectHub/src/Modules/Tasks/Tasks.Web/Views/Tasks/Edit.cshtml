@@ -7,7 +7,7 @@
 <div class="container">
     <h1 class="title">Edit Task</h1>
 
-    <form method="post" action="/tasks/@Model.Id/edit" hx-post="/tasks/@Model.Id/edit" hx-target="#main-content" hx-swap="outerHTML">
+    <form method="post" action="/tasks/@Model.Id/edit" hx-post="/tasks/@Model.Id/edit" hx-target="#main-content" hx-swap="innerHTML" hx-push-url="true">
         <div class="field">
             <label class="label">Project</label>
             <div class="control">

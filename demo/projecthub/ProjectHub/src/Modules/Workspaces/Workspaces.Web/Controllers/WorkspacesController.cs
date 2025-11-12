@@ -34,8 +34,8 @@ public class WorkspacesController : SwapController
             return BadRequest(ModelState);
 
         var workspace = await _service.CreateAsync(dto);
-        Response.HxRedirect("/workspaces");
-        return Ok();
+        var workspaces = await _service.GetActiveAsync();
+        return SwapView("Index", workspaces);
     }
 
     [HttpGet("{id}")]
@@ -65,23 +65,23 @@ public class WorkspacesController : SwapController
             return BadRequest(ModelState);
 
         await _service.UpdateAsync(id, dto);
-        Response.HxRedirect($"/workspaces/{id}");
-        return Ok();
+        var workspace = await _service.GetByIdAsync(id);
+        return SwapView("Details", workspace);
     }
 
     [HttpPost("archive/{id}")]
     public async Task<IActionResult> Archive(int id)
     {
         await _service.ArchiveAsync(id);
-        Response.HxRedirect("/workspaces");
-        return Ok();
+        var workspaces = await _service.GetActiveAsync();
+        return SwapView("Index", workspaces);
     }
 
     [HttpPost("unarchive/{id}")]
     public async Task<IActionResult> Unarchive(int id)
     {
         await _service.UnarchiveAsync(id);
-        Response.HxRedirect("/workspaces");
-        return Ok();
+        var workspaces = await _service.GetActiveAsync();
+        return SwapView("Index", workspaces);
     }
 }

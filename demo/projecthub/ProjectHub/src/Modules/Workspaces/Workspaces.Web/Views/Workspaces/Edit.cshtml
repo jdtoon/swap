@@ -6,7 +6,7 @@
 <div class="container">
     <h1 class="title">Edit Workspace</h1>
 
-    <form method="post" action="/workspaces/@Model.Id/edit" hx-post="/workspaces/@Model.Id/edit" hx-target="#main-content" hx-swap="outerHTML">
+    <form method="post" action="/workspaces/@Model.Id/edit" hx-post="/workspaces/@Model.Id/edit" hx-target="#main-content" hx-swap="innerHTML" hx-push-url="true">
         <div class="field">
             <label class="label" for="Name">Name</label>
             <div class="control">
