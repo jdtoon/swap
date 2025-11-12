@@ -1,0 +1,96 @@
+@{
+    ViewData["Title"] = "Create Project";
+    var workspaces = ViewBag.Workspaces as IEnumerable<ProjectHub.Modules.Workspaces.Contracts.WorkspaceDto>;
+    var selectedWorkspaceId = ViewBag.SelectedWorkspaceId as int?;
+}
+
+<section class="section">
+    <div class="container">
+        <h1 class="title">Create Project</h1>
+        <p class="subtitle">Start a new project in your workspace</p>
+
+        <form hx-post="/projects/create" hx-target="#main-content">
+            <div class="field">
+                <label class="label">Workspace</label>
+                <div class="control">
+                    <div class="select is-fullwidth">
+                        <select name="WorkspaceId" required>
+                            <option value="">Select a workspace</option>
+                            @foreach (var ws in workspaces ?? Enumerable.Empty<ProjectHub.Modules.Workspaces.Contracts.WorkspaceDto>())
+                            {
+                                <option value="@ws.Id" selected="@(ws.Id == selectedWorkspaceId)">@ws.Name</option>
+                            }
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="field">
+                <label class="label">Project Name</label>
+                <div class="control has-icons-left">
+                    <input class="input" type="text" name="Name" placeholder="My Project" required>
+                    <span class="icon is-small is-left">
+                        <i class="fas fa-project-diagram"></i>
+                    </span>
+                </div>
+            </div>
+
+            <div class="field">
+                <label class="label">Description</label>
+                <div class="control">
+                    <textarea class="textarea" name="Description" placeholder="Project description" rows="3"></textarea>
+                </div>
+            </div>
+
+            <div class="columns">
+                <div class="column">
+                    <div class="field">
+                        <label class="label">Status</label>
+                        <div class="control">
+                            <div class="select is-fullwidth">
+                                <select name="Status">
+                                    <option value="Planning">Planning</option>
+                                    <option value="Active">Active</option>
+                                    <option value="OnHold">On Hold</option>
+                                    <option value="Completed">Completed</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="column">
+                    <div class="field">
+                        <label class="label">Start Date</label>
+                        <div class="control">
+                            <input class="input" type="date" name="StartDate">
+                        </div>
+                    </div>
+                </div>
+                <div class="column">
+                    <div class="field">
+                        <label class="label">Due Date</label>
+                        <div class="control">
+                            <input class="input" type="date" name="DueDate">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="field is-grouped">
+                <div class="control">
+                    <button type="submit" class="button is-primary">
+                        <span class="icon"><i class="fas fa-check"></i></span>
+                        <span>Create Project</span>
+                    </button>
+                </div>
+                <div class="control">
+                    <a href="/projects"
+                       hx-get="/projects"
+                       hx-target="#main-content"
+                       hx-push-url="true"
+                       class="button is-light">Cancel</a>
+                </div>
+            </div>
+        </form>
+    </div>
+</section>

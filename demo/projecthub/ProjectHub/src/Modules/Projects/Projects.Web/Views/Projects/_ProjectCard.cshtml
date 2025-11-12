@@ -1,0 +1,76 @@
+@model ProjectHub.Modules.Projects.Contracts.ProjectDto
+
+@{
+    var statusColor = Model.Status switch
+    {
+        "Active" => "is-success",
+        "OnHold" => "is-warning",
+        "Completed" => "is-info",
+        _ => "is-light"
+    };
+}
+
+<div class="card project-card">
+    <div class="card-content">
+        <div class="media">
+            <div class="media-left">
+                <span class="icon is-large has-text-primary">
+                    <i class="fas fa-folder-open fa-2x"></i>
+                </span>
+            </div>
+            <div class="media-content">
+                <a href="/projects/@Model.Id"
+                   hx-get="/projects/@Model.Id"
+                   hx-target="#main-content"
+                   hx-push-url="true"
+                   class="title is-4">@Model.Name</a>
+                @if (!string.IsNullOrWhiteSpace(Model.Description))
+                {
+                    <p class="subtitle is-6 has-text-grey mt-1">@Model.Description</p>
+                }
+                <p class="subtitle is-6 has-text-grey-light mt-1">
+                    <span class="icon is-small"><i class="fas fa-folder"></i></span>
+                    <a href="/projects/workspace/@Model.WorkspaceId"
+                       hx-get="/projects/workspace/@Model.WorkspaceId"
+                       hx-target="#main-content"
+                       hx-push-url="true">@Model.WorkspaceName</a>
+                </p>
+            </div>
+        </div>
+        
+        <div class="content">
+            <div class="tags">
+                <span class="tag @statusColor">
+                    @Model.Status
+                </span>
+                @if (Model.DueDate.HasValue)
+                {
+                    var daysUntilDue = (Model.DueDate.Value - DateTime.UtcNow).Days;
+                    var dueDateClass = daysUntilDue < 0 ? "is-danger" : daysUntilDue < 7 ? "is-warning" : "is-light";
+                    <span class="tag @dueDateClass">
+                        <span class="icon is-small"><i class="far fa-calendar"></i></span>
+                        <span>Due @Model.DueDate.Value.ToString("MMM dd")</span>
+                    </span>
+                }
+            </div>
+        </div>
+    </div>
+    <footer class="card-footer">
+        <a href="/projects/@Model.Id" 
+           hx-get="/projects/@Model.Id"
+           hx-target="#main-content"
+           hx-push-url="true"
+           class="card-footer-item">
+            <span class="icon is-small"><i class="fas fa-eye"></i></span>
+            <span>View</span>
+        </a>
+        <a href="/projects/@Model.Id/edit" 
+           hx-get="/projects/@Model.Id/edit"
+           hx-target="#main-content"
+           hx-push-url="true"
+           class="card-footer-item">
+            <span class="icon is-small"><i class="fas fa-edit"></i></span>
+            <span>Edit</span>
+        </a>
+    </footer>
+</div>

@@ -7,6 +7,8 @@
   <ItemGroup>
     <ProjectReference Include="..\Modules\Workspaces\Workspaces.Module\Workspaces.Module.csproj" />
     <ProjectReference Include="..\Modules\Workspaces\Workspaces.Web\Workspaces.Web.csproj" />
+    <ProjectReference Include="..\Modules\Projects\Projects.Module\Projects.Module.csproj" />
+    <ProjectReference Include="..\Modules\Projects\Projects.Web\Projects.Web.csproj" />
   </ItemGroup>
 
   <ItemGroup>

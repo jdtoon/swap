@@ -53,14 +53,37 @@
         </div>
 
         <div class="box">
-            <p class="has-text-centered has-text-grey">
-                <span class="icon is-large">
-                    <i class="fas fa-tasks fa-3x"></i>
-                </span>
-            </p>
-            <p class="has-text-centered has-text-grey">
-                This workspace is ready for projects! Projects module coming soon.
-            </p>
+            <div class="level mb-4">
+                <div class="level-left">
+                    <div class="level-item">
+                        <h2 class="title is-5">
+                            <span class="icon"><i class="fas fa-project-diagram"></i></span>
+                            <span>Projects</span>
+                        </h2>
+                    </div>
+                </div>
+                <div class="level-right">
+                    <div class="level-item">
+                        <a href="/projects/create?workspaceId=@Model.Id"
+                           hx-get="/projects/create?workspaceId=@Model.Id"
+                           hx-target="#main-content"
+                           hx-push-url="true"
+                           class="button is-primary is-small">
+                            <span class="icon"><i class="fas fa-plus"></i></span>
+                            <span>New Project</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <a href="/projects/workspace/@Model.Id"
+               hx-get="/projects/workspace/@Model.Id"
+               hx-target="#main-content"
+               hx-push-url="true"
+               class="button is-light is-fullwidth">
+                <span class="icon"><i class="fas fa-eye"></i></span>
+                <span>View All Projects in this Workspace</span>
+            </a>
         </div>
 
         <div class="notification is-light mt-4">
@@ -72,3 +95,4 @@
         </div>
     </div>
 </section>
+

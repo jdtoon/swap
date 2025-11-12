@@ -1,0 +1,139 @@
+@model ProjectHub.Modules.Projects.Contracts.ProjectDto
+@{
+    ViewData["Title"] = Model.Name;
+    var statusColor = Model.Status switch
+    {
+        "Active" => "is-success",
+        "OnHold" => "is-warning",
+        "Completed" => "is-info",
+        _ => "is-light"
+    };
+}
+
+<section class="section">
+    <div class="container">
+        <nav class="breadcrumb" aria-label="breadcrumbs">
+            <ul>
+                <li>
+                    <a href="/workspaces"
+                       hx-get="/workspaces"
+                       hx-target="#main-content"
+                       hx-push-url="true">Workspaces</a>
+                </li>
+                <li>
+                    <a href="/workspaces/@Model.WorkspaceId"
+                       hx-get="/workspaces/@Model.WorkspaceId"
+                       hx-target="#main-content"
+                       hx-push-url="true">@Model.WorkspaceName</a>
+                </li>
+                <li>
+                    <a href="/projects/workspace/@Model.WorkspaceId"
+                       hx-get="/projects/workspace/@Model.WorkspaceId"
+                       hx-target="#main-content"
+                       hx-push-url="true">Projects</a>
+                </li>
+                <li class="is-active"><a href="#" aria-current="page">@Model.Name</a></li>
+            </ul>
+        </nav>
+
+        <div class="level">
+            <div class="level-left">
+                <div class="level-item">
+                    <div>
+                        <h1 class="title">
+                            <span class="icon has-text-primary">
+                                <i class="fas fa-folder-open"></i>
+                            </span>
+                            @Model.Name
+                        </h1>
+                        @if (!string.IsNullOrWhiteSpace(Model.Description))
+                        {
+                            <p class="subtitle">@Model.Description</p>
+                        }
+                    </div>
+                </div>
+            </div>
+            <div class="level-right">
+                <div class="level-item">
+                    <div class="buttons">
+                        <a href="/projects/@Model.Id/edit"
+                           hx-get="/projects/@Model.Id/edit"
+                           hx-target="#main-content"
+                           hx-push-url="true"
+                           class="button is-light">
+                            <span class="icon"><i class="fas fa-edit"></i></span>
+                            <span>Edit</span>
+                        </a>
+                        <button class="button is-danger is-light"
+                                hx-post="/projects/archive/@Model.Id"
+                                hx-confirm="Archive this project?">
+                            <span class="icon"><i class="fas fa-archive"></i></span>
+                            <span>Archive</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="columns">
+            <div class="column is-8">
+                <div class="box">
+                    <h2 class="title is-5">
+                        <span class="icon"><i class="fas fa-tasks"></i></span>
+                        <span>Tasks</span>
+                    </h2>
+                    <p class="has-text-centered has-text-grey">
+                        <span class="icon is-large">
+                            <i class="fas fa-clipboard-list fa-3x"></i>
+                        </span>
+                    </p>
+                    <p class="has-text-centered has-text-grey">
+                        Tasks module coming soon!
+                    </p>
+                </div>
+            </div>
+
+            <div class="column is-4">
+                <div class="box">
+                    <h2 class="title is-6">Project Details</h2>
+                    
+                    <div class="field">
+                        <label class="label is-small">Status</label>
+                        <div class="control">
+                            <span class="tag @statusColor">@Model.Status</span>
+                        </div>
+                    </div>
+
+                    @if (Model.StartDate.HasValue)
+                    {
+                        <div class="field">
+                            <label class="label is-small">Start Date</label>
+                            <p>@Model.StartDate.Value.ToString("MMMM dd, yyyy")</p>
+                        </div>
+                    }
+
+                    @if (Model.DueDate.HasValue)
+                    {
+                        <div class="field">
+                            <label class="label is-small">Due Date</label>
+                            <p>@Model.DueDate.Value.ToString("MMMM dd, yyyy")</p>
+                        </div>
+                    }
+
+                    <div class="field">
+                        <label class="label is-small">Created</label>
+                        <p>@Model.CreatedAt.ToString("MMMM dd, yyyy")</p>
+                    </div>
+
+                    @if (Model.UpdatedAt.HasValue)
+                    {
+                        <div class="field">
+                            <label class="label is-small">Last Updated</label>
+                            <p>@Model.UpdatedAt.Value.ToString("MMMM dd, yyyy")</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
