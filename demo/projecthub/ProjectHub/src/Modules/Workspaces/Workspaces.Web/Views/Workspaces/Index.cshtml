@@ -1,0 +1,58 @@
+@model IEnumerable<ProjectHub.Modules.Workspaces.Contracts.WorkspaceDto>
+@{
+    ViewData["Title"] = "Workspaces";
+}
+
+<section class="section">
+    <div class="container">
+        <div class="level">
+            <div class="level-left">
+                <div class="level-item">
+                    <div>
+                        <h1 class="title">Workspaces</h1>
+                        <p class="subtitle">Organize your projects into workspaces</p>
+                    </div>
+                </div>
+            </div>
+            <div class="level-right">
+                <div class="level-item">
+                    <a href="/workspaces/create" 
+                       hx-get="/workspaces/create"
+                       hx-target="#main-content"
+                       hx-push-url="true"
+                       class="button is-primary">
+                        <span class="icon"><i class="fas fa-plus"></i></span>
+                        <span>New Workspace</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="columns is-multiline">
+            @if (Model == null || !Model.Any())
+            {
+                <div class="column is-12">
+                    <div class="notification is-light">
+                        <p class="has-text-centered has-text-grey">
+                            <span class="icon is-large">
+                                <i class="fas fa-folder-open fa-3x"></i>
+                            </span>
+                        </p>
+                        <p class="has-text-centered has-text-grey">
+                            No workspaces yet. Create one to get started!
+                        </p>
+                    </div>
+                </div>
+            }
+            else
+            {
+                @foreach (var workspace in Model)
+                {
+                    <div class="column is-one-third">
+                        @await Html.PartialAsync("_WorkspaceCard", workspace)
+                    </div>
+                }
+            }
+        </div>
+    </div>
+</section>

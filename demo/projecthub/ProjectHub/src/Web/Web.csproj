@@ -5,7 +5,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
   <ItemGroup>
-    <!-- Module references will be added here as we create them -->
+    <ProjectReference Include="..\Modules\Workspaces\Workspaces.Module\Workspaces.Module.csproj" />
+    <ProjectReference Include="..\Modules\Workspaces\Workspaces.Web\Workspaces.Web.csproj" />
   </ItemGroup>
 
   <ItemGroup>

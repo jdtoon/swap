@@ -1,0 +1,50 @@
+@model ProjectHub.Modules.Workspaces.Contracts.WorkspaceDto
+
+<div class="card workspace-card">
+    <div class="card-content">
+        <div class="media">
+            <div class="media-left">
+                <span class="icon is-large has-text-primary">
+                    <i class="fas fa-folder fa-2x" style="color: @(Model.Color ?? "var(--ph-primary)")"></i>
+                </span>
+            </div>
+            <div class="media-content">
+                <a href="/workspaces/@Model.Id"
+                   hx-get="/workspaces/@Model.Id"
+                   hx-target="#main-content"
+                   hx-push-url="true"
+                   class="title is-4">@Model.Name</a>
+                @if (!string.IsNullOrWhiteSpace(Model.Description))
+                {
+                    <p class="subtitle is-6 has-text-grey">@Model.Description</p>
+                }
+            </div>
+        </div>
+        
+        <div class="content">
+            <div class="tags">
+                <span class="tag is-light">
+                    <span class="icon is-small"><i class="far fa-clock"></i></span>
+                    <span>Created @Model.CreatedAt.ToString("MMM dd, yyyy")</span>
+                </span>
+            </div>
+        </div>
+    </div>
+    <footer class="card-footer">
+        <a href="/workspaces/@Model.Id" 
+           hx-get="/workspaces/@Model.Id"
+           hx-target="#main-content"
+           hx-push-url="true"
+           class="card-footer-item">
+            <span class="icon is-small"><i class="fas fa-eye"></i></span>
+            <span>View</span>
+        </a>
+        <a href="#" 
+           hx-post="/workspaces/archive/@Model.Id"
+           hx-confirm="Archive this workspace?"
+           class="card-footer-item has-text-danger">
+            <span class="icon is-small"><i class="fas fa-archive"></i></span>
+            <span>Archive</span>
+        </a>
+    </footer>
+</div>

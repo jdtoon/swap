@@ -53,7 +53,16 @@
                             </span>
                             <span>Home</span>
                         </a>
-                        <!-- Module navigation will be added here -->
+                        <a class="navbar-item" 
+                           href="/workspaces"
+                           hx-get="/workspaces"
+                           hx-target="#main-content"
+                           hx-push-url="true">
+                            <span class="icon">
+                                <i class="fas fa-folder"></i>
+                            </span>
+                            <span>Workspaces</span>
+                        </a>
                     </div>
                     
                     <div class="navbar-end">

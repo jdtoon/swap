@@ -1,0 +1,74 @@
+@model ProjectHub.Modules.Workspaces.Contracts.WorkspaceDto
+@{
+    ViewData["Title"] = Model.Name;
+}
+
+<section class="section">
+    <div class="container">
+        <nav class="breadcrumb" aria-label="breadcrumbs">
+            <ul>
+                <li>
+                    <a href="/workspaces"
+                       hx-get="/workspaces"
+                       hx-target="#main-content"
+                       hx-push-url="true">Workspaces</a>
+                </li>
+                <li class="is-active"><a href="#" aria-current="page">@Model.Name</a></li>
+            </ul>
+        </nav>
+
+        <div class="level">
+            <div class="level-left">
+                <div class="level-item">
+                    <div>
+                        <h1 class="title">
+                            <span class="icon has-text-primary">
+                                <i class="fas fa-folder" style="color: @(Model.Color ?? "var(--ph-primary)")"></i>
+                            </span>
+                            @Model.Name
+                        </h1>
+                        @if (!string.IsNullOrWhiteSpace(Model.Description))
+                        {
+                            <p class="subtitle">@Model.Description</p>
+                        }
+                    </div>
+                </div>
+            </div>
+            <div class="level-right">
+                <div class="level-item">
+                    <div class="buttons">
+                        <button class="button is-light">
+                            <span class="icon"><i class="fas fa-cog"></i></span>
+                            <span>Settings</span>
+                        </button>
+                        <button class="button is-danger is-light"
+                                hx-post="/workspaces/archive/@Model.Id"
+                                hx-confirm="Archive this workspace?">
+                            <span class="icon"><i class="fas fa-archive"></i></span>
+                            <span>Archive</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="box">
+            <p class="has-text-centered has-text-grey">
+                <span class="icon is-large">
+                    <i class="fas fa-tasks fa-3x"></i>
+                </span>
+            </p>
+            <p class="has-text-centered has-text-grey">
+                This workspace is ready for projects! Projects module coming soon.
+            </p>
+        </div>
+
+        <div class="notification is-light mt-4">
+            <p><strong>Created:</strong> @Model.CreatedAt.ToString("MMMM dd, yyyy 'at' h:mm tt")</p>
+            @if (Model.UpdatedAt.HasValue)
+            {
+                <p><strong>Last updated:</strong> @Model.UpdatedAt.Value.ToString("MMMM dd, yyyy 'at' h:mm tt")</p>
+            }
+        </div>
+    </div>
+</section>

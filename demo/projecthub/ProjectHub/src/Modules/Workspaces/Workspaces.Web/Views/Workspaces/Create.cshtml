@@ -1,0 +1,62 @@
+@{
+    ViewData["Title"] = "Create Workspace";
+}
+
+<section class="section">
+    <div class="container">
+        <h1 class="title">Create Workspace</h1>
+        <p class="subtitle">Set up a new workspace to organize your projects</p>
+
+        <form hx-post="/workspaces/create" hx-target="#main-content">
+            <div class="field">
+                <label class="label">Workspace Name</label>
+                <div class="control has-icons-left">
+                    <input class="input" type="text" name="Name" placeholder="My Workspace" required>
+                    <span class="icon is-small is-left">
+                        <i class="fas fa-folder"></i>
+                    </span>
+                </div>
+            </div>
+
+            <div class="field">
+                <label class="label">Description</label>
+                <div class="control">
+                    <textarea class="textarea" name="Description" placeholder="What's this workspace for?" rows="3"></textarea>
+                </div>
+            </div>
+
+            <div class="field">
+                <label class="label">Color</label>
+                <div class="control">
+                    <div class="select">
+                        <select name="Color">
+                            <option value="#4F7FFF">Blue</option>
+                            <option value="#10B981">Green</option>
+                            <option value="#F59E0B">Orange</option>
+                            <option value="#EF4444">Red</option>
+                            <option value="#8B5CF6">Purple</option>
+                            <option value="#EC4899">Pink</option>
+                        </select>
+                    </div>
+                </div>
+                <p class="help">Choose a color to easily identify this workspace</p>
+            </div>
+
+            <div class="field is-grouped">
+                <div class="control">
+                    <button type="submit" class="button is-primary">
+                        <span class="icon"><i class="fas fa-check"></i></span>
+                        <span>Create Workspace</span>
+                    </button>
+                </div>
+                <div class="control">
+                    <a href="/workspaces"
+                       hx-get="/workspaces"
+                       hx-target="#main-content"
+                       hx-push-url="true"
+                       class="button is-light">Cancel</a>
+                </div>
+            </div>
+        </form>
+    </div>
+</section>
