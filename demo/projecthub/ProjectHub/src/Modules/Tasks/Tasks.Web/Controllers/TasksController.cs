@@ -104,6 +104,21 @@ public class TasksController(ITaskService taskService, IProjectService projectSe
         return SwapView("Index", tasks);
     }
 
+    [HttpGet("kanban")]
+    public async Task<IActionResult> Kanban(int? projectId)
+    {
+        var tasks = projectId.HasValue
+            ? await taskService.GetByProjectIdAsync(projectId.Value)
+            : await taskService.GetAllAsync();
+
+        var projects = await projectService.GetAllAsync();
+
+        ViewBag.Projects = projects;
+        ViewBag.SelectedProjectId = projectId;
+
+        return SwapView(tasks);
+    }
+
     [HttpPost("{id}/move")]
     public async Task<IActionResult> Move(int id, [FromBody] MoveTaskDto dto)
     {

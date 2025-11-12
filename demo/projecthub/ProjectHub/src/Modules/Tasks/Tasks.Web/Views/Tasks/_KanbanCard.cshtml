@@ -1,0 +1,59 @@
+@model ProjectHub.Modules.Tasks.Contracts.TaskDto
+
+<div class="card">
+    <div class="card-content">
+        <div class="content">
+            <a href="/tasks/@Model.Id" 
+               hx-get="/tasks/@Model.Id" 
+               hx-target="#main-content" 
+               hx-push-url="true"
+               class="has-text-weight-semibold has-text-dark">
+                @Model.Title
+            </a>
+            
+            @if (!string.IsNullOrWhiteSpace(Model.Description))
+            {
+                <p class="is-size-7 has-text-grey mt-2">@Model.Description</p>
+            }
+            
+            <div class="tags mt-3">
+                @if (Model.Priority != ProjectHub.Modules.Tasks.Contracts.TaskPriority.Medium)
+                {
+                    var priorityClass = Model.Priority switch
+                    {
+                        ProjectHub.Modules.Tasks.Contracts.TaskPriority.High => "is-danger",
+                        ProjectHub.Modules.Tasks.Contracts.TaskPriority.Low => "is-info",
+                        _ => "is-light"
+                    };
+                    <span class="tag @priorityClass is-light">
+                        <span class="icon is-small">
+                            <i class="fas fa-flag"></i>
+                        </span>
+                        <span>@Model.Priority</span>
+                    </span>
+                }
+                
+                @if (Model.DueDate.HasValue)
+                {
+                    var isOverdue = Model.DueDate.Value < DateTimeOffset.Now && Model.Status != ProjectHub.Modules.Tasks.Contracts.TaskStatus.Done;
+                    var dueDateClass = isOverdue ? "is-danger" : "is-light";
+                    <span class="tag @dueDateClass">
+                        <span class="icon is-small">
+                            <i class="far fa-calendar"></i>
+                        </span>
+                        <span>@Model.DueDate.Value.ToString("MMM d")</span>
+                    </span>
+                }
+            </div>
+            
+            <div class="is-size-7 has-text-grey-light mt-2">
+                <span class="icon-text">
+                    <span class="icon is-small">
+                        <i class="fas fa-project-diagram"></i>
+                    </span>
+                    <span>@Model.ProjectName</span>
+                </span>
+            </div>
+        </div>
+    </div>
+</div>

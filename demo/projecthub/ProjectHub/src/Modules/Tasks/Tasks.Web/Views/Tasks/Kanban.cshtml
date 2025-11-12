@@ -1,0 +1,207 @@
+@model IEnumerable<ProjectHub.Modules.Tasks.Contracts.TaskDto>
+@{
+    ViewData["Title"] = "Tasks - Kanban Board";
+    var projects = ViewBag.Projects as IEnumerable<ProjectHub.Modules.Projects.Contracts.ProjectDto>;
+    var selectedProjectId = ViewBag.SelectedProjectId as int?;
+    
+    var todoTasks = Model.Where(t => t.Status == ProjectHub.Modules.Tasks.Contracts.TaskStatus.Todo).OrderBy(t => t.Position).ToList();
+    var inProgressTasks = Model.Where(t => t.Status == ProjectHub.Modules.Tasks.Contracts.TaskStatus.InProgress).OrderBy(t => t.Position).ToList();
+    var doneTasks = Model.Where(t => t.Status == ProjectHub.Modules.Tasks.Contracts.TaskStatus.Done).OrderBy(t => t.Position).ToList();
+}
+
+<section class="section">
+    <div class="container is-fluid">
+        <div class="level">
+            <div class="level-left">
+                <div class="level-item">
+                    <div>
+                        <h1 class="title">Tasks - Kanban Board</h1>
+                        <p class="subtitle">Drag and drop to organize your tasks</p>
+                    </div>
+                </div>
+            </div>
+            <div class="level-right">
+                <div class="level-item">
+                    <div class="buttons">
+                        <a href="/tasks" hx-get="/tasks" hx-target="#main-content" hx-push-url="true" class="button is-light">
+                            <span class="icon"><i class="fas fa-list"></i></span>
+                            <span>List View</span>
+                        </a>
+                        <a href="/tasks/create?projectId=@selectedProjectId" hx-get="/tasks/create?projectId=@selectedProjectId" hx-target="#main-content" hx-push-url="true" class="button is-primary">
+                            <span class="icon"><i class="fas fa-plus"></i></span>
+                            <span>New Task</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        @if (projects?.Any() == true)
+        {
+            <div class="field">
+                <div class="control">
+                    <div class="select">
+                        <select id="project-filter">
+                            <option value="">All Projects</option>
+                            @foreach (var project in projects)
+                            {
+                                <option value="@project.Id" @(selectedProjectId == project.Id ? "selected" : "")>@project.Name</option>
+                            }
+                        </select>
+                    </div>
+                </div>
+            </div>
+        }
+
+        <div class="columns is-variable is-2 mt-4" style="min-height: 70vh;">
+            <!-- Todo Column -->
+            <div class="column">
+                <div class="box has-background-light" style="height: 100%;">
+                    <h2 class="title is-5 has-text-grey-dark">
+                        <span class="icon-text">
+                            <span class="icon has-text-grey"><i class="fas fa-circle"></i></span>
+                            <span>To Do</span>
+                            <span class="tag is-light ml-2">@todoTasks.Count</span>
+                        </span>
+                    </h2>
+                    <div class="kanban-column" data-status="Todo" id="kanban-todo">
+                        @foreach (var task in todoTasks)
+                        {
+                            <div class="kanban-card" data-task-id="@task.Id">
+                                @await Html.PartialAsync("_KanbanCard", task)
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- In Progress Column -->
+            <div class="column">
+                <div class="box has-background-info-light" style="height: 100%;">
+                    <h2 class="title is-5 has-text-info-dark">
+                        <span class="icon-text">
+                            <span class="icon has-text-info"><i class="fas fa-circle-half-stroke"></i></span>
+                            <span>In Progress</span>
+                            <span class="tag is-info is-light ml-2">@inProgressTasks.Count</span>
+                        </span>
+                    </h2>
+                    <div class="kanban-column" data-status="InProgress" id="kanban-inprogress">
+                        @foreach (var task in inProgressTasks)
+                        {
+                            <div class="kanban-card" data-task-id="@task.Id">
+                                @await Html.PartialAsync("_KanbanCard", task)
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- Done Column -->
+            <div class="column">
+                <div class="box has-background-success-light" style="height: 100%;">
+                    <h2 class="title is-5 has-text-success-dark">
+                        <span class="icon-text">
+                            <span class="icon has-text-success"><i class="fas fa-circle-check"></i></span>
+                            <span>Done</span>
+                            <span class="tag is-success is-light ml-2">@doneTasks.Count</span>
+                        </span>
+                    </h2>
+                    <div class="kanban-column" data-status="Done" id="kanban-done">
+                        @foreach (var task in doneTasks)
+                        {
+                            <div class="kanban-card" data-task-id="@task.Id">
+                                @await Html.PartialAsync("_KanbanCard", task)
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<style>
+    .kanban-column {
+        min-height: 500px;
+        padding: 0.5rem;
+    }
+    
+    .kanban-card {
+        margin-bottom: 0.75rem;
+        cursor: move;
+    }
+    
+    .kanban-card.sortable-ghost {
+        opacity: 0.4;
+    }
+    
+    .kanban-card.sortable-drag {
+        cursor: grabbing;
+    }
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize Sortable for each column
+    const columns = document.querySelectorAll('.kanban-column');
+    
+    columns.forEach(column => {
+        new Sortable(column, {
+            group: 'kanban',
+            animation: 150,
+            ghostClass: 'sortable-ghost',
+            dragClass: 'sortable-drag',
+            onEnd: function(evt) {
+                const taskId = evt.item.dataset.taskId;
+                const newStatus = evt.to.dataset.status;
+                const newPosition = evt.newIndex;
+                
+                // Send HTMX request to update task
+                fetch(`/tasks/${taskId}/move`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        status: newStatus,
+                        position: newPosition
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Task moved:', data);
+                    // Update column counts
+                    updateColumnCounts();
+                })
+                .catch(error => {
+                    console.error('Error moving task:', error);
+                    // Revert on error
+                    evt.item.remove();
+                    evt.from.insertBefore(evt.item, evt.from.children[evt.oldIndex]);
+                });
+            }
+        });
+    });
+    
+    // Project filter
+    const projectFilter = document.getElementById('project-filter');
+    if (projectFilter) {
+        projectFilter.addEventListener('change', function() {
+            const projectId = this.value;
+            const url = projectId ? `/tasks/kanban?projectId=${projectId}` : '/tasks/kanban';
+            htmx.ajax('GET', url, { target: '#main-content', swap: 'innerHTML', pushUrl: true });
+        });
+    }
+    
+    function updateColumnCounts() {
+        const todoCount = document.querySelectorAll('#kanban-todo .kanban-card').length;
+        const inProgressCount = document.querySelectorAll('#kanban-inprogress .kanban-card').length;
+        const doneCount = document.querySelectorAll('#kanban-done .kanban-card').length;
+        
+        document.querySelector('#kanban-todo').parentElement.querySelector('.tag').textContent = todoCount;
+        document.querySelector('#kanban-inprogress').parentElement.querySelector('.tag').textContent = inProgressCount;
+        document.querySelector('#kanban-done').parentElement.querySelector('.tag').textContent = doneCount;
+    }
+});
+</script>

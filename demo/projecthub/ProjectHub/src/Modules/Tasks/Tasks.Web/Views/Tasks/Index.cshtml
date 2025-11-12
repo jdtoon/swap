@@ -14,10 +14,16 @@
         </div>
         <div class="level-right">
             <div class="level-item">
-                <a href="/tasks/create" class="button is-primary" hx-get="/tasks/create" hx-target="#main-content" hx-push-url="true">
-                    <span class="icon"><i class="fas fa-plus"></i></span>
-                    <span>New Task</span>
-                </a>
+                <div class="buttons">
+                    <a href="/tasks/kanban" hx-get="/tasks/kanban" hx-target="#main-content" hx-push-url="true" class="button is-light">
+                        <span class="icon"><i class="fas fa-columns"></i></span>
+                        <span>Kanban View</span>
+                    </a>
+                    <a href="/tasks/create" class="button is-primary" hx-get="/tasks/create" hx-target="#main-content" hx-push-url="true">
+                        <span class="icon"><i class="fas fa-plus"></i></span>
+                        <span>New Task</span>
+                    </a>
+                </div>
             </div>
         </div>
     </div>
