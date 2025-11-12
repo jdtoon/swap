@@ -2,11 +2,12 @@ using Microsoft.AspNetCore.Mvc;
 using ProjectHub.Modules.Projects.Contracts;
 using ProjectHub.Modules.Tasks.Contracts;
 using Swap.Htmx;
+using Swap.Htmx.Events;
 
 namespace ProjectHub.Modules.Tasks.Web.Controllers;
 
 [Route("tasks")]
-public class TasksController(ITaskService taskService, IProjectService projectService) : SwapController
+public class TasksController(ITaskService taskService, IProjectService projectService, ISwapEventBus eventBus) : SwapController
 {
     [HttpGet]
     public async Task<IActionResult> Index(int? projectId)
@@ -44,6 +45,8 @@ public class TasksController(ITaskService taskService, IProjectService projectSe
         }
 
         var task = await taskService.CreateAsync(dto);
+        eventBus.Emit(TaskEvents.Created, new { taskId = task.Id });
+        Response.ShowSuccessToast("Task created successfully");
 
         var tasks = await taskService.GetByProjectIdAsync(task.ProjectId);
         var projectsList = await projectService.GetAllAsync();
@@ -86,6 +89,8 @@ public class TasksController(ITaskService taskService, IProjectService projectSe
         }
 
         await taskService.UpdateAsync(id, dto);
+        eventBus.Emit(TaskEvents.Updated, new { taskId = id });
+        Response.ShowSuccessToast("Task updated successfully");
 
         var detailsTask = await taskService.GetByIdAsync(id);
         return SwapView("Details", detailsTask);
@@ -95,6 +100,8 @@ public class TasksController(ITaskService taskService, IProjectService projectSe
     public async Task<IActionResult> Delete(int id)
     {
         await taskService.DeleteAsync(id);
+        eventBus.Emit(TaskEvents.Deleted, new { taskId = id });
+        Response.ShowSuccessToast("Task deleted successfully");
 
         var tasks = await taskService.GetAllAsync();
         var projects = await projectService.GetAllAsync();
@@ -123,7 +130,15 @@ public class TasksController(ITaskService taskService, IProjectService projectSe
     public async Task<IActionResult> Move(int id, [FromBody] MoveTaskDto dto)
     {
         var task = await taskService.MoveAsync(id, dto);
+        eventBus.Emit(TaskEvents.Moved, new { taskId = id, newStatus = dto.NewStatus });
+        Response.ShowSuccessToast($"Task moved to {dto.NewStatus}");
 
-        return Ok(task);
+        // Return the updated Kanban columns partial
+        var tasks = await taskService.GetAllAsync();
+        var projects = await projectService.GetAllAsync();
+        ViewBag.Projects = projects;
+        ViewBag.SelectedProjectId = (int?)null;
+
+        return PartialView("_KanbanColumns", tasks);
     }
 }

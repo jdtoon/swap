@@ -1,0 +1,113 @@
+@model IEnumerable<ProjectHub.Modules.Tasks.Contracts.TaskDto>
+@{
+    var backlogTasks = Model.Where(t => t.Status == ProjectHub.Modules.Tasks.Contracts.TaskStatus.Backlog).OrderBy(t => t.Position).ToList();
+    var todoTasks = Model.Where(t => t.Status == ProjectHub.Modules.Tasks.Contracts.TaskStatus.Todo).OrderBy(t => t.Position).ToList();
+    var inProgressTasks = Model.Where(t => t.Status == ProjectHub.Modules.Tasks.Contracts.TaskStatus.InProgress).OrderBy(t => t.Position).ToList();
+    var reviewTasks = Model.Where(t => t.Status == ProjectHub.Modules.Tasks.Contracts.TaskStatus.Review).OrderBy(t => t.Position).ToList();
+    var doneTasks = Model.Where(t => t.Status == ProjectHub.Modules.Tasks.Contracts.TaskStatus.Done).OrderBy(t => t.Position).ToList();
+}
+
+<!-- Backlog Column -->
+<div class="column">
+    <div class="box has-background-grey-lighter" style="height: 100%;">
+        <h2 class="title is-5 has-text-grey-darker">
+            <span class="icon-text">
+                <span class="icon has-text-grey"><i class="fas fa-inbox"></i></span>
+                <span>Backlog</span>
+                <span class="tag is-light ml-2">@backlogTasks.Count</span>
+            </span>
+        </h2>
+        <div class="kanban-column" data-status="Backlog" id="kanban-backlog">
+            @foreach (var task in backlogTasks)
+            {
+                <div class="kanban-card" data-task-id="@task.Id">
+                    @await Html.PartialAsync("_KanbanCard", task)
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Todo Column -->
+<div class="column">
+    <div class="box has-background-light" style="height: 100%;">
+        <h2 class="title is-5 has-text-grey-dark">
+            <span class="icon-text">
+                <span class="icon has-text-grey"><i class="fas fa-circle"></i></span>
+                <span>To Do</span>
+                <span class="tag is-light ml-2">@todoTasks.Count</span>
+            </span>
+        </h2>
+        <div class="kanban-column" data-status="Todo" id="kanban-todo">
+            @foreach (var task in todoTasks)
+            {
+                <div class="kanban-card" data-task-id="@task.Id">
+                    @await Html.PartialAsync("_KanbanCard", task)
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- In Progress Column -->
+<div class="column">
+    <div class="box has-background-info-light" style="height: 100%;">
+        <h2 class="title is-5 has-text-info-dark">
+            <span class="icon-text">
+                <span class="icon has-text-info"><i class="fas fa-circle-half-stroke"></i></span>
+                <span>In Progress</span>
+                <span class="tag is-info is-light ml-2">@inProgressTasks.Count</span>
+            </span>
+        </h2>
+        <div class="kanban-column" data-status="InProgress" id="kanban-inprogress">
+            @foreach (var task in inProgressTasks)
+            {
+                <div class="kanban-card" data-task-id="@task.Id">
+                    @await Html.PartialAsync("_KanbanCard", task)
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Review Column -->
+<div class="column">
+    <div class="box has-background-warning-light" style="height: 100%;">
+        <h2 class="title is-5 has-text-warning-dark">
+            <span class="icon-text">
+                <span class="icon has-text-warning"><i class="fas fa-eye"></i></span>
+                <span>Review</span>
+                <span class="tag is-warning is-light ml-2">@reviewTasks.Count</span>
+            </span>
+        </h2>
+        <div class="kanban-column" data-status="Review" id="kanban-review">
+            @foreach (var task in reviewTasks)
+            {
+                <div class="kanban-card" data-task-id="@task.Id">
+                    @await Html.PartialAsync("_KanbanCard", task)
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Done Column -->
+<div class="column">
+    <div class="box has-background-success-light" style="height: 100%;">
+        <h2 class="title is-5 has-text-success-dark">
+            <span class="icon-text">
+                <span class="icon has-text-success"><i class="fas fa-circle-check"></i></span>
+                <span>Done</span>
+                <span class="tag is-success is-light ml-2">@doneTasks.Count</span>
+            </span>
+        </h2>
+        <div class="kanban-column" data-status="Done" id="kanban-done">
+            @foreach (var task in doneTasks)
+            {
+                <div class="kanban-card" data-task-id="@task.Id">
+                    @await Html.PartialAsync("_KanbanCard", task)
+                </div>
+            }
+        </div>
+    </div>
+</div>
