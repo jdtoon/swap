@@ -1,0 +1,142 @@
+@model IEnumerable<ProjectHub.Modules.Tasks.Contracts.TaskDto>
+@{
+    ViewData["Title"] = "Tasks";
+    var projects = ViewBag.Projects as IEnumerable<ProjectHub.Modules.Projects.Contracts.ProjectDto>;
+    var selectedProjectId = ViewBag.SelectedProjectId as int?;
+}
+
+<div class="container">
+    <div class="level">
+        <div class="level-left">
+            <div class="level-item">
+                <h1 class="title">Tasks</h1>
+            </div>
+        </div>
+        <div class="level-right">
+            <div class="level-item">
+                <a href="/tasks/create" class="button is-primary" hx-get="/tasks/create" hx-target="#main-content" hx-push-url="true">
+                    <span class="icon"><i class="fas fa-plus"></i></span>
+                    <span>New Task</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="box">
+        <div class="field">
+            <label class="label">Filter by Project</label>
+            <div class="control">
+                <div class="select is-fullwidth">
+                    <select hx-get="/tasks" hx-target="#main-content" hx-push-url="true" name="projectId">
+                        <option value="">All Projects</option>
+                        @if (projects != null)
+                        {
+                            foreach (var project in projects)
+                            {
+                                <option value="@project.Id" selected="@(selectedProjectId == project.Id)">@project.Name</option>
+                            }
+                        }
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="notification is-info is-light">
+            <p class="has-text-centered">
+                <span class="icon is-large"><i class="fas fa-tasks fa-3x"></i></span>
+            </p>
+            <p class="has-text-centered has-text-weight-semibold">No tasks found</p>
+            <p class="has-text-centered">Create your first task to get started!</p>
+        </div>
+    }
+    else
+    {
+        <div class="table-container">
+            <table class="table is-fullwidth is-hoverable is-striped">
+                <thead>
+                    <tr>
+                        <th>Title</th>
+                        <th>Project</th>
+                        <th>Status</th>
+                        <th>Priority</th>
+                        <th>Due Date</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var task in Model)
+                    {
+                        <tr>
+                            <td>
+                                <a href="/tasks/@task.Id" hx-get="/tasks/@task.Id" hx-target="#main-content" hx-push-url="true">
+                                    @task.Title
+                                </a>
+                            </td>
+                            <td>@task.ProjectName</td>
+                            <td>
+                                <span class="tag is-@GetStatusColor(task.Status)">@task.Status</span>
+                            </td>
+                            <td>
+                                <span class="tag is-@GetPriorityColor(task.Priority)">@task.Priority</span>
+                            </td>
+                            <td>
+                                @if (task.DueDate.HasValue)
+                                {
+                                    @task.DueDate.Value.ToString("MMM dd, yyyy")
+                                }
+                                else
+                                {
+                                    <span class="has-text-grey-light">—</span>
+                                }
+                            </td>
+                            <td>
+                                <div class="buttons are-small">
+                                    <a href="/tasks/@task.Id/edit" class="button is-small" hx-get="/tasks/@task.Id/edit" hx-target="#main-content" hx-push-url="true">
+                                        <span class="icon"><i class="fas fa-edit"></i></span>
+                                    </a>
+                                    <button class="button is-small is-danger" 
+                                            hx-post="/tasks/@task.Id/delete" 
+                                            hx-confirm="Are you sure you want to delete this task?"
+                                            hx-target="#main-content"
+                                            hx-swap="outerHTML">
+                                        <span class="icon"><i class="fas fa-trash"></i></span>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
+
+@functions {
+    string GetStatusColor(ProjectHub.Modules.Tasks.Contracts.TaskStatus status)
+    {
+        return status switch
+        {
+            ProjectHub.Modules.Tasks.Contracts.TaskStatus.Backlog => "light",
+            ProjectHub.Modules.Tasks.Contracts.TaskStatus.Todo => "info",
+            ProjectHub.Modules.Tasks.Contracts.TaskStatus.InProgress => "warning",
+            ProjectHub.Modules.Tasks.Contracts.TaskStatus.Review => "link",
+            ProjectHub.Modules.Tasks.Contracts.TaskStatus.Done => "success",
+            _ => "light"
+        };
+    }
+
+    string GetPriorityColor(ProjectHub.Modules.Tasks.Contracts.TaskPriority priority)
+    {
+        return priority switch
+        {
+            ProjectHub.Modules.Tasks.Contracts.TaskPriority.Low => "light",
+            ProjectHub.Modules.Tasks.Contracts.TaskPriority.Medium => "info",
+            ProjectHub.Modules.Tasks.Contracts.TaskPriority.High => "warning",
+            ProjectHub.Modules.Tasks.Contracts.TaskPriority.Urgent => "danger",
+            _ => "light"
+        };
+    }
+}
