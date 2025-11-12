@@ -1,0 +1,212 @@
+@{
+    ViewData["Title"] = "Task Board";
+}
+
+<div class="section">
+    <div class="container is-fluid">
+        <div class="level mb-5">
+            <div class="level-left">
+                <div class="level-item">
+                    <h1 class="title is-2">
+                        <span class="icon-text">
+                            <span class="icon has-text-primary">
+                                <i class="fas fa-tasks"></i>
+                            </span>
+                            <span>Task Board</span>
+                        </span>
+                    </h1>
+                </div>
+            </div>
+            <div class="level-right">
+                <div class="level-item">
+                    <button class="button is-primary" 
+                            hx-get="/Tasks/CreateForm" 
+                            hx-target="#create-task-modal-content"
+                            onclick="document.getElementById('create-task-modal').classList.add('is-active')">
+                        <span class="icon">
+                            <i class="fas fa-plus"></i>
+                        </span>
+                        <span>New Task</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats Row -->
+        <div id="task-stats" 
+             class="box mb-5"
+             hx-get="/Tasks/Stats" 
+             hx-trigger="load, ui.taskStats.refresh from:body"
+             hx-swap="innerHTML">
+            @await Html.PartialAsync("_Stats", new TaskFlow.Dtos.TaskStatsDto())
+        </div>
+
+        <!-- Search / Filter Bar -->
+        <div class="box mb-5">
+            <h2 class="title is-5 mb-3">
+                <span class="icon-text">
+                    <span class="icon">
+                        <i class="fas fa-filter"></i>
+                    </span>
+                    <span>Search & Filter</span>
+                </span>
+            </h2>
+            <form hx-get="/Tasks/Search" 
+                  hx-target="#search-results" 
+                  hx-trigger="input delay:500ms, change"
+                  hx-swap="innerHTML">
+                <div class="field is-horizontal">
+                    <div class="field-body">
+                        <div class="field">
+                            <p class="control has-icons-left">
+                                <input class="input" 
+                                       type="text" 
+                                       name="Search" 
+                                       placeholder="Search tasks...">
+                                <span class="icon is-left">
+                                    <i class="fas fa-search"></i>
+                                </span>
+                            </p>
+                        </div>
+
+                        <div class="field">
+                            <p class="control">
+                                <span class="select is-fullwidth">
+                                    <select name="Status">
+                                        <option value="">All Statuses</option>
+                                        <option value="0">To Do</option>
+                                        <option value="1">In Progress</option>
+                                        <option value="2">Done</option>
+                                    </select>
+                                </span>
+                            </p>
+                        </div>
+
+                        <div class="field">
+                            <p class="control">
+                                <span class="select is-fullwidth">
+                                    <select name="Priority">
+                                        <option value="">All Priorities</option>
+                                        <option value="0">Low</option>
+                                        <option value="1">Medium</option>
+                                        <option value="2">High</option>
+                                        <option value="3">Critical</option>
+                                    </select>
+                                </span>
+                            </p>
+                        </div>
+
+                        <div class="field">
+                            <p class="control has-icons-left">
+                                <input class="input" 
+                                       type="text" 
+                                       name="AssignedTo" 
+                                       placeholder="Assigned to...">
+                                <span class="icon is-left">
+                                    <i class="fas fa-user"></i>
+                                </span>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </form>
+            <div id="search-results" class="mt-4">
+                <!-- Search results appear here -->
+            </div>
+        </div>
+
+        <!-- Task Board (Kanban Columns) -->
+        <div class="columns is-variable is-3">
+            <!-- Todo Column -->
+            <div class="column">
+                <div class="box has-background-light" style="min-height: 500px;">
+                    <h2 class="title is-4 has-text-centered mb-4">
+                        <span class="tag is-warning is-light is-large">To Do</span>
+                    </h2>
+                    <div id="task-column-todo" 
+                         hx-get="/Tasks/TaskColumn?status=0" 
+                         hx-trigger="load, ui.taskTodo.refresh from:body, ui.taskBoard.refresh from:body"
+                         hx-swap="innerHTML">
+                        Loading...
+                    </div>
+                </div>
+            </div>
+
+            <!-- In Progress Column -->
+            <div class="column">
+                <div class="box has-background-light" style="min-height: 500px;">
+                    <h2 class="title is-4 has-text-centered mb-4">
+                        <span class="tag is-info is-light is-large">In Progress</span>
+                    </h2>
+                    <div id="task-column-inprogress" 
+                         hx-get="/Tasks/TaskColumn?status=1" 
+                         hx-trigger="load, ui.taskInProgress.refresh from:body, ui.taskBoard.refresh from:body"
+                         hx-swap="innerHTML">
+                        Loading...
+                    </div>
+                </div>
+            </div>
+
+            <!-- Done Column -->
+            <div class="column">
+                <div class="box has-background-light" style="min-height: 500px;">
+                    <h2 class="title is-4 has-text-centered mb-4">
+                        <span class="tag is-success is-light is-large">Done</span>
+                    </h2>
+                    <div id="task-column-done" 
+                         hx-get="/Tasks/TaskColumn?status=2" 
+                         hx-trigger="load, ui.taskDone.refresh from:body, ui.taskBoard.refresh from:body"
+                         hx-swap="innerHTML">
+                        Loading...
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Activity Feed -->
+        <div class="box mt-5">
+            <h2 class="title is-4 mb-4">
+                <span class="icon-text">
+                    <span class="icon has-text-info">
+                        <i class="fas fa-history"></i>
+                    </span>
+                    <span>Recent Activity</span>
+                </span>
+            </h2>
+            <div id="task-activity-feed" 
+                 hx-get="/Tasks/ActivityFeed" 
+                 hx-trigger="load, ui.taskActivity.refresh from:body"
+                 hx-swap="innerHTML">
+                Loading activity...
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Create Task Modal -->
+<div id="create-task-modal" class="modal">
+    <div class="modal-background" onclick="document.getElementById('create-task-modal').classList.remove('is-active')"></div>
+    <div class="modal-card">
+        <header class="modal-card-head">
+            <p class="modal-card-title">Create New Task</p>
+            <button class="delete" aria-label="close" onclick="document.getElementById('create-task-modal').classList.remove('is-active')"></button>
+        </header>
+        <section class="modal-card-body" id="create-task-modal-content">
+            <!-- Form loads here via HTMX -->
+        </section>
+    </div>
+</div>
+
+<!-- Edit Task Modal -->
+<div id="edit-task-modal" class="modal">
+    <div class="modal-background" onclick="document.getElementById('edit-task-modal').classList.remove('is-active')"></div>
+    <div class="modal-card">
+        <header class="modal-card-head">
+            <p class="modal-card-title">Edit Task</p>
+            <button class="delete" aria-label="close" onclick="document.getElementById('edit-task-modal').classList.remove('is-active')"></button>
+        </header>
+        <section class="modal-card-body" id="edit-task-modal-content">
+            <!-- Form loads here via HTMX -->
+        </section>
+    </div>
+</div>

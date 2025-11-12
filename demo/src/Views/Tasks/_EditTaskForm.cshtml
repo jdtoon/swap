@@ -1,0 +1,93 @@
+@model TaskFlow.Dtos.UpdateTaskDto
+
+<form hx-put="/Tasks/Update/@Model.Id" 
+      hx-target="#task-card-@Model.Id"
+      hx-swap="outerHTML">
+    
+    <div class="field">
+        <label class="label">Title</label>
+        <div class="control">
+            <input class="input" 
+                   type="text" 
+                   name="Title" 
+                   value="@Model.Title"
+                   required>
+        </div>
+    </div>
+
+    <div class="field">
+        <label class="label">Description</label>
+        <div class="control">
+            <textarea class="textarea" 
+                      name="Description" 
+                      rows="3">@Model.Description</textarea>
+        </div>
+    </div>
+
+    <div class="field">
+        <label class="label">Status</label>
+        <div class="control">
+            <div class="select is-fullwidth">
+                <select name="Status">
+                    <option value="0" selected="@(Model.Status == 0)">To Do</option>
+                    <option value="1" selected="@(Model.Status == 1)">In Progress</option>
+                    <option value="2" selected="@(Model.Status == 2)">Done</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <div class="field">
+        <label class="label">Priority</label>
+        <div class="control">
+            <div class="select is-fullwidth">
+                <select name="Priority">
+                    <option value="0" selected="@(Model.Priority == 0)">Low</option>
+                    <option value="1" selected="@(Model.Priority == 1)">Medium</option>
+                    <option value="2" selected="@(Model.Priority == 2)">High</option>
+                    <option value="3" selected="@(Model.Priority == 3)">Critical</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <div class="field">
+        <label class="label">Assigned To</label>
+        <div class="control">
+            <input class="input" 
+                   type="text" 
+                   name="AssignedTo" 
+                   value="@Model.AssignedTo">
+        </div>
+    </div>
+
+    <div class="field">
+        <label class="label">Due Date</label>
+        <div class="control">
+            <input class="input" 
+                   type="date" 
+                   name="DueDate" 
+                   value="@Model.DueDate?.ToString("yyyy-MM-dd")">
+        </div>
+    </div>
+
+    <div class="field is-grouped is-grouped-right">
+        <div class="control">
+            <button type="button" 
+                    class="button is-light"
+                    onclick="document.getElementById('edit-task-modal').classList.remove('is-active')">
+                Cancel
+            </button>
+        </div>
+        <div class="control">
+            <button type="submit" 
+                    class="button is-primary"
+                    onclick="document.getElementById('edit-task-modal').classList.remove('is-active')">
+                <span class="icon">
+                    <i class="fas fa-save"></i>
+                </span>
+                <span>Save Changes</span>
+            </button>
+        </div>
+    </div>
+</form>

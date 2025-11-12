@@ -1,0 +1,40 @@
+@model TaskFlow.Dtos.TaskStatsDto
+
+<div class="columns is-multiline has-text-centered">
+    <div class="column is-2">
+        <div class="box has-background-primary-light">
+            <p class="heading">Total Tasks</p>
+            <p class="title is-3">@Model.TotalTasks</p>
+        </div>
+    </div>
+    <div class="column is-2">
+        <div class="box has-background-warning-light">
+            <p class="heading">To Do</p>
+            <p class="title is-3">@Model.TodoCount</p>
+        </div>
+    </div>
+    <div class="column is-2">
+        <div class="box has-background-info-light">
+            <p class="heading">In Progress</p>
+            <p class="title is-3">@Model.InProgressCount</p>
+        </div>
+    </div>
+    <div class="column is-2">
+        <div class="box has-background-success-light">
+            <p class="heading">Done</p>
+            <p class="title is-3">@Model.DoneCount</p>
+        </div>
+    </div>
+    <div class="column is-2">
+        <div class="box has-background-danger-light">
+            <p class="heading">High Priority</p>
+            <p class="title is-3">@Model.HighPriorityCount</p>
+        </div>
+    </div>
+    <div class="column is-2">
+        <div class="box has-background-grey-light">
+            <p class="heading">Overdue</p>
+            <p class="title is-3">@Model.OverdueCount</p>
+        </div>
+    </div>
+</div>

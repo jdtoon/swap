@@ -1,0 +1,20 @@
+{
+  "version": "1.0",
+  "defaultProvider": "cdnjs",
+  "libraries": [
+    {
+      "library": "htmx@2.0.7",
+      "destination": "wwwroot/lib/htmx",
+      "files": [
+        "htmx.min.js"
+      ]
+    },
+    {
+      "library": "bulma@1.0.4",
+      "destination": "wwwroot/lib/bulma",
+      "files": [
+        "css/bulma.min.css"
+      ]
+    }
+  ]
+}

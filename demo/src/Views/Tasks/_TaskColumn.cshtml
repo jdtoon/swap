@@ -1,0 +1,22 @@
+@model List<TaskFlow.Models.TaskItem>
+
+@if (Model == null || !Model.Any())
+{
+    <div class="has-text-centered has-text-grey py-6">
+        <p class="is-size-5">
+            <span class="icon">
+                <i class="fas fa-inbox"></i>
+            </span>
+            <span>No tasks here</span>
+        </p>
+    </div>
+}
+else
+{
+    <div class="task-cards">
+        @foreach (var task in Model)
+        {
+            @await Html.PartialAsync("_TaskCard", task)
+        }
+    </div>
+}

@@ -1,0 +1,119 @@
+/* Task Board Custom Styles */
+
+.task-cards {
+    min-height: 100px;
+}
+
+.card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0.5em 1em -0.125em rgba(10, 10, 10, 0.15), 0 0px 0 1px rgba(10, 10, 10, 0.02);
+}
+
+/* HTMX Loading States */
+.htmx-request .htmx-indicator {
+    display: inline-block !important;
+}
+
+.htmx-indicator {
+    display: none;
+}
+
+/* Smooth transitions for HTMX swaps */
+.htmx-swapping {
+    opacity: 0;
+    transition: opacity 0.3s ease-out;
+}
+
+.htmx-settling {
+    opacity: 1;
+    transition: opacity 0.3s ease-in;
+}
+
+/* Priority badges */
+.tag.is-dark {
+    background-color: #363636 !important;
+    color: white;
+}
+
+/* Modal animations */
+.modal.is-active {
+    animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* Card delete animation */
+.htmx-swapping.card {
+    opacity: 0;
+    transform: scale(0.8);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+/* Button loading state */
+button.htmx-request {
+    position: relative;
+    color: transparent !important;
+}
+
+button.htmx-request::after {
+    content: "";
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    top: 50%;
+    left: 50%;
+    margin-left: -8px;
+    margin-top: -8px;
+    border: 2px solid transparent;
+    border-radius: 50%;
+    border-top-color: currentColor;
+    animation: button-loading-spinner 0.6s ease infinite;
+}
+
+@keyframes button-loading-spinner {
+    from {
+        transform: rotate(0turn);
+    }
+    to {
+        transform: rotate(1turn);
+    }
+}
+
+/* Empty state styling */
+.task-column-empty {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: #b5b5b5;
+}
+
+/* Responsive columns */
+@media screen and (max-width: 768px) {
+    .columns.is-variable.is-3 {
+        display: block;
+    }
+}
+
+/* Focus states */
+.input:focus,
+.textarea:focus,
+.select select:focus {
+    border-color: #3e8ed0;
+    box-shadow: 0 0 0 0.125em rgba(62, 142, 208, 0.25);
+}
+
+/* Drag and drop hints (for future enhancement) */
+.task-card-dragging {
+    opacity: 0.5;
+}
+
+.task-column-dragover {
+    background-color: #f5f5f5;
+    border: 2px dashed #3e8ed0;
+}

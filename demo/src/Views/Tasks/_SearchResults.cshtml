@@ -1,0 +1,28 @@
+@model List<TaskFlow.Models.TaskItem>
+
+<div class="box">
+    <h3 class="title is-4 mb-4">Search Results (@Model.Count tasks found)</h3>
+    
+    @if (!Model.Any())
+    {
+        <div class="notification is-light">
+            <p class="has-text-centered">
+                <span class="icon">
+                    <i class="fas fa-search"></i>
+                </span>
+                <span>No tasks match your search criteria</span>
+            </p>
+        </div>
+    }
+    else
+    {
+        <div class="columns is-multiline">
+            @foreach (var task in Model)
+            {
+                <div class="column is-one-third">
+                    @await Html.PartialAsync("_TaskCard", task)
+                </div>
+            }
+        </div>
+    }
+</div>

@@ -1,0 +1,21 @@
+@{
+    ViewData["Title"] = "Dynamic Components";
+}
+
+<div class="columns is-multiline">
+  <div class="column is-half">
+    <section class="box">
+      <h2 class="title is-4">Summary</h2>
+      @await Html.PartialAsync("~/Views/Demo/_SummaryPanel.cshtml")
+      <p class="help has-text-grey mt-2">Updates when notes are added in the Details panel.</p>
+    </section>
+  </div>
+
+  <div class="column is-half">
+    <section class="box">
+      <h2 class="title is-4">Details</h2>
+      @await Html.PartialAsync("~/Views/Demo/_DetailsPanel.cshtml")
+      <p class="help has-text-grey mt-2">This panel is injected after page load and listens for <code>ui.details.refresh</code>.</p>
+    </section>
+  </div>
+</div>

@@ -1,0 +1,93 @@
+@model List<TaskFlow.Models.ActivityLog>
+
+@if (Model == null || !Model.Any())
+{
+    <p class="has-text-grey has-text-centered py-4">
+        <span class="icon">
+            <i class="fas fa-info-circle"></i>
+        </span>
+        <span>No recent activity</span>
+    </p>
+}
+else
+{
+    <div class="timeline">
+        @foreach (var activity in Model)
+        {
+            <div class="timeline-item mb-3">
+                <div class="timeline-marker @activity.ColorClass">
+                    <span class="icon is-small">
+                        <i class="@activity.Icon"></i>
+                    </span>
+                </div>
+                <div class="timeline-content">
+                    <p class="heading">@activity.Timestamp.ToString("HH:mm:ss")</p>
+                    <p>
+                        <strong>@activity.Action</strong>
+                        @if (!string.IsNullOrEmpty(activity.Details))
+                        {
+                            <span> — @activity.Details</span>
+                        }
+                    </p>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+<style>
+    .timeline {
+        position: relative;
+        padding-left: 30px;
+    }
+    
+    .timeline-item {
+        position: relative;
+        padding-bottom: 1rem;
+        border-left: 2px solid #dbdbdb;
+    }
+    
+    .timeline-item:last-child {
+        border-left: 0;
+    }
+    
+    .timeline-marker {
+        position: absolute;
+        left: -31px;
+        width: 2rem;
+        height: 2rem;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: white;
+        border: 2px solid #dbdbdb;
+    }
+    
+    .timeline-marker.is-success {
+        background-color: #48c78e;
+        border-color: #48c78e;
+        color: white;
+    }
+    
+    .timeline-marker.is-info {
+        background-color: #3e8ed0;
+        border-color: #3e8ed0;
+        color: white;
+    }
+    
+    .timeline-marker.is-warning {
+        background-color: #ffe08a;
+        border-color: #ffe08a;
+    }
+    
+    .timeline-marker.is-danger {
+        background-color: #f14668;
+        border-color: #f14668;
+        color: white;
+    }
+    
+    .timeline-content {
+        padding-left: 1rem;
+    }
+</style>

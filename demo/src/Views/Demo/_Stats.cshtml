@@ -1,0 +1,24 @@
+@model StatsModel
+<div class="level">
+  <div class="level-item has-text-centered">
+    <div>
+      <p class="heading">Total</p>
+      <p class="title">@Model.Total</p>
+      <p class="help">All todos</p>
+    </div>
+  </div>
+  <div class="level-item has-text-centered">
+    <div>
+      <p class="heading">Completed</p>
+      <p class="title has-text-success">@Model.Completed</p>
+      <p class="help">Done</p>
+    </div>
+  </div>
+  <div class="level-item has-text-centered">
+    <div>
+      <p class="heading">Pending</p>
+      <p class="title">@Model.Pending</p>
+      <p class="help">Remaining</p>
+    </div>
+  </div>
+</div>
