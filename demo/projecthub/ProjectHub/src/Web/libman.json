@@ -1,0 +1,34 @@
+{
+  "version": "1.0",
+  "defaultProvider": "cdnjs",
+  "libraries": [
+    {
+      "library": "htmx@2.0.7",
+      "destination": "wwwroot/lib/htmx",
+      "files": [
+        "htmx.min.js",
+        "ext/sse.js"
+      ]
+    },
+    {
+      "library": "bulma@1.0.4",
+      "destination": "wwwroot/lib/bulma",
+      "files": [
+        "css/bulma.min.css"
+      ]
+    },
+    {
+      "library": "font-awesome@6.7.1",
+      "destination": "wwwroot/lib/font-awesome",
+      "files": [
+        "css/all.min.css",
+        "webfonts/fa-brands-400.woff2",
+        "webfonts/fa-brands-400.ttf",
+        "webfonts/fa-regular-400.woff2",
+        "webfonts/fa-regular-400.ttf",
+        "webfonts/fa-solid-900.woff2",
+        "webfonts/fa-solid-900.ttf"
+      ]
+    }
+  ]
+}

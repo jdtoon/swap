@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - ProjectHub</title>
+    
+    <!-- Bulma CSS -->
+    <link rel="stylesheet" href="~/lib/bulma/css/bulma.min.css" asp-append-version="true" />
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="~/lib/font-awesome/css/all.min.css" asp-append-version="true" />
+    
+    <!-- Custom Theme -->
+    <link rel="stylesheet" href="~/css/theme.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/htmx-toast.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/htmx-transitions.css" asp-append-version="true" />
+    
+    <!-- HTMX -->
+    <script src="~/lib/htmx/htmx.min.js" asp-append-version="true"></script>
+    <script src="~/lib/htmx/ext/sse.js" asp-append-version="true"></script>
+</head>
+<body>
+    <header>
+        <nav class="navbar" role="navigation" aria-label="main navigation">
+            <div class="container">
+                <div class="navbar-brand">
+                    <a class="navbar-item" href="/">
+                        <span class="icon-text">
+                            <span class="icon">
+                                <i class="fas fa-project-diagram"></i>
+                            </span>
+                            <span class="has-text-weight-bold is-size-5">ProjectHub</span>
+                        </span>
+                    </a>
+                    
+                    <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false">
+                        <span aria-hidden="true"></span>
+                        <span aria-hidden="true"></span>
+                        <span aria-hidden="true"></span>
+                    </a>
+                </div>
+                
+                <div class="navbar-menu">
+                    <div class="navbar-start">
+                        <a class="navbar-item" href="/">
+                            <span class="icon">
+                                <i class="fas fa-home"></i>
+                            </span>
+                            <span>Home</span>
+                        </a>
+                        <!-- Module navigation will be added here -->
+                    </div>
+                    
+                    <div class="navbar-end">
+                        <!-- Notification Bell (will be activated by Notifications module) -->
+                        <div class="navbar-item">
+                            <div class="notification-bell">
+                                <span class="icon is-large">
+                                    <i class="far fa-bell"></i>
+                                </span>
+                                <!-- Badge will be added dynamically -->
+                            </div>
+                        </div>
+                        
+                        <!-- User dropdown (future authentication) -->
+                        <div class="navbar-item has-dropdown is-hoverable">
+                            <a class="navbar-link">
+                                <span class="icon">
+                                    <i class="fas fa-user-circle"></i>
+                                </span>
+                                <span>Account</span>
+                            </a>
+                            <div class="navbar-dropdown is-right">
+                                <a class="navbar-item">Profile</a>
+                                <a class="navbar-item">Settings</a>
+                                <hr class="navbar-divider">
+                                <a class="navbar-item">Logout</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main id="main-content" class="section">
+        <div class="container">
+            @RenderBody()
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="content has-text-centered">
+            <p class="has-text-grey">
+                <strong>ProjectHub</strong> by <a href="https://github.com/jdtoon/swap">Swap Framework</a>.
+                <br>
+                Built with <span class="icon"><i class="fas fa-heart has-text-danger"></i></span> using ASP.NET Core + HTMX + Bulma
+            </p>
+        </div>
+    </footer>
+
+    <!-- Theme Toggle Button -->
+    <button class="theme-toggle" id="theme-toggle" aria-label="Toggle theme">
+        <i class="fas fa-moon"></i>
+    </button>
+
+    @await Html.PartialAsync("_ToastContainer")
+
+    @await RenderSectionAsync("Scripts", required: false)
+    
+    <script src="~/js/swap-toast.js" asp-append-version="true"></script>
+    <script src="~/js/theme-toggle.js" asp-append-version="true"></script>
+</body>
+</html>
