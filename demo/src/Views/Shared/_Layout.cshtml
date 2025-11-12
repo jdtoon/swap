@@ -16,7 +16,11 @@
         <nav class="navbar" role="navigation" aria-label="main navigation">
             <div class="container">
                 <div class="navbar-brand">
-                    <a class="navbar-item" href="/">
+                    <a class="navbar-item" 
+                       href="/"
+                       hx-get="/"
+                       hx-target="main"
+                       hx-push-url="true">
                         <strong>
                             <span class="icon-text">
                                 <span class="icon has-text-primary">
@@ -29,7 +33,11 @@
                 </div>
                 <div class="navbar-menu">
                     <div class="navbar-start">
-                        <a class="navbar-item" href="/">
+                        <a class="navbar-item" 
+                           href="/"
+                           hx-get="/"
+                           hx-target="main"
+                           hx-push-url="true">
                             <span class="icon-text">
                                 <span class="icon">
                                     <i class="fas fa-home"></i>
@@ -37,7 +45,11 @@
                                 <span>Home</span>
                             </span>
                         </a>
-                        <a class="navbar-item" href="/Tasks">
+                        <a class="navbar-item" 
+                           href="/Tasks"
+                           hx-get="/Tasks"
+                           hx-target="main"
+                           hx-push-url="true">
                             <span class="icon-text">
                                 <span class="icon">
                                     <i class="fas fa-clipboard-list"></i>
@@ -57,10 +69,10 @@
 
     <footer class="footer has-background-light mt-6">
         <div class="content has-text-centered">
-            <p class="has-text-secondary">
-                <strong>TaskFlow</strong> - Built with <a href="https://github.com/your-repo/swap" class="has-text-primary">Swap.Htmx</a>
+            <p style="color: var(--text-primary); font-weight: 600;">
+                <strong style="color: var(--primary); font-size: 1.125rem;">TaskFlow</strong> - Built with <a href="https://github.com/your-repo/swap" style="color: var(--primary); font-weight: 600; text-decoration: none;">Swap.Htmx</a>
             </p>
-            <p class="is-size-7 has-text-muted">
+            <p style="color: var(--text-secondary); font-size: 0.875rem;">
                 Pure server-driven development. Zero JavaScript frameworks.
             </p>
         </div>
