@@ -55,6 +55,32 @@ public static class SwapHtmxServiceExtensions
     }
 
     /// <summary>
+    /// Adds SSE fallback services for polling support when SSE connections fail.
+    /// This enables graceful degradation to HTTP polling for unreliable networks.
+    /// </summary>
+    /// <param name="services">The service collection.</param>
+    /// <param name="configure">Optional configuration for fallback behavior.</param>
+    /// <returns>The service collection for chaining.</returns>
+    /// <example>
+    /// <code>
+    /// builder.Services.AddSseEventBridge()
+    ///                 .AddSseFallback(options => {
+    ///                     options.DefaultPollInterval = 3000;
+    ///                     options.MaxSseRetries = 5;
+    ///                 });
+    /// </code>
+    /// </example>
+    public static IServiceCollection AddSseFallback(this IServiceCollection services, Action<SseFallbackOptions>? configure = null)
+    {
+        var options = new SseFallbackOptions();
+        configure?.Invoke(options);
+        services.AddSingleton(options);
+        services.AddSingleton<ISseFallbackService, SseFallbackService>();
+
+        return services;
+    }
+
+    /// <summary>
     /// Adds Swap.Htmx services and configures event chains.
     /// </summary>
     /// <param name="services">The service collection.</param>
