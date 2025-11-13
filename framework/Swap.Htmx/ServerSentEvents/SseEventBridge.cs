@@ -65,6 +65,20 @@ internal sealed class SseEventBridge : ISseEventBridge
                     await _connectionRegistry.BroadcastToSubscribersAsync(sseEventName, html, cancellationToken);
                     break;
 
+                case "roles":
+                    var roles = target.Split(',');
+                    await _connectionRegistry.BroadcastToRolesAsync(sseEventName, html, roles, cancellationToken);
+                    break;
+
+                case "user":
+                    await _connectionRegistry.BroadcastToUserAsync(sseEventName, html, target, cancellationToken);
+                    break;
+
+                case "filter":
+                    // For custom filters, we'll use a convention where the filter key maps to a predicate
+                    await HandleFilteredBroadcast(target, sseEventName, html, cancellationToken);
+                    break;
+
                 default:
                     _logger.LogWarning("Unknown SSE event type: {EventType} for event {EventName}", eventType, eventName);
                     break;
@@ -169,5 +183,32 @@ internal sealed class SseEventBridge : ISseEventBridge
         }
 
         return null;
+    }
+
+    /// <summary>
+    /// Handles filtered broadcasting based on predefined filter keys.
+    /// </summary>
+    private async Task HandleFilteredBroadcast(string filterKey, string eventName, string html, CancellationToken cancellationToken)
+    {
+        Func<SseConnection, bool> filter = filterKey.ToLowerInvariant() switch
+        {
+            "authenticated" => conn => conn.User?.Identity?.IsAuthenticated == true,
+            "anonymous" => conn => conn.User?.Identity?.IsAuthenticated != true,
+            "admin" => conn => conn.User?.IsInRole("admin") == true,
+            "moderator" => conn => conn.User?.IsInRole("moderator") == true || conn.User?.IsInRole("admin") == true,
+            "recent" => conn => (DateTime.UtcNow - conn.ConnectedAt).TotalMinutes < 5,
+            "monitoring" => conn => conn.Rooms.Contains("monitoring"),
+            "debug" => conn => conn.Rooms.Contains("debug"),
+            _ => _ => false // Unknown filter, matches nothing
+        };
+
+        if (filter != null)
+        {
+            await _connectionRegistry.BroadcastToFilteredAsync(eventName, html, filter, cancellationToken);
+        }
+        else
+        {
+            _logger.LogWarning("Unknown SSE filter key: {FilterKey}", filterKey);
+        }
     }
 }

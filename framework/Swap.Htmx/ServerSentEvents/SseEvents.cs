@@ -33,6 +33,31 @@ public static class SseEvents
     /// <param name="rooms">The rooms to broadcast to.</param>
     public static SseRoomBuilder Rooms(params string[] rooms) => new(rooms);
 
+    /// <summary>
+    /// Creates an event key for broadcasting to users with specific roles.
+    /// </summary>
+    /// <param name="eventName">The SSE event name that will be sent to clients.</param>
+    /// <param name="roles">The roles to broadcast to.</param>
+    public static EventKey Roles(string eventName, params string[] roles) =>
+        new($"sse:roles:{string.Join(",", roles)}:{eventName}");
+
+    /// <summary>
+    /// Creates an event key for broadcasting to a specific user.
+    /// </summary>
+    /// <param name="eventName">The SSE event name that will be sent to clients.</param>
+    /// <param name="userId">The user ID to broadcast to.</param>
+    public static EventKey User(string eventName, string userId) =>
+        new($"sse:user:{userId}:{eventName}");
+
+    /// <summary>
+    /// Creates an event key for filtering connections with a custom predicate.
+    /// Note: The predicate will be evaluated on the server-side.
+    /// </summary>
+    /// <param name="eventName">The SSE event name that will be sent to clients.</param>
+    /// <param name="filterKey">A unique key identifying this filter.</param>
+    public static EventKey Filter(string eventName, string filterKey) =>
+        new($"sse:filter:{filterKey}:{eventName}");
+
     // Common SSE event names for convenience
     public static class Common
     {
@@ -42,6 +67,14 @@ public static class SseEvents
         public static EventKey Toast => Broadcast("toast");
         public static EventKey Metrics => Broadcast("metrics");
         public static EventKey Activity => Broadcast("activity");
+
+        // User-specific common events
+        public static EventKey UserNotification(string userId) => User("notification", userId);
+        public static EventKey UserUpdate(string userId) => User("update", userId);
+
+        // Role-based common events  
+        public static EventKey AdminAlert => Roles("alert", "admin");
+        public static EventKey ModeratorNotification => Roles("notification", "moderator", "admin");
     }
 }
 

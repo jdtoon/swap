@@ -34,6 +34,21 @@ public interface ISseConnectionRegistry
     Task BroadcastToSubscribersAsync(string eventName, string html, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Broadcasts an event to connections matching a filter predicate.
+    /// </summary>
+    Task BroadcastToFilteredAsync(string eventName, string html, Func<SseConnection, bool> filter, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Broadcasts an event to authenticated users with specific roles.
+    /// </summary>
+    Task BroadcastToRolesAsync(string eventName, string html, IEnumerable<string> roles, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Broadcasts an event to a specific user by user ID.
+    /// </summary>
+    Task BroadcastToUserAsync(string eventName, string html, string userId, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Gets all active connection IDs.
     /// </summary>
     IReadOnlyCollection<string> GetActiveConnectionIds();
@@ -137,6 +152,77 @@ internal sealed class SseConnectionRegistry : ISseConnectionRegistry
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "Error during SSE broadcast to event subscribers {EventName}", eventName);
+        }
+
+        CleanupInactiveConnections();
+    }
+
+    public async Task BroadcastToFilteredAsync(string eventName, string html, Func<SseConnection, bool> filter, CancellationToken cancellationToken = default)
+    {
+        var targetConnections = GetActiveConnections()
+            .Where(filter)
+            .ToList();
+
+        var tasks = targetConnections.Select(conn => conn.SendEventAsync(eventName, html));
+
+        try
+        {
+            await Task.WhenAll(tasks);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Error during SSE filtered broadcast for event {EventName}", eventName);
+        }
+
+        CleanupInactiveConnections();
+    }
+
+    public async Task BroadcastToRolesAsync(string eventName, string html, IEnumerable<string> roles, CancellationToken cancellationToken = default)
+    {
+        var roleSet = roles.ToHashSet();
+        var targetConnections = GetActiveConnections()
+            .Where(conn => conn.User?.Identity?.IsAuthenticated == true &&
+                          roleSet.Any(role => conn.User.IsInRole(role)))
+            .ToList();
+
+        var tasks = targetConnections.Select(conn => conn.SendEventAsync(eventName, html));
+
+        try
+        {
+            await Task.WhenAll(tasks);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Error during SSE broadcast to roles {Roles}", string.Join(", ", roles));
+        }
+
+        CleanupInactiveConnections();
+    }
+
+    public async Task BroadcastToUserAsync(string eventName, string html, string userId, CancellationToken cancellationToken = default)
+    {
+        var targetConnections = GetActiveConnections()
+            .Where(conn =>
+            {
+                if (conn.User?.Identity?.IsAuthenticated != true) return false;
+
+                var userIdClaim = conn.User.FindFirst("sub")?.Value
+                               ?? conn.User.FindFirst("id")?.Value
+                               ?? conn.User.Identity.Name;
+
+                return string.Equals(userIdClaim, userId, StringComparison.OrdinalIgnoreCase);
+            })
+            .ToList();
+
+        var tasks = targetConnections.Select(conn => conn.SendEventAsync(eventName, html));
+
+        try
+        {
+            await Task.WhenAll(tasks);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Error during SSE broadcast to user {UserId}", userId);
         }
 
         CleanupInactiveConnections();
