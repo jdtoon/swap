@@ -1,0 +1,235 @@
+@model ProjectHub.Web.Controllers.DashboardStatsViewModel
+@{
+    ViewData["Title"] = "Enhanced Real-Time Dashboard";
+}
+
+<div class="hero is-primary is-small">
+    <div class="hero-body">
+        <div class="container">
+            <h1 class="title">Enhanced Real-Time Dashboard</h1>
+            <p class="subtitle">Demonstrating advanced SSE features with fallback support</p>
+        </div>
+    </div>
+</div>
+
+<section class="section">
+    <div class="container">
+        <!-- SSE Connection Status -->
+        <div class="columns">
+            <div class="column">
+                <div class="notification is-info is-light">
+                    <h5 class="title is-5">🔗 Connection Status</h5>
+                    <div class="tags">
+                        <span class="tag" id="metrics-status">Connecting...</span>
+                        <span class="tag" id="notifications-status">Connecting...</span>
+                        <span class="tag" id="activity-status">Connecting...</span>
+                    </div>
+                    <p class="is-size-7 mt-2">
+                        This dashboard automatically falls back to polling if SSE connections fail.
+                        Open DevTools Network tab to see connection behavior.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="columns">
+            <!-- Live Metrics -->
+            <div class="column is-two-thirds">
+                <div class="box">
+                    <h4 class="title is-4">📊 Live Metrics 
+                        <span class="tag is-small is-info" id="metrics-mode">SSE</span>
+                    </h4>
+                    
+                    <!-- Metrics will be updated via SSE -->
+                    <div 
+                        id="dashboard-metrics"
+                        hx-ext="sse-fallback"
+                        hx-sse="connect:/dashboard/enhanced/live"
+                        hx-sse-swap="metrics-update"
+                        hx-sse-fallback-url="/dashboard/enhanced/live"
+                        hx-sse-fallback-interval="5000">
+                        @await Html.PartialAsync("_EnhancedDashboardMetrics", Model)
+                    </div>
+
+                    <!-- Manual Broadcast Form -->
+                    <div class="box has-background-light mt-4">
+                        <h6 class="title is-6">📢 Manual Broadcast Test</h6>
+                        <form hx-post="/dashboard/enhanced/broadcast" 
+                              hx-target="#broadcast-result" 
+                              hx-trigger="submit">
+                            <div class="field has-addons">
+                                <div class="control is-expanded">
+                                    <input class="input" 
+                                           type="text" 
+                                           name="message" 
+                                           placeholder="Enter a message to broadcast to all connections..."
+                                           required>
+                                </div>
+                                <div class="control">
+                                    <div class="select">
+                                        <select name="type">
+                                            <option value="info">Info</option>
+                                            <option value="success">Success</option>
+                                            <option value="warning">Warning</option>
+                                            <option value="danger">Error</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="control">
+                                    <button class="button is-primary" type="submit">Broadcast</button>
+                                </div>
+                            </div>
+                        </form>
+                        <div id="broadcast-result"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Live Notifications -->
+            <div class="column is-one-third">
+                <div class="box">
+                    <h4 class="title is-4">🔔 Live Notifications
+                        <span class="tag is-small is-info" id="notifications-mode">SSE</span>
+                    </h4>
+                    <div 
+                        id="notifications-feed"
+                        hx-ext="sse-fallback"
+                        hx-sse="connect:/dashboard/enhanced/notifications"
+                        hx-sse-swap="notification"
+                        hx-sse-fallback-url="/dashboard/enhanced/notifications"
+                        hx-sse-fallback-interval="10000"
+                        hx-sse-fallback-type="json">
+                        <!-- Initial state -->
+                        <div class="has-text-centered has-text-grey">
+                            <p>Connecting to notification stream...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cross-Module Activity Feed -->
+        <div class="columns">
+            <div class="column">
+                <div class="box">
+                    <h4 class="title is-4">🔄 Cross-Module Activity Feed
+                        <span class="tag is-small is-info" id="activity-mode">SSE</span>
+                    </h4>
+                    <p class="subtitle is-6 has-text-grey">
+                        Real-time updates from Workspaces, Projects, and Tasks modules
+                    </p>
+                    
+                    <div 
+                        id="activity-feed"
+                        hx-ext="sse-fallback"
+                        hx-sse="connect:/dashboard/enhanced/activity"
+                        hx-sse-swap="activity-update"
+                        hx-sse-fallback-url="/dashboard/enhanced/activity"
+                        hx-sse-fallback-interval="8000"
+                        style="max-height: 400px; overflow-y: auto;">
+                        <!-- Initial state -->
+                        <div class="has-text-centered has-text-grey p-4">
+                            <p>Connecting to activity stream...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Feature Documentation -->
+        <div class="columns">
+            <div class="column">
+                <div class="notification is-light">
+                    <h5 class="title is-5">✨ Enhanced SSE Features Demonstrated</h5>
+                    <div class="content">
+                        <ul>
+                            <li><strong>Automatic Fallback:</strong> Graceful degradation to HTTP polling when SSE fails</li>
+                            <li><strong>Connection Management:</strong> Rooms, authentication, and event filtering</li>
+                            <li><strong>Event-Driven Broadcasting:</strong> Cross-module communication via domain events</li>
+                            <li><strong>Performance Optimization:</strong> Caching for polling endpoints</li>
+                            <li><strong>Real-Time Monitoring:</strong> Connection status and debugging information</li>
+                            <li><strong>Manual Broadcasting:</strong> Direct message broadcasting to specific connection groups</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Include SSE Fallback Extension -->
+<script src="~/lib/htmx.org/dist/htmx.min.js"></script>
+<script src="~/js/sse-fallback.js"></script>
+
+<script>
+    // Connection status monitoring
+    function updateConnectionStatus(elementId, status, mode) {
+        const element = document.getElementById(elementId);
+        const modeElement = document.getElementById(elementId.replace('-status', '-mode'));
+        
+        if (element) {
+            element.textContent = status;
+            element.className = `tag ${getStatusClass(status)}`;
+        }
+        
+        if (modeElement && mode) {
+            modeElement.textContent = mode;
+            modeElement.className = `tag is-small ${mode === 'SSE' ? 'is-success' : 'is-warning'}`;
+        }
+    }
+    
+    function getStatusClass(status) {
+        switch (status.toLowerCase()) {
+            case 'connected': return 'is-success';
+            case 'polling fallback': return 'is-warning';
+            case 'error': return 'is-danger';
+            default: return 'is-info';
+        }
+    }
+
+    // Listen for SSE events
+    document.addEventListener('sse:connected', (e) => {
+        const elementId = e.detail.elementId + '-status';
+        updateConnectionStatus(elementId, 'Connected', 'SSE');
+        console.log(`SSE connected: ${e.detail.elementId}`);
+    });
+
+    document.addEventListener('sse:fallback', (e) => {
+        const elementId = e.detail.elementId + '-status';
+        updateConnectionStatus(elementId, 'Polling Fallback', 'Polling');
+        console.log(`Fallback to polling: ${e.detail.elementId}`);
+    });
+
+    document.addEventListener('sse:error', (e) => {
+        const elementId = e.detail.elementId + '-status';
+        updateConnectionStatus(elementId, 'Error', 'Error');
+        console.log(`Connection error: ${e.detail.elementId}`, e.detail.error);
+    });
+
+    // Handle JSON notifications (for polling fallback)
+    document.addEventListener('sse:data', (e) => {
+        if (e.detail.elementId === 'notifications-feed' && e.detail.data) {
+            const notification = e.detail.data.notification;
+            if (notification) {
+                const html = `
+                    <div class="notification is-info is-light mb-3" id="notification-${Date.now()}">
+                        <button class="delete" onclick="this.parentElement.remove()"></button>
+                        <p><span class="icon">${notification.icon}</span> <strong>${notification.message}</strong></p>
+                        <p class="is-size-7 has-text-grey">Just now (via polling)</p>
+                    </div>`;
+                    
+                document.getElementById('notifications-feed').insertAdjacentHTML('afterbegin', html);
+            }
+        }
+    });
+
+    // Add CSS animation for new activities
+    const style = document.createElement('style');
+    style.textContent = `
+        @@keyframes fadeIn {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+    `;
+    document.head.appendChild(style);
+</script>
