@@ -131,7 +131,7 @@ public abstract class SwapController : Controller
         // Get the target action descriptor
         var actionDescriptor = ControllerContext.ActionDescriptor;
         var controllerName = actionDescriptor.ControllerName;
-        
+
         // Invoke the target action using reflection
         var method = GetType().GetMethod(actionName);
         if (method == null)
@@ -142,7 +142,7 @@ public abstract class SwapController : Controller
         // Build parameters from route values
         var parameters = method.GetParameters();
         var args = new object?[parameters.Length];
-        
+
         if (routeValues != null)
         {
             var routeDict = new RouteValueDictionary(routeValues);
@@ -158,7 +158,7 @@ public abstract class SwapController : Controller
 
         // Invoke the action method
         var result = method.Invoke(this, args);
-        
+
         // Handle async results
         if (result is Task<IActionResult> taskResult)
         {
@@ -206,9 +206,38 @@ public abstract class SwapController : Controller
     }
 
     /// <summary>
+    /// Creates an enhanced SSE connection with connection management, rooms, and event filtering.
+    /// This version integrates with the SSE event bridge for automatic event-driven broadcasting.
+    /// </summary>
+    /// <param name="handler">The async function that configures and maintains the SSE connection.</param>
+    /// <returns>An enhanced SSE result with connection registry integration.</returns>
+    /// <example>
+    /// <code>
+    /// public IActionResult EnhancedLiveFeed()
+    /// {
+    ///     return ServerSentEvents(async (connection, ct) =>
+    ///     {
+    ///         await connection
+    ///             .WithAuthentication()
+    ///             .WithRooms("dashboard", $"user-{UserId}")
+    ///             .WithEvents("task-updated", "notification")
+    ///             .WithInitialState("initial", await RenderPartialToStringAsync("_Dashboard", model))
+    ///             .KeepAlive(cancellationToken: ct);
+    ///     });
+    /// }
+    /// </code>
+    /// </example>
+    protected IActionResult ServerSentEvents(Func<SseConnectionBuilder, CancellationToken, Task> handler)
+    {
+        // Store controller reference for partial view rendering
+        HttpContext.Items["SwapController"] = this;
+        return new EnhancedServerSentEventsResult(handler);
+    }
+
+    /// <summary>
     /// Renders a partial view to a string for use in SSE or other scenarios.
     /// </summary>
-    protected async Task<string> RenderPartialToStringAsync<TModel>(string viewName, TModel model)
+    public async Task<string> RenderPartialToStringAsync<TModel>(string viewName, TModel model)
     {
         if (string.IsNullOrEmpty(viewName))
             viewName = ControllerContext.ActionDescriptor.ActionName;
@@ -248,13 +277,13 @@ public abstract class SwapController : Controller
     protected async Task<string> RenderOobSwapAsync(string targetId, string viewName, object? model, string swapMode = "true")
     {
         var partialHtml = await RenderPartialToStringAsync(viewName, model);
-        
+
         // Wrap in div with hx-swap-oob attribute if not already present
         if (!partialHtml.Contains("hx-swap-oob"))
         {
             return $"<div id=\"{targetId}\" hx-swap-oob=\"{swapMode}\">{partialHtml}</div>";
         }
-        
+
         return partialHtml;
     }
 }

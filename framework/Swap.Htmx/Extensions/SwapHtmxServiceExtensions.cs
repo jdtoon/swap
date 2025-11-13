@@ -4,6 +4,7 @@ using Microsoft.Extensions.Options;
 using Swap.Htmx.Events;
 using Swap.Htmx.Middleware;
 using Swap.Htmx.Dev;
+using Swap.Htmx.ServerSentEvents;
 
 namespace Swap.Htmx;
 
@@ -31,6 +32,25 @@ public static class SwapHtmxServiceExtensions
         // Default event bus + options (no chains by default)
         services.AddSingleton(new SwapEventBusOptions());
         services.AddScoped<ISwapEventBus, SwapEventBus>();
+        return services;
+    }
+
+    /// <summary>
+    /// Adds enhanced SSE services with connection management and event-driven broadcasting.
+    /// Call this to enable advanced SSE features like rooms, authentication, and automatic event bridging.
+    /// </summary>
+    /// <param name="services">The service collection.</param>
+    /// <returns>The service collection for chaining.</returns>
+    /// <example>
+    /// <code>
+    /// builder.Services.AddSwapHtmx()
+    ///                 .AddSseEventBridge();
+    /// </code>
+    /// </example>
+    public static IServiceCollection AddSseEventBridge(this IServiceCollection services)
+    {
+        services.AddSingleton<ISseConnectionRegistry, SseConnectionRegistry>();
+        services.AddScoped<ISseEventBridge, SseEventBridge>();
         return services;
     }
 
@@ -95,5 +115,22 @@ public static class SwapHtmxServiceExtensions
     public static IApplicationBuilder UseSwapHtmx(this IApplicationBuilder app)
     {
         return app.UseMiddleware<SwapEventResponseMiddleware>();
+    }
+
+    /// <summary>
+    /// Registers the SSE event middleware for automatic event-driven broadcasting.
+    /// This should be called after UseSwapHtmx() to enable SSE event processing.
+    /// </summary>
+    /// <param name="app">The application builder.</param>
+    /// <returns>The application builder for chaining.</returns>
+    /// <example>
+    /// <code>
+    /// app.UseSwapHtmx()
+    ///    .UseSseEventBridge();
+    /// </code>
+    /// </example>
+    public static IApplicationBuilder UseSseEventBridge(this IApplicationBuilder app)
+    {
+        return app.UseMiddleware<SseEventMiddleware>();
     }
 }

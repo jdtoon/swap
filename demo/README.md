@@ -60,7 +60,7 @@ A **focused demonstration** of Swap.Htmx patterns and event-driven UI. Simple ta
 ✅ **Toast Notifications** — Server-triggered client toasts  
 ✅ **HTMX Integration Tests** — Test your HTMX flows properly  
 ✅ **Clean CRUD Patterns** — Server-driven forms with validation  
-✅ **WebSockets (future)** — Real-time updates placeholder
+✅ **Enhanced SSE Integration** — Event-driven real-time updates
 
 ### Run It
 
@@ -76,17 +76,17 @@ Open **http://localhost:5000** — Pure HTMX velocity!
 
 ## 🤔 Which Demo Should I Explore?
 
-| If you want to see...                        | Check out...    |
-|----------------------------------------------|-----------------|
-| **Modular architecture at scale**            | ProjectHub      |
-| **Server-Sent Events (SSE) streaming**       | ProjectHub      |
-| **Cross-module communication**               | ProjectHub      |
-| **Per-module migrations**                    | ProjectHub      |
-| **Docker/Postgres/RabbitMQ setup**           | ProjectHub      |
-| **Core HTMX patterns**                       | TaskFlow        |
-| **Event system fundamentals**                | TaskFlow        |
-| **Simple, clean starting point**             | TaskFlow        |
-| **Integration testing patterns**             | Both            |
+| If you want to see...                  | Check out... |
+| -------------------------------------- | ------------ |
+| **Modular architecture at scale**      | ProjectHub   |
+| **Server-Sent Events (SSE) streaming** | ProjectHub   |
+| **Cross-module communication**         | ProjectHub   |
+| **Per-module migrations**              | ProjectHub   |
+| **Docker/Postgres/RabbitMQ setup**     | ProjectHub   |
+| **Core HTMX patterns**                 | TaskFlow     |
+| **Event system fundamentals**          | TaskFlow     |
+| **Simple, clean starting point**       | TaskFlow     |
+| **Integration testing patterns**       | Both         |
 
 ---
 
@@ -98,6 +98,7 @@ Both demos include extensive inline documentation:
 - **TaskFlow:** [`demo/taskflow/README.md`](./taskflow/README.md) + pattern explanations
 
 For framework-level docs, see:
+
 - **Main README:** [`README.md`](../README.md)
 - **Framework Docs:** [`framework/README.md`](../framework/README.md)
 - **Templates:** [`templates/README.md`](../templates/README.md)
