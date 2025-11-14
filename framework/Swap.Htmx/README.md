@@ -1,32 +1,21 @@
 # Swap.Htmx# Swap.Htmx
 
-
-
 [![NuGet](https://img.shields.io/nuget/v/Swap.Htmx.svg)](https://www.nuget.org/packages/Swap.Htmx/)[![NuGet](https://img.shields.io/nuget/v/Swap.Htmx.svg)](https://www.nuget.org/packages/Swap.Htmx/)
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
+**Minimal HTMX framework for ASP.NET Core MVC** that provides automatic page/partial detection, toast notifications, out-of-band swaps, enhanced Server-Sent Events, and a powerful event system for decoupling domain logic from UI updates.
 
+## Features
 
-A minimal HTMX framework for ASP.NET Core MVC that makes building modern, dynamic web applications simple and intuitive.**Minimal HTMX framework for ASP.NET Core MVC** that provides automatic page/partial detection, toast notifications, out-of-band swaps, and a powerful event system for decoupling domain logic from UI updates.
-
-
-
-## What is Swap.Htmx?## Features
-
-
-
-Swap.Htmx provides the missing pieces between HTMX and ASP.NET Core MVC:- ✅ **SwapController** - Automatic page vs partial rendering based on HX-Request header
-
+- ✅ **SwapController** - Automatic page vs partial rendering based on HX-Request header
 - ✅ **Toast Notifications** - Built-in success/error/warning/info toasts with zero JavaScript
-
-- **Automatic page/partial detection** - Returns full pages or partials based on request type- ✅ **Out-of-Band Swaps** - Update multiple page sections in one response
-
-- **Real-time streaming** - Server-Sent Events (SSE) support for live updates- ✅ **Event System** - Chain domain events to UI updates with static typing
-
-- **Toast notifications** - User feedback without writing JavaScript- ✅ **Middleware** - Validates responses and headers automatically
-
-- **Out-of-band swaps** - Update multiple page sections in one response- ✅ **Extension Methods** - Fluent API for HTMX headers and responses
+- ✅ **Out-of-Band Swaps** - Update multiple page sections in one response
+- ✅ **Event System** - Chain domain events to UI updates with static typing
+- ✅ **Enhanced SSE** - Real-time Server-Sent Events with automatic polling fallback
+- ✅ **Connection Management** - Room-based broadcasting with authentication support
+- ✅ **Middleware** - Validates responses and headers automatically
+- ✅ **Extension Methods** - Fluent API for HTMX headers and responses
 
 - **Event system** - Decouple domain logic from UI updates with typed events
 
@@ -34,7 +23,7 @@ Swap.Htmx provides the missing pieces between HTMX and ASP.NET Core MVC:- ✅ **
 
 ## Quick Example
 
-```bash
+````bash
 
 ```csharpdotnet add package Swap.Htmx
 
@@ -58,7 +47,7 @@ public class TodoController : SwapController
 
     }var builder = WebApplication.CreateBuilder(args);
 
-    
+
 
     // Real-time updates with SSEbuilder.Services.AddControllersWithViews();
 
@@ -110,21 +99,21 @@ public class TodoController : SwapController
 
 </div>    }
 
-```    
+````
 
     public async Task<IActionResult> Create(ProductDto dto)
 
-## Installation    {
+## Installation {
 
         await _service.CreateAsync(dto);
 
-```bash        
+````bash
 
 dotnet add package Swap.Htmx        // Show success toast
 
 ```        Response.ShowSuccessToast("Product created!");
 
-        
+
 
 Then register in `Program.cs`:        return SwapView("Success");
 
@@ -144,49 +133,43 @@ app.UseSwapHtmxShell();```razor
 
 app.UseSwapHtmx();@model List<Product>
 
-```
+````
 
 <div id="product-list">
 
-## Documentation    <h1>Products</h1>
+## Documentation <h1>Products</h1>
 
-    
+### Getting Started @foreach (var product in Model)
 
-### Getting Started    @foreach (var product in Model)
-
-- **[Complete Setup Guide](./Docs/GETTING-STARTED.md)** - Step-by-step setup for new projects    {
+- **[Complete Setup Guide](./Docs/GETTING-STARTED.md)** - Step-by-step setup for new projects {
 
         <div class="product-card">
 
-### Core Features            <h3>@product.Name</h3>
+### Core Features <h3>@product.Name</h3>
 
-- **[Toast Notifications](./Docs/TOASTS.md)** - User feedback without JavaScript            <p>$@product.Price</p>
+- **[Toast Notifications](./Docs/TOASTS.md)** - User feedback without JavaScript <p>$@product.Price</p>
 
-- **[Out-of-Band Swaps](./Docs/OOB-SWAPS.md)** - Update multiple elements at once            
+- **[Out-of-Band Swaps](./Docs/OOB-SWAPS.md)** - Update multiple elements at once
 
-- **[Server-Sent Events](./Docs/SERVER-SENT-EVENTS.md)** - Real-time HTML streaming            <button hx-post="/products/delete/@product.Id" 
+- **[Server-Sent Events](./Docs/SERVER-SENT-EVENTS.md)** - Real-time HTML streaming <button hx-post="/products/delete/@product.Id"
 
-- **[Event System](./Docs/EVENTS.md)** - Domain events → UI updates                    hx-target="#product-list"
+- **[Event System](./Docs/EVENTS.md)** - Domain events → UI updates hx-target="#product-list"
 
                     hx-confirm="Delete this product?">
 
-### Reference                Delete
+### Reference Delete
 
-- **[Templates](./Docs/TEMPLATES.md)** - Project templates and patterns            </button>
+- **[Templates](./Docs/TEMPLATES.md)** - Project templates and patterns </button>
 
-- **[Detailed API Reference](./Docs/README.md)** - Complete framework documentation        </div>
+- **[Detailed API Reference](./Docs/README.md)** - Complete framework documentation </div>
 
-- **[E2E Testing Guide](./Swap.Htmx.E2ETests/README.md)** - Browser-based testing    }
+- **[E2E Testing Guide](./Swap.Htmx.E2ETests/README.md)** - Browser-based testing }
 
 </div>
 
 ## Philosophy```
 
-
-
 Swap.Htmx embraces simplicity:## Core Concepts
-
-
 
 1. **Minimal abstraction** - Leverage HTMX's power, don't hide it### SwapView() - Automatic Rendering
 
@@ -196,7 +179,7 @@ Swap.Htmx embraces simplicity:## Core Concepts
 
 4. **Progressive enhancement** - Works as a traditional MVC app, HTMX adds interactivity
 
-```csharp
+````csharp
 
 ## Examplespublic async Task<IActionResult> Details(int id)
 
@@ -204,7 +187,7 @@ Swap.Htmx embraces simplicity:## Core Concepts
 
 See the test app for complete working examples:    var product = await _service.GetAsync(id);
 
-    
+
 
 ```bash    // Initial page load: Returns View() with layout
 
@@ -214,9 +197,7 @@ dotnet run    return SwapView("Details", product);
 
 # Visit http://localhost:5000/test}
 
-``````
-
-
+````
 
 Examples include:**How it works:**
 
@@ -250,8 +231,6 @@ Response.ShowInfoToast("Processing in background...");
 
 MIT - See [LICENSE](../../LICENSE) for details```
 
-
-
 ## Contributing**Features:**
 
 - 4 toast types with different colors
@@ -272,22 +251,23 @@ Update multiple page sections in a single response:
 public async Task<IActionResult> AddToCart(int productId)
 {
     await _cartService.AddItemAsync(productId);
-    
+
     // Main content
     var main = SwapView("ItemAdded");
-    
+
     // Also update cart total in header (out-of-band)
     var total = await _cartService.GetTotalAsync();
     ViewData["OobCartTotal"] = $@"
         <div id=""cart-total"" hx-swap-oob=""true"">
             {total.ItemCount} items - ${total.Total}
         </div>";
-    
+
     return main;
 }
 ```
 
 **Common use cases:**
+
 - Update header badge counts
 - Refresh sidebar panels
 - Update multiple dashboard widgets
@@ -317,8 +297,8 @@ public static class UiEvents
 builder.Services.AddSwapHtmx(events =>
 {
     // When product is created, refresh list and show toast
-    events.Chain(ProductEvents.Created, 
-                 UiEvents.RefreshList, 
+    events.Chain(ProductEvents.Created,
+                 UiEvents.RefreshList,
                  UiEvents.ShowToast);
 });
 
@@ -326,15 +306,118 @@ builder.Services.AddSwapHtmx(events =>
 public async Task<IActionResult> Create(ProductDto dto)
 {
     await _service.CreateAsync(dto);
-    
+
     // Emit domain event (triggers UI events via chain)
     await _publisher.EmitAsync(ProductEvents.Created);
-    
+
     return SwapView("Success");
 }
 ```
 
 [📖 Full Event System Documentation](./EVENTS.md)
+
+### Enhanced Server-Sent Events (NEW!)
+
+Real-time communication with automatic fallback support:
+
+```csharp
+// 1. Register enhanced SSE services
+builder.Services.AddSseEventBridge();
+builder.Services.AddSseFallback(options => {
+    options.DefaultPollInterval = 5000;
+    options.MaxSseRetries = 3;
+    options.EnableFallback = true;
+});
+
+app.UseSseEventBridge();
+
+// 2. Enhanced SSE endpoint with connection management
+public IActionResult LiveDashboard()
+{
+    return new EnhancedServerSentEventsResult(async (connectionBuilder, cancellationToken) => {
+        connectionBuilder.WithRooms("dashboard", "admin")
+                        .WithEventPrefix("ui.dashboard");
+
+        var connection = connectionBuilder.Connection;
+
+        // Send initial data
+        await connection.SendEventAsync("initial-data", html);
+
+        // Keep connection alive
+        await connectionBuilder.KeepAlive(TimeSpan.FromSeconds(30), cancellationToken);
+    });
+}
+
+// 3. Automatic fallback polling endpoint
+public async Task<IActionResult> DashboardData()
+{
+    if (_fallbackService.ShouldUsePolling(HttpContext))
+    {
+        return await this.CachedPollingFallback(
+            cacheKey: "dashboard-data",
+            getContentFunc: async () => await RenderDashboardAsync(),
+            cacheDuration: TimeSpan.FromSeconds(10)
+        );
+    }
+
+    // Regular SSE handling...
+}
+```
+
+**Client-side with automatic fallback:**
+
+```html
+<div
+  id="live-dashboard"
+  hx-ext="sse-fallback"
+  hx-sse="connect:/dashboard/live"
+  hx-sse-swap="dashboard-update"
+  hx-sse-fallback-url="/dashboard/data"
+  hx-sse-fallback-interval="3000"
+>
+  <!-- Content updated in real-time -->
+</div>
+
+<script>
+  // Monitor connection status
+  document.addEventListener("sse:connected", (e) => {
+    console.log("SSE connected:", e.detail.elementId);
+  });
+
+  document.addEventListener("sse:fallback", (e) => {
+    console.log("Switched to polling fallback");
+  });
+</script>
+```
+
+**Cross-module broadcasting:**
+
+```csharp
+// Broadcast to specific rooms
+await _connectionRegistry.BroadcastToRoomsAsync(
+    eventName: "notification",
+    html: notificationHtml,
+    rooms: new[] { "users", "dashboard" }
+);
+
+// Broadcast to users with specific roles
+await _connectionRegistry.BroadcastToRolesAsync(
+    eventName: "admin-alert",
+    html: alertHtml,
+    roles: new[] { "Admin", "Manager" }
+);
+```
+
+**Features:**
+
+- 🔄 **Automatic Fallback** - Seamless HTTP polling when SSE fails
+- 🏠 **Room Management** - Target broadcasts to specific user groups
+- 🔐 **Authentication** - User-aware connections with role-based filtering
+- 📡 **Event Bridge** - Automatic domain event → SSE broadcasting
+- ⚡ **Performance** - Cached polling endpoints for optimal fallback
+- 🔧 **Monitoring** - Connection status tracking and debugging tools
+
+[📖 Full SSE Documentation](./SERVER-SENT-EVENTS.md)
 
 ## Extension Methods
 
@@ -385,7 +468,7 @@ The framework includes comprehensive test coverage:
 - **38 Unit Tests** - Verify methods, headers, event chains
 - **16 E2E Tests** - Playwright tests in real browsers
   - 6 toast tests
-  - 5 OOB swap tests  
+  - 5 OOB swap tests
   - 4 combined feature tests
   - 1 debug test
 
@@ -402,14 +485,17 @@ dotnet test
 ## Documentation
 
 ### Getting Started
+
 - [Complete Setup Guide](./GETTING-STARTED.md) - Step-by-step setup for new projects
 
 ### Features
+
 - [Toast Notifications](./TOASTS.md) - Complete toast API and examples
 - [Out-of-Band Swaps](./OOB-SWAPS.md) - Multiple element updates
 - [Event System](./EVENTS.md) - Domain event → UI event chains
 
 ### Reference
+
 - [Templates](./TEMPLATES.md) - Project templates and patterns
 - [E2E Testing](../Swap.Htmx.E2ETests/README.md) - Browser-based testing guide
 

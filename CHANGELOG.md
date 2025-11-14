@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added - Demo Applications
+
 - **ProjectHub** — Modular monolith demo showcasing Swap.Modularity patterns
   - 3 independent modules (Workspaces, Projects, Tasks) with Contracts/Module/Web RCL structure
   - Server-Sent Events (SSE) live dashboard with real-time metrics streaming
@@ -28,42 +29,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated main README with "Live Demos" section
 
 ### Planned / In Progress
-- WebSocket Chat Demo completion: front-end OOB swap rendering & E2E Playwright tests still in progress
-- Additional HTMX real-time patterns (presence, notifications) pending stabilization of WebSocket infrastructure
+
+- **SSE Hybrid Fallback System** ✅ Complete
+  - JavaScript extension (`sse-fallback.js`) with automatic retry logic and polling fallback
+  - Server-side fallback extensions for polling endpoint support with caching
+  - Automatic content negotiation between SSE and polling modes
+  - Connection monitoring and debugging capabilities
+  - Example controller demonstrating various fallback patterns
+- Enhanced Server-Sent Events with automatic event-driven broadcasting ✅ Complete
+- Advanced SSE patterns (presence, notifications) with connection management ✅ Complete
+- **WebSocket Removal** ✅ Complete - Removed entire WebSocket subsystem to focus on SSE+HTMX approach
 
 ---
 
 ## [0.4.3] - 2025-11-11
 
 ### Added - Server-Sent Events (SSE)
+
 - Introduced SSE utilities with `MapSwapServerSentEvents` patterns for streaming UI updates.
 - Razor partial rendering helpers used to broadcast OOB fragments (`hx-swap-oob`) for live list updates.
 - Demo endpoints & partials: notifications stream, incremental list append, completion markers.
 - Documentation: `SERVER-SENT-EVENTS.md` detailing setup, rendering pipeline, error handling & reconnection strategies.
 
-### Added - WebSockets (Incomplete)
-- Initial WebSocket handler framework: `SwapWebSocketHandler`, `WebSocketConnection` lifecycle (connect, message, disconnect).
-- Dynamic Razor partial rendering over sockets via `RenderPartialToStringAsync`.
-- Chat demo scaffold (`/ws/chat`) broadcasting HTML fragments.
-- HTMX WebSocket extension integrated (connection + form `ws-send`).
-- OOB swap partial `_ChatMessage` prepared with `hx-swap-oob="beforeend:#chat-messages"`.
-- Known Gaps (feature incomplete):
-  - Messages currently not rendering in browser (OOB swap target investigation ongoing).
-  - Missing automated E2E Playwright coverage (infra conflict w/ running app).
-  - Needs connection state indicator & retry UX.
-  - Additional samples (presence count, system notifications) deferred.
-
 ### Documentation
-- `WEBSOCKETS.md` draft published: architecture, handler lifecycle, broadcasting patterns, troubleshooting.
-- Real-time section expanded to compare SSE vs WebSockets trade-offs and recommended usage scenarios.
+
+- Real-time section expanded with SSE patterns, connection management, and event-driven broadcasting.
 
 ### Internal
-- Rendering pipeline reused between SSE & WebSockets for consistent partial composition.
-- Extension event hooks (`htmx:ws*`) evaluated for future diagnostics instrumentation.
+
+- Rendering pipeline optimized for SSE partial composition and efficient streaming.
 
 ### Status
-- SSE: Complete & validated.
-- WebSockets: Partially implemented (handler + transport ok) — UI integration & tests pending.
+
+- SSE: Complete & validated with comprehensive testing coverage.
 
 ---
 
@@ -72,6 +70,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.4.2] - 2025-11-11
 
 ### Changed - Bulma Migration
+
 - **Zero NPM Dependencies**: Migrated all templates from Tailwind/DaisyUI/NPM to Bulma CSS via LibMan
   - **swap-monolith**: Removed package.json, tailwind.config.js, npm scripts; added Bulma 1.0.4 via LibMan
   - **swap-layered**: Removed all NPM infrastructure; added Bulma 1.0.4 via LibMan
@@ -92,6 +91,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - New main README with clear template comparison and feature highlights
 
 ### Fixed - swap-modular-monolith
+
 - **Routing Issues**: Fixed controller endpoint mismatches in Demo module
   - Fixed `/Demo/BulkList` → `/Demo/BulkTodos` in `_BulkListPanel.cshtml`
   - Fixed Details component auto-loading: added `load` trigger to `hx-trigger` in `_DetailsPanel.cshtml`
@@ -102,6 +102,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **EventKey Migration**: Wrapped all string event constants in `new EventKey()` for type safety
 
 ### Documentation
+
 - **Main README**: Complete redesign with modern, engaging presentation
   - Clear template comparison (minimal → monolith → layered → modular-monolith)
   - Feature highlights with code examples
@@ -117,6 +118,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.4.1] - 2025-11-07
 
 ### Changed - Framework Focus
+
 - **Removed Code Generation**: Eliminated all CLI code generation commands and infrastructure
   - Removed `swap generate controller`, `swap generate seeder`, `swap generate test`, `swap generate factory`
   - Removed `swap generate pattern`, `swap generate relationship`, `swap generate auth`
@@ -134,6 +136,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Focus on HTMX patterns, event chains, and testing utilities
 
 ### Removed
+
 - All code generation commands and infrastructure (~8,000 lines)
 - Template processing system for controller/view/service generation
 - PropertyParser and field definition models
@@ -141,15 +144,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Test projects for removed generators
 
 ### Validated
+
 - `swap new` creates complete working applications
 - `swap events` commands work with existing event system
 - `swap db` commands work with EF Core migrations
 - All three templates (monolith, layered, modular-monolith) generate successfully
 
 ---
+
 ## [0.4.0] - 2025-11-06
 
 ### Added - Template Documentation Suite
+
 - **Comprehensive Documentation**: Created epic developer experience documentation for all templates
   - **swap-monolith**: 5 documentation files (README, ARCHITECTURE, DEVELOPMENT, DEPLOYMENT, EVENTS)
   - **swap-layered**: 5 documentation files (README, ARCHITECTURE, DEVELOPMENT, DEPLOYMENT, EVENTS)
@@ -160,6 +166,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - EVENTS.md provides deep dive on Swap event system with naming conventions, event chains, real-world examples, debugging, performance, testing, best practices
 
 ### Added - Template File Completeness
+
 - **Docker Support**: Fixed missing .dockerignore.template files
   - Added .dockerignore.template to swap-monolith root
   - Added .dockerignore.template to swap-layered root
@@ -173,6 +180,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Files now properly copied during template generation
 
 ### Changed - NewCommand.cs Refactoring
+
 - **Code Organization**: Refactored 900+ line NewCommand.cs for better maintainability
   - Extracted methods: ValidateInputs, DisplayProjectInfo, CheckPrerequisitesAsync, RunSetupCommandsAsync, GenerateProjectAsync
   - Added regions: Validation, Display Messages, Template Helpers, Prerequisites, Setup Commands, Project Generation, Template Processing
@@ -180,12 +188,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Improved readability and easier modification for future enhancements
 
 ### Changed - Template Alias Support
+
 - **Modular Monolith Alias**: Added "modular-monolith" as alias for "swap-modular-monolith"
   - Updated template resolution logic in 5 locations
   - Consistent alias support across all template detection points
   - Users can now use either "swap-modular-monolith" or "modular-monolith"
 
 ### Fixed - Docker Configuration
+
 - **Build Context Issues**: Fixed Docker build failures for layered and modular-monolith templates
   - Changed build context from "src/Web" to "src" in docker-compose.yml.template
   - Updated Dockerfile.template COPY paths to match new build context
@@ -193,6 +203,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Fixed "COPY failed: file not found" errors for Application/Infrastructure/Domain
 
 ### Fixed - Migration Error Handling
+
 - **Database Migration Errors**: Added try-catch around db.Database.Migrate() in templates
   - swap-monolith/src/Program.cs.template
   - swap-layered/src/Web/Program.cs.template
@@ -200,6 +211,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Prevents confusing SQLite "table already exists" errors in Docker
 
 ### Validated
+
 - **Template Generation**: All three templates generate successfully
   - swap-monolith builds and runs with Docker
   - swap-layered builds and runs with Docker
@@ -213,6 +225,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.3.2] - 2025-11-06
 
 ### Added - Template: Modular Monolith (swap-modular-monolith)
+
 - New production-lean template for modular monoliths: single deployable host with clearly bounded modules.
 - Per-module ownership: each module ships with `Contracts`, `Module` (services/endpoints), and a `Web` Razor Class Library for UI.
 - Provider-specific EF Core migrations as module-owned projects (SqlServer/Postgres) with design-time factories.
@@ -221,15 +234,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Example event chains, tests, and docs included to guide module authoring.
 
 ### Added - CLI Support
+
 - `swap new MyApp --template swap-modular-monolith` generates the full modular monolith solution.
 - Host pre-wired with `AddSwapModules(...)`, `MapSwapModuleEndpoints()`, and optional event-chain configuration hook.
 - Server events transport selectable via configuration (in-memory or RabbitMQ) using `AddSwapServerEventChainsFromConfiguration`.
 
 ### Added - Documentation
+
 - Template-level README and docs: architecture, module authoring, database migrations, server events, and host wiring.
 - Quickstarts added to template docs; links integrated into the main docs site.
 
 ### Validated
+
 - Generated modular monolith builds and runs locally; example integration tests pass using `Swap.Testing`.
 
 ---
@@ -237,14 +253,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.3.1] - 2025-11-03
 
 ### Fixed - CLI Setup Hang
+
 - Resolved intermittent hang during "Building project before migration..." by streaming stdout/stderr in the command runner to avoid process output buffer deadlocks.
 
 ### Changed - Templates & Tests
+
 - Integration tests for both templates standardized on Swap.Testing; removed direct Microsoft.AspNetCore.Mvc.Testing references to prevent NU1605 downgrades.
 - HTMX smoke tests adjusted to use the fluent API correctly (no async chaining on Task instances).
 - Layered Docker/readme instructions aligned with src/test layout and correct EF commands (`-p src/Infrastructure -s src/Web`).
 
 ### Added - Documentation
+
 - Heavily expanded template READMEs (monolith and layered):
   - What you get, architecture/layout, run/migrate instructions, HTMX + event chains, Swap.Testing usage and example, Docker notes, and links to the wiki.
 - Wiki updates:
@@ -253,10 +272,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Layered getting-started updated to src/test paths.
 
 ### Version Bumps
+
 - Swap.CLI: 0.3.0 → 0.3.1
 - Wiki site (docs): 0.0.1 → 0.0.2
 
 ### Validated
+
 - Generated monolith and layered apps build/run; integration tests pass using Swap.Testing.
 
 ---
@@ -264,6 +285,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.3.0] - 2025-11-03
 
 ### Added - HTMX-Native Event System (Foundation)
+
 - Server-side event bus with chain resolution and client filtering via X-Swap-Events
 - Resolution modes with safe default: `ChainResolutionMode`
   - `OneHop` (default), `Bidirectional`, `Transitive` (with `MaxTransitiveDepth`)
@@ -279,21 +301,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `swap events graph` (Mermaid/DOT output)
 
 ### Fixed - Dev Dashboard
+
 - Mermaid graph now renders properly (no HTML encoding of graph text)
 - Distinct edge counting in summary and table; de-duplicated edges in graph output
 - Explain section includes clear legend about server-side resolution vs client filtering
 
 ### Changed - Templates
+
 - `swap-monolith` and classic `monolith` templates reference the event system by default
 - Both templates updated to reference Swap packages at `0.3.0`
 
 ### Changed - Package Versions
+
 - Swap.CLI: 0.2.0-dev → 0.3.0 (Assembly/FileVersion: 0.3.0.0)
 - Swap.Htmx: 0.2.0-dev → 0.3.0
 - Swap.Patterns: 0.2.0-dev → 0.3.0
 - Swap.Testing: 0.2.0-dev → 0.3.0
 
 ### Validated
+
 - 55 new/updated tests cover event resolution modes, filtering, and edge cases
 - Manual validation of dev dashboard endpoints and CLI event commands
 
@@ -306,6 +332,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 This release completes the relationship story with **automatic UI generation** for all four relationship types. Controllers generated with `--with-relationships` now create fully functional forms with dropdowns and checkboxes, no manual wiring required.
 
 ### Added - One-to-One Relationship Generation
+
 - **One-to-One Support**: Full CLI support for generating one-to-one relationships
   - Generates FK with unique constraint on dependent entity
   - Adds single navigation properties to both entities
@@ -315,22 +342,25 @@ This release completes the relationship story with **automatic UI generation** f
   - Supports required and optional relationships
   - Full unit test coverage (13 tests)
 - **CLI Examples**:
+
   ```bash
   # Basic one-to-one (Profile is dependent by default)
   swap g rel -s Profile -t User --type one-to-one --required
-  
+
   # Explicitly specify principal
   swap g rel -s Profile -t User --type one-to-one --principal User
-  
+
   # Optional relationship
   swap g rel -s Profile -t User --type one-to-one
   ```
+
 - **Automatic UI**: Generates dropdown in forms on dependent side with automatic display field detection
   - ⚠️ **Known Limitation**: Principal side navigation property generates as text input instead of dropdown
   - Workaround: Manage one-to-one relationships from the dependent side (entity with FK)
   - Example: Edit UserProfile to select User, rather than editing User to select UserProfile
 
 ### Added - Many-to-Many Relationship Generation
+
 - **Many-to-Many Support**: Full CLI support for generating many-to-many relationships
   - Generates junction entity with composite key (alphabetical naming convention, e.g., `CourseStudent`)
   - Adds collection navigation properties to both entities (`ICollection<T>`)
@@ -340,16 +370,19 @@ This release completes the relationship story with **automatic UI generation** f
   - Automatic DbSet creation with Models namespace detection
   - Full unit test coverage (21 tests)
 - **CLI Examples**:
+
   ```bash
   # Basic many-to-many
   swap g rel -s Student -t Course --type many-to-many
-  
+
   # Custom junction with extra properties
   swap g rel -s Post -t Tag --type many-to-many --junction PostTag --junction-props "CreatedAt:datetime"
   ```
+
 - **Automatic UI**: Generates checkbox list UI in forms, ViewBag population, and controller action handlers for Selected{Entity}Ids
 
 ### Added - Automatic Display Field Detection
+
 - **Smart Display Field Selection**: Controllers now intelligently choose display fields for dropdowns
   - Priority order: `Name` → `Title` → `Email` → `Username` → `Description` → fallback to `Id`
   - Works for all foreign key relationships (one-to-many, many-to-one, one-to-one dependent)
@@ -357,12 +390,14 @@ This release completes the relationship story with **automatic UI generation** f
   - Generates clean UI code: `@item.Email` or `@item.Name` instead of `@item.ToString()`
 
 ### Added - Select-All Checkbox Fix
+
 - **Bulk Selection**: Fixed ID casing mismatch in select-all checkbox
   - Previously used all-lowercase entity name (e.g., `#userprofile-list`)
   - Now correctly uses camelCase (e.g., `#userProfile-list`)
   - Select-all checkbox now properly targets the list container
 
 ### Added - OneToOne Edit FK Protection
+
 - **Unique Constraint Protection**: Added conditional readonly FK field for one-to-one edit forms
   - FK dropdown shown on create (Model.Id == 0)
   - FK shown as readonly on edit with helper text explaining unique constraint
@@ -370,6 +405,7 @@ This release completes the relationship story with **automatic UI generation** f
   - Note: Detection logic for one-to-one vs many-to-one currently based on FK inference, not metadata
 
 ### Added - Comprehensive Documentation
+
 - **README.md Enhancements**:
   - Added "🔗 Relationship Generation" to "Why Swap?" section highlighting all relationship types
   - New "Add Relationships" quick start example showing Product-Category dropdown
@@ -381,30 +417,34 @@ This release completes the relationship story with **automatic UI generation** f
 - **CLI Help Text**: All relationship features properly documented in `--help` output
 
 ### Added - Authentication Scaffolding
+
 - **Authentication System**: Complete ASP.NET Core Identity integration with `swap generate auth`
   - Generates ApplicationUser model extending IdentityUser with DisplayName, CreatedAt, LastLoginAt
   - Creates 4 ViewModels: LoginViewModel, RegisterViewModel, ForgotPasswordViewModel, ResetPasswordViewModel
   - Generates AuthController with full auth flow: register, login, logout, password reset, access denied
   - Creates 7 views: Login, Register, ForgotPassword, ForgotPasswordConfirmation, ResetPassword, ResetPasswordConfirmation, AccessDenied
-  - Includes _LoginPartial.cshtml for layout integration
+  - Includes \_LoginPartial.cshtml for layout integration
   - All views styled with Tailwind CSS and HTMX-compatible markup
   - Automatically adds Microsoft.AspNetCore.Identity.EntityFrameworkCore package reference
   - Comprehensive setup instructions with code snippets for Program.cs and DbContext configuration
 - **CLI Options**: `--dry-run`, `--force`, `--project` support
 
 ### Changed - Package Versions
+
 - **Swap.CLI**: 0.1.0 → 0.2.0-dev
 - **Swap.Htmx**: 0.1.0 → 0.2.0-dev
 - **Swap.Patterns**: 0.1.0 → 0.2.0-dev
 - **Swap.Testing**: 0.1.0 → 0.2.0-dev
 
 ### Known Issues
+
 - **One-to-One Principal Side**: Navigation property on principal side generates as text input in forms
   - Affects scenarios where you want to select dependent entity from principal entity form
   - Detection logic successfully identifies one-to-one relationships but form generation needs enhancement
   - Workaround: Always manage one-to-one relationships from dependent side (entity with FK)
 
 ### Validated
+
 - **All Relationship Types Production-Ready**:
   - ✅ One-to-Many: CLI, migration, UI generation, display field detection
   - ✅ Many-to-One: CLI, migration, UI generation, display field detection
@@ -423,10 +463,11 @@ This release completes the relationship story with **automatic UI generation** f
 This release marks Swap's readiness for open-source production use with comprehensive pattern auto-wiring, removal capabilities, and cross-platform support.
 
 ### Added - Pattern Auto-Wiring
+
 - **Automatic DbContext Configuration**: Patterns now self-configure with zero boilerplate
   - `ISoftDeletable`: Automatically adds global query filter to DbContext
   - `IAuditable`: Auto-registers IHttpContextAccessor and SaveChanges interceptor
-  - `ITimestampable`: Auto-registers SaveChanges interceptor  
+  - `ITimestampable`: Auto-registers SaveChanges interceptor
   - `ISluggable`: Automatically creates unique index on Slug column
 - **Pattern Tracking**: New `swap-config.json` tracks applied patterns per entity
   - Enables safe pattern removal with intelligent cleanup
@@ -434,6 +475,7 @@ This release marks Swap's readiness for open-source production use with comprehe
   - JSON format: `{ "patterns": { "EntityName": ["pattern1", "pattern2"] } }`
 
 ### Added - Pattern Removal
+
 - **Remove Pattern Command**: `swap generate pattern remove <pattern> <entity>`
   - Supported patterns: `softdelete`, `auditable`, `timestampable`, `sluggable`
   - Removes interface implementation from model
@@ -451,6 +493,7 @@ This release marks Swap's readiness for open-source production use with comprehe
   - `docs/features/patterns.md`: Removal workflows and safety notes
 
 ### Added - Pattern Compatibility Validation
+
 - **Conflict Detection**: Prevents incompatible pattern combinations
   - Blocks applying `IAuditable` when `ITimestampable` exists (property overlap: CreatedAt, UpdatedAt)
   - Blocks applying `ITimestampable` when `IAuditable` exists (same conflict)
@@ -458,6 +501,7 @@ This release marks Swap's readiness for open-source production use with comprehe
 - **CheckPatternCompatibilityAsync**: Pre-flight validation before pattern application
 
 ### Added - Roslyn-Based Code Modifications
+
 - **Robust Code Generation**: Replaced regex-based edits with Roslyn SyntaxFactory
   - Uses `SyntaxFactory` with `NormalizeWhitespace()` for proper C# formatting
   - Handles complex DbContext modifications safely
@@ -465,6 +509,7 @@ This release marks Swap's readiness for open-source production use with comprehe
   - Eliminates formatting issues and malformed code generation
 
 ### Added - Non-Blocking Migrations
+
 - **Migration Flag**: New `--no-migrations` option for all generation commands
   - Allows entity/pattern generation without running migrations
   - Useful for batch operations or CI/CD pipelines
@@ -472,12 +517,14 @@ This release marks Swap's readiness for open-source production use with comprehe
   - Continues command execution even if migration step fails
 
 ### Added - Cross-Platform Scripts
+
 - **Bash Scripts**: Linux/Mac developer support
   - `scripts/pack-local.sh`: Build all framework packages locally
   - `scripts/reinstall-cli.sh`: Reinstall CLI from local feed
   - Mirrors existing PowerShell scripts for Windows users
 
 ### Changed - Templates
+
 - **Controller Template Fix**: `EntityController.cs.template`
   - `ToggleSelectAll` now calls correct method: `Get{{EntityName}}List` instead of `Index`
   - Fixes CS1501 method overload mismatch error
@@ -492,6 +539,7 @@ This release marks Swap's readiness for open-source production use with comprehe
   - Proper C# syntax for nullable and non-nullable properties
 
 ### Changed - Documentation
+
 - **README.md**: Updated main documentation
   - Version badge: v0.0.14-prerelease → v0.1.0
   - Expanded Swap.Patterns section with auto-wiring details
@@ -506,12 +554,14 @@ This release marks Swap's readiness for open-source production use with comprehe
   - Database column handling notes
 
 ### Changed - Package Versions
+
 - **Swap.CLI**: 0.0.14 → 0.1.0
 - **Swap.Htmx**: 0.0.1 → 0.1.0
 - **Swap.Patterns**: 0.0.1 → 0.1.0
 - **Swap.Testing**: 0.0.1 → 0.1.0
 
 ### Validated
+
 - **Database Provider Support**:
   - ✅ SQL Server: Template validation completed
   - ✅ PostgreSQL: Template validation completed with proper connection strings
@@ -523,6 +573,7 @@ This release marks Swap's readiness for open-source production use with comprehe
 ## [0.0.14] - 2025-10-28
 
 ### Added - Seeder Enhancements
+
 - **Pattern Integration**: `swap generate seed` now auto-excludes pattern properties managed by interceptors
   - Skips: `CreatedAt`, `CreatedBy`, `UpdatedAt`, `UpdatedBy` (IAuditable)
   - Skips: `IsDeleted`, `DeletedAt`, `DeletedBy` (ISoftDeletable)
@@ -534,12 +585,14 @@ This release marks Swap's readiness for open-source production use with comprehe
 - **Better Relationship Handling**: Foreign key preloading with null safety guards
 
 ### Changed
+
 - Seeder template adds XML doc comments and improved code comments
 - README updated with pattern integration details and field intelligence improvements
 
 ## [0.0.13] - 2025-10-28
 
 ### Added - Visibility Pattern
+
 - **Visibility Pattern**: Controllable visibility with optional time-based scheduling
   - `IVisibility` interface with `IsVisible`, `VisibleFrom`, `VisibleUntil`
   - Extensions: `Show()`, `Hide()`, `ShowNow()`, `ScheduleVisibility()`, `ScheduleVisibilityWindow()`, `IsCurrentlyVisible()`
@@ -551,11 +604,13 @@ This release marks Swap's readiness for open-source production use with comprehe
   - Wiki `features/patterns.md`: added Visibility guide with when-to-use and quick start
 
 ### Changed
+
 - Pattern command help now mentions `visibility`
 
 ## [0.0.12] - 2025-10-28
 
 ### Added - Versionable Pattern
+
 - **Versionable Pattern**: Automatic integer versioning on save
   - `IVersionable` interface with `Version`
   - `VersionInterceptor` initializes and increments version
@@ -569,6 +624,7 @@ This release marks Swap's readiness for open-source production use with comprehe
 ## [0.0.11] - 2025-10-28
 
 ### Added - Publishable Pattern
+
 - **Publishable Pattern**: Draft/Published workflow
   - `IPublishable` interface with `IsPublished`, `PublishedAt`
   - Extensions: `Publish()`, `Unpublish()`, `Published()`, `Drafts()`, `PublishedAfter()`, `PublishedBefore()`
@@ -579,11 +635,13 @@ This release marks Swap's readiness for open-source production use with comprehe
   - Wiki `features/patterns.md`: added Publishable guide
 
 ### Changed
+
 - Pattern command help now mentions `publishable`
 
 ## [0.0.10] - 2025-10-28
 
 ### Added - Timestampable & Orderable Patterns
+
 - **Timestampable Pattern**: Lightweight automatic timestamps
   - `ITimestampable` interface with `CreatedAt`, `UpdatedAt`
   - `TimestampInterceptor` sets timestamps on insert/update
@@ -601,12 +659,14 @@ This release marks Swap's readiness for open-source production use with comprehe
   - Wiki `features/patterns.md`: Timestampable and Orderable guides; updated Combining Patterns (don’t mix Auditable and Timestampable)
 
 ### Changed
+
 - CLI pattern help updated to include `timestampable` and `orderable`
 - Improved code-generation formatting via NormalizeWhitespace (earlier change validated)
 
 ## [0.0.9] - 2025-10-28
 
 ### Added - Auditable & Sluggable Patterns
+
 - **Auditable Pattern**: Track entity creation and modification
   - `IAuditable` interface with CreatedAt, CreatedBy, UpdatedAt, UpdatedBy
   - `AuditInterceptor` for automatic timestamp/user tracking
@@ -627,12 +687,14 @@ This release marks Swap's readiness for open-source production use with comprehe
   - Configuration guides for Program.cs, DbContext, interceptors
 
 ### Changed
+
 - Expanded Swap.Patterns library from 1 to 3 production-ready patterns
 - CLI pattern command now supports: `softdelete`, `auditable`, `sluggable`
 
 ## [0.0.8] - 2025-10-28
 
 ### Added - Entity Patterns
+
 - **Swap.Patterns Library**: Battle-tested entity patterns for common scenarios
   - Soft Delete pattern with `ISoftDeletable` interface
   - Extension methods: `SoftDelete()`, `Restore()`, `IncludeDeleted()`, `OnlyDeleted()`
@@ -655,6 +717,7 @@ This release marks Swap's readiness for open-source production use with comprehe
 ## [0.0.7] - 2025-10-28
 
 ### Added - HTMX Testing Framework
+
 - **Swap.Testing Library**: Fluent testing framework for ASP.NET Core + HTMX applications
   - HTMX-aware client with automatic HX-Request headers
   - Rich HTML and HTMX attribute assertions
@@ -672,12 +735,14 @@ This release marks Swap's readiness for open-source production use with comprehe
   - CLI docs for test and factory generators
 
 ### Changed
+
 - Enhanced CLI README with prominent testing framework section and examples
 - Updated wiki CLI overview with testing command quick references
 
 ## [0.0.4] - 2025-10-27
 
 ### Added - Docker Support
+
 - Docker-ready templates for generated apps with multi-stage Dockerfile
   - Build: .NET SDK 9.0 + Node 20 + libman CLI; automatic libman restore and Tailwind build
   - Runtime: ASP.NET minimal runtime; HTTP-only for Development
@@ -690,21 +755,26 @@ This release marks Swap's readiness for open-source production use with comprehe
 - .dockerignore template includes Migrations to enable auto-migration
 
 ### Fixed - HTMX Todo List Bug
+
 - Views template: ensured the HTMX target element remains stable across swaps
   - Moved `<div id="todo-list">` wrapper into `_TodoList.cshtml.template`
   - Removed duplicate wrapper from `Index.cshtml.template`
 
 ### Changed
+
 - New command no longer applies `dotnet ef database update` during scaffolding; migrations are created and applied at runtime in Development
 
 ### Docs
+
 - README and wiki updated to reflect Docker-ready status, health checks, auto-migrations, and libman usage
 
 ### CI
+
 - Added PR workflow to build the Docusaurus wiki on changes under `wiki/**`
 
 ### Fixed - HTMX Todo List Bug (2025-10-27)
-- **_TodoList.cshtml.template**: Fixed HTMX target element disappearing
+
+- **\_TodoList.cshtml.template**: Fixed HTMX target element disappearing
   - Moved `<div id="todo-list">` wrapper into partial view
   - Ensures target element persists after HTMX swaps
   - Resolves issue where add/delete operations would stop working after first use
@@ -713,6 +783,7 @@ This release marks Swap's readiness for open-source production use with comprehe
   - Cleaner markup structure
 
 ### Added - Docker Support (2025-10-27)
+
 - **Dockerfile Template**: Multi-stage build with libman and Node.js
   - Build stage: .NET SDK 9.0 + Node.js 20.x + libman CLI
   - Automatic `libman restore` for HTMX/DaisyUI libraries
@@ -755,6 +826,7 @@ This release marks Swap's readiness for open-source production use with comprehe
   - Default: SQLite for simplicity
 
 ### Changed - Repository Rebrand & Documentation Update (2025-10-27)
+
 - **Repository Rename**: netmx → swap across all files and URLs
 - **Git Remote**: Updated to https://github.com/jdtoon/swap.git
 - **Solution File**: Renamed netmx.sln → swap.sln
@@ -762,7 +834,7 @@ This release marks Swap's readiness for open-source production use with comprehe
   - Shifted messaging from "Rails of .NET" to unique HTMX + DaisyUI value
   - Added "Why HTMX?" section comparing SPA vs HTMX architecture
   - Added "How Swap Works" 5-step meta-development process
-- **Documentation Restructure**: 
+- **Documentation Restructure**:
   - Renamed HTMX-PATTERNS-LEARNED.md → PATTERNS-LIBRARY.md
   - Removed redundant philosophy content, kept pattern catalog
   - Enhanced THE-PRODUCT.md with new sections
@@ -781,6 +853,7 @@ This release marks Swap's readiness for open-source production use with comprehe
 - **Breaking**: None - purely documentation and branding changes
 
 ### Added - Week 1 Day 2: Server-Driven Bulk Operations Architecture (2025-10-27)
+
 - **Session-Based State**: Selections stored in server session, not client-side
 - **Session Middleware**: Added AddSession() + UseSession() to Program.cs template
 - **SessionExtensions Helper**: JSON serialization helpers for session storage (SetObject/GetObject)
@@ -788,16 +861,16 @@ This release marks Swap's readiness for open-source production use with comprehe
 - **BulkActionsBar Action**: GET endpoint to render fresh bulk actions UI
 - **Event-Based Coordination**: HX-Trigger: selectionChanged for automatic UI sync
 - **Zero Client JavaScript**: Removed all bulk operation JavaScript (getSelectedIds, updateBulkActions, etc.)
-- **Checkbox Partial View**: _EntityCheckboxCell.cshtml.template for OOB swaps
-- **Bulk Actions Partial**: _BulkActionsBar.cshtml.template with event listener
+- **Checkbox Partial View**: \_EntityCheckboxCell.cshtml.template for OOB swaps
+- **Bulk Actions Partial**: \_BulkActionsBar.cshtml.template with event listener
 - **HTMX Event Listeners**: hx-trigger="selectionChanged from:body" for reactive updates
 - **Session Persistence**: Selections survive page refresh, navigation, and back button
 - **BulkDelete Update**: Reads selected IDs from session instead of request body
 - **FieldHelper Updates**: GenerateBulkActionsBar() now includes event attributes
 - **Template Controller Updates**: EntityController.cs.template with new actions
-- **GenerateControllerCommand Update**: Generates _BulkActionsBar.cshtml file
+- **GenerateControllerCommand Update**: Generates \_BulkActionsBar.cshtml file
 - **Documentation**: Comprehensive server-driven architecture section in bulk-operations.md
-- **Architecture Benefits**: 
+- **Architecture Benefits**:
   - Session persistence (selections survive navigation)
   - No client-side state management needed
   - Automatic UI synchronization via HTMX events
@@ -811,6 +884,7 @@ This release marks Swap's readiness for open-source production use with comprehe
 ### Added - Phase 4: Advanced List Management (Sorting, Filtering & Bulk Operations) ✅
 
 #### Toast Notification System (2025-10-26)
+
 - **Toastify.js Integration**: Replaced custom toast with battle-tested Toastify library (1.12.0)
 - **LibMan Configuration**: Added toastify-js to libman.json for CDN delivery
 - **Professional Styling**: Clean slide-in animations with close button
@@ -820,12 +894,13 @@ This release marks Swap's readiness for open-source production use with comprehe
 - **Auto-Dismiss**: 3.5 second duration with manual close option
 - **Top-Right Position**: Non-intrusive placement with gravity/position config
 - **Event Listener Fix**: Removed DOMContentLoaded wrapper for HTMX compatibility
-- **Global Scope**: Toast handler in _Layout.cshtml available to all pages
+- **Global Scope**: Toast handler in \_Layout.cshtml available to all pages
 - **CRUD Integration**: All Create/Update/Delete operations trigger toast notifications
 - **Bulk Operations**: Bulk delete shows count in toast message
 - **Consistent UX**: Matches CareStream implementation pattern
 
 #### Phase 4.4: Bulk Operations (2025-10-26)
+
 - **Selection Checkboxes**: Checkbox column added to all generated tables
 - **Select All Functionality**: Header checkbox to select/deselect all items on page
 - **Bulk Action Bar**: Alert bar appears when items selected, showing count
@@ -841,7 +916,7 @@ This release marks Swap's readiness for open-source production use with comprehe
 - **Error Handling**: Try-catch with rollback, returns 500 on failure
 - **HTMX Trigger**: Custom event to refresh list after deletion
 - **DaisyUI Styling**: Consistent checkbox and alert styling
-- **Template Updates**: _EntityList.cshtml.template with bulk operations UI
+- **Template Updates**: \_EntityList.cshtml.template with bulk operations UI
 - **Controller Updates**: EntityController.cs.template with BulkDelete action
 - **FieldHelper Methods**: 5 new generation methods for bulk operations
   - GenerateBulkSelectHeader(): Checkbox column header with select-all
@@ -854,6 +929,7 @@ This release marks Swap's readiness for open-source production use with comprehe
 - **Note**: Refactored to server-driven architecture on 2025-10-27 (see above)
 
 #### Phase 4.3: Field-Level Flags (2025-10-26)
+
 - **Field Control Flags**: Developer control over sortable/filterable behavior per field
 - **Sortable Flags**: `:sortable`/`:s` (enable), `:nosort`/`:ns` (disable)
 - **Filterable Flag**: `:filterable`/`:f` (enable filtering for bool fields)
@@ -873,6 +949,7 @@ This release marks Swap's readiness for open-source production use with comprehe
 - **Benefits**: Cleaner UIs, better UX, developer control, future-proof architecture
 
 #### Phase 4.2: Boolean Filtering (2025-10-26)
+
 - **Filter Parameters**: Controller Index action accepts bool? parameters for filtering
 - **Filter Logic**: ApplyFilters method applies bool field filters to queries
 - **Filter UI**: DaisyUI dropdowns with All/Yes/No options
@@ -884,6 +961,7 @@ This release marks Swap's readiness for open-source production use with comprehe
 - **Index View Updates**: Filter section with responsive grid layout
 
 #### Phase 4.1: Column Sorting (2025-10-26)
+
 - **Sortable Headers**: All table columns now clickable for sorting
 - **Sort Indicators**: Visual arrows (↑ ascending, ↓ descending)
 - **Toggle Behavior**: Click same column to reverse sort order
@@ -897,6 +975,7 @@ This release marks Swap's readiness for open-source production use with comprehe
 ### Added - Phase 3: HTMX-Powered CRUD with Pagination & Search ✅
 
 #### Phase 3.5: Complete CRUD with Pagination (2025-10-25)
+
 - **Pagination System**: Configurable page sizes (10, 25, 50, 100)
 - **Page Navigation**: Previous, Next, First, Last buttons
 - **Page Info Display**: "Showing X-Y of Z items"
@@ -907,15 +986,17 @@ This release marks Swap's readiness for open-source production use with comprehe
 - **HTMX Partial Updates**: Zero page reloads for all operations
 
 #### Phase 3.4: HTMX Modal CRUD (2025-10-25)
+
 - **Modal-Based Create**: HTMX-powered create modal
 - **Modal-Based Edit**: HTMX-powered edit modal with prefill
 - **Modal-Based Details**: Read-only details view in modal
 - **Delete Confirmation**: In-list delete with HTMX confirmation
 - **Toast Notifications**: Success/error feedback system
 - **Validation**: Client and server-side with inline errors
-- **Partial Views**: Modular view structure (_Create, _Edit, _Details, _Form)
+- **Partial Views**: Modular view structure (\_Create, \_Edit, \_Details, \_Form)
 
 #### Phase 3.3: Field Type Support (2025-10-25)
+
 - **11 Field Types**: string, int, long, short, byte, bool, float, double, decimal, DateTime, Guid
 - **Nullable Fields**: Support for nullable reference and value types
 - **DateTime Defaults**: Auto-populated with DateTime.Now
@@ -925,14 +1006,16 @@ This release marks Swap's readiness for open-source production use with comprehe
 - **FieldHelper Class**: Centralized field generation logic
 
 #### Phase 3.2: Template System (2025-10-25)
+
 - **Template-Based Generation**: Moved from inline strings to .template files
 - **Modular Templates**: Separate templates for controller, views, models
 - **Token Replacement**: {{EntityName}}, {{Fields}}, {{TableHeaders}}, etc.
 - **Views Subfolder**: Organized template structure
 - **PreserveNewest**: Templates copied to output directory
-- **Reusable Partials**: _PaginationControls, _Form shared components
+- **Reusable Partials**: \_PaginationControls, \_Form shared components
 
 #### Phase 3.1: CLI Field Parser (2025-10-25)
+
 - **FieldDefinition Model**: Name, Type, IsNullable properties
 - **Field Parsing**: Parse "Name:Type?" format from command line
 - **GenerateControllerCommand**: New command with --fields option
@@ -943,8 +1026,9 @@ This release marks Swap's readiness for open-source production use with comprehe
 ### Fixed
 
 #### Phase 4.4 Bug Fixes (2025-10-26)
+
 - **Monolith Template HTMX**: Fixed component-level targeting for todo items
-  - Created _TodoItem.cshtml.template for single-item rendering
+  - Created \_TodoItem.cshtml.template for single-item rendering
   - Each item has unique ID (todo-item-{id})
   - Checkbox targets itself with hx-target="#todo-item-{id}"
   - Controller has ToggleItem action returning single item
@@ -960,11 +1044,13 @@ This release marks Swap's readiness for open-source production use with comprehe
   - Users warned if setup commands fail
 
 #### Earlier Bug Fixes
+
 - **Duplicate DbSet Bug**: Now checks fully qualified names (DbSet<Project.Models.Entity>)
 - **Template Paths**: Fixed {{entityNameLower}} token in hx-target attributes
 - **Razor Syntax**: Removed inline C# from HTML attributes to fix compilation errors
 
 ### Changed
+
 - **UI Framework**: Migrated from Bootstrap to DaisyUI/Tailwind CSS
 - **Architecture**: HTMX-first approach for all interactions
 - **View Structure**: Partial views for better modularity
@@ -972,6 +1058,7 @@ This release marks Swap's readiness for open-source production use with comprehe
 - **Response Pattern**: HTMX triggers instead of redirects
 
 ### Documentation Needed
+
 - **CLI Documentation**: Update generate-controller.md with new features
 - **Field Types Guide**: Document all 11 supported field types
 - **HTMX Patterns**: Document HTMX integration patterns
@@ -980,6 +1067,7 @@ This release marks Swap's readiness for open-source production use with comprehe
 - **Filtering Guide**: Document boolean filtering usage
 
 ### Planned - Phase 4: Remaining Features
+
 - **Phase 4.5**: Export (CSV/Excel) - Generate downloadable data exports
 - **Phase 4.6**: Advanced Search - Multi-field search with operators
 - **Phase 4.7**: Audit Trail - Track all entity changes with timestamps
@@ -994,6 +1082,7 @@ This release marks Swap's readiness for open-source production use with comprehe
 ### Added - Phase 2D: Seeder Generation Complete ✅
 
 #### Seeder Generation (Commit TBD)
+
 - **SeederGenerator** class for database seeder generation
 - **SeederGenerationOptions** model for configuration
 - **GenerateSeederCommand** for CLI integration
@@ -1005,7 +1094,7 @@ This release marks Swap's readiness for open-source production use with comprehe
 - Smart seeder name handling (removes duplicate "Seeder" suffix)
 - Next steps guidance after generation
 - **Tests**: 14 passing (11 generator tests + 3 command tests)
-- **Files**: 
+- **Files**:
   - SeederGenerator.cs (87 lines)
   - SeederGenerationOptions.cs (35 lines)
   - GenerateSeederCommand.cs (96 lines)
@@ -1013,6 +1102,7 @@ This release marks Swap's readiness for open-source production use with comprehe
   - GenerateSeederCommandTests.cs (31 lines)
 
 **Usage**:
+
 ```bash
 # Generate seeder in app context
 Swap generate seeder ProductSeeder
@@ -1022,6 +1112,7 @@ Swap generate seeder PermissionSeeder -m Authorization
 ```
 
 **Generated Code Features**:
+
 - ISeeder interface implementation
 - Repository dependency injection
 - XML documentation comments
@@ -1031,6 +1122,7 @@ Swap generate seeder PermissionSeeder -m Authorization
 - InsertAsync loop for batch insertion
 
 **Statistics**:
+
 - Total tests: 134 (120 from Phase 2C + 14 new)
 - Code added: ~430 lines (production + tests)
 - Time investment: ~2 hours
@@ -1039,6 +1131,7 @@ Swap generate seeder PermissionSeeder -m Authorization
 ### Added - Phase 2C: Code Generation Complete ✅
 
 #### Part 1: EntityGenerator (Commit 5f23a3b)
+
 - **EntityGenerator** class for DDD entity generation
 - Private setters for encapsulation
 - Private constructor for EF Core
@@ -1051,6 +1144,7 @@ Swap generate seeder PermissionSeeder -m Authorization
 - **Files**: EntityGenerator.cs (350 lines), EntityGeneratorTests.cs (320 lines)
 
 #### Part 2: DtoGenerator (Commit 7e6d9fa)
+
 - **DtoGenerator** class for DTO generation
 - ReadDto generation (for queries)
 - CreateDto generation (for creation with validation)
@@ -1063,6 +1157,7 @@ Swap generate seeder PermissionSeeder -m Authorization
 - **Files**: DtoGenerator.cs (500 lines), DtoGeneratorTests.cs (380 lines)
 
 #### Part 3: ServiceGenerator (Commit 3ab7445)
+
 - **ServiceGenerator** class for service layer generation
 - Service interface generation (IEntityService)
 - Service implementation generation (EntityService)
@@ -1078,6 +1173,7 @@ Swap generate seeder PermissionSeeder -m Authorization
 - **Files**: ServiceGenerator.cs (550 lines), ServiceGeneratorTests.cs (440 lines)
 
 #### Part 4: ControllerGenerator (Commit d10da27)
+
 - **ControllerGenerator** class for MVC controller generation
 - Index action (full page view)
 - List action (partial view for HTMX with pagination/search/filter/sort)
@@ -1091,10 +1187,11 @@ Swap generate seeder PermissionSeeder -m Authorization
 - **Files**: ControllerGenerator.cs (300 lines), ControllerGeneratorTests.cs (360 lines)
 
 #### Part 5: ViewGenerator (Commit 0ac38de)
+
 - **ViewGenerator** class for Razor view generation
 - Index.cshtml generation (main page with search, filters, list container, modal container)
-- _List.cshtml generation (table partial with sortable headers, pagination, actions)
-- _Form.cshtml generation (modal form with property-specific inputs, validation)
+- \_List.cshtml generation (table partial with sortable headers, pagination, actions)
+- \_Form.cshtml generation (modal form with property-specific inputs, validation)
 - HTMX attributes (hx-get, hx-post, hx-delete, hx-trigger, hx-target, hx-include, hx-confirm)
 - Bulma CSS styling (container, section, title, box, field, control, input, button, table, modal, pagination)
 - Font Awesome icons (fa-box, fa-search, fa-plus, fa-edit, fa-trash, fa-check, fa-times, fa-sort)
@@ -1107,6 +1204,7 @@ Swap generate seeder PermissionSeeder -m Authorization
 - **Files**: ViewGenerator.cs (600 lines), ViewGeneratorTests.cs (470 lines)
 
 #### Part 6: Integration (Commit 2ac2d6d)
+
 - **GenerateFeatureCommand** rewrite to orchestrate all generators
 - Removed 961 lines of inline code generation
 - Added 319 lines of orchestration logic
@@ -1122,6 +1220,7 @@ Swap generate seeder PermissionSeeder -m Authorization
 - **Files**: GenerateFeatureCommand.cs (319 lines), Program.cs (updated)
 
 ### Added - Phase 2B: Property Parsing (October 2025)
+
 - **PropertyParser** class for parsing CLI property definitions
 - **PropertyDefinition** model with comprehensive metadata
 - Type mappings (string, int, decimal, datetime, bool, guid, enum, etc.)
@@ -1136,6 +1235,7 @@ Swap generate seeder PermissionSeeder -m Authorization
 - **Files**: PropertyParser.cs (314 lines), PropertyDefinition.cs (150 lines)
 
 ### Added - Phase 2A: DB Commands (October 2025)
+
 - `Swap db migrate <name>` - Create database migration
 - `Swap db update` - Apply pending migrations
 - `Swap db rollback` - Undo last migration
@@ -1148,6 +1248,7 @@ Swap generate seeder PermissionSeeder -m Authorization
 - **Files**: DbCommands.cs, DbContextInjector.cs (200 lines), MigrationRunner.cs (180 lines)
 
 ### Added - Phase 1: Foundation (September-October 2025)
+
 - Basic CLI structure with System.CommandLine
 - `Swap create module <name>` command
 - Module scaffolding (4-layer architecture)
@@ -1158,7 +1259,9 @@ Swap generate seeder PermissionSeeder -m Authorization
 - NuGet packaging support
 
 ### Changed
+
 - **Program.cs**: Updated CLI flag mapping for new generator system
+
   - `--search` flag now enables pagination (20 items), search (Name, Description), and sorting (Name, CreatedAt)
   - `--export` flag now adds CSV export format
   - `--migrate` flag triggers auto-migration workflow
@@ -1170,12 +1273,14 @@ Swap generate seeder PermissionSeeder -m Authorization
   - Improvement: 832 lines removed, cleaner separation of concerns
 
 ### Fixed
+
 - Property parser capitalization for range filters (PriceMin/Max not priceMin/Max)
 - Module context now correctly uses repository pattern
 - App context now correctly uses DbContext directly
 - HTMX event names now use kebab-case (product-created not ProductCreated)
 
 ### Performance
+
 - Feature generation: ~100ms for 13 files
 - All generators are pure functions (no I/O, no dependencies)
 - Test suite runs in ~4 seconds (120 tests)
@@ -1185,12 +1290,14 @@ Swap generate seeder PermissionSeeder -m Authorization
 ## Statistics (Phase 2C)
 
 ### Code Metrics
+
 - **Production Code**: ~3,000 lines (all generators)
 - **Test Code**: ~2,500 lines (comprehensive coverage)
 - **Command Code**: 319 lines (orchestration)
 - **Total**: ~5,800 lines
 
 ### Test Coverage
+
 - EntityGeneratorTests: 14 tests
 - DtoGeneratorTests: 12 tests
 - ServiceGeneratorTests: 17 tests
@@ -1202,6 +1309,7 @@ Swap generate seeder PermissionSeeder -m Authorization
 - **Total**: 120 tests (100% passing)
 
 ### Commits (Phase 2C)
+
 1. `5f23a3b` - EntityGenerator (Part 1) - Oct 21, 2025
 2. `7e6d9fa` - DtoGenerator (Part 2) - Oct 21, 2025
 3. `3ab7445` - ServiceGenerator (Part 3) - Oct 21, 2025
@@ -1210,12 +1318,14 @@ Swap generate seeder PermissionSeeder -m Authorization
 6. `2ac2d6d` - Integration (Part 6) - Oct 21, 2025
 
 ### Time Investment
+
 - Development: ~8 hours (all 6 parts)
 - Testing: ~4 hours (120 comprehensive tests)
 - Documentation: ~2 hours (README, ARCHITECTURE, CHANGELOG)
 - **Total**: ~14 hours
 
 ### Time Savings
+
 - **Per Feature Generated**: 4-6 hours saved (vs manual creation)
 - **ROI**: After 3-4 feature generations, time savings exceed development time
 
@@ -1224,6 +1334,7 @@ Swap generate seeder PermissionSeeder -m Authorization
 ## [0.0.1-dev] - 2025-09-15
 
 ### Added
+
 - Initial CLI project structure
 - Basic `Swap` command
 - Development setup documentation
@@ -1233,18 +1344,23 @@ Swap generate seeder PermissionSeeder -m Authorization
 ## Versioning Strategy
 
 ### Pre-Release Versions (develop branch)
+
 Format: `0.1.0-dev.YYYYMMDD.sha`
+
 - Example: `0.1.0-dev.20251021.2ac2d6d`
 - Published to NuGet.org as pre-release
 - Installed with: `dotnet tool install --global Swap.CLI --version "0.1.0-dev*"`
 
 ### Stable Versions (main branch)
+
 Format: `0.1.0`
+
 - Example: `0.1.0` (first stable release)
 - Published to NuGet.org as stable
 - Installed with: `dotnet tool install --global Swap.CLI`
 
 ### Semantic Versioning Rules
+
 - **Major** (x.0.0): Breaking changes
 - **Minor** (0.x.0): New features (backwards compatible)
 - **Patch** (0.0.x): Bug fixes
@@ -1256,6 +1372,7 @@ Format: `0.1.0`
 ### From 0.0.x to 0.1.0
 
 **New Commands**:
+
 ```bash
 # Old (still works, deprecated)
 Swap generate crud Product
@@ -1265,6 +1382,7 @@ Swap generate feature Product
 ```
 
 **New Flags**:
+
 ```bash
 # Enable pagination, search, sorting
 Swap generate feature Product --search
@@ -1277,9 +1395,11 @@ Swap generate feature Product --migrate
 ```
 
 **Breaking Changes**:
+
 - None (fully backwards compatible)
 
 **Deprecations**:
+
 - `Swap generate crud` is deprecated, use `Swap generate feature` instead
 
 ---
@@ -1287,13 +1407,15 @@ Swap generate feature Product --migrate
 ## Future Roadmap
 
 ### Phase 2D: Seeders (Week 4)
+
 - `Swap generate seeder <name>` command
 - Seeder class scaffolding
 - Seeder execution in `Swap db seed`
-- Seeder ordering (1_, 2_, 3_)
+- Seeder ordering (1*, 2*, 3\_)
 - Idempotent seeding
 
 ### Phase 3: Custom Properties (Weeks 5-6)
+
 - `--props` flag for custom property definitions
 - Property parsing from CLI
 - Support for all property types (enums, FKs, collections)
@@ -1301,12 +1423,14 @@ Swap generate feature Product --migrate
 - Foreign key constraint generation
 
 ### Phase 4: Templates (Weeks 7-8)
+
 - Customizable code templates (Liquid)
 - Template inheritance
 - User templates directory (~/.Swap/templates/)
 - Template variables (EntityName, Properties, Options)
 
 ### Phase 5: AI-Assisted Generation (Week 9+)
+
 - Natural language feature generation
 - AI-powered property inference
 - Confirmation before generation
@@ -1317,6 +1441,7 @@ Swap generate feature Product --migrate
 ## Contributing
 
 See [CONTRIBUTING.md](../CONTRIBUTING.md) for guidelines on:
+
 - Reporting bugs
 - Suggesting features
 - Submitting pull requests
@@ -1341,4 +1466,3 @@ MIT License - See [LICENSE](../LICENSE) for details.
 **Last Updated**: October 21, 2025  
 **Current Version**: 0.1.0-dev  
 **Status**: Phase 2C Complete ✅
-

@@ -19,6 +19,7 @@ Swap.Htmx provides first-class support for Server-Sent Events, enabling you to s
 ## Quick Example
 
 **Controller:**
+
 ```csharp
 using Swap.Htmx;
 
@@ -36,7 +37,7 @@ public class NotificationsController : SwapController
                     "_Notification", notification);
                 await stream.SendEventAsync("notification", html);
             }
-            
+
             // Close connection gracefully
             await stream.SendEventAsync("close", "done");
         });
@@ -45,11 +46,12 @@ public class NotificationsController : SwapController
 ```
 
 **View:**
+
 ```html
 <div hx-ext="sse" sse-connect="/notifications/stream" sse-close="close">
-    <div id="notifications" sse-swap="notification" hx-swap="afterbegin">
-        <!-- New notifications appear here -->
-    </div>
+  <div id="notifications" sse-swap="notification" hx-swap="afterbegin">
+    <!-- New notifications appear here -->
+  </div>
 </div>
 
 <!-- Include HTMX SSE Extension -->
@@ -146,14 +148,14 @@ public IActionResult ProcessProgress(int jobId)
         while (progress < 100 && !ct.IsCancellationRequested)
         {
             progress = await _jobService.GetProgressAsync(jobId);
-            
+
             var html = await this.RenderPartialToStringAsync(
                 "_ProgressBar", new { Percentage = progress });
             await stream.SendEventAsync("progress", html);
-            
+
             await Task.Delay(500, ct);
         }
-        
+
         await stream.SendEventAsync("close", "done");
     });
 }
@@ -169,7 +171,7 @@ public IActionResult ActivityFeed()
     return ServerSentEvents(async (stream, ct) =>
     {
         await using var subscription = _activityService.Subscribe();
-        
+
         await foreach (var activity in subscription.ReadAllAsync(ct))
         {
             var html = await this.RenderPartialToStringAsync(
@@ -188,9 +190,9 @@ Handle different event types in the same connection:
 
 ```html
 <div hx-ext="sse" sse-connect="/dashboard/stream">
-    <div id="stats" sse-swap="stats"></div>
-    <div id="alerts" sse-swap="alert" hx-swap="afterbegin"></div>
-    <div id="logs" sse-swap="log" hx-swap="beforeend"></div>
+  <div id="stats" sse-swap="stats"></div>
+  <div id="alerts" sse-swap="alert" hx-swap="afterbegin"></div>
+  <div id="logs" sse-swap="log" hx-swap="beforeend"></div>
 </div>
 ```
 
@@ -200,9 +202,9 @@ Trigger HTMX requests when SSE events arrive:
 
 ```html
 <div hx-ext="sse" sse-connect="/stream">
-    <button hx-get="/refresh" hx-trigger="sse:refresh">
-        Refresh on Server Event
-    </button>
+  <button hx-get="/refresh" hx-trigger="sse:refresh">
+    Refresh on Server Event
+  </button>
 </div>
 ```
 
@@ -211,13 +213,15 @@ Trigger HTMX requests when SSE events arrive:
 ### 1. Always Use Razor Partials
 
 ❌ **Don't concatenate HTML strings:**
+
 ```csharp
 await stream.SendEventAsync("msg", $"<div>{message}</div>");
 ```
 
 ✅ **Use Razor partials:**
+
 ```csharp
-await stream.SendEventAsync("msg", 
+await stream.SendEventAsync("msg",
     await this.RenderPartialToStringAsync("_Message", message));
 ```
 
@@ -231,7 +235,7 @@ return ServerSentEvents(async (stream, ct) =>
     while (!ct.IsCancellationRequested)
     {
         if (ct.IsCancellationRequested) break;
-        
+
         // Your logic here
         await Task.Delay(1000, ct);
     }
@@ -247,8 +251,9 @@ await stream.SendEventAsync("close", "done");
 ```
 
 And match it in HTML:
+
 ```html
-<div sse-close="close">
+<div sse-close="close"></div>
 ```
 
 ### 4. Send Keepalives
@@ -264,12 +269,14 @@ await stream.SendKeepAliveAsync(); // Every 15-30 seconds
 The SSE extension is included with HTMX 2.0. Add to your layout:
 
 **Via CDN:**
+
 ```html
 <script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.8/dist/htmx.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/htmx-ext-sse@2.2.4/dist/sse.min.js"></script>
 ```
 
 **Via libman.json:**
+
 ```json
 {
   "libraries": [
@@ -299,7 +306,7 @@ await stream.SendEventAsync("close", "done");
 ```
 
 ```html
-<div sse-close="close">
+<div sse-close="close"></div>
 ```
 
 ### Events Not Appearing
@@ -317,27 +324,24 @@ Send keepalives periodically:
 await stream.SendKeepAliveAsync();
 ```
 
-## Comparison with WebSockets
+## When to Use SSE
 
-| Feature | SSE | WebSocket |
-|---------|-----|-----------|
-| Direction | Server → Client only | Bidirectional |
-| Protocol | HTTP | WebSocket protocol |
-| Reconnection | Automatic | Manual |
-| Browser Support | Excellent (IE10+) | Good (IE11+) |
-| Complexity | Simple | More complex |
-| Use Case | Real-time updates, notifications | Chat, gaming, real-time collaboration |
+**SSE is ideal for:**
 
-**Choose SSE when:**
-- Updates flow from server to client only
-- You want automatic reconnection
-- HTTP infrastructure is important (proxies, load balancers)
-- Simple implementation is preferred
+- Real-time dashboards and metrics
+- Live notifications and updates
+- Activity feeds and status updates
+- Progress indicators for long-running tasks
+- Chat applications (receive-only)
 
-**Choose WebSocket when:**
+**Consider alternatives when:**
+
+- You need bidirectional real-time communication
 - Client needs to send frequent updates to server
 - Very low latency is critical
-- You need bidirectional communication
+- Complex real-time collaboration is required
+
+For these cases, consider using WebSockets directly or other real-time technologies.
 
 ## Technical Details
 

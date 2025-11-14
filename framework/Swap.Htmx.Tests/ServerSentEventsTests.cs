@@ -14,7 +14,7 @@ public class ServerSentEventsTests
         var httpContext = new DefaultHttpContext();
         var memoryStream = new MemoryStream();
         httpContext.Response.Body = memoryStream;
-        
+
         var stream = new ServerSentEventStream(httpContext.Response, CancellationToken.None);
 
         // Act
@@ -24,7 +24,7 @@ public class ServerSentEventsTests
         memoryStream.Position = 0;
         var reader = new StreamReader(memoryStream);
         var output = await reader.ReadToEndAsync();
-        
+
         Assert.Contains("event: test-event", output);
         Assert.Contains("data: <div>Hello</div>", output);
         Assert.EndsWith("\n\n", output); // SSE messages end with double newline
@@ -37,7 +37,7 @@ public class ServerSentEventsTests
         var httpContext = new DefaultHttpContext();
         var memoryStream = new MemoryStream();
         httpContext.Response.Body = memoryStream;
-        
+
         var stream = new ServerSentEventStream(httpContext.Response, CancellationToken.None);
 
         // Act
@@ -48,7 +48,7 @@ public class ServerSentEventsTests
         memoryStream.Position = 0;
         var reader = new StreamReader(memoryStream);
         var output = await reader.ReadToEndAsync();
-        
+
         // Each line should have "data: " prefix
         var lines = output.Split('\n');
         Assert.Contains(lines, l => l == "data: <div>");
@@ -62,7 +62,7 @@ public class ServerSentEventsTests
         // Arrange
         var httpContext = new DefaultHttpContext();
         var actionContext = new ActionContext(httpContext, new Microsoft.AspNetCore.Routing.RouteData(), new Microsoft.AspNetCore.Mvc.Abstractions.ActionDescriptor());
-        
+
         var result = new ServerSentEventsResult(async (stream, ct) =>
         {
             await stream.SendEventAsync("test", "<div>Test</div>");
@@ -92,7 +92,7 @@ public class ServerSentEventsTests
         var stream = new ServerSentEventStream(httpContext.Response, CancellationToken.None);
 
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentException>(() => 
+        await Assert.ThrowsAsync<ArgumentException>(() =>
             stream.SendEventAsync("", "<div>Test</div>"));
     }
 
@@ -103,7 +103,7 @@ public class ServerSentEventsTests
         var httpContext = new DefaultHttpContext();
         var memoryStream = new MemoryStream();
         httpContext.Response.Body = memoryStream;
-        
+
         var stream = new ServerSentEventStream(httpContext.Response, CancellationToken.None);
 
         // Act
@@ -113,7 +113,7 @@ public class ServerSentEventsTests
         memoryStream.Position = 0;
         var reader = new StreamReader(memoryStream);
         var output = await reader.ReadToEndAsync();
-        
+
         Assert.Equal(": keepalive\n\n", output);
     }
 }

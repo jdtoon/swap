@@ -15,7 +15,7 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Swap.Modularity" Version="0.1.0" />
-    <PackageReference Include="Swap.Htmx" Version="0.3.4" />
+    <PackageReference Include="Swap.Htmx" Version="0.3.5" />
   </ItemGroup>
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
