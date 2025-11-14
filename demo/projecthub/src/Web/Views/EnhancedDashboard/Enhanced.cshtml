@@ -43,11 +43,9 @@
                     <!-- Metrics will be updated via SSE -->
                     <div 
                         id="dashboard-metrics"
-                        hx-ext="sse-fallback"
-                        hx-sse="connect:/dashboard/enhanced/live"
-                        hx-sse-swap="metrics-update"
-                        hx-sse-fallback-url="/dashboard/enhanced/live"
-                        hx-sse-fallback-interval="5000">
+                        hx-ext="sse"
+                        sse-connect="/dashboard/enhanced/live"
+                        sse-swap="metrics-update">
                         @await Html.PartialAsync("_EnhancedDashboardMetrics", Model)
                     </div>
 

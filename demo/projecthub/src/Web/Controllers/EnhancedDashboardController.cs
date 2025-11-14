@@ -39,42 +39,27 @@ public class EnhancedDashboardController : SwapController
     }
 
     /// <summary>
-    /// Enhanced SSE endpoint with automatic event-driven updates and fallback support
+    /// Simple SSE endpoint - framework's clean approach
     /// </summary>
     [HttpGet("enhanced/live")]
-    public async Task<IActionResult> EnhancedLiveMetrics()
+    public IActionResult EnhancedLiveMetrics()
     {
-        // Check if fallback should be used
-        if (_fallbackService.ShouldUsePolling(HttpContext))
+        return ServerSentEvents(async (stream, cancellationToken) =>
         {
-            return await this.CachedPollingFallback(
-                cacheKey: "dashboard-metrics",
-                getContentFunc: async () =>
-                {
-                    var stats = await GetDashboardStatsAsync();
-                    return await this.RenderPartialToStringAsync("_EnhancedDashboardMetrics", stats);
-                },
-                cacheDuration: TimeSpan.FromSeconds(10)
-            );
-        }
-
-        // Enhanced SSE with connection management
-        return new EnhancedServerSentEventsResult(async (connectionBuilder, cancellationToken) =>
-        {
-            var connection = connectionBuilder.Connection;
-
-            // Join dashboard room for targeted updates
-            connectionBuilder.WithRooms("dashboard", "metrics")
-                           .WithEventPrefix("ui.dashboard")
-                           .WithEventPrefix("ui.stats");
-
             // Send initial state
-            var initialStats = await GetDashboardStatsAsync();
-            var initialHtml = await this.RenderPartialToStringAsync("_EnhancedDashboardMetrics", initialStats);
-            await connection.SendEventAsync("metrics-update", initialHtml);
+            var stats = await GetDashboardStatsAsync();
+            var html = await this.RenderPartialToStringAsync("_EnhancedDashboardMetrics", stats);
+            await stream.SendEventAsync("metrics-update", html);
 
-            // Keep connection alive with heartbeat
-            await connectionBuilder.KeepAlive(TimeSpan.FromSeconds(30), cancellationToken);
+            // Update every 5 seconds
+            while (!cancellationToken.IsCancellationRequested)
+            {
+                await Task.Delay(5000, cancellationToken);
+
+                stats = await GetDashboardStatsAsync();
+                html = await this.RenderPartialToStringAsync("_EnhancedDashboardMetrics", stats);
+                await stream.SendEventAsync("metrics-update", html);
+            }
         });
     }
 
