@@ -15,7 +15,7 @@ public class ProjectsController : SwapController
     private readonly ITaskService _taskService;
 
     public ProjectsController(
-        IProjectService projectService, 
+        IProjectService projectService,
         IWorkspaceService workspaceService,
         ITaskService taskService)
     {
@@ -36,7 +36,7 @@ public class ProjectsController : SwapController
     {
         var projects = await _projectService.GetByWorkspaceAsync(workspaceId);
         var workspace = await _workspaceService.GetByIdAsync(workspaceId);
-        
+
         ViewBag.Workspace = workspace;
         return SwapView("Index", projects);
     }
@@ -58,6 +58,20 @@ public class ProjectsController : SwapController
 
         var project = await _projectService.CreateAsync(dto);
         var detailsProject = await _projectService.GetByIdAsync(project.Id);
+
+        // Set ViewBag data required by Details view
+        var tasks = await _taskService.GetByProjectIdAsync(project.Id);
+        ViewBag.Tasks = tasks;
+        ViewBag.TaskStats = new
+        {
+            Total = tasks.Count(),
+            Completed = tasks.Count(t => t.Status == TaskStatus.Done),
+            InProgress = tasks.Count(t => t.Status == TaskStatus.InProgress),
+            Todo = tasks.Count(t => t.Status == TaskStatus.Todo),
+            Backlog = tasks.Count(t => t.Status == TaskStatus.Backlog),
+            Review = tasks.Count(t => t.Status == TaskStatus.Review)
+        };
+
         return SwapView("Details", detailsProject);
     }
 
@@ -102,6 +116,20 @@ public class ProjectsController : SwapController
 
         var project = await _projectService.UpdateAsync(id, dto);
         var detailsProject = await _projectService.GetByIdAsync(project.Id);
+
+        // Set ViewBag data required by Details view
+        var tasks = await _taskService.GetByProjectIdAsync(id);
+        ViewBag.Tasks = tasks;
+        ViewBag.TaskStats = new
+        {
+            Total = tasks.Count(),
+            Completed = tasks.Count(t => t.Status == TaskStatus.Done),
+            InProgress = tasks.Count(t => t.Status == TaskStatus.InProgress),
+            Todo = tasks.Count(t => t.Status == TaskStatus.Todo),
+            Backlog = tasks.Count(t => t.Status == TaskStatus.Backlog),
+            Review = tasks.Count(t => t.Status == TaskStatus.Review)
+        };
+
         return SwapView("Details", detailsProject);
     }
 

@@ -25,7 +25,11 @@
         <nav class="navbar" role="navigation" aria-label="main navigation">
             <div class="container">
                 <div class="navbar-brand">
-                    <a class="navbar-item" href="/">
+                    <a class="navbar-item" 
+                           href="/"
+                           hx-get="/"
+                           hx-target="#main-content"
+                           hx-push-url="true">
                         <span class="icon-text">
                             <span class="icon">
                                 <i class="fas fa-project-diagram"></i>
