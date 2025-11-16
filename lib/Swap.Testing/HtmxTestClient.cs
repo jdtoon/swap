@@ -7,7 +7,10 @@ namespace Swap.Testing;
 
 /// <summary>
 /// Fluent test client for HTMX-powered ASP.NET Core applications.
-/// Provides assertions for partial views, HTMX attributes, and HTML responses.
+/// Wraps <see cref="WebApplicationFactory{TProgram}"/> and exposes
+/// HTMX-aware helpers (for example <c>HtmxGetAsync</c>, <c>HtmxPostAsync</c>)
+/// that automatically set <c>HX-Request</c>, <c>HX-Target</c> and
+/// <c>HX-Trigger</c> headers and return <see cref="HtmxTestResponse"/>.
 /// </summary>
 public class HtmxTestClient<TProgram> where TProgram : class
 {
@@ -23,7 +26,8 @@ public class HtmxTestClient<TProgram> where TProgram : class
     }
 
     /// <summary>
-    /// Set a default header for all requests.
+    /// Set a default header for all subsequent requests created by this
+    /// client. This is useful for things like authentication headers.
     /// </summary>
     public HtmxTestClient<TProgram> WithHeader(string name, string value)
     {
@@ -32,7 +36,8 @@ public class HtmxTestClient<TProgram> where TProgram : class
     }
 
     /// <summary>
-    /// Set the HX-Request header to simulate HTMX requests.
+    /// Set the <c>HX-Request</c> header for all subsequent requests so they
+    /// are treated as HTMX requests by the application under test.
     /// </summary>
     public HtmxTestClient<TProgram> AsHtmxRequest()
     {
@@ -95,7 +100,8 @@ public class HtmxTestClient<TProgram> where TProgram : class
     }
 
     /// <summary>
-    /// Perform an HTMX GET request with HX-Request header.
+    /// Perform an HTMX GET request with <c>HX-Request</c> header and optional
+    /// <c>HX-Target</c>/<c>HX-Trigger</c> values.
     /// </summary>
     public async Task<HtmxTestResponse> HtmxGetAsync(string url, string? target = null, string? trigger = null)
     {
@@ -115,7 +121,8 @@ public class HtmxTestClient<TProgram> where TProgram : class
     }
 
     /// <summary>
-    /// Perform an HTMX POST request with HX-Request header.
+    /// Perform an HTMX POST request with <c>HX-Request</c> header and
+    /// optional <c>HX-Target</c>/<c>HX-Trigger</c> values.
     /// </summary>
     public async Task<HtmxTestResponse> HtmxPostAsync(string url, HttpContent? content = null, string? target = null, string? trigger = null)
     {
@@ -138,7 +145,7 @@ public class HtmxTestClient<TProgram> where TProgram : class
     }
 
     /// <summary>
-    /// Convenience overload for HTMX POST with form data.
+    /// Convenience overload for HTMX POST with URL-encoded form data.
     /// </summary>
     public Task<HtmxTestResponse> HtmxPostAsync(string url, Dictionary<string, string>? formData, string? target = null, string? trigger = null)
     {
@@ -147,7 +154,7 @@ public class HtmxTestClient<TProgram> where TProgram : class
     }
 
     /// <summary>
-    /// Perform an HTMX PUT request with HX-Request header.
+    /// Perform an HTMX PUT request with <c>HX-Request</c> header.
     /// </summary>
     public async Task<HtmxTestResponse> HtmxPutAsync(string url, HttpContent? content = null, string? target = null, string? trigger = null)
     {
@@ -170,7 +177,7 @@ public class HtmxTestClient<TProgram> where TProgram : class
     }
 
     /// <summary>
-    /// Convenience overload for HTMX PUT with form data.
+    /// Convenience overload for HTMX PUT with URL-encoded form data.
     /// </summary>
     public Task<HtmxTestResponse> HtmxPutAsync(string url, Dictionary<string, string>? formData, string? target = null, string? trigger = null)
     {
@@ -179,7 +186,7 @@ public class HtmxTestClient<TProgram> where TProgram : class
     }
 
     /// <summary>
-    /// Perform an HTMX DELETE request with HX-Request header.
+    /// Perform an HTMX DELETE request with <c>HX-Request</c> header.
     /// </summary>
     public async Task<HtmxTestResponse> HtmxDeleteAsync(string url, string? target = null, string? trigger = null)
     {
@@ -199,7 +206,7 @@ public class HtmxTestClient<TProgram> where TProgram : class
     }
 
     /// <summary>
-    /// Convenience overload for POST with form data.
+    /// Convenience overload for POST with URL-encoded form data.
     /// </summary>
     public Task<HtmxTestResponse> PostAsync(string url, Dictionary<string, string>? formData)
     {
@@ -208,7 +215,7 @@ public class HtmxTestClient<TProgram> where TProgram : class
     }
 
     /// <summary>
-    /// Convenience overload for PUT with form data.
+    /// Convenience overload for PUT with URL-encoded form data.
     /// </summary>
     public Task<HtmxTestResponse> PutAsync(string url, Dictionary<string, string>? formData)
     {
@@ -338,7 +345,8 @@ public class HtmxTestClient<TProgram> where TProgram : class
     }
 
     /// <summary>
-    /// If a previous response returned an HX-Redirect header, follow it and return the fetched response (as HTMX GET).
+    /// If a previous response returned an <c>HX-Redirect</c> header, follow
+    /// it and return the fetched response (performed as an HTMX GET).
     /// </summary>
     public async Task<HtmxTestResponse> FollowHxRedirectAsync(HtmxTestResponse response, string? target = null, string? trigger = null)
     {

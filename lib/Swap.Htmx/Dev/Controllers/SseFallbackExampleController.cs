@@ -4,8 +4,9 @@ using Swap.Htmx.ServerSentEvents;
 namespace Swap.Htmx.Dev.Controllers;
 
 /// <summary>
-/// Example controller demonstrating SSE fallback patterns.
-/// This shows how to implement endpoints that can serve both SSE and polling clients.
+/// Example controller demonstrating how to pair Swap's SSE primitives with
+/// the optional polling helpers in <see cref="Swap.Htmx.ServerSentEvents.SseFallbackExtensions"/>.
+/// These endpoints are intended for development and documentation only.
 /// </summary>
 public class SseFallbackExampleController : SwapController
 {
@@ -22,9 +23,9 @@ public class SseFallbackExampleController : SwapController
     }
 
     /// <summary>
-    /// Basic SSE endpoint with polling fallback.
-    /// GET /sse-fallback-example/time - SSE stream
-    /// GET /sse-fallback-example/time/poll - Polling endpoint
+    /// Basic SSE endpoint with an accompanying polling endpoint.
+    /// GET /sse-fallback-example/time      - SSE stream
+    /// GET /sse-fallback-example/time/poll - polling endpoint returning HTML snapshots.
     /// </summary>
     [HttpGet("time")]
     public async Task<IActionResult> TimeStream()
@@ -157,8 +158,9 @@ public class SseFallbackExampleController : SwapController
     }
 
     /// <summary>
-    /// Example of handling fallback automatically using attributes.
-    /// The JavaScript extension will detect SSE failures and switch to polling.
+    /// Example view that previously demonstrated automatic client-side
+    /// fallback using a JavaScript extension. The server-side pieces remain
+    /// valid as a reference for wiring SSE and polling together.
     /// </summary>
     [HttpGet("auto-fallback")]
     public IActionResult AutoFallbackExample()

@@ -6,7 +6,9 @@ using System.Net;
 namespace Swap.Testing;
 
 /// <summary>
-/// Represents an HTTP response with fluent assertion methods for HTMX testing.
+/// Wraps an <see cref="HttpResponseMessage"/> and exposes fluent assertion
+/// helpers tailored for HTMX applications. This includes both general
+/// HTTP/HTML checks and HTMX-specific header and attribute assertions.
 /// </summary>
 public class HtmxTestResponse
 {
@@ -293,15 +295,17 @@ public class HtmxTestResponse
     }
 
     /// <summary>
-    /// Assert that the response is a partial view (not a full page with html/body tags).
-
-    /// <summary>
-    /// Assert that the response contains an element with hx-swap-oob attribute.
-    /// </summary>
+    /// Assert that the response contains an element with <c>hx-swap-oob</c>
+    /// attribute.
     public async Task<HtmxTestResponse> AssertHxSwapOobAsync(string cssSelector, string? expectedValue = null)
     {
         return await AssertHxAttributeAsync(cssSelector, "hx-swap-oob", expectedValue);
     }
+
+    /// <summary>
+    /// Assert that the response represents a partial fragment rather than a
+    /// full HTML document. This is done by scanning the raw content for
+    /// <c>&lt;html&gt;</c>/<c>&lt;body&gt;</c> tags instead of relying on the parsed DOM.
     /// </summary>
     public async Task<HtmxTestResponse> AssertPartialViewAsync()
     {
