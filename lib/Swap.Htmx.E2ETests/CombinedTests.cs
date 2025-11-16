@@ -58,6 +58,19 @@ public class CombinedTests : PageTest
     public async Task Combined_ToastAndOobIndependent()
     {
         // This test verifies that toast dismissal doesn't affect OOB content
+            [Test]
+            public async Task Todo_create_emits_events_and_renders_item()
+            {
+                await Page.GotoAsync(TestUrl("/test"));
+
+                var input = Page.Locator("input[name='title']");
+                await input.FillAsync("Buy milk");
+                await Page.Locator("button[data-test-id='todo-create']").ClickAsync();
+
+                var toast = Page.Locator("[data-test-id='toast-message']");
+                await Expect(toast).ToBeVisibleAsync();
+                await Expect(toast).ToContainTextAsync("Buy milk");
+            }
         
         // Act - Trigger combined action
         await Page.Locator("[data-test-id='combined']").ClickAsync(new() { Force = true });
