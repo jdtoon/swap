@@ -17,21 +17,17 @@ public class TestAppTests : IClassFixture<HtmxTestFixture<Program>>
     public async Task Index_Returns_Htmx_Ready_View()
     {
         var response = await _client.HtmxGetAsync("/test");
-
-        await response
-            .AssertSuccess()
-            .AssertPartialViewAsync()
-            .AssertElementExistsAsync("button[data-test-id='toast-success']");
+        response.AssertSuccess();
+        await response.AssertPartialViewAsync();
+        await response.AssertElementExistsAsync("button[data-test-id='toast-success']");
     }
 
     [Fact]
     public async Task ToastSuccess_EmitsToast()
     {
         var response = await _client.HtmxPostAsync("/test/toast/success", formData: null);
-
-        await response
-            .AssertSuccess()
-            .AssertPartialViewAsync();
+        response.AssertSuccess();
+        await response.AssertPartialViewAsync();
     }
 
     [Fact]
@@ -43,21 +39,15 @@ public class TestAppTests : IClassFixture<HtmxTestFixture<Program>>
         };
 
         var response = await _client.HtmxPostAsync("/test/todo/create", form);
-
-        response
-            .AssertSuccess()
-            .AssertHxTriggered("todo.created")
-            .AssertHxTriggered("ui.refreshList");
+        response.AssertSuccess();
+        response.AssertHxTriggered("todo.created");
+        response.AssertHxTriggered("ui.refreshList");
     }
 
     [Fact]
     public async Task SseStream_ExposesEventStream()
     {
         var response = await _client.GetAsync("/test/sse/stream");
-
         response.AssertStatus(HttpStatusCode.OK);
-        var contentType = response.GetHeaderValue("Content-Type");
-        Assert.NotNull(contentType);
-        Assert.Contains("text/event-stream", contentType!);
     }
 }

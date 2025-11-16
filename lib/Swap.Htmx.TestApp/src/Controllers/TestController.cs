@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Swap.Htmx;
+using Swap.Htmx.Events;
 
 namespace Swap.Htmx.TestApp.Controllers;
 
@@ -165,11 +166,5 @@ public class TestController : SwapController
         });
     }
 
-    // WebSocket Tests
     
-    [HttpGet("/test/websocket")]
-    public IActionResult WebSocketDemo()
-    {
-        return SwapView();
-    }
 }
