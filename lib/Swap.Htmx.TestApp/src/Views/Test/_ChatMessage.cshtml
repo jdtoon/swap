@@ -1,0 +1,9 @@
+@model Swap.Htmx.TestApp.WebSockets.ChatMessage
+
+<div hx-swap-oob="beforeend:#chat-messages" class="mb-2 p-2 rounded @(Model.Username == "System" ? "bg-gray-200" : "bg-blue-50")">
+    <div class="flex justify-between items-start">
+        <span class="font-semibold text-sm">@Model.Username</span>
+        <span class="text-xs text-gray-500">@Model.Timestamp.ToString("HH:mm:ss")</span>
+    </div>
+    <p class="text-sm mt-1">@Model.Message</p>
+</div>

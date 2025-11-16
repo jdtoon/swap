@@ -1,0 +1,43 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>true</IsPackable>
+    
+    <!-- Package Metadata -->
+    <PackageId>Swap.Testing</PackageId>
+  <Version>0.3.0</Version>
+    <Description>Testing framework for HTMX-powered ASP.NET Core applications. Fluent API for testing partial views, HTMX attributes, and HTML responses.</Description>
+    <PackageTags>swap;testing;htmx;aspnetcore;integration-tests;e2e</PackageTags>
+    <PackageProjectUrl>https://github.com/jdtoon/swap</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/jdtoon/swap</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <Authors>jdtoon</Authors>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- ASP.NET Core Testing -->
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="9.0.10" />
+    
+    <!-- HTML Parsing -->
+    <PackageReference Include="AngleSharp" Version="1.1.2" />
+    
+    <!-- Test Framework (for assertions) -->
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Exclude example test file from build -->
+    <Compile Remove="EXAMPLE_TESTS.cs" />
+    <None Include="EXAMPLE_TESTS.cs" />
+  </ItemGroup>
+
+</Project>

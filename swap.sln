@@ -5,11 +5,11 @@ VisualStudioVersion = 17.5.2.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "framework", "framework", "{9A0CCAB9-4303-13B4-2371-F1B97FF5B728}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Swap.Htmx", "framework\Swap.Htmx\Swap.Htmx.csproj", "{39992254-BA73-424B-B16B-CBCB5847B522}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Swap.Htmx", "lib\Swap.Htmx\Swap.Htmx.csproj", "{39992254-BA73-424B-B16B-CBCB5847B522}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Swap.Htmx.Tests", "framework\Swap.Htmx.Tests\Swap.Htmx.Tests.csproj", "{12C11CCA-3DAC-4ABF-B5D7-D6EC21CB60ED}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Swap.Htmx.Tests", "lib\Swap.Htmx.Tests\Swap.Htmx.Tests.csproj", "{12C11CCA-3DAC-4ABF-B5D7-D6EC21CB60ED}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Swap.Testing", "framework\Swap.Testing\Swap.Testing.csproj", "{AF46FF94-C92A-413A-8ABF-4F7BF7AA2BE5}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Swap.Testing", "lib\Swap.Testing\Swap.Testing.csproj", "{AF46FF94-C92A-413A-8ABF-4F7BF7AA2BE5}"
 EndProject
  
 Global

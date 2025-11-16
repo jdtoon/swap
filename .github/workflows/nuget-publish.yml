@@ -40,11 +40,10 @@ jobs:
         mkdir -p .nuget/local
         echo "Prepared local NuGet feed at .nuget/local"
 
-    - name: Pack framework packages to local feed
+    - name: Pack library packages to local feed
       run: |
-        dotnet pack framework/Swap.Htmx/Swap.Htmx.csproj --configuration Release --output ./.nuget/local
-        dotnet pack framework/Swap.Modularity/Swap.Modularity.csproj --configuration Release --output ./.nuget/local
-        dotnet pack framework/Swap.Testing/Swap.Testing.csproj --configuration Release --output ./.nuget/local
+        dotnet pack lib/Swap.Htmx/Swap.Htmx.csproj --configuration Release --output ./.nuget/local
+        dotnet pack lib/Swap.Testing/Swap.Testing.csproj --configuration Release --output ./.nuget/local
       env:
         DOTNET_NUGET_SIGNATURE_VERIFICATION: false
     
@@ -53,10 +52,10 @@ jobs:
       with:
         dotnet-version: '9.0.x'
     
-    - name: Extract version from Swap.CLI.csproj
+    - name: Extract version from Swap.Htmx.csproj
       id: version
       run: |
-        VERSION=$(grep -oP '<Version>\K[^<]+' tools/Swap.CLI/Swap.CLI.csproj)
+        VERSION=$(grep -oP '<Version>\K[^<]+' lib/Swap.Htmx/Swap.Htmx.csproj)
         echo "version=$VERSION" >> $GITHUB_OUTPUT
         echo "tag=v$VERSION" >> $GITHUB_OUTPUT
         echo "📦 Version: $VERSION"
@@ -83,11 +82,9 @@ jobs:
     
     - name: Pack and Publish Packages
       run: |
-        # Pack all packages
-        dotnet pack tools/Swap.CLI/Swap.CLI.csproj --configuration Release --no-restore --output ./nupkg
-        dotnet pack framework/Swap.Htmx/Swap.Htmx.csproj --configuration Release --no-restore --output ./nupkg
-        dotnet pack framework/Swap.Modularity/Swap.Modularity.csproj --configuration Release --no-restore --output ./nupkg
-        dotnet pack framework/Swap.Testing/Swap.Testing.csproj --configuration Release --no-restore --output ./nupkg
+        # Pack library packages
+        dotnet pack lib/Swap.Htmx/Swap.Htmx.csproj --configuration Release --no-restore --output ./nupkg
+        dotnet pack lib/Swap.Testing/Swap.Testing.csproj --configuration Release --no-restore --output ./nupkg
         
         # Publish all packages (skip-duplicate will handle already published versions)
         dotnet nuget push ./nupkg/*.nupkg --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
@@ -99,19 +96,9 @@ jobs:
       id: changelog
       run: |
         VERSION=${{ steps.version.outputs.version }}
-        
-        # Extract section for this version from CHANGELOG.md
-        awk "/## \[$VERSION\]/,/^## \[/" CHANGELOG.md | sed '1d;$d' > release-notes.md
-        
-        # If release notes are empty, use a default message
-        if [ ! -s release-notes.md ]; then
-          echo "Release $VERSION" > release-notes.md
-          echo "" >> release-notes.md
-          echo "See [CHANGELOG.md](CHANGELOG.md) for details." >> release-notes.md
-        fi
-        
-        echo "📝 Release notes extracted"
-        cat release-notes.md
+        echo "Release $VERSION" > release-notes.md
+        echo "" >> release-notes.md
+        echo "Swap.Htmx $VERSION" >> release-notes.md
     
     - name: Create Git tag
       if: steps.check_tag.outputs.exists == 'false'
