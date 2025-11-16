@@ -1,12 +1,6 @@
 # Build stage
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 
-# Install Node.js for Tailwind CSS build
-RUN apt-get update && apt-get install -y curl && \
-    curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
-    apt-get install -y nodejs && \
-    rm -rf /var/lib/apt/lists/*
-
 # Install LibMan CLI globally
 RUN dotnet tool install -g Microsoft.Web.LibraryManager.Cli
 
@@ -27,15 +21,8 @@ RUN libman restore
 COPY ["wwwroot/", "/app/wwwroot/"]
 RUN chmod -R 755 /app/wwwroot
 
-# Copy package.json and install npm dependencies
-COPY ["package.json", "./"]
-RUN npm install
-
 # Copy the rest of the application
 COPY . .
-
-# Build CSS (Tailwind)
-RUN npm run build:css
 
 # Build and publish the application
 RUN dotnet publish "Swap.Htmx.TestApp.csproj" -c Release -o /app/publish /p:UseAppHost=false
@@ -52,13 +39,9 @@ COPY --from=build /app/publish .
 # Copy wwwroot with libman dependencies
 COPY --from=build /app/wwwroot ./wwwroot
 
-
 # For SQLite: Create directories for database file and data protection keys
 RUN mkdir -p /app/data /app/keys && chmod -R 700 /app/keys
 ENV ConnectionStrings__DefaultConnection="Data Source=/app/data/Swap.Htmx.TestApp.db"
-
-
-
 
 # Set ASP.NET Core environment
 ENV ASPNETCORE_ENVIRONMENT=Production
