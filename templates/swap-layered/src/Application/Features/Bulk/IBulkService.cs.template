@@ -1,6 +1,0 @@
-namespace {{ProjectName}}.Application.Features.Bulk;
-
-public interface IBulkService
-{
-    Task<int> CompleteAsync(int[] ids, CancellationToken ct = default);
-}

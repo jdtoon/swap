@@ -1,8 +1,0 @@
-namespace {{ProjectName}}.Application.Features.Notes;
-
-public interface INotesService
-{
-    Task<int> GetCountAsync(CancellationToken ct = default);
-    Task<List<string>> GetAllAsync(CancellationToken ct = default);
-    Task AddAsync(string text, CancellationToken ct = default);
-}

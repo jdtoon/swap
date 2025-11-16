@@ -1,6 +1,0 @@
-# {{ProjectName}}.Infrastructure
-
-Infrastructure layer: EF Core DbContext and repository implementations.
-
-- AppDbContext: database access
-- Repositories: concrete data access for features

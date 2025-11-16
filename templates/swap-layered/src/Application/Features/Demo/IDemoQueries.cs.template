@@ -1,7 +1,0 @@
-namespace {{ProjectName}}.Application.Features.Demo;
-
-public interface IDemoQueries
-{
-    Task<string> GetLatestMessageAsync(CancellationToken ct = default);
-    Task<List<string>> GetActivityLogAsync(CancellationToken ct = default);
-}

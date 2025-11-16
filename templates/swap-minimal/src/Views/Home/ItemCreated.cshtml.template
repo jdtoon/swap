@@ -1,5 +1,0 @@
-@model string
-
-<div class="notification is-success">
-    Item created: <strong>@Model</strong>
-</div>

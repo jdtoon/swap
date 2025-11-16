@@ -1,6 +1,0 @@
-namespace {{ProjectName}}.Application.Abstractions;
-
-public interface IEventBus
-{
-    void Emit(string eventName, object? payload = null);
-}
