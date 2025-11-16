@@ -10,22 +10,37 @@ public class ToastTests : PageTest
     private const string BaseUrl = "http://localhost:5000/test";
 
     [SetUp]
-    // Removed Toast Playwright tests.
+    public async Task Setup()
+    {
+        await Page.GotoAsync(BaseUrl, new() { WaitUntil = WaitUntilState.NetworkIdle });
+        await Page.WaitForLoadStateAsync(LoadState.DOMContentLoaded);
+    }
 
     [Test]
-    public async Task Toast_AutoDismissesAfterDelay()
+    public async Task ToastDemo_LoadsCorrectly()
     {
-        // Act - Click toast button
-        await Page.Locator("[data-test-id='toast-success']").ClickAsync(new() { Force = true });
+        await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "Toast Notifications" })).ToBeVisibleAsync();
+        await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Trigger Toast" })).ToBeVisibleAsync();
+    }
 
-        // Assert - Toast should appear
-        var toast = Page.Locator(".toast").First;
-        await Expect(toast).ToBeVisibleAsync(new() { Timeout = 5000 });
+    [Test]
+    public async Task ToastDemo_DisplaysToastOnTrigger()
+    {
+        await Page.GetByRole(AriaRole.Button, new() { Name = "Trigger Toast" }).ClickAsync();
+        var toast = Page.Locator("#toast-area > div");
+        await Expect(toast).ToBeVisibleAsync(new() { Timeout = 3000 });
+        var text = await toast.TextContentAsync();
+        Assert.That(text, Is.Not.Null.And.Not.Empty);
+    }
 
-        // Wait for auto-dismiss (3.5 seconds + buffer)
-        await Task.Delay(4000);
+    [Test]
+    public async Task ToastDemo_MultipleToastsStack()
+    {
+        for (int i = 0; i < 3; i++)
+            await Page.GetByRole(AriaRole.Button, new() { Name = "Trigger Toast" }).ClickAsync();
 
-        // Toast should be gone
-        await Expect(toast).Not.ToBeVisibleAsync();
+        var toasts = Page.Locator("#toast-area > div");
+        await Expect(toasts.Nth(2)).ToBeVisibleAsync(new() { Timeout = 4000 });
+        Assert.That(await toasts.CountAsync(), Is.GreaterThanOrEqualTo(3));
     }
 }
