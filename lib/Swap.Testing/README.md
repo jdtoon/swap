@@ -1,10 +1,14 @@
 # Swap.Testing
 
+[![NuGet](https://img.shields.io/nuget/v/Swap.Testing.svg)](https://www.nuget.org/packages/Swap.Testing)
+
 `Swap.Testing` provides small helpers for writing integration tests against HTMX-powered ASP.NET Core MVC applications.
 
 It is designed to work alongside `Swap.Htmx` but does not require it.
 
 ## Install
+
+- NuGet: https://www.nuget.org/packages/Swap.Testing
 
 ```bash
 dotnet add package Swap.Testing
