@@ -11,9 +11,13 @@
     <PackageProjectUrl>https://github.com/jdtoon/swap</PackageProjectUrl>
     <RepositoryUrl>https://github.com/jdtoon/swap</RepositoryUrl>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <PackageTags>htmx;aspnetcore;mvc;swap;controller;middleware</PackageTags>
+    <PackageTags>htmx;aspnetcore;mvc;swap;controller;middleware;sse;events</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="" />
+  </ItemGroup>
 
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
