@@ -1,15 +1,18 @@
 namespace Swap.Htmx.Events;
 
 /// <summary>
-/// Example event patterns for apps to follow when defining their own event classes.
-/// Apps should create their own static event classes (e.g., ProductEvents, OrderEvents)
-/// following these naming conventions: {domain}.{action}
+/// Example event patterns for apps to follow when defining their own event
+/// classes. These are purely convenience helpers; most real applications
+/// should define their own static classes (for example
+/// <c>ProductEvents.Created</c>, <c>OrderEvents.Updated</c>) following the
+/// <c>{domain}.{action}</c> convention.
 /// </summary>
 public static class SwapEvents
 {
     /// <summary>
-    /// Example UI events for client-side actions.
-    /// Apps define their own UI events specific to their needs.
+    /// Example UI events for client-side actions. Your application can
+    /// either use these directly or copy the pattern and define its own
+    /// event catalog that better reflects your domain.
     /// </summary>
     public static class UI
     {
@@ -20,8 +23,9 @@ public static class SwapEvents
     }
 
     /// <summary>
-    /// Example entity event helpers for domain events.
-    /// Apps define their own entity-specific events (e.g., ProductEvents.Created).
+    /// Example helpers for generating domain events. Most applications will
+    /// create their own strongly named helpers instead of passing raw
+    /// strings to this method.
     /// </summary>
     public static class Entity
     {
@@ -31,8 +35,8 @@ public static class SwapEvents
     }
 
     /// <summary>
-    /// Example authentication events.
-    /// Apps define their own auth events based on their security requirements.
+    /// Example authentication events. Treat these as suggestions; feel free
+    /// to replace them with application-specific events.
     /// </summary>
     public static class Auth
     {

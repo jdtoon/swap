@@ -6,8 +6,10 @@ using Swap.Htmx.Events;
 namespace Swap.Htmx.ServerSentEvents;
 
 /// <summary>
-/// Middleware that intercepts SSE-related events and routes them to the SSE event bridge.
-/// This enables automatic event-driven SSE broadcasting from domain events.
+/// Middleware that inspects resolved Swap events and forwards any
+/// <c>"sse:"</c>-prefixed events to the configured <see cref="ISseEventBridge"/>.
+/// This enables automatic event-driven SSE broadcasting from the same
+/// event chains that feed <c>HX-Trigger</c>.
 /// </summary>
 public sealed class SseEventMiddleware
 {

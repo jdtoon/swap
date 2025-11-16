@@ -7,8 +7,9 @@ using Swap.Htmx.Events;
 namespace Swap.Htmx.Middleware;
 
 /// <summary>
-/// Middleware that builds HX-Trigger headers at the end of the request from pending events.
-/// Should be registered before MVC endpoints; uses OnStarting to append headers safely.
+/// Middleware that builds <c>HX-Trigger</c> headers at the end of the request
+/// from events captured in <see cref="SwapEventBus"/>. Register this early in
+/// the pipeline so it can safely append headers before the response starts.
 /// </summary>
 public class SwapEventResponseMiddleware
 {
@@ -45,45 +46,7 @@ public class SwapEventResponseMiddleware
 
             try
             {
-                var json = JsonSerializer.Serialize(resolved);
-                if (!httpContext.Response.Headers.TryGetValue("HX-Trigger", out StringValues existing) || StringValues.IsNullOrEmpty(existing))
-                {
-                    httpContext.Response.Headers["HX-Trigger"] = json;
-                }
-                else
-                {
-                    // Merge if someone already set HX-Trigger earlier (best-effort)
-                    try
-                    {
-                        var merged = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
-
-                        foreach (var value in existing)
-                        {
-                            try
-                            {
-                                if (string.IsNullOrWhiteSpace(value)) continue;
-                                var obj = JsonSerializer.Deserialize<Dictionary<string, object?>>(value);
-                                if (obj is not null)
-                                {
-                                    foreach (var kv in obj) merged[kv.Key] = kv.Value;
-                                }
-                            }
-                            catch
-                            {
-                                // ignore unparsable existing value
-                            }
-                        }
-
-                        foreach (var kv in resolved) merged[kv.Key] = kv.Value; // last-write-wins
-                        var mergedJson = JsonSerializer.Serialize(merged);
-                        httpContext.Response.Headers["HX-Trigger"] = mergedJson;
-                    }
-                    catch
-                    {
-                        // If merging fails, fall back to appending another header value
-                        httpContext.Response.Headers.Append("HX-Trigger", json);
-                    }
-                }
+                MergeHxTriggerHeader(httpContext.Response, resolved);
 
                 _logger?.LogInformation("[SwapEvents] Resolved {Count} events for HX-Trigger", resolved.Count);
                 httpContext.Items.Remove(SwapEventKeys.PendingEvents);
@@ -108,39 +71,7 @@ public class SwapEventResponseMiddleware
                 var resolved = bus.ResolveChains(context);
                 if (resolved.Count > 0)
                 {
-                    var json = JsonSerializer.Serialize(resolved);
-                    if (!context.Response.Headers.TryGetValue("HX-Trigger", out StringValues existing) || StringValues.IsNullOrEmpty(existing))
-                    {
-                        context.Response.Headers["HX-Trigger"] = json;
-                    }
-                    else
-                    {
-                        try
-                        {
-                            var merged = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
-                            foreach (var value in existing)
-                            {
-                                try
-                                {
-                                    if (string.IsNullOrWhiteSpace(value)) continue;
-                                    var obj = JsonSerializer.Deserialize<Dictionary<string, object?>>(value);
-                                    if (obj is not null)
-                                    {
-                                        foreach (var kv in obj) merged[kv.Key] = kv.Value;
-                                    }
-                                }
-                                catch { }
-                            }
-                            foreach (var kv in resolved) merged[kv.Key] = kv.Value;
-                            var mergedJson = JsonSerializer.Serialize(merged);
-                            context.Response.Headers["HX-Trigger"] = mergedJson;
-                        }
-                        catch
-                        {
-                            context.Response.Headers.Append("HX-Trigger", json);
-                        }
-                    }
-
+                    MergeHxTriggerHeader(context.Response, resolved);
                     _logger?.LogInformation("[SwapEvents] Resolved {Count} events for HX-Trigger", resolved.Count);
                 }
             }
@@ -152,6 +83,48 @@ public class SwapEventResponseMiddleware
             {
                 context.Items.Remove(SwapEventKeys.PendingEvents);
             }
+        }
+    }
+
+    private static void MergeHxTriggerHeader(HttpResponse response, IReadOnlyDictionary<string, object?> resolved)
+    {
+        var json = JsonSerializer.Serialize(resolved);
+
+        if (!response.Headers.TryGetValue("HX-Trigger", out StringValues existing) || StringValues.IsNullOrEmpty(existing))
+        {
+            response.Headers["HX-Trigger"] = json;
+            return;
+        }
+
+        try
+        {
+            var merged = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var value in existing)
+            {
+                try
+                {
+                    if (string.IsNullOrWhiteSpace(value)) continue;
+                    var obj = JsonSerializer.Deserialize<Dictionary<string, object?>>(value);
+                    if (obj is not null)
+                    {
+                        foreach (var kv in obj) merged[kv.Key] = kv.Value;
+                    }
+                }
+                catch
+                {
+                    // ignore unparsable existing value
+                }
+            }
+
+            foreach (var kv in resolved) merged[kv.Key] = kv.Value; // last-write-wins
+            var mergedJson = JsonSerializer.Serialize(merged);
+            response.Headers["HX-Trigger"] = mergedJson;
+        }
+        catch
+        {
+            // If merging fails, fall back to appending another header value
+            response.Headers.Append("HX-Trigger", json);
         }
     }
 }

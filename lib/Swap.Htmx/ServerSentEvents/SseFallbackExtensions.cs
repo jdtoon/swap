@@ -5,13 +5,17 @@ using Microsoft.Extensions.Caching.Memory;
 namespace Swap.Htmx.ServerSentEvents;
 
 /// <summary>
-/// Extensions for adding polling fallback support to SSE endpoints.
+/// Extensions for building simple polling endpoints alongside SSE.
+/// These helpers are optional and are not wired to any client-side
+/// fallback script; use them when you explicitly want polling.
 /// </summary>
 public static class SseFallbackExtensions
 {
     /// <summary>
-    /// Creates a polling endpoint that can serve as a fallback for SSE.
-    /// This method detects whether the request is a polling fallback and returns appropriate content.
+    /// Creates a polling endpoint that can serve HTML responses keyed off an
+    /// optional <c>Last-Event-ID</c> value. This is protocol-agnostic and can
+    /// be used either as a manual SSE fallback or as a standalone polling
+    /// endpoint.
     /// </summary>
     /// <param name="controller">The SwapController instance.</param>
     /// <param name="getContentFunc">Function to get the current content for polling.</param>
@@ -49,7 +53,7 @@ public static class SseFallbackExtensions
                 return controller.Content(content, "text/html");
             }
 
-            // For regular requests, return the view
+            // For non-polling requests, return the current HTML snapshot
             return controller.Content(content, "text/html");
         }
         catch (Exception)
@@ -115,7 +119,7 @@ public static class SseFallbackExtensions
 
     /// <summary>
     /// Creates a polling endpoint that returns JSON data instead of HTML.
-    /// Useful for JavaScript-based updates.
+    /// Useful for JavaScript-based updates or custom front-end clients.
     /// </summary>
     /// <param name="controller">The SwapController instance.</param>
     /// <param name="getDataFunc">Function to get the current data.</param>
@@ -151,7 +155,9 @@ public static class SseFallbackExtensions
 }
 
 /// <summary>
-/// Configuration for SSE fallback behavior.
+/// Configuration for polling behaviour when used alongside SSE. This type
+/// does not control any automatic client-side fallback; it simply provides
+/// server-side defaults for polling intervals and diagnostics.
 /// </summary>
 public class SseFallbackOptions
 {
@@ -161,17 +167,19 @@ public class SseFallbackOptions
     public int DefaultPollInterval { get; set; } = 5000;
 
     /// <summary>
-    /// Maximum number of SSE retries before falling back to polling.
+    /// Maximum number of SSE retries before falling back to polling (if you
+    /// implement such logic on the client).
     /// </summary>
     public int MaxSseRetries { get; set; } = 3;
 
     /// <summary>
-    /// Number of SSE errors before switching to polling fallback.
+    /// Number of SSE errors before switching to polling on the client.
     /// </summary>
     public int FallbackAfterErrors { get; set; } = 2;
 
     /// <summary>
-    /// Whether fallback polling is enabled by default.
+    /// Whether polling endpoints should be considered enabled by default in
+    /// your own application logic.
     /// </summary>
     public bool EnableFallback { get; set; } = true;
 
@@ -187,7 +195,9 @@ public class SseFallbackOptions
 }
 
 /// <summary>
-/// Service for managing SSE fallback configuration.
+/// Service for managing polling configuration when used together with SSE.
+/// This is an optional abstraction that you can use to centralise how your
+/// app decides between SSE and polling.
 /// </summary>
 public interface ISseFallbackService
 {
@@ -208,7 +218,9 @@ public interface ISseFallbackService
 }
 
 /// <summary>
-/// Default implementation of SSE fallback service.
+/// Default implementation of <see cref="ISseFallbackService"/>. It uses
+/// simple header and query-string conventions to decide when to poll and
+/// how frequently.
 /// </summary>
 internal class SseFallbackService : ISseFallbackService
 {

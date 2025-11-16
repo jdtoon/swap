@@ -4,11 +4,19 @@ using Swap.Htmx.Events;
 
 namespace Swap.Htmx;
 
+/// <summary>
+/// Helpers for emitting HTMX client-side events via response headers such
+/// as <c>HX-Trigger</c>, <c>HX-Trigger-After-Settle</c> and
+/// <c>HX-Trigger-After-Swap</c>. These methods are thin wrappers around
+/// header manipulation and can be used alongside <see cref="SwapEventBus"/>.
+/// </summary>
 public static class HtmxEvents
 {
     /// <summary>
-    /// Trigger a client-side HTMX event via HX-Trigger header.
-    /// If payload is null, sends the event name as a simple token. Otherwise, sends a JSON map { eventName: payload }.
+    /// Trigger a client-side HTMX event via the <c>HX-Trigger</c> header.
+    /// If <paramref name="payload"/> is <c>null</c> the event name is sent
+    /// as a simple token. Otherwise a JSON map of the shape
+    /// <c>{ eventName: payload }</c> is appended as the header value.
     /// </summary>
     public static void Trigger(HttpResponse response, string eventName, object? payload = null, string header = "HX-Trigger")
     {
