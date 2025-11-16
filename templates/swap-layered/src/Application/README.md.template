@@ -1,6 +1,0 @@
-# {{ProjectName}}.Application
-
-Application layer: use-case orchestration, business logic, and abstractions.
-
-- Abstractions: IEventBus, repository interfaces
-- Features: services per feature (e.g., Todos)

@@ -36,11 +36,10 @@ jobs:
         mkdir -p .nuget/local
         echo "Prepared local NuGet feed at .nuget/local"
 
-    - name: Pack framework packages to local feed
+    - name: Pack library packages to local feed
       run: |
-        dotnet pack framework/Swap.Htmx/Swap.Htmx.csproj --configuration Release --output ./.nuget/local
-        dotnet pack framework/Swap.Modularity/Swap.Modularity.csproj --configuration Release --output ./.nuget/local
-        dotnet pack framework/Swap.Testing/Swap.Testing.csproj --configuration Release --output ./.nuget/local
+        dotnet pack lib/Swap.Htmx/Swap.Htmx.csproj --configuration Release --output ./.nuget/local
+        dotnet pack lib/Swap.Testing/Swap.Testing.csproj --configuration Release --output ./.nuget/local
       env:
         DOTNET_NUGET_SIGNATURE_VERIFICATION: false
     
@@ -55,7 +54,5 @@ jobs:
 
     - name: Pack packages (artifacts)
       run: |
-        dotnet pack framework/Swap.Htmx/Swap.Htmx.csproj --configuration Release --no-restore --output ./nupkg
-        dotnet pack framework/Swap.Modularity/Swap.Modularity.csproj --configuration Release --no-restore --output ./nupkg
-        dotnet pack framework/Swap.Testing/Swap.Testing.csproj --configuration Release --no-restore --output ./nupkg
-        dotnet pack tools/Swap.CLI/Swap.CLI.csproj --configuration Release --no-restore --output ./nupkg
+        dotnet pack lib/Swap.Htmx/Swap.Htmx.csproj --configuration Release --no-restore --output ./nupkg
+        dotnet pack lib/Swap.Testing/Swap.Testing.csproj --configuration Release --no-restore --output ./nupkg

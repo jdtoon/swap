@@ -1,9 +1,0 @@
-@model int
-@{
-    var targetId = ViewData["OobTargetId"] as string ?? "task-total-count";
-    var swapOob = ViewData["HxSwapOob"] as string ?? "true";
-}
-
-<span class="tag is-light" id="@targetId" hx-swap-oob="@swapOob">
-    @Model Tasks
-</span>

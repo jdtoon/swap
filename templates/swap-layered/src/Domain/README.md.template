@@ -1,6 +1,0 @@
-# {{ProjectName}}.Domain
-
-Domain layer: pure domain objects and events. No external dependencies.
-
-- Entities: domain models
-- Events: domain event name constants

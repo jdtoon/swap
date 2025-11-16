@@ -1,0 +1,65 @@
+using System.Text.Json;
+using Microsoft.AspNetCore.Http;
+using Swap.Htmx.Events;
+
+namespace Swap.Htmx;
+
+/// <summary>
+/// Helpers for emitting HTMX client-side events via response headers such
+/// as <c>HX-Trigger</c>, <c>HX-Trigger-After-Settle</c> and
+/// <c>HX-Trigger-After-Swap</c>. These methods are thin wrappers around
+/// header manipulation and can be used alongside <see cref="SwapEventBus"/>.
+/// </summary>
+public static class HtmxEvents
+{
+    /// <summary>
+    /// Trigger a client-side HTMX event via the <c>HX-Trigger</c> header.
+    /// If <paramref name="payload"/> is <c>null</c> the event name is sent
+    /// as a simple token. Otherwise a JSON map of the shape
+    /// <c>{ eventName: payload }</c> is appended as the header value.
+    /// </summary>
+    public static void Trigger(HttpResponse response, string eventName, object? payload = null, string header = "HX-Trigger")
+    {
+        if (string.IsNullOrWhiteSpace(eventName)) return;
+
+        if (payload is null)
+        {
+            response.Headers.Append(header, eventName);
+        }
+        else
+        {
+            var json = JsonSerializer.Serialize(new Dictionary<string, object?> { { eventName, payload } });
+            response.Headers.Append(header, json);
+        }
+    }
+
+    /// <summary>
+    /// Strongly typed overload: trigger a client-side HTMX event via HX-Trigger header using EventKey.
+    /// </summary>
+    public static void Trigger(HttpResponse response, EventKey eventKey, object? payload = null, string header = "HX-Trigger")
+        => Trigger(response, eventKey.Name, payload, header);
+
+    /// <summary>
+    /// Trigger after swap is complete (HX-Trigger-After-Settle).
+    /// </summary>
+    public static void TriggerAfterSettle(HttpResponse response, string eventName, object? payload = null)
+        => Trigger(response, eventName, payload, header: "HX-Trigger-After-Settle");
+
+    /// <summary>
+    /// Strongly typed overload for HX-Trigger-After-Settle using EventKey.
+    /// </summary>
+    public static void TriggerAfterSettle(HttpResponse response, EventKey eventKey, object? payload = null)
+        => Trigger(response, eventKey.Name, payload, header: "HX-Trigger-After-Settle");
+
+    /// <summary>
+    /// Trigger after request is finished but before swap (HX-Trigger-After-Settle is usually preferred).
+    /// </summary>
+    public static void TriggerAfterSwap(HttpResponse response, string eventName, object? payload = null)
+        => Trigger(response, eventName, payload, header: "HX-Trigger-After-Swap");
+
+    /// <summary>
+    /// Strongly typed overload for HX-Trigger-After-Swap using EventKey.
+    /// </summary>
+    public static void TriggerAfterSwap(HttpResponse response, EventKey eventKey, object? payload = null)
+        => Trigger(response, eventKey.Name, payload, header: "HX-Trigger-After-Swap");
+}

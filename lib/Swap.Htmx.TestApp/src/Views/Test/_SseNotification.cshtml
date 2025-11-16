@@ -1,0 +1,8 @@
+@model (int Index, string Message)
+
+<div class="notification is-info is-light" data-test-id="sse-notification-@Model.Index">
+    <button class="delete"></button>
+    <strong>Notification #@(Model.Index + 1)</strong>
+    <p>@Model.Message</p>
+    <small class="has-text-grey">Just now</small>
+</div>
