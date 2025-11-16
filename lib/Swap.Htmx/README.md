@@ -1,5 +1,7 @@
 # Swap.Htmx
 
+[![NuGet](https://img.shields.io/nuget/v/Swap.Htmx.svg)](https://www.nuget.org/packages/Swap.Htmx)
+
 `Swap.Htmx` is a lightweight helper library that makes it easy to build HTMX-powered ASP.NET Core MVC applications.
 
 It focuses on:
@@ -10,6 +12,8 @@ It focuses on:
 - Server‑sent events (SSE) primitives for streaming HTML updates.
 
 ## Install
+
+- NuGet: https://www.nuget.org/packages/Swap.Htmx
 
 ```bash
 dotnet add package Swap.Htmx

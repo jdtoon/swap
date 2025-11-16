@@ -1,10 +1,12 @@
 using Microsoft.AspNetCore.Mvc;
 using Swap.Htmx;
+using Swap.Htmx.Events;
 
 namespace Swap.Htmx.TestApp.Controllers;
 
 /// <summary>
-/// Controller for testing Swap.Htmx framework features
+/// Controller for exercising Swap.Htmx features in a single place
+/// using the intended "happy path" patterns.
 /// </summary>
 public class TestController : SwapController
 {
@@ -90,6 +92,25 @@ public class TestController : SwapController
         return SwapView("OobResult", "Combined update complete");
     }
     
+    // Simple todo-style endpoint to demonstrate event bus + HX-Trigger
+
+    [HttpPost("/test/todo/create")]
+    public IActionResult CreateTodo([FromForm] string title, [FromServices] ISwapEventBus events)
+    {
+        if (string.IsNullOrWhiteSpace(title))
+        {
+            Response.ShowErrorToast("Title is required");
+            return SwapView("ToastResult");
+        }
+
+        // Emit a domain event and let middleware build HX-Trigger
+        events.Emit(SwapEvents.Entity.Created("todo"));
+
+        // Return a simple partial representing the new item
+        ViewData["TodoTitle"] = title;
+        return SwapView("ToastResult");
+    }
+
     // Helper Methods
     
     private string RenderOobPanel(string targetId, string content, string strategy = "true")
@@ -145,11 +166,5 @@ public class TestController : SwapController
         });
     }
 
-    // WebSocket Tests
     
-    [HttpGet("/test/websocket")]
-    public IActionResult WebSocketDemo()
-    {
-        return SwapView();
-    }
 }

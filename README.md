@@ -1,5 +1,9 @@
 # Swap
 
+[![NuGet - Swap.Htmx](https://img.shields.io/nuget/v/Swap.Htmx.svg?label=Swap.Htmx)](https://www.nuget.org/packages/Swap.Htmx)
+[![NuGet - Swap.Testing](https://img.shields.io/nuget/v/Swap.Testing.svg?label=Swap.Testing)](https://www.nuget.org/packages/Swap.Testing)
+[![CI](https://github.com/jdtoon/swap/actions/workflows/ci-build.yml/badge.svg)](https://github.com/jdtoon/swap/actions/workflows/ci-build.yml)
+
 HTMX + ASP.NET Core MVC, but ergonomic.
 
 Swap is a small set of libraries that make it pleasant to build server‑rendered apps with HTMX and MVC:
@@ -84,8 +88,8 @@ public class TodosTests : IClassFixture<HtmxTestFixture<Program>>
 
 ## Packages
 
-- [`Swap.Htmx`](lib/Swap.Htmx/README.md) – add HTMX‑friendly building blocks to an existing ASP.NET Core MVC app.
-- [`Swap.Testing`](lib/Swap.Testing/README.md) – write fluent integration tests for HTMX endpoints.
+- [`Swap.Htmx`](https://www.nuget.org/packages/Swap.Htmx) – HTMX‑friendly building blocks for ASP.NET Core MVC apps. [Docs](lib/Swap.Htmx/README.md)
+- [`Swap.Testing`](https://www.nuget.org/packages/Swap.Testing) – fluent integration tests for HTMX endpoints. [Docs](lib/Swap.Testing/README.md)
 
 ## Examples
 

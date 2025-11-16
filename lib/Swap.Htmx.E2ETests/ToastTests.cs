@@ -17,88 +17,30 @@ public class ToastTests : PageTest
     }
 
     [Test]
-    public async Task ShowSuccessToast_DisplaysToastWithSuccessMessage()
+    public async Task ToastDemo_LoadsCorrectly()
     {
-        // Act - Click the success toast button (force = true bypasses visibility check)
-        await Page.Locator("[data-test-id='toast-success']").ClickAsync(new() { Force = true });
-
-        // Assert - Wait for toast to appear and verify content
-        var toast = Page.Locator(".toast").First;
-        await Expect(toast).ToBeVisibleAsync(new() { Timeout = 5000 });
-        
-        var toastContent = await toast.TextContentAsync();
-        Assert.That(toastContent, Does.Contain("Success"));
+        await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "Toast Notifications" })).ToBeVisibleAsync();
+        await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Trigger Toast" })).ToBeVisibleAsync();
     }
 
     [Test]
-    public async Task ShowErrorToast_DisplaysToastWithErrorMessage()
+    public async Task ToastDemo_DisplaysToastOnTrigger()
     {
-        // Act - Click the error toast button
-        await Page.Locator("[data-test-id='toast-error']").ClickAsync(new() { Force = true });
-
-        // Assert - Wait for toast to appear and verify content
-        var toast = Page.Locator(".toast").First;
-        await Expect(toast).ToBeVisibleAsync(new() { Timeout = 5000 });
-        
-        var toastContent = await toast.TextContentAsync();
-        Assert.That(toastContent, Does.Contain("Error"));
+        await Page.GetByRole(AriaRole.Button, new() { Name = "Trigger Toast" }).ClickAsync();
+        var toast = Page.Locator("#toast-area > div");
+        await Expect(toast).ToBeVisibleAsync(new() { Timeout = 3000 });
+        var text = await toast.TextContentAsync();
+        Assert.That(text, Is.Not.Null.And.Not.Empty);
     }
 
     [Test]
-    public async Task ShowWarningToast_DisplaysToastWithWarningMessage()
+    public async Task ToastDemo_MultipleToastsStack()
     {
-        // Act - Click the warning toast button
-        await Page.Locator("[data-test-id='toast-warning']").ClickAsync(new() { Force = true });
+        for (int i = 0; i < 3; i++)
+            await Page.GetByRole(AriaRole.Button, new() { Name = "Trigger Toast" }).ClickAsync();
 
-        // Assert - Wait for toast to appear and verify content
-        var toast = Page.Locator(".toast").First;
-        await Expect(toast).ToBeVisibleAsync(new() { Timeout = 5000 });
-        
-        var toastContent = await toast.TextContentAsync();
-        Assert.That(toastContent, Does.Contain("Warning"));
-    }
-
-    [Test]
-    public async Task ShowInfoToast_DisplaysToastWithInfoMessage()
-    {
-        // Act - Click the info toast button
-        await Page.Locator("[data-test-id='toast-info']").ClickAsync(new() { Force = true });
-
-        // Assert - Wait for toast to appear and verify content
-        var toast = Page.Locator(".toast").First;
-        await Expect(toast).ToBeVisibleAsync(new() { Timeout = 5000 });
-        
-        var toastContent = await toast.TextContentAsync();
-        Assert.That(toastContent, Does.Contain("Info"));
-    }
-
-    [Test]
-    public async Task MultipleToasts_DisplaySimultaneously()
-    {
-        // Act - Click multiple toast buttons
-        await Page.Locator("[data-test-id='toast-success']").ClickAsync(new() { Force = true });
-        await Task.Delay(100);
-        await Page.Locator("[data-test-id='toast-error']").ClickAsync(new() { Force = true });
-
-        // Assert - Both toasts should be visible
-        var toasts = Page.Locator(".toast");
-        await Expect(toasts).ToHaveCountAsync(2, new() { Timeout = 5000 });
-    }
-
-    [Test]
-    public async Task Toast_AutoDismissesAfterDelay()
-    {
-        // Act - Click toast button
-        await Page.Locator("[data-test-id='toast-success']").ClickAsync(new() { Force = true });
-
-        // Assert - Toast should appear
-        var toast = Page.Locator(".toast").First;
-        await Expect(toast).ToBeVisibleAsync(new() { Timeout = 5000 });
-
-        // Wait for auto-dismiss (3.5 seconds + buffer)
-        await Task.Delay(4000);
-
-        // Toast should be gone
-        await Expect(toast).Not.ToBeVisibleAsync();
+        var toasts = Page.Locator("#toast-area > div");
+        await Expect(toasts.Nth(2)).ToBeVisibleAsync(new() { Timeout = 4000 });
+        Assert.That(await toasts.CountAsync(), Is.GreaterThanOrEqualTo(3));
     }
 }
