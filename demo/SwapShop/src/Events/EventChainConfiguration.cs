@@ -63,6 +63,11 @@ public static class EventChainConfiguration
 
         config.When(CartEvents.Cleared)
             .RefreshPartial(CartElements.Items, CartViews.Empty, ctx => null)
+            .RefreshPartial(CartElements.Total, CartViews.Total, ctx => 
+            {
+                var cartService = ctx.RequestServices.GetRequiredService<ICartService>();
+                return cartService.GetCart(ctx.Session.Id);
+            })
             .RefreshPartial(CartElements.Badge, CartViews.Badge, ctx => 0)
             .Toast("Cart cleared", ToastType.Info);
 
@@ -82,7 +87,12 @@ public static class EventChainConfiguration
             .AlsoTrigger(NotificationEvents.OrderConfirmation);
 
         config.When(OrderEvents.Processing)
-            .RefreshPartial(OrderElements.Status, OrderViews.Status, ctx => null)
+            .RefreshPartial(OrderElements.Status, OrderViews.Status, ctx =>
+            {
+                // Get order from service - event payload not accessible here
+                // In a real app, you'd pass order ID or get from route data
+                return null; // Status partial will handle null gracefully
+            })
             .Toast("Order is being processed", ToastType.Info);
 
         config.When(OrderEvents.Shipped)

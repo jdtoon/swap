@@ -86,16 +86,21 @@ public class OrdersController : SwapController
         if (nextStatus != order.Status)
         {
             _orderService.UpdateStatus(id, nextStatus);
+            order = _orderService.GetById(id); // Get updated order
             
-            var eventKey = nextStatus switch
+            // Build response with status update and toast
+            var (message, toastType) = nextStatus switch
             {
-                OrderStatus.Processing => OrderEvents.Processing,
-                OrderStatus.Shipped => OrderEvents.Shipped,
-                OrderStatus.Delivered => OrderEvents.Delivered,
-                _ => OrderEvents.StatusChanged
+                OrderStatus.Processing => ("Order is being processed", ToastType.Info),
+                OrderStatus.Shipped => ("Order has been shipped!", ToastType.Success),
+                OrderStatus.Delivered => ("Order delivered!", ToastType.Success),
+                _ => ("Status updated", ToastType.Info)
             };
 
-            return SwapEvent(eventKey, order).Build();
+            return SwapResponse()
+                .WithView(OrderViews.Status, order)
+                .WithToast(message, toastType)
+                .Build();
         }
 
         return SwapView(OrderViews.Status, order);

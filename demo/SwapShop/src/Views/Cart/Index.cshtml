@@ -33,7 +33,12 @@
                         class="secondary outline">
                     Clear Cart
                 </button>
-                <a href="/Checkout" role="button">
+                <a href="/Checkout" 
+                   hx-get="/Checkout" 
+                   hx-target="main" 
+                   hx-swap="innerHTML" 
+                   hx-push-url="true" 
+                   role="button">
                     Proceed to Checkout
                 </a>
             </div>
