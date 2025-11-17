@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.Extensions.DependencyInjection;
 using Swap.Htmx.Extensions;
 using Swap.Htmx.Models;
+using System.Text;
 using System.Text.Json;
 
 namespace Swap.Htmx.Results;
@@ -94,20 +95,26 @@ public sealed class SwapActionResult : ActionResult
         }
         else if (_builder.OobSwaps.Count > 0)
         {
-            // No main view, but we have OOB swaps - write them directly
-            context.HttpContext.Response.ContentType = "text/html";
-            await using var writer = new StreamWriter(context.HttpContext.Response.Body, leaveOpen: true);
+            // No main view, but we have OOB swaps - use ContentResult to ensure proper header handling
+            var htmlContent = new StringBuilder();
             
             foreach (var key in _controller.ViewData.Keys.Where(k => k.StartsWith("Oob_")))
             {
                 var oobHtml = _controller.ViewData[key] as string;
                 if (!string.IsNullOrEmpty(oobHtml))
                 {
-                    await writer.WriteAsync(oobHtml);
+                    htmlContent.Append(oobHtml);
                 }
             }
             
-            await writer.FlushAsync();
+            var contentResult = new ContentResult
+            {
+                Content = htmlContent.ToString(),
+                ContentType = "text/html",
+                StatusCode = 200
+            };
+            
+            await contentResult.ExecuteResultAsync(context);
         }
         else
         {

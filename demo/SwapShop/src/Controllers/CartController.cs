@@ -22,7 +22,19 @@ public class CartController : SwapController
         _productService = productService;
     }
 
-    private string SessionId => HttpContext.Session.Id;
+    private string SessionId
+    {
+        get
+        {
+            // Setting ANY value in session triggers the cookie to be saved
+            // This is critical for session persistence
+            if (!HttpContext.Session.Keys.Contains("_initialized"))
+            {
+                HttpContext.Session.SetString("_initialized", "true");
+            }
+            return HttpContext.Session.Id;
+        }
+    }
 
     /// <summary>
     /// Full cart page
@@ -56,8 +68,13 @@ public class CartController : SwapController
             return SwapEvent(CartEvents.AddFailed, new { ProductId = productId, Reason = "Product not available" }).Build();
         }
 
-        _cartService.AddItem(SessionId, productId, quantity);
-        var cart = _cartService.GetCart(SessionId);
+        var sessionId = SessionId;
+        _cartService.AddItem(sessionId, productId, quantity);
+        var cart = _cartService.GetCart(sessionId);
+        var itemCount = _cartService.GetItemCount(sessionId);
+
+        // Debug logging
+        Console.WriteLine($"[AddItem] SessionId: {sessionId}, ProductId: {productId}, Cart Items: {cart.Items.Count}, Item Count: {itemCount}");
 
         return SwapEvent(CartEvents.ItemAdded, cart).Build();
     }
