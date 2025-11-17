@@ -76,6 +76,7 @@ public class CheckoutController : SwapController
             return NotFound();
         }
 
-        return View(order);
+        // Show confirmation
+        return SwapView(order);
     }
 }

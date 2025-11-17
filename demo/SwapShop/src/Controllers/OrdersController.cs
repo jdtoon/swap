@@ -28,7 +28,7 @@ public class OrdersController : SwapController
     public IActionResult Index()
     {
         var orders = _orderService.GetBySessionId(SessionId);
-        return View(orders);
+        return SwapView(orders);
     }
 
     /// <summary>
@@ -42,7 +42,7 @@ public class OrdersController : SwapController
             return NotFound();
         }
 
-        return View(order);
+        return SwapView(order);
     }
 
     /// <summary>

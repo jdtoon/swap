@@ -26,7 +26,7 @@ public class ProductsController : SwapController
     {
         var products = _productService.Search(search);
         ViewData["SearchQuery"] = search;
-        return View(products);
+        return SwapView(products);
     }
 
     /// <summary>

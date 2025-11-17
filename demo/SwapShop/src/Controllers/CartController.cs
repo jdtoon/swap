@@ -30,7 +30,7 @@ public class CartController : SwapController
     public IActionResult Index()
     {
         var cart = _cartService.GetCart(SessionId);
-        return View(cart);
+        return SwapView(cart);
     }
 
     /// <summary>

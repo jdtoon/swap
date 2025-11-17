@@ -22,9 +22,27 @@
                 <li><strong>SwapShop</strong></li>
             </ul>
             <ul>
-                <li><a asp-controller="Products" asp-action="Index">Products</a></li>
-                <li><a asp-controller="Cart" asp-action="Index">Cart <span id="@CartElements.Badge">@await Html.PartialAsync(CartViews.Badge, CartService.GetItemCount(Context.Session.Id))</span></a></li>
-                <li><a asp-controller="Orders" asp-action="Index">Orders</a></li>
+                <li>
+                    <a href="@Url.Action("Index", "Products")" 
+                       hx-get="@Url.Action("Index", "Products")" 
+                       hx-target="main" 
+                       hx-swap="innerHTML" 
+                       hx-push-url="true">Products</a>
+                </li>
+                <li>
+                    <a href="@Url.Action("Index", "Cart")" 
+                       hx-get="@Url.Action("Index", "Cart")" 
+                       hx-target="main" 
+                       hx-swap="innerHTML" 
+                       hx-push-url="true">Cart <span id="@CartElements.Badge">@await Html.PartialAsync(CartViews.Badge, CartService.GetItemCount(Context.Session.Id))</span></a>
+                </li>
+                <li>
+                    <a href="@Url.Action("Index", "Orders")" 
+                       hx-get="@Url.Action("Index", "Orders")" 
+                       hx-target="main" 
+                       hx-swap="innerHTML" 
+                       hx-push-url="true">Orders</a>
+                </li>
             </ul>
         </nav>
     </header>
