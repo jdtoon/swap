@@ -51,6 +51,7 @@ public class ProductsController : SwapController
     /// <summary>
     /// Tier 2: SwapResponse - Coordinated multi-partial response
     /// When searching, we want to update both the grid AND the count
+    /// Returns the grid as main content with count as OOB update
     /// </summary>
     public IActionResult Search(string? query = null)
     {
@@ -58,7 +59,7 @@ public class ProductsController : SwapController
         var count = products.Count;
 
         return SwapResponse()
-            .AlsoUpdate(ProductElements.Grid, ProductViews.Grid, products)
+            .WithView(ProductViews.Grid, products)
             .AlsoUpdate(ProductElements.Count, ProductViews.Count, count)
             .Build();
     }
@@ -98,9 +99,10 @@ public class ProductsController : SwapController
     }
 
     /// <summary>
-    /// OLD-STYLE DEMO: Programmatic response building
-    /// This demonstrates building a coordinated response manually in the controller
-    /// instead of using HTTP event chains configured in EventChainConfiguration.cs
+    /// OLD-STYLE DEMO: Event-driven update
+    /// This demonstrates the event-driven approach where the view updates
+    /// are handled by event chains configured in EventChainConfiguration.cs
+    /// Compare this to the manual SwapResponse approach above
     /// </summary>
     public IActionResult QuickView(int id)
     {
@@ -110,13 +112,8 @@ public class ProductsController : SwapController
             return NotFound();
         }
 
-        // Old-style: Manually coordinate updates, triggers, and toasts
-        return SwapResponse()
-            .AlsoUpdate(ProductElements.Card, ProductViews.Details, product)
-            .AlsoUpdate(ProductElements.Card, ProductViews.StockBadge, product)
-            .WithTrigger(ProductEvents.Viewed, product)
-            .WithToast($"Viewing {product.Name}", ToastType.Info)
-            .Build();
+        // Trigger ProductViewed event - the event chain will handle the UI updates
+        return SwapEvent(ProductEvents.Viewed, product).Build();
     }
 }
 

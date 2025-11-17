@@ -107,12 +107,4 @@ public class CartController : SwapController
     /// Tier 2: SwapResponse - Mini cart dropdown
     /// Returns multiple partials for cart summary display
     /// </summary>
-    public IActionResult MiniCart()
-    {
-        var cart = _cartService.GetCart(SessionId);
-
-        return SwapResponse()
-            .AlsoUpdate(CartElements.MiniCart, CartViews.MiniCart, cart)
-            .Build();
-    }
 }

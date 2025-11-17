@@ -19,7 +19,7 @@ public static class EventChainConfiguration
         // ================================================================================
         
         config.When(ProductEvents.Viewed)
-            .RefreshPartial(ProductElements.Card, ProductViews.Details, ctx => null);
+            .RefreshPartial(ProductElements.Card, ProductViews.Card, ctx => null);
 
         config.When(ProductEvents.LowStock)
             .RefreshPartial(ProductElements.Card, ProductViews.StockBadge, ctx => null)
@@ -37,11 +37,6 @@ public static class EventChainConfiguration
             {
                 var cartService = ctx.RequestServices.GetRequiredService<ICartService>();
                 return cartService.GetItemCount(ctx.Session.Id);
-            })
-            .RefreshPartial(CartElements.MiniCart, CartViews.MiniCart, ctx =>
-            {
-                var cartService = ctx.RequestServices.GetRequiredService<ICartService>();
-                return cartService.GetCart(ctx.Session.Id);
             })
             .Toast("Item added to cart", ToastType.Success);
 
