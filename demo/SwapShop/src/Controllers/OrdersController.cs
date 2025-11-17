@@ -97,8 +97,11 @@ public class OrdersController : SwapController
                 _ => ("Status updated", ToastType.Info)
             };
 
+            // Target the specific order's status element
+            var targetId = $"{OrderElements.Status}-{id}";
+
             return SwapResponse()
-                .WithView(OrderViews.Status, order)
+                .AlsoUpdate(targetId, OrderViews.Status, order)
                 .WithToast(message, toastType)
                 .Build();
         }
