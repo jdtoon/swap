@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Moq;
@@ -14,6 +15,7 @@ public class SwapControllerTests
         public IActionResult TestSwapViewWithName(string? viewName, object? model = null) => SwapView(viewName, model);
         public IActionResult TestSwapOobView(string targetId, string? viewName = null, object? model = null, string swapStrategy = "true") 
             => SwapOobView(targetId, viewName, model, swapStrategy);
+        public string TestGetOrInitializeSessionId() => GetOrInitializeSessionId();
     }
 
     private static TestSwapController CreateControllerWithRequest(bool includeHxRequestHeader = false)
@@ -227,4 +229,55 @@ public class SwapControllerTests
         var partialViewResult = Assert.IsType<PartialViewResult>(result);
         Assert.Equal(strategy, partialViewResult.ViewData["HxSwapOob"]);
     }
+
+    [Fact]
+    public void GetOrInitializeSessionId_FirstCall_InitializesSession()
+    {
+        // Arrange
+        var controller = CreateControllerWithRequest();
+        var session = new TestSession();
+        controller.HttpContext!.Features.Set<ISessionFeature>(new TestSessionFeature(session));
+
+        // Act
+        var sessionId1 = controller.TestGetOrInitializeSessionId();
+        var sessionId2 = controller.TestGetOrInitializeSessionId();
+
+        // Assert
+        Assert.Equal(sessionId1, sessionId2); // Should return same session ID
+        Assert.True(session.ContainsKey("_swap_session_initialized"));
+    }
+
+    private class TestSession : ISession
+    {
+        private readonly Dictionary<string, byte[]> _store = new();
+        private readonly string _id = Guid.NewGuid().ToString();
+        
+        public string Id => _id;
+        public bool IsAvailable => true;
+        public IEnumerable<string> Keys => _store.Keys;
+
+        public void Clear() => _store.Clear();
+        public Task CommitAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
+        public Task LoadAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
+        public void Remove(string key) => _store.Remove(key);
+        public void Set(string key, byte[] value) => _store[key] = value;
+        public bool TryGetValue(string key, out byte[] value)
+        {
+            if (_store.TryGetValue(key, out var val))
+            {
+                value = val;
+                return true;
+            }
+            value = Array.Empty<byte>();
+            return false;
+        }
+        public bool ContainsKey(string key) => _store.ContainsKey(key);
+    }
+
+    private class TestSessionFeature : ISessionFeature
+    {
+        public TestSessionFeature(ISession session) => Session = session;
+        public ISession Session { get; set; }
+    }
 }
+

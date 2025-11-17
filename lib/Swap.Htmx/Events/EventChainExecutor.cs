@@ -18,8 +18,9 @@ public interface IEventChainExecutor
     /// <param name="eventKey">The event that was triggered.</param>
     /// <param name="httpContext">The current HTTP context.</param>
     /// <param name="controller">The controller handling the request.</param>
+    /// <param name="payload">Optional event payload to pass to model factories.</param>
     /// <returns>A SwapResponseBuilder configured with all event chain actions, or null if no chain exists.</returns>
-    SwapResponseBuilder? Execute(EventKey eventKey, HttpContext httpContext, ControllerBase controller);
+    SwapResponseBuilder? Execute(EventKey eventKey, HttpContext httpContext, ControllerBase controller, object? payload = null);
 }
 
 /// <summary>
@@ -34,7 +35,7 @@ internal sealed class EventChainExecutor : IEventChainExecutor
         _options = options;
     }
 
-    public SwapResponseBuilder? Execute(EventKey eventKey, HttpContext httpContext, ControllerBase controller)
+    public SwapResponseBuilder? Execute(EventKey eventKey, HttpContext httpContext, ControllerBase controller, object? payload = null)
     {
         var configs = _options.GetEventChainConfigs();
         var logger = httpContext.RequestServices?.GetService<ILogger<EventChainExecutor>>();
@@ -56,7 +57,11 @@ internal sealed class EventChainExecutor : IEventChainExecutor
         // Add configured partials
         foreach (var partial in config.Partials)
         {
-            var model = partial.ModelFactory?.Invoke(httpContext);
+            // Use payload-aware factory if available, otherwise use standard factory
+            var model = partial.ModelFactoryWithPayload != null
+                ? partial.ModelFactoryWithPayload(httpContext, payload)
+                : partial.ModelFactory?.Invoke(httpContext);
+                
             builder.AlsoUpdate(partial.TargetId, partial.ViewName, model, partial.SwapMode);
         }
 

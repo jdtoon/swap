@@ -20,7 +20,8 @@ public class OrdersController : SwapController
         _orderService = orderService;
     }
 
-    private string SessionId => HttpContext.Session.Id;
+    // Use the new GetOrInitializeSessionId helper for automatic session persistence
+    private string SessionId => GetOrInitializeSessionId();
 
     /// <summary>
     /// User's order history

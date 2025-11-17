@@ -20,6 +20,34 @@ You keep normal ASP.NET Core MVC. Swap gives you better defaults for HTMX reques
 - **Events, not glue** – a small event system that turns server actions into `HX-Trigger` headers and optional SSE broadcasts.
 - **Strong testing story** – integration tests that speak in terms of partials, HTMX attributes, and HX headers.
 
+## Quick Start
+
+**Install the package:**
+```bash
+dotnet add package Swap.Htmx
+```
+
+**Inherit from SwapController:**
+```csharp
+public class HomeController : SwapController
+{
+    public IActionResult Index() => SwapView();
+}
+```
+
+**That's it!** Your controller now:
+- Returns partials for HTMX requests, full pages otherwise
+- Has access to `SwapResponse()` for multi-part updates
+- Has access to `SwapEvent()` for event-driven UI updates
+- Automatically handles session cookie persistence via `GetOrInitializeSessionId()`
+
+**New in 0.5.0:**
+- 🎯 Automatic session cookie persistence
+- 📁 Configurable view search paths for cross-controller OOB swaps
+- 🎨 Standalone toast CSS (zero dependencies)
+- 📦 Event payload access in event chains
+- 🔧 OOB instance ID helpers for lists
+
 ## Tiny example
 
 `Program.cs` (minimal wiring):
@@ -28,15 +56,24 @@ You keep normal ASP.NET Core MVC. Swap gives you better defaults for HTMX reques
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllersWithViews();
-builder.Services.AddHttpContextAccessor();
-builder.Services.AddSingleton<SwapEventBusOptions>();
-builder.Services.AddScoped<ISwapEventBus, SwapEventBus>();
+
+// Add Swap.Htmx with optional configuration
+builder.Services.AddSwapHtmx(options =>
+{
+    // Optional: Configure view search paths for cross-controller OOB swaps
+    options.PartialViewSearchPaths.Add("Shared");
+    
+    // Optional: Configure event chains
+    options.EventBus.When(new EventKey("todo.created"))
+        .RefreshPartial("todo-count", "_TodoCount", ctx => GetTodoCount())
+        .Toast("Todo created!", ToastType.Success);
+});
 
 var app = builder.Build();
 
-app.UseSwapHtmxVary();
-app.UseMiddleware<SwapEventResponseMiddleware>();
-
+app.UseStaticFiles();
+app.UseRouting();
+app.UseSwapHtmx(); // Add Swap.Htmx middleware
 app.MapControllers();
 
 app.Run();
@@ -47,17 +84,40 @@ app.Run();
 ```csharp
 public class TodosController : SwapController
 {
-	[HttpGet("/todos")]
-	public IActionResult Index()
-		=> SwapView("Index", model: _service.GetTodos());
+    private readonly ITodoService _service;
+    
+    public TodosController(ITodoService service)
+    {
+        _service = service;
+    }
 
-	[HttpPost("/todos")]
-	public IActionResult Create(TodoInput input, [FromServices] ISwapEventBus events)
-	{
-		var todo = _service.Create(input);
-		events.Emit(SwapEvents.Entity.Created("todo"));
-		return SwapView("_Todo", todo); // partial for HTMX, full view otherwise
-	}
+    // Tier 1: SwapView - Automatically handles HTMX vs full page
+    [HttpGet("/todos")]
+    public IActionResult Index()
+    {
+        var todos = _service.GetTodos();
+        return SwapView(todos);
+    }
+
+    // Tier 2: SwapResponse - Coordinated multi-part updates
+    [HttpPost("/todos")]
+    public IActionResult Create(TodoInput input)
+    {
+        var todo = _service.Create(input);
+        
+        return SwapResponse()
+            .AlsoUpdate("todo-count", "_TodoCount", _service.GetCount())
+            .WithSuccessToast("Todo created!")
+            .Build();
+    }
+    
+    // Tier 3: SwapEvent - Event-driven updates (uses configured event chains)
+    [HttpDelete("/todos/{id}")]
+    public IActionResult Delete(int id)
+    {
+        _service.Delete(id);
+        return SwapEvent(new EventKey("todo.deleted")).Build();
+    }
 }
 ```
 
@@ -66,23 +126,34 @@ public class TodosController : SwapController
 ```csharp
 public class TodosTests : IClassFixture<HtmxTestFixture<Program>>
 {
-	private readonly HtmxTestClient<Program> _client;
+    private readonly HtmxTestClient _client;
 
-	public TodosTests(HtmxTestFixture<Program> fixture)
-	{
-		_client = fixture.Client;
-	}
+    public TodosTests(HtmxTestFixture<Program> fixture)
+    {
+        _client = fixture.Client;
+    }
 
-	[Fact]
-	public async Task GetTodos_ReturnsPartialWithItems()
-	{
-		var response = await _client.HtmxGetAsync("/todos");
+    [Fact]
+    public async Task GetTodos_ReturnsPartialWithItems()
+    {
+        var response = await _client.HtmxGetAsync("/todos");
 
-		await response
-			.AssertSuccess()
-			.AssertPartialViewAsync()
-			.AssertElementCountAsync(".todo-item", expectedCount: 5);
-	}
+        await response
+            .AssertSuccess()
+            .AssertPartialViewAsync()
+            .AssertElementCountAsync(".todo-item", expectedCount: 5);
+    }
+    
+    [Fact]
+    public async Task CreateTodo_ReturnsOobSwapAndToast()
+    {
+        var response = await _client.HtmxPostAsync("/todos", new { Title = "New Todo" });
+        
+        await response
+            .AssertSuccess()
+            .AssertHasOobSwapAsync("todo-count")
+            .AssertHasTriggerAsync("showToast");
+    }
 }
 ```
 

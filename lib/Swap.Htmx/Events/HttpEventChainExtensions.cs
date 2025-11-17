@@ -11,6 +11,7 @@ public sealed record EventPartialHandler(
     string TargetId,
     string ViewName,
     Func<HttpContext, object?>? ModelFactory,
+    Func<HttpContext, object?, object?>? ModelFactoryWithPayload,
     SwapMode SwapMode = SwapMode.OuterHTML
 );
 
@@ -134,7 +135,40 @@ public sealed class HttpEventChainBuilder
         Func<HttpContext, object?>? modelFactory = null,
         SwapMode swapMode = SwapMode.OuterHTML)
     {
-        _config.Partials.Add(new EventPartialHandler(targetId, viewName, modelFactory, swapMode));
+        _config.Partials.Add(new EventPartialHandler(targetId, viewName, modelFactory, null, swapMode));
+        return this;
+    }
+
+    /// <summary>
+    /// Adds a partial view refresh with access to the event payload.
+    /// When the event is triggered, the model factory receives both HttpContext and the event payload.
+    /// This avoids re-fetching data that was already available when the event was published.
+    /// </summary>
+    /// <param name="targetId">The ID of the element to update.</param>
+    /// <param name="viewName">The partial view to render.</param>
+    /// <param name="modelFactory">Factory function receiving HttpContext and event payload.</param>
+    /// <param name="swapMode">How to swap the content (defaults to OuterHTML).</param>
+    /// <returns>The builder for chaining.</returns>
+    /// <example>
+    /// <code>
+    /// // In event chain configuration:
+    /// events.When(OrderEvents.StatusChanged)
+    ///       .RefreshPartial("order-status", "_OrderStatus", (ctx, payload) => {
+    ///           var order = (Order)payload!; // Reuse the order from the event
+    ///           return new OrderStatusViewModel { Order = order };
+    ///       });
+    /// 
+    /// // In controller:
+    /// await PublishAsync(OrderEvents.StatusChanged, order);
+    /// </code>
+    /// </example>
+    public HttpEventChainBuilder RefreshPartial(
+        string targetId,
+        string viewName,
+        Func<HttpContext, object?, object?> modelFactory,
+        SwapMode swapMode = SwapMode.OuterHTML)
+    {
+        _config.Partials.Add(new EventPartialHandler(targetId, viewName, null, modelFactory, swapMode));
         return this;
     }
 

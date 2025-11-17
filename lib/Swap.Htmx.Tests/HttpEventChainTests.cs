@@ -458,11 +458,145 @@ public class HttpEventChainTests
         // Arrange
         var builder = new SwapResponseBuilder();
 
+
         // Act
         builder.WithRedirect("/checkout");
 
         // Assert
         Assert.Equal("/checkout", builder.RedirectUrl);
     }
+
+    [Fact]
+    public void RefreshPartial_WithPayloadAwareFactory_StoresFactoryWithPayload()
+    {
+        // Arrange
+        var options = new SwapEventBusOptions();
+        Func<HttpContext, object?, object?> factory = (ctx, payload) => payload;
+
+        // Act
+        options.When(SwapEvents.UI.RefreshList)
+            .RefreshPartial("test-target", "_TestView", factory);
+
+        var configs = options.GetEventChainConfigs();
+
+        // Assert
+        var config = configs[SwapEvents.UI.RefreshList.Name];
+        Assert.Single(config.Partials);
+        Assert.Null(config.Partials[0].ModelFactory); // Standard factory should be null
+        Assert.NotNull(config.Partials[0].ModelFactoryWithPayload); // Payload factory should be set
+    }
+
+    [Fact]
+    public void RefreshPartial_WithStandardFactory_StoresFactoryWithoutPayload()
+    {
+        // Arrange
+        var options = new SwapEventBusOptions();
+        Func<HttpContext, object?> factory = ctx => new { Test = "data" };
+
+        // Act
+        options.When(SwapEvents.UI.RefreshList)
+            .RefreshPartial("test-target", "_TestView", factory);
+
+        var configs = options.GetEventChainConfigs();
+
+        // Assert
+        var config = configs[SwapEvents.UI.RefreshList.Name];
+        Assert.Single(config.Partials);
+        Assert.NotNull(config.Partials[0].ModelFactory); // Standard factory should be set
+        Assert.Null(config.Partials[0].ModelFactoryWithPayload); // Payload factory should be null
+    }
+
+    [Fact]
+    public void EventChainExecutor_WithPayloadFactory_PassesPayloadToFactory()
+    {
+        // Arrange
+        var options = new SwapEventBusOptions();
+        var testPayload = new { OrderId = 42, Status = "Shipped" };
+        object? capturedPayload = null;
+
+        options.When(SwapEvents.UI.RefreshList)
+            .RefreshPartial("test-target", "_TestView", (ctx, payload) =>
+            {
+                capturedPayload = payload;
+                return payload;
+            });
+
+        var executor = new EventChainExecutor(options);
+        var httpContext = new DefaultHttpContext();
+        var controller = new TestController
+        {
+            ControllerContext = new ControllerContext { HttpContext = httpContext },
+            TempData = new TempDataDictionary(httpContext, new SessionStateTempDataProvider())
+        };
+
+        // Act
+        var result = executor.Execute(SwapEvents.UI.RefreshList, httpContext, controller, testPayload);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Same(testPayload, capturedPayload);
+    }
+
+    [Fact]
+    public void EventChainExecutor_WithStandardFactory_DoesNotReceivePayload()
+    {
+        // Arrange
+        var options = new SwapEventBusOptions();
+        var testPayload = new { OrderId = 42 };
+        var factoryCalled = false;
+
+        options.When(SwapEvents.UI.RefreshList)
+            .RefreshPartial("test-target", "_TestView", ctx =>
+            {
+                factoryCalled = true;
+                return new { Data = "from-factory" };
+            });
+
+        var executor = new EventChainExecutor(options);
+        var httpContext = new DefaultHttpContext();
+        var controller = new TestController
+        {
+            ControllerContext = new ControllerContext { HttpContext = httpContext },
+            TempData = new TempDataDictionary(httpContext, new SessionStateTempDataProvider())
+        };
+
+        // Act
+        var result = executor.Execute(SwapEvents.UI.RefreshList, httpContext, controller, testPayload);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.True(factoryCalled);
+    }
+
+    [Fact]
+    public void EventChainExecutor_WithoutPayload_PayloadFactoryReceivesNull()
+    {
+        // Arrange
+        var options = new SwapEventBusOptions();
+        object? capturedPayload = new { Sentinel = "not-null" }; // Start with non-null
+
+        options.When(SwapEvents.UI.RefreshList)
+            .RefreshPartial("test-target", "_TestView", (ctx, payload) =>
+            {
+                capturedPayload = payload;
+                return new { };
+            });
+
+        var executor = new EventChainExecutor(options);
+        var httpContext = new DefaultHttpContext();
+        var controller = new TestController
+        {
+            ControllerContext = new ControllerContext { HttpContext = httpContext },
+            TempData = new TempDataDictionary(httpContext, new SessionStateTempDataProvider())
+        };
+
+        // Act
+        var result = executor.Execute(SwapEvents.UI.RefreshList, httpContext, controller, payload: null);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Null(capturedPayload); // Should receive null if no payload provided
+    }
 }
+
 

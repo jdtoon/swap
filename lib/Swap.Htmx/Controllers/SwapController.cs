@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -19,6 +20,39 @@ namespace Swap.Htmx;
 /// </summary>
 public abstract class SwapController : Controller
 {
+    /// <summary>
+    /// Gets the session ID, ensuring the session cookie is sent to the client.
+    /// Call this instead of HttpContext.Session.Id to avoid session persistence issues.
+    /// ASP.NET Core doesn't send the session cookie until you write a value to the session.
+    /// </summary>
+    /// <returns>The session ID that will persist across requests.</returns>
+    /// <example>
+    /// <code>
+    /// public class CartController : SwapController
+    /// {
+    ///     private string SessionId => GetOrInitializeSessionId();
+    ///     
+    ///     public IActionResult Index()
+    ///     {
+    ///         var cart = _cartService.GetCart(SessionId);
+    ///         return SwapView(cart);
+    ///     }
+    /// }
+    /// </code>
+    /// </example>
+    protected string GetOrInitializeSessionId()
+    {
+        const string InitKey = "_swap_session_initialized";
+        
+        // Ensure session cookie is sent by writing a value if not already present
+        if (!HttpContext.Session.Keys.Contains(InitKey))
+        {
+            HttpContext.Session.SetString(InitKey, DateTime.UtcNow.ToString("O"));
+        }
+        
+        return HttpContext.Session.Id;
+    }
+
     /// <summary>
     /// Returns a view result that automatically chooses between full page or partial view
     /// based on whether the request is an HTMX request (HX-Request header present).
@@ -364,7 +398,7 @@ public abstract class SwapController : Controller
 
         if (executor != null && HttpContext != null)
         {
-            var result = executor.Execute(eventKey, HttpContext, this);
+            var result = executor.Execute(eventKey, HttpContext, this, payload);
             Dev.SwapDevLogger.LogExecutor(logger, $"Executor returned: {result != null}");
             
             if (result != null)

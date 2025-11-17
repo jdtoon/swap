@@ -159,19 +159,19 @@ public sealed class SwapActionResult : ActionResult
             Model = oob.Model
         };
 
-        // Try to find the view - first in current controller context, then in common locations
+        // Try to find the view - first in current controller context
         var viewResult = viewEngine.FindView(context, oob.ViewName, isMainPage: false);
         
         if (!viewResult.Success)
         {
-            // Try common partial locations if not found
-            var searchLocations = new[]
-            {
-                $"~/Views/Shared/{oob.ViewName}.cshtml",
-                $"~/Views/Cart/{oob.ViewName}.cshtml",
-                $"~/Views/Products/{oob.ViewName}.cshtml",
-                $"~/Views/Orders/{oob.ViewName}.cshtml"
-            };
+            // Get configured search paths from SwapHtmxOptions
+            var options = context.HttpContext.RequestServices.GetService<SwapHtmxOptions>();
+            var searchPaths = options?.PartialViewSearchPaths ?? new List<string> { "Shared" };
+            
+            // Build search locations from configured paths
+            var searchLocations = searchPaths
+                .Select(path => $"~/Views/{path}/{oob.ViewName}.cshtml")
+                .ToList();
 
             foreach (var location in searchLocations)
             {
@@ -182,7 +182,8 @@ public sealed class SwapActionResult : ActionResult
 
             if (!viewResult.Success)
             {
-                throw new InvalidOperationException($"Could not find view '{oob.ViewName}' for OOB swap.");
+                var searchedPaths = string.Join(", ", searchLocations);
+                throw new InvalidOperationException($"Could not find view '{oob.ViewName}' for OOB swap. Searched: {searchedPaths}");
             }
         }
 
