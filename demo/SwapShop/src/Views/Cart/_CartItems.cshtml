@@ -1,0 +1,23 @@
+@model SwapShop.Models.Cart
+
+@{
+    Layout = null;
+}
+
+<table>
+    <thead>
+        <tr>
+            <th>Product</th>
+            <th>Price</th>
+            <th>Quantity</th>
+            <th>Subtotal</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model.Items)
+        {
+            @await Html.PartialAsync("_CartItem", item)
+        }
+    </tbody>
+</table>

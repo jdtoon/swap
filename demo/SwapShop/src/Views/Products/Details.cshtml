@@ -1,0 +1,62 @@
+@model SwapShop.Models.Product
+
+@{
+    ViewData["Title"] = Model.Name;
+}
+
+<article>
+    <header>
+        <nav aria-label="breadcrumb">
+            <ul>
+                <li><a href="/Products" hx-get="/Products" hx-target="main" hx-swap="innerHTML" hx-push-url="true">Products</a></li>
+                <li>@Model.Name</li>
+            </ul>
+        </nav>
+    </header>
+
+    <div class="grid">
+        <div>
+            <h1>@Model.Name</h1>
+            <p style="font-size: 1.2rem; color: var(--pico-muted-color);">@Model.Description</p>
+            
+            <div style="margin: 2rem 0;">
+                <p><strong>Category:</strong> @Model.Category</p>
+                <p><strong>Stock Available:</strong> @Model.Stock units</p>
+                <p style="font-size: 2rem; color: var(--pico-primary); margin-top: 1rem;">
+                    <strong>$@Model.Price.ToString("F2")</strong>
+                </p>
+            </div>
+
+            <div class="grid">
+                <a href="/Products" 
+                   hx-get="/Products" 
+                   hx-target="main" 
+                   hx-swap="innerHTML" 
+                   hx-push-url="true" 
+                   role="button" 
+                   class="secondary outline">
+                    Back to Products
+                </a>
+                @if (Model.Stock > 0)
+                {
+                    <button hx-post="/Cart/Add"
+                            hx-vals='{"productId": @Model.Id, "quantity": 1}'
+                            hx-swap="none">
+                        Add to Cart
+                    </button>
+                }
+                else
+                {
+                    <button disabled>Out of Stock</button>
+                }
+            </div>
+        </div>
+        
+        <div style="text-align: center;">
+            <div style="background: var(--pico-muted-border-color); padding: 4rem; border-radius: 8px;">
+                <p style="font-size: 3rem; opacity: 0.3;">📦</p>
+                <p style="opacity: 0.5;">Product image placeholder</p>
+            </div>
+        </div>
+    </div>
+</article>

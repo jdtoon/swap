@@ -4,6 +4,11 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.AspNetCore.Mvc.ViewEngines;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.AspNetCore.Routing;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Swap.Htmx.Events;
+using Swap.Htmx.Models;
+using Swap.Htmx.Results;
 using Swap.Htmx.ServerSentEvents;
 
 namespace Swap.Htmx;
@@ -74,6 +79,33 @@ public abstract class SwapController : Controller
             // Normal request (initial load or refresh) - return full view with layout
             return View(viewName, model);
         }
+    }
+
+    /// <summary>
+    /// Creates a fluent response builder for coordinating multiple updates in a single response.
+    /// This is the recommended approach when you need to combine view rendering, OOB swaps,
+    /// toasts, and custom triggers.
+    /// </summary>
+    /// <returns>A fluent builder for constructing coordinated HTMX responses.</returns>
+    /// <example>
+    /// <code>
+    /// public IActionResult AddToCart(int productId)
+    /// {
+    ///     _cart.Add(productId);
+    ///     
+    ///     return SwapResponse()
+    ///         .WithView("_ProductAdded")
+    ///         .AlsoUpdate("cart-count", "_CartCount", _cart.Count)
+    ///         .AlsoUpdate("cart-total", "_CartTotal", _cart.Total)
+    ///         .WithSuccessToast("Added to cart!");
+    /// }
+    /// </code>
+    /// </example>
+    protected SwapResponseBuilder SwapResponse()
+    {
+        var builder = new SwapResponseBuilder();
+        builder.Controller = this;
+        return builder;
     }
 
     /// <summary>
@@ -286,4 +318,77 @@ public abstract class SwapController : Controller
 
         return partialHtml;
     }
+
+    /// <summary>
+    /// Executes a configured event chain and returns the coordinated response.
+    /// This is the event-driven approach: you emit an event, and all configured UI updates happen automatically.
+    /// </summary>
+    /// <param name="eventKey">The event to trigger.</param>
+    /// <param name="payload">Optional payload data to include with the event.</param>
+    /// <returns>
+    /// A SwapResponseBuilder with all configured partials, toasts, and triggers from the event chain,
+    /// or an empty builder if no chain is configured.
+    /// </returns>
+    /// <example>
+    /// <code>
+    /// // In Startup.cs - configure the event chain
+    /// builder.Services.AddSwapHtmx(events =>
+    /// {
+    ///     events.When(ProductEvents.Created)
+    ///           .RefreshPartial("product-list", "_ProductList", ctx => GetProducts())
+    ///           .RefreshPartial("product-count", "_ProductCount", ctx => GetCount())
+    ///           .SuccessToast("Product created!");
+    /// });
+    /// 
+    /// // In controller - just emit the event
+    /// public async Task&lt;IActionResult&gt; CreateProduct(Product product)
+    /// {
+    ///     await _db.Products.AddAsync(product);
+    ///     await _db.SaveChangesAsync();
+    ///     
+    ///     // All UI updates happen automatically based on configuration
+    ///     return SwapEvent(ProductEvents.Created);
+    /// }
+    /// </code>
+    /// </example>
+    protected SwapResponseBuilder SwapEvent(EventKey eventKey, object? payload = null)
+    {
+        var logger = HttpContext?.RequestServices?.GetService<ILogger<SwapController>>();
+        
+        Dev.SwapDevLogger.LogSwapEvent(logger, eventKey.Name, $"Payload: {payload?.GetType().Name ?? "null"}");
+        
+        var executor = HttpContext?.RequestServices?.GetService(typeof(Events.IEventChainExecutor)) 
+            as Events.IEventChainExecutor;
+
+        Dev.SwapDevLogger.LogExecutor(logger, $"Executor found: {executor != null}");
+
+        if (executor != null && HttpContext != null)
+        {
+            var result = executor.Execute(eventKey, HttpContext, this);
+            Dev.SwapDevLogger.LogExecutor(logger, $"Executor returned: {result != null}");
+            
+            if (result != null)
+            {
+                // If payload provided, add it as a trigger
+                if (payload != null)
+                {
+                    result.WithTrigger(eventKey, payload);
+                }
+                return result;
+            }
+        }
+
+        // No chain configured or no executor - return empty builder
+        var builder = new SwapResponseBuilder();
+        builder.Controller = this;
+        
+        // Still include the trigger event with payload if provided
+        if (payload != null)
+        {
+            builder.WithTrigger(eventKey, payload);
+        }
+        
+        return builder;
+    }
 }
+

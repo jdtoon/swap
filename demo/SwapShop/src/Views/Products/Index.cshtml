@@ -1,0 +1,34 @@
+@model IEnumerable<SwapShop.Models.Product>
+@using SwapShop.Views
+
+@{
+    ViewData["Title"] = "Products";
+    var searchQuery = ViewData["SearchQuery"] as string;
+}
+
+<article>
+    <header>
+        <h1>Products</h1>
+        <p>Browse our collection</p>
+    </header>
+
+    <!-- Search bar with HTMX -->
+    <form hx-get="/Products/Search" 
+          hx-trigger="input changed delay:500ms, search" 
+          hx-target="#@ProductElements.Grid"
+          hx-swap="outerHTML">
+        <input type="search" 
+               name="query" 
+               placeholder="Search products..." 
+               value="@searchQuery"
+               aria-label="Search products" />
+    </form>
+
+    <!-- Product count -->
+    <small id="@ProductElements.Count">
+        @await Html.PartialAsync(ProductViews.Count, Model.Count())
+    </small>
+
+    <!-- Product grid -->
+    @await Html.PartialAsync(ProductViews.Grid, Model)
+</article>

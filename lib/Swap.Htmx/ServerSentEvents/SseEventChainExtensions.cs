@@ -17,10 +17,22 @@ public static class SseEventChainExtensions
     /// <returns>The event bus options for chaining.</returns>
     /// <example>
     /// <code>
+    /// // Define SSE event name constants
+    /// public static class TaskSseEvents
+    /// {
+    ///     public const string Updated = "task-updated";
+    ///     public const string Deleted = "task-deleted";
+    /// }
+    /// 
+    /// public static class SseRooms
+    /// {
+    ///     public const string Dashboard = "dashboard";
+    /// }
+    /// 
     /// builder.Services.AddSwapHtmx(events =>
     /// {
-    ///     events.ChainToSse(TaskEvents.StatusChanged, SseEvents.Broadcast("task-updated"));
-    ///     events.ChainToSse(ProjectEvents.Created, SseEvents.Room("dashboard", "project-created"));
+    ///     events.ChainToSse(TaskEvents.StatusChanged, SseEvents.Broadcast(TaskSseEvents.Updated));
+    ///     events.ChainToSse(ProjectEvents.Created, SseEvents.Room(SseRooms.Dashboard, "project-created"));
     /// });
     /// </code>
     /// </example>
@@ -39,12 +51,19 @@ public static class SseEventChainExtensions
     /// <returns>The event bus options for chaining.</returns>
     /// <example>
     /// <code>
+    /// public static class TaskSseEvents
+    /// {
+    ///     public const string Updated = "task-updated";
+    ///     public const string Refresh = "refresh";
+    ///     public const string TaskEvents = "task-events";
+    /// }
+    /// 
     /// builder.Services.AddSwapHtmx(events =>
     /// {
     ///     events.ChainToSse(TaskEvents.StatusChanged, 
-    ///         SseEvents.Broadcast("task-updated"),
-    ///         SseEvents.Room("dashboard", "refresh"),
-    ///         SseEvents.Subscribers("task-events"));
+    ///         SseEvents.Broadcast(TaskSseEvents.Updated),
+    ///         SseEvents.Room(SseRooms.Dashboard, TaskSseEvents.Refresh),
+    ///         SseEvents.Subscribers(TaskSseEvents.TaskEvents));
     /// });
     /// </code>
     /// </example>
@@ -64,9 +83,9 @@ public static class SseEventChainExtensions
     /// builder.Services.AddSwapHtmx(events =>
     /// {
     ///     events.OnEvent(TaskEvents.StatusChanged)
-    ///           .BroadcastSse("task-updated")
-    ///           .ToRoom("dashboard", "refresh")
-    ///           .ToSubscribers("notifications");
+    ///           .BroadcastSse(TaskSseEvents.Updated)
+    ///           .ToRoom(SseRooms.Dashboard, TaskSseEvents.Refresh)
+    ///           .ToSubscribers(TaskSseEvents.Notifications);
     /// });
     /// </code>
     /// </example>

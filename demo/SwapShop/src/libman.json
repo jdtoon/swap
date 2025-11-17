@@ -1,0 +1,14 @@
+{
+  "version": "1.0",
+  "defaultProvider": "unpkg",
+  "libraries": [
+    {
+      "library": "htmx.org@2.0.8",
+      "destination": "wwwroot/lib/htmx/",
+      "files": [
+        "dist/htmx.min.js",
+        "dist/htmx.js"
+      ]
+    }
+  ]
+}

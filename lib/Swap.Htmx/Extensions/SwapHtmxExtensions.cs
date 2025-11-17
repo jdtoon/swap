@@ -109,7 +109,7 @@ public static class SwapHtmxExtensions
     /// </example>
     public static void HxTrigger(this HttpResponse response, string eventName)
     {
-        response.Headers[HxHeaders.TriggerResp] = eventName;
+        MergeTriggerHeader(response, HxHeaders.TriggerResp, eventName, null);
     }
 
     /// <summary>
@@ -125,7 +125,7 @@ public static class SwapHtmxExtensions
     /// </example>
     public static void HxTriggerWithDetails(this HttpResponse response, string json)
     {
-        response.Headers[HxHeaders.TriggerResp] = json;
+        MergeTriggerHeaderJson(response, HxHeaders.TriggerResp, json);
     }
 
     /// <summary>
@@ -134,11 +134,7 @@ public static class SwapHtmxExtensions
     /// </summary>
     public static void HxTrigger(this HttpResponse response, string eventName, object details)
     {
-        var payload = JsonSerializer.Serialize(new Dictionary<string, object?>
-        {
-            [eventName] = details
-        });
-        response.Headers[HxHeaders.TriggerResp] = payload;
+        MergeTriggerHeader(response, HxHeaders.TriggerResp, eventName, details);
     }
 
     /// <summary>
@@ -146,7 +142,7 @@ public static class SwapHtmxExtensions
     /// </summary>
     public static void HxTriggerAfterSwap(this HttpResponse response, string eventName)
     {
-        response.Headers[HxHeaders.TriggerAfterSwap] = eventName;
+        MergeTriggerHeader(response, HxHeaders.TriggerAfterSwap, eventName, null);
     }
 
     /// <summary>
@@ -154,7 +150,7 @@ public static class SwapHtmxExtensions
     /// </summary>
     public static void HxTriggerAfterSwapWithDetails(this HttpResponse response, string json)
     {
-        response.Headers[HxHeaders.TriggerAfterSwap] = json;
+        MergeTriggerHeaderJson(response, HxHeaders.TriggerAfterSwap, json);
     }
 
     /// <summary>
@@ -163,11 +159,7 @@ public static class SwapHtmxExtensions
     /// </summary>
     public static void HxTriggerAfterSwap(this HttpResponse response, string eventName, object details)
     {
-        var payload = JsonSerializer.Serialize(new Dictionary<string, object?>
-        {
-            [eventName] = details
-        });
-        response.Headers[HxHeaders.TriggerAfterSwap] = payload;
+        MergeTriggerHeader(response, HxHeaders.TriggerAfterSwap, eventName, details);
     }
 
     /// <summary>
@@ -175,7 +167,7 @@ public static class SwapHtmxExtensions
     /// </summary>
     public static void HxTriggerAfterSettle(this HttpResponse response, string eventName)
     {
-        response.Headers[HxHeaders.TriggerAfterSettle] = eventName;
+        MergeTriggerHeader(response, HxHeaders.TriggerAfterSettle, eventName, null);
     }
 
     /// <summary>
@@ -183,7 +175,7 @@ public static class SwapHtmxExtensions
     /// </summary>
     public static void HxTriggerAfterSettleWithDetails(this HttpResponse response, string json)
     {
-        response.Headers[HxHeaders.TriggerAfterSettle] = json;
+        MergeTriggerHeaderJson(response, HxHeaders.TriggerAfterSettle, json);
     }
 
     /// <summary>
@@ -192,11 +184,103 @@ public static class SwapHtmxExtensions
     /// </summary>
     public static void HxTriggerAfterSettle(this HttpResponse response, string eventName, object details)
     {
-        var payload = JsonSerializer.Serialize(new Dictionary<string, object?>
+        MergeTriggerHeader(response, HxHeaders.TriggerAfterSettle, eventName, details);
+    }
+
+    /// <summary>
+    /// Helper to merge a trigger event into an existing HX-Trigger* header.
+    /// </summary>
+    private static void MergeTriggerHeader(HttpResponse response, string headerName, string eventName, object? details)
+    {
+        if (response.Headers.ContainsKey(headerName))
         {
-            [eventName] = details
-        });
-        response.Headers[HxHeaders.TriggerAfterSettle] = payload;
+            var existing = response.Headers[headerName].ToString();
+
+            if (existing.TrimStart().StartsWith("{"))
+            {
+                // Existing is JSON object - parse and merge
+                try
+                {
+                    var existingDict = JsonSerializer.Deserialize<Dictionary<string, object>>(existing);
+                    if (existingDict != null)
+                    {
+                        existingDict[eventName] = details ?? (object)"null";
+                        response.Headers[headerName] = JsonSerializer.Serialize(existingDict);
+                        return;
+                    }
+                }
+                catch
+                {
+                    // If parsing fails, fall through to string manipulation
+                }
+
+                // Fallback: string manipulation
+                existing = existing.TrimEnd().TrimEnd('}');
+                var newEventJson = details == null
+                    ? $"\"{eventName}\": null"
+                    : $"\"{eventName}\": {JsonSerializer.Serialize(details)}";
+                response.Headers[headerName] = $"{existing}, {newEventJson}}}";
+            }
+            else
+            {
+                // Existing is simple event name(s) - convert to JSON
+                var names = existing.Split(',').Select(s => s.Trim()).Where(s => !string.IsNullOrWhiteSpace(s));
+                var keysJson = string.Join(", ", names.Select(n => $"\"{n}\": null"));
+                var newEventJson = details == null
+                    ? $"\"{eventName}\": null"
+                    : $"\"{eventName}\": {JsonSerializer.Serialize(details)}";
+                response.Headers[headerName] = $"{{{keysJson}, {newEventJson}}}";
+            }
+        }
+        else
+        {
+            // No existing header - create new JSON object
+            var newEventJson = details == null
+                ? $"\"{eventName}\": null"
+                : $"\"{eventName}\": {JsonSerializer.Serialize(details)}";
+            response.Headers[headerName] = $"{{{newEventJson}}}";
+        }
+    }
+
+    /// <summary>
+    /// Helper to merge raw JSON into an existing HX-Trigger* header.
+    /// </summary>
+    private static void MergeTriggerHeaderJson(HttpResponse response, string headerName, string json)
+    {
+        if (response.Headers.ContainsKey(headerName))
+        {
+            var existing = response.Headers[headerName].ToString();
+
+            if (existing.TrimStart().StartsWith("{") && json.TrimStart().StartsWith("{"))
+            {
+                // Both are JSON objects - merge them
+                var existingDict = JsonSerializer.Deserialize<Dictionary<string, object>>(existing);
+                var newDict = JsonSerializer.Deserialize<Dictionary<string, object>>(json);
+
+                if (existingDict != null && newDict != null)
+                {
+                    foreach (var kvp in newDict)
+                    {
+                        existingDict[kvp.Key] = kvp.Value;
+                    }
+                    response.Headers[headerName] = JsonSerializer.Serialize(existingDict);
+                }
+                else
+                {
+                    // Fallback to simple replacement if parsing fails
+                    response.Headers[headerName] = json;
+                }
+            }
+            else
+            {
+                // Can't merge non-JSON - just replace
+                response.Headers[headerName] = json;
+            }
+        }
+        else
+        {
+            response.Headers[headerName] = json;
+        }
     }
 
     /// <summary>

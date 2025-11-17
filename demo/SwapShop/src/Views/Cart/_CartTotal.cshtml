@@ -1,0 +1,34 @@
+@model SwapShop.Models.Cart
+
+@{
+    Layout = null;
+}
+
+@if (Model.Items.Any())
+{
+    <div class="grid">
+        <div></div>
+        <div>
+            <p>
+                <strong>Total Items:</strong> @Model.Items.Sum(i => i.Quantity)<br />
+                <strong>Total:</strong> <span style="font-size: 1.5rem; color: var(--pico-primary);">$@Model.Total.ToString("F2")</span>
+            </p>
+        </div>
+    </div>
+
+    <div class="grid">
+        <button hx-post="/Cart/Clear"
+                hx-confirm="Clear entire cart?"
+                class="secondary outline">
+            Clear Cart
+        </button>
+        <a href="/Checkout" 
+           hx-get="/Checkout" 
+           hx-target="main" 
+           hx-swap="innerHTML" 
+           hx-push-url="true" 
+           role="button">
+            Proceed to Checkout
+        </a>
+    </div>
+}

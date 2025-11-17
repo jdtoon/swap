@@ -1,0 +1,25 @@
+@model SwapShop.Models.Order
+
+@{
+    Layout = null;
+}
+
+@if (Model != null)
+{
+    var statusClass = Model.Status switch
+    {
+        SwapShop.Models.OrderStatus.Pending => "secondary",
+        SwapShop.Models.OrderStatus.Processing => "contrast",
+        SwapShop.Models.OrderStatus.Shipped => "primary",
+        SwapShop.Models.OrderStatus.Delivered => "",
+        _ => "secondary"
+    };
+    
+    <span class="@statusClass" role="status">
+        <strong>@Model.Status.ToString().ToUpper()</strong>
+    </span>
+}
+else
+{
+    <span role="status">UNKNOWN</span>
+}

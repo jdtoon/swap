@@ -62,7 +62,7 @@ public class SwapEventBusOptions
     // Allow lowercase segment start with alnum; later chars can be alnum with optional camelCase in UI segments
     var namePattern = new System.Text.RegularExpressions.Regex("^[a-z][a-z0-9]*(\\.[a-z][A-Za-z0-9]*)+$");
 
-        // Validate names
+        // Validate names (skip internal storage keys like "Swap.EventChainConfigs")
         foreach (var name in Chains.Keys.Concat(Chains.Values.SelectMany(v => v)))
         {
             if (string.IsNullOrWhiteSpace(name))
@@ -70,6 +70,13 @@ public class SwapEventBusOptions
                 diag.Errors.Add("Empty event name in chain configuration.");
                 continue;
             }
+            
+            // Skip internal storage keys
+            if (name.StartsWith("Swap.", StringComparison.Ordinal) && char.IsUpper(name[5]))
+            {
+                continue; // Internal key like "Swap.EventChainConfigs"
+            }
+            
             if (!namePattern.IsMatch(name))
             {
                 diag.Errors.Add($"Invalid event name '{name}'. Use lowercase segments separated by dots, e.g., 'todo.created' or 'ui.stats.refresh'.");

@@ -2,106 +2,437 @@
 
 [![NuGet](https://img.shields.io/nuget/v/Swap.Htmx.svg)](https://www.nuget.org/packages/Swap.Htmx)
 
-`Swap.Htmx` is a lightweight helper library that makes it easy to build HTMX-powered ASP.NET Core MVC applications.
+`Swap.Htmx` is a lightweight library that makes it easy to build HTMX-powered ASP.NET Core applications with a clean, fluent API.
 
-It focuses on:
+## Key Features
 
-- A base controller (`SwapController`) that understands HTMX requests and chooses between full views and partials.
-- Simple extension methods for reading HX request headers and writing HX response headers.
-- Middleware and an event system for building `HX-Trigger` headers in one place.
-- Server‑sent events (SSE) primitives for streaming HTML updates.
+- **Fluent response builder** - Coordinate view rendering, out-of-band swaps, toasts, and triggers in one clean chain
+- **Type-safe API** - No magic strings for swap modes or event names
+- **SwapController base class** - Automatically handles HTMX requests vs full page loads
+- **Server-sent events (SSE)** - Stream HTML updates with connection management
+- **Event system** - Build `HX-Trigger` headers declaratively
 
 ## Install
-
-- NuGet: https://www.nuget.org/packages/Swap.Htmx
 
 ```bash
 dotnet add package Swap.Htmx
 ```
 
-## Quick start
+## Three Ways to Build Responses
 
-1. **Register services and middleware**
+### 1. Simple View (80% of use cases)
+
+For single updates with automatic partial/full view detection:
+
+```csharp
+public class ProductsController : SwapController
+{
+    public IActionResult Details(int id)
+    {
+        var product = _db.Products.Find(id);
+        return SwapView("Details", product);
+        // Returns full view for normal requests
+        // Returns partial for HTMX requests
+    }
+}
+```
+
+### 2. Coordinated Updates (Manual Control)
+
+When you need to update multiple parts of the page:
+
+```csharp
+public class CartController : SwapController
+{
+    public ActionResult AddToCart(int productId)
+    {
+        _cart.Add(productId);
+        
+        return SwapResponse()
+            .WithView(CartViews.ProductAdded)
+            .AlsoUpdate(CartElements.Count, CartViews.Count, _cart.Count, SwapMode.InnerHTML)
+            .AlsoUpdate(CartElements.Total, CartViews.Total, _cart.Total)
+            .WithSuccessToast("Added to cart!")
+            .WithTrigger(CartEvents.Updated, new { itemCount = _cart.Count });
+    }
+}
+```
+
+**Available methods:**
+- `WithView(viewName, model)` - Set the main view to render
+- `AlsoUpdate(targetId, viewName, model, swapMode)` - Add out-of-band swap
+- `WithSuccessToast(message)` / `WithErrorToast(message)` / `WithWarningToast(message)` / `WithInfoToast(message)`
+- `WithTrigger(eventName, payload)` - Add custom HX-Trigger event
+
+**Note:** All triggers and toasts are automatically merged into a single `HX-Trigger` header. Multiple calls to `WithTrigger` and toast methods will create a JSON object containing all events.
+
+**SwapMode options:**
+- `SwapMode.OuterHTML` (default) - Replace entire element
+- `SwapMode.InnerHTML` - Replace inner content only
+- `SwapMode.BeforeBegin` / `AfterBegin` / `BeforeEnd` / `AfterEnd` - Insert content
+- `SwapMode.Delete` - Remove the element
+
+### 3. Event-Driven (Configuration-Based Updates)
+
+For complex apps where multiple controllers need coordinated updates, configure event chains once and trigger them anywhere:
+
+```csharp
+// Define constants for element IDs and view names (avoids magic strings)
+public static class ProductViews
+{
+    public const string List = "_ProductList";
+    public const string Count = "_ProductCount";
+}
+
+public static class ProductElements
+{
+    public const string List = "product-list";
+    public const string Count = "product-count";
+}
+
+// Configuration in Program.cs
+builder.Services.AddSwapHtmx(events => 
+{
+    events.When(SwapEvents.Entity.Created("Product"))
+          .RefreshPartial(ProductElements.List, ProductViews.List, ctx => GetProducts(ctx))
+          .RefreshPartial(ProductElements.Count, ProductViews.Count, ctx => GetProductCount(ctx))
+          .SuccessToast("Product created!");
+    
+    events.When(SwapEvents.Entity.Updated("Product"))
+          .RefreshPartial(ProductElements.List, ProductViews.List, ctx => GetProducts(ctx))
+          .InfoToast("Product updated!");
+    
+    events.When(SwapEvents.Entity.Deleted("Product"))
+          .RefreshPartial(ProductElements.List, ProductViews.List, ctx => GetProducts(ctx))
+          .RefreshPartial(ProductElements.Count, ProductViews.Count, ctx => GetProductCount(ctx))
+          .WarningToast("Product deleted!");
+});
+
+// In your controller - just emit the event
+public class ProductsController : SwapController
+{
+    public IActionResult Create(Product product)
+    {
+        _db.Products.Add(product);
+        _db.SaveChangesAsync();
+        
+        // Event chain handles ALL UI updates based on configuration
+        return SwapEvent(SwapEvents.Entity.Created("Product"));
+    }
+}
+```
+
+**Benefits:**
+- Centralized UI update configuration
+- No repetition across controllers
+- Easy to understand what updates when an event fires
+- Change UI behavior without touching controller code
+
+**Event chain builder methods:**
+- `RefreshPartial(targetId, viewName, modelFactory, swapMode)` - Render and swap a partial
+- `SuccessToast(message)` / `ErrorToast(message)` / `WarningToast(message)` / `InfoToast(message)` - Show toast
+- `AlsoTrigger(eventKey)` - Trigger additional client-side events
+- `Build()` - Complete the chain configuration
+
+See [Events Documentation](Events/README_EVENTS.md) for more details on type-safe events.
+
+## Setup
+
+### Basic Configuration
 
 ```csharp
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllersWithViews();
-builder.Services.AddHttpContextAccessor();
-builder.Services.AddSingleton<SwapEventBusOptions>();
-builder.Services.AddScoped<ISwapEventBus, SwapEventBus>();
+builder.Services.AddSwapHtmx(); // Registers core services
 
 var app = builder.Build();
 
-app.UseSwapHtmxVary();           // ensure Vary: HX-Request
-app.UseMiddleware<SwapEventResponseMiddleware>(); // build HX-Trigger at the end of requests
-
+app.UseSwapHtmx(); // Adds middleware for event handling
 app.MapControllers();
 
 app.Run();
 ```
 
-2. **Inherit from `SwapController`**
+### With Server-Sent Events
 
 ```csharp
-public class TodosController : SwapController
-{
-    [HttpGet("/todos")]
-    public IActionResult Index()
-    {
-        // Returns a full view for normal requests,
-        // and a partial view for HTMX requests.
-        return SwapView("Index", model: GetTodos());
-    }
-}
+builder.Services
+    .AddSwapHtmx()
+    .AddSseEventBridge(); // Enables SSE with connection management
+
+app.UseSwapHtmx(); // Handles both HTTP responses and SSE broadcasts
 ```
 
-3. **Trigger client events**
+## Server-Sent Events (SSE)
+
+Stream real-time HTML updates to connected clients:
+
+### Basic SSE
 
 ```csharp
-public class TodosController : SwapController
+public const string NotificationView = "_Notification";
+
+[HttpGet("/sse/notifications")]
+public IActionResult StreamNotifications()
 {
-    [HttpPost("/todos")]
-    public IActionResult Create(TodoInput input, [FromServices] ISwapEventBus events)
+    return ServerSentEvents(async (connection, ct) =>
     {
-        var todo = _service.Create(input);
-        events.Emit(SwapEvents.Entity.Created("todo"));
-
-        // HTMX request: return partial and HX-Trigger is built by middleware
-        return SwapView("_Todo", todo);
-    }
-}
-```
-
-## Server‑sent events (SSE)
-
-`SwapController` includes helpers for creating SSE endpoints that stream HTML fragments to the browser.
-
-```csharp
-[HttpGet("/sse/time")]
-public IActionResult TimeStream()
-{
-    return ServerSentEvents(async (builder, ct) =>
-    {
-        var connection = builder.Connection;
         while (!ct.IsCancellationRequested)
         {
-            var html = $"<div id=\"current-time\">{DateTime.Now:HH:mm:ss}</div>";
-            await connection.SendEventAsync("time-update", html);
-            await Task.Delay(1000, ct);
+            var html = await RenderPartialToStringAsync(NotificationView, GetLatestNotification());
+            await connection.SendEventAsync("notification", html);
+            await Task.Delay(5000, ct);
         }
     });
 }
 ```
 
-## Dev tooling
-
-In development you can turn on simple dev endpoints to inspect event chains:
+### Enhanced SSE with Connection Management
 
 ```csharp
-app.MapSwapHtmxDevEndpoints(); // maps /_swap/dev/events and friends (Development only)
+public static class SseRooms
+{
+    public const string Dashboard = "dashboard";
+}
+
+public static class SseEventNames
+{
+    public const string MetricsUpdated = "metrics-updated";
+}
+
+[HttpGet("/sse/dashboard")]
+public IActionResult Dashboard()
+{
+    return EnhancedServerSentEvents(async (builder, ct) =>
+    {
+        var connection = builder.Connection;
+        
+        // Join rooms for targeted broadcasting
+        connection.JoinRoom(SseRooms.Dashboard);
+        connection.SubscribeToEvent(SseEventNames.MetricsUpdated);
+        
+        // Keep connection alive
+        while (!ct.IsCancellationRequested)
+        {
+            await Task.Delay(30000, ct);
+        }
+    });
+}
 ```
 
-## More
+## Manual HTMX Helpers
 
-For end‑to‑end examples, see the `Swap.Htmx.TestApp` project in this repository.
+For low-level control, extension methods are available:
+
+```csharp
+// Check if request is from HTMX
+if (Request.IsHtmxRequest())
+{
+    // Set response headers
+    Response.HxTrigger("todoCreated");
+    Response.HxTrigger("todoCreated", new { id = 123 });
+    Response.HxRedirect("/todos");
+    Response.HxRefresh();
+}
+```
+
+## Dev Tooling
+
+Visualize event chains and inspect SSE connections in development:
+
+```csharp
+app.MapSwapHtmxDevEndpoints(); // Available at /_swap/dev/*
+```
+
+## Migration from Manual Patterns
+
+### Before (Manual Coordination)
+
+```csharp
+public static class TodoViews { public const string Todo = "_Todo"; }
+public static class TodoElements { public const string Counter = "counter"; public const string Status = "status"; }
+public static class TodoEvents { public static readonly EventKey Created = new("todo.created"); }
+
+public IActionResult Create(TodoInput input)
+{
+    var todo = _service.Create(input);
+    
+    Response.ShowSuccessToast("Todo created!");
+    Response.HxTrigger(TodoEvents.Created.Name);
+    
+    ViewData["OobCounter"] = RenderOobPanel(TodoElements.Counter, GetCount());
+    ViewData["OobStatus"] = RenderOobPanel(TodoElements.Status, "Active");
+    
+    return SwapView(TodoViews.Todo, todo);
+}
+```
+
+### After (Fluent Builder)
+
+```csharp
+public static class TodoViews 
+{ 
+    public const string Todo = "_Todo";
+    public const string Counter = "_Counter";
+    public const string Status = "_Status";
+}
+
+public ActionResult Create(TodoInput input)
+{
+    var todo = _service.Create(input);
+    
+    return SwapResponse()
+        .WithView(TodoViews.Todo, todo)
+        .AlsoUpdate(TodoElements.Counter, TodoViews.Counter, GetCount(), SwapMode.InnerHTML)
+        .AlsoUpdate(TodoElements.Status, TodoViews.Status, "Active")
+        .WithSuccessToast("Todo created!")
+        .WithTrigger(TodoEvents.Created);
+}
+```
+
+## Examples
+
+### Complete Product Management Example
+
+This example shows all three approaches in a single controller:
+
+```csharp
+// Constants for type safety (no magic strings!)
+public static class ProductViews
+{
+    public const string List = "_ProductList";
+    public const string Count = "_ProductCount";
+    public const string Added = "_ProductAdded";
+}
+
+public static class ProductElements
+{
+    public const string List = "product-list";
+    public const string Count = "product-count";
+}
+
+public static class CartElements
+{
+    public const string Badge = "cart-badge";
+    public const string Total = "cart-total";
+}
+
+public static class CartViews
+{
+    public const string Badge = "_CartBadge";
+    public const string Total = "_CartTotal";
+}
+
+// 1. Configure event chains (Program.cs)
+builder.Services.AddSwapHtmx(events =>
+{
+    events.When(SwapEvents.Entity.Created("Product"))
+          .RefreshPartial(ProductElements.List, ProductViews.List, ctx => 
+              ctx.RequestServices.GetRequiredService<ProductService>().GetAll())
+          .RefreshPartial(ProductElements.Count, ProductViews.Count, ctx => 
+              ctx.RequestServices.GetRequiredService<ProductService>().GetCount())
+          .SuccessToast("Product created successfully!");
+});
+
+// 2. Controller using all three approaches
+public class ProductsController : SwapController
+{
+    private readonly ProductService _service;
+    
+    public ProductsController(ProductService service) => _service = service;
+    
+    // Approach 1: Simple view (list page)
+    public IActionResult Index()
+    {
+        var products = _service.GetAll();
+        return SwapView(products);
+        // Auto-detects: full page on first load, partial on HTMX requests
+    }
+    
+    // Approach 2: Coordinated updates (manual control for cart)
+    public IActionResult AddToCart(int id)
+    {
+        var product = _service.Get(id);
+        _cart.Add(product);
+        
+        return SwapResponse()
+            .WithView(ProductViews.Added, product)
+            .AlsoUpdate(CartElements.Badge, CartViews.Badge, _cart.ItemCount, SwapMode.InnerHTML)
+            .AlsoUpdate(CartElements.Total, CartViews.Total, _cart.Total)
+            .WithSuccessToast($"{product.Name} added to cart!")
+            .WithTrigger(SwapEvents.UI.UpdateCounter, new { count = _cart.ItemCount });
+    }
+    
+    // Approach 3: Event-driven (DRY for repeated patterns)
+    public IActionResult Create(Product product)
+    {
+        _service.Create(product);
+        
+        // All UI updates happen automatically via configured event chain
+        return SwapEvent(SwapEvents.Entity.Created("Product"));
+    }
+}
+```
+
+### Migration from Manual Patterns
+
+**Before (manual ViewData + Response headers):**
+```csharp
+public IActionResult Create(Todo todo)
+{
+    _db.Todos.Add(todo);
+    _db.SaveChangesAsync();
+    
+    // Scattered UI logic with magic strings everywhere
+    ViewData["OobTodoList"] = await RenderPartialAsync("_TodoList", _db.Todos.ToList());
+    ViewData["OobTodoCount"] = await RenderPartialAsync("_TodoCount", _db.Todos.Count());
+    Response.AddSuccessToast("Todo created!");
+    Response.AddTrigger("todoCreated");
+    
+    return PartialView("_TodoCreated", todo);
+}
+```
+
+**After (fluent API with type-safe constants):**
+```csharp
+// Define once, use everywhere
+public static class TodoViews
+{
+    public const string Created = "_TodoCreated";
+    public const string List = "_TodoList";
+    public const string Count = "_TodoCount";
+}
+
+public static class TodoElements
+{
+    public const string List = "todo-list";
+    public const string Count = "todo-count";
+}
+
+public IActionResult Create(Todo todo)
+{
+    _db.Todos.Add(todo);
+    _db.SaveChangesAsync();
+    
+    // Clean, discoverable, type-safe - no magic strings!
+    return SwapResponse()
+        .WithView(TodoViews.Created, todo)
+        .AlsoUpdate(TodoElements.List, TodoViews.List, _db.Todos.ToList())
+        .AlsoUpdate(TodoElements.Count, TodoViews.Count, _db.Todos.Count())
+        .WithSuccessToast("Todo created!")
+        .WithTrigger(SwapEvents.UI.RefreshList);
+}
+```
+
+For complete working examples, see the `Swap.Htmx.TestApp` project in this repository.
+
+## Documentation
+
+- **[Type-Safe Events Guide](docs/Events.md)** - Learn how to define and use strongly-typed event keys to eliminate magic strings
+- **[Event Chains Guide](docs/EventChains.md)** - Configure automatic UI updates when events are triggered
+- **[Debugging & Logging](docs/DebuggingAndLogging.md)** - Enable debug logging to see event chains, toasts, and HTTP headers during development
+
+## License
+
+MIT
