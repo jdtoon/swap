@@ -36,11 +36,16 @@ internal sealed class EventChainExecutor : IEventChainExecutor
     {
         var configs = _options.GetEventChainConfigs();
         
+        Console.WriteLine($"[EventChainExecutor] Event: {eventKey.Name}, Total Configs: {configs.Count}");
+        
         if (!configs.TryGetValue(eventKey.Name, out var config))
         {
             // No chain configured for this event
+            Console.WriteLine($"[EventChainExecutor] No chain found for event: {eventKey.Name}");
             return null;
         }
+
+        Console.WriteLine($"[EventChainExecutor] Found chain with {config.Partials.Count} partials, {config.Toasts.Count} toasts");
 
         var builder = new SwapResponseBuilder
         {

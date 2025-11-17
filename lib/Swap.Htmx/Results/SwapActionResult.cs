@@ -31,9 +31,13 @@ public sealed class SwapActionResult : ActionResult
     {
         var response = context.HttpContext.Response;
         
+        Console.WriteLine($"[SwapActionResult] Executing with {_builder.Toasts.Count} toasts");
+        
         // 1. Apply toasts
         foreach (var toast in _builder.Toasts)
         {
+            Console.WriteLine($"[SwapActionResult] Applying toast: {toast.Type} - {toast.Message}");
+            
             switch (toast.Type)
             {
                 case ToastType.Success:
@@ -107,6 +111,12 @@ public sealed class SwapActionResult : ActionResult
                 }
             }
             
+            Console.WriteLine($"[SwapActionResult] Before ContentResult - HX-Trigger header: {context.HttpContext.Response.Headers.ContainsKey("HX-Trigger")}");
+            if (context.HttpContext.Response.Headers.ContainsKey("HX-Trigger"))
+            {
+                Console.WriteLine($"[SwapActionResult] HX-Trigger value: {context.HttpContext.Response.Headers["HX-Trigger"]}");
+            }
+            
             var contentResult = new ContentResult
             {
                 Content = htmlContent.ToString(),
@@ -115,6 +125,12 @@ public sealed class SwapActionResult : ActionResult
             };
             
             await contentResult.ExecuteResultAsync(context);
+            
+            Console.WriteLine($"[SwapActionResult] After ContentResult - HX-Trigger header: {context.HttpContext.Response.Headers.ContainsKey("HX-Trigger")}");
+            if (context.HttpContext.Response.Headers.ContainsKey("HX-Trigger"))
+            {
+                Console.WriteLine($"[SwapActionResult] HX-Trigger value after: {context.HttpContext.Response.Headers["HX-Trigger"]}");
+            }
         }
         else
         {

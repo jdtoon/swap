@@ -351,12 +351,18 @@ public abstract class SwapController : Controller
     /// </example>
     protected SwapResponseBuilder SwapEvent(EventKey eventKey, object? payload = null)
     {
+        Console.WriteLine($"[SwapEvent] Event: {eventKey.Name}, Payload: {payload?.GetType().Name ?? "null"}");
+        
         var executor = HttpContext?.RequestServices?.GetService(typeof(Events.IEventChainExecutor)) 
             as Events.IEventChainExecutor;
+
+        Console.WriteLine($"[SwapEvent] Executor found: {executor != null}");
 
         if (executor != null && HttpContext != null)
         {
             var result = executor.Execute(eventKey, HttpContext, this);
+            Console.WriteLine($"[SwapEvent] Executor returned: {result != null}");
+            
             if (result != null)
             {
                 // If payload provided, add it as a trigger
