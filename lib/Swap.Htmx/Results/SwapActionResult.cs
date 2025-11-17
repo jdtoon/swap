@@ -33,7 +33,13 @@ public sealed class SwapActionResult : ActionResult
         var response = context.HttpContext.Response;
         var logger = context.HttpContext.RequestServices.GetService<ILogger<SwapActionResult>>();
         
-        // 1. Apply toasts
+        // 1. Apply redirect if configured
+        if (!string.IsNullOrEmpty(_builder.RedirectUrl))
+        {
+            response.HxRedirect(_builder.RedirectUrl);
+        }
+        
+        // 2. Apply toasts
         foreach (var toast in _builder.Toasts)
         {
             Dev.SwapDevLogger.LogToast(logger, toast.Type.ToString(), toast.Message);
@@ -55,7 +61,7 @@ public sealed class SwapActionResult : ActionResult
             }
         }
 
-        // 2. Apply custom triggers
+        // 3. Apply custom triggers
         foreach (var trigger in _builder.Triggers)
         {
             if (trigger.Payload == null)
@@ -68,7 +74,7 @@ public sealed class SwapActionResult : ActionResult
             }
         }
 
-        // 3. Render OOB swaps and store in ViewData
+        // 4. Render OOB swaps and store in ViewData
         if (_builder.OobSwaps.Count > 0)
         {
             foreach (var oob in _builder.OobSwaps)
@@ -79,7 +85,7 @@ public sealed class SwapActionResult : ActionResult
             }
         }
 
-        // 4. Render main view (if one is specified) or just OOB swaps
+        // 5. Render main view (if one is specified) or just OOB swaps
         if (!string.IsNullOrEmpty(_builder.ViewName) || _builder.Model != null)
         {
             // Has a main view to render

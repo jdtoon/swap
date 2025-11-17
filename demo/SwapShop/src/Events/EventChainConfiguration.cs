@@ -84,6 +84,7 @@ public static class EventChainConfiguration
         config.When(OrderEvents.Created)
             .RefreshPartial(CartElements.Badge, CartViews.Badge, ctx => 0)
             .Toast("Order placed successfully!", ToastType.Success)
+            .Redirect("/Orders")
             .AlsoTrigger(NotificationEvents.OrderConfirmation);
 
         config.When(OrderEvents.Processing)

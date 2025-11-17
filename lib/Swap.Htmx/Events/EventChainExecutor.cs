@@ -79,6 +79,12 @@ internal sealed class EventChainExecutor : IEventChainExecutor
             builder.WithTrigger(triggerEvent);
         }
 
+        // Add redirect if configured
+        if (config.Redirect != null)
+        {
+            builder.WithRedirect(config.Redirect.Url);
+        }
+
         return builder;
     }
 }

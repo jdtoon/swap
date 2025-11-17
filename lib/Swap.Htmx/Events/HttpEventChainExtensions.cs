@@ -23,6 +23,13 @@ public sealed record EventToastHandler(
 );
 
 /// <summary>
+/// Represents a redirect to perform when an event is triggered.
+/// </summary>
+public sealed record EventRedirectHandler(
+    string Url
+);
+
+/// <summary>
 /// Configuration for what should happen when a specific event is triggered.
 /// </summary>
 public sealed class EventChainConfiguration
@@ -30,6 +37,7 @@ public sealed class EventChainConfiguration
     internal List<EventPartialHandler> Partials { get; } = new();
     internal List<EventToastHandler> Toasts { get; } = new();
     internal List<EventKey> TriggerEvents { get; } = new();
+    internal EventRedirectHandler? Redirect { get; set; }
 }
 
 /// <summary>
@@ -166,6 +174,18 @@ public sealed class HttpEventChainBuilder
     /// </summary>
     public HttpEventChainBuilder InfoToast(string message)
         => Toast(message, ToastType.Info);
+
+    /// <summary>
+    /// Adds a redirect to the event chain.
+    /// When the event is triggered, the browser will navigate to the specified URL.
+    /// </summary>
+    /// <param name="url">The URL to redirect to.</param>
+    /// <returns>The builder for chaining.</returns>
+    public HttpEventChainBuilder Redirect(string url)
+    {
+        _config.Redirect = new EventRedirectHandler(url);
+        return this;
+    }
 
     /// <summary>
     /// Adds an additional trigger event to the chain.

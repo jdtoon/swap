@@ -16,7 +16,14 @@ public static class SwapToastExtensions
     /// <param name="position">The position of the toast (top-right, top-left, bottom-right, bottom-left)</param>
     public static void ShowToast(this HttpResponse response, string message, ToastType type = ToastType.Info, ToastPosition position = ToastPosition.TopRight)
     {
-        // Prevent HTMX from caching responses with toasts - this prevents duplicate toasts on browser back/forward
+        // Skip toasts on history restore requests (browser back/forward) to prevent duplicates
+        var httpContext = response.HttpContext;
+        if (httpContext.Request.IsHtmxHistoryRestoreRequest())
+        {
+            return;
+        }
+        
+        // Prevent HTMX from caching responses with toasts - defense in depth
         response.Headers["Cache-Control"] = "no-cache, no-store, must-revalidate";
         response.Headers["Pragma"] = "no-cache";
         response.Headers["Expires"] = "0";

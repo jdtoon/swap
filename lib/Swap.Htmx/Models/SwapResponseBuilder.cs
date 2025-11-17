@@ -71,6 +71,7 @@ public sealed class SwapResponseBuilder
     private readonly List<OobSwap> _oobSwaps = new();
     private readonly List<ToastNotification> _toasts = new();
     private readonly List<TriggerEvent> _triggers = new();
+    private string? _redirectUrl;
     
     // Store controller reference for implicit conversion
     internal Controller? Controller { get; set; }
@@ -170,6 +171,17 @@ public sealed class SwapResponseBuilder
     }
 
     /// <summary>
+    /// Sets a redirect URL for the response using HX-Redirect header.
+    /// </summary>
+    /// <param name="url">The URL to redirect to.</param>
+    /// <returns>The builder for chaining.</returns>
+    public SwapResponseBuilder WithRedirect(string url)
+    {
+        _redirectUrl = url;
+        return this;
+    }
+
+    /// <summary>
     /// Gets the configured view name.
     /// </summary>
     internal string? ViewName => _viewName;
@@ -193,6 +205,11 @@ public sealed class SwapResponseBuilder
     /// Gets all configured triggers.
     /// </summary>
     internal IReadOnlyList<TriggerEvent> Triggers => _triggers;
+    
+    /// <summary>
+    /// Gets the configured redirect URL.
+    /// </summary>
+    internal string? RedirectUrl => _redirectUrl;
     
     /// <summary>
     /// Builds and returns the final IActionResult.
