@@ -64,8 +64,14 @@
 
     // Listen for showToast events from server (via HX-Trigger header)
     document.body.addEventListener('showToast', (event) => {
+        console.log('Toast event received:', event.detail);
         const { message, type } = event.detail;
         showToast(message, type || 'info');
+    });
+
+    // Also listen on document for debugging
+    document.addEventListener('showToast', (event) => {
+        console.log('Toast event on document:', event.detail);
     });
 
     // Global function for manual toast triggering (optional)

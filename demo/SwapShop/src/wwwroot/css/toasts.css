@@ -11,10 +11,10 @@
 }
 
 .toast {
-    background: var(--pico-background-color);
-    border: 1px solid var(--pico-muted-border-color);
-    border-radius: var(--pico-border-radius);
-    box-shadow: var(--pico-card-box-shadow);
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     padding: 1rem;
     opacity: 0;
     transform: translateX(400px);
@@ -39,6 +39,7 @@
 
 .toast-message {
     flex: 1;
+    color: var(--text);
 }
 
 .toast-close {
@@ -48,7 +49,7 @@
     line-height: 1;
     cursor: pointer;
     padding: 0;
-    color: var(--pico-color);
+    color: var(--text);
     opacity: 0.7;
     transition: opacity 0.2s;
 }
@@ -59,17 +60,21 @@
 
 /* Toast level variants */
 .toast-success {
-    border-left: 4px solid var(--pico-ins-color);
+    border-left: 4px solid var(--success);
+    background: #f0fdf4;
 }
 
 .toast-error {
-    border-left: 4px solid var(--pico-del-color);
+    border-left: 4px solid var(--danger);
+    background: #fef2f2;
 }
 
 .toast-warning {
-    border-left: 4px solid #ff9800;
+    border-left: 4px solid var(--warning);
+    background: #fffbeb;
 }
 
 .toast-info {
-    border-left: 4px solid var(--pico-primary);
+    border-left: 4px solid var(--info);
+    background: #eff6ff;
 }
