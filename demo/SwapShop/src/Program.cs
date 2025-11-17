@@ -3,6 +3,7 @@ using SwapShop.Events;
 using SwapShop.Infrastructure;
 using SwapShop.Services;
 using System.IO.Compression;
+using Microsoft.AspNetCore.ResponseCompression;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -73,3 +74,6 @@ app.MapControllerRoute(
     pattern: "{controller=Products}/{action=Index}/{id?}");
 
 app.Run();
+
+// Make Program class accessible to integration tests
+public partial class Program { }

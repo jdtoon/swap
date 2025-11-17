@@ -22,7 +22,7 @@ public class CartServiceTests
         // Assert
         Assert.NotNull(cart);
         Assert.Empty(cart.Items);
-        Assert.Equal(0, cart.TotalPrice);
+        Assert.Equal(0, cart.Total);
     }
 
     [Fact]
@@ -33,26 +33,26 @@ public class CartServiceTests
         var sessionId = Guid.NewGuid().ToString();
 
         // Act
-        var result = service.AddItem(sessionId, 1, 1);
+        service.AddItem(sessionId, 1, 1);
 
         // Assert
-        Assert.True(result);
         var cart = service.GetCart(sessionId);
         Assert.Single(cart.Items);
     }
 
     [Fact]
-    public void AddItem_InvalidProduct_ReturnsFalse()
+    public void AddItem_InvalidProduct_DoesNotAddToCart()
     {
         // Arrange
         var service = new CartService(new ProductService());
         var sessionId = Guid.NewGuid().ToString();
 
-        // Act
-        var result = service.AddItem(sessionId, 99999, 1);
+        // Act - should not throw, but won't add invalid product
+        service.AddItem(sessionId, 99999, 1);
 
         // Assert
-        Assert.False(result);
+        var cart = service.GetCart(sessionId);
+        Assert.Empty(cart.Items);
     }
 
     [Fact]
@@ -64,10 +64,9 @@ public class CartServiceTests
         service.AddItem(sessionId, 1, 1);
 
         // Act
-        var result = service.UpdateQuantity(sessionId, 1, 3);
+        service.UpdateQuantity(sessionId, 1, 3);
 
         // Assert
-        Assert.True(result);
         var cart = service.GetCart(sessionId);
         Assert.Equal(3, cart.Items.First().Quantity);
     }
@@ -98,7 +97,7 @@ public class CartServiceTests
         service.AddItem(sessionId, 2, 1);
 
         // Act
-        service.Clear(sessionId);
+        service.ClearCart(sessionId);
 
         // Assert
         var cart = service.GetCart(sessionId);

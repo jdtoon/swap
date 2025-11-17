@@ -98,9 +98,9 @@ public class ProductsController : SwapController
     }
 
     /// <summary>
-    /// OLD-STYLE DEMO: Programmatic .Chain() approach
-    /// This demonstrates the original event chaining API where you manually
-    /// build the chain in the controller action instead of using HTTP event chains.
+    /// OLD-STYLE DEMO: Programmatic response building
+    /// This demonstrates building a coordinated response manually in the controller
+    /// instead of using HTTP event chains configured in EventChainConfiguration.cs
     /// </summary>
     public IActionResult QuickView(int id)
     {
@@ -110,10 +110,12 @@ public class ProductsController : SwapController
             return NotFound();
         }
 
-        // Old-style: Build the chain programmatically in the action
-        return SwapEvent(ProductEvents.Viewed, product)
-            .Chain(ProductEvents.StockChecked, product)  // Check stock after viewing
-            .Toast($"Viewing {product.Name}", ToastType.Info)  // Show a toast
+        // Old-style: Manually coordinate updates, triggers, and toasts
+        return SwapResponse()
+            .AlsoUpdate(ProductElements.Card, ProductViews.Details, product)
+            .AlsoUpdate(ProductElements.Card, ProductViews.StockBadge, product)
+            .WithTrigger(ProductEvents.Viewed, product)
+            .WithToast($"Viewing {product.Name}", ToastType.Info)
             .Build();
     }
 }

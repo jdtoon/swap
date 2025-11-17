@@ -57,11 +57,12 @@ public class ProductServiceTests
         var service = new ProductService();
 
         // Act
-        var products = service.Search("Keyboard");
+        var products = service.Search("Shirt");
 
         // Assert
         Assert.NotNull(products);
-        Assert.Contains(products, p => p.Name.Contains("Keyboard", StringComparison.OrdinalIgnoreCase));
+        Assert.NotEmpty(products);
+        Assert.Contains(products, p => p.Name.Contains("Shirt", StringComparison.OrdinalIgnoreCase));
     }
 
     [Fact]

@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\lib\Swap.Htmx\Swap.Htmx.csproj" />
+    <ProjectReference Include="..\..\..\lib\Swap.Htmx\Swap.Htmx.csproj" />
   </ItemGroup>
 
   <PropertyGroup>

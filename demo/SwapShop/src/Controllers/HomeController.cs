@@ -1,10 +1,11 @@
 using System.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
+using Swap.Htmx;
 using SwapShop.Models;
 
 namespace SwapShop.Controllers;
 
-public class HomeController : Controller
+public class HomeController : SwapController
 {
     private readonly ILogger<HomeController> _logger;
 
