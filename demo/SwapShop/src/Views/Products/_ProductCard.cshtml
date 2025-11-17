@@ -3,7 +3,17 @@
 
 <article id="@ProductElements.Card-@Model.Id">
     <header>
-        <h3>@Model.Name</h3>
+        <h3>
+            @Model.Name
+            <a href="/Products/QuickView/@Model.Id"
+               hx-get="/Products/QuickView/@Model.Id"
+               hx-swap="none"
+               role="button"
+               class="outline secondary"
+               style="font-size: 0.8rem; padding: 0.25rem 0.5rem; margin-left: 0.5rem;">
+                Quick View (Old-style Chain)
+            </a>
+        </h3>
     </header>
     
     <p>@Model.Description</p>

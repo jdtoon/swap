@@ -34,7 +34,7 @@
                        hx-get="@Url.Action("Index", "Cart")" 
                        hx-target="main" 
                        hx-swap="innerHTML" 
-                       hx-push-url="true">Cart <span id="@CartElements.Badge">@await Html.PartialAsync(CartViews.Badge, CartService.GetItemCount(Context.Session.Id))</span></a>
+                       hx-push-url="true">Cart <span id="@CartElements.Badge">@await Html.PartialAsync("~/Views/Cart/_CartBadge.cshtml", CartService.GetItemCount(Context.Session.Id))</span></a>
                 </li>
                 <li>
                     <a href="@Url.Action("Index", "Orders")" 

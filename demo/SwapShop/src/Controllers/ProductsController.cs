@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Swap.Htmx;
 using Swap.Htmx.Events;
+using Swap.Htmx.Extensions;
 using SwapShop.Events;
 using SwapShop.Services;
 using SwapShop.Views;
@@ -95,4 +96,25 @@ public class ProductsController : SwapController
 
         return SwapEvent(eventKey, product).Build();
     }
+
+    /// <summary>
+    /// OLD-STYLE DEMO: Programmatic .Chain() approach
+    /// This demonstrates the original event chaining API where you manually
+    /// build the chain in the controller action instead of using HTTP event chains.
+    /// </summary>
+    public IActionResult QuickView(int id)
+    {
+        var product = _productService.GetById(id);
+        if (product == null)
+        {
+            return NotFound();
+        }
+
+        // Old-style: Build the chain programmatically in the action
+        return SwapEvent(ProductEvents.Viewed, product)
+            .Chain(ProductEvents.StockChecked, product)  // Check stock after viewing
+            .Toast($"Viewing {product.Name}", ToastType.Info)  // Show a toast
+            .Build();
+    }
 }
+
