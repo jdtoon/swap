@@ -1,0 +1,68 @@
+@model dynamic
+@{
+    ViewData["Title"] = "Tasks";
+}
+
+<div class="kanban-board" sse-connect="/tasks/stream">
+    <div class="kanban-column">
+        <h3 class="column-header todo">📝 To Do</h3>
+        <div id="@TaskElements.Column(TaskStatus.Todo)" class="task-list">
+            @await Html.PartialAsync(TaskViews.TaskColumn, TaskStatus.Todo)
+        </div>
+    </div>
+
+    <div class="kanban-column">
+        <h3 class="column-header in-progress">⚡ In Progress</h3>
+        <div id="@TaskElements.Column(TaskStatus.InProgress)" class="task-list">
+            @await Html.PartialAsync(TaskViews.TaskColumn, TaskStatus.InProgress)
+        </div>
+    </div>
+
+    <div class="kanban-column">
+        <h3 class="column-header review">👀 Review</h3>
+        <div id="@TaskElements.Column(TaskStatus.Review)" class="task-list">
+            @await Html.PartialAsync(TaskViews.TaskColumn, TaskStatus.Review)
+        </div>
+    </div>
+
+    <div class="kanban-column">
+        <h3 class="column-header done">✅ Done</h3>
+        <div id="@TaskElements.Column(TaskStatus.Done)" class="task-list">
+            @await Html.PartialAsync(TaskViews.TaskColumn, TaskStatus.Done)
+        </div>
+    </div>
+</div>
+
+<!-- New Task Form -->
+<div class="new-task-section">
+    <h3>Create New Task</h3>
+    <form hx-post="/tasks" hx-target="body" hx-swap="none">
+        <input type="text" name="Title" placeholder="Task title" required />
+        <textarea name="Description" placeholder="Description"></textarea>
+        
+        <select name="ProjectId" required>
+            <option value="">Select Project</option>
+            @foreach (var project in Model.Projects)
+            {
+                <option value="@project.Id">@project.Name</option>
+            }
+        </select>
+
+        <select name="Priority">
+            <option value="@TaskPriority.Low">Low</option>
+            <option value="@TaskPriority.Medium" selected>Medium</option>
+            <option value="@TaskPriority.High">High</option>
+            <option value="@TaskPriority.Critical">Critical</option>
+        </select>
+
+        <select name="AssigneeId">
+            <option value="">Unassigned</option>
+            @foreach (var member in Model.TeamMembers)
+            {
+                <option value="@member.Id">@member.Name</option>
+            }
+        </select>
+
+        <button type="submit">Create Task</button>
+    </form>
+</div>

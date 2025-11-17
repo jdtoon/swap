@@ -1,0 +1,37 @@
+@model dynamic
+@{
+    ViewData["Title"] = "Dashboard";
+}
+
+<div class="dashboard" sse-connect="/dashboard/stream">
+    <h1>Team Dashboard</h1>
+
+    <!-- Stats Section -->
+    <div id="@DashboardElements.Stats" class="stats-grid">
+        @await Html.PartialAsync(DashboardViews.Stats, Model.Stats)
+    </div>
+
+    <!-- Team Presence -->
+    <div id="@DashboardElements.TeamList" class="team-section">
+        @await Html.PartialAsync(DashboardViews.TeamList, Model.TeamMembers)
+    </div>
+
+    <!-- Recent Activity Feed (SSE-powered) -->
+    <div id="@DashboardElements.Activity" class="activity-feed">
+        @await Html.PartialAsync(DashboardViews.Activity, Model.Activities)
+    </div>
+
+    <!-- Projects Overview -->
+    <div class="projects-overview">
+        <h2>Projects</h2>
+        @foreach (var project in Model.Projects)
+        {
+            <div class="project-summary">
+                <h3>@project.Name</h3>
+                <div id="@ProjectElements.Progress(project.Id)">
+                    @await Html.PartialAsync(ProjectViews.ProgressBar, project)
+                </div>
+            </div>
+        }
+    </div>
+</div>

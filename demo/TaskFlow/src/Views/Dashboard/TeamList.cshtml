@@ -1,0 +1,23 @@
+@model List<TeamMember>
+
+<h2>Team Members</h2>
+<div class="team-grid">
+    @foreach (var member in Model)
+    {
+        <div class="team-member">
+            <span class="member-avatar" style="background-color: @member.Color">
+                @member.Name[0]
+            </span>
+            <div class="member-info">
+                <strong>@member.Name</strong>
+                <span class="status-indicator @(member.IsOnline ? "online" : "offline")">
+                    @(member.IsOnline ? "● Online" : "○ Offline")
+                </span>
+                @if (!member.IsOnline && member.LastSeenAt.HasValue)
+                {
+                    <small>Last seen @member.LastSeenAt.Value.ToString("MMM d, h:mm tt")</small>
+                }
+            </div>
+        </div>
+    }
+</div>

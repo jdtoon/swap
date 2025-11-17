@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - TaskFlow</title>
+    <link rel="stylesheet" href="~/css/site.css" />
+    <link rel="stylesheet" href="~/lib/swap.htmx/swap-toasts.css" />
+    <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+    <script src="https://unpkg.com/htmx-ext-sse@2.2.2/sse.js"></script>
+</head>
+<body hx-ext="sse">
+    <header>
+        <nav class="navbar">
+            <div class="container">
+                <a href="/" class="brand">TaskFlow</a>
+                <div class="nav-links">
+                    <a href="/dashboard">Dashboard</a>
+                    <a href="/tasks">Tasks</a>
+                    <a href="/projects">Projects</a>
+                    <a href="/notifications" class="notification-link">
+                        <span id="@NotificationElements.Bell" 
+                              hx-get="/notifications/bell" 
+                              hx-trigger="load, every 30s"
+                              hx-swap="innerHTML">
+                            🔔
+                        </span>
+                    </a>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main class="container">
+        @RenderBody()
+    </main>
+
+    <!-- Toast container - positioned by library's swap-toasts.css -->
+    <div id="toast-container"></div>
+
+    <script src="~/js/sse-reconnect.js"></script>
+</body>
+</html>
+
+@using TaskFlow.Views

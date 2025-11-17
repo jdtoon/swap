@@ -1,0 +1,12 @@
+@model TaskFlow.Models.TaskStatus
+@using TaskFlow.Services
+@inject ITaskService TaskService
+
+@{
+    var tasks = TaskService.GetAll().Where(t => t.Status == Model).ToList();
+}
+
+@foreach (var task in tasks)
+{
+    @await Html.PartialAsync(TaskViews.TaskCard, task)
+}

@@ -1,0 +1,21 @@
+@model TeamStats
+
+<div class="stat-card">
+    <span class="stat-value">@Model.TotalTasks</span>
+    <span class="stat-label">Total Tasks</span>
+</div>
+
+<div class="stat-card">
+    <span class="stat-value">@Model.CompletedTasks</span>
+    <span class="stat-label">Completed</span>
+</div>
+
+<div class="stat-card">
+    <span class="stat-value">@Model.InProgressTasks</span>
+    <span class="stat-label">In Progress</span>
+</div>
+
+<div class="stat-card">
+    <span class="stat-value">@Model.OverdueTasks</span>
+    <span class="stat-label">Overdue</span>
+</div>
