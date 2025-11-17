@@ -66,7 +66,7 @@ public class ProductsController : SwapController
 
     /// <summary>
     /// Tier 3: SwapEvent - Event-driven response with event chains
-    /// The view is configured in Program.cs event chains
+    /// The view is configured in EventChainConfiguration.cs event chains
     /// </summary>
     public IActionResult Details(int id)
     {
@@ -76,7 +76,10 @@ public class ProductsController : SwapController
             return NotFound();
         }
 
-        // Event chain configured in Program.cs will handle the view rendering
+        // Store product in HttpContext for event chain to access
+        HttpContext.Items["Product"] = product;
+
+        // Event chain configured in EventChainConfiguration.cs will handle the view rendering
         return SwapEvent(ProductEvents.Viewed, product).Build();
     }
 
@@ -95,6 +98,9 @@ public class ProductsController : SwapController
             ? ProductEvents.LowStock
             : ProductEvents.StockChecked;
 
+        // Store product in HttpContext for event chain to access
+        HttpContext.Items["Product"] = product;
+
         return SwapEvent(eventKey, product).Build();
     }
 
@@ -111,6 +117,9 @@ public class ProductsController : SwapController
         {
             return NotFound();
         }
+
+        // Store product in HttpContext for event chain to access
+        HttpContext.Items["Product"] = product;
 
         // Trigger ProductViewed event - the event chain will handle the UI updates
         return SwapEvent(ProductEvents.Viewed, product).Build();

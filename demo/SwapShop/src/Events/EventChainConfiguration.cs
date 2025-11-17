@@ -15,20 +15,6 @@ public static class EventChainConfiguration
     public static void ConfigureEventChains(SwapEventBusOptions config)
     {
         // ================================================================================
-        // PRODUCT EVENTS
-        // ================================================================================
-        
-        config.When(ProductEvents.Viewed)
-            .RefreshPartial(ProductElements.Card, ProductViews.Card, ctx => null);
-
-        config.When(ProductEvents.LowStock)
-            .RefreshPartial(ProductElements.Card, ProductViews.StockBadge, ctx => null)
-            .Toast("Low stock alert!", ToastType.Warning);
-
-        config.When(ProductEvents.StockChecked)
-            .RefreshPartial(ProductElements.Card, ProductViews.StockBadge, ctx => null);
-
-        // ================================================================================
         // CART EVENTS - Demonstrates centralized coordination of multiple UI updates
         // ================================================================================
         
