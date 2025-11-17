@@ -49,11 +49,11 @@ public class CartController : SwapController
         _cart.Add(productId);
         
         return SwapResponse()
-            .WithView("_ProductAdded")
-            .AlsoUpdate("cart-count", "_CartCount", _cart.Count, SwapMode.InnerHTML)
-            .AlsoUpdate("cart-total", "_CartTotal", _cart.Total)
+            .WithView(CartViews.ProductAdded)
+            .AlsoUpdate(CartElements.Count, CartViews.Count, _cart.Count, SwapMode.InnerHTML)
+            .AlsoUpdate(CartElements.Total, CartViews.Total, _cart.Total)
             .WithSuccessToast("Added to cart!")
-            .WithTrigger("cart.updated", new { itemCount = _cart.Count });
+            .WithTrigger(CartEvents.Updated, new { itemCount = _cart.Count });
     }
 }
 ```
@@ -75,21 +75,34 @@ public class CartController : SwapController
 For complex apps where multiple controllers need coordinated updates, configure event chains once and trigger them anywhere:
 
 ```csharp
+// Define constants for element IDs and view names (avoids magic strings)
+public static class ProductViews
+{
+    public const string List = "_ProductList";
+    public const string Count = "_ProductCount";
+}
+
+public static class ProductElements
+{
+    public const string List = "product-list";
+    public const string Count = "product-count";
+}
+
 // Configuration in Program.cs
 builder.Services.AddSwapHtmx(events => 
 {
     events.When(SwapEvents.Entity.Created("Product"))
-          .RefreshPartial("product-list", "_ProductList", ctx => GetProducts(ctx))
-          .RefreshPartial("product-count", "_ProductCount", ctx => GetProductCount(ctx))
+          .RefreshPartial(ProductElements.List, ProductViews.List, ctx => GetProducts(ctx))
+          .RefreshPartial(ProductElements.Count, ProductViews.Count, ctx => GetProductCount(ctx))
           .SuccessToast("Product created!");
     
     events.When(SwapEvents.Entity.Updated("Product"))
-          .RefreshPartial("product-list", "_ProductList", ctx => GetProducts(ctx))
+          .RefreshPartial(ProductElements.List, ProductViews.List, ctx => GetProducts(ctx))
           .InfoToast("Product updated!");
     
     events.When(SwapEvents.Entity.Deleted("Product"))
-          .RefreshPartial("product-list", "_ProductList", ctx => GetProducts(ctx))
-          .RefreshPartial("product-count", "_ProductCount", ctx => GetProductCount(ctx))
+          .RefreshPartial(ProductElements.List, ProductViews.List, ctx => GetProducts(ctx))
+          .RefreshPartial(ProductElements.Count, ProductViews.Count, ctx => GetProductCount(ctx))
           .WarningToast("Product deleted!");
 });
 
@@ -260,13 +273,39 @@ public ActionResult Create(TodoInput input)
 This example shows all three approaches in a single controller:
 
 ```csharp
+// Constants for type safety (no magic strings!)
+public static class ProductViews
+{
+    public const string List = "_ProductList";
+    public const string Count = "_ProductCount";
+    public const string Added = "_ProductAdded";
+}
+
+public static class ProductElements
+{
+    public const string List = "product-list";
+    public const string Count = "product-count";
+}
+
+public static class CartElements
+{
+    public const string Badge = "cart-badge";
+    public const string Total = "cart-total";
+}
+
+public static class CartViews
+{
+    public const string Badge = "_CartBadge";
+    public const string Total = "_CartTotal";
+}
+
 // 1. Configure event chains (Program.cs)
 builder.Services.AddSwapHtmx(events =>
 {
     events.When(SwapEvents.Entity.Created("Product"))
-          .RefreshPartial("product-list", "_ProductList", ctx => 
+          .RefreshPartial(ProductElements.List, ProductViews.List, ctx => 
               ctx.RequestServices.GetRequiredService<ProductService>().GetAll())
-          .RefreshPartial("product-count", "_ProductCount", ctx => 
+          .RefreshPartial(ProductElements.Count, ProductViews.Count, ctx => 
               ctx.RequestServices.GetRequiredService<ProductService>().GetCount())
           .SuccessToast("Product created successfully!");
 });
@@ -293,9 +332,9 @@ public class ProductsController : SwapController
         _cart.Add(product);
         
         return SwapResponse()
-            .WithView("_ProductAdded", product)
-            .AlsoUpdate("cart-badge", "_CartBadge", _cart.ItemCount, SwapMode.InnerHTML)
-            .AlsoUpdate("cart-total", "_CartTotal", _cart.Total)
+            .WithView(ProductViews.Added, product)
+            .AlsoUpdate(CartElements.Badge, CartViews.Badge, _cart.ItemCount, SwapMode.InnerHTML)
+            .AlsoUpdate(CartElements.Total, CartViews.Total, _cart.Total)
             .WithSuccessToast($"{product.Name} added to cart!")
             .WithTrigger(SwapEvents.UI.UpdateCounter, new { count = _cart.ItemCount });
     }
@@ -320,7 +359,7 @@ public IActionResult Create(Todo todo)
     _db.Todos.Add(todo);
     _db.SaveChangesAsync();
     
-    // Scattered UI logic
+    // Scattered UI logic with magic strings everywhere
     ViewData["OobTodoList"] = await RenderPartialAsync("_TodoList", _db.Todos.ToList());
     ViewData["OobTodoCount"] = await RenderPartialAsync("_TodoCount", _db.Todos.Count());
     Response.AddSuccessToast("Todo created!");
@@ -330,18 +369,32 @@ public IActionResult Create(Todo todo)
 }
 ```
 
-**After (fluent API):**
+**After (fluent API with type-safe constants):**
 ```csharp
+// Define once, use everywhere
+public static class TodoViews
+{
+    public const string Created = "_TodoCreated";
+    public const string List = "_TodoList";
+    public const string Count = "_TodoCount";
+}
+
+public static class TodoElements
+{
+    public const string List = "todo-list";
+    public const string Count = "todo-count";
+}
+
 public IActionResult Create(Todo todo)
 {
     _db.Todos.Add(todo);
     _db.SaveChangesAsync();
     
-    // Clean, discoverable, type-safe
+    // Clean, discoverable, type-safe - no magic strings!
     return SwapResponse()
-        .WithView("_TodoCreated", todo)
-        .AlsoUpdate("todo-list", "_TodoList", _db.Todos.ToList())
-        .AlsoUpdate("todo-count", "_TodoCount", _db.Todos.Count())
+        .WithView(TodoViews.Created, todo)
+        .AlsoUpdate(TodoElements.List, TodoViews.List, _db.Todos.ToList())
+        .AlsoUpdate(TodoElements.Count, TodoViews.Count, _db.Todos.Count())
         .WithSuccessToast("Todo created!")
         .WithTrigger(SwapEvents.UI.RefreshList);
 }

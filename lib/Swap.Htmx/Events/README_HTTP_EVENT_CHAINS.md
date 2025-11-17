@@ -13,16 +13,29 @@ Instead of manually building responses in every controller action, you can confi
 In your `Program.cs`, define what should happen when events are triggered:
 
 ```csharp
+// Define constants to eliminate magic strings
+public static class ProductViews
+{
+    public const string List = "_ProductList";
+    public const string Count = "_ProductCount";
+}
+
+public static class ProductElements
+{
+    public const string List = "product-list";
+    public const string Count = "product-count";
+}
+
 builder.Services.AddSwapHtmx(events =>
 {
     // When a product is created, refresh the list and show a toast
     events.When(SwapEvents.Entity.Created("Product"))
-          .RefreshPartial("product-list", "_ProductList", ctx =>
+          .RefreshPartial(ProductElements.List, ProductViews.List, ctx =>
           {
               var service = ctx.RequestServices.GetRequiredService<ProductService>();
               return service.GetAll();
           })
-          .RefreshPartial("product-count", "_ProductCount", ctx =>
+          .RefreshPartial(ProductElements.Count, ProductViews.Count, ctx =>
           {
               var service = ctx.RequestServices.GetRequiredService<ProductService>();
               return new { Count = service.GetCount() };
@@ -69,8 +82,8 @@ Render a partial view and send it as an out-of-band swap:
 
 ```csharp
 .RefreshPartial(
-    targetId: "product-list",              // ID of element to update
-    viewName: "_ProductList",               // Partial view to render
+    targetId: ProductElements.List,         // ID of element to update (use constant!)
+    viewName: ProductViews.List,            // Partial view to render (use constant!)
     modelFactory: ctx => GetProducts(ctx),  // Optional: function to create model
     swapMode: SwapMode.OuterHTML            // Optional: how to swap content
 )
@@ -113,18 +126,18 @@ builder.Services.AddSwapHtmx(events =>
 {
     // Product created
     events.When(SwapEvents.Entity.Created("Product"))
-          .RefreshPartial("product-list", "_ProductList", ctx => GetProducts(ctx))
+          .RefreshPartial(ProductElements.List, ProductViews.List, ctx => GetProducts(ctx))
           .SuccessToast("Product created!");
     
     // Product updated
     events.When(SwapEvents.Entity.Updated("Product"))
-          .RefreshPartial("product-list", "_ProductList", ctx => GetProducts(ctx))
+          .RefreshPartial(ProductElements.List, ProductViews.List, ctx => GetProducts(ctx))
           .InfoToast("Product updated!");
     
     // Product deleted
     events.When(SwapEvents.Entity.Deleted("Product"))
-          .RefreshPartial("product-list", "_ProductList", ctx => GetProducts(ctx))
-          .RefreshPartial("product-count", "_ProductCount", ctx => GetCount(ctx))
+          .RefreshPartial(ProductElements.List, ProductViews.List, ctx => GetProducts(ctx))
+          .RefreshPartial(ProductElements.Count, ProductViews.Count, ctx => GetCount(ctx))
           .WarningToast("Product deleted!");
 });
 ```
@@ -137,7 +150,7 @@ Model factories give you access to the current `HttpContext` so you can:
 - Read request data
 
 ```csharp
-.RefreshPartial("cart-total", "_CartTotal", ctx =>
+.RefreshPartial(CartElements.Total, CartViews.Total, ctx =>
 {
     // Get service from DI
     var cart = ctx.RequestServices.GetRequiredService<ICartService>();
@@ -172,25 +185,48 @@ Model factories give you access to the current `HttpContext` so you can:
 ## Complete Example
 
 ```csharp
+// Constants - define once, use everywhere (no magic strings!)
+public static class ProductViews
+{
+    public const string List = "_ProductList";
+    public const string Count = "_ProductCount";
+}
+
+public static class ProductElements
+{
+    public const string List = "product-list";
+    public const string Count = "product-count";
+}
+
+public static class ActivityViews
+{
+    public const string Recent = "_RecentActivity";
+}
+
+public static class ActivityElements
+{
+    public const string Recent = "recent-activity";
+}
+
 // Program.cs - Configure all product-related event chains
 builder.Services.AddSwapHtmx(events =>
 {
     events.When(SwapEvents.Entity.Created("Product"))
-          .RefreshPartial("product-list", "_ProductList", GetProducts)
-          .RefreshPartial("product-count", "_ProductCount", GetProductCount)
-          .RefreshPartial("recent-activity", "_RecentActivity", GetRecentActivity)
+          .RefreshPartial(ProductElements.List, ProductViews.List, GetProducts)
+          .RefreshPartial(ProductElements.Count, ProductViews.Count, GetProductCount)
+          .RefreshPartial(ActivityElements.Recent, ActivityViews.Recent, GetRecentActivity)
           .SuccessToast("Product created successfully!")
           .AlsoTrigger(SwapEvents.UI.RefreshPage);
     
     events.When(SwapEvents.Entity.Updated("Product"))
-          .RefreshPartial("product-list", "_ProductList", GetProducts)
-          .RefreshPartial("recent-activity", "_RecentActivity", GetRecentActivity)
+          .RefreshPartial(ProductElements.List, ProductViews.List, GetProducts)
+          .RefreshPartial(ActivityElements.Recent, ActivityViews.Recent, GetRecentActivity)
           .InfoToast("Product updated!");
     
     events.When(SwapEvents.Entity.Deleted("Product"))
-          .RefreshPartial("product-list", "_ProductList", GetProducts)
-          .RefreshPartial("product-count", "_ProductCount", GetProductCount)
-          .RefreshPartial("recent-activity", "_RecentActivity", GetRecentActivity)
+          .RefreshPartial(ProductElements.List, ProductViews.List, GetProducts)
+          .RefreshPartial(ProductElements.Count, ProductViews.Count, GetProductCount)
+          .RefreshPartial(ActivityElements.Recent, ActivityViews.Recent, GetRecentActivity)
           .WarningToast("Product deleted!");
 });
 
