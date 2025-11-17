@@ -22,26 +22,8 @@
             @await Html.PartialAsync(CartViews.Items, Model)
         </div>
 
-        <footer>
-            <div id="@CartElements.Total">
-                @await Html.PartialAsync(CartViews.Total, Model)
-            </div>
-
-            <div class="grid">
-                <button hx-post="/Cart/Clear"
-                        hx-confirm="Clear entire cart?"
-                        class="secondary outline">
-                    Clear Cart
-                </button>
-                <a href="/Checkout" 
-                   hx-get="/Checkout" 
-                   hx-target="main" 
-                   hx-swap="innerHTML" 
-                   hx-push-url="true" 
-                   role="button">
-                    Proceed to Checkout
-                </a>
-            </div>
+        <footer id="@CartElements.Total">
+            @await Html.PartialAsync(CartViews.Total, Model)
         </footer>
     }
 </article>

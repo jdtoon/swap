@@ -99,6 +99,11 @@ Debug logging is automatically disabled in production:
 2. Verify HX-Trigger header contains `showToast` event
 3. Check browser console for JavaScript errors
 
+**Duplicate toasts on browser back/forward?**
+1. This is now fixed automatically - responses with toasts include `Cache-Control: no-cache`
+2. HTMX won't cache these responses, preventing duplicate toast events
+3. Check Network tab - responses with toasts should have `Cache-Control: no-cache, no-store, must-revalidate`
+
 **Event chains not executing?**
 1. Look for: `[EventChainExecutor] Event: {name}, Partials: X, Toasts: Y`
 2. If you see "No chain configured", check EventChainConfiguration.cs

@@ -3,7 +3,16 @@
 
 <article id="@ProductElements.Card-@Model.Id">
     <header>
-        <h3>@Model.Name</h3>
+        <h3>
+            <a href="/Products/Details/@Model.Id"
+               hx-get="/Products/Details/@Model.Id"
+               hx-target="main"
+               hx-swap="innerHTML"
+               hx-push-url="true"
+               style="text-decoration: none; color: inherit;">
+                @Model.Name
+            </a>
+        </h3>
     </header>
     
     <p>@Model.Description</p>
