@@ -62,10 +62,10 @@
         return div.innerHTML;
     }
 
-    // Listen for swap:toast events from server
-    document.addEventListener('swap:toast', (event) => {
-        const { message, level } = event.detail;
-        showToast(message, level || 'info');
+    // Listen for showToast events from server (via HX-Trigger header)
+    document.body.addEventListener('showToast', (event) => {
+        const { message, type } = event.detail;
+        showToast(message, type || 'info');
     });
 
     // Global function for manual toast triggering (optional)

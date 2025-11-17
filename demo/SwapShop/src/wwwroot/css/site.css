@@ -1,0 +1,63 @@
+/* SwapShop Custom Styles */
+
+/* Product Grid - Responsive card layout */
+.product-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.5rem;
+    margin-top: 2rem;
+}
+
+/* Ensure product cards fill their grid cells properly */
+.product-grid > article {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.product-grid > article > footer {
+    margin-top: auto;
+}
+
+/* Search form styling */
+form[hx-get*="Search"] {
+    margin-bottom: 1rem;
+}
+
+/* Product count styling */
+#product-count {
+    display: block;
+    margin-bottom: 1rem;
+    color: var(--pico-muted-color);
+}
+
+/* Cart badge styling */
+#cart-badge {
+    background: var(--pico-primary-background);
+    color: var(--pico-primary-inverse);
+    border-radius: 50%;
+    padding: 0.125rem 0.5rem;
+    font-size: 0.75rem;
+    font-weight: bold;
+    margin-left: 0.25rem;
+}
+
+/* Empty state for cart */
+.empty-state {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: var(--pico-muted-color);
+}
+
+/* Improve button spacing in product cards */
+.product-grid article footer .grid {
+    align-items: center;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .product-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+}

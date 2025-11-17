@@ -1,7 +1,11 @@
 @model IEnumerable<SwapShop.Models.Product>
 @using SwapShop.Views
 
-<div id="@ProductElements.Grid" class="grid">
+@{
+    Layout = null;
+}
+
+<div id="@ProductElements.Grid" class="product-grid">
     @if (!Model.Any())
     {
         <p>No products found.</p>
