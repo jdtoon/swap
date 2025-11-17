@@ -46,7 +46,7 @@ public class DashboardController : SwapController
             Projects = projects
         };
 
-        return View(DashboardViews.Index, model);
+        return SwapView(DashboardViews.Index, model);
     }
 
     // ================================================================================

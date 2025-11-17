@@ -32,7 +32,7 @@ public class ProjectsController : SwapController
     public IActionResult Index()
     {
         var projects = _projectService.GetAll();
-        return View(ProjectViews.Index, projects);
+        return SwapView(ProjectViews.Index, projects);
     }
 
     [HttpGet("/projects/{id}")]
@@ -56,7 +56,7 @@ public class ProjectsController : SwapController
             Breakdown = breakdown
         };
 
-        return View(ProjectViews.Details, model);
+        return SwapView(ProjectViews.Details, model);
     }
 
     [HttpPost("/projects")]

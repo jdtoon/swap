@@ -84,7 +84,7 @@ public class TasksController : SwapController
             TeamMembers = teamMembers
         };
 
-        return View(TaskViews.Index, model);
+        return SwapView(TaskViews.Index, model);
     }
 
     // ================================================================================

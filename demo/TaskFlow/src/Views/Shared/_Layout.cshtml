@@ -13,12 +13,12 @@
     <header>
         <nav class="navbar">
             <div class="container">
-                <a href="/" class="brand">TaskFlow</a>
+                <a href="/" class="brand" hx-get="/" hx-target="main" hx-push-url="true">TaskFlow</a>
                 <div class="nav-links">
-                    <a href="/dashboard">Dashboard</a>
-                    <a href="/tasks">Tasks</a>
-                    <a href="/projects">Projects</a>
-                    <a href="/notifications" class="notification-link">
+                    <a href="/dashboard" hx-get="/dashboard" hx-target="main" hx-push-url="true">Dashboard</a>
+                    <a href="/tasks" hx-get="/tasks" hx-target="main" hx-push-url="true">Tasks</a>
+                    <a href="/projects" hx-get="/projects" hx-target="main" hx-push-url="true">Projects</a>
+                    <a href="/notifications" class="notification-link" hx-get="/notifications" hx-target="main" hx-push-url="true">
                         <span id="@NotificationElements.Bell" 
                               hx-get="/notifications/bell" 
                               hx-trigger="load, every 30s"
@@ -31,7 +31,7 @@
         </nav>
     </header>
 
-    <main class="container">
+    <main class="container" id="main">
         @RenderBody()
     </main>
 

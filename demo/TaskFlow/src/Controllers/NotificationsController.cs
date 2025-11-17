@@ -57,7 +57,7 @@ public class NotificationsController : SwapController
     {
         var userId = "demo-user"; // In real app, get from auth
         var notifications = _notificationService.GetForUser(userId);
-        return View(NotificationViews.Index, notifications);
+        return SwapView(NotificationViews.Index, notifications);
     }
 
     [HttpGet("/notifications/bell")]
