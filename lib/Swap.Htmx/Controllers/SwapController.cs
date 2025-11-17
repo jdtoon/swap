@@ -4,6 +4,8 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.AspNetCore.Mvc.ViewEngines;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.AspNetCore.Routing;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Swap.Htmx.Events;
 using Swap.Htmx.Models;
 using Swap.Htmx.Results;
@@ -351,17 +353,19 @@ public abstract class SwapController : Controller
     /// </example>
     protected SwapResponseBuilder SwapEvent(EventKey eventKey, object? payload = null)
     {
-        Console.WriteLine($"[SwapEvent] Event: {eventKey.Name}, Payload: {payload?.GetType().Name ?? "null"}");
+        var logger = HttpContext?.RequestServices?.GetService<ILogger<SwapController>>();
+        
+        Dev.SwapDevLogger.LogSwapEvent(logger, eventKey.Name, $"Payload: {payload?.GetType().Name ?? "null"}");
         
         var executor = HttpContext?.RequestServices?.GetService(typeof(Events.IEventChainExecutor)) 
             as Events.IEventChainExecutor;
 
-        Console.WriteLine($"[SwapEvent] Executor found: {executor != null}");
+        Dev.SwapDevLogger.LogExecutor(logger, $"Executor found: {executor != null}");
 
         if (executor != null && HttpContext != null)
         {
             var result = executor.Execute(eventKey, HttpContext, this);
-            Console.WriteLine($"[SwapEvent] Executor returned: {result != null}");
+            Dev.SwapDevLogger.LogExecutor(logger, $"Executor returned: {result != null}");
             
             if (result != null)
             {

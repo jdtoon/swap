@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Swap.Htmx.Extensions;
 using Swap.Htmx.Models;
 
@@ -35,17 +37,16 @@ internal sealed class EventChainExecutor : IEventChainExecutor
     public SwapResponseBuilder? Execute(EventKey eventKey, HttpContext httpContext, ControllerBase controller)
     {
         var configs = _options.GetEventChainConfigs();
-        
-        Console.WriteLine($"[EventChainExecutor] Event: {eventKey.Name}, Total Configs: {configs.Count}");
+        var logger = httpContext.RequestServices.GetService<ILogger<EventChainExecutor>>();
         
         if (!configs.TryGetValue(eventKey.Name, out var config))
         {
             // No chain configured for this event
-            Console.WriteLine($"[EventChainExecutor] No chain found for event: {eventKey.Name}");
+            Dev.SwapDevLogger.LogSwapEvent(logger, eventKey.Name, "No chain configured");
             return null;
         }
 
-        Console.WriteLine($"[EventChainExecutor] Found chain with {config.Partials.Count} partials, {config.Toasts.Count} toasts");
+        Dev.SwapDevLogger.LogEventChain(logger, eventKey.Name, config.Partials.Count, config.Toasts.Count);
 
         var builder = new SwapResponseBuilder
         {

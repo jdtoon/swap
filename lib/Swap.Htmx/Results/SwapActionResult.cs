@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.AspNetCore.Mvc.ViewEngines;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Swap.Htmx.Extensions;
 using Swap.Htmx.Models;
 using System.Text;
@@ -30,13 +31,12 @@ public sealed class SwapActionResult : ActionResult
     public override async Task ExecuteResultAsync(ActionContext context)
     {
         var response = context.HttpContext.Response;
-        
-        Console.WriteLine($"[SwapActionResult] Executing with {_builder.Toasts.Count} toasts");
+        var logger = context.HttpContext.RequestServices.GetService<ILogger<SwapActionResult>>();
         
         // 1. Apply toasts
         foreach (var toast in _builder.Toasts)
         {
-            Console.WriteLine($"[SwapActionResult] Applying toast: {toast.Type} - {toast.Message}");
+            Dev.SwapDevLogger.LogToast(logger, toast.Type.ToString(), toast.Message);
             
             switch (toast.Type)
             {
@@ -111,10 +111,10 @@ public sealed class SwapActionResult : ActionResult
                 }
             }
             
-            Console.WriteLine($"[SwapActionResult] Before ContentResult - HX-Trigger header: {context.HttpContext.Response.Headers.ContainsKey("HX-Trigger")}");
             if (context.HttpContext.Response.Headers.ContainsKey("HX-Trigger"))
             {
-                Console.WriteLine($"[SwapActionResult] HX-Trigger value: {context.HttpContext.Response.Headers["HX-Trigger"]}");
+                var triggerValue = context.HttpContext.Response.Headers["HX-Trigger"].ToString();
+                Dev.SwapDevLogger.LogHeader(logger, "HX-Trigger (before render)", triggerValue);
             }
             
             var contentResult = new ContentResult
@@ -126,10 +126,10 @@ public sealed class SwapActionResult : ActionResult
             
             await contentResult.ExecuteResultAsync(context);
             
-            Console.WriteLine($"[SwapActionResult] After ContentResult - HX-Trigger header: {context.HttpContext.Response.Headers.ContainsKey("HX-Trigger")}");
             if (context.HttpContext.Response.Headers.ContainsKey("HX-Trigger"))
             {
-                Console.WriteLine($"[SwapActionResult] HX-Trigger value after: {context.HttpContext.Response.Headers["HX-Trigger"]}");
+                var triggerValue = context.HttpContext.Response.Headers["HX-Trigger"].ToString();
+                Dev.SwapDevLogger.LogHeader(logger, "HX-Trigger (after render)", triggerValue);
             }
         }
         else
