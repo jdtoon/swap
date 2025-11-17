@@ -50,6 +50,28 @@ public static class OrderEvents
 ### 2. Use in Controllers
 
 ```csharp
+public static class ProductViews
+{
+    public const string Product = "_Product";
+    public const string ProductAdded = "_ProductAdded";
+    public const string Count = "_Count";
+}
+
+public static class ProductElements
+{
+    public const string Count = "product-count";
+}
+
+public static class CartElements
+{
+    public const string Badge = "cart-badge";
+}
+
+public static class CartViews
+{
+    public const string Badge = "_CartBadge";
+}
+
 public class ProductsController : SwapController
 {
     public ActionResult Create(ProductInput input)
@@ -57,8 +79,8 @@ public class ProductsController : SwapController
         var product = _service.Create(input);
         
         return SwapResponse()
-            .WithView("_Product", product)
-            .AlsoUpdate("product-count", "_Count", GetCount())
+            .WithView(ProductViews.Product, product)
+            .AlsoUpdate(ProductElements.Count, ProductViews.Count, GetCount())
             .WithSuccessToast("Product created!")
             .WithTrigger(ProductEvents.Created, new { product.Id });
             //          ^^^^^^^^^^^^^^^^^^^^^^
@@ -70,8 +92,8 @@ public class ProductsController : SwapController
         _cart.Add(productId);
         
         return SwapResponse()
-            .WithView("_ProductAdded")
-            .AlsoUpdate("cart-badge", "_CartBadge", _cart.Count)
+            .WithView(ProductViews.ProductAdded)
+            .AlsoUpdate(CartElements.Badge, CartViews.Badge, _cart.Count)
             .WithSuccessToast("Added to cart!")
             .WithTrigger(CartEvents.ItemAdded, new { productId, count = _cart.Count });
             //          ^^^^^^^^^^^^^^^^^^^^^
@@ -80,21 +102,43 @@ public class ProductsController : SwapController
 }
 ```
 
-### 3. Use in Event Chains (Coming Soon)
+### 3. Use in Event Chains
 
 ```csharp
+public static class ProductElements
+{
+    public const string List = "product-list";
+    public const string Count = "product-count";
+}
+
+public static class CartElements
+{
+    public const string Dropdown = "cart-dropdown";
+    public const string Badge = "cart-badge";
+}
+
+public static class SseRooms
+{
+    public const string Shopping = "shopping";
+}
+
+public static class CartSseEvents
+{
+    public const string Update = "cart-update";
+}
+
 // Program.cs
 builder.Services.AddSwapHtmx(events =>
 {
     events.When(ProductEvents.Created)
-          .RefreshPartial("product-list", ctx => RenderProductList(ctx))
-          .RefreshPartial("product-count", ctx => RenderCount(ctx))
-          .Toast("Product created!", ToastType.Success);
+          .RefreshPartial(ProductElements.List, ctx => RenderProductList(ctx))
+          .RefreshPartial(ProductElements.Count, ctx => RenderCount(ctx))
+          .SuccessToast("Product created!");
     
     events.When(CartEvents.ItemAdded)
-          .RefreshPartial("cart-dropdown", ctx => RenderCart(ctx))
-          .RefreshPartial("cart-badge", ctx => RenderBadge(ctx))
-          .BroadcastSse(SseEvents.Room("shopping", "cart-update"));
+          .RefreshPartial(CartElements.Dropdown, ctx => RenderCart(ctx))
+          .RefreshPartial(CartElements.Badge, ctx => RenderBadge(ctx))
+          .BroadcastSse(SseEvents.Room(SseRooms.Shopping, CartSseEvents.Update));
 });
 ```
 

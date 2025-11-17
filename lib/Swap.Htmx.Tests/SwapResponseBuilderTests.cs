@@ -3,11 +3,18 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.Extensions.Logging.Abstractions;
+using Swap.Htmx.Events;
 using Swap.Htmx.Extensions;
 using Swap.Htmx.Models;
 using Xunit;
 
 namespace Swap.Htmx.Tests;
+
+// Test event constants
+public static class CartEvents
+{
+    public static readonly EventKey Updated = new("cart.updated");
+}
 
 /// <summary>
 /// Tests for the SwapResponseBuilder fluent API.
@@ -61,13 +68,20 @@ public class SwapResponseBuilderTests
                 .WithView("Main")
                 .WithTrigger("customEvent", new { id = 123, status = "completed" });
         
+        // Test constants
+        private const string ProductAddedView = "_ProductAdded";
+        private const string CartCountElement = "cart-count";
+        private const string CartCountView = "_CartCount";
+        private const string CartTotalElement = "cart-total";
+        private const string CartTotalView = "_CartTotal";
+        
         public ActionResult TestCompleteScenario() =>
             SwapResponse()
-                .WithView("_ProductAdded")
-                .AlsoUpdate("cart-count", "_CartCount", 3)
-                .AlsoUpdate("cart-total", "_CartTotal", 99.99m)
+                .WithView(ProductAddedView)
+                .AlsoUpdate(CartCountElement, CartCountView, 3)
+                .AlsoUpdate(CartTotalElement, CartTotalView, 99.99m)
                 .WithSuccessToast("Product added to cart!")
-                .WithTrigger("cart.updated", new { itemCount = 3 });
+                .WithTrigger(CartEvents.Updated, new { itemCount = 3 });
         
         public ActionResult TestSwapModes() =>
             SwapResponse()

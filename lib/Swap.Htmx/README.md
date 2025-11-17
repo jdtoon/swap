@@ -169,15 +169,17 @@ Stream real-time HTML updates to connected clients:
 ### Basic SSE
 
 ```csharp
+public const string NotificationView = "_Notification";
+
 [HttpGet("/sse/notifications")]
-public IActionResult Notifications()
+public IActionResult StreamNotifications()
 {
-    return ServerSentEvents(async (stream, ct) =>
+    return ServerSentEvents(async (connection, ct) =>
     {
         while (!ct.IsCancellationRequested)
         {
-            var html = await RenderPartialToStringAsync("_Notification", GetLatestNotification());
-            await stream.SendEventAsync("notification", html);
+            var html = await RenderPartialToStringAsync(NotificationView, GetLatestNotification());
+            await connection.SendEventAsync("notification", html);
             await Task.Delay(5000, ct);
         }
     });
@@ -187,6 +189,16 @@ public IActionResult Notifications()
 ### Enhanced SSE with Connection Management
 
 ```csharp
+public static class SseRooms
+{
+    public const string Dashboard = "dashboard";
+}
+
+public static class SseEventNames
+{
+    public const string MetricsUpdated = "metrics-updated";
+}
+
 [HttpGet("/sse/dashboard")]
 public IActionResult Dashboard()
 {
@@ -195,8 +207,8 @@ public IActionResult Dashboard()
         var connection = builder.Connection;
         
         // Join rooms for targeted broadcasting
-        connection.JoinRoom("dashboard");
-        connection.SubscribeToEvent("metrics-updated");
+        connection.JoinRoom(SseRooms.Dashboard);
+        connection.SubscribeToEvent(SseEventNames.MetricsUpdated);
         
         // Keep connection alive
         while (!ct.IsCancellationRequested)
@@ -236,33 +248,44 @@ app.MapSwapHtmxDevEndpoints(); // Available at /_swap/dev/*
 ### Before (Manual Coordination)
 
 ```csharp
+public static class TodoViews { public const string Todo = "_Todo"; }
+public static class TodoElements { public const string Counter = "counter"; public const string Status = "status"; }
+public static class TodoEvents { public static readonly EventKey Created = new("todo.created"); }
+
 public IActionResult Create(TodoInput input)
 {
     var todo = _service.Create(input);
     
     Response.ShowSuccessToast("Todo created!");
-    Response.HxTrigger("todoCreated");
+    Response.HxTrigger(TodoEvents.Created.Name);
     
-    ViewData["OobCounter"] = RenderOobPanel("counter", GetCount());
-    ViewData["OobStatus"] = RenderOobPanel("status", "Active");
+    ViewData["OobCounter"] = RenderOobPanel(TodoElements.Counter, GetCount());
+    ViewData["OobStatus"] = RenderOobPanel(TodoElements.Status, "Active");
     
-    return SwapView("_Todo", todo);
+    return SwapView(TodoViews.Todo, todo);
 }
 ```
 
 ### After (Fluent Builder)
 
 ```csharp
+public static class TodoViews 
+{ 
+    public const string Todo = "_Todo";
+    public const string Counter = "_Counter";
+    public const string Status = "_Status";
+}
+
 public ActionResult Create(TodoInput input)
 {
     var todo = _service.Create(input);
     
     return SwapResponse()
-        .WithView("_Todo", todo)
-        .AlsoUpdate("counter", "_Counter", GetCount(), SwapMode.InnerHTML)
-        .AlsoUpdate("status", "_Status", "Active")
+        .WithView(TodoViews.Todo, todo)
+        .AlsoUpdate(TodoElements.Counter, TodoViews.Counter, GetCount(), SwapMode.InnerHTML)
+        .AlsoUpdate(TodoElements.Status, TodoViews.Status, "Active")
         .WithSuccessToast("Todo created!")
-        .WithTrigger("todoCreated");
+        .WithTrigger(TodoEvents.Created);
 }
 ```
 
