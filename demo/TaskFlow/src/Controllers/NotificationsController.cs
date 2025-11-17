@@ -84,8 +84,8 @@ public class NotificationsController : SwapController
         var userId = "demo-user"; // In real app, get from auth
         
         return SwapResponse()
-            .RefreshPartial(NotificationElements.Card(id), NotificationViews.Card, _notificationService.Get(id)!)
-            .AlsoUpdateById(NotificationElements.Bell, NotificationViews.Bell, _notificationService.GetUnreadCount(userId))
+            .AlsoUpdate(NotificationElements.Card(id), NotificationViews.Card, _notificationService.Get(id)!)
+            .AlsoUpdate(NotificationElements.Bell, NotificationViews.Bell, _notificationService.GetUnreadCount(userId))
             .Build();
     }
 
@@ -96,8 +96,8 @@ public class NotificationsController : SwapController
         _notificationService.MarkAllAsRead(userId);
 
         return SwapResponse()
-            .RefreshPartial(NotificationElements.List, NotificationViews.List, _notificationService.GetForUser(userId))
-            .AlsoUpdateById(NotificationElements.Bell, NotificationViews.Bell, 0)
+            .AlsoUpdate(NotificationElements.List, NotificationViews.List, _notificationService.GetForUser(userId))
+            .AlsoUpdate(NotificationElements.Bell, NotificationViews.Bell, 0)
             .WithToast("All notifications marked as read", ToastType.Success)
             .Build();
     }

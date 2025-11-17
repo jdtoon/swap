@@ -1,4 +1,4 @@
-using Swap.Htmx.Extensions;
+using Swap.Htmx;
 using TaskFlow.Services;
 using TaskFlow.Events;
 
@@ -11,15 +11,18 @@ builder.Services.AddControllersWithViews();
 builder.Services.AddSwapHtmx(options =>
 {
     // Configure view search paths for better organization
-    options.ViewSearchPaths = new[]
+    options.PartialViewSearchPaths = new List<string>
     {
-        "/Views/{1}/{0}.cshtml",     // Controller-specific: /Views/Tasks/TaskCard.cshtml
-        "/Views/Shared/{0}.cshtml",  // Shared views: /Views/Shared/_Layout.cshtml
-        "/Views/{0}.cshtml"          // Root views
+        "Tasks",        // /Views/Tasks/
+        "Projects",     // /Views/Projects/
+        "Comments",     // /Views/Comments/
+        "Dashboard",    // /Views/Dashboard/
+        "Notifications",// /Views/Notifications/
+        "Shared"        // /Views/Shared/
     };
 
     // Configure event chains with payload access
-    EventChainConfiguration.ConfigureEventChains(options);
+    EventChainConfiguration.ConfigureEventChains(options.EventBus);
 });
 
 // Add task flow services (in-memory for demo)

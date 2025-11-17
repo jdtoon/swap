@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Swap.Htmx;
 using Swap.Htmx.Extensions;
+using Swap.Htmx.Models;
 using TaskFlow.Services;
 using TaskFlow.Models;
 using TaskFlow.Events;
@@ -77,8 +78,8 @@ public class ProjectsController : SwapController
         );
 
         return SwapResponse()
-            .RefreshPartial(ProjectElements.List, ProjectViews.List, _projectService.GetAll())
-            .TriggerEvent(ProjectEvents.Created, project)
+            .AlsoUpdate(ProjectElements.List, ProjectViews.List, _projectService.GetAll())
+            .WithTrigger(ProjectEvents.Created, project)
             .Build();
     }
 
@@ -103,7 +104,7 @@ public class ProjectsController : SwapController
         );
 
         return SwapResponse()
-            .RefreshPartial(ProjectElements.Card(id), ProjectViews.Card, project)
+            .AlsoUpdate(ProjectElements.Card(id), ProjectViews.Card, project)
             .WithToast("Project updated", ToastType.Success)
             .Build();
     }
@@ -127,7 +128,7 @@ public class ProjectsController : SwapController
         );
 
         return SwapResponse()
-            .DeleteElement(ProjectElements.Card(id))
+            .AlsoUpdate(ProjectElements.Card(id), string.Empty, null, SwapMode.Delete)
             .WithToast("Project deleted", ToastType.Info)
             .Build();
     }

@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Swap.Htmx;
 using Swap.Htmx.Extensions;
+using Swap.Htmx.Models;
 using Swap.Htmx.ServerSentEvents;
 using TaskFlow.Services;
 using TaskFlow.Events;
@@ -113,8 +114,8 @@ public class TasksController : SwapController
         // Trigger event with payload - NEW in 0.5.0
         // Event chain will receive task object and avoid re-fetching
         return SwapResponse()
-            .RefreshPartial(TaskElements.Column(task.Status), TaskViews.TaskColumn, task.Status)
-            .TriggerEvent(TaskEvents.Created, task) // Pass task as payload!
+            .AlsoUpdate(TaskElements.Column(task.Status), TaskViews.TaskColumn, task.Status)
+            .WithTrigger(TaskEvents.Created, task) // Pass task as payload!
             .Build();
     }
 
@@ -148,17 +149,17 @@ public class TasksController : SwapController
         // Multi-column update using OOB helpers - NEW in 0.5.0
         return SwapResponse()
             // Remove from old column
-            .RefreshPartial(TaskElements.Column(oldStatus), TaskViews.TaskColumn, oldStatus)
+            .AlsoUpdate(TaskElements.Column(oldStatus), TaskViews.TaskColumn, oldStatus)
             // Add to new column (demonstrates AlsoUpdateById)
-            .AlsoUpdateById(TaskElements.Column(status), TaskViews.TaskColumn, status)
+            .AlsoUpdate(TaskElements.Column(status), TaskViews.TaskColumn, status)
             // Update project progress
-            .AlsoUpdateById(
+            .AlsoUpdate(
                 ProjectElements.Progress(task.ProjectId),
                 ProjectViews.ProgressBar,
                 _projectService.GetProgress(task.ProjectId)
             )
             // Trigger event with payload for cascade
-            .TriggerEvent(TaskEvents.StatusChanged, task)
+            .WithTrigger(TaskEvents.StatusChanged, task)
             .Build();
     }
 
@@ -191,7 +192,7 @@ public class TasksController : SwapController
         {
             // Demonstrates WARNING toast
             return SwapResponse()
-                .TriggerEvent(TaskEvents.AssignmentFailed)
+                .WithTrigger(TaskEvents.AssignmentFailed)
                 .Build();
         }
 
@@ -208,9 +209,9 @@ public class TasksController : SwapController
 
         // Deep event chain: Task.Assigned → cascades to Notification + Activity
         return SwapResponse()
-            .RefreshPartial(TaskElements.Card(id), TaskViews.TaskCard, task)
-            .AlsoUpdateById(DashboardElements.TeamList, DashboardViews.TeamList, _teamService.GetAll())
-            .TriggerEvent(TaskEvents.Assigned, task)
+            .AlsoUpdate(TaskElements.Card(id), TaskViews.TaskCard, task)
+            .AlsoUpdate(DashboardElements.TeamList, DashboardViews.TeamList, _teamService.GetAll())
+            .WithTrigger(TaskEvents.Assigned, task)
             .Build();
     }
 
@@ -243,13 +244,13 @@ public class TasksController : SwapController
 
         // Demonstrates DELETE swap mode (removes element from DOM)
         return SwapResponse()
-            .DeleteElement(TaskElements.Card(id))
-            .AlsoUpdateById(
+            .AlsoUpdate(TaskElements.Card(id), string.Empty, null, SwapMode.Delete)
+            .AlsoUpdate(
                 ProjectElements.Progress(projectId),
                 ProjectViews.ProgressBar,
                 _projectService.GetProgress(projectId)
             )
-            .TriggerEvent(TaskEvents.Deleted)
+            .WithTrigger(TaskEvents.Deleted)
             .Build();
     }
 
@@ -306,8 +307,8 @@ public class TasksController : SwapController
         );
 
         return SwapResponse()
-            .RefreshPartial(TaskElements.Card(id), TaskViews.TaskCard, task)
-            .TriggerEvent(TaskEvents.PriorityChanged, task)
+            .AlsoUpdate(TaskElements.Card(id), TaskViews.TaskCard, task)
+            .WithTrigger(TaskEvents.PriorityChanged, task)
             .WithToast("Priority updated", ToastType.Info)
             .Build();
     }

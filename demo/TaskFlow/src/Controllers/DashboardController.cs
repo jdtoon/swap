@@ -68,7 +68,7 @@ public class DashboardController : SwapController
             var stats = _teamService.GetStats();
             var statsHtml = $@"<div class='stats'>
                 <div>Total Tasks: {stats.TotalTasks}</div>
-                <div>Active: {stats.ActiveTasks}</div>
+                <div>In Progress: {stats.InProgressTasks}</div>
                 <div>Completed: {stats.CompletedTasks}</div>
             </div>";
             await stream.SendEventAsync("stats-update", statsHtml);

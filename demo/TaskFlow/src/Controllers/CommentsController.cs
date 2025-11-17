@@ -69,18 +69,18 @@ public class CommentsController : SwapController
 
         // Demonstrates BeforeEnd swap mode - inserts new comment at end of list
         return SwapResponse()
-            .AddPartial(
+            .AlsoUpdate(
                 targetId: CommentElements.List(taskId),
                 viewName: CommentViews.CommentCard,
                 model: comment,
                 swapMode: SwapMode.BeforeEnd // NEW: Insert before closing tag
             )
-            .AlsoUpdateById(
+            .AlsoUpdate(
                 CommentElements.Count(taskId),
                 CommentViews.Count,
                 _commentService.GetByTask(taskId).Count
             )
-            .TriggerEvent(CommentEvents.Added, comment)
+            .WithTrigger(CommentEvents.Added, comment)
             .Build();
     }
 
@@ -106,7 +106,7 @@ public class CommentsController : SwapController
         comment = _commentService.Get(id)!;
 
         return SwapResponse()
-            .RefreshPartial(CommentElements.Card(id), CommentViews.CommentCard, comment)
+            .AlsoUpdate(CommentElements.Card(id), CommentViews.CommentCard, comment)
             .WithToast("Comment updated", ToastType.Info)
             .Build();
     }
@@ -127,13 +127,13 @@ public class CommentsController : SwapController
 
         // Demonstrates DELETE swap mode
         return SwapResponse()
-            .DeleteElement(CommentElements.Card(id))
-            .AlsoUpdateById(
+            .AlsoUpdate(CommentElements.Card(id), string.Empty, null, SwapMode.Delete)
+            .AlsoUpdate(
                 CommentElements.Count(taskId),
                 CommentViews.Count,
                 _commentService.GetByTask(taskId).Count
             )
-            .TriggerEvent(CommentEvents.Deleted)
+            .WithTrigger(CommentEvents.Deleted)
             .Build();
     }
 }
