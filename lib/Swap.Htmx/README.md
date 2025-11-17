@@ -229,6 +229,10 @@ public ActionResult Create(TodoInput input)
 
 For complete working examples, see the `Swap.Htmx.TestApp` project in this repository.
 
+## Documentation
+
+- **[Type-Safe Events Guide](Events/README_EVENTS.md)** - Learn how to define and use strongly-typed event keys to eliminate magic strings
+
 ## License
 
 MIT
