@@ -1,4 +1,6 @@
-﻿namespace TaskFlow.UnitTests;
+﻿using Xunit;
+
+namespace TaskFlow.UnitTests;
 
 public class UnitTest1
 {
