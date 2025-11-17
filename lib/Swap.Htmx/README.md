@@ -64,6 +64,8 @@ public class CartController : SwapController
 - `WithSuccessToast(message)` / `WithErrorToast(message)` / `WithWarningToast(message)` / `WithInfoToast(message)`
 - `WithTrigger(eventName, payload)` - Add custom HX-Trigger event
 
+**Note:** All triggers and toasts are automatically merged into a single `HX-Trigger` header. Multiple calls to `WithTrigger` and toast methods will create a JSON object containing all events.
+
 **SwapMode options:**
 - `SwapMode.OuterHTML` (default) - Replace entire element
 - `SwapMode.InnerHTML` - Replace inner content only
@@ -429,6 +431,7 @@ For complete working examples, see the `Swap.Htmx.TestApp` project in this repos
 
 - **[Type-Safe Events Guide](docs/Events.md)** - Learn how to define and use strongly-typed event keys to eliminate magic strings
 - **[Event Chains Guide](docs/EventChains.md)** - Configure automatic UI updates when events are triggered
+- **[Debugging & Logging](docs/DebuggingAndLogging.md)** - Enable debug logging to see event chains, toasts, and HTTP headers during development
 
 ## License
 

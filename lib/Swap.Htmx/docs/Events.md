@@ -4,7 +4,30 @@ Swap.Htmx uses `EventKey` for type-safe event handling, eliminating magic string
 
 **See also:** [Event Chains Guide](EventChains.md) - Learn how to configure automatic UI updates when events are triggered.
 
-## Quick Start
+## How HX-Trigger Headers Work
+
+HTMX listens for the `HX-Trigger` response header to fire client-side events. Swap.Htmx automatically merges multiple triggers into a single JSON object:
+
+```csharp
+return SwapResponse()
+    .WithSuccessToast("Item saved!")           // Adds: {"showToast": {...}}
+    .WithTrigger("itemSaved", item)            // Merges: {"showToast": {...}, "itemSaved": {...}}
+    .WithTrigger("listRefresh")                // Merges: {"showToast": {...}, "itemSaved": {...}, "listRefresh": null}
+    .Build();
+```
+
+**Result:** Single `HX-Trigger` header with all events:
+```json
+{
+  "showToast": {"type": "success", "message": "Item saved!"},
+  "itemSaved": {"ProductId": 123, "Name": "Widget"},
+  "listRefresh": null
+}
+```
+
+This ensures toasts, custom events, and event chain payloads all work together seamlessly.
+
+## Type-Safe Event Keys
 
 ### 1. Define Your Events
 
