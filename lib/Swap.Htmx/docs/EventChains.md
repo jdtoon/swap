@@ -278,5 +278,5 @@ public class ProductsController : SwapController
 
 ## See Also
 
-- [Type-Safe Events Guide](README_EVENTS.md) - Learn how to define strongly-typed events
+- [Type-Safe Events Guide](Events.md) - Learn how to define strongly-typed events
 - [Main README](../README.md) - Overview of all Swap.Htmx features

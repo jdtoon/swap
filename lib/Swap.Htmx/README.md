@@ -427,7 +427,8 @@ For complete working examples, see the `Swap.Htmx.TestApp` project in this repos
 
 ## Documentation
 
-- **[Type-Safe Events Guide](Events/README_EVENTS.md)** - Learn how to define and use strongly-typed event keys to eliminate magic strings
+- **[Type-Safe Events Guide](docs/Events.md)** - Learn how to define and use strongly-typed event keys to eliminate magic strings
+- **[Event Chains Guide](docs/EventChains.md)** - Configure automatic UI updates when events are triggered
 
 ## License
 
