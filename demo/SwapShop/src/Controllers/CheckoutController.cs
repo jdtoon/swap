@@ -25,11 +25,8 @@ public class CheckoutController : SwapController
     {
         get
         {
-            if (!HttpContext.Session.Keys.Contains("_initialized"))
-            {
-                HttpContext.Session.SetString("_initialized", "true");
-            }
-            return HttpContext.Session.Id;
+            // Use the new GetOrInitializeSessionId helper
+            return GetOrInitializeSessionId();
         }
     }
 

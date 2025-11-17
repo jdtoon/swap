@@ -26,13 +26,9 @@ public class CartController : SwapController
     {
         get
         {
-            // Setting ANY value in session triggers the cookie to be saved
-            // This is critical for session persistence
-            if (!HttpContext.Session.Keys.Contains("_initialized"))
-            {
-                HttpContext.Session.SetString("_initialized", "true");
-            }
-            return HttpContext.Session.Id;
+            // Use the new GetOrInitializeSessionId helper which automatically
+            // triggers session cookie persistence on first use
+            return GetOrInitializeSessionId();
         }
     }
 

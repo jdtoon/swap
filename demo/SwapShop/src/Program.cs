@@ -47,7 +47,16 @@ builder.Services.Configure<GzipCompressionProviderOptions>(options =>
 });
 
 // Add Swap.Htmx with centralized event chain configuration
-builder.Services.AddSwapHtmx(EventChainConfiguration.ConfigureEventChains);
+builder.Services.AddSwapHtmx(options =>
+{
+    // Configure view search paths for cross-controller OOB swaps
+    options.PartialViewSearchPaths.Add("Cart");
+    options.PartialViewSearchPaths.Add("Products");
+    options.PartialViewSearchPaths.Add("Orders");
+    
+    // Configure event chains
+    EventChainConfiguration.ConfigureEventChains(options.EventBus);
+});
 
 var app = builder.Build();
 
