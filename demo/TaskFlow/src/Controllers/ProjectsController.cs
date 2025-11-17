@@ -63,7 +63,9 @@ public class ProjectsController : SwapController
     {
         if (string.IsNullOrWhiteSpace(input.Name))
         {
-            return this.Toast("Project name is required", ToastType.Error);
+            return SwapResponse()
+                .WithToast("Project name is required", ToastType.Error)
+                .Build();
         }
 
         var project = _projectService.Create(input);
@@ -74,7 +76,7 @@ public class ProjectsController : SwapController
             userId: "demo-user"
         );
 
-        return this.SwapBuilder()
+        return SwapResponse()
             .RefreshPartial(ProjectElements.List, ProjectViews.List, _projectService.GetAll())
             .TriggerEvent(ProjectEvents.Created, project)
             .Build();
@@ -86,7 +88,9 @@ public class ProjectsController : SwapController
         var project = _projectService.Get(id);
         if (project == null)
         {
-            return this.Toast("Project not found", ToastType.Error);
+            return SwapResponse()
+                .WithToast("Project not found", ToastType.Error)
+                .Build();
         }
 
         _projectService.Update(id, input);
@@ -98,9 +102,9 @@ public class ProjectsController : SwapController
             userId: "demo-user"
         );
 
-        return this.SwapBuilder()
+        return SwapResponse()
             .RefreshPartial(ProjectElements.Card(id), ProjectViews.Card, project)
-            .Toast("Project updated", ToastType.Success)
+            .WithToast("Project updated", ToastType.Success)
             .Build();
     }
 
@@ -110,7 +114,9 @@ public class ProjectsController : SwapController
         var project = _projectService.Get(id);
         if (project == null)
         {
-            return this.Toast("Project not found", ToastType.Error);
+            return SwapResponse()
+                .WithToast("Project not found", ToastType.Error)
+                .Build();
         }
 
         _projectService.Delete(id);
@@ -120,9 +126,9 @@ public class ProjectsController : SwapController
             userId: "demo-user"
         );
 
-        return this.SwapBuilder()
+        return SwapResponse()
             .DeleteElement(ProjectElements.Card(id))
-            .Toast("Project deleted", ToastType.Info)
+            .WithToast("Project deleted", ToastType.Info)
             .Build();
     }
 

@@ -26,27 +26,29 @@ public class NotificationsController : SwapController
     [HttpGet("/notifications/stream")]
     public IActionResult NotificationStream()
     {
-        return Sse(stream =>
+        return ServerSentEvents(async (stream, cancel) =>
         {
             // Demonstrates SSE for real-time notifications
             // In production, subscribe to user-specific notification channel
             
-            stream.WriteEvent(new SseEvent
-            {
-                Data = "connected",
-                Event = "heartbeat"
-            });
+            await stream.SendEventAsync("heartbeat", "connected");
 
             // Push new notifications as they arrive
             // Example: new notification event
             var userId = "demo-user"; // In real app, get from auth
             var unreadCount = _notificationService.GetUnreadCount(userId);
             
-            stream.WriteEvent(new SseEvent
+            await stream.SendEventAsync("notification-count", unreadCount.ToString());
+            
+            // Keep connection alive
+            while (!cancel.IsCancellationRequested)
             {
-                Data = unreadCount.ToString(),
-                Event = "notification-count"
-            });
+                await Task.Delay(30000, cancel);
+                if (!cancel.IsCancellationRequested)
+                {
+                    await stream.SendKeepAliveAsync();
+                }
+            }
         });
     }
 
@@ -72,14 +74,16 @@ public class NotificationsController : SwapController
         var notification = _notificationService.Get(id);
         if (notification == null)
         {
-            return this.Toast("Notification not found", ToastType.Error);
+            return SwapResponse()
+                .WithToast("Notification not found", ToastType.Error)
+                .Build();
         }
 
         _notificationService.MarkAsRead(id);
 
         var userId = "demo-user"; // In real app, get from auth
         
-        return this.SwapBuilder()
+        return SwapResponse()
             .RefreshPartial(NotificationElements.Card(id), NotificationViews.Card, _notificationService.Get(id)!)
             .AlsoUpdateById(NotificationElements.Bell, NotificationViews.Bell, _notificationService.GetUnreadCount(userId))
             .Build();
@@ -91,10 +95,10 @@ public class NotificationsController : SwapController
         var userId = "demo-user"; // In real app, get from auth
         _notificationService.MarkAllAsRead(userId);
 
-        return this.SwapBuilder()
+        return SwapResponse()
             .RefreshPartial(NotificationElements.List, NotificationViews.List, _notificationService.GetForUser(userId))
             .AlsoUpdateById(NotificationElements.Bell, NotificationViews.Bell, 0)
-            .Toast("All notifications marked as read", ToastType.Success)
+            .WithToast("All notifications marked as read", ToastType.Success)
             .Build();
     }
 }

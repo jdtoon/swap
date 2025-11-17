@@ -41,21 +41,27 @@ public class TasksController : SwapController
     [HttpGet("/tasks/stream")]
     public IActionResult TaskStream()
     {
-        return Sse(stream =>
+        return ServerSentEvents(async (stream, cancel) =>
         {
             // Demonstrates SSE event bridge for real-time updates
             // This endpoint is kept alive and pushes updates when tasks change
             // Note: In production, use proper pub/sub (Redis, SignalR, etc.)
             
             // Heartbeat to keep connection alive
-            stream.WriteEvent(new SseEvent
-            {
-                Data = "connected",
-                Event = "heartbeat"
-            });
+            await stream.SendEventAsync("heartbeat", "connected");
 
             // Listen for task changes and push updates
             // Actual implementation would subscribe to event bus or message queue
+            
+            // Keep connection alive
+            while (!cancel.IsCancellationRequested)
+            {
+                await Task.Delay(30000, cancel); // 30 second heartbeat
+                if (!cancel.IsCancellationRequested)
+                {
+                    await stream.SendKeepAliveAsync();
+                }
+            }
         });
     }
 
@@ -89,10 +95,12 @@ public class TasksController : SwapController
     {
         if (string.IsNullOrWhiteSpace(input.Title))
         {
-            return this.Toast("Task title is required", ToastType.Error);
+            return SwapResponse()
+                .WithToast("Task title is required", ToastType.Error)
+                .Build();
         }
 
-        var task = _taskService.Create(input);
+        var task = _taskService.Create(input, "demo-user");
 
         // Log activity
         _activityService.LogActivity(
@@ -104,7 +112,7 @@ public class TasksController : SwapController
 
         // Trigger event with payload - NEW in 0.5.0
         // Event chain will receive task object and avoid re-fetching
-        return this.SwapBuilder()
+        return SwapResponse()
             .RefreshPartial(TaskElements.Column(task.Status), TaskViews.TaskColumn, task.Status)
             .TriggerEvent(TaskEvents.Created, task) // Pass task as payload!
             .Build();
@@ -120,7 +128,9 @@ public class TasksController : SwapController
         var task = _taskService.Get(id);
         if (task == null)
         {
-            return this.Toast("Task not found", ToastType.Error);
+            return SwapResponse()
+                .WithToast("Task not found", ToastType.Error)
+                .Build();
         }
 
         var oldStatus = task.Status;
@@ -136,7 +146,7 @@ public class TasksController : SwapController
         );
 
         // Multi-column update using OOB helpers - NEW in 0.5.0
-        return this.SwapBuilder()
+        return SwapResponse()
             // Remove from old column
             .RefreshPartial(TaskElements.Column(oldStatus), TaskViews.TaskColumn, oldStatus)
             // Add to new column (demonstrates AlsoUpdateById)
@@ -162,21 +172,25 @@ public class TasksController : SwapController
         var task = _taskService.Get(id);
         if (task == null)
         {
-            return this.Toast("Task not found", ToastType.Error);
+            return SwapResponse()
+                .WithToast("Task not found", ToastType.Error)
+                .Build();
         }
 
         // Check if team member is overloaded (>= 10 active tasks)
         var member = _teamService.Get(assigneeId);
         if (member == null)
         {
-            return this.Toast("Team member not found", ToastType.Error);
+            return SwapResponse()
+                .WithToast("Team member not found", ToastType.Error)
+                .Build();
         }
 
         var activeTaskCount = _teamService.GetActiveTaskCount(assigneeId);
         if (activeTaskCount >= 10)
         {
             // Demonstrates WARNING toast
-            return this.SwapBuilder()
+            return SwapResponse()
                 .TriggerEvent(TaskEvents.AssignmentFailed)
                 .Build();
         }
@@ -193,7 +207,7 @@ public class TasksController : SwapController
         );
 
         // Deep event chain: Task.Assigned → cascades to Notification + Activity
-        return this.SwapBuilder()
+        return SwapResponse()
             .RefreshPartial(TaskElements.Card(id), TaskViews.TaskCard, task)
             .AlsoUpdateById(DashboardElements.TeamList, DashboardViews.TeamList, _teamService.GetAll())
             .TriggerEvent(TaskEvents.Assigned, task)
@@ -210,7 +224,9 @@ public class TasksController : SwapController
         var task = _taskService.Get(id);
         if (task == null)
         {
-            return this.Toast("Task not found", ToastType.Error);
+            return SwapResponse()
+                .WithToast("Task not found", ToastType.Error)
+                .Build();
         }
 
         var projectId = task.ProjectId;
@@ -226,7 +242,7 @@ public class TasksController : SwapController
         );
 
         // Demonstrates DELETE swap mode (removes element from DOM)
-        return this.SwapBuilder()
+        return SwapResponse()
             .DeleteElement(TaskElements.Card(id))
             .AlsoUpdateById(
                 ProjectElements.Progress(projectId),
@@ -273,7 +289,9 @@ public class TasksController : SwapController
         var task = _taskService.Get(id);
         if (task == null)
         {
-            return this.Toast("Task not found", ToastType.Error);
+            return SwapResponse()
+                .WithToast("Task not found", ToastType.Error)
+                .Build();
         }
 
         _taskService.UpdatePriority(id, priority);
@@ -287,10 +305,10 @@ public class TasksController : SwapController
             userId: "demo-user"
         );
 
-        return this.SwapBuilder()
+        return SwapResponse()
             .RefreshPartial(TaskElements.Card(id), TaskViews.TaskCard, task)
             .TriggerEvent(TaskEvents.PriorityChanged, task)
-            .Toast("Priority updated", ToastType.Info)
+            .WithToast("Priority updated", ToastType.Info)
             .Build();
     }
 }

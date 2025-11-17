@@ -41,15 +41,24 @@ public class CommentsController : SwapController
         var task = _taskService.Get(taskId);
         if (task == null)
         {
-            return this.Toast("Task not found", ToastType.Error);
+            return SwapResponse()
+                .WithToast("Task not found", ToastType.Error)
+                .Build();
         }
 
         if (string.IsNullOrWhiteSpace(input.Content))
         {
-            return this.Toast("Comment cannot be empty", ToastType.Error);
+            return SwapResponse()
+                .WithToast("Comment cannot be empty", ToastType.Error)
+                .Build();
         }
 
-        var comment = _commentService.Create(taskId, input);
+        var comment = _commentService.Create(
+            taskId,
+            input,
+            authorId: "demo-user",
+            authorName: "Demo User"
+        );
 
         _activityService.LogActivity(
             description: $"Commented on '{task.Title}'",
@@ -59,7 +68,7 @@ public class CommentsController : SwapController
         );
 
         // Demonstrates BeforeEnd swap mode - inserts new comment at end of list
-        return this.SwapBuilder()
+        return SwapResponse()
             .AddPartial(
                 targetId: CommentElements.List(taskId),
                 viewName: CommentViews.CommentCard,
@@ -81,20 +90,24 @@ public class CommentsController : SwapController
         var comment = _commentService.Get(id);
         if (comment == null)
         {
-            return this.Toast("Comment not found", ToastType.Error);
+            return SwapResponse()
+                .WithToast("Comment not found", ToastType.Error)
+                .Build();
         }
 
         if (string.IsNullOrWhiteSpace(input.Content))
         {
-            return this.Toast("Comment cannot be empty", ToastType.Error);
+            return SwapResponse()
+                .WithToast("Comment cannot be empty", ToastType.Error)
+                .Build();
         }
 
         _commentService.Update(id, input);
         comment = _commentService.Get(id)!;
 
-        return this.SwapBuilder()
+        return SwapResponse()
             .RefreshPartial(CommentElements.Card(id), CommentViews.CommentCard, comment)
-            .Toast("Comment updated", ToastType.Info)
+            .WithToast("Comment updated", ToastType.Info)
             .Build();
     }
 
@@ -104,14 +117,16 @@ public class CommentsController : SwapController
         var comment = _commentService.Get(id);
         if (comment == null)
         {
-            return this.Toast("Comment not found", ToastType.Error);
+            return SwapResponse()
+                .WithToast("Comment not found", ToastType.Error)
+                .Build();
         }
 
         var taskId = comment.TaskId;
         _commentService.Delete(id);
 
         // Demonstrates DELETE swap mode
-        return this.SwapBuilder()
+        return SwapResponse()
             .DeleteElement(CommentElements.Card(id))
             .AlsoUpdateById(
                 CommentElements.Count(taskId),

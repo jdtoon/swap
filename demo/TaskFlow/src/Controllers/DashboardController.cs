@@ -56,25 +56,32 @@ public class DashboardController : SwapController
     [HttpGet("/dashboard/stream")]
     public IActionResult DashboardStream()
     {
-        return Sse(stream =>
+        return ServerSentEvents(async (stream, cancel) =>
         {
             // Demonstrates SSE for real-time dashboard updates
             // In production, subscribe to event bus/Redis/etc.
             
-            stream.WriteEvent(new SseEvent
-            {
-                Data = "connected",
-                Event = "heartbeat"
-            });
+            await stream.SendEventAsync("heartbeat", "connected");
 
             // Push updates when stats/activity changes
             // Example: stats update event
             var stats = _teamService.GetStats();
-            stream.WriteEvent(new SseEvent
+            var statsHtml = $@"<div class='stats'>
+                <div>Total Tasks: {stats.TotalTasks}</div>
+                <div>Active: {stats.ActiveTasks}</div>
+                <div>Completed: {stats.CompletedTasks}</div>
+            </div>";
+            await stream.SendEventAsync("stats-update", statsHtml);
+            
+            // Keep connection alive
+            while (!cancel.IsCancellationRequested)
             {
-                Data = System.Text.Json.JsonSerializer.Serialize(stats),
-                Event = "stats-update"
-            });
+                await Task.Delay(30000, cancel);
+                if (!cancel.IsCancellationRequested)
+                {
+                    await stream.SendKeepAliveAsync();
+                }
+            }
         });
     }
 
