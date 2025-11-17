@@ -1,0 +1,17 @@
+@model List<Notification>
+@using TaskFlow.Models
+@using TaskFlow.Views
+@{
+    ViewData["Title"] = "Notifications";
+}
+
+<div class="notifications-page">
+    <div class="header">
+        <h1>Notifications</h1>
+        <button hx-post="/notifications/read-all" class="btn">Mark All as Read</button>
+    </div>
+    
+    <div id="@NotificationElements.List">
+        @{ await Html.RenderPartialAsync(NotificationViews.List, Model); }
+    </div>
+</div>
