@@ -4,6 +4,8 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.AspNetCore.Mvc.ViewEngines;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.AspNetCore.Routing;
+using Swap.Htmx.Models;
+using Swap.Htmx.Results;
 using Swap.Htmx.ServerSentEvents;
 
 namespace Swap.Htmx;
@@ -74,6 +76,33 @@ public abstract class SwapController : Controller
             // Normal request (initial load or refresh) - return full view with layout
             return View(viewName, model);
         }
+    }
+
+    /// <summary>
+    /// Creates a fluent response builder for coordinating multiple updates in a single response.
+    /// This is the recommended approach when you need to combine view rendering, OOB swaps,
+    /// toasts, and custom triggers.
+    /// </summary>
+    /// <returns>A fluent builder for constructing coordinated HTMX responses.</returns>
+    /// <example>
+    /// <code>
+    /// public IActionResult AddToCart(int productId)
+    /// {
+    ///     _cart.Add(productId);
+    ///     
+    ///     return SwapResponse()
+    ///         .WithView("_ProductAdded")
+    ///         .AlsoUpdate("cart-count", "_CartCount", _cart.Count)
+    ///         .AlsoUpdate("cart-total", "_CartTotal", _cart.Total)
+    ///         .WithSuccessToast("Added to cart!");
+    /// }
+    /// </code>
+    /// </example>
+    protected SwapResponseBuilder SwapResponse()
+    {
+        var builder = new SwapResponseBuilder();
+        builder.Controller = this;
+        return builder;
     }
 
     /// <summary>
