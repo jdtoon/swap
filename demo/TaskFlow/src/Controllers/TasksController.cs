@@ -244,7 +244,7 @@ public class TasksController : SwapController
 
         // Demonstrates DELETE swap mode (removes element from DOM)
         return SwapResponse()
-            .AlsoUpdate(TaskElements.Card(id), string.Empty, null, SwapMode.Delete)
+            .AlsoUpdate(TaskElements.Card(id), "_Empty", null, SwapMode.Delete)
             .AlsoUpdate(
                 ProjectElements.Progress(projectId),
                 ProjectViews.ProgressBar,

@@ -1,0 +1,35 @@
+@model List<Project>
+@using TaskFlow.Models
+@using TaskFlow.Views
+@inject TaskFlow.Services.IProjectService ProjectService
+@{
+    ViewData["Title"] = "Projects";
+}
+
+<div class="projects-page">
+    <div class="header">
+        <h1>Projects</h1>
+        <button class="btn" onclick="showCreateProjectForm()">+ New Project</button>
+    </div>
+
+    <div class="projects-grid">
+        @foreach (var project in Model)
+        {
+            <div id="@ProjectElements.Card(project.Id)" class="project-card">
+                <h3>@project.Name</h3>
+                <p>@project.Description</p>
+                
+                <div id="@ProjectElements.Progress(project.Id)">
+                    @{ await Html.RenderPartialAsync(ProjectViews.ProgressBar, ProjectService.GetProgress(project.Id)); }
+                </div>
+                
+                <div class="project-actions">
+                    <a href="/projects/@project.Id" class="btn-sm">Details</a>
+                    <button hx-delete="/projects/@project.Id" 
+                            hx-confirm="Delete this project?"
+                            class="btn-sm btn-danger">Delete</button>
+                </div>
+            </div>
+        }
+    </div>
+</div>

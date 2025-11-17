@@ -128,7 +128,7 @@ public class ProjectsController : SwapController
         );
 
         return SwapResponse()
-            .AlsoUpdate(ProjectElements.Card(id), string.Empty, null, SwapMode.Delete)
+            .AlsoUpdate(ProjectElements.Card(id), "_Empty", null, SwapMode.Delete)
             .WithToast("Project deleted", ToastType.Info)
             .Build();
     }

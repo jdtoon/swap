@@ -1,9 +1,8 @@
-@model Project
-@inject TaskFlow.Services.IProjectService ProjectService
+@model double
 
 <div class="progress-bar-container">
     <div class="progress-bar">
-        <div class="progress-fill" style="width: @(ProjectService.GetProgress(Model.Id))%"></div>
+        <div class="progress-fill" style="width: @Model%"></div>
     </div>
-    <span class="progress-text">@(ProjectService.GetProgress(Model.Id))% Complete</span>
+    <span class="progress-text">@Model.ToString("F1")% Complete</span>
 </div>

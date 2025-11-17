@@ -127,7 +127,7 @@ public class CommentsController : SwapController
 
         // Demonstrates DELETE swap mode
         return SwapResponse()
-            .AlsoUpdate(CommentElements.Card(id), string.Empty, null, SwapMode.Delete)
+            .AlsoUpdate(CommentElements.Card(id), "_Empty", null, SwapMode.Delete)
             .AlsoUpdate(
                 CommentElements.Count(taskId),
                 CommentViews.Count,
