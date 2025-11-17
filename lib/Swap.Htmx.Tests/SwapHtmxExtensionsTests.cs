@@ -161,7 +161,7 @@ public class SwapHtmxExtensionsTests
 
         // Assert
         Assert.True(context.Response.Headers.ContainsKey("HX-Trigger"));
-        Assert.Equal(eventName, context.Response.Headers["HX-Trigger"]);
+        Assert.Equal("{\"itemCreated\": null}", context.Response.Headers["HX-Trigger"]);
     }
 
     [Fact]

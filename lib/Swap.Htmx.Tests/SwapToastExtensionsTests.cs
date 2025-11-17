@@ -217,4 +217,52 @@ public class SwapToastExtensionsTests
         Assert.Contains("showToast", secondHeader);
         Assert.Contains("Second message", secondHeader);
     }
+
+    [Fact]
+    public void ShowToast_SkipsToast_WhenHistoryRestoreRequest()
+    {
+        // Arrange
+        var context = new DefaultHttpContext();
+        context.Request.Headers["HX-History-Restore-Request"] = "true";
+        var response = context.Response;
+
+        // Act
+        response.ShowToast("Test message", ToastType.Info);
+
+        // Assert - No HX-Trigger header should be added
+        Assert.False(response.Headers.ContainsKey("HX-Trigger"));
+    }
+
+    [Fact]
+    public void ShowToast_AddsCacheControlHeaders()
+    {
+        // Arrange
+        var context = new DefaultHttpContext();
+        var response = context.Response;
+
+        // Act
+        response.ShowToast("Test message", ToastType.Info);
+
+        // Assert
+        Assert.True(response.Headers.ContainsKey("Cache-Control"));
+        Assert.Contains("no-cache", response.Headers["Cache-Control"].ToString());
+        Assert.Contains("no-store", response.Headers["Cache-Control"].ToString());
+        Assert.Contains("must-revalidate", response.Headers["Cache-Control"].ToString());
+    }
+
+    [Fact]
+    public void ShowToast_NoCacheControlHeaders_WhenHistoryRestoreRequest()
+    {
+        // Arrange
+        var context = new DefaultHttpContext();
+        context.Request.Headers["HX-History-Restore-Request"] = "true";
+        var response = context.Response;
+
+        // Act
+        response.ShowToast("Test message", ToastType.Info);
+
+        // Assert - No cache headers should be added on history restore
+        Assert.False(response.Headers.ContainsKey("Cache-Control"));
+    }
 }
+

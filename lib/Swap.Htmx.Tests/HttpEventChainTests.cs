@@ -412,4 +412,57 @@ public class HttpEventChainTests
         Assert.Equal("Deleted!", result3!.Toasts.First().Message);
         Assert.Equal(ToastType.Warning, result3.Toasts.First().Type);
     }
+
+    [Fact]
+    public void EventChain_WithRedirect_ConfiguresRedirect()
+    {
+        // Arrange
+        var options = new SwapEventBusOptions();
+
+        // Act
+        options.When(SwapEvents.UI.RefreshList)
+            .Toast("Success!", ToastType.Success)
+            .Redirect("/dashboard");
+
+        var configs = options.GetEventChainConfigs();
+
+        // Assert
+        var config = configs[SwapEvents.UI.RefreshList.Name];
+        Assert.NotNull(config.Redirect);
+        Assert.Equal("/dashboard", config.Redirect!.Url);
+    }
+
+    [Fact]
+    public void EventChainExecutor_WithRedirect_BuildsResponseWithRedirect()
+    {
+        // Arrange
+        var options = new SwapEventBusOptions();
+        options.When(SwapEvents.UI.RefreshList)
+            .Redirect("/orders");
+
+        var executor = new Events.EventChainExecutor(options);
+        var httpContext = new DefaultHttpContext();
+        var controller = new TestController();
+
+        // Act
+        var result = executor.Execute(SwapEvents.UI.RefreshList, httpContext, controller);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal("/orders", result!.RedirectUrl);
+    }
+
+    [Fact]
+    public void SwapResponseBuilder_WithRedirect_StoresRedirectUrl()
+    {
+        // Arrange
+        var builder = new SwapResponseBuilder();
+
+        // Act
+        builder.WithRedirect("/checkout");
+
+        // Assert
+        Assert.Equal("/checkout", builder.RedirectUrl);
+    }
 }
+

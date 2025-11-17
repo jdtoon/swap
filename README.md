@@ -91,8 +91,31 @@ public class TodosTests : IClassFixture<HtmxTestFixture<Program>>
 - [`Swap.Htmx`](https://www.nuget.org/packages/Swap.Htmx) – HTMX‑friendly building blocks for ASP.NET Core MVC apps. [Docs](lib/Swap.Htmx/README.md)
 - [`Swap.Testing`](https://www.nuget.org/packages/Swap.Testing) – fluent integration tests for HTMX endpoints. [Docs](lib/Swap.Testing/README.md)
 
+## Demo Application
+
+**[SwapShop](demo/SwapShop/README.md)** – A fully functional e-commerce demo showcasing all three tiers of the Swap.Htmx API:
+- **Tier 1: SwapView** - Simple HTMX-aware view rendering
+- **Tier 2: SwapResponse** - Coordinated multi-part updates with OOB swaps
+- **Tier 3: SwapEvent** - Event-driven UI updates with configurable event chains
+
+Features demonstrated:
+- Shopping cart with session persistence
+- Toast notifications (success, error, warning, info)
+- Event chains for coordinated updates
+- HTMX navigation with browser history support
+- Form submissions with optimistic UI updates
+- Debug logging with color-coded console output
+
+Quick start:
+```bash
+cd demo/SwapShop/src
+dotnet run
+# Open http://localhost:5120
+```
+
 ## Examples
 
-- `Swap.Htmx.TestApp` – small demo application showing HTMX + MVC + Swap.
-- `lib/Swap.Testing/EXAMPLE_TESTS.cs` – longer example test suite using most of the testing helpers.
+- **[SwapShop](demo/SwapShop)** – Production-ready e-commerce demo with comprehensive event chain examples
+- `lib/Swap.Testing/EXAMPLE_TESTS.cs` – Example test suite using the testing helpers
+
 
