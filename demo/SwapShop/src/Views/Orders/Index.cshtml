@@ -12,7 +12,11 @@
 
     @if (!Model.Any())
     {
-        <p>No orders yet. <a href="/Products">Start shopping!</a></p>
+        <p>No orders yet. <a href="/Products" 
+           hx-get="/Products" 
+           hx-target="main" 
+           hx-swap="innerHTML" 
+           hx-push-url="true">Start shopping!</a></p>
     }
     else
     {

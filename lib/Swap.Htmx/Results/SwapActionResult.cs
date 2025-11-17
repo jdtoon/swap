@@ -137,10 +137,31 @@ public sealed class SwapActionResult : ActionResult
             Model = oob.Model
         };
 
+        // Try to find the view - first in current controller context, then in common locations
         var viewResult = viewEngine.FindView(context, oob.ViewName, isMainPage: false);
+        
         if (!viewResult.Success)
         {
-            throw new InvalidOperationException($"Could not find view '{oob.ViewName}' for OOB swap.");
+            // Try common partial locations if not found
+            var searchLocations = new[]
+            {
+                $"~/Views/Shared/{oob.ViewName}.cshtml",
+                $"~/Views/Cart/{oob.ViewName}.cshtml",
+                $"~/Views/Products/{oob.ViewName}.cshtml",
+                $"~/Views/Orders/{oob.ViewName}.cshtml"
+            };
+
+            foreach (var location in searchLocations)
+            {
+                viewResult = viewEngine.GetView(executingFilePath: null, viewPath: location, isMainPage: false);
+                if (viewResult.Success)
+                    break;
+            }
+
+            if (!viewResult.Success)
+            {
+                throw new InvalidOperationException($"Could not find view '{oob.ViewName}' for OOB swap.");
+            }
         }
 
         await using var sw = new StringWriter();

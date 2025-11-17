@@ -9,14 +9,6 @@
         "dist/htmx.min.js",
         "dist/htmx.js"
       ]
-    },
-    {
-      "library": "@picocss/pico@2.1.1",
-      "destination": "wwwroot/lib/pico/",
-      "files": [
-        "css/pico.min.css",
-        "css/pico.css"
-      ]
     }
   ]
 }

@@ -21,7 +21,17 @@ public class CheckoutController : SwapController
         _orderService = orderService;
     }
 
-    private string SessionId => HttpContext.Session.Id;
+    private string SessionId
+    {
+        get
+        {
+            if (!HttpContext.Session.Keys.Contains("_initialized"))
+            {
+                HttpContext.Session.SetString("_initialized", "true");
+            }
+            return HttpContext.Session.Id;
+        }
+    }
 
     /// <summary>
     /// Checkout page

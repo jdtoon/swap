@@ -41,7 +41,12 @@
 
     <footer>
         <div class="grid">
-            <a href="/Cart" role="button" class="secondary outline">Back to Cart</a>
+                    <a href="@Url.Action("Index", "Cart")" 
+           hx-get="@Url.Action("Index", "Cart")" 
+           hx-target="main" 
+           hx-swap="innerHTML" 
+           hx-push-url="true" 
+           role="button">Back to Cart</a>
             <button hx-post="/Checkout/PlaceOrder"
                     hx-swap="none"
                     hx-on::after-request="if(event.detail.successful) { window.location.href = '/Orders'; }">

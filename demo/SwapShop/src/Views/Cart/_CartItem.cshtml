@@ -5,11 +5,13 @@
     <td>$@Model.Price.ToString("F2")</td>
     <td>
         <input type="number" 
+               name="quantity"
                value="@Model.Quantity" 
                min="1" 
                max="99"
                hx-put="/Cart/UpdateQuantity"
                hx-vals='{"productId": @Model.ProductId}'
+               hx-include="this"
                hx-trigger="change"
                hx-swap="none"
                style="width: 80px;" />
