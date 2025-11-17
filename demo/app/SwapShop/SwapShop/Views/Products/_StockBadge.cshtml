@@ -1,0 +1,14 @@
+@model SwapShop.Models.Product
+
+@if (Model.Stock == 0)
+{
+    <small class="pico-color-red-500"><strong>Out of Stock</strong></small>
+}
+else if (Model.Stock <= 5)
+{
+    <small class="pico-color-amber-500"><strong>Low Stock</strong> (@Model.Stock left)</small>
+}
+else
+{
+    <small class="pico-color-green-500"><strong>In Stock</strong> (@Model.Stock available)</small>
+}

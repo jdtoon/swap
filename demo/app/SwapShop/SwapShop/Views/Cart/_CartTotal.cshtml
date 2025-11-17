@@ -1,0 +1,11 @@
+@model SwapShop.Models.Cart
+
+<div class="grid">
+    <div></div>
+    <div>
+        <p>
+            <strong>Total Items:</strong> @Model.Items.Sum(i => i.Quantity)<br />
+            <strong>Total:</strong> <span style="font-size: 1.5rem; color: var(--pico-primary);">$@Model.Total.ToString("F2")</span>
+        </p>
+    </div>
+</div>

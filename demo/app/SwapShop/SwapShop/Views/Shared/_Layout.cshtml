@@ -1,0 +1,47 @@
+﻿@using SwapShop.Views
+@inject SwapShop.Services.ICartService CartService
+
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - SwapShop</title>
+    
+    <!-- Pico CSS -->
+    <link rel="stylesheet" href="~/lib/pico/css/pico.min.css" />
+    <link rel="stylesheet" href="~/css/toasts.css" asp-append-version="true" />
+    
+    <!-- HTMX -->
+    <script src="~/lib/htmx/dist/htmx.min.js"></script>
+</head>
+<body>
+    <header>
+        <nav class="container">
+            <ul>
+                <li><strong>SwapShop</strong></li>
+            </ul>
+            <ul>
+                <li><a asp-controller="Products" asp-action="Index">Products</a></li>
+                <li><a asp-controller="Cart" asp-action="Index">Cart <span id="@CartElements.Badge">@await Html.PartialAsync(CartViews.Badge, CartService.GetItemCount(Context.Session.Id))</span></a></li>
+                <li><a asp-controller="Orders" asp-action="Index">Orders</a></li>
+            </ul>
+        </nav>
+    </header>
+    
+    <main class="container">
+        @RenderBody()
+    </main>
+
+    <footer class="container">
+        <small>SwapShop - Demonstrating Swap.Htmx · HTMX @(ViewData["HtmxVersion"] ?? "2.0.8") · <a href="https://github.com/yourusername/swap" target="_blank">GitHub</a></small>
+    </footer>
+
+    <!-- Toast container injected by swap-toasts.js -->
+    
+    <!-- Swap.Htmx Toast System -->
+    <script src="~/js/swap-toasts.js" asp-append-version="true"></script>
+    
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

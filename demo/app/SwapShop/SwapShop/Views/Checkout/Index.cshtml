@@ -1,0 +1,52 @@
+@model SwapShop.Models.Cart
+@using SwapShop.Views
+
+@{
+    ViewData["Title"] = "Checkout";
+}
+
+<article>
+    <header>
+        <h1>Checkout</h1>
+    </header>
+
+    <h2>Order Summary</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Product</th>
+                <th>Quantity</th>
+                <th>Price</th>
+                <th>Subtotal</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model.Items)
+            {
+                <tr>
+                    <td>@item.ProductName</td>
+                    <td>@item.Quantity</td>
+                    <td>$@item.Price.ToString("F2")</td>
+                    <td>$@item.Subtotal.ToString("F2")</td>
+                </tr>
+            }
+        </tbody>
+        <tfoot>
+            <tr>
+                <td colspan="3"><strong>Total</strong></td>
+                <td><strong>$@Model.Total.ToString("F2")</strong></td>
+            </tr>
+        </tfoot>
+    </table>
+
+    <footer>
+        <div class="grid">
+            <a href="/Cart" role="button" class="secondary outline">Back to Cart</a>
+            <button hx-post="/Checkout/PlaceOrder"
+                    hx-swap="none"
+                    hx-on::after-request="if(event.detail.successful) { window.location.href = '/Orders'; }">
+                Place Order
+            </button>
+        </div>
+    </footer>
+</article>

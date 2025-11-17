@@ -1,0 +1,42 @@
+@model SwapShop.Models.Cart
+@using SwapShop.Views
+
+@{
+    ViewData["Title"] = "Shopping Cart";
+}
+
+<article>
+    <header>
+        <h1>Shopping Cart</h1>
+    </header>
+
+    @if (!Model.Items.Any())
+    {
+        <div id="@CartElements.Items">
+            @await Html.PartialAsync(CartViews.Empty)
+        </div>
+    }
+    else
+    {
+        <div id="@CartElements.Items">
+            @await Html.PartialAsync(CartViews.Items, Model)
+        </div>
+
+        <footer>
+            <div id="@CartElements.Total">
+                @await Html.PartialAsync(CartViews.Total, Model)
+            </div>
+
+            <div class="grid">
+                <button hx-post="/Cart/Clear"
+                        hx-confirm="Clear entire cart?"
+                        class="secondary outline">
+                    Clear Cart
+                </button>
+                <a href="/Checkout" role="button">
+                    Proceed to Checkout
+                </a>
+            </div>
+        </footer>
+    }
+</article>

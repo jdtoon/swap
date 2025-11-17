@@ -1,0 +1,35 @@
+@model SwapShop.Models.Product
+@using SwapShop.Views
+
+<article id="@ProductElements.Card-@Model.Id">
+    <header>
+        <h3>@Model.Name</h3>
+    </header>
+    
+    <p>@Model.Description</p>
+    
+    <footer>
+        <div class="grid">
+            <div>
+                <strong>$@Model.Price.ToString("F2")</strong>
+                <br />
+                @await Html.PartialAsync(ProductViews.StockBadge, Model)
+            </div>
+            <div>
+                @if (Model.Stock > 0)
+                {
+                    <button hx-post="/Cart/AddItem"
+                            hx-vals='{"productId": @Model.Id, "quantity": 1}'
+                            hx-swap="none"
+                            class="secondary">
+                        Add to Cart
+                    </button>
+                }
+                else
+                {
+                    <button disabled>Out of Stock</button>
+                }
+            </div>
+        </div>
+    </footer>
+</article>

@@ -1,0 +1,54 @@
+@model SwapShop.Models.Order
+@using SwapShop.Views
+
+<article>
+    <header>
+        <div class="grid">
+            <div>
+                <h3>Order #@Model.Id</h3>
+                <small>@Model.CreatedAt.ToString("MMM dd, yyyy HH:mm")</small>
+            </div>
+            <div id="@OrderElements.Status-@Model.Id">
+                @await Html.PartialAsync(OrderViews.Status, Model)
+            </div>
+        </div>
+    </header>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Product</th>
+                <th>Quantity</th>
+                <th>Price</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model.Items)
+            {
+                <tr>
+                    <td>@item.ProductName</td>
+                    <td>@item.Quantity</td>
+                    <td>$@item.Price.ToString("F2")</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <footer>
+        <div class="grid">
+            <div>
+                <strong>Total: $@Model.Total.ToString("F2")</strong>
+            </div>
+            <div>
+                @if (Model.Status != SwapShop.Models.OrderStatus.Delivered)
+                {
+                    <button hx-post="/Orders/SimulateProgress?id=@Model.Id"
+                            hx-swap="none"
+                            class="secondary outline">
+                        Simulate Next Status
+                    </button>
+                }
+            </div>
+        </div>
+    </footer>
+</article>

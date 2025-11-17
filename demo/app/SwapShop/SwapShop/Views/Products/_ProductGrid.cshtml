@@ -1,0 +1,16 @@
+@model IEnumerable<SwapShop.Models.Product>
+@using SwapShop.Views
+
+<div id="@ProductElements.Grid" class="grid">
+    @if (!Model.Any())
+    {
+        <p>No products found.</p>
+    }
+    else
+    {
+        foreach (var product in Model)
+        {
+            @await Html.PartialAsync(ProductViews.Card, product)
+        }
+    }
+</div>

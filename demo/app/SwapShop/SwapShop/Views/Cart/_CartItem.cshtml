@@ -1,0 +1,27 @@
+@model SwapShop.Models.CartItem
+
+<tr id="cart-item-@Model.ProductId">
+    <td>@Model.ProductName</td>
+    <td>$@Model.Price.ToString("F2")</td>
+    <td>
+        <input type="number" 
+               value="@Model.Quantity" 
+               min="1" 
+               max="99"
+               hx-put="/Cart/UpdateQuantity"
+               hx-vals='{"productId": @Model.ProductId}'
+               hx-trigger="change"
+               hx-swap="none"
+               style="width: 80px;" />
+    </td>
+    <td>$@Model.Subtotal.ToString("F2")</td>
+    <td>
+        <button hx-delete="/Cart/RemoveItem?productId=@Model.ProductId"
+                hx-confirm="Remove this item?"
+                hx-swap="none"
+                class="secondary outline"
+                aria-label="Remove item">
+            ×
+        </button>
+    </td>
+</tr>

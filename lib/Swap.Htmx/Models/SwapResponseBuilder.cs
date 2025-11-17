@@ -195,6 +195,21 @@ public sealed class SwapResponseBuilder
     internal IReadOnlyList<TriggerEvent> Triggers => _triggers;
     
     /// <summary>
+    /// Builds and returns the final IActionResult.
+    /// This allows explicit conversion when implicit conversion to ActionResult doesn't apply.
+    /// </summary>
+    public IActionResult Build()
+    {
+        if (Controller == null)
+        {
+            throw new InvalidOperationException(
+                "SwapResponseBuilder must be created through SwapController.SwapResponse() to use Build().");
+        }
+        
+        return new Swap.Htmx.Results.SwapActionResult(this, Controller);
+    }
+    
+    /// <summary>
     /// Implicit conversion to ActionResult.
     /// Allows returning SwapResponseBuilder directly from controller actions.
     /// </summary>

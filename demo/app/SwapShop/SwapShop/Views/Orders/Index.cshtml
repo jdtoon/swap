@@ -1,0 +1,26 @@
+@model IEnumerable<SwapShop.Models.Order>
+@using SwapShop.Views
+
+@{
+    ViewData["Title"] = "My Orders";
+}
+
+<article>
+    <header>
+        <h1>My Orders</h1>
+    </header>
+
+    @if (!Model.Any())
+    {
+        <p>No orders yet. <a href="/Products">Start shopping!</a></p>
+    }
+    else
+    {
+        <div id="@OrderElements.List">
+            @foreach (var order in Model)
+            {
+                @await Html.PartialAsync(OrderViews.Card, order)
+            }
+        </div>
+    }
+</article>

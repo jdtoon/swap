@@ -1,0 +1,22 @@
+{
+  "version": "1.0",
+  "defaultProvider": "unpkg",
+  "libraries": [
+    {
+      "library": "htmx.org@2.0.8",
+      "destination": "wwwroot/lib/htmx/",
+      "files": [
+        "dist/htmx.min.js",
+        "dist/htmx.js"
+      ]
+    },
+    {
+      "library": "@picocss/pico@2.0.6",
+      "destination": "wwwroot/lib/pico/",
+      "files": [
+        "css/pico.min.css",
+        "css/pico.css"
+      ]
+    }
+  ]
+}
