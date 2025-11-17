@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Swap.Htmx.Events;
 using Swap.Htmx.Extensions;
 
 namespace Swap.Htmx.Models;
@@ -144,7 +145,20 @@ public sealed class SwapResponseBuilder
         => WithToast(message, ToastType.Info);
 
     /// <summary>
-    /// Adds a custom HX-Trigger event.
+    /// Adds a custom HX-Trigger event with a type-safe event key.
+    /// </summary>
+    /// <param name="eventKey">The event key to trigger on the client.</param>
+    /// <param name="payload">Optional payload data for the event.</param>
+    /// <returns>The builder for chaining.</returns>
+    public SwapResponseBuilder WithTrigger(EventKey eventKey, object? payload = null)
+    {
+        _triggers.Add(new TriggerEvent(eventKey.Name, payload));
+        return this;
+    }
+
+    /// <summary>
+    /// Adds a custom HX-Trigger event with a string event name.
+    /// Prefer using the EventKey overload for type safety.
     /// </summary>
     /// <param name="eventName">The event name to trigger on the client.</param>
     /// <param name="payload">Optional payload data for the event.</param>
