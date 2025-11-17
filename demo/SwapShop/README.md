@@ -46,7 +46,8 @@ public IActionResult Remove(int productId)
 ✅ **Out-of-Band (OOB) Swaps** - Update cart badge while updating main content
 ✅ **Event Chains** - Configure what happens when events fire (toasts, partials, redirects)
 ✅ **Toast Notifications** - Success/Error/Warning/Info toasts with auto-dismiss
-✅ **Session Management** - Shopping cart persists across navigation
+✅ **Automatic Session Management** - Cookie persistence handled automatically via `GetOrInitializeSessionId()`
+✅ **Configurable View Search Paths** - Cross-controller OOB swaps work seamlessly
 ✅ **Form Submissions** - Add to cart, update quantities, checkout with HTMX
 ✅ **Optimistic UI Updates** - Instant feedback on user actions
 ✅ **History Navigation** - Browser back/forward works correctly
@@ -136,6 +137,18 @@ SwapShop/
 Configure what happens when events are triggered:
 
 ```csharp
+// In Program.cs - Configure Swap.Htmx with view search paths and event chains
+builder.Services.AddSwapHtmx(options =>
+{
+    // Configure view search paths for cross-controller OOB swaps
+    options.PartialViewSearchPaths.Add("Cart");
+    options.PartialViewSearchPaths.Add("Products");
+    options.PartialViewSearchPaths.Add("Orders");
+    
+    // Configure event chains
+    EventChainConfiguration.ConfigureEventChains(options.EventBus);
+});
+
 // In EventChainConfiguration.cs
 config.When(CartEvents.ItemAdded)
     .RefreshPartial(CartElements.Badge, CartViews.Badge, ctx => GetCartCount())
@@ -215,6 +228,25 @@ response.ShowInfoToast("Price updated");
 
 ## Common Patterns
 
+### Pattern 0: Session Helper (New in 0.5.0)
+```csharp
+// Automatic session cookie persistence - no manual initialization needed
+private string SessionId => GetOrInitializeSessionId();
+
+// Old pattern (still works, but not recommended):
+private string SessionId
+{
+    get
+    {
+        if (!HttpContext.Session.Keys.Contains("_initialized"))
+        {
+            HttpContext.Session.SetString("_initialized", "true");
+        }
+        return HttpContext.Session.Id;
+    }
+}
+```
+
 ### Pattern 1: Simple Page Load
 ```csharp
 public IActionResult Index() => SwapView(_products);
@@ -285,7 +317,7 @@ See exactly what's happening under the hood:
 1. **OOB targets must have IDs** - `<div id="cart-badge">` not just `<div>`
 2. **Event chains need matching event keys** - Case-sensitive
 3. **Partials need Layout = null** - Prevents nested layouts
-4. **Session initialization** - Cookie must be set before Session.Id is stable
+4. **View search paths** - Configure paths in `AddSwapHtmx()` for cross-controller OOB swaps
 
 ## Next Steps
 
@@ -299,11 +331,24 @@ See exactly what's happening under the hood:
 
 ### Apply to Your Project
 
-1. Install `Swap.Htmx` package
-2. Add `builder.Services.AddSwapHtmx()` to Program.cs
+1. Install `Swap.Htmx` package (version 0.5.0+)
+2. Configure in Program.cs:
+   ```csharp
+   builder.Services.AddSwapHtmx(options =>
+   {
+       // Optional: Add view search paths for cross-controller OOB swaps
+       options.PartialViewSearchPaths.Add("YourController");
+       
+       // Optional: Configure event chains
+       options.EventBus.When(YourEvents.Created)
+           .RefreshPartial("target-id", "_PartialView")
+           .Toast("Success!", ToastType.Success);
+   });
+   ```
 3. Inherit from `SwapController`
-4. Use `SwapView()`, `SwapResponse()`, or `SwapEvent()`
-5. Configure event chains as needed
+4. Use `GetOrInitializeSessionId()` for automatic session management
+5. Use `SwapView()`, `SwapResponse()`, or `SwapEvent()`
+6. Configure event chains as needed
 
 ## Questions or Issues?
 
