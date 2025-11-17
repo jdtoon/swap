@@ -53,16 +53,13 @@ public class CartController : SwapController
         var product = _productService.GetById(productId);
         if (product == null || product.Stock < quantity)
         {
-            // Trigger failure event via response header
-            Response.HxTrigger(CartEvents.AddFailed.Name);
-            return Content("", "text/html");
+            return SwapEvent(CartEvents.AddFailed, new { ProductId = productId, Reason = "Product not available" }).Build();
         }
 
         _cartService.AddItem(SessionId, productId, quantity);
-        
-        // Trigger success event - event chain will handle UI updates
-        Response.HxTrigger(CartEvents.ItemAdded.Name);
-        return Content("", "text/html");
+        var cart = _cartService.GetCart(SessionId);
+
+        return SwapEvent(CartEvents.ItemAdded, cart).Build();
     }
 
     /// <summary>
@@ -74,14 +71,13 @@ public class CartController : SwapController
         var product = _productService.GetById(productId);
         if (product == null || quantity > product.Stock)
         {
-            Response.HxTrigger(CartEvents.UpdateFailed.Name);
-            return Content("", "text/html");
+            return SwapEvent(CartEvents.UpdateFailed, new { ProductId = productId, RequestedQuantity = quantity }).Build();
         }
 
         _cartService.UpdateQuantity(SessionId, productId, quantity);
-        
-        Response.HxTrigger(CartEvents.QuantityUpdated.Name);
-        return Content("", "text/html");
+        var cart = _cartService.GetCart(SessionId);
+
+        return SwapEvent(CartEvents.QuantityUpdated, cart).Build();
     }
 
     /// <summary>
@@ -91,9 +87,9 @@ public class CartController : SwapController
     public IActionResult RemoveItem(int productId)
     {
         _cartService.RemoveItem(SessionId, productId);
-        
-        Response.HxTrigger(CartEvents.ItemRemoved.Name);
-        return Content("", "text/html");
+        var cart = _cartService.GetCart(SessionId);
+
+        return SwapEvent(CartEvents.ItemRemoved, cart).Build();
     }
 
     /// <summary>
@@ -103,9 +99,8 @@ public class CartController : SwapController
     public IActionResult Clear()
     {
         _cartService.ClearCart(SessionId);
-        
-        Response.HxTrigger(CartEvents.Cleared.Name);
-        return Content("", "text/html");
+
+        return SwapEvent(CartEvents.Cleared).Build();
     }
 
     /// <summary>

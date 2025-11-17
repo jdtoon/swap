@@ -74,20 +74,51 @@ public sealed class SwapActionResult : ActionResult
             }
         }
 
-        // 4. Render main view
-        var viewResult = new ViewResult
+        // 4. Render main view (if one is specified) or just OOB swaps
+        if (!string.IsNullOrEmpty(_builder.ViewName) || _builder.Model != null)
         {
-            ViewName = _builder.ViewName,
-            ViewData = _controller.ViewData,
-            TempData = _controller.TempData
-        };
+            // Has a main view to render
+            var viewResult = new ViewResult
+            {
+                ViewName = _builder.ViewName,
+                ViewData = _controller.ViewData,
+                TempData = _controller.TempData
+            };
 
-        if (_builder.Model != null)
-        {
-            viewResult.ViewData.Model = _builder.Model;
+            if (_builder.Model != null)
+            {
+                viewResult.ViewData.Model = _builder.Model;
+            }
+
+            await viewResult.ExecuteResultAsync(context);
         }
-
-        await viewResult.ExecuteResultAsync(context);
+        else if (_builder.OobSwaps.Count > 0)
+        {
+            // No main view, but we have OOB swaps - write them directly
+            context.HttpContext.Response.ContentType = "text/html";
+            await using var writer = new StreamWriter(context.HttpContext.Response.Body, leaveOpen: true);
+            
+            foreach (var key in _controller.ViewData.Keys.Where(k => k.StartsWith("Oob_")))
+            {
+                var oobHtml = _controller.ViewData[key] as string;
+                if (!string.IsNullOrEmpty(oobHtml))
+                {
+                    await writer.WriteAsync(oobHtml);
+                }
+            }
+            
+            await writer.FlushAsync();
+        }
+        else
+        {
+            // No main view and no OOB swaps - return empty content
+            var emptyResult = new ContentResult 
+            { 
+                Content = "",
+                ContentType = "text/html"
+            };
+            await emptyResult.ExecuteResultAsync(context);
+        }
     }
 
     private async Task<string> RenderOobSwapAsync(ActionContext context, OobSwap oob)
