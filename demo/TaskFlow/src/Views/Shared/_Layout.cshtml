@@ -18,11 +18,12 @@
                     <a href="/dashboard" hx-get="/dashboard" hx-target="main" hx-push-url="true">Dashboard</a>
                     <a href="/tasks" hx-get="/tasks" hx-target="main" hx-push-url="true">Tasks</a>
                     <a href="/projects" hx-get="/projects" hx-target="main" hx-push-url="true">Projects</a>
-                    <a href="/notifications" class="notification-link" hx-get="/notifications" hx-target="main" hx-push-url="true">
+                    <a href="/notifications" class="notification-link" hx-get="/notifications" hx-target="#main" hx-push-url="true">
                         <span id="@NotificationElements.Bell" 
                               hx-get="/notifications/bell" 
                               hx-trigger="load, every 30s"
-                              hx-swap="innerHTML">
+                              hx-swap="innerHTML"
+                              hx-push-url="false">
                             🔔
                         </span>
                     </a>
