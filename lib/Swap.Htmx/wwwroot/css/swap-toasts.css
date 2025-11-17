@@ -1,0 +1,138 @@
+/**
+ * Swap.Htmx Toast Notifications
+ * 
+ * Standalone toast styling with zero external dependencies.
+ * Works with the SwapResponseBuilder.Toast() API.
+ * 
+ * Usage in _Layout.cshtml:
+ * <link rel="stylesheet" href="~/_content/Swap.Htmx/css/swap-toasts.css" />
+ * 
+ * Or via CDN (once published to NuGet):
+ * <link rel="stylesheet" href="https://unpkg.com/swap.htmx@0.5.0/wwwroot/css/swap-toasts.css" />
+ */
+
+/* CSS Custom Properties for easy theming */
+:root {
+    --swap-toast-success-bg: #10b981;
+    --swap-toast-success-color: #ffffff;
+    --swap-toast-info-bg: #3b82f6;
+    --swap-toast-info-color: #ffffff;
+    --swap-toast-warning-bg: #f59e0b;
+    --swap-toast-warning-color: #ffffff;
+    --swap-toast-error-bg: #ef4444;
+    --swap-toast-error-color: #ffffff;
+    --swap-toast-border-radius: 0.5rem;
+    --swap-toast-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --swap-toast-success-bg: #059669;
+        --swap-toast-info-bg: #2563eb;
+        --swap-toast-warning-bg: #d97706;
+        --swap-toast-error-bg: #dc2626;
+        --swap-toast-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
+    }
+}
+
+/* Toast container - positioned at top-right */
+#swap-toasts {
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    max-width: 400px;
+    pointer-events: none; /* Allow clicks to pass through container */
+}
+
+/* Individual toast */
+.swap-toast {
+    pointer-events: auto; /* Re-enable clicks on toasts */
+    padding: 1rem 1.25rem;
+    border-radius: var(--swap-toast-border-radius);
+    box-shadow: var(--swap-toast-shadow);
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    font-size: 0.875rem;
+    line-height: 1.5;
+    font-weight: 500;
+    animation: swap-toast-slide-in 0.3s ease-out;
+}
+
+/* Toast variants */
+.swap-toast.success {
+    background-color: var(--swap-toast-success-bg);
+    color: var(--swap-toast-success-color);
+}
+
+.swap-toast.info {
+    background-color: var(--swap-toast-info-bg);
+    color: var(--swap-toast-info-color);
+}
+
+.swap-toast.warning {
+    background-color: var(--swap-toast-warning-bg);
+    color: var(--swap-toast-warning-color);
+}
+
+.swap-toast.error {
+    background-color: var(--swap-toast-error-bg);
+    color: var(--swap-toast-error-color);
+}
+
+/* Slide-in animation */
+@keyframes swap-toast-slide-in {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* Auto-remove animation (triggered by HTMX swap:settle) */
+.swap-toast.removing {
+    animation: swap-toast-slide-out 0.3s ease-in forwards;
+}
+
+@keyframes swap-toast-slide-out {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+}
+
+/* Mobile responsiveness */
+@media (max-width: 640px) {
+    #swap-toasts {
+        left: 1rem;
+        right: 1rem;
+        max-width: none;
+    }
+    
+    .swap-toast {
+        padding: 0.875rem 1rem;
+        font-size: 0.8125rem;
+    }
+}
+
+/* Accessibility: Respect reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+    .swap-toast {
+        animation: none;
+    }
+    
+    .swap-toast.removing {
+        animation: none;
+        opacity: 0;
+    }
+}

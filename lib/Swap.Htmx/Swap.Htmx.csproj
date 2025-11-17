@@ -4,7 +4,7 @@
     <TargetFramework>net9.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <Version>0.4.1</Version>
+    <Version>0.5.0</Version>
     <Authors>JD Toon</Authors>
     <Company>Swap Framework</Company>
     <Description>HTMX helper library for ASP.NET Core MVC applications. Provides SwapController base class, middleware, event helpers, SSE support, and extension methods for seamless HTMX integration.</Description>
@@ -17,6 +17,10 @@
 
   <ItemGroup>
     <None Include="README.md" Pack="true" PackagePath="" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="wwwroot\**\*.*" Pack="true" PackagePath="staticwebassets\" />
   </ItemGroup>
 
   <ItemGroup>

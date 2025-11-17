@@ -5,6 +5,7 @@ using Swap.Htmx.Events;
 using Swap.Htmx.Middleware;
 using Swap.Htmx.Dev;
 using Swap.Htmx.ServerSentEvents;
+using Swap.Htmx.Models;
 
 namespace Swap.Htmx;
 
@@ -15,27 +16,45 @@ public static class SwapHtmxServiceExtensions
 {
     /// <summary>
     /// Adds Swap.Htmx services to the service collection.
-    /// Currently this is a placeholder for future services.
     /// </summary>
     /// <param name="services">The service collection.</param>
+    /// <param name="configure">Optional configuration for Swap.Htmx features.</param>
     /// <returns>The service collection for chaining.</returns>
     /// <example>
     /// <code>
+    /// // Minimal setup
     /// builder.Services.AddSwapHtmx();
+    /// 
+    /// // With configuration
+    /// builder.Services.AddSwapHtmx(options => {
+    ///     // Add view search paths for OOB partials
+    ///     options.PartialViewSearchPaths.Add("Components");
+    ///     
+    ///     // Configure event chains
+    ///     options.EventBus.When(MyEvents.Created)
+    ///         .RefreshPartial("list", "_List")
+    ///         .Toast("Created!", ToastType.Success);
+    /// });
     /// </code>
     /// </example>
-    public static IServiceCollection AddSwapHtmx(this IServiceCollection services)
+    public static IServiceCollection AddSwapHtmx(this IServiceCollection services, Action<SwapHtmxOptions>? configure = null)
     {
         // Core services required by Swap.Htmx
         services.AddHttpContextAccessor();
 
-        // Default event bus + options (no chains by default)
-        var options = new SwapEventBusOptions();
-        services.AddSingleton(options);
-        services.AddScoped<ISwapEventBus, SwapEventBus>();
+        // Create and configure options
+        var options = new SwapHtmxOptions();
+        configure?.Invoke(options);
         
-        // Event chain executor for HTTP responses
-        services.AddScoped<IEventChainExecutor>(sp => new EventChainExecutor(options));
+        // Register options singleton
+        services.AddSingleton(options);
+        
+        // Register event bus options
+        services.AddSingleton(options.EventBus);
+        
+        // Register event infrastructure
+        services.AddScoped<ISwapEventBus, SwapEventBus>();
+        services.AddScoped<IEventChainExecutor>(sp => new EventChainExecutor(options.EventBus));
         
         return services;
     }
