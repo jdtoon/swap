@@ -2,33 +2,34 @@
 @{
     ViewData["Title"] = "Tasks";
 }
+@using TaskFlow.Models
 
 <div class="kanban-board" sse-connect="/tasks/stream">
     <div class="kanban-column">
         <h3 class="column-header todo">📝 To Do</h3>
-        <div id="@TaskElements.Column(TaskStatus.Todo)" class="task-list">
-            @await Html.PartialAsync(TaskViews.TaskColumn, TaskStatus.Todo)
+        <div id="@TaskElements.Column(Models.TaskStatus.Todo)" class="task-list">
+            @await Html.PartialAsync(TaskViews.TaskColumn, Models.TaskStatus.Todo)
         </div>
     </div>
 
     <div class="kanban-column">
         <h3 class="column-header in-progress">⚡ In Progress</h3>
-        <div id="@TaskElements.Column(TaskStatus.InProgress)" class="task-list">
-            @await Html.PartialAsync(TaskViews.TaskColumn, TaskStatus.InProgress)
+        <div id="@TaskElements.Column(Models.TaskStatus.InProgress)" class="task-list">
+            @await Html.PartialAsync(TaskViews.TaskColumn, Models.TaskStatus.InProgress)
         </div>
     </div>
 
     <div class="kanban-column">
         <h3 class="column-header review">👀 Review</h3>
-        <div id="@TaskElements.Column(TaskStatus.Review)" class="task-list">
-            @await Html.PartialAsync(TaskViews.TaskColumn, TaskStatus.Review)
+        <div id="@TaskElements.Column(Models.TaskStatus.Review)" class="task-list">
+            @await Html.PartialAsync(TaskViews.TaskColumn, Models.TaskStatus.Review)
         </div>
     </div>
 
     <div class="kanban-column">
         <h3 class="column-header done">✅ Done</h3>
-        <div id="@TaskElements.Column(TaskStatus.Done)" class="task-list">
-            @await Html.PartialAsync(TaskViews.TaskColumn, TaskStatus.Done)
+        <div id="@TaskElements.Column(Models.TaskStatus.Done)" class="task-list">
+            @await Html.PartialAsync(TaskViews.TaskColumn, Models.TaskStatus.Done)
         </div>
     </div>
 </div>

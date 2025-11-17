@@ -1,3 +1,5 @@
+using TaskFlow.Models;
+
 namespace TaskFlow.Views;
 
 /// <summary>
@@ -5,8 +7,11 @@ namespace TaskFlow.Views;
 /// </summary>
 public static class TaskViews
 {
+    public const string Index = "Index";
     public const string Board = "_TaskBoard";
     public const string Card = "_TaskCard";
+    public const string TaskCard = "TaskCard";
+    public const string TaskColumn = "TaskColumn";
     public const string List = "_TaskList";
     public const string Details = "_TaskDetails";
     public const string Form = "_TaskForm";
@@ -26,6 +31,7 @@ public static class TaskElements
     public const string Count = "task-count";
     
     public static string Card(int taskId) => $"task-card-{taskId}";
+    public static string Column(Models.TaskStatus status) => $"task-column-{status.ToString().ToLower()}";
     public static string Comments(int taskId) => $"task-comments-{taskId}";
     public static string CommentCount(int taskId) => $"task-comment-count-{taskId}";
 }
@@ -35,9 +41,11 @@ public static class TaskElements
 /// </summary>
 public static class ProjectViews
 {
+    public const string Index = "Index";
+    public const string Details = "Details";
     public const string List = "_ProjectList";
     public const string Card = "_ProjectCard";
-    public const string ProgressBar = "_ProgressBar";
+    public const string ProgressBar = "ProgressBar";
     public const string Stats = "_ProjectStats";
 }
 
@@ -56,10 +64,12 @@ public static class ProjectElements
 /// </summary>
 public static class CommentViews
 {
+    public const string List = "List";
     public const string Thread = "_CommentThread";
     public const string Single = "_Comment";
+    public const string CommentCard = "CommentCard";
     public const string Form = "_CommentForm";
-    public const string Count = "_CommentCount";
+    public const string Count = "Count";
 }
 
 /// <summary>
@@ -68,7 +78,10 @@ public static class CommentViews
 public static class CommentElements
 {
     public static string Thread(int taskId) => $"comment-thread-{taskId}";
+    public static string List(int taskId) => $"comment-list-{taskId}";
     public static string Single(int commentId) => $"comment-{commentId}";
+    public static string Card(int commentId) => $"comment-card-{commentId}";
+    public static string Count(int taskId) => $"comment-count-{taskId}";
 }
 
 /// <summary>
@@ -76,8 +89,10 @@ public static class CommentElements
 /// </summary>
 public static class DashboardViews
 {
-    public const string Stats = "_TeamStats";
-    public const string Activity = "_ActivityFeed";
+    public const string Index = "Index";
+    public const string Stats = "Stats";
+    public const string Activity = "Activity";
+    public const string TeamList = "TeamList";
     public const string Presence = "_TeamPresence";
 }
 
@@ -88,6 +103,7 @@ public static class DashboardElements
 {
     public const string Stats = "dashboard-stats";
     public const string Activity = "dashboard-activity";
+    public const string TeamList = "team-list";
     public const string Presence = "team-presence";
 }
 
@@ -96,8 +112,10 @@ public static class DashboardElements
 /// </summary>
 public static class NotificationViews
 {
-    public const string Bell = "_NotificationBell";
-    public const string List = "_NotificationList";
+    public const string Index = "Index";
+    public const string Bell = "Bell";
+    public const string List = "List";
+    public const string Card = "Card";
     public const string Single = "_Notification";
 }
 
@@ -109,4 +127,5 @@ public static class NotificationElements
     public const string Bell = "notification-bell";
     public const string List = "notification-list";
     public const string Count = "notification-count";
+    public static string Card(int notificationId) => $"notification-card-{notificationId}";
 }

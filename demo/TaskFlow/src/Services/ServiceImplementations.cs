@@ -41,6 +41,8 @@ public class TeamService : ITeamService
         }
     }
 
+    public TeamMember? Get(string id) => GetById(id);
+
     public void SetOnline(string id, bool online)
     {
         lock (_lock)
@@ -57,6 +59,11 @@ public class TeamService : ITeamService
     public int GetTaskCount(string userId)
     {
         return _taskService.GetByAssignee(userId).Count(t => t.Status != TaskStatus.Done);
+    }
+
+    public int GetActiveTaskCount(string userId)
+    {
+        return GetTaskCount(userId);
     }
 
     public bool IsOverloaded(string userId, int threshold = 10)
@@ -148,6 +155,8 @@ public class CommentService : ICommentService
         }
     }
 
+    public Comment? Get(int id) => GetById(id);
+
     public Comment Create(int taskId, CommentInput input, string authorId, string authorName)
     {
         lock (_lock)
@@ -166,14 +175,14 @@ public class CommentService : ICommentService
         }
     }
 
-    public Comment Update(int id, string content)
+    public Comment Update(int id, CommentInput input)
     {
         lock (_lock)
         {
             var comment = _comments.FirstOrDefault(c => c.Id == id);
             if (comment == null) throw new InvalidOperationException($"Comment {id} not found");
 
-            comment.Content = content;
+            comment.Content = input.Content;
             comment.EditedAt = DateTime.UtcNow;
             return comment;
         }
@@ -254,6 +263,11 @@ public class ActivityService : IActivityService
             _activities.Add(activity);
         }
     }
+
+    public void LogActivity(string description, int? taskId = null, int? projectId = null, string userId = "demo-user")
+    {
+        Log("activity", description, userId, userId, taskId, projectId);
+    }
 }
 
 /// <summary>
@@ -286,6 +300,16 @@ public class NotificationService : INotificationService
                 .ToList();
         }
     }
+
+    public Notification? GetById(int id)
+    {
+        lock (_lock)
+        {
+            return _notifications.FirstOrDefault(n => n.Id == id);
+        }
+    }
+
+    public Notification? Get(int id) => GetById(id);
 
     public int GetUnreadCount(string userId)
     {

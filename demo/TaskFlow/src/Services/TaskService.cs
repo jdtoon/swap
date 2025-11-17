@@ -58,6 +58,8 @@ public class TaskService : ITaskService
         }
     }
 
+    public TaskItem? Get(int id) => GetById(id);
+
     public TaskItem Create(TaskInput input, string creatorId)
     {
         lock (_lock)
@@ -125,6 +127,11 @@ public class TaskService : ITaskService
         }
     }
 
+    public void UpdateStatus(int id, TaskStatus newStatus)
+    {
+        ChangeStatus(id, newStatus);
+    }
+
     public TaskItem ChangePriority(int id, TaskPriority newPriority)
     {
         lock (_lock)
@@ -135,6 +142,11 @@ public class TaskService : ITaskService
             task.Priority = newPriority;
             return task;
         }
+    }
+
+    public void UpdatePriority(int id, TaskPriority newPriority)
+    {
+        ChangePriority(id, newPriority);
     }
 
     public TaskItem Assign(int id, string userId)

@@ -34,6 +34,7 @@ public class TaskItem
     public TaskStatus Status { get; set; }
     public int ProjectId { get; set; }
     public string? AssignedTo { get; set; } // Team member ID
+    public string? AssigneeId { get; set; } // Alias for AssignedTo
     public DateTime CreatedAt { get; set; }
     public DateTime? DueDate { get; set; }
     public DateTime? CompletedAt { get; set; }
@@ -61,11 +62,13 @@ public class Comment
 {
     public int Id { get; set; }
     public int TaskId { get; set; }
+    public string UserId { get; set; } = string.Empty; // For compatibility
     public string AuthorId { get; set; } = string.Empty;
     public string AuthorName { get; set; } = string.Empty;
     public string Content { get; set; } = string.Empty;
     public DateTime CreatedAt { get; set; }
     public DateTime? EditedAt { get; set; }
+    public bool IsEdited => EditedAt.HasValue;
 }
 
 /// <summary>
@@ -76,9 +79,11 @@ public class TeamMember
     public string Id { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
+    public string Color { get; set; } = "#10b981"; // Alias for AvatarColor
     public string AvatarColor { get; set; } = "#10b981"; // Green default
     public bool IsOnline { get; set; }
     public DateTime? LastSeen { get; set; }
+    public DateTime? LastSeenAt { get; set; } // Alias for LastSeen
 }
 
 /// <summary>

@@ -35,6 +35,8 @@ public class ProjectService : IProjectService
         }
     }
 
+    public Project? Get(int id) => GetById(id);
+
     public Project Create(ProjectInput input)
     {
         lock (_lock)

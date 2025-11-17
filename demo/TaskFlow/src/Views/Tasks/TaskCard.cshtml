@@ -1,4 +1,5 @@
 @model TaskItem
+@using TaskFlow.Models
 
 <div id="@TaskElements.Card(Model.Id)" class="task-card priority-@Model.Priority.ToString().ToLower()">
     <div class="task-header">
@@ -27,28 +28,28 @@
 
     <!-- Status change buttons -->
     <div class="status-actions">
-        @if (Model.Status != TaskStatus.Todo)
+        @if (Model.Status != Models.TaskStatus.Todo)
         {
             <button hx-patch="/tasks/@Model.Id/status" 
-                    hx-vals='{"status": "@((int)TaskStatus.Todo)"}'
+                    hx-vals='{"status": "@((int)Models.TaskStatus.Todo)"}'
                     class="btn-sm">◀ To Do</button>
         }
-        @if (Model.Status == TaskStatus.Todo)
+        @if (Model.Status == Models.TaskStatus.Todo)
         {
             <button hx-patch="/tasks/@Model.Id/status" 
-                    hx-vals='{"status": "@((int)TaskStatus.InProgress)"}'
+                    hx-vals='{"status": "@((int)Models.TaskStatus.InProgress)"}'
                     class="btn-sm">Start ▶</button>
         }
-        @if (Model.Status == TaskStatus.InProgress)
+        @if (Model.Status == Models.TaskStatus.InProgress)
         {
             <button hx-patch="/tasks/@Model.Id/status" 
-                    hx-vals='{"status": "@((int)TaskStatus.Review)"}'
+                    hx-vals='{"status": "@((int)Models.TaskStatus.Review)"}'
                     class="btn-sm">Review ▶</button>
         }
-        @if (Model.Status == TaskStatus.Review)
+        @if (Model.Status == Models.TaskStatus.Review)
         {
             <button hx-patch="/tasks/@Model.Id/status" 
-                    hx-vals='{"status": "@((int)TaskStatus.Done)"}'
+                    hx-vals='{"status": "@((int)Models.TaskStatus.Done)"}'
                     class="btn-sm">Done ✓</button>
         }
     </div>
