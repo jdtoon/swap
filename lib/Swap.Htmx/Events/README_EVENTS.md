@@ -2,6 +2,8 @@
 
 Swap.Htmx uses `EventKey` for type-safe event handling, eliminating magic strings throughout your application.
 
+**See also:** [HTTP Event Chains Guide](README_HTTP_EVENT_CHAINS.md) - Learn how to configure automatic UI updates when events are triggered.
+
 ## Quick Start
 
 ### 1. Define Your Events

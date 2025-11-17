@@ -70,28 +70,56 @@ public class CartController : SwapController
 - `SwapMode.BeforeBegin` / `AfterBegin` / `BeforeEnd` / `AfterEnd` - Insert content
 - `SwapMode.Delete` - Remove the element
 
-### 3. Event-Driven (Coming Soon)
+### 3. Event-Driven (Configuration-Based Updates)
 
-For complex apps where multiple controllers need coordinated updates:
+For complex apps where multiple controllers need coordinated updates, configure event chains once and trigger them anywhere:
 
 ```csharp
 // Configuration in Program.cs
 builder.Services.AddSwapHtmx(events => 
 {
-    events.When(OrderEvents.Created)
-          .RefreshPartial("order-list", ctx => RenderOrderList(ctx))
-          .RefreshPartial("order-count", ctx => RenderCount(ctx))
-          .Toast("Order created!", ToastType.Success);
+    events.When(SwapEvents.Entity.Created("Product"))
+          .RefreshPartial("product-list", "_ProductList", ctx => GetProducts(ctx))
+          .RefreshPartial("product-count", "_ProductCount", ctx => GetProductCount(ctx))
+          .SuccessToast("Product created!");
+    
+    events.When(SwapEvents.Entity.Updated("Product"))
+          .RefreshPartial("product-list", "_ProductList", ctx => GetProducts(ctx))
+          .InfoToast("Product updated!");
+    
+    events.When(SwapEvents.Entity.Deleted("Product"))
+          .RefreshPartial("product-list", "_ProductList", ctx => GetProducts(ctx))
+          .RefreshPartial("product-count", "_ProductCount", ctx => GetProductCount(ctx))
+          .WarningToast("Product deleted!");
 });
 
-// In your controller
-public ActionResult CreateOrder()
+// In your controller - just emit the event
+public class ProductsController : SwapController
 {
-    var order = _service.CreateOrder(...);
-    return SwapEvent(OrderEvents.Created, new { order.Id });
-    // Event chains handle all UI updates automatically
+    public IActionResult Create(Product product)
+    {
+        _db.Products.Add(product);
+        _db.SaveChangesAsync();
+        
+        // Event chain handles ALL UI updates based on configuration
+        return SwapEvent(SwapEvents.Entity.Created("Product"));
+    }
 }
 ```
+
+**Benefits:**
+- Centralized UI update configuration
+- No repetition across controllers
+- Easy to understand what updates when an event fires
+- Change UI behavior without touching controller code
+
+**Event chain builder methods:**
+- `RefreshPartial(targetId, viewName, modelFactory, swapMode)` - Render and swap a partial
+- `SuccessToast(message)` / `ErrorToast(message)` / `WarningToast(message)` / `InfoToast(message)` - Show toast
+- `AlsoTrigger(eventKey)` - Trigger additional client-side events
+- `Build()` - Complete the chain configuration
+
+See [Events Documentation](Events/README_EVENTS.md) for more details on type-safe events.
 
 ## Setup
 
@@ -226,6 +254,98 @@ public ActionResult Create(TodoInput input)
 ```
 
 ## Examples
+
+### Complete Product Management Example
+
+This example shows all three approaches in a single controller:
+
+```csharp
+// 1. Configure event chains (Program.cs)
+builder.Services.AddSwapHtmx(events =>
+{
+    events.When(SwapEvents.Entity.Created("Product"))
+          .RefreshPartial("product-list", "_ProductList", ctx => 
+              ctx.RequestServices.GetRequiredService<ProductService>().GetAll())
+          .RefreshPartial("product-count", "_ProductCount", ctx => 
+              ctx.RequestServices.GetRequiredService<ProductService>().GetCount())
+          .SuccessToast("Product created successfully!");
+});
+
+// 2. Controller using all three approaches
+public class ProductsController : SwapController
+{
+    private readonly ProductService _service;
+    
+    public ProductsController(ProductService service) => _service = service;
+    
+    // Approach 1: Simple view (list page)
+    public IActionResult Index()
+    {
+        var products = _service.GetAll();
+        return SwapView(products);
+        // Auto-detects: full page on first load, partial on HTMX requests
+    }
+    
+    // Approach 2: Coordinated updates (manual control for cart)
+    public IActionResult AddToCart(int id)
+    {
+        var product = _service.Get(id);
+        _cart.Add(product);
+        
+        return SwapResponse()
+            .WithView("_ProductAdded", product)
+            .AlsoUpdate("cart-badge", "_CartBadge", _cart.ItemCount, SwapMode.InnerHTML)
+            .AlsoUpdate("cart-total", "_CartTotal", _cart.Total)
+            .WithSuccessToast($"{product.Name} added to cart!")
+            .WithTrigger(SwapEvents.UI.UpdateCounter, new { count = _cart.ItemCount });
+    }
+    
+    // Approach 3: Event-driven (DRY for repeated patterns)
+    public IActionResult Create(Product product)
+    {
+        _service.Create(product);
+        
+        // All UI updates happen automatically via configured event chain
+        return SwapEvent(SwapEvents.Entity.Created("Product"));
+    }
+}
+```
+
+### Migration from Manual Patterns
+
+**Before (manual ViewData + Response headers):**
+```csharp
+public IActionResult Create(Todo todo)
+{
+    _db.Todos.Add(todo);
+    _db.SaveChangesAsync();
+    
+    // Scattered UI logic
+    ViewData["OobTodoList"] = await RenderPartialAsync("_TodoList", _db.Todos.ToList());
+    ViewData["OobTodoCount"] = await RenderPartialAsync("_TodoCount", _db.Todos.Count());
+    Response.AddSuccessToast("Todo created!");
+    Response.AddTrigger("todoCreated");
+    
+    return PartialView("_TodoCreated", todo);
+}
+```
+
+**After (fluent API):**
+```csharp
+public IActionResult Create(Todo todo)
+{
+    _db.Todos.Add(todo);
+    _db.SaveChangesAsync();
+    
+    // Clean, discoverable, type-safe
+    return SwapResponse()
+        .WithView("_TodoCreated", todo)
+        .AlsoUpdate("todo-list", "_TodoList", _db.Todos.ToList())
+        .AlsoUpdate("todo-count", "_TodoCount", _db.Todos.Count())
+        .WithSuccessToast("Todo created!")
+        .WithTrigger(SwapEvents.UI.RefreshList);
+}
+```
 
 For complete working examples, see the `Swap.Htmx.TestApp` project in this repository.
 

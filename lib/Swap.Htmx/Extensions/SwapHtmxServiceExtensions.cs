@@ -30,8 +30,13 @@ public static class SwapHtmxServiceExtensions
         services.AddHttpContextAccessor();
 
         // Default event bus + options (no chains by default)
-        services.AddSingleton(new SwapEventBusOptions());
+        var options = new SwapEventBusOptions();
+        services.AddSingleton(options);
         services.AddScoped<ISwapEventBus, SwapEventBus>();
+        
+        // Event chain executor for HTTP responses
+        services.AddScoped<IEventChainExecutor>(sp => new EventChainExecutor(options));
+        
         return services;
     }
 
@@ -88,9 +93,11 @@ public static class SwapHtmxServiceExtensions
     /// <returns>The service collection.</returns>
     public static IServiceCollection AddSwapHtmx(this IServiceCollection services, Action<SwapEventBusOptions> configureEvents)
     {
-        services.AddSwapHtmx();
+        services.AddHttpContextAccessor();
+        
         var opts = new SwapEventBusOptions();
         configureEvents?.Invoke(opts);
+        
         // Guardrails: validate configuration early
         try
         {
@@ -108,8 +115,14 @@ public static class SwapHtmxServiceExtensions
         {
             throw;
         }
-        // Replace the default singleton with configured one
+        
+        // Register configured singleton
         services.AddSingleton(opts);
+        services.AddScoped<ISwapEventBus, SwapEventBus>();
+        
+        // Event chain executor for HTTP responses
+        services.AddScoped<IEventChainExecutor>(sp => new EventChainExecutor(opts));
+        
         return services;
     }
 
