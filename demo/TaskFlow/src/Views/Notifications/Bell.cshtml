@@ -6,8 +6,8 @@
       hx-get="/notifications/bell" 
       hx-trigger="every 30s"
       hx-swap="outerHTML"
-      style="cursor: pointer;"
-      onclick="window.location.href='/notifications'">
+      hx-on:click="window.location.href='/notifications/list'"
+      style="cursor: pointer;">
     🔔
     @if (Model > 0)
     {

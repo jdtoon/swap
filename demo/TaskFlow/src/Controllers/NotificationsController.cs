@@ -52,7 +52,7 @@ public class NotificationsController : SwapController
         });
     }
 
-    [HttpGet("/notifications")]
+    [HttpGet("/notifications/list")]
     public IActionResult Index()
     {
         var userId = "demo-user"; // In real app, get from auth

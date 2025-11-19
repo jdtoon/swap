@@ -1,0 +1,11 @@
+@using TaskFlow.Services
+@using TaskFlow.Views
+@inject ITeamService TeamService
+
+@{
+    var stats = TeamService.GetStats();
+}
+
+<div id="@DashboardElements.Stats" class="stats-grid">
+    @{ await Html.RenderPartialAsync(DashboardViews.Stats, stats); }
+</div>
