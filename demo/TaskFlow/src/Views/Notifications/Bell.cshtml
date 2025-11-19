@@ -1,16 +1,21 @@
 @model int
 @using TaskFlow.Views
 
-<span id="@NotificationElements.Bell" 
-      class="notification-link"
-      hx-get="/notifications/bell" 
-      hx-trigger="every 30s"
-      hx-swap="outerHTML"
-      hx-on:click="window.location.href='/notifications/list'"
-      style="cursor: pointer;">
-    🔔
-    @if (Model > 0)
-    {
-        <span class="notification-badge">@Model</span>
-    }
-</span>
+<a id="@NotificationElements.Bell" 
+   class="notification-link"
+   href="/notifications/list"
+   hx-get="/notifications/list"
+   hx-target="#main"
+   hx-push-url="true"
+   style="cursor: pointer; text-decoration: none;">
+    <span hx-get="/notifications/bell" 
+          hx-trigger="every 30s"
+          hx-swap="outerHTML"
+          hx-target="#@NotificationElements.Bell">
+        🔔
+        @if (Model > 0)
+        {
+            <span class="notification-badge">@Model</span>
+        }
+    </span>
+</a>
