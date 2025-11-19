@@ -9,8 +9,8 @@
 - **Fluent response builder** - Coordinate view rendering, out-of-band swaps, toasts, and triggers in one clean chain
 - **Type-safe API** - No magic strings for swap modes or event names
 - **SwapController base class** - Automatically handles HTMX requests vs full page loads
-- **Server-sent events (SSE)** - Stream HTML updates with connection management
-- **Event system** - Build `HX-Trigger` headers declaratively
+- **Real-time updates with SSE** - Built-in Server-Sent Events support with automatic connection management, room-based broadcasting, and seamless HTMX integration
+- **Event system** - Build `HX-Trigger` headers declaratively and chain complex UI updates
 
 ## Install
 
@@ -429,6 +429,9 @@ For complete working examples, see the `Swap.Htmx.TestApp` project in this repos
 
 ## Documentation
 
+- **[Getting Started Guide](docs/GettingStarted.md)** - Step-by-step tutorial for building your first HTMX app
+- **[Out-of-Band Swaps Guide](docs/OutOfBandSwaps.md)** - Complete guide to multi-part page updates
+- **[Server-Sent Events Guide](docs/ServerSentEvents.md)** - Complete guide to real-time updates with SSE
 - **[Type-Safe Events Guide](docs/Events.md)** - Learn how to define and use strongly-typed event keys to eliminate magic strings
 - **[Event Chains Guide](docs/EventChains.md)** - Configure automatic UI updates when events are triggered
 - **[Debugging & Logging](docs/DebuggingAndLogging.md)** - Enable debug logging to see event chains, toasts, and HTTP headers during development

@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Swap.Htmx.Events;
+using Swap.Htmx.Models;
 
 // Import the SwapController from the root namespace
 using SwapController = Swap.Htmx.SwapController;
@@ -26,56 +27,75 @@ internal sealed class SseEventBridge : ISseEventBridge
 {
     private readonly ISseConnectionRegistry _connectionRegistry;
     private readonly IServiceProvider _serviceProvider;
+    private readonly SwapEventBusOptions _eventBusOptions;
     private readonly ILogger<SseEventBridge> _logger;
+    private readonly ISseViewRenderer _viewRenderer;
 
     public SseEventBridge(
         ISseConnectionRegistry connectionRegistry,
         IServiceProvider serviceProvider,
-        ILogger<SseEventBridge> logger)
+        SwapEventBusOptions eventBusOptions,
+        ILogger<SseEventBridge> logger,
+        ISseViewRenderer viewRenderer)
     {
         _connectionRegistry = connectionRegistry;
         _serviceProvider = serviceProvider;
+        _eventBusOptions = eventBusOptions;
         _logger = logger;
+        _viewRenderer = viewRenderer;
     }
 
     public async Task HandleSseEventAsync(string eventName, object? payload, CancellationToken cancellationToken = default)
     {
         try
         {
+            _logger.LogDebug("[SSE Bridge] HandleSseEventAsync called with eventName: {EventName}, payload type: {PayloadType}", 
+                eventName, payload?.GetType().Name ?? "null");
+            
             var (eventType, target, sseEventName) = ParseSseEvent(eventName);
+            _logger.LogDebug("[SSE Bridge] Parsed event - Type: {EventType}, Target: {Target}, SseEventName: {SseEventName}", 
+                eventType, target ?? "null", sseEventName);
 
             string html = await RenderEventContentAsync(sseEventName, payload, cancellationToken);
+            _logger.LogDebug("[SSE Bridge] Rendered HTML content (length: {Length} chars)", html.Length);
 
             switch (eventType)
             {
                 case "broadcast":
+                    _logger.LogDebug("[SSE Bridge] Broadcasting to all connections: {EventName}", sseEventName);
                     await _connectionRegistry.BroadcastAsync(sseEventName, html, cancellationToken);
                     break;
 
                 case "room":
+                    _logger.LogDebug("[SSE Bridge] Broadcasting to room: {Room}", target);
                     await _connectionRegistry.BroadcastToRoomsAsync(sseEventName, html, new[] { target }, cancellationToken);
                     break;
 
                 case "rooms":
                     var rooms = target.Split(',');
+                    _logger.LogDebug("[SSE Bridge] Broadcasting to rooms: {Rooms}", string.Join(", ", rooms));
                     await _connectionRegistry.BroadcastToRoomsAsync(sseEventName, html, rooms, cancellationToken);
                     break;
 
                 case "subscribers":
+                    _logger.LogDebug("[SSE Bridge] Broadcasting to subscribers of: {EventName}", sseEventName);
                     await _connectionRegistry.BroadcastToSubscribersAsync(sseEventName, html, cancellationToken);
                     break;
 
                 case "roles":
                     var roles = target.Split(',');
+                    _logger.LogDebug("[SSE Bridge] Broadcasting to roles: {Roles}", string.Join(", ", roles));
                     await _connectionRegistry.BroadcastToRolesAsync(sseEventName, html, roles, cancellationToken);
                     break;
 
                 case "user":
+                    _logger.LogDebug("[SSE Bridge] Broadcasting to user: {User}", target);
                     await _connectionRegistry.BroadcastToUserAsync(sseEventName, html, target, cancellationToken);
                     break;
 
                 case "filter":
                     // For custom filters, we'll use a convention where the filter key maps to a predicate
+                    _logger.LogDebug("[SSE Bridge] Broadcasting with filter: {Filter}", target);
                     await HandleFilteredBroadcast(target, sseEventName, html, cancellationToken);
                     break;
 
@@ -113,26 +133,71 @@ internal sealed class SseEventBridge : ISseEventBridge
     }
 
     /// <summary>
-    /// Renders HTML content for an SSE event.
-    /// First tries to render a partial view, then falls back to JSON payload.
+    /// Renders HTML content for an SSE event by executing the configured event chain.
     /// </summary>
     private async Task<string> RenderEventContentAsync(string eventName, object? payload, CancellationToken cancellationToken)
     {
-        // Try to render a partial view for the event
-        if (await TryRenderPartialViewAsync(eventName, payload) is { } html)
+        try
         {
-            return html;
-        }
+            // Get the event chain configuration for this SSE event
+            var configs = _eventBusOptions.GetEventChainConfigs();
+            var fullEventName = $"sse:broadcast:{eventName}"; // Reconstruct the full event name
+            
+            if (!configs.TryGetValue(fullEventName, out var config))
+            {
+                _logger.LogDebug("[SSE Bridge] No event chain configuration found for {EventName}", fullEventName);
+                return $"<div data-event=\"{eventName}\"></div>";
+            }
 
-        // Fall back to simple HTML with JSON payload
-        if (payload is not null)
+            _logger.LogDebug("[SSE Bridge] Found event chain with {PartialCount} partials for {EventName}", 
+                config.Partials.Count, eventName);
+
+            // Create a scoped service provider for rendering
+            using var scope = _serviceProvider.CreateScope();
+            var httpContextAccessor = scope.ServiceProvider.GetService<Microsoft.AspNetCore.Http.IHttpContextAccessor>();
+            var httpContext = httpContextAccessor?.HttpContext;
+
+            // Render all configured partials using the view renderer
+            var htmlBuilder = new System.Text.StringBuilder();
+            foreach (var partial in config.Partials)
+            {
+                try
+                {
+                    // Use payload-aware factory if available
+                    var model = partial.ModelFactoryWithPayload != null
+                        ? partial.ModelFactoryWithPayload(httpContext, payload)
+                        : partial.ModelFactory?.Invoke(httpContext);
+
+                    _logger.LogDebug("[SSE Bridge] Rendering partial {ViewName} with model type {ModelType}", 
+                        partial.ViewName, model?.GetType().Name ?? "null");
+
+                    // Use the standalone view renderer (doesn't need SwapController)
+                    var partialHtml = await _viewRenderer.RenderPartialAsync(partial.ViewName, model);
+                    
+                    _logger.LogDebug("[SSE Bridge] Rendered {Length} chars for partial {ViewName}", 
+                        partialHtml?.Length ?? 0, partial.ViewName);
+                    
+                    // For SSE broadcasts, HTMX SSE extension expects just the HTML content
+                    // The element with sse-swap attribute will handle the swap
+                    // We don't need hx-swap-oob wrapper for SSE events
+                    htmlBuilder.AppendLine(partialHtml);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "[SSE Bridge] Failed to render partial {ViewName} for SSE event {EventName}", 
+                        partial.ViewName, eventName);
+                }
+            }
+
+            var result = htmlBuilder.ToString();
+            _logger.LogDebug("[SSE Bridge] Rendered {Length} chars of HTML for {EventName}", result.Length, eventName);
+            return result;
+        }
+        catch (Exception ex)
         {
-            var json = System.Text.Json.JsonSerializer.Serialize(payload);
-            return $"<div data-event=\"{eventName}\" data-payload=\"{System.Web.HttpUtility.HtmlEncode(json)}\"></div>";
+            _logger.LogError(ex, "[SSE Bridge] Error rendering content for SSE event: {EventName}", eventName);
+            return $"<div data-event=\"{eventName}\"></div>";
         }
-
-        // Simple notification div
-        return $"<div data-event=\"{eventName}\"></div>";
     }
 
     /// <summary>

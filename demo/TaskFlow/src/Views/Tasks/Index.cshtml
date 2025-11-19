@@ -14,31 +14,37 @@
     var doneTasks = tasks.Where(t => t.Status == TaskStatus.Done).ToList();
 }
 
-<div class="kanban-board" sse-connect="/tasks/stream">
+<h1>Task Board 
+    <small style="color: #666; font-size: 0.5em;">
+        <span id="sse-status-tasks" style="color: orange;">Connecting to SSE...</span>
+    </small>
+</h1>
+
+<div class="kanban-board" hx-ext="sse" sse-connect="/tasks/stream">
     <div class="kanban-column">
         <h3 class="column-header todo">📝 To Do</h3>
-        <div id="@TaskElements.Column(TaskStatus.Todo)" class="task-list">
+        <div id="@TaskElements.Column(TaskStatus.Todo)" class="task-list" sse-swap="task-column-todo-update">
             @await Html.PartialAsync(TaskViews.TaskColumn, todoTasks)
         </div>
     </div>
 
     <div class="kanban-column">
         <h3 class="column-header in-progress">⚡ In Progress</h3>
-        <div id="@TaskElements.Column(TaskStatus.InProgress)" class="task-list">
+        <div id="@TaskElements.Column(TaskStatus.InProgress)" class="task-list" sse-swap="task-column-inprogress-update">
             @await Html.PartialAsync(TaskViews.TaskColumn, inProgressTasks)
         </div>
     </div>
 
     <div class="kanban-column">
         <h3 class="column-header review">👀 Review</h3>
-        <div id="@TaskElements.Column(TaskStatus.Review)" class="task-list">
+        <div id="@TaskElements.Column(TaskStatus.Review)" class="task-list" sse-swap="task-column-review-update">
             @await Html.PartialAsync(TaskViews.TaskColumn, reviewTasks)
         </div>
     </div>
 
     <div class="kanban-column">
         <h3 class="column-header done">✅ Done</h3>
-        <div id="@TaskElements.Column(TaskStatus.Done)" class="task-list">
+        <div id="@TaskElements.Column(TaskStatus.Done)" class="task-list" sse-swap="task-column-done-update">
             @await Html.PartialAsync(TaskViews.TaskColumn, doneTasks)
         </div>
     </div>
@@ -77,3 +83,30 @@
         <button type="submit">Create Task</button>
     </form>
 </div>
+
+<script>
+    // SSE connection status indicator
+    document.body.addEventListener('htmx:sseOpen', function(evt) {
+        const statusEl = document.getElementById('sse-status-tasks');
+        if (statusEl) {
+            statusEl.textContent = 'Live Updates Connected ✓';
+            statusEl.style.color = '#10b981';
+        }
+    });
+
+    document.body.addEventListener('htmx:sseError', function(evt) {
+        const statusEl = document.getElementById('sse-status-tasks');
+        if (statusEl) {
+            statusEl.textContent = 'Connection Error';
+            statusEl.style.color = '#ef4444';
+        }
+    });
+
+    document.body.addEventListener('htmx:sseClose', function(evt) {
+        const statusEl = document.getElementById('sse-status-tasks');
+        if (statusEl) {
+            statusEl.textContent = 'Reconnecting...';
+            statusEl.style.color = '#f59e0b';
+        }
+    });
+</script>

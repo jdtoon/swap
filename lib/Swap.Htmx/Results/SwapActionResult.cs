@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc.ViewEngines;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Swap.Htmx.Events;
 using Swap.Htmx.Extensions;
 using Swap.Htmx.Models;
 using System.Text;
@@ -61,9 +62,18 @@ public sealed class SwapActionResult : ActionResult
             }
         }
 
-        // 3. Apply custom triggers
+        // 3. Apply custom triggers - emit to event bus FIRST for SSE processing
+        var eventBus = context.HttpContext.RequestServices.GetService<ISwapEventBus>();
         foreach (var trigger in _builder.Triggers)
         {
+            // Emit to event bus so SSE middleware can pick it up
+            if (eventBus != null)
+            {
+                logger?.LogDebug("[SwapActionResult] Emitting event to bus: {EventName}", trigger.EventName);
+                eventBus.Emit(new EventKey(trigger.EventName), trigger.Payload);
+            }
+            
+            // Also add to HX-Trigger header for client-side handling
             if (trigger.Payload == null)
             {
                 response.HxTrigger(trigger.EventName);

@@ -25,7 +25,7 @@ public sealed class SseConnection : IAsyncDisposable
     /// </summary>
     internal ServerSentEventStream Stream => _stream;
 
-    internal SseConnection(string id, ServerSentEventStream stream, HttpContext httpContext)
+    public SseConnection(string id, ServerSentEventStream stream, HttpContext httpContext)
     {
         Id = id;
         _stream = stream;

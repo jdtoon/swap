@@ -86,8 +86,8 @@ internal sealed class SseConnectionRegistry : ISseConnectionRegistry
     public void RegisterConnection(SseConnection connection)
     {
         _connections.TryAdd(connection.Id, connection);
-        _logger.LogDebug("SSE connection registered: {ConnectionId} for user {UserId}",
-            connection.Id, connection.User?.Identity?.Name ?? "anonymous");
+        _logger.LogInformation("[SSE Registry] Connection registered: {ConnectionId} for user {UserId}. Total connections: {Total}",
+            connection.Id, connection.User?.Identity?.Name ?? "anonymous", _connections.Count);
     }
 
     public void UnregisterConnection(string connectionId)
@@ -102,15 +102,25 @@ internal sealed class SseConnectionRegistry : ISseConnectionRegistry
     public async Task BroadcastAsync(string eventName, string html, CancellationToken cancellationToken = default)
     {
         var activeConnections = GetActiveConnections();
+        _logger.LogDebug("[SSE Registry] BroadcastAsync - Event: {EventName}, Active connections: {Count}, Total connections: {Total}", 
+            eventName, activeConnections.Count, _connections.Count);
+        
+        if (activeConnections.Count == 0)
+        {
+            _logger.LogWarning("[SSE Registry] No active connections to broadcast to!");
+            return;
+        }
+        
         var tasks = activeConnections.Select(conn => conn.SendEventAsync(eventName, html));
 
         try
         {
             await Task.WhenAll(tasks);
+            _logger.LogDebug("[SSE Registry] Successfully broadcast to {Count} connections", activeConnections.Count);
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Error during SSE broadcast to all connections");
+            _logger.LogWarning(ex, "[SSE Registry] Error during SSE broadcast to all connections");
         }
 
         CleanupInactiveConnections();

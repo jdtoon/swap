@@ -91,11 +91,12 @@ public static class CommentElements
 public static class DashboardViews
 {
     public const string Index = "Index";
-    public const string Stats = "Stats";
-    public const string Activity = "Activity";
+    public const string Stats = "~/Views/Dashboard/Stats.cshtml";
+    public const string Activity = "~/Views/Dashboard/Activity.cshtml";
     public const string ActivityCard = "ActivityCard";
     public const string TeamList = "TeamList";
     public const string Presence = "_TeamPresence";
+    public const string ProjectsOverview = "~/Views/Dashboard/ProjectsOverview.cshtml";
 }
 
 /// <summary>
@@ -107,6 +108,7 @@ public static class DashboardElements
     public const string Activity = "dashboard-activity";
     public const string TeamList = "team-list";
     public const string Presence = "team-presence";
+    public const string Projects = "dashboard-projects";
 }
 
 /// <summary>
@@ -115,7 +117,7 @@ public static class DashboardElements
 public static class NotificationViews
 {
     public const string Index = "Index";
-    public const string Bell = "Bell";
+    public const string Bell = "~/Views/Notifications/Bell.cshtml";
     public const string List = "List";
     public const string Card = "Card";
     public const string Single = "_Notification";

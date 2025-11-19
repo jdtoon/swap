@@ -85,3 +85,25 @@ public static class DashboardSseEvents
     public const string ActivityUpdate = "activity-update";
     public const string TeamUpdate = "team-update";
 }
+
+/// <summary>
+/// SSE event names for project updates
+/// </summary>
+public static class ProjectSseEvents
+{
+    public const string ListUpdate = "project-list-update";
+    public const string ProgressUpdate = "project-progress-update";
+}
+
+/// <summary>
+/// SSE event names for task board updates
+/// </summary>
+public static class TaskSseEvents
+{
+    public const string BoardUpdate = "task-board-update";
+    public const string ColumnUpdate = "task-column-update";
+    public const string TodoColumnUpdate = "task-column-todo-update";
+    public const string InProgressColumnUpdate = "task-column-inprogress-update";
+    public const string ReviewColumnUpdate = "task-column-review-update";
+    public const string DoneColumnUpdate = "task-column-done-update";
+}
