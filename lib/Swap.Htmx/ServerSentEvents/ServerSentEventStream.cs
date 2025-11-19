@@ -38,12 +38,15 @@ public sealed class ServerSentEventStream : IAsyncDisposable
         try
         {
             var message = FormatSseMessage(eventName, html, id);
+            System.Diagnostics.Debug.WriteLine($"[SSE Stream] Sending event '{eventName}' with {html.Length} chars");
             await _response.WriteAsync(message, _cancellationToken);
             await _response.Body.FlushAsync(_cancellationToken);
+            System.Diagnostics.Debug.WriteLine($"[SSE Stream] Successfully sent and flushed event '{eventName}'");
         }
         catch (OperationCanceledException)
         {
             // Client disconnected or request cancelled - expected
+            System.Diagnostics.Debug.WriteLine($"[SSE Stream] Client disconnected while sending '{eventName}'");
             throw;
         }
         catch (System.IO.IOException ex)

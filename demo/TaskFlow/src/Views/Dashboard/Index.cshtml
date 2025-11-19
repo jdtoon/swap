@@ -6,21 +6,37 @@
 @using TaskFlow.Views
 @inject TaskFlow.Services.IProjectService ProjectService
 
-<div class="dashboard" sse-connect="/dashboard/stream">
-    <h1>Team Dashboard</h1>
+<div class="dashboard" hx-ext="sse" sse-connect="/dashboard/stream">
+    <h1>Team Dashboard 
+        <small style="color: #666; font-size: 0.5em;">
+            <span id="sse-status" style="color: orange;">Connecting to SSE...</span>
+        </small>
+    </h1>
 
-    <!-- Stats Section -->
-    <div id="@DashboardElements.Stats" class="stats-grid">
+    <!-- SSE Test Button -->
+    <div style="margin: 1rem 0; padding: 1rem; background: #f0f9ff; border: 1px solid #bfdbfe; border-radius: 8px;">
+        <h3 style="margin-top: 0;">SSE Test Controls</h3>
+        <p style="margin: 0.5rem 0;">Click the button below to create a test task. The dashboard stats should update in real-time via SSE!</p>
+        <button hx-post="/dashboard/test-sse" 
+                hx-swap="none"
+                class="btn btn-primary"
+                style="padding: 0.5rem 1rem; background: #3b82f6; color: white; border: none; border-radius: 4px; cursor: pointer;">
+            Create Test Task (Triggers SSE Update)
+        </button>
+    </div>
+
+    <!-- Stats Section (SSE auto-update) -->
+    <div id="@DashboardElements.Stats" class="stats-grid" sse-swap="stats-update">
         @{ await Html.RenderPartialAsync(DashboardViews.Stats, (TeamStats)model.Stats); }
     </div>
 
     <!-- Team Presence -->
-    <div id="@DashboardElements.TeamList" class="team-section">
+    <div id="@DashboardElements.TeamList" class="team-section" sse-swap="team-update">
         @{ await Html.RenderPartialAsync(DashboardViews.TeamList, (List<TeamMember>)model.TeamMembers); }
     </div>
 
     <!-- Recent Activity Feed (SSE-powered) -->
-    <div id="@DashboardElements.Activity" class="activity-feed">
+    <div id="@DashboardElements.Activity" class="activity-feed" sse-swap="activity-update">
         @{ await Html.RenderPartialAsync(DashboardViews.Activity, (List<Activity>)model.Activities); }
     </div>
 

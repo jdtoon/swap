@@ -23,7 +23,8 @@ builder.Services.AddSwapHtmx(options =>
 
     // Configure event chains with payload access
     EventChainConfiguration.ConfigureEventChains(options.EventBus);
-});
+})
+.AddSseEventBridge(); // Register SSE services for event-driven broadcasting
 
 // Add task flow services (in-memory for demo)
 builder.Services.AddSingleton<ITaskService, TaskService>();

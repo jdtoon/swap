@@ -6,6 +6,14 @@
 
     // Track SSE connections
     const sseConnections = new Map();
+    
+    function updateConnectionStatus(status, color) {
+        const statusEl = document.getElementById('sse-status');
+        if (statusEl) {
+            statusEl.textContent = status;
+            statusEl.style.color = color;
+        }
+    }
 
     // Listen for SSE connect events
     document.body.addEventListener('htmx:sseBeforeMessage', function(event) {
@@ -25,6 +33,8 @@
     document.body.addEventListener('htmx:sseError', function(event) {
         const element = event.target;
         const url = element.getAttribute('sse-connect');
+        
+        updateConnectionStatus('[ERROR] SSE Disconnected', '#ef4444');
         
         if (url) {
             const connection = sseConnections.get(url);
@@ -48,6 +58,8 @@
     document.body.addEventListener('htmx:sseOpen', function(event) {
         const element = event.target;
         const url = element.getAttribute('sse-connect');
+        
+        updateConnectionStatus('[CONNECTED] SSE Connected', '#10b981');
         
         if (url) {
             const connection = sseConnections.get(url);

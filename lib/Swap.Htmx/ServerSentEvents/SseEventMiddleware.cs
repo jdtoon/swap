@@ -33,6 +33,7 @@ public sealed class SseEventMiddleware
             var eventBridge = httpContext.RequestServices.GetService<ISseEventBridge>();
             if (eventBridge == null)
             {
+                _logger.LogDebug("[SSE Middleware] No ISseEventBridge service registered, skipping SSE event processing");
                 return;
             }
 
@@ -41,22 +42,30 @@ public sealed class SseEventMiddleware
             if (eventBus is SwapEventBus bus)
             {
                 var resolved = bus.ResolveChains(httpContext);
+                _logger.LogDebug("[SSE Middleware] Resolved {Count} events from event bus", resolved.Count);
 
                 // Process SSE events
-                var sseEvents = resolved.Where(kv => kv.Key.StartsWith("sse:"));
+                var sseEvents = resolved.Where(kv => kv.Key.StartsWith("sse:")).ToList();
+                _logger.LogDebug("[SSE Middleware] Found {Count} SSE events to process", sseEvents.Count);
 
                 foreach (var sseEvent in sseEvents)
                 {
                     try
                     {
+                        _logger.LogDebug("[SSE Middleware] Processing SSE event: {EventName}", sseEvent.Key);
                         await eventBridge.HandleSseEventAsync(sseEvent.Key, sseEvent.Value);
+                        _logger.LogDebug("[SSE Middleware] Successfully processed SSE event: {EventName}", sseEvent.Key);
                     }
                     catch (Exception ex)
                     {
                         // Log error but don't break the response
-                        _logger?.LogError(ex, "Error handling SSE event: {EventName}", sseEvent.Key);
+                        _logger?.LogError(ex, "[SSE Middleware] Error handling SSE event: {EventName}", sseEvent.Key);
                     }
                 }
+            }
+            else
+            {
+                _logger.LogDebug("[SSE Middleware] Event bus is not SwapEventBus type or not available");
             }
         }, context);
 

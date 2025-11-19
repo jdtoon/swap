@@ -268,7 +268,8 @@ public abstract class SwapController : Controller
     /// </example>
     protected IActionResult ServerSentEvents(Func<ServerSentEventStream, CancellationToken, Task> handler)
     {
-        return new ServerSentEventsResult(handler);
+        var logger = HttpContext.RequestServices.GetService<ILogger<ServerSentEventsResult>>();
+        return new ServerSentEventsResult(handler, logger);
     }
 
     /// <summary>
