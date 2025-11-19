@@ -429,6 +429,8 @@ For complete working examples, see the `Swap.Htmx.TestApp` project in this repos
 
 ## Documentation
 
+- **[Getting Started Guide](docs/GettingStarted.md)** - Step-by-step tutorial for building your first HTMX app
+- **[Out-of-Band Swaps Guide](docs/OutOfBandSwaps.md)** - Complete guide to multi-part page updates
 - **[Server-Sent Events Guide](docs/ServerSentEvents.md)** - Complete guide to real-time updates with SSE
 - **[Type-Safe Events Guide](docs/Events.md)** - Learn how to define and use strongly-typed event keys to eliminate magic strings
 - **[Event Chains Guide](docs/EventChains.md)** - Configure automatic UI updates when events are triggered
