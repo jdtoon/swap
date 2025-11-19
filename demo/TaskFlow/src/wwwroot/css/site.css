@@ -252,7 +252,7 @@ body {
     height: 100%;
     background: var(--color-border);
     transition: all 0.3s ease;
-    z-index: 0;
+    z-index: -1;
 }
 
 .task-card:hover {
@@ -288,7 +288,7 @@ body {
     align-items: flex-start;
     margin-bottom: 0.75rem;
     position: relative;
-    z-index: 1;
+    z-index: 10;
 }
 
 .task-header h4 {
@@ -308,7 +308,7 @@ body {
     color: var(--color-gray-600);
     margin-bottom: 0.75rem;
     position: relative;
-    z-index: 1;
+    z-index: 10;
 }
 
 .task-meta {
@@ -318,7 +318,7 @@ body {
     font-size: 0.875rem;
     margin-bottom: 0.75rem;
     position: relative;
-    z-index: 1;
+    z-index: 10;
 }
 
 .assignee {
@@ -364,7 +364,7 @@ body {
     gap: 0.5rem;
     margin-bottom: 0.75rem;
     position: relative;
-    z-index: 1;
+    z-index: 10;
 }
 
 /* ===================================
@@ -743,7 +743,7 @@ textarea {
     border-top: 1px solid var(--color-border);
     padding-top: 1rem;
     position: relative;
-    z-index: 1;
+    z-index: 10;
 }
 
 .comments-list {
@@ -788,19 +788,19 @@ textarea {
     display: flex;
     gap: 0.75rem;
     position: relative;
-    z-index: 1;
+    z-index: 10;
 }
 
 .comment-form input {
     flex: 1;
     position: relative;
-    z-index: 1;
+    z-index: 10;
 }
 
 .comment-form button {
     padding: 0.75rem 1.25rem;
     position: relative;
-    z-index: 1;
+    z-index: 10;
 }
 
 /* ===================================

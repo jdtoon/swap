@@ -4,10 +4,10 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - TaskFlow</title>
-    <link rel="stylesheet" href="~/css/site.css" />
-    <link rel="stylesheet" href="~/css/swap-toasts.css" />
-    <script src="~/lib/htmx/dist/htmx.min.js"></script>
-    <script src="~/lib/htmx-ext-sse/sse.js"></script>
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/swap-toasts.css" asp-append-version="true" />
+    <script src="~/lib/htmx/dist/htmx.min.js" asp-append-version="true"></script>
+    <script src="~/lib/htmx-ext-sse/sse.js" asp-append-version="true"></script>
 </head>
 <body hx-ext="sse">
     <header>
@@ -36,7 +36,7 @@
     <!-- Toast container - positioned by library's swap-toasts.css -->
     <div id="toast-container"></div>
 
-    <script src="~/js/sse-reconnect.js"></script>
+    <script src="~/js/sse-reconnect.js" asp-append-version="true"></script>
 </body>
 </html>
 
