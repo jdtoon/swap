@@ -42,27 +42,16 @@ public class TasksController : SwapController
     [HttpGet("/tasks/stream")]
     public IActionResult TaskStream()
     {
-        return ServerSentEvents(async (stream, cancel) =>
+        return ServerSentEvents(async (conn, ct) =>
         {
-            // Demonstrates SSE event bridge for real-time updates
-            // This endpoint is kept alive and pushes updates when tasks change
-            // Note: In production, use proper pub/sub (Redis, SignalR, etc.)
-            
-            // Heartbeat to keep connection alive
-            await stream.SendEventAsync("heartbeat", "connected");
+            // Subscribe to task board update events
+            conn.WithEvents(
+                TaskSseEvents.BoardUpdate,
+                TaskSseEvents.ColumnUpdate
+            );
 
-            // Listen for task changes and push updates
-            // Actual implementation would subscribe to event bus or message queue
-            
-            // Keep connection alive
-            while (!cancel.IsCancellationRequested)
-            {
-                await Task.Delay(30000, cancel); // 30 second heartbeat
-                if (!cancel.IsCancellationRequested)
-                {
-                    await stream.SendKeepAliveAsync();
-                }
-            }
+            // Keep connection alive with heartbeats
+            await conn.KeepAlive(TimeSpan.FromSeconds(30), ct);
         });
     }
 

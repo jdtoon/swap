@@ -96,6 +96,7 @@ public static class DashboardViews
     public const string ActivityCard = "ActivityCard";
     public const string TeamList = "TeamList";
     public const string Presence = "_TeamPresence";
+    public const string ProjectsOverview = "~/Views/Dashboard/ProjectsOverview.cshtml";
 }
 
 /// <summary>
@@ -107,6 +108,7 @@ public static class DashboardElements
     public const string Activity = "dashboard-activity";
     public const string TeamList = "team-list";
     public const string Presence = "team-presence";
+    public const string Projects = "dashboard-projects";
 }
 
 /// <summary>

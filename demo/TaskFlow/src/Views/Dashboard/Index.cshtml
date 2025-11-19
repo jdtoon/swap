@@ -43,14 +43,8 @@
     <!-- Projects Overview -->
     <div class="projects-overview">
         <h2>Projects</h2>
-        @foreach (var project in (List<Project>)model.Projects)
-        {
-            <div class="project-summary">
-                <h3>@project.Name</h3>
-                <div id="@ProjectElements.Progress(project.Id)">
-                    @{ await Html.RenderPartialAsync(ProjectViews.ProgressBar, ProjectService.GetProgress(project.Id)); }
-                </div>
-            </div>
-        }
+        <div id="@DashboardElements.Projects" sse-swap="project-progress-update">
+            @{ await Html.RenderPartialAsync(DashboardViews.ProjectsOverview, (List<Project>)model.Projects); }
+        </div>
     </div>
 </div>

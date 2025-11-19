@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Swap.Htmx;
 using Swap.Htmx.Extensions;
 using Swap.Htmx.Models;
+using Swap.Htmx.ServerSentEvents;
 using TaskFlow.Services;
 using TaskFlow.Models;
 using TaskFlow.Events;
@@ -33,6 +34,26 @@ public class ProjectsController : SwapController
     {
         var projects = _projectService.GetAll();
         return SwapView(ProjectViews.Index, projects);
+    }
+
+    // ================================================================================
+    // SSE ENDPOINT - Real-time project updates
+    // ================================================================================
+
+    [HttpGet("/projects/stream")]
+    public IActionResult ProjectStream()
+    {
+        return ServerSentEvents(async (conn, ct) =>
+        {
+            // Subscribe to project update events
+            conn.WithEvents(
+                ProjectSseEvents.ListUpdate,
+                ProjectSseEvents.ProgressUpdate
+            );
+
+            // Keep connection alive with heartbeats
+            await conn.KeepAlive(TimeSpan.FromSeconds(30), ct);
+        });
     }
 
     [HttpGet("/projects/{id}")]

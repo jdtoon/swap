@@ -67,7 +67,8 @@ public class DashboardController : SwapController
             conn.WithEvents(
                 DashboardSseEvents.StatsUpdate,
                 DashboardSseEvents.ActivityUpdate,
-                DashboardSseEvents.TeamUpdate
+                DashboardSseEvents.TeamUpdate,
+                ProjectSseEvents.ProgressUpdate
             );
 
             // Keep connection alive with heartbeats
