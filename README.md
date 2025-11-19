@@ -162,31 +162,69 @@ public class TodosTests : IClassFixture<HtmxTestFixture<Program>>
 - [`Swap.Htmx`](https://www.nuget.org/packages/Swap.Htmx) – HTMX‑friendly building blocks for ASP.NET Core MVC apps. [Docs](lib/Swap.Htmx/README.md)
 - [`Swap.Testing`](https://www.nuget.org/packages/Swap.Testing) – fluent integration tests for HTMX endpoints. [Docs](lib/Swap.Testing/README.md)
 
-## Demo Application
+## Demo Applications
 
-**[SwapShop](demo/SwapShop/README.md)** – A fully functional e-commerce demo showcasing all three tiers of the Swap.Htmx API:
+### [SwapShop](demo/SwapShop/README.md) – E-commerce Foundation
+
+A fully functional e-commerce demo showcasing the **three-tier API** and core Swap.Htmx features:
+
 - **Tier 1: SwapView** - Simple HTMX-aware view rendering
 - **Tier 2: SwapResponse** - Coordinated multi-part updates with OOB swaps
 - **Tier 3: SwapEvent** - Event-driven UI updates with configurable event chains
 
-Features demonstrated:
+**Features demonstrated:**
 - Shopping cart with session persistence
-- Toast notifications (success, error, warning, info)
-- Event chains for coordinated updates
+- Toast notifications (success, error, info)
+- Basic event chains for coordinated updates
 - HTMX navigation with browser history support
 - Form submissions with optimistic UI updates
 - Debug logging with color-coded console output
 
-Quick start:
+**Quick start:**
 ```bash
 cd demo/SwapShop/src
 dotnet run
 # Open http://localhost:5120
 ```
 
+---
+
+### [TaskFlow](demo/TaskFlow/README.md) – Advanced Features Showcase
+
+A collaborative task management demo showcasing **advanced features** not covered by SwapShop:
+
+- **Server-Sent Events (SSE)** - Real-time dashboard and notification updates ⚠️ WIP
+- **All Swap Modes** - Delete, BeforeEnd, AfterEnd, InnerHTML (100% coverage)
+- **Payload-Aware Event Chains** - Access event payload to avoid re-fetching (NEW in 0.5.0)
+- **Warning Toasts** - Team overload, conflict detection, deadline alerts
+- **Deep Event Chains** - 4-5 level cascading event patterns
+- **Dynamic Element IDs** - Helper methods for instance-specific updates (NEW in 0.5.0)
+
+**Features demonstrated:**
+- Kanban board with multi-column task management
+- Real-time collaboration patterns
+- Complex OOB swap scenarios
+- Warning toast types and use cases
+- Event payload optimization techniques
+- Custom CSS without framework dependencies
+
+**Quick start:**
+```bash
+cd demo/TaskFlow/src
+dotnet run
+# Open https://localhost:5001
+```
+
+---
+
+**Together, SwapShop + TaskFlow provide 100% coverage of Swap.Htmx features!**
+
+Start with **SwapShop** to learn the fundamentals, then explore **TaskFlow** for advanced patterns.
+
 ## Examples
 
-- **[SwapShop](demo/SwapShop)** – Production-ready e-commerce demo with comprehensive event chain examples
+- **[SwapShop](demo/SwapShop)** – E-commerce demo covering core API and foundational patterns
+- **[TaskFlow](demo/TaskFlow)** – Team collaboration demo covering SSE, all swap modes, and advanced event chains
 - `lib/Swap.Testing/EXAMPLE_TESTS.cs` – Example test suite using the testing helpers
 
 
