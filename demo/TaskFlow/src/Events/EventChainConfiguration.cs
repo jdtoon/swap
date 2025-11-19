@@ -39,33 +39,41 @@ public static class EventChainConfiguration
         // Chain domain events to SSE broadcasts
         config.OnEvent(TaskEvents.Created)
             .BroadcastSse(DashboardSseEvents.StatsUpdate)
-            .BroadcastSse(DashboardSseEvents.ActivityUpdate);
+            .BroadcastSse(DashboardSseEvents.ActivityUpdate)
+            .Build();
 
         config.OnEvent(TaskEvents.StatusChanged)
             .BroadcastSse(DashboardSseEvents.StatsUpdate)
-            .BroadcastSse(DashboardSseEvents.ActivityUpdate);
+            .BroadcastSse(DashboardSseEvents.ActivityUpdate)
+            .Build();
 
         config.OnEvent(TaskEvents.Assigned)
             .BroadcastSse(DashboardSseEvents.StatsUpdate)
-            .BroadcastSse(DashboardSseEvents.ActivityUpdate);
+            .BroadcastSse(DashboardSseEvents.ActivityUpdate)
+            .Build();
 
         config.OnEvent(TaskEvents.Completed)
             .BroadcastSse(DashboardSseEvents.StatsUpdate)
-            .BroadcastSse(DashboardSseEvents.ActivityUpdate);
+            .BroadcastSse(DashboardSseEvents.ActivityUpdate)
+            .Build();
 
         config.OnEvent(TaskEvents.Deleted)
             .BroadcastSse(DashboardSseEvents.StatsUpdate)
-            .BroadcastSse(DashboardSseEvents.ActivityUpdate);
+            .BroadcastSse(DashboardSseEvents.ActivityUpdate)
+            .Build();
 
         config.OnEvent(ProjectEvents.Created)
             .BroadcastSse(DashboardSseEvents.StatsUpdate)
-            .BroadcastSse(DashboardSseEvents.ActivityUpdate);
+            .BroadcastSse(DashboardSseEvents.ActivityUpdate)
+            .Build();
 
         config.OnEvent(CommentEvents.Added)
-            .BroadcastSse(DashboardSseEvents.ActivityUpdate);
+            .BroadcastSse(DashboardSseEvents.ActivityUpdate)
+            .Build();
 
         config.OnEvent(ActivityEvents.Logged)
-            .BroadcastSse(DashboardSseEvents.ActivityUpdate);
+            .BroadcastSse(DashboardSseEvents.ActivityUpdate)
+            .Build();
 
         // ================================================================================
         // TASK EVENTS - Demonstrates payload access (NEW in 0.5.0)

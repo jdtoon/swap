@@ -74,7 +74,10 @@
              hx-trigger="load" 
              hx-swap="innerHTML">
         </div>
-        <form hx-post="/tasks/@Model.Id/comments" hx-target="body" hx-swap="none" class="comment-form">
+        <form hx-post="/tasks/@Model.Id/comments" 
+              hx-swap="none" 
+              hx-on::after-request="if(event.detail.successful) this.reset();" 
+              class="comment-form">
             <input type="text" name="Content" placeholder="Add a comment..." required />
             <button type="submit">💬</button>
         </form>
