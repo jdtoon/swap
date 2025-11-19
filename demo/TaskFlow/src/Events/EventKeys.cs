@@ -75,3 +75,13 @@ public static class PresenceEvents
     public static readonly EventKey UserOffline = new("presence.userOffline");
     public static readonly EventKey ViewingTask = new("presence.viewingTask");
 }
+
+/// <summary>
+/// SSE event names for dashboard updates
+/// </summary>
+public static class DashboardSseEvents
+{
+    public const string StatsUpdate = "stats-update";
+    public const string ActivityUpdate = "activity-update";
+    public const string TeamUpdate = "team-update";
+}

@@ -4,6 +4,7 @@ using Swap.Htmx.Extensions;
 using Swap.Htmx.ServerSentEvents;
 using TaskFlow.Services;
 using TaskFlow.Views;
+using TaskFlow.Events;
 
 namespace TaskFlow.Controllers;
 
@@ -56,32 +57,17 @@ public class DashboardController : SwapController
     [HttpGet("/dashboard/stream")]
     public IActionResult DashboardStream()
     {
-        return ServerSentEvents(async (stream, cancel) =>
+        return ServerSentEvents(async (conn, ct) =>
         {
-            // Demonstrates SSE for real-time dashboard updates
-            // In production, subscribe to event bus/Redis/etc.
-            
-            await stream.SendEventAsync("heartbeat", "connected");
+            // Subscribe to dashboard update events
+            conn.WithEvents(
+                DashboardSseEvents.StatsUpdate,
+                DashboardSseEvents.ActivityUpdate,
+                DashboardSseEvents.TeamUpdate
+            );
 
-            // Push updates when stats/activity changes
-            // Example: stats update event
-            var stats = _teamService.GetStats();
-            var statsHtml = $@"<div class='stats'>
-                <div>Total Tasks: {stats.TotalTasks}</div>
-                <div>In Progress: {stats.InProgressTasks}</div>
-                <div>Completed: {stats.CompletedTasks}</div>
-            </div>";
-            await stream.SendEventAsync("stats-update", statsHtml);
-            
-            // Keep connection alive
-            while (!cancel.IsCancellationRequested)
-            {
-                await Task.Delay(30000, cancel);
-                if (!cancel.IsCancellationRequested)
-                {
-                    await stream.SendKeepAliveAsync();
-                }
-            }
+            // Keep connection alive with heartbeats
+            await conn.KeepAlive(TimeSpan.FromSeconds(30), ct);
         });
     }
 
