@@ -29,17 +29,20 @@ internal sealed class SseEventBridge : ISseEventBridge
     private readonly IServiceProvider _serviceProvider;
     private readonly SwapEventBusOptions _eventBusOptions;
     private readonly ILogger<SseEventBridge> _logger;
+    private readonly ISseViewRenderer _viewRenderer;
 
     public SseEventBridge(
         ISseConnectionRegistry connectionRegistry,
         IServiceProvider serviceProvider,
         SwapEventBusOptions eventBusOptions,
-        ILogger<SseEventBridge> logger)
+        ILogger<SseEventBridge> logger,
+        ISseViewRenderer viewRenderer)
     {
         _connectionRegistry = connectionRegistry;
         _serviceProvider = serviceProvider;
         _eventBusOptions = eventBusOptions;
         _logger = logger;
+        _viewRenderer = viewRenderer;
     }
 
     public async Task HandleSseEventAsync(string eventName, object? payload, CancellationToken cancellationToken = default)
@@ -149,25 +152,12 @@ internal sealed class SseEventBridge : ISseEventBridge
             _logger.LogDebug("[SSE Bridge] Found event chain with {PartialCount} partials for {EventName}", 
                 config.Partials.Count, eventName);
 
-            // Create a minimal HTTP context if needed
+            // Create a scoped service provider for rendering
             using var scope = _serviceProvider.CreateScope();
             var httpContextAccessor = scope.ServiceProvider.GetService<Microsoft.AspNetCore.Http.IHttpContextAccessor>();
             var httpContext = httpContextAccessor?.HttpContext;
 
-            if (httpContext == null)
-            {
-                _logger.LogWarning("[SSE Bridge] No HttpContext available for rendering SSE event: {EventName}", eventName);
-                return $"<div data-event=\"{eventName}\"></div>";
-            }
-
-            // Check if we have a SwapController available
-            if (httpContext.Items["SwapController"] is not SwapController controller)
-            {
-                _logger.LogWarning("[SSE Bridge] No SwapController available for rendering SSE event: {EventName}", eventName);
-                return $"<div data-event=\"{eventName}\"></div>";
-            }
-
-            // Render all configured partials
+            // Render all configured partials using the view renderer
             var htmlBuilder = new System.Text.StringBuilder();
             foreach (var partial in config.Partials)
             {
@@ -181,7 +171,11 @@ internal sealed class SseEventBridge : ISseEventBridge
                     _logger.LogDebug("[SSE Bridge] Rendering partial {ViewName} with model type {ModelType}", 
                         partial.ViewName, model?.GetType().Name ?? "null");
 
-                    var partialHtml = await controller.RenderPartialToStringAsync(partial.ViewName, model);
+                    // Use the standalone view renderer (doesn't need SwapController)
+                    var partialHtml = await _viewRenderer.RenderPartialAsync(partial.ViewName, model);
+                    
+                    _logger.LogDebug("[SSE Bridge] Rendered {Length} chars for partial {ViewName}", 
+                        partialHtml?.Length ?? 0, partial.ViewName);
                     
                     // Wrap with hx-swap-oob for HTMX SSE
                     var swapMode = partial.SwapMode switch

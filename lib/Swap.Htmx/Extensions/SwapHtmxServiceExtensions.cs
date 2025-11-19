@@ -75,6 +75,8 @@ public static class SwapHtmxServiceExtensions
     {
         services.AddSingleton<ISseConnectionRegistry, SseConnectionRegistry>();
         services.AddScoped<ISseEventBridge, SseEventBridge>();
+        services.AddScoped<ISseViewRenderer, SseViewRenderer>();
+        services.AddHttpContextAccessor(); // Required for view rendering
         return services;
     }
 
