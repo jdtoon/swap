@@ -2,6 +2,9 @@
 @using TaskFlow.Models
 @using TaskFlow.Views
 @inject TaskFlow.Services.IProjectService ProjectService
+@{
+    Layout = null;
+}
 
 <div id="@ProjectElements.Card(Model.Id)" class="project-card">
     <h3>@Model.Name</h3>
