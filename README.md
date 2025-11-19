@@ -193,7 +193,7 @@ dotnet run
 
 A collaborative task management demo showcasing **advanced features** not covered by SwapShop:
 
-- **Server-Sent Events (SSE)** - Real-time dashboard and notification updates ⚠️ WIP
+- **Server-Sent Events (SSE)** - Real-time dashboard and notification updates
 - **All Swap Modes** - Delete, BeforeEnd, AfterEnd, InnerHTML (100% coverage)
 - **Payload-Aware Event Chains** - Access event payload to avoid re-fetching (NEW in 0.5.0)
 - **Warning Toasts** - Team overload, conflict detection, deadline alerts
@@ -202,6 +202,8 @@ A collaborative task management demo showcasing **advanced features** not covere
 
 **Features demonstrated:**
 - Kanban board with multi-column task management
+- Real-time dashboard updates via Server-Sent Events
+- Live activity feed and notification streaming
 - Real-time collaboration patterns
 - Complex OOB swap scenarios
 - Warning toast types and use cases

@@ -9,7 +9,7 @@
 - **Fluent response builder** - Coordinate view rendering, out-of-band swaps, toasts, and triggers in one clean chain
 - **Type-safe API** - No magic strings for swap modes or event names
 - **SwapController base class** - Automatically handles HTMX requests vs full page loads
-- **Server-sent events (SSE)** - Stream HTML updates with connection management
+- **SSE for real-time updates** - The SSE implementation includes connection management, room-based broadcasting, and automatic reconnection. For high-scale production apps with thousands of concurrent connections, consider Redis pub/sub or similar distributed messaging
 - **Event system** - Build `HX-Trigger` headers declaratively
 
 ## Install
