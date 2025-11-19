@@ -70,7 +70,8 @@ app.UseSession();
 app.UseResponseCompression();
 
 // Swap.Htmx middleware (must be after UseRouting, before MapControllers)
-app.UseSwapHtmx();
+app.UseSwapHtmx()
+   .UseSseEventBridge(); // Enable SSE event broadcasting from event chains
 
 app.MapControllers();
 
