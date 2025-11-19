@@ -177,22 +177,10 @@ internal sealed class SseEventBridge : ISseEventBridge
                     _logger.LogDebug("[SSE Bridge] Rendered {Length} chars for partial {ViewName}", 
                         partialHtml?.Length ?? 0, partial.ViewName);
                     
-                    // Wrap with hx-swap-oob for HTMX SSE
-                    var swapMode = partial.SwapMode switch
-                    {
-                        SwapMode.OuterHTML => "true",
-                        SwapMode.InnerHTML => "innerHTML",
-                        SwapMode.BeforeBegin => "beforebegin",
-                        SwapMode.AfterBegin => "afterbegin",
-                        SwapMode.BeforeEnd => "beforeend",
-                        SwapMode.AfterEnd => "afterend",
-                        SwapMode.Delete => "delete",
-                        _ => "true"
-                    };
-
-                    htmlBuilder.AppendLine($"<div id=\"{partial.TargetId}\" hx-swap-oob=\"{swapMode}\">");
+                    // For SSE broadcasts, HTMX SSE extension expects just the HTML content
+                    // The element with sse-swap attribute will handle the swap
+                    // We don't need hx-swap-oob wrapper for SSE events
                     htmlBuilder.AppendLine(partialHtml);
-                    htmlBuilder.AppendLine("</div>");
                 }
                 catch (Exception ex)
                 {
