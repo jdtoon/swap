@@ -15,7 +15,11 @@
     </div>
     
     <div class="project-actions">
-        <a href="/projects/@Model.Id" class="btn-sm">Details</a>
+        <a href="/projects/@Model.Id" 
+           hx-get="/projects/@Model.Id" 
+           hx-target="#main" 
+           hx-push-url="true" 
+           class="btn-sm">Details</a>
         <button hx-delete="/projects/@Model.Id" 
                 hx-confirm="Delete this project?"
                 class="btn-sm btn-danger">Delete</button>
