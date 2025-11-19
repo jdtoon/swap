@@ -52,29 +52,29 @@ public static class EventChainConfiguration
                 return projectService.GetAll();
             });
 
-        // Task column update SSE event - refreshes all kanban columns
-        config.When(SseEvents.Broadcast(TaskSseEvents.ColumnUpdate))
+        // Task column update SSE events - separate event for each column
+        config.When(SseEvents.Broadcast(TaskSseEvents.TodoColumnUpdate))
             .RefreshPartial(TaskElements.Column(Models.TaskStatus.Todo), "~/Views/Tasks/TaskColumn.cshtml", ctx =>
             {
                 var taskService = ctx.RequestServices.GetRequiredService<ITaskService>();
                 return taskService.GetByStatus(Models.TaskStatus.Todo);
             });
 
-        config.When(SseEvents.Broadcast(TaskSseEvents.ColumnUpdate))
+        config.When(SseEvents.Broadcast(TaskSseEvents.InProgressColumnUpdate))
             .RefreshPartial(TaskElements.Column(Models.TaskStatus.InProgress), "~/Views/Tasks/TaskColumn.cshtml", ctx =>
             {
                 var taskService = ctx.RequestServices.GetRequiredService<ITaskService>();
                 return taskService.GetByStatus(Models.TaskStatus.InProgress);
             });
 
-        config.When(SseEvents.Broadcast(TaskSseEvents.ColumnUpdate))
+        config.When(SseEvents.Broadcast(TaskSseEvents.ReviewColumnUpdate))
             .RefreshPartial(TaskElements.Column(Models.TaskStatus.Review), "~/Views/Tasks/TaskColumn.cshtml", ctx =>
             {
                 var taskService = ctx.RequestServices.GetRequiredService<ITaskService>();
                 return taskService.GetByStatus(Models.TaskStatus.Review);
             });
 
-        config.When(SseEvents.Broadcast(TaskSseEvents.ColumnUpdate))
+        config.When(SseEvents.Broadcast(TaskSseEvents.DoneColumnUpdate))
             .RefreshPartial(TaskElements.Column(Models.TaskStatus.Done), "~/Views/Tasks/TaskColumn.cshtml", ctx =>
             {
                 var taskService = ctx.RequestServices.GetRequiredService<ITaskService>();
@@ -85,34 +85,49 @@ public static class EventChainConfiguration
         config.OnEvent(TaskEvents.Created)
             .BroadcastSse(DashboardSseEvents.StatsUpdate)
             .BroadcastSse(DashboardSseEvents.ActivityUpdate)
-            .BroadcastSse(TaskSseEvents.ColumnUpdate)
+            .BroadcastSse(TaskSseEvents.TodoColumnUpdate)
+            .BroadcastSse(TaskSseEvents.InProgressColumnUpdate)
+            .BroadcastSse(TaskSseEvents.ReviewColumnUpdate)
+            .BroadcastSse(TaskSseEvents.DoneColumnUpdate)
             .BroadcastSse(ProjectSseEvents.ProgressUpdate)
             .Build();
 
         config.OnEvent(TaskEvents.StatusChanged)
             .BroadcastSse(DashboardSseEvents.StatsUpdate)
             .BroadcastSse(DashboardSseEvents.ActivityUpdate)
-            .BroadcastSse(TaskSseEvents.ColumnUpdate)
+            .BroadcastSse(TaskSseEvents.TodoColumnUpdate)
+            .BroadcastSse(TaskSseEvents.InProgressColumnUpdate)
+            .BroadcastSse(TaskSseEvents.ReviewColumnUpdate)
+            .BroadcastSse(TaskSseEvents.DoneColumnUpdate)
             .BroadcastSse(ProjectSseEvents.ProgressUpdate)
             .Build();
 
         config.OnEvent(TaskEvents.Assigned)
             .BroadcastSse(DashboardSseEvents.StatsUpdate)
             .BroadcastSse(DashboardSseEvents.ActivityUpdate)
-            .BroadcastSse(TaskSseEvents.ColumnUpdate)
+            .BroadcastSse(TaskSseEvents.TodoColumnUpdate)
+            .BroadcastSse(TaskSseEvents.InProgressColumnUpdate)
+            .BroadcastSse(TaskSseEvents.ReviewColumnUpdate)
+            .BroadcastSse(TaskSseEvents.DoneColumnUpdate)
             .Build();
 
         config.OnEvent(TaskEvents.Completed)
             .BroadcastSse(DashboardSseEvents.StatsUpdate)
             .BroadcastSse(DashboardSseEvents.ActivityUpdate)
-            .BroadcastSse(TaskSseEvents.ColumnUpdate)
+            .BroadcastSse(TaskSseEvents.TodoColumnUpdate)
+            .BroadcastSse(TaskSseEvents.InProgressColumnUpdate)
+            .BroadcastSse(TaskSseEvents.ReviewColumnUpdate)
+            .BroadcastSse(TaskSseEvents.DoneColumnUpdate)
             .BroadcastSse(ProjectSseEvents.ProgressUpdate)
             .Build();
 
         config.OnEvent(TaskEvents.Deleted)
             .BroadcastSse(DashboardSseEvents.StatsUpdate)
             .BroadcastSse(DashboardSseEvents.ActivityUpdate)
-            .BroadcastSse(TaskSseEvents.ColumnUpdate)
+            .BroadcastSse(TaskSseEvents.TodoColumnUpdate)
+            .BroadcastSse(TaskSseEvents.InProgressColumnUpdate)
+            .BroadcastSse(TaskSseEvents.ReviewColumnUpdate)
+            .BroadcastSse(TaskSseEvents.DoneColumnUpdate)
             .BroadcastSse(ProjectSseEvents.ProgressUpdate)
             .Build();
 

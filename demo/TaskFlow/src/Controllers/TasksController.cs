@@ -47,7 +47,10 @@ public class TasksController : SwapController
             // Subscribe to task board update events
             conn.WithEvents(
                 TaskSseEvents.BoardUpdate,
-                TaskSseEvents.ColumnUpdate
+                TaskSseEvents.TodoColumnUpdate,
+                TaskSseEvents.InProgressColumnUpdate,
+                TaskSseEvents.ReviewColumnUpdate,
+                TaskSseEvents.DoneColumnUpdate
             );
 
             // Keep connection alive with heartbeats

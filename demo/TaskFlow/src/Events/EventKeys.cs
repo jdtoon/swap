@@ -102,4 +102,8 @@ public static class TaskSseEvents
 {
     public const string BoardUpdate = "task-board-update";
     public const string ColumnUpdate = "task-column-update";
+    public const string TodoColumnUpdate = "task-column-todo-update";
+    public const string InProgressColumnUpdate = "task-column-inprogress-update";
+    public const string ReviewColumnUpdate = "task-column-review-update";
+    public const string DoneColumnUpdate = "task-column-done-update";
 }
