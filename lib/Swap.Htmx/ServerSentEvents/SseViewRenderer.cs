@@ -54,22 +54,65 @@ public class SseViewRenderer : ISseViewRenderer
             RequestServices = _serviceProvider
         };
 
-        // Create a minimal ActionContext for view rendering
+        // Create a RouteData with controller context to help view engine find views
+        var routeData = httpContext.GetRouteData() ?? new RouteData();
+        
+        // If view name doesn't start with ~/ or /, try to infer controller from view path
+        // For views like "Stats", we'll search in common locations
+        // The view engine will search: Views/{Controller}/{ViewName}, Views/Shared/{ViewName}
+        
+        // Create ActionDescriptor with controller name to help view engine
+        var actionDescriptor = new ActionDescriptor
+        {
+            RouteValues = new Dictionary<string, string?>()
+        };
+
+        // Create ActionContext for view rendering
         var actionContext = new ActionContext(
             httpContext,
-            httpContext.GetRouteData() ?? new RouteData(),
-            new ActionDescriptor()
+            routeData,
+            actionDescriptor
         );
 
         using var writer = new StringWriter();
         
-        // Find the view
-        var viewResult = _viewEngine.FindView(actionContext, viewName, isMainPage: false);
+        // Try multiple search strategies for the view
+        ViewEngineResult viewResult;
+        
+        // 1. Try as partial view name (searches Views/Shared and current controller)
+        viewResult = _viewEngine.FindView(actionContext, viewName, isMainPage: false);
         
         if (!viewResult.Success)
         {
-            // Try partial view lookup
+            // 2. Try with ~ prefix for app-relative path
             viewResult = _viewEngine.GetView(executingFilePath: null, viewName, isMainPage: false);
+        }
+
+        if (!viewResult.Success)
+        {
+            // 3. Try common controller locations (Dashboard, Tasks, etc.)
+            var commonControllers = new[] { "Dashboard", "Tasks", "Projects", "Notifications", "Shared" };
+            foreach (var controller in commonControllers)
+            {
+                var controllerActionContext = new ActionContext(
+                    httpContext,
+                    routeData,
+                    new ActionDescriptor
+                    {
+                        RouteValues = new Dictionary<string, string?>
+                        {
+                            ["controller"] = controller
+                        }
+                    }
+                );
+                
+                viewResult = _viewEngine.FindView(controllerActionContext, viewName, isMainPage: false);
+                if (viewResult.Success)
+                {
+                    actionContext = controllerActionContext;
+                    break;
+                }
+            }
         }
 
         if (!viewResult.Success)

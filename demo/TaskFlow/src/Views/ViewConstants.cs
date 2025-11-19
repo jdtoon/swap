@@ -91,8 +91,8 @@ public static class CommentElements
 public static class DashboardViews
 {
     public const string Index = "Index";
-    public const string Stats = "Stats";
-    public const string Activity = "Activity";
+    public const string Stats = "~/Views/Dashboard/Stats.cshtml";
+    public const string Activity = "~/Views/Dashboard/Activity.cshtml";
     public const string ActivityCard = "ActivityCard";
     public const string TeamList = "TeamList";
     public const string Presence = "_TeamPresence";
