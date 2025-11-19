@@ -1,0 +1,7 @@
+@model List<TaskFlow.Models.TaskItem>
+@using TaskFlow.Views
+
+@foreach (var task in Model)
+{
+    @await Html.PartialAsync(TaskViews.TaskCard, task)
+}

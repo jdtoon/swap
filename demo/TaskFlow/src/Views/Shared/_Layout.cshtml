@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - TaskFlow</title>
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/swap-toasts.css" asp-append-version="true" />
+    <script src="~/lib/htmx/dist/htmx.min.js" asp-append-version="true"></script>
+    <script src="~/lib/htmx-ext-sse/sse.js" asp-append-version="true"></script>
+</head>
+<body hx-ext="sse">
+    <header>
+        <nav class="navbar">
+            <div class="container">
+                <a href="/" class="brand" hx-get="/" hx-target="main" hx-push-url="true">TaskFlow</a>
+                <div class="nav-links">
+                    <a href="/dashboard" hx-get="/dashboard" hx-target="main" hx-push-url="true">Dashboard</a>
+                    <a href="/tasks" hx-get="/tasks" hx-target="main" hx-push-url="true">Tasks</a>
+                    <a href="/projects" hx-get="/projects" hx-target="main" hx-push-url="true">Projects</a>
+                    <span id="@NotificationElements.Bell" 
+                          hx-get="/notifications/bell" 
+                          hx-trigger="load"
+                          hx-swap="outerHTML"
+                          hx-push-url="false">
+                        🔔
+                    </span>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main class="container" id="main">
+        @RenderBody()
+    </main>
+
+    <!-- Toast container - positioned by library's swap-toasts.css -->
+    <div id="toast-container"></div>
+
+    <script src="~/js/sse-reconnect.js" asp-append-version="true"></script>
+</body>
+</html>
+
+@using TaskFlow.Views

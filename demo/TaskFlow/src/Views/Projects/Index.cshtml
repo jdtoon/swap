@@ -1,0 +1,56 @@
+@model List<Project>
+@using TaskFlow.Models
+@using TaskFlow.Views
+@inject TaskFlow.Services.IProjectService ProjectService
+@{
+    ViewData["Title"] = "Projects";
+    Layout = null;
+}
+
+<div class="projects-page">
+    <div class="header">
+        <h1>Projects</h1>
+        <button class="btn" onclick="document.getElementById('create-form').style.display='block'">+ New Project</button>
+    </div>
+
+    <div id="create-form" style="display:none; margin-bottom: 2rem; padding: 1rem; background: var(--color-surface); border-radius: var(--radius-md);">
+        <h3>Create New Project</h3>
+        <form hx-post="/projects" 
+              hx-target="#project-list" 
+              hx-swap="beforeend"
+              hx-on::after-request="if(event.detail.successful) { this.reset(); document.getElementById('create-form').style.display='none'; }">
+            <input type="text" name="Name" placeholder="Project name" required style="width: 100%; margin-bottom: 1rem; padding: 0.5rem;" />
+            <textarea name="Description" placeholder="Description" style="width: 100%; margin-bottom: 1rem; padding: 0.5rem;" rows="3"></textarea>
+            <input type="color" name="Color" value="#3b82f6" style="margin-bottom: 1rem;" />
+            <div>
+                <button type="submit" class="btn">Create</button>
+                <button type="button" class="btn btn-outline" onclick="document.getElementById('create-form').style.display='none'">Cancel</button>
+            </div>
+        </form>
+    </div>
+
+    <div id="project-list" class="projects-grid">
+        @foreach (var project in Model)
+        {
+            <div id="@ProjectElements.Card(project.Id)" class="project-card">
+                <h3>@project.Name</h3>
+                <p>@project.Description</p>
+                
+                <div id="@ProjectElements.Progress(project.Id)">
+                    @{ await Html.RenderPartialAsync(ProjectViews.ProgressBar, ProjectService.GetProgress(project.Id)); }
+                </div>
+                
+                <div class="project-actions">
+                    <a href="/projects/@project.Id" 
+                       hx-get="/projects/@project.Id" 
+                       hx-target="#main" 
+                       hx-push-url="true" 
+                       class="btn-sm">Details</a>
+                    <button hx-delete="/projects/@project.Id" 
+                            hx-confirm="Delete this project?"
+                            class="btn-sm btn-danger">Delete</button>
+                </div>
+            </div>
+        }
+    </div>
+</div>

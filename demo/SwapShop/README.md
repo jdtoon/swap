@@ -42,16 +42,16 @@ public IActionResult Remove(int productId)
 
 ### Key Features Demonstrated
 
-✅ **HTMX SPA Navigation** - Full page loads on first visit, partial updates on navigation
-✅ **Out-of-Band (OOB) Swaps** - Update cart badge while updating main content
-✅ **Event Chains** - Configure what happens when events fire (toasts, partials, redirects)
-✅ **Toast Notifications** - Success/Error/Warning/Info toasts with auto-dismiss
-✅ **Automatic Session Management** - Cookie persistence handled automatically via `GetOrInitializeSessionId()`
-✅ **Configurable View Search Paths** - Cross-controller OOB swaps work seamlessly
-✅ **Form Submissions** - Add to cart, update quantities, checkout with HTMX
-✅ **Optimistic UI Updates** - Instant feedback on user actions
-✅ **History Navigation** - Browser back/forward works correctly
-✅ **Debug Logging** - Color-coded console logs for development
+- ✅ **HTMX SPA Navigation** - Full page loads on first visit, partial updates on navigation
+- ✅ **Out-of-Band (OOB) Swaps** - Update cart badge while updating main content
+- ✅ **Event Chains** - Configure what happens when events fire (toasts, partials, redirects)
+- ✅ **Toast Notifications** - Success/Error/Warning/Info toasts with auto-dismiss
+- ✅ **Automatic Session Management** - Cookie persistence handled automatically via `GetOrInitializeSessionId()`
+- ✅ **Configurable View Search Paths** - Cross-controller OOB swaps work seamlessly
+- ✅ **Form Submissions** - Add to cart, update quantities, checkout with HTMX
+- ✅ **Optimistic UI Updates** - Instant feedback on user actions
+- ✅ **History Navigation** - Browser back/forward works correctly
+- ✅ **Debug Logging** - Color-coded console logs for development
 
 ## Running the Demo
 

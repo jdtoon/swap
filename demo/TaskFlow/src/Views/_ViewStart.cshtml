@@ -1,0 +1,4 @@
+@using Swap.Htmx
+@{
+    Layout = Context.Request.IsHtmxRequest() ? null : "_Layout";
+}

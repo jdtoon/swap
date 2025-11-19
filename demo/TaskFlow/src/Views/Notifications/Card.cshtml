@@ -1,0 +1,11 @@
+@model Notification
+@using TaskFlow.Models
+
+<div class="notification-content">
+    <p>@Model.Message</p>
+    <small>@Model.CreatedAt.ToString("g")</small>
+    @if (!Model.IsRead)
+    {
+        <button hx-post="/notifications/@Model.Id/read" class="btn-sm">Mark as Read</button>
+    }
+</div>
