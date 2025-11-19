@@ -1,6 +1,16 @@
 @model int
+@using TaskFlow.Views
 
-@if (Model > 0)
-{
-    <span class="notification-badge">@Model</span>
-}
+<span id="@NotificationElements.Bell" 
+      class="notification-link"
+      hx-get="/notifications/bell" 
+      hx-trigger="load, every 30s"
+      hx-swap="outerHTML"
+      style="cursor: pointer;"
+      onclick="window.location.href='/notifications'">
+    🔔
+    @if (Model > 0)
+    {
+        <span class="notification-badge">@Model</span>
+    }
+</span>

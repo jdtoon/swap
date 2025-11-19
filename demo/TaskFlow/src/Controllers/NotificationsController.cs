@@ -10,6 +10,7 @@ namespace TaskFlow.Controllers;
 /// <summary>
 /// Demonstrates SSE notification stream and real-time updates
 /// </summary>
+[Route("notifications")]
 public class NotificationsController : SwapController
 {
     private readonly INotificationService _notificationService;
