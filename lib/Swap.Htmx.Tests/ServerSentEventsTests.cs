@@ -73,9 +73,10 @@ public class ServerSentEventsTests
 
         // Assert
         Assert.Equal(200, httpContext.Response.StatusCode);
-        Assert.Equal("text/event-stream", httpContext.Response.ContentType);
+        Assert.Equal("text/event-stream; charset=utf-8", httpContext.Response.ContentType);
         Assert.Equal("no-cache", httpContext.Response.Headers["Cache-Control"]);
         Assert.Equal("keep-alive", httpContext.Response.Headers["Connection"]);
+        Assert.Equal("no", httpContext.Response.Headers["X-Accel-Buffering"]);
     }
 
     [Fact]

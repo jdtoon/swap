@@ -19,11 +19,12 @@ public sealed class ServerSentEventsResult : IActionResult
     {
         var response = context.HttpContext.Response;
         
-        // Set SSE headers
+        // Set SSE headers per W3C EventSource specification
         response.StatusCode = 200;
-        response.ContentType = "text/event-stream";
+        response.ContentType = "text/event-stream; charset=utf-8";
         response.Headers["Cache-Control"] = "no-cache";
         response.Headers["Connection"] = "keep-alive";
+        response.Headers["X-Accel-Buffering"] = "no"; // Prevent Nginx buffering
         
         // Disable response buffering for real-time streaming
         var bufferingFeature = context.HttpContext.Features.Get<Microsoft.AspNetCore.Http.Features.IHttpResponseBodyFeature>();
@@ -35,6 +36,10 @@ public sealed class ServerSentEventsResult : IActionResult
         try
         {
             await _handler(stream, cancellationToken);
+        }
+        catch (OperationCanceledException)
+        {
+            // Client disconnected - this is normal for SSE
         }
         finally
         {
