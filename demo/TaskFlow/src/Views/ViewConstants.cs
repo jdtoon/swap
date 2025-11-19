@@ -115,7 +115,7 @@ public static class DashboardElements
 public static class NotificationViews
 {
     public const string Index = "Index";
-    public const string Bell = "Bell";
+    public const string Bell = "~/Views/Notifications/Bell.cshtml";
     public const string List = "List";
     public const string Card = "Card";
     public const string Single = "_Notification";
