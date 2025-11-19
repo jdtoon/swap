@@ -14,7 +14,10 @@
 
     <div id="create-form" style="display:none; margin-bottom: 2rem; padding: 1rem; background: var(--color-surface); border-radius: var(--radius-md);">
         <h3>Create New Project</h3>
-        <form hx-post="/projects" hx-target="#project-list" hx-swap="beforeend">
+        <form hx-post="/projects" 
+              hx-target="#project-list" 
+              hx-swap="beforeend"
+              hx-on::after-request="if(event.detail.successful) { this.reset(); document.getElementById('create-form').style.display='none'; }">
             <input type="text" name="Name" placeholder="Project name" required style="width: 100%; margin-bottom: 1rem; padding: 0.5rem;" />
             <textarea name="Description" placeholder="Description" style="width: 100%; margin-bottom: 1rem; padding: 0.5rem;" rows="3"></textarea>
             <input type="color" name="Color" value="#3b82f6" style="margin-bottom: 1rem;" />

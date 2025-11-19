@@ -45,6 +45,7 @@ public static class ProjectViews
     public const string Details = "Details";
     public const string List = "_ProjectList";
     public const string Card = "_ProjectCard";
+    public const string ProjectCard = "ProjectCard";
     public const string ProgressBar = "ProgressBar";
     public const string Stats = "_ProjectStats";
 }

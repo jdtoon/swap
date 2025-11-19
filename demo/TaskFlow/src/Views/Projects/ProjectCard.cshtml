@@ -1,0 +1,20 @@
+@model Project
+@using TaskFlow.Models
+@using TaskFlow.Views
+@inject TaskFlow.Services.IProjectService ProjectService
+
+<div id="@ProjectElements.Card(Model.Id)" class="project-card">
+    <h3>@Model.Name</h3>
+    <p>@Model.Description</p>
+    
+    <div id="@ProjectElements.Progress(Model.Id)">
+        @{ await Html.RenderPartialAsync(ProjectViews.ProgressBar, ProjectService.GetProgress(Model.Id)); }
+    </div>
+    
+    <div class="project-actions">
+        <a href="/projects/@Model.Id" class="btn-sm">Details</a>
+        <button hx-delete="/projects/@Model.Id" 
+                hx-confirm="Delete this project?"
+                class="btn-sm btn-danger">Delete</button>
+    </div>
+</div>

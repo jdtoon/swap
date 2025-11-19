@@ -77,9 +77,11 @@ public class ProjectsController : SwapController
             userId: "demo-user"
         );
 
+        // Return the new project card to be added to the grid
         return SwapResponse()
-            .AlsoUpdate(ProjectElements.List, ProjectViews.List, _projectService.GetAll())
+            .WithView("ProjectCard", project)
             .WithTrigger(ProjectEvents.Created, project)
+            .WithToast("Project created", ToastType.Success)
             .Build();
     }
 
