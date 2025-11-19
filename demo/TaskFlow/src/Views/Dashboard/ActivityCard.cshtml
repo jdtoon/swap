@@ -1,0 +1,38 @@
+@model Activity
+
+<div class="activity-item" id="activity-@Model.Id">
+    <div class="activity-icon">
+        @switch (Model.Type.ToLower())
+        {
+            case "task.created":
+            case "activity":
+                <span>➕</span>
+                break;
+            case "task.completed":
+                <span>✅</span>
+                break;
+            case "task.updated":
+            case "task.statuschanged":
+                <span>📝</span>
+                break;
+            case "task.assigned":
+                <span>👤</span>
+                break;
+            case "comment.added":
+                <span>💬</span>
+                break;
+            case "project.created":
+                <span>📁</span>
+                break;
+            default:
+                <span>•</span>
+                break;
+        }
+    </div>
+    <div class="activity-content">
+        <span class="activity-time">@Model.CreatedAt.ToString("h:mm tt")</span>
+        <p class="activity-description">
+            <strong>@Model.ActorName</strong> @Model.Description
+        </p>
+    </div>
+</div>

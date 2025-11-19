@@ -35,6 +35,13 @@ public class CommentsController : SwapController
         return PartialView(CommentViews.List, comments);
     }
 
+    [HttpGet("/tasks/{taskId}/comments/count")]
+    public IActionResult GetCommentCount(int taskId)
+    {
+        var count = _commentService.GetByTask(taskId).Count;
+        return Content(count.ToString());
+    }
+
     [HttpPost("/tasks/{taskId}/comments")]
     public IActionResult Create(int taskId, [FromForm] CommentInput input)
     {

@@ -13,7 +13,7 @@ public static class TaskViews
     public const string TaskCard = "TaskCard";
     public const string TaskColumn = "TaskColumn";
     public const string List = "_TaskList";
-    public const string Details = "_TaskDetails";
+    public const string Details = "TaskDetails";
     public const string Form = "_TaskForm";
     public const string Count = "_TaskCount";
 }
@@ -92,6 +92,7 @@ public static class DashboardViews
     public const string Index = "Index";
     public const string Stats = "Stats";
     public const string Activity = "Activity";
+    public const string ActivityCard = "ActivityCard";
     public const string TeamList = "TeamList";
     public const string Presence = "_TeamPresence";
 }

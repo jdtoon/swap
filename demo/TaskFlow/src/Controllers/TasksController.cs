@@ -114,7 +114,7 @@ public class TasksController : SwapController
         // Trigger event with payload - NEW in 0.5.0
         // Event chain will receive task object and avoid re-fetching
         return SwapResponse()
-            .AlsoUpdate(TaskElements.Column(task.Status), TaskViews.TaskColumn, task.Status)
+            .AlsoUpdate(TaskElements.Column(task.Status), TaskViews.TaskColumn, _taskService.GetByStatus(task.Status))
             .WithTrigger(TaskEvents.Created, task) // Pass task as payload!
             .Build();
     }
@@ -149,9 +149,9 @@ public class TasksController : SwapController
         // Multi-column update using OOB helpers - NEW in 0.5.0
         return SwapResponse()
             // Remove from old column
-            .AlsoUpdate(TaskElements.Column(oldStatus), TaskViews.TaskColumn, oldStatus)
+            .AlsoUpdate(TaskElements.Column(oldStatus), TaskViews.TaskColumn, _taskService.GetByStatus(oldStatus))
             // Add to new column (demonstrates AlsoUpdateById)
-            .AlsoUpdate(TaskElements.Column(status), TaskViews.TaskColumn, status)
+            .AlsoUpdate(TaskElements.Column(status), TaskViews.TaskColumn, _taskService.GetByStatus(status))
             // Update project progress
             .AlsoUpdate(
                 ProjectElements.Progress(task.ProjectId),
@@ -310,6 +310,51 @@ public class TasksController : SwapController
             .AlsoUpdate(TaskElements.Card(id), TaskViews.TaskCard, task)
             .WithTrigger(TaskEvents.PriorityChanged, task)
             .WithToast("Priority updated", ToastType.Info)
+            .Build();
+    }
+
+    // ================================================================================
+    // CHECK OVERDUE TASKS - Manual trigger for demonstration
+    // ================================================================================
+
+    [HttpPost("/tasks/check-overdue")]
+    public IActionResult CheckOverdueTasks()
+    {
+        var overdueTasks = _taskService.GetOverdue();
+        
+        if (!overdueTasks.Any())
+        {
+            return SwapResponse()
+                .WithToast("No overdue tasks", ToastType.Info)
+                .Build();
+        }
+
+        // Trigger overdue warning for first overdue task as demo
+        var task = overdueTasks.First();
+        
+        return SwapResponse()
+            .WithTrigger(TaskEvents.Overdue, task)
+            .Build();
+    }
+
+    // ================================================================================
+    // SIMULATE CONFLICT - Demonstrates warning toast for concurrent editing
+    // ================================================================================
+
+    [HttpPost("/tasks/{id}/simulate-conflict")]
+    public IActionResult SimulateConflict(int id)
+    {
+        var task = _taskService.Get(id);
+        if (task == null)
+        {
+            return SwapResponse()
+                .WithToast("Task not found", ToastType.Error)
+                .Build();
+        }
+
+        // Trigger conflict detected warning (simulated for demo)
+        return SwapResponse()
+            .WithTrigger(TaskEvents.ConflictDetected, task)
             .Build();
     }
 }

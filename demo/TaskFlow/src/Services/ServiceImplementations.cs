@@ -52,7 +52,7 @@ public class TeamService : ITeamService
             if (member != null)
             {
                 member.IsOnline = online;
-                member.LastSeen = online ? null : DateTime.UtcNow;
+                member.LastSeenAt = online ? null : DateTime.UtcNow;
             }
         }
     }
@@ -125,7 +125,7 @@ public class TeamService : ITeamService
                 Email = "charlie@taskflow.dev",
                 AvatarColor = "#f59e0b", // Orange
                 IsOnline = false,
-                LastSeen = DateTime.UtcNow.AddMinutes(-30)
+                LastSeenAt = DateTime.UtcNow.AddMinutes(-30)
             }
         });
     }

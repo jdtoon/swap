@@ -2,7 +2,7 @@
 
 <div id="@CommentElements.Card(Model.Id)" class="comment-card">
     <div class="comment-header">
-        <strong>@Model.UserId</strong>
+        <strong>@Model.AuthorName</strong>
         <span class="comment-time">@Model.CreatedAt.ToString("MMM d, h:mm tt")</span>
         <button hx-delete="/comments/@Model.Id" class="btn-icon">🗑️</button>
     </div>

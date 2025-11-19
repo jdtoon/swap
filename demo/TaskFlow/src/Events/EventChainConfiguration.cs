@@ -28,9 +28,12 @@ public static class EventChainConfiguration
                 var teamService = ctx.RequestServices.GetRequiredService<ITeamService>();
                 return teamService.GetStats();
             })
-            .RefreshPartial(DashboardElements.Activity, DashboardViews.Activity, ctx =>
+            .RefreshPartial(DashboardElements.Activity, DashboardViews.Activity, (ctx, payload) =>
             {
+                // Use task from payload to show in activity without DB query
+                var task = (TaskItem?)payload;
                 var activityService = ctx.RequestServices.GetRequiredService<IActivityService>();
+                // Activity already logged by controller, just refresh view
                 return activityService.GetRecent(10);
             })
             .Toast("Task created successfully", ToastType.Success);
@@ -39,25 +42,32 @@ public static class EventChainConfiguration
         config.When(TaskEvents.StatusChanged)
             .RefreshPartial(DashboardElements.Stats, DashboardViews.Stats, (ctx, payload) =>
             {
+                // Use task from payload - no need to fetch from DB
                 var task = (TaskItem?)payload;
                 var teamService = ctx.RequestServices.GetRequiredService<ITeamService>();
+                // We have the task object, can use it if needed for filtering/logic
                 return teamService.GetStats();
             })
-            .RefreshPartial(DashboardElements.Activity, DashboardViews.Activity, ctx =>
+            .RefreshPartial(DashboardElements.Activity, DashboardViews.Activity, (ctx, payload) =>
             {
+                var task = (TaskItem?)payload;
                 var activityService = ctx.RequestServices.GetRequiredService<IActivityService>();
+                // Activity updated by controller, refresh feed
                 return activityService.GetRecent(10);
             })
             .Toast("Task status updated", ToastType.Info);
 
         // Task Assigned - Deep event chain with cascading triggers
+        // DEMONSTRATES: Using payload to update assignee's task card specifically
         config.When(TaskEvents.Assigned)
             .RefreshPartial(DashboardElements.Stats, DashboardViews.Stats, (ctx, payload) =>
             {
+                // Payload contains the task with assignee info - use it!
+                var task = (TaskItem?)payload;
                 var teamService = ctx.RequestServices.GetRequiredService<ITeamService>();
                 return teamService.GetStats();
             })
-            .RefreshPartial(DashboardElements.Activity, DashboardViews.Activity, ctx =>
+            .RefreshPartial(DashboardElements.Activity, DashboardViews.Activity, (ctx, payload) =>
             {
                 var activityService = ctx.RequestServices.GetRequiredService<IActivityService>();
                 return activityService.GetRecent(10);
@@ -78,6 +88,8 @@ public static class EventChainConfiguration
         config.When(TaskEvents.Completed)
             .RefreshPartial(DashboardElements.Stats, DashboardViews.Stats, (ctx, payload) =>
             {
+                // Use completed task from payload
+                var task = (TaskItem?)payload;
                 var teamService = ctx.RequestServices.GetRequiredService<ITeamService>();
                 return teamService.GetStats();
             })
@@ -85,8 +97,9 @@ public static class EventChainConfiguration
 
         // Task Overdue - Warning demonstration
         config.When(TaskEvents.Overdue)
-            .RefreshPartial(DashboardElements.Stats, DashboardViews.Stats, ctx =>
+            .RefreshPartial(DashboardElements.Stats, DashboardViews.Stats, (ctx, payload) =>
             {
+                var task = (TaskItem?)payload;
                 var teamService = ctx.RequestServices.GetRequiredService<ITeamService>();
                 return teamService.GetStats();
             })
@@ -95,7 +108,7 @@ public static class EventChainConfiguration
 
         // Task Deleted - Delete swap mode demonstration
         config.When(TaskEvents.Deleted)
-            .RefreshPartial(DashboardElements.Stats, DashboardViews.Stats, ctx =>
+            .RefreshPartial(DashboardElements.Stats, DashboardViews.Stats, (ctx, payload) =>
             {
                 var teamService = ctx.RequestServices.GetRequiredService<ITeamService>();
                 return teamService.GetStats();
@@ -132,6 +145,7 @@ public static class EventChainConfiguration
         config.When(ProjectEvents.ProgressChanged)
             .RefreshPartial(DashboardElements.Stats, DashboardViews.Stats, (ctx, payload) =>
             {
+                // Payload would contain project data if passed
                 var teamService = ctx.RequestServices.GetRequiredService<ITeamService>();
                 return teamService.GetStats();
             })

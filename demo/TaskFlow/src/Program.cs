@@ -33,6 +33,9 @@ builder.Services.AddSingleton<ICommentService, CommentService>();
 builder.Services.AddSingleton<IActivityService, ActivityService>();
 builder.Services.AddSingleton<INotificationService, NotificationService>();
 
+// Add background service for deadline monitoring (demonstrates warning toasts)
+builder.Services.AddHostedService<TaskDeadlineMonitor>();
+
 // Enable response compression for SSE
 builder.Services.AddResponseCompression(options =>
 {

@@ -7,6 +7,9 @@
     <div class="task-header">
         <h4>@Model.Title</h4>
         <div class="task-actions">
+            <button hx-post="/tasks/@Model.Id/simulate-conflict" 
+                    class="btn-icon"
+                    title="Simulate conflict (demo)">⚠️</button>
             <button hx-delete="/tasks/@Model.Id" 
                     hx-confirm="Delete this task?"
                     class="btn-icon">🗑️</button>
@@ -58,11 +61,21 @@
 
     <!-- Comments section -->
     <div class="task-comments">
-        <div id="@CommentElements.List(Model.Id)" class="comments-list">
-            @* Comments loaded dynamically *@
+        <div class="comments-header">
+            <span class="comment-count" id="@CommentElements.Count(Model.Id)">
+                💬 <span hx-get="/tasks/@Model.Id/comments/count" 
+                         hx-trigger="load"
+                         hx-swap="innerHTML">0</span>
+            </span>
+        </div>
+        <div id="@CommentElements.List(Model.Id)" 
+             class="comments-list"
+             hx-get="/tasks/@Model.Id/comments" 
+             hx-trigger="load" 
+             hx-swap="innerHTML">
         </div>
         <form hx-post="/tasks/@Model.Id/comments" hx-target="body" hx-swap="none" class="comment-form">
-            <input type="text" name="Content" placeholder="Add a comment..." />
+            <input type="text" name="Content" placeholder="Add a comment..." required />
             <button type="submit">💬</button>
         </form>
     </div>

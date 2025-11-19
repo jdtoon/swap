@@ -46,7 +46,7 @@ public class TaskService : ITaskService
     {
         lock (_lock)
         {
-            return _tasks.Where(t => t.AssignedTo == userId).OrderBy(t => t.Order).ToList();
+            return _tasks.Where(t => t.AssigneeId == userId).OrderBy(t => t.Order).ToList();
         }
     }
 
@@ -72,7 +72,7 @@ public class TaskService : ITaskService
                 Priority = input.Priority,
                 Status = TaskStatus.Todo,
                 ProjectId = input.ProjectId,
-                AssignedTo = input.AssignedTo,
+                AssigneeId = input.AssigneeId,
                 CreatedAt = DateTime.UtcNow,
                 DueDate = input.DueDate,
                 Order = _tasks.Count(t => t.Status == TaskStatus.Todo)
@@ -93,7 +93,7 @@ public class TaskService : ITaskService
             task.Description = input.Description;
             task.Priority = input.Priority;
             task.ProjectId = input.ProjectId;
-            task.AssignedTo = input.AssignedTo;
+            task.AssigneeId = input.AssigneeId;
             task.DueDate = input.DueDate;
             return task;
         }
@@ -156,7 +156,7 @@ public class TaskService : ITaskService
             var task = _tasks.FirstOrDefault(t => t.Id == id);
             if (task == null) throw new InvalidOperationException($"Task {id} not found");
 
-            task.AssignedTo = userId;
+            task.AssigneeId = userId;
             return task;
         }
     }
@@ -168,7 +168,7 @@ public class TaskService : ITaskService
             var task = _tasks.FirstOrDefault(t => t.Id == id);
             if (task == null) throw new InvalidOperationException($"Task {id} not found");
 
-            task.AssignedTo = null;
+            task.AssigneeId = null;
             return task;
         }
     }
@@ -205,7 +205,7 @@ public class TaskService : ITaskService
                 Priority = TaskPriority.High,
                 Status = TaskStatus.InProgress,
                 ProjectId = 1,
-                AssignedTo = "alice",
+                AssigneeId = "alice",
                 CreatedAt = DateTime.UtcNow.AddDays(-5),
                 DueDate = DateTime.UtcNow.AddDays(2),
                 Order = 0
@@ -218,7 +218,7 @@ public class TaskService : ITaskService
                 Priority = TaskPriority.Critical,
                 Status = TaskStatus.Todo,
                 ProjectId = 1,
-                AssignedTo = "bob",
+                AssigneeId = "bob",
                 CreatedAt = DateTime.UtcNow.AddDays(-2),
                 DueDate = DateTime.UtcNow.AddDays(1),
                 Order = 0
@@ -243,7 +243,7 @@ public class TaskService : ITaskService
                 Priority = TaskPriority.High,
                 Status = TaskStatus.Review,
                 ProjectId = 2,
-                AssignedTo = "charlie",
+                AssigneeId = "charlie",
                 CreatedAt = DateTime.UtcNow.AddDays(-1),
                 DueDate = DateTime.UtcNow.AddDays(1),
                 Order = 0
@@ -256,7 +256,7 @@ public class TaskService : ITaskService
                 Priority = TaskPriority.Medium,
                 Status = TaskStatus.Done,
                 ProjectId = 2,
-                AssignedTo = "alice",
+                AssigneeId = "alice",
                 CreatedAt = DateTime.UtcNow.AddDays(-4),
                 CompletedAt = DateTime.UtcNow.AddDays(-1),
                 Order = 0
