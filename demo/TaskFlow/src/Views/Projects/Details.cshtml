@@ -6,6 +6,10 @@
 @using System.Linq
 @using TaskFlow.Models
 
+@{
+    var tasks = (List<TaskItem>)Model.Tasks;
+}
+
 <div class="container">
     <div class="project-header">
         <div>
@@ -57,10 +61,10 @@
 
     <div class="project-tasks">
         <h2>Tasks</h2>
-        @if (Model.Tasks.Any())
+        @if (tasks.Any())
         {
             <div class="task-list">
-                @foreach (var task in Model.Tasks)
+                @foreach (var task in tasks)
                 {
                     <div class="task-item">
                         <div class="task-info">
