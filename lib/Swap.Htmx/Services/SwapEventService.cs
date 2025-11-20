@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Swap.Htmx.Events;
@@ -40,6 +41,11 @@ public class SwapEventService : ISwapEventService
         }
         
         return builder;
+    }
+
+    public SwapResponseBuilder Response(PageModel pageModel)
+    {
+        return new SwapResponseBuilder(pageModel);
     }
 
     public SwapResponseBuilder Event(EventKey eventKey, object? payload = null)
@@ -98,11 +104,39 @@ public class SwapEventService : ISwapEventService
         return builder;
     }
 
+    public SwapResponseBuilder Event(EventKey eventKey, PageModel pageModel, object? payload = null)
+    {
+        var httpContext = pageModel.HttpContext;
+        
+        Dev.SwapDevLogger.LogSwapEvent(_logger, eventKey.Name, $"Payload: {payload?.GetType().Name ?? "null"}");
+        
+        var result = _executor.Execute(eventKey, httpContext, pageModel, payload);
+        
+        if (result != null)
+        {
+            if (payload != null)
+            {
+                result.WithTrigger(eventKey, payload);
+            }
+            return result;
+        }
+
+        // No chain configured - return empty builder
+        var builder = Response(pageModel);
+        
+        if (payload != null)
+        {
+            builder.WithTrigger(eventKey, payload);
+        }
+        
+        return builder;
+    }
+
     public async Task<SwapResponseBuilder> EventAsync(EventKey eventKey, object? payload = null)
     {
         var httpContext = _httpContextAccessor.HttpContext ?? throw new InvalidOperationException("HttpContext is not available.");
         
-        Dev.SwapDevLogger.LogSwapEvent(_logger, eventKey.Name, $"Payload: {payload?.GetType().Name ?? "null"} (Async)");
+        Dev.SwapDevLogger.LogSwapEvent(_logger, eventKey.Name, $"Payload: {payload?.GetType().Name ?? "null"}");
         
         var result = await _executor.ExecuteAsync(eventKey, httpContext, null, payload);
         
@@ -130,7 +164,7 @@ public class SwapEventService : ISwapEventService
     {
         var httpContext = controller.HttpContext;
         
-        Dev.SwapDevLogger.LogSwapEvent(_logger, eventKey.Name, $"Payload: {payload?.GetType().Name ?? "null"} (Async)");
+        Dev.SwapDevLogger.LogSwapEvent(_logger, eventKey.Name, $"Payload: {payload?.GetType().Name ?? "null"}");
         
         var result = await _executor.ExecuteAsync(eventKey, httpContext, controller, payload);
         
@@ -145,6 +179,34 @@ public class SwapEventService : ISwapEventService
 
         // No chain configured - return empty builder
         var builder = Response(controller);
+        
+        if (payload != null)
+        {
+            builder.WithTrigger(eventKey, payload);
+        }
+        
+        return builder;
+    }
+
+    public async Task<SwapResponseBuilder> EventAsync(EventKey eventKey, PageModel pageModel, object? payload = null)
+    {
+        var httpContext = pageModel.HttpContext;
+        
+        Dev.SwapDevLogger.LogSwapEvent(_logger, eventKey.Name, $"Payload: {payload?.GetType().Name ?? "null"}");
+        
+        var result = await _executor.ExecuteAsync(eventKey, httpContext, pageModel, payload);
+        
+        if (result != null)
+        {
+            if (payload != null)
+            {
+                result.WithTrigger(eventKey, payload);
+            }
+            return result;
+        }
+
+        // No chain configured - return empty builder
+        var builder = Response(pageModel);
         
         if (payload != null)
         {
