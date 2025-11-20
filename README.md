@@ -22,7 +22,7 @@ It handles the "messy middle" of modern web apps—validation, partial updates, 
 - **Type-Safe Events** – Coordinate partials, toasts, and triggers with a strongly-typed event system.
 - **Minimal APIs** – First-class support for `IResult` endpoints with `SwapResults`.
 - **Razor Pages** – Native support for `PageModel` with `this.SwapResponse()`.
-- **Real-Time Ready** – Built-in Server-Sent Events (SSE) bridge with `ISseBackplane` support for web farms.
+- **Real-Time Ready** – Built-in Server-Sent Events (SSE) bridge with `ISseBackplane` support for web farms and `CanJoinRoom` security hooks.
 
 ## Quick Start
 

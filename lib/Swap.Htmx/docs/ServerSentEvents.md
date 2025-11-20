@@ -12,6 +12,7 @@ Server-Sent Events provide real-time, server-to-client updates over HTTP. Swap.H
 - [Broadcasting Events](#broadcasting-events)
 - [Event Chain Integration](#event-chain-integration)
 - [Advanced Features](#advanced-features)
+- [Security & Authorization](#security--authorization)
 - [Best Practices](#best-practices)
 - [Troubleshooting](#troubleshooting)
 
@@ -596,56 +597,81 @@ Swap.Htmx will automatically use this backplane to distribute all broadcast even
 
 > **Demo:** See the `SwapChat` demo project for a working example using a file-based backplane.
 
-## Targeted Broadcasts (User/Role)
+## Security & Authorization
 
-You can target specific users or roles using the fluent API:
+Swap.Htmx provides robust security features for your real-time streams, integrating directly with ASP.NET Core's `ClaimsPrincipal`.
 
+### Authentication
+
+The SSE connection automatically captures the `HttpContext.User` (ClaimsPrincipal) when the connection is established. This allows you to access user identity and roles within your SSE logic.
+
+**Note:** Ensure your authentication middleware (Cookies, JWT, etc.) runs *before* the SSE endpoint.
+
+### Targeted Broadcasts
+
+You can send events to specific users or roles, ensuring private data stays private.
+
+**Fluent API:**
 ```csharp
-// In Program.cs
 builder.Services.AddSwapHtmx(events =>
 {
-    // Broadcast to a specific user
+    // Send 'notification-received' ONLY to the specific user
     events.OnEvent(NotificationEvents.Created)
           .ToUser(userId, "notification-received");
 
-    // Broadcast to all admins
+    // Send 'system-alert' ONLY to users in the 'Admin' role
     events.OnEvent(SystemEvents.CriticalError)
           .ToRole("Admin", "system-alert");
 });
 ```
 
-Or manually via `ISseConnectionRegistry`:
-
+**Manual Broadcast:**
 ```csharp
-await _registry.BroadcastToUserAsync("notification", html, userId);
-await _registry.BroadcastToRolesAsync("alert", html, new[] { "Admin" });
+// Send to a specific user
+await _registry.BroadcastToUserAsync("chat-message", html, targetUserId);
+
+// Send to all Admins
+await _registry.BroadcastToRolesAsync("admin-alert", html, new[] { "Admin" });
 ```
 
-## Securing Room Subscriptions
+### Securing Room Access
 
-When using `SwapResults.Sse`, you can validate if a user is allowed to join a room:
+By default, any client can subscribe to any room. To prevent unauthorized access (e.g., a regular user joining an "admin" room), use the `CanJoinRoom` validator.
 
 ```csharp
-app.MapGet("/sse", (ISseConnectionRegistry registry, HttpContext context) => 
+app.MapGet("/swap/sse", (ISseConnectionRegistry registry, HttpContext context) => 
 {
     var room = context.Request.Query["room"].ToString();
     
     return SwapResults.Sse(registry, options => {
-        options.AutoSubscribeRooms = new[] { room };
+        options.HeartbeatInterval = TimeSpan.FromSeconds(10);
         
-        // Validate room access
-        options.CanJoinRoom = async (connection, roomName) => {
-            // Check if user is authenticated
-            if (connection.User?.Identity?.IsAuthenticated != true) return false;
-            
-            // Check if user has access to this room
-            var db = context.RequestServices.GetRequiredService<AppDbContext>();
-            return await db.UserRooms.AnyAsync(ur => 
-                ur.UserId == connection.User.GetUserId() && 
-                ur.RoomName == roomName);
+        // Security: Validate room access
+        options.CanJoinRoom = (connection, roomName) => 
+        {
+            // 1. Require Authentication
+            if (connection.User.Identity?.IsAuthenticated != true) 
+                return Task.FromResult(false);
+
+            // 2. Role-Based Access
+            if (roomName.Equals("admin", StringComparison.OrdinalIgnoreCase))
+            {
+                return Task.FromResult(connection.User.IsInRole("Admin"));
+            }
+
+            // 3. Data-Driven Access (e.g., check DB)
+            // var db = context.RequestServices.GetRequiredService<AppDbContext>();
+            // return await db.CanUserJoinRoomAsync(connection.User.Identity.Name, roomName);
+
+            return Task.FromResult(true);
         };
+
+        if (!string.IsNullOrEmpty(room))
+        {
+            options.AutoSubscribeRooms = new[] { room };
+        }
     });
-});
+}).RequireAuthorization(); // Ensure endpoint itself requires auth
 ```
 
 ## Best Practices
