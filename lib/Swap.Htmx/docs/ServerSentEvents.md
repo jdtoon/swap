@@ -12,6 +12,7 @@ Server-Sent Events provide real-time, server-to-client updates over HTTP. Swap.H
 - [Broadcasting Events](#broadcasting-events)
 - [Event Chain Integration](#event-chain-integration)
 - [Advanced Features](#advanced-features)
+- [Security & Authorization](#security--authorization)
 - [Best Practices](#best-practices)
 - [Troubleshooting](#troubleshooting)
 
@@ -595,6 +596,83 @@ builder.Services.AddSingleton<ISseBackplane, RedisSseBackplane>();
 Swap.Htmx will automatically use this backplane to distribute all broadcast events across your cluster.
 
 > **Demo:** See the `SwapChat` demo project for a working example using a file-based backplane.
+
+## Security & Authorization
+
+Swap.Htmx provides robust security features for your real-time streams, integrating directly with ASP.NET Core's `ClaimsPrincipal`.
+
+### Authentication
+
+The SSE connection automatically captures the `HttpContext.User` (ClaimsPrincipal) when the connection is established. This allows you to access user identity and roles within your SSE logic.
+
+**Note:** Ensure your authentication middleware (Cookies, JWT, etc.) runs *before* the SSE endpoint.
+
+### Targeted Broadcasts
+
+You can send events to specific users or roles, ensuring private data stays private.
+
+**Fluent API:**
+```csharp
+builder.Services.AddSwapHtmx(events =>
+{
+    // Send 'notification-received' ONLY to the specific user
+    events.OnEvent(NotificationEvents.Created)
+          .ToUser(userId, "notification-received");
+
+    // Send 'system-alert' ONLY to users in the 'Admin' role
+    events.OnEvent(SystemEvents.CriticalError)
+          .ToRole("Admin", "system-alert");
+});
+```
+
+**Manual Broadcast:**
+```csharp
+// Send to a specific user
+await _registry.BroadcastToUserAsync("chat-message", html, targetUserId);
+
+// Send to all Admins
+await _registry.BroadcastToRolesAsync("admin-alert", html, new[] { "Admin" });
+```
+
+### Securing Room Access
+
+By default, any client can subscribe to any room. To prevent unauthorized access (e.g., a regular user joining an "admin" room), use the `CanJoinRoom` validator.
+
+```csharp
+app.MapGet("/swap/sse", (ISseConnectionRegistry registry, HttpContext context) => 
+{
+    var room = context.Request.Query["room"].ToString();
+    
+    return SwapResults.Sse(registry, options => {
+        options.HeartbeatInterval = TimeSpan.FromSeconds(10);
+        
+        // Security: Validate room access
+        options.CanJoinRoom = (connection, roomName) => 
+        {
+            // 1. Require Authentication
+            if (connection.User.Identity?.IsAuthenticated != true) 
+                return Task.FromResult(false);
+
+            // 2. Role-Based Access
+            if (roomName.Equals("admin", StringComparison.OrdinalIgnoreCase))
+            {
+                return Task.FromResult(connection.User.IsInRole("Admin"));
+            }
+
+            // 3. Data-Driven Access (e.g., check DB)
+            // var db = context.RequestServices.GetRequiredService<AppDbContext>();
+            // return await db.CanUserJoinRoomAsync(connection.User.Identity.Name, roomName);
+
+            return Task.FromResult(true);
+        };
+
+        if (!string.IsNullOrEmpty(room))
+        {
+            options.AutoSubscribeRooms = new[] { room };
+        }
+    });
+}).RequireAuthorization(); // Ensure endpoint itself requires auth
+```
 
 ## Best Practices
 

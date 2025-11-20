@@ -1,0 +1,51 @@
+@page
+@model SwapChat.Pages.ChatModel
+@{
+    ViewData["Title"] = "Chat";
+}
+
+<div style="display:flex; justify-content:space-between; align-items:center">
+    <h2>SwapChat <small>(@Model.Username)</small></h2>
+    <a href="/logout" class="btn-sm">Logout</a>
+</div>
+
+<div hx-ext="sse" sse-connect="/swap/sse?room=@Model.Room">
+    <div class="chat-header">
+        <h3>Room: @Model.Room</h3>
+        <div id="connection-status" class="status-connecting" title="Connection Status"></div>
+    </div>
+    
+    <div id="chat-window" sse-swap="chat-message" hx-swap="beforeend">
+        <div class="system-message">Joined room: @Model.Room as @Model.Username</div>
+    </div>
+
+    <form hx-post="/chat/send" hx-swap="none">
+        <input type="hidden" name="room" value="@Model.Room" />
+        <input type="text" name="message" placeholder="Type a message..." required autofocus />
+        <button type="submit">Send</button>
+    </form>
+
+    <hr/>
+    
+    <!-- Private Message Section -->
+    <div class="private-message-area">
+        <h4>Send Private Message</h4>
+        <form hx-post="/chat/private" hx-swap="none">
+            <input type="text" name="targetUser" placeholder="Target Username" required />
+            <input type="text" name="message" placeholder="Private Message..." required />
+            <button type="submit">Send Private</button>
+        </form>
+    </div>
+
+    <!-- Admin Section -->
+    @if (Model.IsAdmin)
+    {
+        <div class="admin-area" style="margin-top:20px; border:1px solid red; padding:10px;">
+            <h4>Admin Broadcast</h4>
+            <form hx-post="/chat/broadcast" hx-swap="none">
+                <input type="text" name="message" placeholder="Broadcast to ALL..." required />
+                <button type="submit">Broadcast</button>
+            </form>
+        </div>
+    }
+</div>

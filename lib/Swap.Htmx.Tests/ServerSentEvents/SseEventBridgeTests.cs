@@ -204,7 +204,7 @@ public class SseEventBridgeTests
         var mockRegistry = new Mock<ISseConnectionRegistry>();
         var mockViewRenderer = new Mock<ISseViewRenderer>();
         
-        object capturedModel = null;
+        object? capturedModel = null;
         mockViewRenderer.Setup(r => r.RenderPartialAsync(It.IsAny<string>(), It.IsAny<object>()))
             .Callback<string, object>((view, model) => capturedModel = model)
             .ReturnsAsync("<div>Content</div>");
@@ -239,6 +239,44 @@ public class SseEventBridgeTests
         Assert.NotNull(capturedModel);
         var taskId = capturedModel.GetType().GetProperty("TaskId")?.GetValue(capturedModel);
         Assert.Equal("task-123", taskId);
+    }
+
+    [Fact]
+    public async Task HandleSseEventAsync_BroadcastsToSpecificRole()
+    {
+        // Arrange
+        var mockRegistry = new Mock<ISseConnectionRegistry>();
+        var mockViewRenderer = new Mock<ISseViewRenderer>();
+        mockViewRenderer.Setup(r => r.RenderPartialAsync(It.IsAny<string>(), It.IsAny<object>()))
+            .ReturnsAsync("<div>Admin Content</div>");
+
+        var services = new ServiceCollection();
+        services.AddSingleton<IHttpContextAccessor>(new HttpContextAccessor { HttpContext = new DefaultHttpContext() });
+        var serviceProvider = services.BuildServiceProvider();
+
+        var options = new SwapEventBusOptions();
+        options.When(SseEvents.Roles("system-alert", "Admin"))
+            .RefreshPartial("alert-box", "~/Views/Shared/Alert.cshtml", _ => new { Message = "Alert" });
+
+        var logger = new Mock<ILogger<SseEventBridge>>().Object;
+
+        var bridge = new SseEventBridge(
+            mockRegistry.Object,
+            serviceProvider,
+            options,
+            logger,
+            mockViewRenderer.Object);
+
+        // Act
+        await bridge.HandleSseEventAsync("sse:roles:Admin:system-alert", null);
+
+        // Assert
+        mockRegistry.Verify(r => r.BroadcastToRolesAsync(
+            "system-alert",
+            It.IsAny<string>(),
+            It.Is<IEnumerable<string>>(roles => roles.Contains("Admin")),
+            It.IsAny<CancellationToken>()),
+            Times.Once);
     }
 }
 

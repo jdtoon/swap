@@ -158,6 +158,42 @@ public sealed class SseChainBuilder
     }
 
     /// <summary>
+    /// Adds a user-specific SSE event to the chain.
+    /// </summary>
+    /// <param name="userId">The user ID to broadcast to.</param>
+    /// <param name="eventName">The SSE event name.</param>
+    /// <returns>The builder for chaining.</returns>
+    public SseChainBuilder ToUser(string userId, string eventName)
+    {
+        _sseEvents.Add(SseEvents.User(eventName, userId));
+        return this;
+    }
+
+    /// <summary>
+    /// Adds a role-specific SSE event to the chain.
+    /// </summary>
+    /// <param name="role">The role to broadcast to.</param>
+    /// <param name="eventName">The SSE event name.</param>
+    /// <returns>The builder for chaining.</returns>
+    public SseChainBuilder ToRole(string role, string eventName)
+    {
+        _sseEvents.Add(SseEvents.Roles(eventName, role));
+        return this;
+    }
+
+    /// <summary>
+    /// Adds a multi-role SSE event to the chain.
+    /// </summary>
+    /// <param name="eventName">The SSE event name.</param>
+    /// <param name="roles">The roles to broadcast to.</param>
+    /// <returns>The builder for chaining.</returns>
+    public SseChainBuilder ToRoles(string eventName, params string[] roles)
+    {
+        _sseEvents.Add(SseEvents.Roles(eventName, roles));
+        return this;
+    }
+
+    /// <summary>
     /// Adds a common refresh event to the chain.
     /// </summary>
     /// <returns>The builder for chaining.</returns>
