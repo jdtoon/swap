@@ -8,6 +8,7 @@
 
 - **Fluent response builder** - Coordinate view rendering, out-of-band swaps, toasts, and triggers in one clean chain
 - **Minimal API Support** - Use `SwapResults` to return HTMX responses from Minimal API endpoints
+- **Razor Pages Support** - Use `this.SwapResponse()` directly in your `PageModel`
 - **Type-safe API** - No magic strings for swap modes or event names
 - **SwapController base class** - Automatically handles HTMX requests vs full page loads
 - **Real-time updates with SSE** - Built-in Server-Sent Events support with automatic connection management, room-based broadcasting, and seamless HTMX integration
@@ -33,7 +34,7 @@ Add the following to your `_Layout.cshtml` to enable the Toast system and client
 </head>
 ```
 
-## Three Ways to Build Responses
+## Four Ways to Build Responses
 
 ### 1. Simple View (80% of use cases)
 
@@ -87,7 +88,7 @@ public class CartController : SwapController
 - `SwapMode.BeforeBegin` / `AfterBegin` / `BeforeEnd` / `AfterEnd` - Insert content
 - `SwapMode.Delete` - Remove the element
 
-### 4. Minimal APIs (New!)
+### 3. Minimal APIs
 
 Swap provides first-class support for Minimal APIs via `SwapResults`.
 
@@ -98,6 +99,25 @@ app.MapPost("/todo", (TodoItem item, ITodoService service) =>
     
     return SwapResults.Response()
         .WithView("_TodoItem", item)
+        .WithSuccessToast("Added!");
+});
+```
+
+### 4. Razor Pages
+
+Swap works natively with Razor Pages using extension methods.
+
+```csharp
+public class IndexModel : PageModel
+{
+    public IActionResult OnGetUpdate()
+    {
+        return this.SwapResponse()
+            .WithView("_Partial", this)
+            .Build();
+    }
+}
+```
         .AlsoUpdate("todo-count", "_TodoCount", service.Count())
         .WithSuccessToast("Item added!");
 });
