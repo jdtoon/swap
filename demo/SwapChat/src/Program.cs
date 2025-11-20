@@ -18,6 +18,7 @@ builder.Services.AddSingleton<ISseBackplane, FileSseBackplane>();
 var app = builder.Build();
 
 app.UseStaticFiles();
+app.UseAntiforgery();
 app.UseSwapHtmx();
 
 // Map the SSE endpoint
