@@ -33,14 +33,22 @@ cd MyHtmxApp
 dotnet add package Swap.Htmx
 ```
 
-**3. Add HTMX to your layout:**
+**3. Add HTMX and Swap.Htmx to your layout:**
 
-In `Views/Shared/_Layout.cshtml`, add HTMX before the closing `</head>` tag:
+In `Views/Shared/_Layout.cshtml`, add HTMX and the Swap.Htmx client assets before the closing `</head>` tag:
 
 ```html
 <head>
     <!-- ... existing content ... -->
+    
+    <!-- 1. Add Swap.Htmx Styles (for Toasts) -->
+    <link rel="stylesheet" href="~/_content/Swap.Htmx/css/swap.css" />
+
+    <!-- 2. Add HTMX -->
     <script src="https://unpkg.com/htmx.org@2.0.3"></script>
+    
+    <!-- 3. Add Swap.Htmx Script (for Toasts and Events) -->
+    <script src="~/_content/Swap.Htmx/js/swap.js"></script>
 </head>
 ```
 
