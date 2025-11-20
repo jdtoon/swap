@@ -47,7 +47,19 @@ public class TodosTests : IClassFixture<HtmxTestFixture<Program>>
             .AssertPartialViewAsync()
             .AssertElementCountAsync(".todo-item", expectedCount: 5);
     }
+
+    [Fact]
+    public async Task UpdateCounter_RazorPage_ReturnsUpdatedCount()
+    {
+        // Use the Razor Pages helper to target a specific handler
+        var response = await _client.HtmxGetPageHandlerAsync("/Counter", "Increment", new { count = 5 });
+
+        await response
+            .AssertSuccess()
+            .AssertContainsAsync("Count: 6");
+    }
 }
+
 ```
 
 ## Form and redirect helpers

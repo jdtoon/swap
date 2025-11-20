@@ -11,7 +11,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Register Razor View Engine and Swap services
 builder.Services.AddControllersWithViews();
-builder.Services.AddSwap();
+builder.Services.AddSwapHtmx();
 
 var app = builder.Build();
 

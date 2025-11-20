@@ -8,6 +8,7 @@ Swap.Htmx is a lightweight library that makes building HTMX applications with AS
 
 - **SwapController** - Base controller that automatically handles HTMX vs full page requests
 - **Minimal API Support** - Return HTMX responses directly from Minimal API endpoints
+- **Razor Pages Support** - Native integration with `PageModel`
 - **Fluent response builder** - Build complex multi-part responses with a clean API
 - **Event system** - Configure declarative UI updates that happen when events are triggered
 - **SSE support** - Built-in real-time updates with Server-Sent Events
@@ -503,4 +504,10 @@ Now that you have the basics, explore:
 
 ---
 
-**Next:** [SwapController Guide](SwapController.md) - Deep dive into the base controller
+## Next Steps
+
+- [SwapController Guide](SwapController.md) - Deep dive into the base controller
+- [Minimal APIs Guide](MinimalApis.md) - Using Swap with Minimal APIs
+- [Razor Pages Guide](RazorPages.md) - Using Swap with Razor Pages
+- [Event Chains](EventChains.md) - Learn about the event system
+- [Server-Sent Events](ServerSentEvents.md) - Real-time updates

@@ -1,0 +1,14 @@
+@model SwapPages.Pages.IndexModel
+
+<div id="counter-container" class="p-4 border rounded bg-light">
+    <h3>Counter: @Model.Count</h3>
+    <button hx-get="?handler=UpdateCounter&count=@Model.Count" 
+            hx-target="#counter-container" 
+            hx-swap="outerHTML"
+            class="btn btn-primary">
+        Increment
+    </button>
+    <p class="text-muted small mt-2">
+        Rendered at @DateTime.Now.ToString("HH:mm:ss")
+    </p>
+</div>

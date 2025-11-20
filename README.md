@@ -21,6 +21,7 @@ It handles the "messy middle" of modern web apps—validation, partial updates, 
 - **Stay Server‑Side** – Build rich, reactive apps using standard Razor views and HTMX.
 - **Type-Safe Events** – Coordinate partials, toasts, and triggers with a strongly-typed event system.
 - **Minimal APIs** – First-class support for `IResult` endpoints with `SwapResults`.
+- **Razor Pages** – Native support for `PageModel` with `this.SwapResponse()`.
 - **Real-Time Ready** – Built-in Server-Sent Events (SSE) bridge for instant updates.
 
 ## Quick Start
@@ -36,6 +37,17 @@ app.MapPost("/subscribe", (string email) =>
     SwapResults.Response()
         .WithSuccessToast("Subscribed!")
         .WithView("_SuccessMessage", email));
+```
+
+**Razor Pages (New!):**
+```csharp
+public class CounterModel : PageModel
+{
+    public IActionResult OnGetIncrement() => 
+        this.SwapResponse()
+            .WithView("_Counter", this)
+            .Build();
+}
 ```
 
 **Inherit from SwapController:**

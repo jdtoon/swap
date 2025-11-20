@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.RazorPages;
 using Swap.Htmx.Events;
 using Swap.Htmx.Extensions;
 using Swap.Htmx.Results;
@@ -78,6 +79,9 @@ public sealed class SwapResponseBuilder : IResult
     
     // Store controller reference for implicit conversion
     internal Controller? Controller { get; set; }
+    
+    // Store PageModel reference for implicit conversion
+    internal PageModel? PageModel { get; set; }
 
     /// <summary>
     /// Creates a new instance of SwapResponseBuilder.
@@ -91,6 +95,15 @@ public sealed class SwapResponseBuilder : IResult
     public SwapResponseBuilder(Controller controller) 
     {
         Controller = controller;
+    }
+
+    /// <summary>
+    /// Creates a new instance of SwapResponseBuilder with a page model context.
+    /// </summary>
+    /// <param name="pageModel">The page model instance.</param>
+    public SwapResponseBuilder(PageModel pageModel) 
+    {
+        PageModel = pageModel;
     }
 
     /// <summary>
@@ -255,13 +268,18 @@ public sealed class SwapResponseBuilder : IResult
     /// </summary>
     public IActionResult Build()
     {
-        if (Controller == null)
+        if (Controller != null)
         {
-            throw new InvalidOperationException(
-                "SwapResponseBuilder must be created through SwapController.SwapResponse() to use Build().");
+            return new Swap.Htmx.Results.SwapActionResult(this, Controller);
         }
         
-        return new Swap.Htmx.Results.SwapActionResult(this, Controller);
+        if (PageModel != null)
+        {
+            return new Swap.Htmx.Results.SwapPageResult(this, PageModel);
+        }
+        
+        throw new InvalidOperationException(
+            "SwapResponseBuilder must be created through SwapController.SwapResponse() or PageModel.SwapResponse() to use Build().");
     }
     
     /// <summary>
@@ -287,12 +305,17 @@ public sealed class SwapResponseBuilder : IResult
     /// </summary>
     public static implicit operator ActionResult(SwapResponseBuilder builder)
     {
-        if (builder.Controller == null)
+        if (builder.Controller != null)
         {
-            throw new InvalidOperationException(
-                "SwapResponseBuilder must be created through SwapController.SwapResponse() to use implicit conversion.");
+            return new Swap.Htmx.Results.SwapActionResult(builder, builder.Controller);
         }
         
-        return new Swap.Htmx.Results.SwapActionResult(builder, builder.Controller);
+        if (builder.PageModel != null)
+        {
+            return new Swap.Htmx.Results.SwapPageResult(builder, builder.PageModel);
+        }
+        
+        throw new InvalidOperationException(
+            "SwapResponseBuilder must be created through SwapController.SwapResponse() or PageModel.SwapResponse() to use implicit conversion.");
     }
 }

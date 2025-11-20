@@ -1,0 +1,9 @@
+@using SwapMinimal.Models
+@model MessageModel
+<div id="message-container" style="padding: 20px; background-color: #e0f7fa; border-radius: 5px;">
+    <h3>@Model.Text</h3>
+    <p>Rendered at @DateTime.Now</p>
+    <button hx-get="/message" hx-target="#message-container" hx-swap="outerHTML">
+        Reload
+    </button>
+</div>
