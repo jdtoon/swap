@@ -1,11 +1,11 @@
 using Microsoft.AspNetCore.Mvc;
-using Swap.Htmx.ServerSentEvents;
+using Swap.Htmx.Realtime;
 
 namespace Swap.Htmx.Dev.Controllers;
 
 /// <summary>
 /// Example controller demonstrating how to pair Swap's SSE primitives with
-/// the optional polling helpers in <see cref="Swap.Htmx.ServerSentEvents.SseFallbackExtensions"/>.
+/// the optional polling helpers in <see cref="Swap.Htmx.Realtime.SseFallbackExtensions"/>.
 /// These endpoints are intended for development and documentation only.
 /// </summary>
 public class SseFallbackExampleController : SwapController

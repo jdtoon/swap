@@ -71,12 +71,12 @@ public class HomeController : Controller
 - Returns partials for HTMX requests, full pages otherwise
 - Has access to `SwapResponse()` for multi-part updates
 - Has access to `SwapEvent()` for event-driven UI updates
-- Automatically handles session cookie persistence via `GetOrInitializeSessionId()`
+- Automatically handles user context resolution via `GetOrInitializeSessionId()` (defaults to Session)
 
 ## Features
 
 - 🧩 **Composition Over Inheritance** - Use `Swap.Htmx` with standard Controllers via extension methods
-- 🎯 **Automatic Session Persistence** - Handles cookie tracking for you
+- 🎯 **Pluggable User Context** - Abstracted user ID resolution (Session, Cookie, JWT, etc.)
 - 📁 **View Search Paths** - Share OOB partials across controllers easily
 - 🎨 **Built-in Toasts** - Zero-dependency toast notifications included
 - 📦 **Event Payload Access** - Pass data through event chains efficiently
@@ -238,5 +238,6 @@ Demonstrates native Razor Pages support:
 - [**Event Chains**](lib/Swap.Htmx/docs/EventChains.md)
 - [**Out-of-Band Swaps**](lib/Swap.Htmx/docs/OutOfBandSwaps.md)
 - [**Server-Sent Events**](lib/Swap.Htmx/docs/ServerSentEvents.md)
+- [**User Context & Identity**](lib/Swap.Htmx/docs/UserContext.md)
 
 

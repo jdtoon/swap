@@ -1,7 +1,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Swap.Htmx.ServerSentEvents;
+namespace Swap.Htmx.Realtime;
 
 /// <summary>
 /// Represents a message to be broadcast via SSE.

@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Http;
 using System.Collections.Concurrent;
 using System.Security.Claims;
 
-namespace Swap.Htmx.ServerSentEvents;
+namespace Swap.Htmx.Realtime;
 
 /// <summary>
 /// Represents an active SSE connection with user context and room subscriptions.

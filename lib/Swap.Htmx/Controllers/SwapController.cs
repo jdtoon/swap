@@ -10,7 +10,8 @@ using Microsoft.Extensions.Logging;
 using Swap.Htmx.Events;
 using Swap.Htmx.Models;
 using Swap.Htmx.Results;
-using Swap.Htmx.ServerSentEvents;
+using Swap.Htmx.Realtime;
+using Swap.Htmx.Services;
 
 namespace Swap.Htmx;
 
@@ -42,6 +43,12 @@ public abstract class SwapController : Controller
     /// </example>
     protected string GetOrInitializeSessionId()
     {
+        var userContext = HttpContext.RequestServices.GetService<ISwapUserContext>();
+        if (userContext != null)
+        {
+            return userContext.GetSessionId();
+        }
+
         const string InitKey = "_swap_session_initialized";
         
         // Ensure session cookie is sent by writing a value if not already present

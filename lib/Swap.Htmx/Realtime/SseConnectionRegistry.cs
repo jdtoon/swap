@@ -2,7 +2,7 @@ using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
 using Swap.Htmx.Diagnostics;
 
-namespace Swap.Htmx.ServerSentEvents;
+namespace Swap.Htmx.Realtime;
 
 /// <summary>
 /// Interface for managing active SSE connections.

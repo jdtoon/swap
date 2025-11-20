@@ -47,7 +47,7 @@ public IActionResult Remove(int productId)
 - ✅ **Event Chains** - Configure what happens when events fire (toasts, partials, redirects)
 - ✅ **Minimal APIs** - Use `SwapResults` in Minimal API endpoints (Newsletter, System Status)
 - ✅ **Toast Notifications** - Success/Error/Warning/Info toasts with auto-dismiss
-- ✅ **Automatic Session Management** - Cookie persistence handled automatically via `GetOrInitializeSessionId()`
+- ✅ **Abstracted User Context** - User ID resolution handled via `GetOrInitializeSessionId()` (defaults to Session)
 - ✅ **Configurable View Search Paths** - Cross-controller OOB swaps work seamlessly
 - ✅ **Form Submissions** - Add to cart, update quantities, checkout with HTMX
 - ✅ **Optimistic UI Updates** - Instant feedback on user actions

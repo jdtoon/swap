@@ -9,7 +9,7 @@ using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Swap.Htmx.ServerSentEvents;
+namespace Swap.Htmx.Realtime;
 
 /// <summary>
 /// Service for rendering Razor partial views during SSE broadcasts.

@@ -1,7 +1,7 @@
 using Swap.Htmx.Models;
 using Swap.Htmx.Events;
 using Swap.Htmx.Results;
-using Swap.Htmx.ServerSentEvents;
+using Swap.Htmx.Realtime;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.Http;
 

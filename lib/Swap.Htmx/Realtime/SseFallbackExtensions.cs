@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Caching.Memory;
 
-namespace Swap.Htmx.ServerSentEvents;
+namespace Swap.Htmx.Realtime;
 
 /// <summary>
 /// Extensions for building simple polling endpoints alongside SSE.

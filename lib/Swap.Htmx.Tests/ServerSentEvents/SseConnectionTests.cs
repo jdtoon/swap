@@ -1,5 +1,5 @@
 using Microsoft.AspNetCore.Http;
-using Swap.Htmx.ServerSentEvents;
+using Swap.Htmx.Realtime;
 using Xunit;
 using System.Security.Claims;
 

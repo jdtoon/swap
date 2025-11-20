@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
-using Swap.Htmx.ServerSentEvents;
+using Swap.Htmx.Realtime;
 
 namespace Swap.Htmx.Results;
 

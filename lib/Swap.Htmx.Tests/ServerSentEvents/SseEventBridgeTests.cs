@@ -2,7 +2,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Swap.Htmx.Events;
-using Swap.Htmx.ServerSentEvents;
+using Swap.Htmx.Realtime;
 using Xunit;
 using Microsoft.AspNetCore.Http;
 
