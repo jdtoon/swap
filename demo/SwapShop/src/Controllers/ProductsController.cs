@@ -80,8 +80,9 @@ public class ProductsController : SwapController
 
     /// <summary>
     /// Tier 3: SwapEvent - Stock check that could trigger low stock alerts
+    /// Demonstrates Async Event Chains (Phase 1.1)
     /// </summary>
-    public IActionResult StockBadge(int id)
+    public async Task<IActionResult> StockBadge(int id)
     {
         var product = _productService.GetById(id);
         if (product == null)
@@ -96,7 +97,9 @@ public class ProductsController : SwapController
         // Store product in HttpContext for event chain to access
         HttpContext.Items["Product"] = product;
 
-        return SwapEvent(eventKey, product).Build();
+        // Use the new Async method
+        var builder = await SwapEventAsync(eventKey, product);
+        return builder.Build();
     }
 
     /// <summary>

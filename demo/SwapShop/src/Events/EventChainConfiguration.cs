@@ -78,6 +78,26 @@ public static class EventChainConfiguration
             .Toast("Could not update quantity - exceeds available stock", ToastType.Error);
 
         // ================================================================================
+        // PRODUCT EVENTS - Demonstrates Async Event Chains (Phase 1.1)
+        // ================================================================================
+
+        config.When(ProductEvents.StockChecked)
+            .RefreshPartialAsync("stock-badge-container", "_StockBadge", async ctx =>
+            {
+                // Simulate async database operation
+                await Task.Delay(500);
+                
+                // Get product ID from route
+                if (int.TryParse(ctx.Request.RouteValues["id"]?.ToString(), out int id))
+                {
+                    var service = ctx.RequestServices.GetRequiredService<IProductService>();
+                    return service.GetById(id);
+                }
+                return null;
+            })
+            .Toast("Stock checked asynchronously!", ToastType.Info);
+
+        // ================================================================================
         // ORDER EVENTS - Demonstrates complex event chains with cascading triggers
         // ================================================================================
         
