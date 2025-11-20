@@ -122,6 +122,27 @@ public class ProductsController : SwapController
 }
 ```
 
+### Async Event Chains (v1.1)
+
+Avoid thread starvation by using async model factories for database operations:
+
+```csharp
+// Configuration
+events.When(ProductEvents.StockChecked)
+      .RefreshPartialAsync(ProductElements.Stock, ProductViews.Stock, async ctx => 
+      {
+          var service = ctx.RequestServices.GetRequiredService<IProductService>();
+          return await service.GetStockAsync(); // Safe async execution
+      });
+
+// Controller
+public async Task<IActionResult> CheckStock(int id)
+{
+    // ... logic ...
+    return await SwapEventAsync(ProductEvents.StockChecked);
+}
+```
+
 **Benefits:**
 - Centralized UI update configuration
 - No repetition across controllers
