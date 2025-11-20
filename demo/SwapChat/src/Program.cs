@@ -5,6 +5,9 @@ using SwapChat.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Add Razor services (required for Swap.Htmx view rendering)
+builder.Services.AddRazorPages();
+
 // Add Swap.Htmx services
 builder.Services.AddSwapHtmx();
 builder.Services.AddSseEventBridge();
