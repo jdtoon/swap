@@ -96,7 +96,55 @@ builder.Services.AddSwapHtmx(events =>
     events.When(SwapEvents.Entity.Created("Product"))
           .RefreshPartial(ProductElements.List, ProductViews.List, ctx => GetProducts(ctx))
           .RefreshPartial(ProductElements.Count, ProductViews.Count, ctx => GetProductCount(ctx))
-          .SuccessToast("Product created!");
+                    .SuccessToast("Product created!");
+});
+```
+
+### 4. Composition Over Inheritance (New in v1.2)
+
+You don't have to inherit from `SwapController`. You can use standard ASP.NET Core controllers and access all Swap features via extension methods:
+
+```csharp
+using Swap.Htmx; // Import extension methods
+
+public class ReviewsController : Controller
+{
+    [HttpPost]
+    public IActionResult Add(Review review)
+    {
+        _service.Add(review);
+        
+        // Use extension methods on 'this' (ControllerBase)
+        return this.SwapResponse()
+            .WithSuccessToast("Review added!")
+            .WithTrigger(ReviewEvents.Added, review)
+            .Build();
+    }
+
+    [HttpGet]
+    public IActionResult List(int productId)
+    {
+        var reviews = _service.GetByProductId(productId);
+        
+        // Use SwapView extension to handle partial/full view automatically
+        return this.SwapView("_ReviewList", reviews);
+    }
+}
+```
+
+## Documentation
+
+- [Getting Started](docs/GettingStarted.md)
+- [Events & Triggers](docs/Events.md)
+- [Event Chains](docs/EventChains.md)
+- [Out-of-Band Swaps](docs/OutOfBandSwaps.md)
+- [Server-Sent Events](docs/ServerSentEvents.md)
+- [Debugging & Logging](docs/DebuggingAndLogging.md)
+
+## License
+
+MIT
+
     
     events.When(SwapEvents.Entity.Updated("Product"))
           .RefreshPartial(ProductElements.List, ProductViews.List, ctx => GetProducts(ctx))

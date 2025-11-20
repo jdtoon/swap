@@ -46,4 +46,42 @@ public static class SwapControllerExtensions
         var service = controller.HttpContext.RequestServices.GetRequiredService<ISwapEventService>();
         return service.EventAsync(eventKey, controller, payload);
     }
+
+    /// <summary>
+    /// Returns a view result that automatically chooses between full page or partial view
+    /// based on whether the request is an HTMX request (HX-Request header present).
+    /// </summary>
+    /// <param name="controller">The controller instance.</param>
+    /// <param name="viewName">The name of the view to render. If null, uses conventional view name.</param>
+    /// <param name="model">The model to pass to the view.</param>
+    /// <returns>
+    /// - For HTMX requests (HX-Request header present): Returns partial view
+    /// - For normal requests (initial page load, refresh): Returns full view with layout
+    /// </returns>
+    public static IActionResult SwapView(this Controller controller, string? viewName, object? model = null)
+    {
+        controller.Response.EnsureVaryHxRequest();
+
+        if (controller.Request.IsHtmxRequest())
+        {
+            return controller.PartialView(viewName, model);
+        }
+        
+        return controller.View(viewName, model);
+    }
+
+    /// <summary>
+    /// Returns a view result that automatically chooses between full page or partial view
+    /// based on whether the request is an HTMX request (HX-Request header present).
+    /// </summary>
+    /// <param name="controller">The controller instance.</param>
+    /// <param name="model">The model to pass to the view.</param>
+    /// <returns>
+    /// - For HTMX requests (HX-Request header present): Returns partial view
+    /// - For normal requests (initial page load, refresh): Returns full view with layout
+    /// </returns>
+    public static IActionResult SwapView(this Controller controller, object? model = null)
+    {
+        return controller.SwapView(viewName: null, model: model);
+    }
 }

@@ -126,5 +126,25 @@ public static class EventChainConfiguration
 
         config.When(OrderEvents.Failed)
             .Toast("Order failed - please try again", ToastType.Error);
+
+        // ================================================================================
+        // REVIEW EVENTS - Demonstrates Composition Over Inheritance (Phase 1.2)
+        // ================================================================================
+
+        config.When(ReviewEvents.Added)
+            .RefreshPartial("reviews-container", "_ReviewList", (ctx, payload) =>
+            {
+                var review = payload as SwapShop.Models.Review;
+                var service = ctx.RequestServices.GetRequiredService<IReviewService>();
+                
+                // Pass ProductId to view so the form works after refresh
+                if (review != null)
+                {
+                    ctx.Items["ViewData_ProductId"] = review.ProductId; // Helper to pass to view
+                    return service.GetByProductId(review.ProductId);
+                }
+                return new List<SwapShop.Models.Review>();
+            })
+            .SuccessToast("Review submitted successfully!");
     }
 }

@@ -38,6 +38,24 @@ public class CartController : SwapController
             .Build();
     }
 }
+
+// OR using Composition (Standard Controller)
+public class CartController : Controller
+{
+    [HttpPost("/cart/add")]
+    public IActionResult AddToCart([FromForm] int productId)
+    {
+        _cart.Add(productId);
+        
+        // Use extension method
+        return this.SwapResponse()
+            .WithView("_ProductAdded")
+            .AlsoUpdate("cart-count", "_CartCount", _cart.ItemCount)
+            .AlsoUpdate("cart-total", "_CartTotal", _cart.Total)
+            .WithSuccessToast("Added to cart!")
+            .Build();
+    }
+}
 ```
 
 ### How It Works

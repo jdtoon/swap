@@ -63,6 +63,18 @@ public class ProductsController : SwapController
         return SwapEvent(SwapEvents.Entity.Created("Product"));
     }
 }
+
+// OR using Composition (Standard Controller)
+public class ProductsController : Controller
+{
+    public IActionResult Create(Product product)
+    {
+        _service.Create(product);
+        
+        // Trigger the event using extension method
+        return this.SwapEvent(SwapEvents.Entity.Created("Product")).Build();
+    }
+}
 ```
 
 ## How It Works

@@ -93,6 +93,37 @@ public class TodosController : SwapController
 }
 ```
 
+### Alternative: Using Standard Controllers (Composition)
+
+If you prefer not to inherit from `SwapController`, you can use standard ASP.NET Core controllers and access Swap features via extension methods. This is useful if you already have a base controller or want to keep your inheritance hierarchy clean.
+
+```csharp
+using Microsoft.AspNetCore.Mvc;
+using Swap.Htmx; // Import extension methods
+
+public class TodosController : Controller
+{
+    [HttpGet("/")]
+    public IActionResult Index()
+    {
+        // Use extension method on standard Controller
+        // Automatically handles partial vs full view based on HX-Request header
+        return this.SwapView(_todos);
+    }
+    
+    [HttpPost]
+    public IActionResult Add(string todo)
+    {
+        _todos.Add(todo);
+        
+        // Use extension method to build response
+        return this.SwapResponse()
+            .WithSuccessToast("Todo added!")
+            .Build();
+    }
+}
+```
+
 **3. Create the view:**
 
 `Views/Todos/Index.cshtml`:

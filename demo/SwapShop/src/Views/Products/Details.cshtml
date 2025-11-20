@@ -63,11 +63,19 @@
             </div>
         </div>
         
-        <div style="text-align: center;">
-            <div style="background: var(--pico-muted-border-color); padding: 4rem; border-radius: 8px;">
-                <p style="font-size: 3rem; opacity: 0.3;">📦</p>
-                <p style="opacity: 0.5;">Product image placeholder</p>
-            </div>
+        <div>
+            <img src="@Model.ImageUrl" alt="@Model.Name" style="width: 100%; border-radius: var(--pico-border-radius);" />
         </div>
     </div>
+
+    <!-- Reviews Section (Demo for Composition Over Inheritance) -->
+    <hr />
+    @{
+        // Inject service directly in view for initial load (common pattern in Razor Pages/MVC)
+        var reviewService = Context.RequestServices.GetRequiredService<SwapShop.Services.IReviewService>();
+        var reviews = reviewService.GetByProductId(Model.Id);
+        ViewData["ProductId"] = Model.Id;
+    }
+    <partial name="~/Views/Reviews/_ReviewList.cshtml" model="reviews" />
+
 </article>
