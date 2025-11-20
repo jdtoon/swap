@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Mvc.Testing;
+using Swap.Testing;
 using SwapShop;
 using System.Net;
 using Xunit;
@@ -8,65 +8,52 @@ namespace SwapShop.IntegrationTests;
 /// <summary>
 /// Basic integration tests to verify the application starts and responds correctly
 /// </summary>
-public class ApplicationTests : IClassFixture<WebApplicationFactory<Program>>
+public class ApplicationTests : IClassFixture<HtmxTestFixture<Program>>
 {
-    private readonly WebApplicationFactory<Program> _factory;
+    private readonly HtmxTestClient<Program> _client;
 
-    public ApplicationTests(WebApplicationFactory<Program> factory)
+    public ApplicationTests(HtmxTestFixture<Program> fixture)
     {
-        _factory = factory;
+        _client = fixture.Client;
     }
 
     [Fact]
     public async Task Get_Homepage_ReturnsSuccess()
     {
-        // Arrange
-        var client = _factory.CreateClient();
-
         // Act
-        var response = await client.GetAsync("/");
+        var response = await _client.GetAsync("/");
 
         // Assert
-        response.EnsureSuccessStatusCode();
-        Assert.Equal("text/html; charset=utf-8", response.Content.Headers.ContentType?.ToString());
+        response.AssertSuccess();
     }
 
     [Fact]
     public async Task Get_Products_ReturnsSuccess()
     {
-        // Arrange
-        var client = _factory.CreateClient();
-
         // Act
-        var response = await client.GetAsync("/Products");
+        var response = await _client.GetAsync("/Products");
 
         // Assert
-        response.EnsureSuccessStatusCode();
+        response.AssertSuccess();
     }
 
     [Fact]
     public async Task Get_Cart_ReturnsSuccess()
     {
-        // Arrange
-        var client = _factory.CreateClient();
-
         // Act
-        var response = await client.GetAsync("/Cart");
+        var response = await _client.GetAsync("/Cart");
 
         // Assert
-        response.EnsureSuccessStatusCode();
+        response.AssertSuccess();
     }
 
     [Fact]
     public async Task Get_Orders_ReturnsSuccess()
     {
-        // Arrange
-        var client = _factory.CreateClient();
-
         // Act
-        var response = await client.GetAsync("/Orders");
+        var response = await _client.GetAsync("/Orders");
 
         // Assert
-        response.EnsureSuccessStatusCode();
+        response.AssertSuccess();
     }
 }
