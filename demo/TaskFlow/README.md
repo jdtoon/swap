@@ -30,6 +30,7 @@ TaskFlow is the **second demo application** for Swap.Htmx, specifically designed
 - **Multi-project Support** - Filter and organize tasks by project
 - **Task Details** - Priority, deadlines, descriptions, assignees
 - **Quick Actions** - Create, edit, delete, assign tasks inline
+- **Quick Notes** - Minimal API endpoint with OOB updates
 
 ### Real-Time Collaboration
 - **Live Dashboard** - Stats and activity feed update in real-time (SSE)

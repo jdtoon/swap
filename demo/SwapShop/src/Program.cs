@@ -103,6 +103,13 @@ app.MapPost("/api/newsletter", (HttpContext context) =>
         .WithSuccessToast("Subscribed successfully!");
 });
 
+// Minimal API GET Endpoint
+app.MapGet("/api/status", () => 
+{
+    return SwapResults.Response()
+        .WithView("_Status", "System Operational");
+});
+
 app.Run();
 
 // Make Program class accessible to integration tests

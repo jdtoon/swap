@@ -89,7 +89,8 @@ app.MapPost("/api/quicknote", (HttpContext context) =>
     
     // In a real app, save to DB
     return SwapResults.Response()
-        .WithSuccessToast("Note saved!");
+        .WithSuccessToast("Note saved!")
+        .AlsoUpdate("quick-notes-list", "_NoteItem", note, SwapMode.BeforeEnd);
 });
 
 app.Run();

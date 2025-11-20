@@ -1,9 +1,12 @@
 <div id="quick-note-widget" class="quick-note">
     <h6>Quick Note</h6>
-    <form hx-post="/api/quicknote" hx-swap="none">
+    <form hx-post="/api/quicknote" hx-swap="none" hx-on::after-request="this.reset()">
         <div class="input-group">
             <input type="text" name="note" placeholder="Jot something down..." required />
             <button type="submit">Save</button>
         </div>
     </form>
+    <ul id="quick-notes-list" style="list-style: none; padding: 0; margin-top: 0.5rem; font-size: 0.8em; color: #666;">
+        <!-- Notes will appear here -->
+    </ul>
 </div>
