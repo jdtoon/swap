@@ -7,6 +7,7 @@
 ## Key Features
 
 - **Fluent response builder** - Coordinate view rendering, out-of-band swaps, toasts, and triggers in one clean chain
+- **Minimal API Support** - Use `SwapResults` to return HTMX responses from Minimal API endpoints
 - **Type-safe API** - No magic strings for swap modes or event names
 - **SwapController base class** - Automatically handles HTMX requests vs full page loads
 - **Real-time updates with SSE** - Built-in Server-Sent Events support with automatic connection management, room-based broadcasting, and seamless HTMX integration
@@ -86,7 +87,23 @@ public class CartController : SwapController
 - `SwapMode.BeforeBegin` / `AfterBegin` / `BeforeEnd` / `AfterEnd` - Insert content
 - `SwapMode.Delete` - Remove the element
 
-### 3. Event-Driven (Configuration-Based Updates)
+### 4. Minimal APIs (New!)
+
+Swap provides first-class support for Minimal APIs via `SwapResults`.
+
+```csharp
+app.MapPost("/todo", (TodoItem item, ITodoService service) => 
+{
+    service.Add(item);
+    
+    return SwapResults.Response()
+        .WithView("_TodoItem", item)
+        .AlsoUpdate("todo-count", "_TodoCount", service.Count())
+        .WithSuccessToast("Item added!");
+});
+```
+
+### 5. Event-Driven (Configuration-Based Updates)
 
 For complex apps where multiple controllers need coordinated updates, configure event chains once and trigger them anywhere:
 

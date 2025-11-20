@@ -82,4 +82,18 @@ app.UseSwapHtmx()
 
 app.MapControllers();
 
+// Minimal API Endpoint for Quick Notes
+app.MapPost("/api/quicknote", (HttpContext context) =>
+{
+    var note = context.Request.Form["note"].ToString();
+    
+    // In a real app, save to DB
+    return SwapResults.Response()
+        .WithSuccessToast("Note saved!")
+        .AlsoUpdate("quick-notes-list", "_NoteItem", note, SwapMode.BeforeEnd);
+});
+
 app.Run();
+
+// Make Program class accessible to integration tests
+public partial class Program { }

@@ -297,10 +297,110 @@ public class HtmxTestResponse
     /// <summary>
     /// Assert that the response contains an element with <c>hx-swap-oob</c>
     /// attribute.
+    /// </summary>
     public async Task<HtmxTestResponse> AssertHxSwapOobAsync(string cssSelector, string? expectedValue = null)
     {
         return await AssertHxAttributeAsync(cssSelector, "hx-swap-oob", expectedValue);
     }
+
+    /// <summary>
+    /// Assert that the response triggered a specific client-side event via the <c>HX-Trigger</c> header.
+    /// </summary>
+    public HtmxTestResponse AssertTrigger(string eventName)
+    {
+        if (!_response.Headers.TryGetValues("HX-Trigger", out var values))
+        {
+            throw new HtmxTestException($"Expected 'HX-Trigger' header to be present, but it was not.");
+        }
+
+        var headerValue = values.FirstOrDefault() ?? string.Empty;
+
+        // Case 1: Simple string (e.g. "myEvent")
+        if (!headerValue.Trim().StartsWith("{"))
+        {
+            var events = headerValue.Split(',').Select(e => e.Trim());
+            if (!events.Contains(eventName))
+            {
+                throw new HtmxTestException($"Expected 'HX-Trigger' to contain event '{eventName}', but got '{headerValue}'.");
+            }
+            return this;
+        }
+
+        // Case 2: JSON object (e.g. {"myEvent": "data"})
+        try
+        {
+            using var doc = JsonDocument.Parse(headerValue);
+            if (!doc.RootElement.TryGetProperty(eventName, out _))
+            {
+                throw new HtmxTestException($"Expected 'HX-Trigger' JSON to contain property '{eventName}', but it did not.\nHeader value: {headerValue}");
+            }
+        }
+        catch (JsonException)
+        {
+            throw new HtmxTestException($"Could not parse 'HX-Trigger' header as JSON: {headerValue}");
+        }
+
+        return this;
+    }
+
+    /// <summary>
+    /// Assert that the response contains a toast notification in the <c>HX-Trigger</c> header.
+    /// </summary>
+    /// <param name="expectedMessage">The expected toast message.</param>
+    /// <param name="expectedType">The expected toast type (e.g., "success", "error"). Case-insensitive.</param>
+    public HtmxTestResponse AssertToast(string expectedMessage, string? expectedType = null)
+    {
+        AssertTrigger("showToast");
+
+        var headerValue = _response.Headers.GetValues("HX-Trigger").First();
+        
+        // We know it's JSON because AssertTrigger("showToast") passed and showToast implies JSON structure in Swap.Htmx
+        using var doc = JsonDocument.Parse(headerValue);
+        var toast = doc.RootElement.GetProperty("showToast");
+        
+        if (toast.ValueKind != JsonValueKind.Object)
+        {
+             throw new HtmxTestException($"Expected 'showToast' event data to be a JSON object, but got {toast.ValueKind}.");
+        }
+
+        if (!toast.TryGetProperty("message", out var messageProp))
+        {
+            throw new HtmxTestException("Toast object does not contain a 'message' property.");
+        }
+
+        var actualMessage = messageProp.GetString();
+        if (actualMessage != expectedMessage)
+        {
+            throw new HtmxTestException($"Expected toast message '{expectedMessage}', but got '{actualMessage}'.");
+        }
+
+        if (expectedType != null)
+        {
+            if (!toast.TryGetProperty("type", out var typeProp))
+            {
+                throw new HtmxTestException("Toast object does not contain a 'type' property.");
+            }
+            
+            var actualType = typeProp.GetString();
+            if (!string.Equals(actualType, expectedType, StringComparison.OrdinalIgnoreCase))
+            {
+                throw new HtmxTestException($"Expected toast type '{expectedType}', but got '{actualType}'.");
+            }
+        }
+
+        return this;
+    }
+
+    /// <summary>
+    /// Assert that the response contains a toast notification in the <c>HX-Trigger</c> header.
+    /// Overload for using Enum types.
+    /// </summary>
+    public HtmxTestResponse AssertToast(string expectedMessage, Enum expectedType)
+    {
+        return AssertToast(expectedMessage, expectedType.ToString());
+    }
+
+
 
     /// <summary>
     /// Assert that the response represents a partial fragment rather than a

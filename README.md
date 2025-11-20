@@ -20,6 +20,7 @@ It handles the "messy middle" of modern web apps—validation, partial updates, 
 - **Orchestrate, Don't Glue** – Decouple controller actions from view rendering using Event Chains.
 - **Stay Server‑Side** – Build rich, reactive apps using standard Razor views and HTMX.
 - **Type-Safe Events** – Coordinate partials, toasts, and triggers with a strongly-typed event system.
+- **Minimal APIs** – First-class support for `IResult` endpoints with `SwapResults`.
 - **Real-Time Ready** – Built-in Server-Sent Events (SSE) bridge for instant updates.
 
 ## Quick Start
@@ -27,6 +28,14 @@ It handles the "messy middle" of modern web apps—validation, partial updates, 
 **Install the package:**
 ```bash
 dotnet add package Swap.Htmx
+```
+
+**Minimal API (New!):**
+```csharp
+app.MapPost("/subscribe", (string email) => 
+    SwapResults.Response()
+        .WithSuccessToast("Subscribed!")
+        .WithView("_SuccessMessage", email));
 ```
 
 **Inherit from SwapController:**

@@ -4,7 +4,7 @@
     <TargetFramework>net9.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <Version>0.7.0</Version>
+    <Version>0.7.1</Version>
     <Authors>JD Toon</Authors>
     <Company>Swap Framework</Company>
     <Description>HTMX helper library for ASP.NET Core MVC applications. Provides SwapController base class, middleware, event helpers, SSE support, and extension methods for seamless HTMX integration.</Description>

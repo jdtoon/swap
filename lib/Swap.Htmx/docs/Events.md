@@ -9,11 +9,16 @@ Swap.Htmx uses `EventKey` for type-safe event handling, eliminating magic string
 HTMX listens for the `HX-Trigger` response header to fire client-side events. Swap.Htmx automatically merges multiple triggers into a single JSON object:
 
 ```csharp
+// In a Controller
 return SwapResponse()
-    .WithSuccessToast("Item saved!")           // Adds: {"showToast": {...}}
-    .WithTrigger("itemSaved", item)            // Merges: {"showToast": {...}, "itemSaved": {...}}
-    .WithTrigger("listRefresh")                // Merges: {"showToast": {...}, "itemSaved": {...}, "listRefresh": null}
+    .WithSuccessToast("Item saved!")
+    .WithTrigger("itemSaved", item)
     .Build();
+
+// In a Minimal API
+return SwapResults.Response()
+    .WithSuccessToast("Item saved!")
+    .WithTrigger("itemSaved", item);
 ```
 
 **Result:** Single `HX-Trigger` header with all events:

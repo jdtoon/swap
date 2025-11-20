@@ -7,6 +7,7 @@ A step-by-step guide to building your first HTMX-powered ASP.NET Core applicatio
 Swap.Htmx is a lightweight library that makes building HTMX applications with ASP.NET Core MVC easier by providing:
 
 - **SwapController** - Base controller that automatically handles HTMX vs full page requests
+- **Minimal API Support** - Return HTMX responses directly from Minimal API endpoints
 - **Fluent response builder** - Build complex multi-part responses with a clean API
 - **Event system** - Configure declarative UI updates that happen when events are triggered
 - **SSE support** - Built-in real-time updates with Server-Sent Events
@@ -99,6 +100,22 @@ public class TodosController : SwapController
         return SwapView(_todos);
     }
 }
+```
+
+### Alternative: Minimal APIs
+
+You can also use Swap with Minimal APIs. This is great for small apps or microservices.
+
+```csharp
+app.MapGet("/", () => SwapResults.Response().WithView("Index", _todos));
+
+app.MapPost("/add", (string todo) => 
+{
+    _todos.Add(todo);
+    return SwapResults.Response()
+        .WithSuccessToast("Todo added!")
+        .WithView("_TodoItem", todo);
+});
 ```
 
 ### Alternative: Using Standard Controllers (Composition)

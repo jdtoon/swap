@@ -55,7 +55,16 @@
     </main>
 
     <footer class="container">
-        <small>SwapShop - Demonstrating Swap.Htmx · HTMX @(ViewData["HtmxVersion"] ?? "2.0.8") · <a href="https://github.com/jdtoon/swap" target="_blank">GitHub</a></small>
+        <div class="grid">
+            <div>
+                <small>SwapShop - Demonstrating Swap.Htmx · HTMX @(ViewData["HtmxVersion"] ?? "2.0.8") · <a href="https://github.com/jdtoon/swap" target="_blank">GitHub</a></small>
+                <br>
+                <small hx-get="/api/status" hx-trigger="load delay:2s" hx-swap="outerHTML">Checking status...</small>
+            </div>
+            <div>
+                <partial name="_Newsletter" />
+            </div>
+        </div>
     </footer>
 
     <!-- Toast container injected by swap.js -->

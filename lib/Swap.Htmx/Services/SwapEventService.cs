@@ -14,16 +14,23 @@ public class SwapEventService : ISwapEventService
 {
     private readonly IEventChainExecutor _executor;
     private readonly ILogger<SwapEventService> _logger;
+    private readonly IHttpContextAccessor _httpContextAccessor;
 
-    public SwapEventService(IEventChainExecutor executor, ILogger<SwapEventService> logger)
+    public SwapEventService(IEventChainExecutor executor, ILogger<SwapEventService> logger, IHttpContextAccessor httpContextAccessor)
     {
         _executor = executor;
         _logger = logger;
+        _httpContextAccessor = httpContextAccessor;
     }
 
-    public Swap.Htmx.Models.SwapResponseBuilder Response(ControllerBase controller)
+    public SwapResponseBuilder Response()
     {
-        var builder = new Swap.Htmx.Models.SwapResponseBuilder();
+        return new SwapResponseBuilder();
+    }
+
+    public SwapResponseBuilder Response(ControllerBase controller)
+    {
+        var builder = new SwapResponseBuilder();
         
         // We need to cast to Controller to access View/PartialView methods
         // If it's just ControllerBase, we might be limited, but SwapResponseBuilder expects Controller
@@ -31,18 +38,39 @@ public class SwapEventService : ISwapEventService
         {
             builder.Controller = mvcController;
         }
-        else
+        
+        return builder;
+    }
+
+    public SwapResponseBuilder Event(EventKey eventKey, object? payload = null)
+    {
+        var httpContext = _httpContextAccessor.HttpContext ?? throw new InvalidOperationException("HttpContext is not available.");
+        
+        Dev.SwapDevLogger.LogSwapEvent(_logger, eventKey.Name, $"Payload: {payload?.GetType().Name ?? "null"}");
+        
+        var result = _executor.Execute(eventKey, httpContext, null, payload);
+        
+        if (result != null)
         {
-            // Fallback or warning? 
-            // SwapResponseBuilder relies on Controller.PartialView() for rendering.
-            // If using Minimal APIs or ControllerBase, rendering might need a different approach (e.g. IRazorViewEngine directly).
-            // For now, we assume Controller.
+            if (payload != null)
+            {
+                result.WithTrigger(eventKey, payload);
+            }
+            return result;
+        }
+
+        // No chain configured - return empty builder
+        var builder = Response();
+        
+        if (payload != null)
+        {
+            builder.WithTrigger(eventKey, payload);
         }
         
         return builder;
     }
 
-    public Swap.Htmx.Models.SwapResponseBuilder Event(EventKey eventKey, ControllerBase controller, object? payload = null)
+    public SwapResponseBuilder Event(EventKey eventKey, ControllerBase controller, object? payload = null)
     {
         var httpContext = controller.HttpContext;
         
@@ -70,7 +98,35 @@ public class SwapEventService : ISwapEventService
         return builder;
     }
 
-    public async Task<Swap.Htmx.Models.SwapResponseBuilder> EventAsync(EventKey eventKey, ControllerBase controller, object? payload = null)
+    public async Task<SwapResponseBuilder> EventAsync(EventKey eventKey, object? payload = null)
+    {
+        var httpContext = _httpContextAccessor.HttpContext ?? throw new InvalidOperationException("HttpContext is not available.");
+        
+        Dev.SwapDevLogger.LogSwapEvent(_logger, eventKey.Name, $"Payload: {payload?.GetType().Name ?? "null"} (Async)");
+        
+        var result = await _executor.ExecuteAsync(eventKey, httpContext, null, payload);
+        
+        if (result != null)
+        {
+            if (payload != null)
+            {
+                result.WithTrigger(eventKey, payload);
+            }
+            return result;
+        }
+
+        // No chain configured - return empty builder
+        var builder = Response();
+        
+        if (payload != null)
+        {
+            builder.WithTrigger(eventKey, payload);
+        }
+        
+        return builder;
+    }
+
+    public async Task<SwapResponseBuilder> EventAsync(EventKey eventKey, ControllerBase controller, object? payload = null)
     {
         var httpContext = controller.HttpContext;
         

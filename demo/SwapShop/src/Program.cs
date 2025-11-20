@@ -86,6 +86,30 @@ app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Products}/{action=Index}/{id?}");
 
+// Minimal API Endpoint for Newsletter
+app.MapPost("/api/newsletter", (HttpContext context) =>
+{
+    var email = context.Request.Form["email"].ToString();
+    
+    // Simulate processing
+    if (string.IsNullOrWhiteSpace(email) || !email.Contains("@"))
+    {
+        return SwapResults.Response()
+            .WithErrorToast("Please enter a valid email address.");
+    }
+
+    return SwapResults.Response()
+        .WithView("_NewsletterSuccess", email)
+        .WithSuccessToast("Subscribed successfully!");
+});
+
+// Minimal API GET Endpoint
+app.MapGet("/api/status", () => 
+{
+    return SwapResults.Response()
+        .WithView("_Status", "System Operational");
+});
+
 app.Run();
 
 // Make Program class accessible to integration tests

@@ -87,6 +87,15 @@ public class ProductsController : Controller
         return this.SwapEvent(SwapEvents.Entity.Created("Product")).Build();
     }
 }
+
+// OR using Minimal APIs
+app.MapPost("/products", (Product product, IProductService service) => 
+{
+    service.Create(product);
+    
+    // Trigger the event directly
+    return SwapResults.Event(SwapEvents.Entity.Created("Product"));
+});
 ```
 
 ## How It Works
