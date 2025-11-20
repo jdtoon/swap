@@ -238,5 +238,6 @@ Demonstrates native Razor Pages support:
 - [**Event Chains**](lib/Swap.Htmx/docs/EventChains.md)
 - [**Out-of-Band Swaps**](lib/Swap.Htmx/docs/OutOfBandSwaps.md)
 - [**Server-Sent Events**](lib/Swap.Htmx/docs/ServerSentEvents.md)
+- [**User Context & Identity**](lib/Swap.Htmx/docs/UserContext.md)
 
 
