@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Moq;
-using Swap.Htmx.ServerSentEvents;
+using Swap.Htmx.Realtime;
 using Xunit;
 
 namespace Swap.Htmx.Tests.ServerSentEvents;

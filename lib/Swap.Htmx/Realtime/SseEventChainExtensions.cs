@@ -1,6 +1,6 @@
 using Swap.Htmx.Events;
 
-namespace Swap.Htmx.ServerSentEvents;
+namespace Swap.Htmx.Realtime;
 
 /// <summary>
 /// Extension methods for integrating SSE events with the Swap event chain system.

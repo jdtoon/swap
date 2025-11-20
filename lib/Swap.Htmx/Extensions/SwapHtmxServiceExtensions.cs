@@ -5,7 +5,7 @@ using Microsoft.Extensions.Options;
 using Swap.Htmx.Events;
 using Swap.Htmx.Middleware;
 using Swap.Htmx.Dev;
-using Swap.Htmx.ServerSentEvents;
+using Swap.Htmx.Realtime;
 using Swap.Htmx.Models;
 using Swap.Htmx.Services;
 
@@ -65,6 +65,9 @@ public static class SwapHtmxServiceExtensions
         services.AddScoped<ISwapEventBus, SwapEventBus>();
         services.AddScoped<IEventChainExecutor>(sp => new EventChainExecutor(options.EventBus));
         services.AddScoped<ISwapEventService, SwapEventService>();
+        
+        // Register user context (default to Session)
+        services.TryAddScoped<ISwapUserContext, SessionSwapUserContext>();
         
         return services;
     }

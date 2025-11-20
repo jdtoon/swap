@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
-using Swap.Htmx.ServerSentEvents;
+using Swap.Htmx.Realtime;
 using Xunit;
 
 namespace Swap.Htmx.Tests.ServerSentEvents;

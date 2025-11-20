@@ -1,7 +1,7 @@
 using Swap.Htmx;
 using Swap.Htmx.Events;
 using Swap.Htmx.Extensions;
-using Swap.Htmx.ServerSentEvents;
+using Swap.Htmx.Realtime;
 using TaskFlow.Services;
 using TaskFlow.Views;
 using TaskFlow.Models;

@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Swap.Htmx.ServerSentEvents;
+using Swap.Htmx.Realtime;
 using Xunit;
 
 namespace Swap.Htmx.Tests;

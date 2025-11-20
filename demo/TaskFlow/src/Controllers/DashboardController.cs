@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Swap.Htmx;
 using Swap.Htmx.Extensions;
-using Swap.Htmx.ServerSentEvents;
+using Swap.Htmx.Realtime;
 using TaskFlow.Services;
 using TaskFlow.Views;
 using TaskFlow.Events;

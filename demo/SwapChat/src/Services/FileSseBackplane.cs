@@ -1,5 +1,5 @@
 using System.Text.Json;
-using Swap.Htmx.ServerSentEvents;
+using Swap.Htmx.Realtime;
 
 namespace SwapChat.Services;
 

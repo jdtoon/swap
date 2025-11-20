@@ -9,7 +9,7 @@ using Swap.Htmx.Models;
 // Import the SwapController from the root namespace
 using SwapController = Swap.Htmx.SwapController;
 
-namespace Swap.Htmx.ServerSentEvents;
+namespace Swap.Htmx.Realtime;
 
 /// <summary>
 /// Interface for bridging domain events to SSE broadcasts.

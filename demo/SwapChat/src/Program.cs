@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using System.Security.Claims;
 using Swap.Htmx;
-using Swap.Htmx.ServerSentEvents;
+using Swap.Htmx.Realtime;
 using SwapChat.Services;
 
 var builder = WebApplication.CreateBuilder(args);

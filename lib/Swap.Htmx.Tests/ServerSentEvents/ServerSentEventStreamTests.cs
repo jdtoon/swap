@@ -1,6 +1,6 @@
 using System.Text;
 using Microsoft.AspNetCore.Http;
-using Swap.Htmx.ServerSentEvents;
+using Swap.Htmx.Realtime;
 using Xunit;
 
 namespace Swap.Htmx.Tests.ServerSentEvents;

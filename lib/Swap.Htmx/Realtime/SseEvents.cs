@@ -1,6 +1,6 @@
 using Swap.Htmx.Events;
 
-namespace Swap.Htmx.ServerSentEvents;
+namespace Swap.Htmx.Realtime;
 
 /// <summary>
 /// Static helper class for creating SSE-related event keys.
