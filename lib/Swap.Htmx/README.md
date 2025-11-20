@@ -18,6 +18,20 @@
 dotnet add package Swap.Htmx
 ```
 
+## Setup
+
+Add the following to your `_Layout.cshtml` to enable the Toast system and client-side event handling:
+
+```html
+<head>
+    <!-- ... other styles ... -->
+    <link rel="stylesheet" href="~/_content/Swap.Htmx/css/swap.css" />
+    
+    <!-- ... htmx script ... -->
+    <script src="~/_content/Swap.Htmx/js/swap.js"></script>
+</head>
+```
+
 ## Three Ways to Build Responses
 
 ### 1. Simple View (80% of use cases)
@@ -96,7 +110,63 @@ builder.Services.AddSwapHtmx(events =>
     events.When(SwapEvents.Entity.Created("Product"))
           .RefreshPartial(ProductElements.List, ProductViews.List, ctx => GetProducts(ctx))
           .RefreshPartial(ProductElements.Count, ProductViews.Count, ctx => GetProductCount(ctx))
-          .SuccessToast("Product created!");
+                    .SuccessToast("Product created!");
+});
+```
+
+### 4. Composition Over Inheritance (New in v1.2)
+
+You don't have to inherit from `SwapController`. You can use standard ASP.NET Core controllers and access all Swap features via extension methods:
+
+```csharp
+using Swap.Htmx; // Import extension methods
+
+public class ReviewsController : Controller
+{
+    [HttpPost]
+    public IActionResult Add(Review review)
+    {
+        if (!ModelState.IsValid)
+        {
+            // New in v1.3: First-class validation support
+            return this.SwapValidationErrors(ModelState)
+                .AlsoUpdate("review-form", "_ReviewForm", review)
+                .Build();
+        }
+
+        _service.Add(review);
+        
+        // Use extension methods on 'this' (ControllerBase)
+        return this.SwapResponse()
+            .WithSuccessToast("Review added!")
+            .WithTrigger(ReviewEvents.Added, review)
+            .Build();
+    }
+
+    [HttpGet]
+    public IActionResult List(int productId)
+    {
+        var reviews = _service.GetByProductId(productId);
+        
+        // Use SwapView extension to handle partial/full view automatically
+        return this.SwapView("_ReviewList", reviews);
+    }
+}
+```
+
+## Documentation
+
+- [Getting Started](docs/GettingStarted.md)
+- [Events & Triggers](docs/Events.md)
+- [Event Chains](docs/EventChains.md)
+- [Out-of-Band Swaps](docs/OutOfBandSwaps.md)
+- [Server-Sent Events](docs/ServerSentEvents.md)
+- [Debugging & Logging](docs/DebuggingAndLogging.md)
+
+## License
+
+MIT
+
     
     events.When(SwapEvents.Entity.Updated("Product"))
           .RefreshPartial(ProductElements.List, ProductViews.List, ctx => GetProducts(ctx))
@@ -119,6 +189,27 @@ public class ProductsController : SwapController
         // Event chain handles ALL UI updates based on configuration
         return SwapEvent(SwapEvents.Entity.Created("Product"));
     }
+}
+```
+
+### Async Event Chains (v1.1)
+
+Avoid thread starvation by using async model factories for database operations:
+
+```csharp
+// Configuration
+events.When(ProductEvents.StockChecked)
+      .RefreshPartialAsync(ProductElements.Stock, ProductViews.Stock, async ctx => 
+      {
+          var service = ctx.RequestServices.GetRequiredService<IProductService>();
+          return await service.GetStockAsync(); // Safe async execution
+      });
+
+// Controller
+public async Task<IActionResult> CheckStock(int id)
+{
+    // ... logic ...
+    return await SwapEventAsync(ProductEvents.StockChecked);
 }
 ```
 

@@ -123,6 +123,21 @@ public class ProductsController : SwapController
             //          No magic strings!
     }
 }
+
+// OR using Composition (Standard Controller)
+public class ProductsController : Controller
+{
+    public ActionResult Create(ProductInput input)
+    {
+        var product = _service.Create(input);
+        
+        // Use extension method
+        return this.SwapResponse()
+            .WithView(ProductViews.Product, product)
+            .WithTrigger(ProductEvents.Created, new { product.Id })
+            .Build();
+    }
+}
 ```
 
 ### 3. Use in Event Chains

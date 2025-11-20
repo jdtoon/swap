@@ -18,6 +18,7 @@ builder.Services.AddControllersWithViews(options =>
 builder.Services.AddSingleton<IProductService, ProductService>();
 builder.Services.AddSingleton<ICartService, CartService>();
 builder.Services.AddSingleton<IOrderService, OrderService>();
+builder.Services.AddSingleton<IReviewService, ReviewService>();
 
 // Configure session for shopping cart
 builder.Services.AddDistributedMemoryCache();

@@ -6,6 +6,7 @@ using Swap.Htmx.Middleware;
 using Swap.Htmx.Dev;
 using Swap.Htmx.ServerSentEvents;
 using Swap.Htmx.Models;
+using Swap.Htmx.Services;
 
 namespace Swap.Htmx;
 
@@ -55,6 +56,7 @@ public static class SwapHtmxServiceExtensions
         // Register event infrastructure
         services.AddScoped<ISwapEventBus, SwapEventBus>();
         services.AddScoped<IEventChainExecutor>(sp => new EventChainExecutor(options.EventBus));
+        services.AddScoped<ISwapEventService, SwapEventService>();
         
         return services;
     }
@@ -143,6 +145,9 @@ public static class SwapHtmxServiceExtensions
         
         // Event chain executor for HTTP responses
         services.AddScoped<IEventChainExecutor>(sp => new EventChainExecutor(opts));
+        
+        // Register SwapEventService
+        services.AddScoped<ISwapEventService, Services.SwapEventService>();
         
         return services;
     }

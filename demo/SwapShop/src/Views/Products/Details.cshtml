@@ -22,6 +22,17 @@
             <div style="margin: 2rem 0;">
                 <p><strong>Category:</strong> @Model.Category</p>
                 <p><strong>Stock Available:</strong> @Model.Stock units</p>
+                
+                <!-- Async Stock Check Demo -->
+                <div id="stock-badge-container" style="margin-top: 1rem;">
+                    <button hx-get="/Products/StockBadge/@Model.Id" 
+                            hx-swap="none"
+                            class="contrast outline"
+                            style="width: auto; padding: 0.25rem 0.5rem; font-size: 0.8rem;">
+                        Check Stock (Async)
+                    </button>
+                </div>
+
                 <p style="font-size: 2rem; color: var(--pico-primary); margin-top: 1rem;">
                     <strong>$@Model.Price.ToString("F2")</strong>
                 </p>
@@ -39,7 +50,7 @@
                 </a>
                 @if (Model.Stock > 0)
                 {
-                    <button hx-post="/Cart/Add"
+                    <button hx-post="/Cart/AddItem"
                             hx-vals='{"productId": @Model.Id, "quantity": 1}'
                             hx-swap="none">
                         Add to Cart
@@ -52,11 +63,19 @@
             </div>
         </div>
         
-        <div style="text-align: center;">
-            <div style="background: var(--pico-muted-border-color); padding: 4rem; border-radius: 8px;">
-                <p style="font-size: 3rem; opacity: 0.3;">📦</p>
-                <p style="opacity: 0.5;">Product image placeholder</p>
-            </div>
+        <div>
+            <img src="@Model.ImageUrl" alt="@Model.Name" style="width: 100%; border-radius: var(--pico-border-radius);" />
         </div>
     </div>
+
+    <!-- Reviews Section (Demo for Composition Over Inheritance) -->
+    <hr />
+    @{
+        // Inject service directly in view for initial load (common pattern in Razor Pages/MVC)
+        var reviewService = Context.RequestServices.GetRequiredService<SwapShop.Services.IReviewService>();
+        var reviews = reviewService.GetByProductId(Model.Id);
+        ViewData["ProductId"] = Model.Id;
+    }
+    <partial name="~/Views/Reviews/_ReviewList.cshtml" model="reviews" />
+
 </article>

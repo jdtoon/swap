@@ -137,6 +137,13 @@ public abstract class SwapController : Controller
     /// </example>
     protected SwapResponseBuilder SwapResponse()
     {
+        var service = HttpContext?.RequestServices?.GetService<ISwapEventService>();
+        if (service != null)
+        {
+            return service.Response(this);
+        }
+        
+        // Fallback if service not registered (shouldn't happen if AddSwapHtmx called)
         var builder = new SwapResponseBuilder();
         builder.Controller = this;
         return builder;
@@ -388,6 +395,13 @@ public abstract class SwapController : Controller
     /// </example>
     protected SwapResponseBuilder SwapEvent(EventKey eventKey, object? payload = null)
     {
+        var service = HttpContext?.RequestServices?.GetService<ISwapEventService>();
+        if (service != null)
+        {
+            return service.Event(eventKey, this, payload);
+        }
+
+        // Fallback logic (duplicated from service for safety)
         var logger = HttpContext?.RequestServices?.GetService<ILogger<SwapController>>();
         
         Dev.SwapDevLogger.LogSwapEvent(logger, eventKey.Name, $"Payload: {payload?.GetType().Name ?? "null"}");
@@ -401,6 +415,60 @@ public abstract class SwapController : Controller
         {
             var result = executor.Execute(eventKey, HttpContext, this, payload);
             Dev.SwapDevLogger.LogExecutor(logger, $"Executor returned: {result != null}");
+            
+            if (result != null)
+            {
+                // If payload provided, add it as a trigger
+                if (payload != null)
+                {
+                    result.WithTrigger(eventKey, payload);
+                }
+                return result;
+            }
+        }
+
+        // No chain configured or no executor - return empty builder
+        var builder = new SwapResponseBuilder();
+        builder.Controller = this;
+        
+        // Still include the trigger event with payload if provided
+        if (payload != null)
+        {
+            builder.WithTrigger(eventKey, payload);
+        }
+        
+        return builder;
+    }
+
+    /// <summary>
+    /// Asynchronously executes a configured event chain and returns the coordinated response.
+    /// Use this when your event chain includes async model factories (e.g., database queries).
+    /// </summary>
+    /// <param name="eventKey">The event to trigger.</param>
+    /// <param name="payload">Optional payload data to include with the event.</param>
+    /// <returns>
+    /// A SwapResponseBuilder with all configured partials, toasts, and triggers from the event chain,
+    /// or an empty builder if no chain is configured.
+    /// </returns>
+    protected async Task<SwapResponseBuilder> SwapEventAsync(EventKey eventKey, object? payload = null)
+    {
+        var service = HttpContext?.RequestServices?.GetService<ISwapEventService>();
+        if (service != null)
+        {
+            return await service.EventAsync(eventKey, this, payload);
+        }
+
+        // Fallback logic
+        var logger = HttpContext?.RequestServices?.GetService<ILogger<SwapController>>();
+        
+        Dev.SwapDevLogger.LogSwapEvent(logger, eventKey.Name, $"Payload: {payload?.GetType().Name ?? "null"} (Async)");
+        
+        var executor = HttpContext?.RequestServices?.GetService(typeof(Events.IEventChainExecutor)) 
+            as Events.IEventChainExecutor;
+
+        if (executor != null && HttpContext != null)
+        {
+            var result = await executor.ExecuteAsync(eventKey, HttpContext, this, payload);
             
             if (result != null)
             {

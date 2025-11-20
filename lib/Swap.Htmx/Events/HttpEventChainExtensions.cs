@@ -12,6 +12,8 @@ public sealed record EventPartialHandler(
     string ViewName,
     Func<HttpContext, object?>? ModelFactory,
     Func<HttpContext, object?, object?>? ModelFactoryWithPayload,
+    Func<HttpContext, Task<object?>>? ModelFactoryAsync,
+    Func<HttpContext, object?, Task<object?>>? ModelFactoryWithPayloadAsync,
     SwapMode SwapMode = SwapMode.OuterHTML
 );
 
@@ -135,7 +137,7 @@ public sealed class HttpEventChainBuilder
         Func<HttpContext, object?>? modelFactory = null,
         SwapMode swapMode = SwapMode.OuterHTML)
     {
-        _config.Partials.Add(new EventPartialHandler(targetId, viewName, modelFactory, null, swapMode));
+        _config.Partials.Add(new EventPartialHandler(targetId, viewName, modelFactory, null, null, null, swapMode));
         return this;
     }
 
@@ -168,7 +170,45 @@ public sealed class HttpEventChainBuilder
         Func<HttpContext, object?, object?> modelFactory,
         SwapMode swapMode = SwapMode.OuterHTML)
     {
-        _config.Partials.Add(new EventPartialHandler(targetId, viewName, null, modelFactory, swapMode));
+        _config.Partials.Add(new EventPartialHandler(targetId, viewName, null, modelFactory, null, null, swapMode));
+        return this;
+    }
+
+    /// <summary>
+    /// Adds an asynchronous partial view refresh to the event chain.
+    /// When the event is triggered, this partial will be rendered and sent as an OOB swap.
+    /// </summary>
+    /// <param name="targetId">The ID of the element to update.</param>
+    /// <param name="viewName">The partial view to render.</param>
+    /// <param name="modelFactory">Async factory function to create the model from HttpContext.</param>
+    /// <param name="swapMode">How to swap the content (defaults to OuterHTML).</param>
+    /// <returns>The builder for chaining.</returns>
+    public HttpEventChainBuilder RefreshPartialAsync(
+        string targetId,
+        string viewName,
+        Func<HttpContext, Task<object?>> modelFactory,
+        SwapMode swapMode = SwapMode.OuterHTML)
+    {
+        _config.Partials.Add(new EventPartialHandler(targetId, viewName, null, null, modelFactory, null, swapMode));
+        return this;
+    }
+
+    /// <summary>
+    /// Adds an asynchronous partial view refresh with access to the event payload.
+    /// When the event is triggered, the model factory receives both HttpContext and the event payload.
+    /// </summary>
+    /// <param name="targetId">The ID of the element to update.</param>
+    /// <param name="viewName">The partial view to render.</param>
+    /// <param name="modelFactory">Async factory function receiving HttpContext and event payload.</param>
+    /// <param name="swapMode">How to swap the content (defaults to OuterHTML).</param>
+    /// <returns>The builder for chaining.</returns>
+    public HttpEventChainBuilder RefreshPartialAsync(
+        string targetId,
+        string viewName,
+        Func<HttpContext, object?, Task<object?>> modelFactory,
+        SwapMode swapMode = SwapMode.OuterHTML)
+    {
+        _config.Partials.Add(new EventPartialHandler(targetId, viewName, null, null, null, modelFactory, swapMode));
         return this;
     }
 

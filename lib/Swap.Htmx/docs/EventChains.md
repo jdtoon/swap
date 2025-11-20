@@ -63,6 +63,18 @@ public class ProductsController : SwapController
         return SwapEvent(SwapEvents.Entity.Created("Product"));
     }
 }
+
+// OR using Composition (Standard Controller)
+public class ProductsController : Controller
+{
+    public IActionResult Create(Product product)
+    {
+        _service.Create(product);
+        
+        // Trigger the event using extension method
+        return this.SwapEvent(SwapEvents.Entity.Created("Product")).Build();
+    }
+}
 ```
 
 ## How It Works
@@ -73,6 +85,41 @@ public class ProductsController : SwapController
    - All model factories are invoked with the current `HttpContext`
    - A `SwapResponseBuilder` is created with all configured actions
    - The response is rendered and returned
+
+## Async Event Chains (v1.1)
+
+You can now use asynchronous model factories to perform database queries or other I/O operations without blocking threads. This is critical for high-performance applications to avoid thread pool starvation.
+
+### Configuration
+
+Use `RefreshPartialAsync` to register an async factory:
+
+```csharp
+events.When(ProductEvents.StockChecked)
+      .RefreshPartialAsync("stock-status", "_StockStatus", async ctx => 
+      {
+          var service = ctx.RequestServices.GetRequiredService<IProductService>();
+          var id = int.Parse(ctx.Request.RouteValues["id"].ToString());
+          
+          // This runs asynchronously!
+          return await service.GetStockStatusAsync(id);
+      });
+```
+
+### Triggering Async Events
+
+In your controller, use `SwapEventAsync`:
+
+```csharp
+public async Task<IActionResult> CheckStock(int id)
+{
+    // ... logic ...
+    
+    // Await the event execution
+    var builder = await SwapEventAsync(ProductEvents.StockChecked);
+    return builder.Build();
+}
+```
 
 ## Event Chain Builder API
 

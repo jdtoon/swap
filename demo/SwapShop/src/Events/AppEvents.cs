@@ -39,6 +39,14 @@ public static class OrderEvents
 }
 
 /// <summary>
+/// Review events
+/// </summary>
+public static class ReviewEvents
+{
+    public static readonly EventKey Added = new("review.added");
+}
+
+/// <summary>
 /// Notification events
 /// </summary>
 public static class NotificationEvents

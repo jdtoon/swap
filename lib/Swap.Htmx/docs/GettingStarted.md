@@ -33,14 +33,22 @@ cd MyHtmxApp
 dotnet add package Swap.Htmx
 ```
 
-**3. Add HTMX to your layout:**
+**3. Add HTMX and Swap.Htmx to your layout:**
 
-In `Views/Shared/_Layout.cshtml`, add HTMX before the closing `</head>` tag:
+In `Views/Shared/_Layout.cshtml`, add HTMX and the Swap.Htmx client assets before the closing `</head>` tag:
 
 ```html
 <head>
     <!-- ... existing content ... -->
+    
+    <!-- 1. Add Swap.Htmx Styles (for Toasts) -->
+    <link rel="stylesheet" href="~/_content/Swap.Htmx/css/swap.css" />
+
+    <!-- 2. Add HTMX -->
     <script src="https://unpkg.com/htmx.org@2.0.3"></script>
+    
+    <!-- 3. Add Swap.Htmx Script (for Toasts and Events) -->
+    <script src="~/_content/Swap.Htmx/js/swap.js"></script>
 </head>
 ```
 
@@ -89,6 +97,37 @@ public class TodosController : SwapController
     public IActionResult Index()
     {
         return SwapView(_todos);
+    }
+}
+```
+
+### Alternative: Using Standard Controllers (Composition)
+
+If you prefer not to inherit from `SwapController`, you can use standard ASP.NET Core controllers and access Swap features via extension methods. This is useful if you already have a base controller or want to keep your inheritance hierarchy clean.
+
+```csharp
+using Microsoft.AspNetCore.Mvc;
+using Swap.Htmx; // Import extension methods
+
+public class TodosController : Controller
+{
+    [HttpGet("/")]
+    public IActionResult Index()
+    {
+        // Use extension method on standard Controller
+        // Automatically handles partial vs full view based on HX-Request header
+        return this.SwapView(_todos);
+    }
+    
+    [HttpPost]
+    public IActionResult Add(string todo)
+    {
+        _todos.Add(todo);
+        
+        // Use extension method to build response
+        return this.SwapResponse()
+            .WithSuccessToast("Todo added!")
+            .Build();
     }
 }
 ```

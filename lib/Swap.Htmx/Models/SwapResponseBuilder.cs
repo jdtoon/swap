@@ -76,7 +76,19 @@ public sealed class SwapResponseBuilder
     // Store controller reference for implicit conversion
     internal Controller? Controller { get; set; }
 
-    internal SwapResponseBuilder() { }
+    /// <summary>
+    /// Creates a new instance of SwapResponseBuilder.
+    /// </summary>
+    public SwapResponseBuilder() { }
+
+    /// <summary>
+    /// Creates a new instance of SwapResponseBuilder with a controller context.
+    /// </summary>
+    /// <param name="controller">The controller instance.</param>
+    public SwapResponseBuilder(Controller controller) 
+    {
+        Controller = controller;
+    }
 
     /// <summary>
     /// Sets the main view to render.
@@ -199,12 +211,12 @@ public sealed class SwapResponseBuilder
     /// <summary>
     /// Gets all configured toasts.
     /// </summary>
-    internal IReadOnlyList<ToastNotification> Toasts => _toasts;
+    public IReadOnlyList<ToastNotification> Toasts => _toasts;
 
     /// <summary>
     /// Gets all configured triggers.
     /// </summary>
-    internal IReadOnlyList<TriggerEvent> Triggers => _triggers;
+    public IReadOnlyList<TriggerEvent> Triggers => _triggers;
     
     /// <summary>
     /// Gets the configured redirect URL.

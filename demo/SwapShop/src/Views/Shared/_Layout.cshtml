@@ -11,10 +11,12 @@
     
     <!-- Custom CSS -->
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/css/toasts.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/_content/Swap.Htmx/css/swap.css" asp-append-version="true" />
     
     <!-- HTMX -->
     <script src="~/lib/htmx/dist/htmx.min.js"></script>
+    <!-- Swap.Htmx -->
+    <script src="~/_content/Swap.Htmx/js/swap.js"></script>
 </head>
 <body>
     <header>
@@ -56,10 +58,7 @@
         <small>SwapShop - Demonstrating Swap.Htmx · HTMX @(ViewData["HtmxVersion"] ?? "2.0.8") · <a href="https://github.com/jdtoon/swap" target="_blank">GitHub</a></small>
     </footer>
 
-    <!-- Toast container injected by swap-toasts.js -->
-    
-    <!-- Swap.Htmx Toast System -->
-    <script src="~/js/swap-toasts.js" asp-append-version="true"></script>
+    <!-- Toast container injected by swap.js -->
     
     @await RenderSectionAsync("Scripts", required: false)
 </body>

@@ -1,0 +1,39 @@
+@model IEnumerable<SwapShop.Models.Review>
+
+<div id="reviews-container">
+    <h3>Customer Reviews (@Model.Count())</h3>
+    
+    @if (!Model.Any())
+    {
+        <p>No reviews yet. Be the first to review!</p>
+    }
+    else
+    {
+        <div class="reviews-list">
+            @foreach (var review in Model)
+            {
+                <article style="margin-bottom: 1rem; padding: 1rem; background-color: var(--pico-card-background-color); border-radius: var(--pico-border-radius);">
+                    <header style="margin-bottom: 0.5rem;">
+                        <strong>@review.UserName</strong> 
+                        <span style="float: right; color: gold;">
+                            @string.Concat(Enumerable.Repeat("★", review.Rating))@string.Concat(Enumerable.Repeat("☆", 5 - review.Rating))
+                        </span>
+                    </header>
+                    <p style="margin-bottom: 0.5rem;">@review.Comment</p>
+                    <small class="text-muted">@review.CreatedAt.ToShortDateString()</small>
+                </article>
+            }
+        </div>
+    }
+    
+    <hr />
+    
+    <!-- Review Form -->
+    @{
+        var pid = ViewData["ProductId"] ?? Context.Items["ViewData_ProductId"];
+        if (pid == null && Model.Any()) pid = Model.First().ProductId;
+        
+        var newReview = new SwapShop.Models.Review { ProductId = Convert.ToInt32(pid) };
+    }
+    <partial name="~/Views/Reviews/_ReviewForm.cshtml" model="newReview" />
+</div>
