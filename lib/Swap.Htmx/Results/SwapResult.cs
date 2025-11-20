@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Swap.Htmx.Diagnostics;
 using Swap.Htmx.Events;
 using Swap.Htmx.Extensions;
 using Swap.Htmx.Models;
@@ -29,6 +30,7 @@ public sealed class SwapResult : IResult
 
     public async Task ExecuteAsync(HttpContext httpContext)
     {
+        using var activity = SwapTelemetry.ActivitySource.StartActivity("Swap.Htmx.ResultExecute");
         var logger = httpContext.RequestServices.GetService<ILogger<SwapResult>>();
         var response = httpContext.Response;
 
@@ -41,7 +43,7 @@ public sealed class SwapResult : IResult
         // 2. Apply toasts
         foreach (var toast in _builder.Toasts)
         {
-            Dev.SwapDevLogger.LogToast(logger, toast.Type.ToString(), toast.Message);
+            logger?.Toast(toast.Type.ToString(), toast.Message);
             
             switch (toast.Type)
             {
@@ -66,7 +68,7 @@ public sealed class SwapResult : IResult
         {
             if (eventBus != null)
             {
-                logger?.LogDebug("[SwapResult] Emitting event to bus: {EventName}", trigger.EventName);
+                logger?.Trigger(trigger.EventName, trigger.Payload?.GetType().Name ?? "null");
                 eventBus.Emit(new EventKey(trigger.EventName), trigger.Payload);
             }
             

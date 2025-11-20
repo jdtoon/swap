@@ -873,6 +873,15 @@ events.When(SseEvents.Broadcast("update-2"))
   - SignalR for more advanced real-time features
   - Dedicated real-time service (Pusher, Ably, etc.)
 
+### Monitoring Connections
+
+**Problem:** Unsure how many users are connected or if broadcasts are working.
+
+**Solution:**
+- Check the `swap.sse.connections` metric in your monitoring tool.
+- Check the `swap.sse.broadcasts` metric to verify event flow.
+- Enable `Debug` logging for `Swap.Htmx` to see connection lifecycle events.
+
 ## See Also
 
 - [Event Chains Documentation](EventChains.md) - Configure event-driven updates

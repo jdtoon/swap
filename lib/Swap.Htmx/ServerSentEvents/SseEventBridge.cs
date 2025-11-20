@@ -1,6 +1,8 @@
+using System.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Swap.Htmx.Diagnostics;
 using Swap.Htmx.Events;
 using Swap.Htmx.Models;
 
@@ -47,22 +49,26 @@ internal sealed class SseEventBridge : ISseEventBridge
 
     public async Task HandleSseEventAsync(string eventName, object? payload, CancellationToken cancellationToken = default)
     {
+        using var activity = SwapTelemetry.ActivitySource.StartActivity("Swap.Htmx.SseBroadcast");
+        activity?.SetTag("sse.event_key", eventName);
+        
+        SwapTelemetry.SseBroadcasts.Add(1);
+
         try
         {
-            _logger.LogDebug("[SSE Bridge] HandleSseEventAsync called with eventName: {EventName}, payload type: {PayloadType}", 
-                eventName, payload?.GetType().Name ?? "null");
-            
             var (eventType, target, sseEventName) = ParseSseEvent(eventName);
-            _logger.LogDebug("[SSE Bridge] Parsed event - Type: {EventType}, Target: {Target}, SseEventName: {SseEventName}", 
-                eventType, target ?? "null", sseEventName);
+            
+            activity?.SetTag("sse.type", eventType);
+            activity?.SetTag("sse.target", target);
+            activity?.SetTag("sse.name", sseEventName);
+
+            _logger.SseBroadcast(sseEventName, eventType, target ?? "all");
 
             string html = await RenderEventContentAsync(sseEventName, payload, cancellationToken);
-            _logger.LogDebug("[SSE Bridge] Rendered HTML content (length: {Length} chars)", html.Length);
-
+            
             switch (eventType)
             {
                 case "broadcast":
-                    _logger.LogDebug("[SSE Bridge] Broadcasting to all connections: {EventName}", sseEventName);
                     await _connectionRegistry.BroadcastAsync(sseEventName, html, cancellationToken);
                     break;
 
@@ -72,7 +78,6 @@ internal sealed class SseEventBridge : ISseEventBridge
                         _logger.LogWarning("[SSE Bridge] Room target is missing for event {EventName}", eventName);
                         break;
                     }
-                    _logger.LogDebug("[SSE Bridge] Broadcasting to room: {Room}", target);
                     await _connectionRegistry.BroadcastToRoomsAsync(sseEventName, html, new[] { target }, cancellationToken);
                     break;
 
@@ -83,12 +88,10 @@ internal sealed class SseEventBridge : ISseEventBridge
                         break;
                     }
                     var rooms = target.Split(',');
-                    _logger.LogDebug("[SSE Bridge] Broadcasting to rooms: {Rooms}", string.Join(", ", rooms));
                     await _connectionRegistry.BroadcastToRoomsAsync(sseEventName, html, rooms, cancellationToken);
                     break;
 
                 case "subscribers":
-                    _logger.LogDebug("[SSE Bridge] Broadcasting to subscribers of: {EventName}", sseEventName);
                     await _connectionRegistry.BroadcastToSubscribersAsync(sseEventName, html, cancellationToken);
                     break;
 
@@ -99,7 +102,6 @@ internal sealed class SseEventBridge : ISseEventBridge
                         break;
                     }
                     var roles = target.Split(',');
-                    _logger.LogDebug("[SSE Bridge] Broadcasting to roles: {Roles}", string.Join(", ", roles));
                     await _connectionRegistry.BroadcastToRolesAsync(sseEventName, html, roles, cancellationToken);
                     break;
 
@@ -109,7 +111,6 @@ internal sealed class SseEventBridge : ISseEventBridge
                         _logger.LogWarning("[SSE Bridge] User target is missing for event {EventName}", eventName);
                         break;
                     }
-                    _logger.LogDebug("[SSE Bridge] Broadcasting to user: {User}", target);
                     await _connectionRegistry.BroadcastToUserAsync(sseEventName, html, target, cancellationToken);
                     break;
 
@@ -119,21 +120,22 @@ internal sealed class SseEventBridge : ISseEventBridge
                         _logger.LogWarning("[SSE Bridge] Filter target is missing for event {EventName}", eventName);
                         break;
                     }
-                    // For custom filters, we'll use a convention where the filter key maps to a predicate
-                    _logger.LogDebug("[SSE Bridge] Broadcasting with filter: {Filter}", target);
                     await HandleFilteredBroadcast(target, sseEventName, html, cancellationToken);
                     break;
 
                 default:
-                    _logger.LogWarning("Unknown SSE event type: {EventType} for event {EventName}", eventType, eventName);
+                    _logger.LogWarning("[SSE Bridge] Unknown SSE event type: {EventType}", eventType);
                     break;
             }
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error handling SSE event: {EventName}", eventName);
+            activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
+            _logger.LogError(ex, "[SSE Bridge] Error handling SSE event {EventName}", eventName);
+            throw;
         }
     }
+
 
     /// <summary>
     /// Parses an SSE event name to extract type, target, and event name.
@@ -162,6 +164,9 @@ internal sealed class SseEventBridge : ISseEventBridge
     /// </summary>
     private async Task<string> RenderEventContentAsync(string eventName, object? payload, CancellationToken cancellationToken)
     {
+        using var activity = SwapTelemetry.ActivitySource.StartActivity("Swap.Htmx.SseRender");
+        activity?.SetTag("sse.event_name", eventName);
+
         try
         {
             // Get the event chain configuration for this SSE event
@@ -170,12 +175,11 @@ internal sealed class SseEventBridge : ISseEventBridge
             
             if (!configs.TryGetValue(fullEventName, out var config))
             {
-                _logger.LogDebug("[SSE Bridge] No event chain configuration found for {EventName}", fullEventName);
+                _logger.SseRenderNoConfig(fullEventName);
                 return $"<div data-event=\"{eventName}\"></div>";
             }
 
-            _logger.LogDebug("[SSE Bridge] Found event chain with {PartialCount} partials for {EventName}", 
-                config.Partials.Count, eventName);
+            _logger.SseRenderStart(eventName);
 
             // Create a scoped service provider for rendering
             using var scope = _serviceProvider.CreateScope();
@@ -188,19 +192,19 @@ internal sealed class SseEventBridge : ISseEventBridge
             {
                 try
                 {
-                    // Use payload-aware factory if available
-                    var model = partial.ModelFactoryWithPayload != null
-                        ? partial.ModelFactoryWithPayload(httpContext, payload)
-                        : partial.ModelFactory?.Invoke(httpContext);
+                    object? model = null;
+                    if (httpContext != null)
+                    {
+                        // Use payload-aware factory if available
+                        model = partial.ModelFactoryWithPayload != null
+                            ? partial.ModelFactoryWithPayload(httpContext, payload)
+                            : partial.ModelFactory?.Invoke(httpContext);
+                    }
 
-                    _logger.LogDebug("[SSE Bridge] Rendering partial {ViewName} with model type {ModelType}", 
-                        partial.ViewName, model?.GetType().Name ?? "null");
+                    _logger.RenderingPartial(partial.ViewName, eventName);
 
                     // Use the standalone view renderer (doesn't need SwapController)
                     var partialHtml = await _viewRenderer.RenderPartialAsync(partial.ViewName, model);
-                    
-                    _logger.LogDebug("[SSE Bridge] Rendered {Length} chars for partial {ViewName}", 
-                        partialHtml?.Length ?? 0, partial.ViewName);
                     
                     // For SSE broadcasts, HTMX SSE extension expects just the HTML content
                     // The element with sse-swap attribute will handle the swap
@@ -215,12 +219,13 @@ internal sealed class SseEventBridge : ISseEventBridge
             }
 
             var result = htmlBuilder.ToString();
-            _logger.LogDebug("[SSE Bridge] Rendered {Length} chars of HTML for {EventName}", result.Length, eventName);
+            _logger.SseRenderSuccess(eventName, result.Length);
             return result;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "[SSE Bridge] Error rendering content for SSE event: {EventName}", eventName);
+            activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
+            _logger.SseRenderError(ex, eventName);
             return $"<div data-event=\"{eventName}\"></div>";
         }
     }
@@ -280,7 +285,7 @@ internal sealed class SseEventBridge : ISseEventBridge
     /// </summary>
     private async Task HandleFilteredBroadcast(string filterKey, string eventName, string html, CancellationToken cancellationToken)
     {
-        Func<SseConnection, bool> filter = filterKey.ToLowerInvariant() switch
+        Func<SseConnection, bool>? filter = filterKey.ToLowerInvariant() switch
         {
             "authenticated" => conn => conn.User?.Identity?.IsAuthenticated == true,
             "anonymous" => conn => conn.User?.Identity?.IsAuthenticated != true,
@@ -289,7 +294,7 @@ internal sealed class SseEventBridge : ISseEventBridge
             "recent" => conn => (DateTime.UtcNow - conn.ConnectedAt).TotalMinutes < 5,
             "monitoring" => conn => conn.Rooms.Contains("monitoring"),
             "debug" => conn => conn.Rooms.Contains("debug"),
-            _ => _ => false // Unknown filter, matches nothing
+            _ => null
         };
 
         if (filter != null)
@@ -298,7 +303,7 @@ internal sealed class SseEventBridge : ISseEventBridge
         }
         else
         {
-            _logger.LogWarning("Unknown SSE filter key: {FilterKey}", filterKey);
+            _logger.SseUnknownFilter(filterKey);
         }
     }
 }

@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
+using Swap.Htmx.Diagnostics;
 
 namespace Swap.Htmx.ServerSentEvents;
 
@@ -122,15 +123,16 @@ internal sealed class SseConnectionRegistry : ISseConnectionRegistry
     public void RegisterConnection(SseConnection connection)
     {
         _connections.TryAdd(connection.Id, connection);
-        _logger.LogInformation("[SSE Registry] Connection registered: {ConnectionId} for user {UserId}. Total connections: {Total}",
-            connection.Id, connection.User?.Identity?.Name ?? "anonymous", _connections.Count);
+        SwapTelemetry.SseConnections.Add(1);
+        _logger.SseConnectionEstablished(connection.Id, connection.User?.Identity?.Name ?? "anonymous");
     }
 
     public void UnregisterConnection(string connectionId)
     {
         if (_connections.TryRemove(connectionId, out var connection))
         {
-            _logger.LogDebug("SSE connection unregistered: {ConnectionId}", connectionId);
+            SwapTelemetry.SseConnections.Add(-1);
+            _logger.SseConnectionClosed(connectionId);
             _ = Task.Run(async () => await connection.DisposeAsync());
         }
     }
