@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Swap.Htmx.Diagnostics;
 using Swap.Htmx.Events;
 using Swap.Htmx.Models;
 
@@ -52,7 +53,7 @@ public class SwapEventService : ISwapEventService
     {
         var httpContext = _httpContextAccessor.HttpContext ?? throw new InvalidOperationException("HttpContext is not available.");
         
-        Dev.SwapDevLogger.LogSwapEvent(_logger, eventKey.Name, $"Payload: {payload?.GetType().Name ?? "null"}");
+        _logger.EventTriggered(eventKey.Name, payload?.GetType().Name ?? "null");
         
         var result = _executor.Execute(eventKey, httpContext, null, payload);
         
@@ -80,7 +81,7 @@ public class SwapEventService : ISwapEventService
     {
         var httpContext = controller.HttpContext;
         
-        Dev.SwapDevLogger.LogSwapEvent(_logger, eventKey.Name, $"Payload: {payload?.GetType().Name ?? "null"}");
+        _logger.EventTriggered(eventKey.Name, payload?.GetType().Name ?? "null");
         
         var result = _executor.Execute(eventKey, httpContext, controller, payload);
         
@@ -108,7 +109,7 @@ public class SwapEventService : ISwapEventService
     {
         var httpContext = pageModel.HttpContext;
         
-        Dev.SwapDevLogger.LogSwapEvent(_logger, eventKey.Name, $"Payload: {payload?.GetType().Name ?? "null"}");
+        _logger.EventTriggered(eventKey.Name, payload?.GetType().Name ?? "null");
         
         var result = _executor.Execute(eventKey, httpContext, pageModel, payload);
         
@@ -136,7 +137,7 @@ public class SwapEventService : ISwapEventService
     {
         var httpContext = _httpContextAccessor.HttpContext ?? throw new InvalidOperationException("HttpContext is not available.");
         
-        Dev.SwapDevLogger.LogSwapEvent(_logger, eventKey.Name, $"Payload: {payload?.GetType().Name ?? "null"}");
+        _logger.EventTriggered(eventKey.Name, payload?.GetType().Name ?? "null");
         
         var result = await _executor.ExecuteAsync(eventKey, httpContext, null, payload);
         
@@ -164,7 +165,7 @@ public class SwapEventService : ISwapEventService
     {
         var httpContext = controller.HttpContext;
         
-        Dev.SwapDevLogger.LogSwapEvent(_logger, eventKey.Name, $"Payload: {payload?.GetType().Name ?? "null"}");
+        _logger.EventTriggered(eventKey.Name, payload?.GetType().Name ?? "null");
         
         var result = await _executor.ExecuteAsync(eventKey, httpContext, controller, payload);
         
@@ -192,7 +193,7 @@ public class SwapEventService : ISwapEventService
     {
         var httpContext = pageModel.HttpContext;
         
-        Dev.SwapDevLogger.LogSwapEvent(_logger, eventKey.Name, $"Payload: {payload?.GetType().Name ?? "null"}");
+        _logger.EventTriggered(eventKey.Name, payload?.GetType().Name ?? "null");
         
         var result = await _executor.ExecuteAsync(eventKey, httpContext, pageModel, payload);
         

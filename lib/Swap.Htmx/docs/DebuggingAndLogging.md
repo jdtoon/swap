@@ -1,16 +1,16 @@
-# Debugging and Logging in Swap.Htmx
+# Observability: Logging, Tracing, and Metrics
 
-## Development Logging
+Swap.Htmx includes comprehensive observability features to help you monitor and debug your application in both development and production.
 
-Swap.Htmx includes comprehensive debug logging to help you understand what's happening under the hood during development.
+## Logging
 
-### Enabling Debug Logs
+Swap.Htmx uses high-performance structured logging (`[LoggerMessage]`) integrated with ASP.NET Core's `ILogger`.
 
-**Option 1: Using appsettings.json (Recommended)**
+### Enabling Logs
 
-Add the following to your `appsettings.Development.json`:
+Add the following to your `appsettings.json` or `appsettings.Development.json`:
 
-```json
+`json
 {
   "Logging": {
     "LogLevel": {
@@ -19,97 +19,75 @@ Add the following to your `appsettings.Development.json`:
     }
   }
 }
-```
+``n
+### Log Categories
 
-This integrates with ASP.NET Core's ILogger infrastructure and respects all standard logging configuration.
-
-**Option 2: Console-Only Output (Quick Testing)**
-
-Set an environment variable:
-
-```powershell
-# PowerShell
-$env:SWAP_DEV_LOGGING="true"
-
-# Bash
-export SWAP_DEV_LOGGING=true
-```
-
-Then run your application. This outputs colored console logs without requiring logger configuration.
+All logs use the category `Swap.Htmx.*` (e.g., `Swap.Htmx.Services.SwapEventService`).
 
 ### What Gets Logged
 
-When debug logging is enabled, you'll see detailed information about:
+- **Events**: Triggering and processing of Swap events.
+- **SSE**: Connection lifecycle, broadcasts, and rendering.
+- **Results**: Execution of Swap results, toasts, and triggers.
 
-#### Event Chain Execution
-```
-[SwapEvent] Event: cart.itemAdded, Payload: Cart
-[SwapEvent] Executor found: True
-[EventChainExecutor] Event: cart.itemAdded, Partials: 1, Toasts: 1
-[SwapEvent] Executor returned: True
-```
+## Distributed Tracing (OpenTelemetry)
 
-#### Toast Application
-```
-[SwapActionResult] Applying toast: Success - Item added to cart
-```
+The library uses `System.Diagnostics.ActivitySource` with the name **`Swap.Htmx`**.
 
-#### HTTP Headers
-```
-[SwapActionResult] HX-Trigger (before render): {"showToast":{"type":"success","message":"Item added to cart"}}
-[SwapActionResult] HX-Trigger (after render): {"showToast":{...},"cart.itemAdded":{...}}
-```
+### Configuration
 
-### Log Categories
+`csharp
+builder.Services.AddOpenTelemetry()
+    .WithTracing(tracing =>
+    {
+        tracing.AddSource("Swap.Htmx");
+        // ... other sources
+    });
+``n
+### Available Spans (Activities)
 
-All Swap.Htmx logs use the category `Swap.Htmx`, so you can control them independently:
+| Activity Name | Description | Tags |
+|--------------|-------------|------|
+| `Swap.Htmx.EventChain` | Tracks the execution of an event chain. | `event.key`, `event.chain_length` |
+| `Swap.Htmx.SseBroadcast` | Tracks the processing of an SSE broadcast. | `sse.event_key`, `sse.type`, `sse.target`, `sse.name` |
+| `Swap.Htmx.SseRender` | Tracks the rendering of partials for SSE. | `sse.event_name` |
+| `Swap.Htmx.ResultExecute` | Tracks the execution of `SwapResult` (Minimal API). | |
+| `Swap.Htmx.ActionResultExecute` | Tracks the execution of `SwapActionResult` (MVC). | |
+| `Swap.Htmx.PageResultExecute` | Tracks the execution of `SwapPageResult` (Razor Pages). | |
 
-```json
-{
-  "Logging": {
-    "LogLevel": {
-      "Default": "Warning",
-      "Microsoft.AspNetCore": "Warning",
-      "Swap.Htmx": "Debug"  // Only debug Swap.Htmx
-    }
-  }
-}
-```
+## Metrics (OpenTelemetry)
 
-### Best Practices
+The library uses `System.Diagnostics.Metrics.Meter` with the name **`Swap.Htmx`**.
 
-1. **Development Only**: Debug logs are compiled out in Release builds (via `[Conditional("DEBUG")]`)
-2. **Structured Logging**: Logs include structured properties for easy filtering
-3. **Color Coding**: Console output uses colors for easy visual scanning
-   - **Cyan**: Event chain execution
-   - **Yellow**: Toast operations
-   - **Green**: HTTP headers
+### Configuration
 
-### Production Considerations
+`csharp
+builder.Services.AddOpenTelemetry()
+    .WithMetrics(metrics =>
+    {
+        metrics.AddMeter("Swap.Htmx");
+        // ... other meters
+    });
+``n
+### Available Metrics
 
-Debug logging is automatically disabled in production:
-- Compiled out via `[Conditional("DEBUG")]` attribute
-- No performance impact
-- No sensitive data exposure risk
+| Metric Name | Type | Description |
+|-------------|------|-------------|
+| `swap.events.triggered` | Counter | Number of Swap events triggered. |
+| `swap.events.processing_duration` | Histogram | Duration of event chain processing (ms). |
+| `swap.sse.broadcasts` | Counter | Number of SSE broadcasts sent. |
+| `swap.sse.connections` | UpDownCounter | Current number of active SSE connections. |
 
-### Troubleshooting Guide
+## Troubleshooting Guide
 
 **Toasts not showing?**
-1. Check logs for: `[SwapActionResult] Applying toast: Success - ...`
-2. Verify HX-Trigger header contains `showToast` event
-3. Check browser console for JavaScript errors
-
-**Duplicate toasts on browser back/forward?**
-1. This is now fixed automatically - responses with toasts include `Cache-Control: no-cache`
-2. HTMX won't cache these responses, preventing duplicate toast events
-3. Check Network tab - responses with toasts should have `Cache-Control: no-cache, no-store, must-revalidate`
+1. Check logs for: `Toast Notification: Success - ...` 
+2. Verify HX-Trigger header contains `showToast` event.
 
 **Event chains not executing?**
-1. Look for: `[EventChainExecutor] Event: {name}, Partials: X, Toasts: Y`
-2. If you see "No chain configured", check EventChainConfiguration.cs
-3. Verify event name matches exactly (case-sensitive)
+1. Look for: `Processing Event Chain for: {name}` 
+2. If you see "No chain configured", check your configuration.
 
-**Headers being overwritten?**
-1. Check the before/after HX-Trigger header logs
-2. Multiple events should be merged in same JSON object
-3. Example: `{"showToast":{...},"customEvent":{...}}`
+**SSE not working?**
+1. Check `swap.sse.connections` metric to see if clients are connecting.
+2. Check logs for `SSE Connection Established`.

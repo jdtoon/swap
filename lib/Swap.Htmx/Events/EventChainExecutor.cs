@@ -1,8 +1,10 @@
+using System.Diagnostics;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Swap.Htmx.Diagnostics;
 using Swap.Htmx.Extensions;
 using Swap.Htmx.Models;
 
@@ -97,16 +99,26 @@ internal sealed class EventChainExecutor : IEventChainExecutor
 
     public async Task<SwapResponseBuilder?> ExecuteAsync(EventKey eventKey, HttpContext httpContext, object? context, object? payload = null)
     {
+        using var activity = SwapTelemetry.ActivitySource.StartActivity("Swap.Htmx.ProcessEventChain");
+        activity?.SetTag("event.name", eventKey.Name);
+        
+        var sw = Stopwatch.StartNew();
+        SwapTelemetry.EventsTriggered.Add(1);
+
         var configs = _options.GetEventChainConfigs();
         var logger = httpContext.RequestServices?.GetService<ILogger<EventChainExecutor>>();
         
         if (!configs.TryGetValue(eventKey.Name, out var config))
         {
-            Dev.SwapDevLogger.LogSwapEvent(logger, eventKey.Name, "No chain configured");
+            logger?.EventTriggered(eventKey.Name, payload?.GetType().Name ?? "null");
+            activity?.SetTag("chain.found", false);
             return null;
         }
 
-        Dev.SwapDevLogger.LogEventChain(logger, eventKey.Name, config.Partials.Count, config.Toasts.Count);
+        activity?.SetTag("chain.found", true);
+        activity?.SetTag("chain.partials_count", config.Partials.Count);
+        
+        logger?.ProcessingEventChain(eventKey.Name, config.Partials.Count);
 
         var builder = new SwapResponseBuilder();
         if (context is Controller controller)
@@ -118,32 +130,45 @@ internal sealed class EventChainExecutor : IEventChainExecutor
             builder.PageModel = pageModel;
         }
 
-        foreach (var partial in config.Partials)
+        try
         {
-            object? model = null;
+            foreach (var partial in config.Partials)
+            {
+                object? model = null;
 
-            if (partial.ModelFactoryWithPayloadAsync != null)
-            {
-                model = await partial.ModelFactoryWithPayloadAsync(httpContext, payload);
-            }
-            else if (partial.ModelFactoryAsync != null)
-            {
-                model = await partial.ModelFactoryAsync(httpContext);
-            }
-            else if (partial.ModelFactoryWithPayload != null)
-            {
-                model = partial.ModelFactoryWithPayload(httpContext, payload);
-            }
-            else if (partial.ModelFactory != null)
-            {
-                model = partial.ModelFactory(httpContext);
+                if (partial.ModelFactoryWithPayloadAsync != null)
+                {
+                    model = await partial.ModelFactoryWithPayloadAsync(httpContext, payload);
+                }
+                else if (partial.ModelFactoryAsync != null)
+                {
+                    model = await partial.ModelFactoryAsync(httpContext);
+                }
+                else if (partial.ModelFactoryWithPayload != null)
+                {
+                    model = partial.ModelFactoryWithPayload(httpContext, payload);
+                }
+                else if (partial.ModelFactory != null)
+                {
+                    model = partial.ModelFactory(httpContext);
+                }
+
+                builder.AlsoUpdate(partial.TargetId, partial.ViewName, model, partial.SwapMode);
             }
 
-            builder.AlsoUpdate(partial.TargetId, partial.ViewName, model, partial.SwapMode);
+            ApplyCommonActions(builder, config);
+            
+            sw.Stop();
+            SwapTelemetry.EventProcessingDuration.Record(sw.Elapsed.TotalMilliseconds);
+            
+            return builder;
         }
-
-        ApplyCommonActions(builder, config);
-        return builder;
+        catch (Exception ex)
+        {
+            activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
+            logger?.EventChainError(eventKey.Name, ex.Message, ex);
+            throw;
+        }
     }
 
     private void ApplyCommonActions(SwapResponseBuilder builder, EventChainConfiguration config)
