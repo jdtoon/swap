@@ -34,6 +34,13 @@ public class SwapSseOptions
     /// Optional callback to execute when the connection is disconnected.
     /// </summary>
     public Func<string, Task>? OnDisconnected { get; set; }
+
+    /// <summary>
+    /// Optional validator to check if a user is allowed to join a specific room.
+    /// If provided, this will be called for each room in AutoSubscribeRooms.
+    /// Return true to allow, false to deny.
+    /// </summary>
+    public Func<SseConnection, string, Task<bool>>? CanJoinRoom { get; set; }
 }
 
 /// <summary>
@@ -83,6 +90,13 @@ public class SwapSseResult : IResult
             // 6. Handle Auto-Subscriptions
             foreach (var room in _options.AutoSubscribeRooms)
             {
+                if (_options.CanJoinRoom != null)
+                {
+                    if (!await _options.CanJoinRoom(connection, room))
+                    {
+                        continue;
+                    }
+                }
                 connection.JoinRoom(room);
             }
 

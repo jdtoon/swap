@@ -596,6 +596,58 @@ Swap.Htmx will automatically use this backplane to distribute all broadcast even
 
 > **Demo:** See the `SwapChat` demo project for a working example using a file-based backplane.
 
+## Targeted Broadcasts (User/Role)
+
+You can target specific users or roles using the fluent API:
+
+```csharp
+// In Program.cs
+builder.Services.AddSwapHtmx(events =>
+{
+    // Broadcast to a specific user
+    events.OnEvent(NotificationEvents.Created)
+          .ToUser(userId, "notification-received");
+
+    // Broadcast to all admins
+    events.OnEvent(SystemEvents.CriticalError)
+          .ToRole("Admin", "system-alert");
+});
+```
+
+Or manually via `ISseConnectionRegistry`:
+
+```csharp
+await _registry.BroadcastToUserAsync("notification", html, userId);
+await _registry.BroadcastToRolesAsync("alert", html, new[] { "Admin" });
+```
+
+## Securing Room Subscriptions
+
+When using `SwapResults.Sse`, you can validate if a user is allowed to join a room:
+
+```csharp
+app.MapGet("/sse", (ISseConnectionRegistry registry, HttpContext context) => 
+{
+    var room = context.Request.Query["room"].ToString();
+    
+    return SwapResults.Sse(registry, options => {
+        options.AutoSubscribeRooms = new[] { room };
+        
+        // Validate room access
+        options.CanJoinRoom = async (connection, roomName) => {
+            // Check if user is authenticated
+            if (connection.User?.Identity?.IsAuthenticated != true) return false;
+            
+            // Check if user has access to this room
+            var db = context.RequestServices.GetRequiredService<AppDbContext>();
+            return await db.UserRooms.AnyAsync(ur => 
+                ur.UserId == connection.User.GetUserId() && 
+                ur.RoomName == roomName);
+        };
+    });
+});
+```
+
 ## Best Practices
 
 ### 1. Use Full View Paths
