@@ -24,4 +24,18 @@ public class SwapHtmxOptions
     /// </code>
     /// </example>
     public List<string> PartialViewSearchPaths { get; set; } = new() { "Shared" };
+
+    /// <summary>
+    /// Internal list of configuration types to be instantiated and applied.
+    /// </summary>
+    internal List<Type> ConfigurationTypes { get; } = new();
+
+    /// <summary>
+    /// Registers a feature-specific event configuration.
+    /// </summary>
+    /// <typeparam name="T">The configuration type implementing ISwapEventConfiguration.</typeparam>
+    public void AddConfig<T>() where T : ISwapEventConfiguration, new()
+    {
+        ConfigurationTypes.Add(typeof(T));
+    }
 }

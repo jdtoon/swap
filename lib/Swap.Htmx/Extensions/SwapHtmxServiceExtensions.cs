@@ -47,6 +47,13 @@ public static class SwapHtmxServiceExtensions
         var options = new SwapHtmxOptions();
         configure?.Invoke(options);
         
+        // Apply decentralized configurations
+        foreach (var configType in options.ConfigurationTypes)
+        {
+            var config = (ISwapEventConfiguration)Activator.CreateInstance(configType)!;
+            config.Configure(options.EventBus);
+        }
+        
         // Register options singleton
         services.AddSingleton(options);
         

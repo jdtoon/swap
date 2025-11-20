@@ -122,6 +122,29 @@ public sealed class SwapResponseBuilder
     }
 
     /// <summary>
+    /// Adds multiple out-of-band swaps for a collection of items.
+    /// Useful for updating rows in a list or grid.
+    /// </summary>
+    /// <typeparam name="T">The type of item.</typeparam>
+    /// <param name="items">The collection of items to update.</param>
+    /// <param name="idSelector">Function to generate the target DOM ID for each item.</param>
+    /// <param name="viewName">The partial view to render for each item.</param>
+    /// <param name="swapMode">The swap mode (defaults to OuterHTML).</param>
+    /// <returns>The builder for chaining.</returns>
+    public SwapResponseBuilder AlsoUpdateMany<T>(
+        IEnumerable<T> items,
+        Func<T, string> idSelector,
+        string viewName,
+        SwapMode swapMode = SwapMode.OuterHTML)
+    {
+        foreach (var item in items)
+        {
+            AlsoUpdate(idSelector(item), viewName, item, swapMode);
+        }
+        return this;
+    }
+
+    /// <summary>
     /// Adds a toast notification to display.
     /// </summary>
     /// <param name="message">The toast message.</param>

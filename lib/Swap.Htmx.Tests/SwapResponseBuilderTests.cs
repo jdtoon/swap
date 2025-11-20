@@ -107,9 +107,7 @@ public class SwapResponseBuilderTests
             new Microsoft.AspNetCore.Mvc.ModelBinding.EmptyModelMetadataProvider(),
             new Microsoft.AspNetCore.Mvc.ModelBinding.ModelStateDictionary());
         
-        controller.TempData = new TempDataDictionary(
-            httpContext,
-            new SessionStateTempDataProvider());
+        controller.TempData = new TestTempDataDictionary();
         
         return controller;
     }
@@ -424,23 +422,31 @@ public class SwapResponseBuilderTests
         Assert.NotNull(result);
         Assert.IsType<Results.SwapActionResult>(result);
     }
-}
 
-/// <summary>
-/// Minimal TempData provider for testing.
-/// </summary>
-internal class SessionStateTempDataProvider : ITempDataProvider
-{
-    private readonly Dictionary<string, object?> _data = new();
-
-    public IDictionary<string, object?> LoadTempData(HttpContext context) => _data;
-
-    public void SaveTempData(HttpContext context, IDictionary<string, object?> values)
+    [Fact]
+    public void AlsoUpdateMany_AddsMultipleOobSwaps()
     {
-        _data.Clear();
-        foreach (var kvp in values)
-        {
-            _data[kvp.Key] = kvp.Value;
-        }
+        // Arrange
+        var controller = CreateController();
+        var items = new[] 
+        { 
+            new { Id = 1, Name = "Item 1" }, 
+            new { Id = 2, Name = "Item 2" } 
+        };
+
+        // Act
+        var builder = controller.TestSwapResponse()
+            .AlsoUpdateMany(items, x => $"item-{x.Id}", "_ItemRow");
+
+        // Assert
+        Assert.Equal(2, builder.OobSwaps.Count);
+        
+        Assert.Equal("item-1", builder.OobSwaps[0].TargetId);
+        Assert.Equal("_ItemRow", builder.OobSwaps[0].ViewName);
+        Assert.Equal(items[0], builder.OobSwaps[0].Model);
+        
+        Assert.Equal("item-2", builder.OobSwaps[1].TargetId);
+        Assert.Equal("_ItemRow", builder.OobSwaps[1].ViewName);
+        Assert.Equal(items[1], builder.OobSwaps[1].Model);
     }
 }

@@ -32,9 +32,7 @@ public class EventKeyTests
             new Microsoft.AspNetCore.Mvc.ModelBinding.EmptyModelMetadataProvider(),
             new Microsoft.AspNetCore.Mvc.ModelBinding.ModelStateDictionary());
         
-        controller.TempData = new TempDataDictionary(
-            httpContext,
-            new SessionStateTempDataProvider());
+        controller.TempData = new TestTempDataDictionary();
         
         return controller;
     }
