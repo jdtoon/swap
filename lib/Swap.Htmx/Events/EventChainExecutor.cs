@@ -17,20 +17,20 @@ public interface IEventChainExecutor
     /// </summary>
     /// <param name="eventKey">The event that was triggered.</param>
     /// <param name="httpContext">The current HTTP context.</param>
-    /// <param name="controller">The controller handling the request.</param>
+    /// <param name="controller">The controller handling the request (optional).</param>
     /// <param name="payload">Optional event payload to pass to model factories.</param>
     /// <returns>A SwapResponseBuilder configured with all event chain actions, or null if no chain exists.</returns>
-    SwapResponseBuilder? Execute(EventKey eventKey, HttpContext httpContext, ControllerBase controller, object? payload = null);
+    SwapResponseBuilder? Execute(EventKey eventKey, HttpContext httpContext, ControllerBase? controller, object? payload = null);
 
     /// <summary>
     /// Asynchronously executes the event chain for a given event and builds a SwapResponseBuilder with all configured actions.
     /// </summary>
     /// <param name="eventKey">The event that was triggered.</param>
     /// <param name="httpContext">The current HTTP context.</param>
-    /// <param name="controller">The controller handling the request.</param>
+    /// <param name="controller">The controller handling the request (optional).</param>
     /// <param name="payload">Optional event payload to pass to model factories.</param>
     /// <returns>A SwapResponseBuilder configured with all event chain actions, or null if no chain exists.</returns>
-    Task<SwapResponseBuilder?> ExecuteAsync(EventKey eventKey, HttpContext httpContext, ControllerBase controller, object? payload = null);
+    Task<SwapResponseBuilder?> ExecuteAsync(EventKey eventKey, HttpContext httpContext, ControllerBase? controller, object? payload = null);
 }
 
 /// <summary>
@@ -45,7 +45,7 @@ internal sealed class EventChainExecutor : IEventChainExecutor
         _options = options;
     }
 
-    public SwapResponseBuilder? Execute(EventKey eventKey, HttpContext httpContext, ControllerBase controller, object? payload = null)
+    public SwapResponseBuilder? Execute(EventKey eventKey, HttpContext httpContext, ControllerBase? controller, object? payload = null)
     {
         // For backward compatibility, we call the async version and block.
         // This is not ideal but necessary until we fully migrate to async.
@@ -89,7 +89,7 @@ internal sealed class EventChainExecutor : IEventChainExecutor
         return builder;
     }
 
-    public async Task<SwapResponseBuilder?> ExecuteAsync(EventKey eventKey, HttpContext httpContext, ControllerBase controller, object? payload = null)
+    public async Task<SwapResponseBuilder?> ExecuteAsync(EventKey eventKey, HttpContext httpContext, ControllerBase? controller, object? payload = null)
     {
         var configs = _options.GetEventChainConfigs();
         var logger = httpContext.RequestServices?.GetService<ILogger<EventChainExecutor>>();

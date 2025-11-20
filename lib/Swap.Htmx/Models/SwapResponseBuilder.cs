@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Swap.Htmx.Events;
 using Swap.Htmx.Extensions;
@@ -261,6 +262,14 @@ public sealed class SwapResponseBuilder
         return new Swap.Htmx.Results.SwapActionResult(this, Controller);
     }
     
+    /// <summary>
+    /// Builds and returns the final IResult for Minimal APIs.
+    /// </summary>
+    public IResult BuildResult()
+    {
+        return new Swap.Htmx.Results.SwapResult(this);
+    }
+
     /// <summary>
     /// Implicit conversion to ActionResult.
     /// Allows returning SwapResponseBuilder directly from controller actions.
