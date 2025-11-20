@@ -6,19 +6,21 @@
 
 HTMX + ASP.NET Core MVC, but ergonomic.
 
-Swap is a small set of libraries that make it pleasant to build server‑rendered apps with HTMX and MVC:
+**Reactive UI Orchestration for ASP.NET Core.**
 
-- `Swap.Htmx` – runtime helpers: HTMX‑aware base controller, middleware, SSE primitives, event system, and extension methods for working with HX headers.
+Swap transforms standard MVC controllers into an **orchestration layer** for your user interface. It decouples **User Actions** (Events) from **UI Updates** (Reactions), giving you the interactivity of a SPA with the simplicity of server-side HTML.
+
+It handles the "messy middle" of modern web apps—validation, partial updates, and real-time events—so you can focus on building features, not glue code.
+
+- `Swap.Htmx` – runtime orchestration: HTMX‑aware controllers, decentralized event configuration, SSE bridge, and type-safe event system.
 - `Swap.Testing` – testing helpers: HTMX‑aware integration test client and rich HTML/HTMX assertions.
-
-You keep normal ASP.NET Core MVC. Swap gives you better defaults for HTMX requests and tests.
 
 ## Why Swap?
 
-- **Stay server‑side** – HTML over the wire, no SPA framework required.
-- **HTMX‑first MVC** – controllers and middleware that understand HX headers out of the box.
-- **Events, not glue** – a small event system that turns server actions into `HX-Trigger` headers and optional SSE broadcasts.
-- **Strong testing story** – integration tests that speak in terms of partials, HTMX attributes, and HX headers.
+- **Orchestrate, Don't Glue** – Decouple controller actions from view rendering using Event Chains.
+- **Stay Server‑Side** – Build rich, reactive apps using standard Razor views and HTMX.
+- **Type-Safe Events** – Coordinate partials, toasts, and triggers with a strongly-typed event system.
+- **Real-Time Ready** – Built-in Server-Sent Events (SSE) bridge for instant updates.
 
 ## Quick Start
 
@@ -74,10 +76,8 @@ builder.Services.AddSwapHtmx(options =>
     // Optional: Configure view search paths for cross-controller OOB swaps
     options.PartialViewSearchPaths.Add("Shared");
     
-    // Optional: Configure event chains
-    options.EventBus.When(new EventKey("todo.created"))
-        .RefreshPartial("todo-count", "_TodoCount", ctx => GetTodoCount())
-        .Toast("Todo created!", ToastType.Success);
+    // Optional: Register decentralized event configurations
+    options.AddConfig<TodoEventConfig>();
 });
 
 var app = builder.Build();

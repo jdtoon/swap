@@ -526,7 +526,7 @@ public class HttpEventChainTests
         var controller = new TestController
         {
             ControllerContext = new ControllerContext { HttpContext = httpContext },
-            TempData = new TempDataDictionary(httpContext, new SessionStateTempDataProvider())
+            TempData = new TestTempDataDictionary()
         };
 
         // Act
@@ -557,7 +557,7 @@ public class HttpEventChainTests
         var controller = new TestController
         {
             ControllerContext = new ControllerContext { HttpContext = httpContext },
-            TempData = new TempDataDictionary(httpContext, new SessionStateTempDataProvider())
+            TempData = new TestTempDataDictionary()
         };
 
         // Act
@@ -587,7 +587,7 @@ public class HttpEventChainTests
         var controller = new TestController
         {
             ControllerContext = new ControllerContext { HttpContext = httpContext },
-            TempData = new TempDataDictionary(httpContext, new SessionStateTempDataProvider())
+            TempData = new TestTempDataDictionary()
         };
 
         // Act

@@ -280,9 +280,8 @@ public IActionResult Delete(int id)
 ### In This Demo
 
 - **Controllers/** - See all three API tiers in action
-- **EventChainConfiguration.cs** - Learn event chain patterns
+- **Events/** - Learn decentralized event configuration patterns
 - **Views/** - HTMX markup examples
-- **wwwroot/js/swap-toasts.js** - Client-side toast handling
 
 ### Library Documentation
 

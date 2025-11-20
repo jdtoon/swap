@@ -105,13 +105,22 @@ public static class ProductElements
 }
 
 // Configuration in Program.cs
-builder.Services.AddSwapHtmx(events => 
+builder.Services.AddSwapHtmx(options => 
 {
-    events.When(SwapEvents.Entity.Created("Product"))
-          .RefreshPartial(ProductElements.List, ProductViews.List, ctx => GetProducts(ctx))
-          .RefreshPartial(ProductElements.Count, ProductViews.Count, ctx => GetProductCount(ctx))
-                    .SuccessToast("Product created!");
+    options.AddConfig<ProductEventConfig>();
 });
+
+// Define configuration class
+public class ProductEventConfig : ISwapEventConfiguration
+{
+    public void Configure(SwapEventBusOptions events)
+    {
+        events.When(SwapEvents.Entity.Created("Product"))
+              .RefreshPartial(ProductElements.List, ProductViews.List, ctx => GetProducts(ctx))
+              .RefreshPartial(ProductElements.Count, ProductViews.Count, ctx => GetProductCount(ctx))
+              .SuccessToast("Product created!");
+    }
+}
 ```
 
 ### 4. Composition Over Inheritance (New in v1.2)
