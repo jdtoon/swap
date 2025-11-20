@@ -18,6 +18,20 @@
 dotnet add package Swap.Htmx
 ```
 
+## Setup
+
+Add the following to your `_Layout.cshtml` to enable the Toast system and client-side event handling:
+
+```html
+<head>
+    <!-- ... other styles ... -->
+    <link rel="stylesheet" href="~/_content/Swap.Htmx/css/swap.css" />
+    
+    <!-- ... htmx script ... -->
+    <script src="~/_content/Swap.Htmx/js/swap.js"></script>
+</head>
+```
+
 ## Three Ways to Build Responses
 
 ### 1. Simple View (80% of use cases)

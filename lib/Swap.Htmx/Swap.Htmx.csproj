@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk.Razor">
 
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
@@ -13,14 +13,11 @@
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageTags>htmx;aspnetcore;mvc;swap;controller;middleware;sse;events</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
+    <AddRazorSupportForMvc>true</AddRazorSupportForMvc>
   </PropertyGroup>
 
   <ItemGroup>
     <None Include="README.md" Pack="true" PackagePath="" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Content Include="wwwroot\**\*.*" Pack="true" PackagePath="staticwebassets\" />
   </ItemGroup>
 
   <ItemGroup>
