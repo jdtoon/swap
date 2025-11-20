@@ -12,6 +12,7 @@
 - **Type-safe API** - No magic strings for swap modes or event names
 - **SwapController base class** - Automatically handles HTMX requests vs full page loads
 - **Real-time updates with SSE** - Built-in Server-Sent Events support with automatic connection management, room-based broadcasting, and `ISseBackplane` for distributed scaling
+- **Observability** - Full OpenTelemetry support (Tracing & Metrics) and structured logging
 - **Event system** - Build `HX-Trigger` headers declaratively and chain complex UI updates
 
 ## Install
@@ -571,7 +572,7 @@ For complete working examples, see the `Swap.Htmx.TestApp` project in this repos
 - **[Server-Sent Events Guide](docs/ServerSentEvents.md)** - Complete guide to real-time updates with SSE
 - **[Type-Safe Events Guide](docs/Events.md)** - Learn how to define and use strongly-typed event keys to eliminate magic strings
 - **[Event Chains Guide](docs/EventChains.md)** - Configure automatic UI updates when events are triggered
-- **[Debugging & Logging](docs/DebuggingAndLogging.md)** - Enable debug logging to see event chains, toasts, and HTTP headers during development
+- **[Debugging & Observability](docs/DebuggingAndLogging.md)** - Configure OpenTelemetry tracing, metrics, and structured logging for production monitoring
 
 ## License
 

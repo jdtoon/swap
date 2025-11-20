@@ -80,6 +80,7 @@ public class HomeController : Controller
 - 📁 **View Search Paths** - Share OOB partials across controllers easily
 - 🎨 **Built-in Toasts** - Zero-dependency toast notifications included
 - 📦 **Event Payload Access** - Pass data through event chains efficiently
+- 📊 **Observability** - Full OpenTelemetry tracing, metrics, and structured logging
 - 🔧 **OOB Helpers** - Tools for managing dynamic lists and instance IDs
 
 ## Tiny example

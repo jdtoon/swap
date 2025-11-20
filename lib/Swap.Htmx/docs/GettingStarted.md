@@ -78,6 +78,8 @@ app.MapControllers();
 app.Run();
 ```
 
+> **Tip:** Enable debug logging to see exactly what Swap is doing! Add `"Swap.Htmx": "Debug"` to the `Logging` section of your `appsettings.Development.json`.
+
 **2. Create your first SwapController:**
 
 ```csharp
