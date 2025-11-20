@@ -30,9 +30,11 @@ public class MinimalApiTests : IClassFixture<HtmxTestFixture<Program>>
         var response = await _client.AsHtmxRequest().PostAsync("/api/newsletter", content);
 
         // Assert
-        response.AssertSuccess();
-        response.AssertHeader("HX-Trigger");
-        
+        await response
+            .AssertSuccess()
+            .AssertToast("Subscribed successfully!", "success")
+            .AssertPartialViewAsync();
+            
         await response.AssertContainsAsync("Thanks for subscribing!");
         await response.AssertContainsAsync("test@example.com");
     }
@@ -51,8 +53,9 @@ public class MinimalApiTests : IClassFixture<HtmxTestFixture<Program>>
         var response = await _client.AsHtmxRequest().PostAsync("/api/newsletter", content);
 
         // Assert
-        response.AssertSuccess();
-        response.AssertHeader("HX-Trigger");
+        response
+            .AssertSuccess()
+            .AssertToast("Please enter a valid email address.", "error");
     }
 
     [Fact]
@@ -63,6 +66,7 @@ public class MinimalApiTests : IClassFixture<HtmxTestFixture<Program>>
 
         // Assert
         response.AssertSuccess();
+        await response.AssertPartialViewAsync();
         await response.AssertContainsAsync("System Operational");
     }
 }

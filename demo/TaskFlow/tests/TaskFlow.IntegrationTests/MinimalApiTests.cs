@@ -31,20 +31,11 @@ public class MinimalApiTests : IClassFixture<HtmxTestFixture<Program>>
         var response = await _client.AsHtmxRequest().PostAsync("/api/quicknote", content);
 
         // Assert
-        response.AssertSuccess();
-        
-        // Check for toast
-        response.AssertHeader("HX-Trigger");
-        
-        // Check for OOB swap
-        // The response body should contain the rendered partial view _NoteItem
-        // and it should have hx-swap-oob attribute or similar if SwapResults.AlsoUpdate handles it.
-        // SwapResults.AlsoUpdate usually appends the OOB content to the response.
-        
+        response
+            .AssertSuccess()
+            .AssertToast("Note saved!", "success");
+            
+        await response.AssertHxSwapOobAsync("[hx-swap-oob]");
         await response.AssertContainsAsync(noteContent);
-        // We can also check for the target ID if we knew how SwapResults renders it.
-        // Usually it renders <div id="quick-notes-list" hx-swap-oob="...">...</div>
-        // or just the content with hx-swap-oob="beforeend:#quick-notes-list" on the element?
-        // Let's just check for the content for now.
     }
 }
