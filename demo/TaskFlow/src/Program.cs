@@ -1,4 +1,5 @@
 using Swap.Htmx;
+using Swap.Htmx.Models;
 using TaskFlow.Services;
 using TaskFlow.Events;
 
@@ -22,7 +23,12 @@ builder.Services.AddSwapHtmx(options =>
     };
 
     // Configure event chains with payload access
-    EventChainConfiguration.ConfigureEventChains(options.EventBus);
+    options.AddConfig<SseEventConfig>();
+    options.AddConfig<TaskEventConfig>();
+    options.AddConfig<ProjectEventConfig>();
+    options.AddConfig<CommentEventConfig>();
+    options.AddConfig<NotificationEventConfig>();
+    options.AddConfig<ActivityEventConfig>();
 })
 .AddSseEventBridge(); // Register SSE services for event-driven broadcasting
 
