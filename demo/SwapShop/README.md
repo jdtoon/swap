@@ -45,6 +45,7 @@ public IActionResult Remove(int productId)
 - ✅ **HTMX SPA Navigation** - Full page loads on first visit, partial updates on navigation
 - ✅ **Out-of-Band (OOB) Swaps** - Update cart badge while updating main content
 - ✅ **Event Chains** - Configure what happens when events fire (toasts, partials, redirects)
+- ✅ **Minimal APIs** - Use `SwapResults` in Minimal API endpoints (e.g., Newsletter subscription)
 - ✅ **Toast Notifications** - Success/Error/Warning/Info toasts with auto-dismiss
 - ✅ **Automatic Session Management** - Cookie persistence handled automatically via `GetOrInitializeSessionId()`
 - ✅ **Configurable View Search Paths** - Cross-controller OOB swaps work seamlessly

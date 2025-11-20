@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Swap.Htmx.Events;
 using Swap.Htmx.Extensions;
+using Swap.Htmx.Results;
 
 namespace Swap.Htmx.Models;
 
@@ -64,8 +65,9 @@ public sealed record TriggerEvent(
 /// <summary>
 /// Fluent builder for constructing coordinated HTMX responses with multiple updates.
 /// Replaces manual ViewData manipulation and Response.AddTrigger() calls with a clean, discoverable API.
+/// Implements IResult for direct usage in Minimal APIs.
 /// </summary>
-public sealed class SwapResponseBuilder
+public sealed class SwapResponseBuilder : IResult
 {
     private string? _viewName;
     private object? _model;
@@ -268,6 +270,15 @@ public sealed class SwapResponseBuilder
     public IResult BuildResult()
     {
         return new Swap.Htmx.Results.SwapResult(this);
+    }
+
+    /// <summary>
+    /// Executes the result operation of the action method asynchronously.
+    /// This allows the builder to be returned directly from Minimal APIs.
+    /// </summary>
+    public Task ExecuteAsync(HttpContext httpContext)
+    {
+        return new SwapResult(this).ExecuteAsync(httpContext);
     }
 
     /// <summary>

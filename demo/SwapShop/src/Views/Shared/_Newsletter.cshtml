@@ -1,0 +1,9 @@
+<div id="newsletter-form" class="newsletter-signup">
+    <h5>Subscribe to our Newsletter</h5>
+    <form hx-post="/api/newsletter" hx-swap="outerHTML">
+        <div class="grid">
+            <input type="email" name="email" placeholder="Enter your email" required />
+            <button type="submit">Subscribe</button>
+        </div>
+    </form>
+</div>
