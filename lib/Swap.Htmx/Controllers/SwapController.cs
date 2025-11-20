@@ -137,6 +137,13 @@ public abstract class SwapController : Controller
     /// </example>
     protected SwapResponseBuilder SwapResponse()
     {
+        var service = HttpContext?.RequestServices?.GetService<ISwapEventService>();
+        if (service != null)
+        {
+            return service.Response(this);
+        }
+        
+        // Fallback if service not registered (shouldn't happen if AddSwapHtmx called)
         var builder = new SwapResponseBuilder();
         builder.Controller = this;
         return builder;
@@ -388,6 +395,13 @@ public abstract class SwapController : Controller
     /// </example>
     protected SwapResponseBuilder SwapEvent(EventKey eventKey, object? payload = null)
     {
+        var service = HttpContext?.RequestServices?.GetService<ISwapEventService>();
+        if (service != null)
+        {
+            return service.Event(eventKey, this, payload);
+        }
+
+        // Fallback logic (duplicated from service for safety)
         var logger = HttpContext?.RequestServices?.GetService<ILogger<SwapController>>();
         
         Dev.SwapDevLogger.LogSwapEvent(logger, eventKey.Name, $"Payload: {payload?.GetType().Name ?? "null"}");
@@ -438,6 +452,13 @@ public abstract class SwapController : Controller
     /// </returns>
     protected async Task<SwapResponseBuilder> SwapEventAsync(EventKey eventKey, object? payload = null)
     {
+        var service = HttpContext?.RequestServices?.GetService<ISwapEventService>();
+        if (service != null)
+        {
+            return await service.EventAsync(eventKey, this, payload);
+        }
+
+        // Fallback logic
         var logger = HttpContext?.RequestServices?.GetService<ILogger<SwapController>>();
         
         Dev.SwapDevLogger.LogSwapEvent(logger, eventKey.Name, $"Payload: {payload?.GetType().Name ?? "null"} (Async)");

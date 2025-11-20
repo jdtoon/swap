@@ -144,6 +144,9 @@ public static class SwapHtmxServiceExtensions
         // Event chain executor for HTTP responses
         services.AddScoped<IEventChainExecutor>(sp => new EventChainExecutor(opts));
         
+        // Register SwapEventService
+        services.AddScoped<ISwapEventService, Services.SwapEventService>();
+        
         return services;
     }
 
