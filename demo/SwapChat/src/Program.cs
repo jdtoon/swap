@@ -59,7 +59,8 @@ app.MapPost("/chat/send", async (
         logger.LogError(ex, "Error sending message");
         return Results.Problem(ex.Message);
     }
-});
+})
+.DisableAntiforgery();
 
 app.MapGet("/chat/join", (string room, string username) => 
 {
