@@ -1,9 +1,9 @@
-<div id="newsletter-form" class="newsletter-signup">
-    <h5>Subscribe to our Newsletter</h5>
+<div id="newsletter-form" class="newsletter-signup" style="margin-top: 1rem;">
+    <h6 style="margin-bottom: 0.5rem; color: var(--muted-color);">Subscribe to our Newsletter</h6>
     <form hx-post="/api/newsletter" hx-swap="outerHTML">
-        <div class="grid">
-            <input type="email" name="email" placeholder="Enter your email" required />
+        <fieldset role="group">
+            <input type="email" name="email" placeholder="Enter your email" required aria-label="Email address" />
             <button type="submit">Subscribe</button>
-        </div>
+        </fieldset>
     </form>
 </div>
