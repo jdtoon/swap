@@ -67,11 +67,21 @@ internal sealed class SseEventBridge : ISseEventBridge
                     break;
 
                 case "room":
+                    if (string.IsNullOrEmpty(target))
+                    {
+                        _logger.LogWarning("[SSE Bridge] Room target is missing for event {EventName}", eventName);
+                        break;
+                    }
                     _logger.LogDebug("[SSE Bridge] Broadcasting to room: {Room}", target);
                     await _connectionRegistry.BroadcastToRoomsAsync(sseEventName, html, new[] { target }, cancellationToken);
                     break;
 
                 case "rooms":
+                    if (string.IsNullOrEmpty(target))
+                    {
+                        _logger.LogWarning("[SSE Bridge] Rooms target is missing for event {EventName}", eventName);
+                        break;
+                    }
                     var rooms = target.Split(',');
                     _logger.LogDebug("[SSE Bridge] Broadcasting to rooms: {Rooms}", string.Join(", ", rooms));
                     await _connectionRegistry.BroadcastToRoomsAsync(sseEventName, html, rooms, cancellationToken);
@@ -83,17 +93,32 @@ internal sealed class SseEventBridge : ISseEventBridge
                     break;
 
                 case "roles":
+                    if (string.IsNullOrEmpty(target))
+                    {
+                        _logger.LogWarning("[SSE Bridge] Roles target is missing for event {EventName}", eventName);
+                        break;
+                    }
                     var roles = target.Split(',');
                     _logger.LogDebug("[SSE Bridge] Broadcasting to roles: {Roles}", string.Join(", ", roles));
                     await _connectionRegistry.BroadcastToRolesAsync(sseEventName, html, roles, cancellationToken);
                     break;
 
                 case "user":
+                    if (string.IsNullOrEmpty(target))
+                    {
+                        _logger.LogWarning("[SSE Bridge] User target is missing for event {EventName}", eventName);
+                        break;
+                    }
                     _logger.LogDebug("[SSE Bridge] Broadcasting to user: {User}", target);
                     await _connectionRegistry.BroadcastToUserAsync(sseEventName, html, target, cancellationToken);
                     break;
 
                 case "filter":
+                    if (string.IsNullOrEmpty(target))
+                    {
+                        _logger.LogWarning("[SSE Bridge] Filter target is missing for event {EventName}", eventName);
+                        break;
+                    }
                     // For custom filters, we'll use a convention where the filter key maps to a predicate
                     _logger.LogDebug("[SSE Bridge] Broadcasting with filter: {Filter}", target);
                     await HandleFilteredBroadcast(target, sseEventName, html, cancellationToken);

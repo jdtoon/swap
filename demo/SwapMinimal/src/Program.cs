@@ -17,7 +17,7 @@ app.MapGet("/", () => Results.Content(@"
 <html>
 <head>
     <title>SwapMinimal</title>
-    <script src=""https://unpkg.com/htmx.org@1.9.10""></script>
+    <script src=""https://unpkg.com/htmx.org@2.0.8""></script>
 </head>
 <body>
     <h1>SwapMinimal Demo</h1>

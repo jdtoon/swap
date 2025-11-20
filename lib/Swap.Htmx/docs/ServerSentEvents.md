@@ -551,6 +551,51 @@ public IActionResult Stream()
 }
 ```
 
+## Distributed SSE (Web Farms)
+
+By default, Swap.Htmx uses an in-memory event bus. This works great for single-server deployments but fails in web farms (multiple server instances) because an event triggered on Server A won't reach clients connected to Server B.
+
+To solve this, Swap.Htmx provides the `ISseBackplane` interface.
+
+### Implementing a Backplane
+
+You can implement `ISseBackplane` to use Redis, NATS, RabbitMQ, or any other message bus.
+
+```csharp
+public class RedisSseBackplane : ISseBackplane
+{
+    private readonly IConnectionMultiplexer _redis;
+    
+    public RedisSseBackplane(IConnectionMultiplexer redis) => _redis = redis;
+
+    public async Task PublishAsync(SseMessage message, CancellationToken ct)
+    {
+        var json = JsonSerializer.Serialize(message);
+        await _redis.GetSubscriber().PublishAsync("swap_sse_channel", json);
+    }
+
+    public async Task SubscribeAsync(Func<SseMessage, CancellationToken, Task> handler, CancellationToken ct)
+    {
+        await _redis.GetSubscriber().SubscribeAsync("swap_sse_channel", async (channel, value) => {
+            var message = JsonSerializer.Deserialize<SseMessage>(value);
+            await handler(message, ct);
+        });
+    }
+}
+```
+
+### Registering the Backplane
+
+Register your implementation in `Program.cs`:
+
+```csharp
+builder.Services.AddSingleton<ISseBackplane, RedisSseBackplane>();
+```
+
+Swap.Htmx will automatically use this backplane to distribute all broadcast events across your cluster.
+
+> **Demo:** See the `SwapChat` demo project for a working example using a file-based backplane.
+
 ## Best Practices
 
 ### 1. Use Full View Paths

@@ -13,7 +13,8 @@ public class SseConnectionRegistryTests
     {
         // Arrange
         var logger = new Mock<ILogger<SseConnectionRegistry>>().Object;
-        var registry = new SseConnectionRegistry(logger);
+        var backplane = new InMemorySseBackplane(new Mock<ILogger<InMemorySseBackplane>>().Object);
+        var registry = new SseConnectionRegistry(backplane, logger);
         
         var httpContext = new DefaultHttpContext();
         var memoryStream = new MemoryStream();
@@ -30,7 +31,8 @@ public class SseConnectionRegistryTests
     {
         // Arrange
         var logger = new Mock<ILogger<SseConnectionRegistry>>().Object;
-        var registry = new SseConnectionRegistry(logger);
+        var backplane = new InMemorySseBackplane(new Mock<ILogger<InMemorySseBackplane>>().Object);
+        var registry = new SseConnectionRegistry(backplane, logger);
 
         // Act & Assert - should not throw
         registry.UnregisterConnection("nonexistent-id");
@@ -41,7 +43,8 @@ public class SseConnectionRegistryTests
     {
         // Arrange
         var logger = new Mock<ILogger<SseConnectionRegistry>>().Object;
-        var registry = new SseConnectionRegistry(logger);
+        var backplane = new InMemorySseBackplane(new Mock<ILogger<InMemorySseBackplane>>().Object);
+        var registry = new SseConnectionRegistry(backplane, logger);
         
         var stream1 = new MemoryStream();
         var stream2 = new MemoryStream();

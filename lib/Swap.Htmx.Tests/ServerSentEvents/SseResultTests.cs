@@ -45,6 +45,7 @@ public class SseResultTests
         var context = new DefaultHttpContext();
         var services = new ServiceCollection();
         services.AddSingleton<ISseConnectionRegistry>(new SseConnectionRegistry(
+            new InMemorySseBackplane(NullLogger<InMemorySseBackplane>.Instance),
             NullLogger<SseConnectionRegistry>.Instance));
         context.RequestServices = services.BuildServiceProvider();
         

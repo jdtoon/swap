@@ -75,12 +75,48 @@ public record SseConnectionStats(
 internal sealed class SseConnectionRegistry : ISseConnectionRegistry
 {
     private readonly ConcurrentDictionary<string, SseConnection> _connections;
+    private readonly ISseBackplane _backplane;
     private readonly ILogger<SseConnectionRegistry> _logger;
 
-    public SseConnectionRegistry(ILogger<SseConnectionRegistry> logger)
+    public SseConnectionRegistry(ISseBackplane backplane, ILogger<SseConnectionRegistry> logger)
     {
         _connections = new ConcurrentDictionary<string, SseConnection>();
+        _backplane = backplane;
         _logger = logger;
+
+        // Subscribe to backplane messages
+        _ = _backplane.SubscribeAsync(HandleBackplaneMessageAsync);
+    }
+
+    private async Task HandleBackplaneMessageAsync(SseMessage message, CancellationToken ct)
+    {
+        switch (message.RecipientType)
+        {
+            case SseRecipientType.Broadcast:
+                await SendToAllLocalAsync(message.EventName, message.Html);
+                break;
+            case SseRecipientType.Room:
+                if (message.RecipientValues != null)
+                {
+                    await SendToRoomsLocalAsync(message.EventName, message.Html, message.RecipientValues);
+                }
+                break;
+            case SseRecipientType.EventSubscription:
+                await SendToSubscribersLocalAsync(message.EventName, message.Html);
+                break;
+            case SseRecipientType.Role:
+                if (message.RecipientValues != null)
+                {
+                    await SendToRolesLocalAsync(message.EventName, message.Html, message.RecipientValues);
+                }
+                break;
+            case SseRecipientType.User:
+                if (message.RecipientValue != null)
+                {
+                    await SendToUserLocalAsync(message.EventName, message.Html, message.RecipientValue);
+                }
+                break;
+        }
     }
 
     public void RegisterConnection(SseConnection connection)
@@ -101,26 +137,26 @@ internal sealed class SseConnectionRegistry : ISseConnectionRegistry
 
     public async Task BroadcastAsync(string eventName, string html, CancellationToken cancellationToken = default)
     {
+        await _backplane.PublishAsync(new SseMessage(eventName, html, SseRecipientType.Broadcast), cancellationToken);
+    }
+
+    private async Task SendToAllLocalAsync(string eventName, string html)
+    {
         var activeConnections = GetActiveConnections();
-        _logger.LogDebug("[SSE Registry] BroadcastAsync - Event: {EventName}, Active connections: {Count}, Total connections: {Total}", 
-            eventName, activeConnections.Count, _connections.Count);
+        _logger.LogDebug("[SSE Registry] Local Broadcast - Event: {EventName}, Active connections: {Count}", 
+            eventName, activeConnections.Count);
         
-        if (activeConnections.Count == 0)
-        {
-            _logger.LogWarning("[SSE Registry] No active connections to broadcast to!");
-            return;
-        }
+        if (activeConnections.Count == 0) return;
         
         var tasks = activeConnections.Select(conn => conn.SendEventAsync(eventName, html));
 
         try
         {
             await Task.WhenAll(tasks);
-            _logger.LogDebug("[SSE Registry] Successfully broadcast to {Count} connections", activeConnections.Count);
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "[SSE Registry] Error during SSE broadcast to all connections");
+            _logger.LogWarning(ex, "[SSE Registry] Error during local SSE broadcast");
         }
 
         CleanupInactiveConnections();
@@ -128,10 +164,17 @@ internal sealed class SseConnectionRegistry : ISseConnectionRegistry
 
     public async Task BroadcastToRoomsAsync(string eventName, string html, IEnumerable<string> rooms, CancellationToken cancellationToken = default)
     {
+        await _backplane.PublishAsync(new SseMessage(eventName, html, SseRecipientType.Room, RecipientValues: rooms.ToArray()), cancellationToken);
+    }
+
+    private async Task SendToRoomsLocalAsync(string eventName, string html, IEnumerable<string> rooms)
+    {
         var roomSet = rooms.ToHashSet();
         var targetConnections = GetActiveConnections()
             .Where(conn => conn.Rooms.Any(room => roomSet.Contains(room)))
             .ToList();
+
+        if (targetConnections.Count == 0) return;
 
         var tasks = targetConnections.Select(conn => conn.SendEventAsync(eventName, html));
 
@@ -141,7 +184,7 @@ internal sealed class SseConnectionRegistry : ISseConnectionRegistry
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Error during SSE broadcast to rooms {Rooms}", string.Join(", ", rooms));
+            _logger.LogWarning(ex, "Error during local SSE broadcast to rooms {Rooms}", string.Join(", ", rooms));
         }
 
         CleanupInactiveConnections();
@@ -149,9 +192,16 @@ internal sealed class SseConnectionRegistry : ISseConnectionRegistry
 
     public async Task BroadcastToSubscribersAsync(string eventName, string html, CancellationToken cancellationToken = default)
     {
+        await _backplane.PublishAsync(new SseMessage(eventName, html, SseRecipientType.EventSubscription), cancellationToken);
+    }
+
+    private async Task SendToSubscribersLocalAsync(string eventName, string html)
+    {
         var targetConnections = GetActiveConnections()
             .Where(conn => conn.IsSubscribedToEvent(eventName))
             .ToList();
+
+        if (targetConnections.Count == 0) return;
 
         var tasks = targetConnections.Select(conn => conn.SendEventAsync(eventName, html));
 
@@ -161,7 +211,7 @@ internal sealed class SseConnectionRegistry : ISseConnectionRegistry
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Error during SSE broadcast to event subscribers {EventName}", eventName);
+            _logger.LogWarning(ex, "Error during local SSE broadcast to event subscribers {EventName}", eventName);
         }
 
         CleanupInactiveConnections();
@@ -189,11 +239,18 @@ internal sealed class SseConnectionRegistry : ISseConnectionRegistry
 
     public async Task BroadcastToRolesAsync(string eventName, string html, IEnumerable<string> roles, CancellationToken cancellationToken = default)
     {
+        await _backplane.PublishAsync(new SseMessage(eventName, html, SseRecipientType.Role, RecipientValues: roles.ToArray()), cancellationToken);
+    }
+
+    private async Task SendToRolesLocalAsync(string eventName, string html, IEnumerable<string> roles)
+    {
         var roleSet = roles.ToHashSet();
         var targetConnections = GetActiveConnections()
             .Where(conn => conn.User?.Identity?.IsAuthenticated == true &&
                           roleSet.Any(role => conn.User.IsInRole(role)))
             .ToList();
+
+        if (targetConnections.Count == 0) return;
 
         var tasks = targetConnections.Select(conn => conn.SendEventAsync(eventName, html));
 
@@ -203,13 +260,18 @@ internal sealed class SseConnectionRegistry : ISseConnectionRegistry
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Error during SSE broadcast to roles {Roles}", string.Join(", ", roles));
+            _logger.LogWarning(ex, "Error during local SSE broadcast to roles {Roles}", string.Join(", ", roles));
         }
 
         CleanupInactiveConnections();
     }
 
     public async Task BroadcastToUserAsync(string eventName, string html, string userId, CancellationToken cancellationToken = default)
+    {
+        await _backplane.PublishAsync(new SseMessage(eventName, html, SseRecipientType.User, RecipientValue: userId), cancellationToken);
+    }
+
+    private async Task SendToUserLocalAsync(string eventName, string html, string userId)
     {
         var targetConnections = GetActiveConnections()
             .Where(conn =>
@@ -224,6 +286,8 @@ internal sealed class SseConnectionRegistry : ISseConnectionRegistry
             })
             .ToList();
 
+        if (targetConnections.Count == 0) return;
+
         var tasks = targetConnections.Select(conn => conn.SendEventAsync(eventName, html));
 
         try
@@ -232,7 +296,7 @@ internal sealed class SseConnectionRegistry : ISseConnectionRegistry
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Error during SSE broadcast to user {UserId}", userId);
+            _logger.LogWarning(ex, "Error during local SSE broadcast to user {UserId}", userId);
         }
 
         CleanupInactiveConnections();

@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
 using Swap.Htmx.Events;
 using Swap.Htmx.Middleware;
@@ -82,6 +83,7 @@ public static class SwapHtmxServiceExtensions
     /// </example>
     public static IServiceCollection AddSseEventBridge(this IServiceCollection services)
     {
+        services.TryAddSingleton<ISseBackplane, InMemorySseBackplane>();
         services.AddSingleton<ISseConnectionRegistry, SseConnectionRegistry>();
         services.AddScoped<ISseEventBridge, SseEventBridge>();
         services.AddScoped<ISseViewRenderer, SseViewRenderer>();
