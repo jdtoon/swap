@@ -11,7 +11,7 @@
 - **Razor Pages Support** - Use `this.SwapResponse()` directly in your `PageModel`
 - **Type-safe API** - No magic strings for swap modes or event names
 - **SwapController base class** - Automatically handles HTMX requests vs full page loads
-- **Real-time updates with SSE** - Built-in Server-Sent Events support with automatic connection management, room-based broadcasting, and seamless HTMX integration
+- **Real-time updates with SSE** - Built-in Server-Sent Events support with automatic connection management, room-based broadcasting, and `ISseBackplane` for distributed scaling
 - **Event system** - Build `HX-Trigger` headers declaratively and chain complex UI updates
 
 ## Install
