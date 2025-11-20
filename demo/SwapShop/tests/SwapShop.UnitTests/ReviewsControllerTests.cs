@@ -105,4 +105,25 @@ public class ReviewsControllerTests
         _reviewServiceMock.Verify(x => x.AddReview(review), Times.Once);
         _swapEventServiceMock.Verify(x => x.Event(ReviewEvents.Added, _controller, review), Times.Once);
     }
+
+    [Fact]
+    public void Add_ReturnsValidationErrors_WhenInvalid()
+    {
+        // Arrange
+        var review = new Review { ProductId = 1 };
+        _controller.ModelState.AddModelError("UserName", "Required");
+        
+        var builder = new SwapResponseBuilder(_controller);
+        _swapEventServiceMock.Setup(x => x.Response(_controller)).Returns(builder);
+        
+        // Act
+        var result = _controller.Add(review);
+        
+        // Assert
+        Assert.IsType<Swap.Htmx.Results.SwapActionResult>(result);
+        
+        // Verify builder state
+        Assert.Contains(builder.Toasts, t => t.Message == "Please correct the errors below.");
+        Assert.Contains(builder.Triggers, t => t.EventName == "validationFailed");
+    }
 }

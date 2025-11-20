@@ -112,6 +112,14 @@ public class ReviewsController : Controller
     [HttpPost]
     public IActionResult Add(Review review)
     {
+        if (!ModelState.IsValid)
+        {
+            // New in v1.3: First-class validation support
+            return this.SwapValidationErrors(ModelState)
+                .AlsoUpdate("review-form", "_ReviewForm", review)
+                .Build();
+        }
+
         _service.Add(review);
         
         // Use extension methods on 'this' (ControllerBase)

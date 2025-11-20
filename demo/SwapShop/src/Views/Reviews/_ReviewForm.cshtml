@@ -1,0 +1,35 @@
+@model SwapShop.Models.Review
+
+<div id="review-form-container">
+    <h4>Write a Review</h4>
+    <form hx-post="/Reviews/Add" hx-swap="none">
+        <input type="hidden" name="ProductId" value="@Model.ProductId" />
+        
+        <div class="grid">
+            <label>
+                Name
+                <input type="text" name="UserName" value="@Model.UserName" required placeholder="Your name" />
+                <span asp-validation-for="UserName" class="error-message"></span>
+            </label>
+            <label>
+                Rating
+                <select name="Rating" asp-for="Rating" required>
+                    <option value="5">5 - Excellent</option>
+                    <option value="4">4 - Good</option>
+                    <option value="3">3 - Average</option>
+                    <option value="2">2 - Poor</option>
+                    <option value="1">1 - Terrible</option>
+                </select>
+                <span asp-validation-for="Rating" class="error-message"></span>
+            </label>
+        </div>
+        
+        <label>
+            Comment
+            <textarea name="Comment" required placeholder="Share your thoughts...">@Model.Comment</textarea>
+            <span asp-validation-for="Comment" class="error-message"></span>
+        </label>
+        
+        <button type="submit">Submit Review</button>
+    </form>
+</div>

@@ -36,8 +36,12 @@ public class ReviewsController : Controller
     {
         if (!ModelState.IsValid)
         {
-            // Simple validation handling for demo
-            return BadRequest("Invalid review");
+            // DEMO: Using new SwapValidationErrors extension (Phase 1.3)
+            // This returns a toast and triggers "validationFailed" event
+            // We also OOB swap the form to show server-side errors
+            return this.SwapValidationErrors(ModelState)
+                .AlsoUpdate("review-form-container", "_ReviewForm", review)
+                .Build();
         }
 
         _reviewService.AddReview(review);

@@ -211,12 +211,12 @@ public sealed class SwapResponseBuilder
     /// <summary>
     /// Gets all configured toasts.
     /// </summary>
-    internal IReadOnlyList<ToastNotification> Toasts => _toasts;
+    public IReadOnlyList<ToastNotification> Toasts => _toasts;
 
     /// <summary>
     /// Gets all configured triggers.
     /// </summary>
-    internal IReadOnlyList<TriggerEvent> Triggers => _triggers;
+    public IReadOnlyList<TriggerEvent> Triggers => _triggers;
     
     /// <summary>
     /// Gets the configured redirect URL.

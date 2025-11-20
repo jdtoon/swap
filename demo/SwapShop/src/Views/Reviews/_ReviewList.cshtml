@@ -29,40 +29,11 @@
     <hr />
     
     <!-- Review Form -->
-    <div id="review-form-container">
-        <h4>Write a Review</h4>
-        <form hx-post="/Reviews/Add" hx-swap="none">
-            <!-- We need the product ID from the context or passed in. -->
-            @{
-                var pid = ViewData["ProductId"] ?? Context.Items["ViewData_ProductId"];
-                // Fallback if model has items
-                if (pid == null && Model.Any()) pid = Model.First().ProductId;
-            }
-            <input type="hidden" name="ProductId" value="@pid" />
-            
-            <div class="grid">
-                <label>
-                    Name
-                    <input type="text" name="UserName" required placeholder="Your name" />
-                </label>
-                <label>
-                    Rating
-                    <select name="Rating" required>
-                        <option value="5">5 - Excellent</option>
-                        <option value="4">4 - Good</option>
-                        <option value="3">3 - Average</option>
-                        <option value="2">2 - Poor</option>
-                        <option value="1">1 - Terrible</option>
-                    </select>
-                </label>
-            </div>
-            
-            <label>
-                Comment
-                <textarea name="Comment" required placeholder="Share your thoughts..."></textarea>
-            </label>
-            
-            <button type="submit">Submit Review</button>
-        </form>
-    </div>
+    @{
+        var pid = ViewData["ProductId"] ?? Context.Items["ViewData_ProductId"];
+        if (pid == null && Model.Any()) pid = Model.First().ProductId;
+        
+        var newReview = new SwapShop.Models.Review { ProductId = Convert.ToInt32(pid) };
+    }
+    <partial name="~/Views/Reviews/_ReviewForm.cshtml" model="newReview" />
 </div>
