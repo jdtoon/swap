@@ -18,7 +18,18 @@ app.UseStaticFiles();
 app.UseSwapHtmx();
 
 // Map the SSE endpoint
-app.MapSwapSse("/swap/sse");
+app.MapGet("/swap/sse", (ISseConnectionRegistry registry, HttpContext context) => 
+{
+    var room = context.Request.Query["room"].ToString();
+    
+    return SwapResults.Sse(registry, options => {
+        options.HeartbeatInterval = TimeSpan.FromSeconds(10);
+        if (!string.IsNullOrEmpty(room))
+        {
+            options.AutoSubscribeRooms = new[] { room };
+        }
+    });
+});
 
 app.MapGet("/", () => Results.Redirect("/index.html"));
 
@@ -50,7 +61,7 @@ app.MapGet("/chat/join", (string room, string username) =>
 {
     // Return the chat UI
     return Results.Content($@"
-        <div hx-ext='sse' sse-connect='/swap/sse?rooms={room}'>
+        <div hx-ext='sse' sse-connect='/swap/sse?room={room}'>
             <div class='chat-header'>
                 <h3>Room: {room}</h3>
                 <div id='connection-status' class='status-connecting' title='Connection Status'></div>
