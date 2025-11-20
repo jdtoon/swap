@@ -50,7 +50,7 @@
                 </a>
                 @if (Model.Stock > 0)
                 {
-                    <button hx-post="/Cart/Add"
+                    <button hx-post="/Cart/AddItem"
                             hx-vals='{"productId": @Model.Id, "quantity": 1}'
                             hx-swap="none">
                         Add to Cart
