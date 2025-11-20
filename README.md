@@ -35,13 +35,23 @@ public class HomeController : SwapController
 }
 ```
 
+**Or use Composition (Standard Controller):**
+```csharp
+public class HomeController : Controller
+{
+    // Use extension methods on 'this'
+    public IActionResult Index() => this.SwapView();
+}
+```
+
 **That's it!** Your controller now:
 - Returns partials for HTMX requests, full pages otherwise
 - Has access to `SwapResponse()` for multi-part updates
 - Has access to `SwapEvent()` for event-driven UI updates
 - Automatically handles session cookie persistence via `GetOrInitializeSessionId()`
 
-**New in 0.5.0:**
+**New in 1.2.0:**
+- 🧩 **Composition Over Inheritance** - Use `Swap.Htmx` with standard Controllers via extension methods
 - 🎯 Automatic session cookie persistence
 - 📁 Configurable view search paths for cross-controller OOB swaps
 - 🎨 Standalone toast CSS (zero dependencies)
