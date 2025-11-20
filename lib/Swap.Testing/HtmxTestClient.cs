@@ -345,6 +345,76 @@ public class HtmxTestClient<TProgram> where TProgram : class
     }
 
     /// <summary>
+    /// Perform an HTMX GET request to a specific Razor Page handler.
+    /// Automatically appends the ?handler=... query parameter.
+    /// </summary>
+    /// <param name="pageName">The path to the page (e.g. "/Index").</param>
+    /// <param name="handler">The name of the handler method (without OnGet/OnPost prefix).</param>
+    /// <param name="routeValues">Optional object containing route values to be added to the query string.</param>
+    /// <param name="target">Optional HX-Target header value.</param>
+    /// <param name="trigger">Optional HX-Trigger header value.</param>
+    public Task<HtmxTestResponse> HtmxGetPageHandlerAsync(string pageName, string handler, object? routeValues = null, string? target = null, string? trigger = null)
+    {
+        var url = pageName;
+        var queryParams = new Dictionary<string, string>();
+        
+        if (routeValues != null)
+        {
+            foreach (var prop in routeValues.GetType().GetProperties())
+            {
+                var value = prop.GetValue(routeValues)?.ToString();
+                if (value != null)
+                {
+                    queryParams[prop.Name] = value;
+                }
+            }
+        }
+        
+        // Add handler
+        queryParams["handler"] = handler;
+        
+        var queryString = string.Join("&", queryParams.Select(kv => $"{Uri.EscapeDataString(kv.Key)}={Uri.EscapeDataString(kv.Value)}"));
+        url = url.Contains("?") ? $"{url}&{queryString}" : $"{url}?{queryString}";
+        
+        return HtmxGetAsync(url, target, trigger);
+    }
+
+    /// <summary>
+    /// Perform an HTMX POST request to a specific Razor Page handler.
+    /// Automatically appends the ?handler=... query parameter.
+    /// </summary>
+    /// <param name="pageName">The path to the page (e.g. "/Index").</param>
+    /// <param name="handler">The name of the handler method (without OnGet/OnPost prefix).</param>
+    /// <param name="formValues">Optional object containing form values to be sent in the body.</param>
+    /// <param name="target">Optional HX-Target header value.</param>
+    /// <param name="trigger">Optional HX-Trigger header value.</param>
+    public Task<HtmxTestResponse> HtmxPostPageHandlerAsync(string pageName, string handler, object? formValues = null, string? target = null, string? trigger = null)
+    {
+        var url = pageName;
+        if (url.Contains("?"))
+            url += $"&handler={handler}";
+        else
+            url += $"?handler={handler}";
+            
+        HttpContent? content = null;
+        if (formValues != null)
+        {
+            var dict = new Dictionary<string, string>();
+            foreach (var prop in formValues.GetType().GetProperties())
+            {
+                var value = prop.GetValue(formValues)?.ToString();
+                if (value != null)
+                {
+                    dict[prop.Name] = value;
+                }
+            }
+            content = new FormUrlEncodedContent(dict);
+        }
+        
+        return HtmxPostAsync(url, content, target, trigger);
+    }
+
+    /// <summary>
     /// If a previous response returned an <c>HX-Redirect</c> header, follow
     /// it and return the fetched response (performed as an HTMX GET).
     /// </summary>

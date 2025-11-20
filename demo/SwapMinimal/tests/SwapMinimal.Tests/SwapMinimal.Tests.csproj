@@ -21,6 +21,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\SwapMinimal.csproj" />
+    <ProjectReference Include="..\..\..\..\lib\Swap.Testing\Swap.Testing.csproj" />
   </ItemGroup>
 
 </Project>

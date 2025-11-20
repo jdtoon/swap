@@ -1,47 +1,37 @@
-using Microsoft.AspNetCore.Mvc.Testing;
-using System.Net;
+using Swap.Testing;
 
 namespace SwapMinimal.Tests;
 
-public class SwapMinimalTests : IClassFixture<WebApplicationFactory<Program>>
+public class SwapMinimalTests : IClassFixture<HtmxTestFixture<Program>>
 {
-    private readonly WebApplicationFactory<Program> _factory;
+    private readonly HtmxTestClient<Program> _client;
 
-    public SwapMinimalTests(WebApplicationFactory<Program> factory)
+    public SwapMinimalTests(HtmxTestFixture<Program> fixture)
     {
-        _factory = factory;
+        _client = fixture.Client;
     }
 
     [Fact]
     public async Task Get_Root_ReturnsHtml()
     {
-        // Arrange
-        var client = _factory.CreateClient();
-
         // Act
-        var response = await client.GetAsync("/");
+        var response = await _client.GetAsync("/");
 
         // Assert
-        response.EnsureSuccessStatusCode();
-        var content = await response.Content.ReadAsStringAsync();
-        Assert.Contains("SwapMinimal Demo", content);
+        await response
+            .AssertSuccess()
+            .AssertContainsAsync("SwapMinimal Demo");
     }
 
     [Fact]
     public async Task Get_Message_ReturnsPartial()
     {
-        // Arrange
-        var client = _factory.CreateClient();
-        client.DefaultRequestHeaders.Add("HX-Request", "true");
-
         // Act
-        var response = await client.GetAsync("/message");
+        var response = await _client.HtmxGetAsync("/message");
 
         // Assert
-        response.EnsureSuccessStatusCode();
-        var content = await response.Content.ReadAsStringAsync();
-        Assert.Contains("message-container", content);
-        Assert.Contains("Hello", content);
-        Assert.Contains("Rendered at", content);
+        await response.AssertSuccess().AssertContainsAsync("message-container");
+        await response.AssertContainsAsync("Hello");
+        await response.AssertContainsAsync("Rendered at");
     }
 }
