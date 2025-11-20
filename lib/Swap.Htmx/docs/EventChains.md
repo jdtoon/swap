@@ -10,7 +10,7 @@ Instead of manually building responses in every controller action, you can confi
 
 ### 1. Configure Event Chains
 
-In your `Program.cs`, define what should happen when events are triggered:
+Create a configuration class implementing `ISwapEventConfiguration`:
 
 ```csharp
 // Define constants to eliminate magic strings
@@ -26,21 +26,33 @@ public static class ProductElements
     public const string Count = "product-count";
 }
 
-builder.Services.AddSwapHtmx(events =>
+public class ProductEventConfig : ISwapEventConfiguration
 {
-    // When a product is created, refresh the list and show a toast
-    events.When(SwapEvents.Entity.Created("Product"))
-          .RefreshPartial(ProductElements.List, ProductViews.List, ctx =>
-          {
-              var service = ctx.RequestServices.GetRequiredService<ProductService>();
-              return service.GetAll();
-          })
-          .RefreshPartial(ProductElements.Count, ProductViews.Count, ctx =>
-          {
-              var service = ctx.RequestServices.GetRequiredService<ProductService>();
-              return new { Count = service.GetCount() };
-          })
-          .SuccessToast("Product created successfully!");
+    public void Configure(SwapEventBusOptions events)
+    {
+        // When a product is created, refresh the list and show a toast
+        events.When(SwapEvents.Entity.Created("Product"))
+              .RefreshPartial(ProductElements.List, ProductViews.List, ctx =>
+              {
+                  var service = ctx.RequestServices.GetRequiredService<ProductService>();
+                  return service.GetAll();
+              })
+              .RefreshPartial(ProductElements.Count, ProductViews.Count, ctx =>
+              {
+                  var service = ctx.RequestServices.GetRequiredService<ProductService>();
+                  return new { Count = service.GetCount() };
+              })
+              .SuccessToast("Product created successfully!");
+    }
+}
+```
+
+Register it in `Program.cs`:
+
+```csharp
+builder.Services.AddSwapHtmx(options =>
+{
+    options.AddConfig<ProductEventConfig>();
 });
 ```
 

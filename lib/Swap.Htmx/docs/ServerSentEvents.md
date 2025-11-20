@@ -57,15 +57,25 @@ public class DashboardController : SwapController
 **3. Configure event handlers:**
 
 ```csharp
-builder.Services.AddSwapHtmx(events =>
+// Define configuration class
+public class DashboardSseConfig : ISwapEventConfiguration
 {
-    // When stats-update SSE event is broadcast, render and send new stats
-    events.When(SseEvents.Broadcast(DashboardSseEvents.StatsUpdate))
-        .RefreshPartial(DashboardElements.Stats, DashboardViews.Stats, ctx =>
-        {
-            var statsService = ctx.RequestServices.GetRequiredService<IStatsService>();
-            return statsService.GetStats();
-        });
+    public void Configure(SwapEventBusOptions events)
+    {
+        // When stats-update SSE event is broadcast, render and send new stats
+        events.When(SseEvents.Broadcast(DashboardSseEvents.StatsUpdate))
+            .RefreshPartial(DashboardElements.Stats, DashboardViews.Stats, ctx =>
+            {
+                var statsService = ctx.RequestServices.GetRequiredService<IStatsService>();
+                return statsService.GetStats();
+            });
+    }
+}
+
+// Register in Program.cs
+builder.Services.AddSwapHtmx(options =>
+{
+    options.AddConfig<DashboardSseConfig>();
 });
 ```
 

@@ -81,11 +81,17 @@ public IActionResult DashboardStream()
 
 **Event Bridge Pattern:**
 ```csharp
-// Chain domain events to SSE broadcasts
-config.OnEvent(TaskEvents.Created)
-    .BroadcastSse(DashboardSseEvents.StatsUpdate)
-    .BroadcastSse(DashboardSseEvents.ActivityUpdate)
-    .Build();
+public class SseEventConfig : ISwapEventConfiguration
+{
+    public void Configure(SwapEventBusOptions config)
+    {
+        // Chain domain events to SSE broadcasts
+        config.OnEvent(TaskEvents.Created)
+            .BroadcastSse(DashboardSseEvents.StatsUpdate)
+            .BroadcastSse(DashboardSseEvents.ActivityUpdate)
+            .Build();
+    }
+}
 ```
 
 ---
@@ -376,7 +382,9 @@ TaskFlow/
 │   │   └── DomainModels.cs             # Task, Project, Comment, Team, etc.
 │   ├── Events/
 │   │   ├── EventKeys.cs                # 30+ type-safe event constants
-│   │   └── EventChainConfiguration.cs  # Payload-aware event chains
+│   │   ├── SseEventConfig.cs           # SSE broadcast configuration
+│   │   ├── TaskEventConfig.cs          # Task event chains
+│   │   └── ... (Feature-specific configs)
 │   ├── Views/
 │   │   ├── ViewConstants.cs            # View names & dynamic element IDs
 │   │   ├── Tasks/                      # Kanban board views
@@ -387,8 +395,7 @@ TaskFlow/
 │   │   └── Shared/                     # Layout, ViewImports, ProgressBar
 │   ├── wwwroot/
 │   │   ├── css/
-│   │   │   ├── site.css                # Custom Kanban CSS (no frameworks)
-│   │   │   └── swap-toasts.css         # Library toast styles
+│   │   │   └── site.css                # Custom Kanban CSS (no frameworks)
 │   │   └── js/
 │   │       └── sse-reconnect.js        # SSE reconnection with backoff
 │   └── Program.cs                       # SSE setup, service registration

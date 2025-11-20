@@ -74,10 +74,8 @@ builder.Services.AddSwapHtmx(options =>
     // Optional: Configure view search paths for cross-controller OOB swaps
     options.PartialViewSearchPaths.Add("Shared");
     
-    // Optional: Configure event chains
-    options.EventBus.When(new EventKey("todo.created"))
-        .RefreshPartial("todo-count", "_TodoCount", ctx => GetTodoCount())
-        .Toast("Todo created!", ToastType.Success);
+    // Optional: Register decentralized event configurations
+    options.AddConfig<TodoEventConfig>();
 });
 
 var app = builder.Build();
