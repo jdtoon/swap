@@ -50,13 +50,14 @@ public class HomeController : Controller
 - Has access to `SwapEvent()` for event-driven UI updates
 - Automatically handles session cookie persistence via `GetOrInitializeSessionId()`
 
-**New in 1.2.0:**
+## Features
+
 - 🧩 **Composition Over Inheritance** - Use `Swap.Htmx` with standard Controllers via extension methods
-- 🎯 Automatic session cookie persistence
-- 📁 Configurable view search paths for cross-controller OOB swaps
-- 🎨 Standalone toast CSS (zero dependencies)
-- 📦 Event payload access in event chains
-- 🔧 OOB instance ID helpers for lists
+- 🎯 **Automatic Session Persistence** - Handles cookie tracking for you
+- 📁 **View Search Paths** - Share OOB partials across controllers easily
+- 🎨 **Built-in Toasts** - Zero-dependency toast notifications included
+- 📦 **Event Payload Access** - Pass data through event chains efficiently
+- 🔧 **OOB Helpers** - Tools for managing dynamic lists and instance IDs
 
 ## Tiny example
 
@@ -238,5 +239,13 @@ Start with **SwapShop** to learn the fundamentals, then explore **TaskFlow** for
 - **[SwapShop](demo/SwapShop)** – E-commerce demo covering core API and foundational patterns
 - **[TaskFlow](demo/TaskFlow)** – Team collaboration demo covering SSE, all swap modes, and advanced event chains
 - `lib/Swap.Testing/EXAMPLE_TESTS.cs` – Example test suite using the testing helpers
+
+## Documentation
+
+- [**Getting Started**](lib/Swap.Htmx/docs/GettingStarted.md)
+- [**Events & Triggers**](lib/Swap.Htmx/docs/Events.md)
+- [**Event Chains**](lib/Swap.Htmx/docs/EventChains.md)
+- [**Out-of-Band Swaps**](lib/Swap.Htmx/docs/OutOfBandSwaps.md)
+- [**Server-Sent Events**](lib/Swap.Htmx/docs/ServerSentEvents.md)
 
 
