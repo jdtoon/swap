@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SwapChat - Distributed SSE Demo</title>
+    <script src="/lib/htmx/dist/htmx.min.js"></script>
+    <script src="/lib/htmx-ext-sse/sse.js"></script>
+    <script src="/_content/Swap.Htmx/js/swap.js"></script>
+    <script src="/_content/Swap.Htmx/js/swap.sse.js"></script>
+    <style>
+        body { font-family: sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        .message { padding: 5px; border-bottom: 1px solid #eee; }
+        .system-message { color: #888; font-style: italic; padding: 5px; }
+        #chat-window { height: 300px; overflow-y: auto; border: 1px solid #ccc; padding: 10px; margin-bottom: 10px; }
+        input[type=text] { width: 70%; padding: 5px; }
+        button { padding: 5px 15px; }
+        .chat-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        #connection-status { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+        .status-connected { background-color: #2ecc71; box-shadow: 0 0 5px #2ecc71; }
+        .status-disconnected { background-color: #e74c3c; box-shadow: 0 0 5px #e74c3c; }
+        .status-connecting { background-color: #f1c40f; animation: pulse 1s infinite; }
+        @keyframes pulse { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
+    </style>
+</head>
+<body>
+    <h1>SwapChat</h1>
+    <p>Distributed SSE Demo using File-Based Backplane</p>
+    
+    <div id="app">
+        <form hx-get="/chat/join" hx-target="#app">
+            <input type="text" name="username" placeholder="Username" required />
+            <input type="text" name="room" placeholder="Room Name" value="general" required />
+            <button type="submit">Join Chat</button>
+        </form>
+    </div>
+</body>
+</html>
