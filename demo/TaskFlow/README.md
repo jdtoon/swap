@@ -14,6 +14,7 @@ TaskFlow is the **second demo application** for Swap.Htmx, specifically designed
 | **Warning Toasts** | ❌ Not used | ✅ Team overload, conflicts, deadlines | Core |
 | **All Swap Modes** | ⚠️ 3 of 8 | ✅ Delete, BeforeEnd, AfterEnd, InnerHTML | Core |
 | **Payload-Aware Event Chains** | ❌ Not available | ✅ Access event payload in factories | 0.5.0 |
+| **Minimal APIs** | ❌ Basic | ✅ Quick Note feature | 0.6.0 |
 | **OOB Instance Helpers** | ❌ Manual IDs | ✅ `WithId()`, dynamic element IDs | 0.5.0 |
 | **Deep Event Chains** | ⚠️ 2 levels | ✅ 4-5 level cascading triggers | Core |
 | **CSS Framework** | Pico CSS | Raw CSS (custom Kanban) | - |

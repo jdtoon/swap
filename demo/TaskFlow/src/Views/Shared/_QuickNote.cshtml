@@ -1,0 +1,9 @@
+<div id="quick-note-widget" class="quick-note">
+    <h6>Quick Note</h6>
+    <form hx-post="/api/quicknote" hx-swap="none">
+        <div class="input-group">
+            <input type="text" name="note" placeholder="Jot something down..." required />
+            <button type="submit">Save</button>
+        </div>
+    </form>
+</div>
