@@ -4,7 +4,7 @@
     <TargetFramework>net9.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <Version>0.9.1</Version>
+    <Version>0.10.0</Version>
     <Authors>JD Toon</Authors>
     <Company>Swap Framework</Company>
     <Description>HTMX helper library for ASP.NET Core MVC applications. Provides SwapController base class, middleware, event helpers, SSE support, and extension methods for seamless HTMX integration.</Description>
@@ -27,6 +27,15 @@
 
   <ItemGroup>
     <Content Update="wwwroot\**\*.*" Pack="true" PackagePath="staticwebassets\" />
+  </ItemGroup>
+
+  <!-- Pack the Source Generator into the NuGet package -->
+  <ItemGroup>
+    <ProjectReference Include="..\..\framework\Swap.Htmx.Generators\Swap.Htmx.Generators.csproj" 
+                      OutputItemType="Analyzer" 
+                      ReferenceOutputAssembly="false"
+                      Pack="true"
+                      PackagePath="analyzers/dotnet/cs" />
   </ItemGroup>
 
 </Project>

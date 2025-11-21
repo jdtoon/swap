@@ -19,7 +19,7 @@ It handles the "messy middle" of modern web apps—validation, partial updates, 
 
 - **Orchestrate, Don't Glue** – Decouple controller actions from view rendering using Event Chains.
 - **Stay Server‑Side** – Build rich, reactive apps using standard Razor views and HTMX.
-- **Type-Safe Events** – Coordinate partials, toasts, and triggers with a strongly-typed event system.
+- **Type-Safe Events** – Coordinate partials, toasts, and triggers with a strongly-typed event system and Source Generators.
 - **Minimal APIs** – First-class support for `IResult` endpoints with `SwapResults`.
 - **Razor Pages** – Native support for `PageModel` with `this.SwapResponse()`.
 - **Real-Time Ready** – Built-in Server-Sent Events (SSE) bridge with `ISseBackplane` support for web farms and `CanJoinRoom` security hooks.
