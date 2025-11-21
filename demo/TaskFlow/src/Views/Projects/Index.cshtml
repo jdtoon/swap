@@ -4,7 +4,6 @@
 @inject TaskFlow.Services.IProjectService ProjectService
 @{
     ViewData["Title"] = "Projects";
-    Layout = null;
 }
 
 <div class="projects-page" hx-ext="sse" sse-connect="/projects/stream">
