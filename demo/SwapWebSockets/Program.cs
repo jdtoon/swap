@@ -5,7 +5,10 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
-builder.Services.AddSwapHtmx()
+builder.Services.AddSwapHtmx(options => 
+{
+    options.AddConfig<SwapWebSockets.Events.ChatEventConfiguration>();
+})
     .AddSseEventBridge(); // Enables Realtime features (SSE + WebSockets)
 
 var app = builder.Build();

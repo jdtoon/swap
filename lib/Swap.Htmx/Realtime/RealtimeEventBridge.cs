@@ -178,9 +178,12 @@ internal sealed class RealtimeEventBridge : IRealtimeEventBridge, ISseEventBridg
             
             if (!configs.TryGetValue(fullEventName, out var config))
             {
-                // Try "realtime:broadcast:{eventName}" if needed in future, but for now stick to sse prefix for config
-                 _logger.LogDebug("No configuration found for event {EventName}", fullEventName);
-                return $"<div data-event=\"{eventName}\"></div>";
+                // Fallback: try the bare event name
+                if (!configs.TryGetValue(eventName, out config))
+                {
+                    _logger.LogDebug("No configuration found for event {EventName} or {FullEventName}", eventName, fullEventName);
+                    return $"<div data-event=\"{eventName}\"></div>";
+                }
             }
 
             // Create a scoped service provider for rendering
@@ -206,6 +209,24 @@ internal sealed class RealtimeEventBridge : IRealtimeEventBridge, ISseEventBridg
                     // Use the standalone view renderer
                     var partialHtml = await _viewRenderer.RenderPartialAsync(partial.ViewName, model);
                     
+                    if (!string.IsNullOrEmpty(partial.TargetId))
+                    {
+                        var swapMode = partial.SwapMode switch
+                        {
+                            SwapMode.OuterHTML => "outerHTML",
+                            SwapMode.InnerHTML => "innerHTML",
+                            SwapMode.BeforeBegin => "beforebegin",
+                            SwapMode.AfterBegin => "afterbegin",
+                            SwapMode.BeforeEnd => "beforeend",
+                            SwapMode.AfterEnd => "afterend",
+                            SwapMode.Delete => "delete",
+                            SwapMode.None => "none",
+                            _ => "outerHTML"
+                        };
+                        
+                        partialHtml = $"<div id=\"{partial.TargetId}\" hx-swap-oob=\"{swapMode}\">{partialHtml}</div>";
+                    }
+
                     htmlBuilder.AppendLine(partialHtml);
                 }
                 catch (Exception ex)

@@ -1,5 +1,5 @@
-@model dynamic
+@model SwapWebSockets.Models.ChatMessage
 
 <div class="message" style="padding: 0.5rem; border-bottom: 1px solid #eee;">
-    <strong>User:</strong> @Model.payload
+    <strong>User:</strong> @Model?.Payload
 </div>

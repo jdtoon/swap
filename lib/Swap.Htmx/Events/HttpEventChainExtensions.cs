@@ -276,6 +276,28 @@ public sealed class HttpEventChainBuilder
     }
 
     /// <summary>
+    /// Configures the event to be broadcasted to realtime clients (SSE/WebSocket).
+    /// </summary>
+    /// <param name="target">The target audience (e.g., "all", "room:name"). Defaults to "all".</param>
+    /// <returns>The builder for chaining.</returns>
+    public HttpEventChainBuilder Broadcast(string target = "all")
+    {
+        string broadcastKey;
+        if (target.StartsWith("room:", StringComparison.OrdinalIgnoreCase))
+        {
+            var roomName = target.Substring(5);
+            broadcastKey = $"sse:room:{roomName}:{_eventKey.Name}";
+        }
+        else 
+        {
+             broadcastKey = $"sse:broadcast:{_eventKey.Name}";
+        }
+
+        _options.Chain(_eventKey, new EventKey(broadcastKey));
+        return this;
+    }
+
+    /// <summary>
     /// Completes the chain configuration.
     /// </summary>
     /// <returns>The original options for further configuration.</returns>

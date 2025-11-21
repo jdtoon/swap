@@ -53,8 +53,13 @@ public class DefaultRealtimeInputHandler : IRealtimeInputHandler
                 {
                     var resolved = swapBus.ResolveChains(httpContextAccessor.HttpContext);
                     
+                    _logger.LogDebug("Resolved {Count} events from chain", resolved.Count);
+                    foreach(var k in resolved.Keys) _logger.LogDebug("Resolved event: {Key}", k);
+
                     var realtimeEvents = resolved.Where(kv => 
                         kv.Key.StartsWith("sse:") || kv.Key.StartsWith("realtime:")).ToList();
+
+                    _logger.LogDebug("Found {Count} realtime events to broadcast", realtimeEvents.Count);
 
                     foreach (var evt in realtimeEvents)
                     {
