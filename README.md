@@ -26,7 +26,17 @@ It handles the "messy middle" of modern web apps—validation, partial updates, 
 
 ## Quick Start
 
-**Install the package:**
+**The easiest way to get started is using the project templates:**
+
+```bash
+# Install the templates
+dotnet new install Swap.Templates
+
+# Create a new project
+dotnet new swap-mvc -n MyProject
+```
+
+**Or install the package manually:**
 ```bash
 dotnet add package Swap.Htmx
 ```
