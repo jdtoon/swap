@@ -1,0 +1,32 @@
+@model List<SwapExpenses.Models.Expense>
+
+<table>
+    <thead>
+        <tr>
+            <th>Description</th>
+            <th>Category</th>
+            <th>Date</th>
+            <th class="text-end">Amount</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var expense in Model)
+        {
+            <tr>
+                <td>@expense.Description</td>
+                <td><span class="badge">@expense.Category</span></td>
+                <td>@expense.Date.ToShortDateString()</td>
+                <td class="amount">@expense.Amount.ToString("C")</td>
+                <td class="actions">
+                    <button class="btn-icon" 
+                            hx-post="/Expense/Delete?id=@expense.Id"
+                            hx-swap="none"
+                            title="Delete">
+                        &times;
+                    </button>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
