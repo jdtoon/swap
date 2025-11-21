@@ -2,6 +2,7 @@ using Swap.Htmx;
 using Swap.Htmx.Events;
 using Swap.Htmx.Extensions;
 using Swap.Htmx.Realtime;
+using Swap.Htmx.Models;
 using TaskFlow.Services;
 using TaskFlow.Views;
 using TaskFlow.Models;
@@ -18,7 +19,7 @@ public class SseEventConfig : ISwapEventConfiguration
             {
                 var teamService = ctx.RequestServices.GetRequiredService<ITeamService>();
                 return teamService.GetStats();
-            });
+            }, SwapMode.InnerHTML);
 
         // Activity update SSE event - responds to activity changes
         config.When(SseEvents.Broadcast(DashboardSseEvents.ActivityUpdate))
@@ -26,7 +27,7 @@ public class SseEventConfig : ISwapEventConfiguration
             {
                 var activityService = ctx.RequestServices.GetRequiredService<IActivityService>();
                 return activityService.GetRecent(10);
-            });
+            }, SwapMode.InnerHTML);
 
         // Project list update SSE event - refreshes entire project grid
         config.When(SseEvents.Broadcast(ProjectSseEvents.ListUpdate))
@@ -34,7 +35,7 @@ public class SseEventConfig : ISwapEventConfiguration
             {
                 var projectService = ctx.RequestServices.GetRequiredService<IProjectService>();
                 return projectService.GetAll();
-            });
+            }, SwapMode.InnerHTML);
 
         // Project progress update SSE event - refreshes dashboard projects overview
         config.When(SseEvents.Broadcast(ProjectSseEvents.ProgressUpdate))
@@ -42,7 +43,7 @@ public class SseEventConfig : ISwapEventConfiguration
             {
                 var projectService = ctx.RequestServices.GetRequiredService<IProjectService>();
                 return projectService.GetAll();
-            });
+            }, SwapMode.InnerHTML);
 
         // Task column update SSE events - separate event for each column
         config.When(SseEvents.Broadcast(TaskSseEvents.TodoColumnUpdate))
@@ -50,28 +51,28 @@ public class SseEventConfig : ISwapEventConfiguration
             {
                 var taskService = ctx.RequestServices.GetRequiredService<ITaskService>();
                 return taskService.GetByStatus(Models.TaskStatus.Todo);
-            });
+            }, SwapMode.InnerHTML);
 
         config.When(SseEvents.Broadcast(TaskSseEvents.InProgressColumnUpdate))
             .RefreshPartial(TaskElements.Column(Models.TaskStatus.InProgress), "~/Views/Tasks/TaskColumn.cshtml", ctx =>
             {
                 var taskService = ctx.RequestServices.GetRequiredService<ITaskService>();
                 return taskService.GetByStatus(Models.TaskStatus.InProgress);
-            });
+            }, SwapMode.InnerHTML);
 
         config.When(SseEvents.Broadcast(TaskSseEvents.ReviewColumnUpdate))
             .RefreshPartial(TaskElements.Column(Models.TaskStatus.Review), "~/Views/Tasks/TaskColumn.cshtml", ctx =>
             {
                 var taskService = ctx.RequestServices.GetRequiredService<ITaskService>();
                 return taskService.GetByStatus(Models.TaskStatus.Review);
-            });
+            }, SwapMode.InnerHTML);
 
         config.When(SseEvents.Broadcast(TaskSseEvents.DoneColumnUpdate))
             .RefreshPartial(TaskElements.Column(Models.TaskStatus.Done), "~/Views/Tasks/TaskColumn.cshtml", ctx =>
             {
                 var taskService = ctx.RequestServices.GetRequiredService<ITaskService>();
                 return taskService.GetByStatus(Models.TaskStatus.Done);
-            });
+            }, SwapMode.InnerHTML);
 
         // Chain domain events to SSE broadcasts
         config.OnEvent(TaskEvents.Created)
