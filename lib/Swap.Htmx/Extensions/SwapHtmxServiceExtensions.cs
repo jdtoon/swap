@@ -87,8 +87,19 @@ public static class SwapHtmxServiceExtensions
     public static IServiceCollection AddSseEventBridge(this IServiceCollection services)
     {
         services.TryAddSingleton<ISseBackplane, InMemorySseBackplane>();
-        services.AddSingleton<ISseConnectionRegistry, SseConnectionRegistry>();
-        services.AddScoped<ISseEventBridge, SseEventBridge>();
+        
+        // Register Registry (implements both ISseConnectionRegistry and IRealtimeConnectionRegistry)
+        services.AddSingleton<SseConnectionRegistry>();
+        services.AddSingleton<ISseConnectionRegistry>(sp => sp.GetRequiredService<SseConnectionRegistry>());
+        services.AddSingleton<IRealtimeConnectionRegistry>(sp => sp.GetRequiredService<SseConnectionRegistry>());
+
+        // Register Bridge (implements both ISseEventBridge and IRealtimeEventBridge)
+        services.AddScoped<RealtimeEventBridge>();
+        services.AddScoped<ISseEventBridge>(sp => sp.GetRequiredService<RealtimeEventBridge>());
+        services.AddScoped<IRealtimeEventBridge>(sp => sp.GetRequiredService<RealtimeEventBridge>());
+
+        services.AddScoped<IRealtimeInputHandler, DefaultRealtimeInputHandler>();
+
         services.AddScoped<ISseViewRenderer, SseViewRenderer>();
         services.AddHttpContextAccessor(); // Required for view rendering
         return services;
@@ -208,6 +219,6 @@ public static class SwapHtmxServiceExtensions
     /// </example>
     public static IApplicationBuilder UseSseEventBridge(this IApplicationBuilder app)
     {
-        return app.UseMiddleware<SseEventMiddleware>();
+        return app.UseMiddleware<RealtimeEventMiddleware>();
     }
 }

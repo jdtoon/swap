@@ -42,6 +42,17 @@ public static class SwapResults
     {
         return new SwapSseResult(registry, configure);
     }
+
+    /// <summary>
+    /// Creates a WebSocket connection result.
+    /// </summary>
+    /// <param name="registry">The realtime connection registry.</param>
+    /// <param name="configure">Optional configuration for the WebSocket connection.</param>
+    /// <returns>An IResult that establishes a WebSocket connection.</returns>
+    public static IResult WebSocket(IRealtimeConnectionRegistry registry, Action<SwapWebSocketOptions>? configure = null)
+    {
+        return new SwapWebSocketResult(registry, configure);
+    }
 }
 
 /// <summary>
