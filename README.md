@@ -242,6 +242,12 @@ Demonstrates native Razor Pages support:
 - `PageModel` extensions (`this.SwapResponse()`)
 - `OnGet`/`OnPost` handler integration
 
+### 6. [SwapWebSockets](demo/SwapWebSockets) (WebSockets)
+**New!** Demonstrates full WebSocket integration:
+- Bi-directional communication
+- Triggering Swap Events from client messages
+- Real-time HTML broadcasting
+
 ## Documentation
 
 - [**Getting Started**](lib/Swap.Htmx/docs/GettingStarted.md)
