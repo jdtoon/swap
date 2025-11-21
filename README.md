@@ -23,7 +23,7 @@ It handles the "messy middle" of modern web apps—validation, partial updates, 
 - **Type-Safe Events** – Coordinate partials, toasts, and triggers with a strongly-typed event system and Source Generators.
 - **Minimal APIs** – First-class support for `IResult` endpoints with `SwapResults`.
 - **Razor Pages** – Native support for `PageModel` with `this.SwapResponse()`.
-- **Real-Time Ready** – Built-in Server-Sent Events (SSE) bridge with `ISseBackplane` support for web farms and `CanJoinRoom` security hooks.
+- **Real-Time Ready** – Built-in Server-Sent Events (SSE) and WebSocket bridge with `ISseBackplane` support for web farms and `CanJoinRoom` security hooks.
 
 ## Quick Start
 
@@ -247,8 +247,13 @@ Demonstrates native Razor Pages support:
 - [**Getting Started**](lib/Swap.Htmx/docs/GettingStarted.md)
 - [**Events & Triggers**](lib/Swap.Htmx/docs/Events.md)
 - [**Event Chains**](lib/Swap.Htmx/docs/EventChains.md)
-- [**Out-of-Band Swaps**](lib/Swap.Htmx/docs/OutOfBandSwaps.md)
+- [**Realtime (WebSockets & SSE)**](lib/Swap.Htmx/docs/WebSockets.md)
 - [**Server-Sent Events**](lib/Swap.Htmx/docs/ServerSentEvents.md)
+- [**Out-of-Band Swaps**](lib/Swap.Htmx/docs/OutOfBandSwaps.md)
+- [**Minimal APIs**](lib/Swap.Htmx/docs/MinimalApis.md)
+- [**Razor Pages**](lib/Swap.Htmx/docs/RazorPages.md)
+- [**Source Generators**](lib/Swap.Htmx/docs/SourceGenerators.md)
 - [**User Context & Identity**](lib/Swap.Htmx/docs/UserContext.md)
+- [**Debugging & Logging**](lib/Swap.Htmx/docs/DebuggingAndLogging.md)
 
 
