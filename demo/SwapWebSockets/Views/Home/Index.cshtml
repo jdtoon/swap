@@ -1,0 +1,34 @@
+@{
+    ViewData["Title"] = "WebSocket Demo";
+}
+
+<div class="container" hx-ext="ws" ws-connect="/swap/ws">
+    <div class="hero">
+        <h1>WebSocket Demo</h1>
+        <p class="text-muted">Realtime bi-directional communication with Swap.Htmx</p>
+    </div>
+
+    <div class="grid">
+        <div class="card">
+            <h3>Chat Room</h3>
+            <div id="chat-messages" style="height: 300px; overflow-y: auto; border: 1px solid #eee; padding: 1rem; margin-bottom: 1rem;">
+                <div class="text-muted">Connected to WebSocket...</div>
+            </div>
+
+            <form ws-send>
+                <div style="display: flex; gap: 0.5rem;">
+                    <input type="hidden" name="event" value="chat.message" />
+                    <input type="text" name="payload" placeholder="Type a message..." style="flex: 1; padding: 0.5rem;" required />
+                    <button type="submit" class="btn">Send</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="card">
+            <h3>Server Status</h3>
+            <div id="server-time" hx-swap-oob="true">
+                Waiting for server time...
+            </div>
+        </div>
+    </div>
+</div>

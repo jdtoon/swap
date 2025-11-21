@@ -7,7 +7,7 @@ namespace Swap.Htmx.Realtime;
 /// <summary>
 /// Represents an active SSE connection with user context and room subscriptions.
 /// </summary>
-public sealed class SseConnection : IAsyncDisposable
+public sealed class SseConnection : IRealtimeConnection
 {
     private readonly ServerSentEventStream _stream;
     private readonly CancellationTokenSource _cts;

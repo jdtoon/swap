@@ -17,12 +17,18 @@ public class SwapEventService : ISwapEventService
     private readonly IEventChainExecutor _executor;
     private readonly ILogger<SwapEventService> _logger;
     private readonly IHttpContextAccessor _httpContextAccessor;
+    private readonly ISwapEventBus _eventBus;
 
-    public SwapEventService(IEventChainExecutor executor, ILogger<SwapEventService> logger, IHttpContextAccessor httpContextAccessor)
+    public SwapEventService(
+        IEventChainExecutor executor, 
+        ILogger<SwapEventService> logger, 
+        IHttpContextAccessor httpContextAccessor,
+        ISwapEventBus eventBus)
     {
         _executor = executor;
         _logger = logger;
         _httpContextAccessor = httpContextAccessor;
+        _eventBus = eventBus;
     }
 
     public SwapResponseBuilder Response()
@@ -55,6 +61,9 @@ public class SwapEventService : ISwapEventService
         
         _logger.EventTriggered(eventKey.Name, payload?.GetType().Name ?? "null");
         
+        // Ensure the event is recorded on the bus so ResolveChains can find it and its downstream events
+        _eventBus.Emit(eventKey, payload);
+        
         var result = _executor.Execute(eventKey, httpContext, null, payload);
         
         if (result != null)
@@ -82,6 +91,9 @@ public class SwapEventService : ISwapEventService
         var httpContext = controller.HttpContext;
         
         _logger.EventTriggered(eventKey.Name, payload?.GetType().Name ?? "null");
+        
+        // Ensure the event is recorded on the bus so ResolveChains can find it and its downstream events
+        _eventBus.Emit(eventKey, payload);
         
         var result = _executor.Execute(eventKey, httpContext, controller, payload);
         

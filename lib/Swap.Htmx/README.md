@@ -12,7 +12,7 @@
 - **Type-safe API** - No magic strings for swap modes or event names
 - **Source Generators** - Automatically generate strongly-typed event keys from your constants
 - **SwapController base class** - Automatically handles HTMX requests vs full page loads
-- **Real-time updates with SSE** - Built-in Server-Sent Events support with automatic connection management, room-based broadcasting, and `ISseBackplane` for distributed scaling
+- **Real-time updates** - Built-in WebSockets and Server-Sent Events (SSE) support with automatic connection management, room-based broadcasting, and `ISseBackplane` for distributed scaling
 - **Observability** - Full OpenTelemetry support (Tracing & Metrics) and structured logging
 - **Event system** - Build `HX-Trigger` headers declaratively and chain complex UI updates
 
@@ -578,10 +578,15 @@ For complete working examples, see the `Swap.Htmx.TestApp` project in this repos
 ## Documentation
 
 - **[Getting Started Guide](docs/GettingStarted.md)** - Step-by-step tutorial for building your first HTMX app
-- **[Out-of-Band Swaps Guide](docs/OutOfBandSwaps.md)** - Complete guide to multi-part page updates
-- **[Server-Sent Events Guide](docs/ServerSentEvents.md)** - Complete guide to real-time updates with SSE
 - **[Type-Safe Events Guide](docs/Events.md)** - Learn how to define and use strongly-typed event keys to eliminate magic strings
 - **[Event Chains Guide](docs/EventChains.md)** - Configure automatic UI updates when events are triggered
+- **[Realtime (WebSockets & SSE)](docs/WebSockets.md)** - Detailed guide on realtime features
+- **[Server-Sent Events Guide](docs/ServerSentEvents.md)** - Complete guide to real-time updates with SSE
+- **[Out-of-Band Swaps Guide](docs/OutOfBandSwaps.md)** - Complete guide to multi-part page updates
+- **[Minimal APIs Guide](docs/MinimalApis.md)** - Using Swap with Minimal APIs
+- **[Razor Pages Guide](docs/RazorPages.md)** - Using Swap with Razor Pages
+- **[Source Generators Guide](docs/SourceGenerators.md)** - Automatically generate type-safe event keys
+- **[User Context & Identity](docs/UserContext.md)** - Abstracted user ID resolution
 - **[Debugging & Observability](docs/DebuggingAndLogging.md)** - Configure OpenTelemetry tracing, metrics, and structured logging for production monitoring
 
 ## License

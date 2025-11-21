@@ -166,7 +166,7 @@ public class SwapEventChainResolutionTests
     }
 
     [Fact]
-    public void ResolveChains_ChainedEvent_HasNullPayload()
+    public void ResolveChains_ChainedEvent_InheritsPayload()
     {
         // Arrange
         var context = CreateContext();
@@ -182,7 +182,8 @@ public class SwapEventChainResolutionTests
         // Assert
         Assert.Equal(2, resolved.Count);
         Assert.NotNull(resolved["domain.created"]); // Has payload
-        Assert.Null(resolved["ui.refresh"]); // Chained event has null payload
+        Assert.NotNull(resolved["ui.refresh"]); // Chained event inherits payload
+        Assert.Equal(resolved["domain.created"], resolved["ui.refresh"]);
     }
 
     [Fact]

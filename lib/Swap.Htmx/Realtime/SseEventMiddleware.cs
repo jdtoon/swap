@@ -11,6 +11,7 @@ namespace Swap.Htmx.Realtime;
 /// This enables automatic event-driven SSE broadcasting from the same
 /// event chains that feed <c>HX-Trigger</c>.
 /// </summary>
+[Obsolete("Use RealtimeEventMiddleware instead.")]
 public sealed class SseEventMiddleware
 {
     private readonly RequestDelegate _next;

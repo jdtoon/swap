@@ -73,15 +73,15 @@ public record SseConnectionStats(
 /// <summary>
 /// Default implementation of SSE connection registry.
 /// </summary>
-internal sealed class SseConnectionRegistry : ISseConnectionRegistry
+internal sealed class SseConnectionRegistry : ISseConnectionRegistry, IRealtimeConnectionRegistry
 {
-    private readonly ConcurrentDictionary<string, SseConnection> _connections;
+    private readonly ConcurrentDictionary<string, IRealtimeConnection> _connections;
     private readonly ISseBackplane _backplane;
     private readonly ILogger<SseConnectionRegistry> _logger;
 
     public SseConnectionRegistry(ISseBackplane backplane, ILogger<SseConnectionRegistry> logger)
     {
-        _connections = new ConcurrentDictionary<string, SseConnection>();
+        _connections = new ConcurrentDictionary<string, IRealtimeConnection>();
         _backplane = backplane;
         _logger = logger;
 
@@ -121,6 +121,11 @@ internal sealed class SseConnectionRegistry : ISseConnectionRegistry
     }
 
     public void RegisterConnection(SseConnection connection)
+    {
+        RegisterConnection((IRealtimeConnection)connection);
+    }
+
+    public void RegisterConnection(IRealtimeConnection connection)
     {
         _connections.TryAdd(connection.Id, connection);
         SwapTelemetry.SseConnections.Add(1);
@@ -222,6 +227,7 @@ internal sealed class SseConnectionRegistry : ISseConnectionRegistry
     public async Task BroadcastToFilteredAsync(string eventName, string html, Func<SseConnection, bool> filter, CancellationToken cancellationToken = default)
     {
         var targetConnections = GetActiveConnections()
+            .OfType<SseConnection>()
             .Where(filter)
             .ToList();
 
@@ -234,6 +240,26 @@ internal sealed class SseConnectionRegistry : ISseConnectionRegistry
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "Error during SSE filtered broadcast for event {EventName}", eventName);
+        }
+
+        CleanupInactiveConnections();
+    }
+
+    public async Task BroadcastToFilteredAsync(string eventName, string data, Func<IRealtimeConnection, bool> filter, CancellationToken cancellationToken = default)
+    {
+        var targetConnections = GetActiveConnections()
+            .Where(filter)
+            .ToList();
+
+        var tasks = targetConnections.Select(conn => conn.SendEventAsync(eventName, data));
+
+        try
+        {
+            await Task.WhenAll(tasks);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Error during realtime filtered broadcast for event {EventName}", eventName);
         }
 
         CleanupInactiveConnections();
@@ -331,7 +357,18 @@ internal sealed class SseConnectionRegistry : ISseConnectionRegistry
         );
     }
 
-    private List<SseConnection> GetActiveConnections()
+    RealtimeConnectionStats IRealtimeConnectionRegistry.GetStats()
+    {
+        var stats = GetStats();
+        return new RealtimeConnectionStats(
+            stats.TotalConnections,
+            stats.ActiveConnections,
+            stats.ConnectionsByRoom,
+            stats.SubscriptionsByEvent
+        );
+    }
+
+    private List<IRealtimeConnection> GetActiveConnections()
     {
         return _connections.Values.Where(conn => conn.IsActive).ToList();
     }

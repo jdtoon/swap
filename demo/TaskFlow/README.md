@@ -619,6 +619,7 @@ config.When(SseEvents.Broadcast(DashboardSseEvents.StatsUpdate))
 
 - **[SwapShop Demo](../SwapShop/README.md)** - First demo covering e-commerce basics
 - **[Swap.Htmx Library](../../lib/Swap.Htmx/README.md)** - Main library documentation
+- **[Realtime & WebSockets Guide](../../lib/Swap.Htmx/docs/WebSockets.md)** - Detailed guide on realtime features
 - **[Coverage Analysis](../COVERAGE_ANALYSIS.md)** - Detailed feature coverage comparison
 - **[HTMX Documentation](https://htmx.org)** - Official HTMX docs
 - **[SSE Extension](https://github.com/bigskysoftware/htmx-extensions/tree/main/src/sse)** - HTMX SSE extension docs

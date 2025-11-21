@@ -172,7 +172,7 @@ public class SwapEventSystemTests
     }
 
     [Fact]
-    public async Task Chained_Payload_Is_Null()
+    public async Task Chained_Payload_Is_Propagated()
     {
         var context = CreateContext();
         var accessor = new HttpContextAccessor { HttpContext = context };
@@ -187,7 +187,8 @@ public class SwapEventSystemTests
         Assert.True(dict.TryGetValue("a", out var payload));
         Assert.True(payload.TryGetProperty("id", out _));
         Assert.True(dict.ContainsKey("b"));
-        Assert.Equal(JsonValueKind.Null, dict["b"].ValueKind);
+        Assert.Equal(JsonValueKind.Object, dict["b"].ValueKind);
+        Assert.True(dict["b"].TryGetProperty("id", out _));
     }
 
     [Fact]

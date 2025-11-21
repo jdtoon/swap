@@ -11,7 +11,7 @@ Swap.Htmx is a lightweight library that makes building HTMX applications with AS
 - **Razor Pages Support** - Native integration with `PageModel`
 - **Fluent response builder** - Build complex multi-part responses with a clean API
 - **Event system** - Configure declarative UI updates that happen when events are triggered
-- **SSE support** - Built-in real-time updates with Server-Sent Events
+- **Realtime support** - Built-in real-time updates with WebSockets and Server-Sent Events
 - **Type-safe APIs** - No magic strings for swap modes or event names
 
 ## Prerequisites
@@ -512,4 +512,4 @@ Now that you have the basics, explore:
 - [Minimal APIs Guide](MinimalApis.md) - Using Swap with Minimal APIs
 - [Razor Pages Guide](RazorPages.md) - Using Swap with Razor Pages
 - [Event Chains](EventChains.md) - Learn about the event system
-- [Server-Sent Events](ServerSentEvents.md) - Real-time updates
+- [WebSockets & Realtime](WebSockets.md) - Real-time updates with WebSockets and SSE
