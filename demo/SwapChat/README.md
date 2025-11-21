@@ -48,6 +48,10 @@ dotnet run --urls "http://localhost:5002"
 3. **Admin Broadcast:**
    - Login as `AdminUser` (Role: Admin).
    - Use the "Admin Broadcast" form (only visible to admins).
+
+## Documentation
+
+For more details on the realtime capabilities used in this demo, see the [Realtime & WebSockets Guide](../../lib/Swap.Htmx/docs/WebSockets.md).
    - **Observe:** The message is sent to ALL users on ALL servers.
 
 This proves that `Swap.Htmx` is now architected for secure, distributed systems.

@@ -22,3 +22,5 @@ This demo showcases the WebSocket integration in Swap.Htmx.
 2. **Sending**: The form sends a JSON message `{ "event": "chat.message", "payload": "..." }` via `ws-send`.
 3. **Processing**: The server receives the message, triggers the `chat.message` event.
 4. **Broadcasting**: The `ChatEventConfiguration` resolves the event to render `_ChatMessage.cshtml` and broadcasts it back to all clients.
+
+For more details, see the [Realtime Documentation](../../lib/Swap.Htmx/docs/WebSockets.md).

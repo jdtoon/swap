@@ -347,4 +347,5 @@ public class ProductsController : SwapController
 ## See Also
 
 - [Type-Safe Events Guide](Events.md) - Learn how to define strongly-typed events
+- [WebSockets & Realtime](WebSockets.md) - Learn how to broadcast events to connected clients
 - [Main README](../README.md) - Overview of all Swap.Htmx features

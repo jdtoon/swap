@@ -27,7 +27,7 @@ All logs use the category `Swap.Htmx.*` (e.g., `Swap.Htmx.Services.SwapEventServ
 ### What Gets Logged
 
 - **Events**: Triggering and processing of Swap events.
-- **SSE**: Connection lifecycle, broadcasts, and rendering.
+- **Realtime**: Connection lifecycle (SSE & WebSockets), broadcasts, and rendering.
 - **Results**: Execution of Swap results, toasts, and triggers.
 
 ## Distributed Tracing (OpenTelemetry)

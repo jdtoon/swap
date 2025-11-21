@@ -2,6 +2,8 @@
 
 Server-Sent Events provide real-time, server-to-client updates over HTTP. Swap.Htmx makes SSE simple with automatic connection management, event routing, and seamless HTMX integration.
 
+> **Note:** For bi-directional communication or WebSocket support, see the [WebSockets & Realtime Guide](WebSockets.md).
+
 ## Table of Contents
 
 - [Quick Start](#quick-start)
