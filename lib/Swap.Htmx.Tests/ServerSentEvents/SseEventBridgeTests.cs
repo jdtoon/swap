@@ -14,7 +14,7 @@ public class SseEventBridgeTests
     public async Task HandleSseEventAsync_BroadcastsEvent()
     {
         // Arrange
-        var mockRegistry = new Mock<ISseConnectionRegistry>();
+        var mockRegistry = new Mock<IRealtimeConnectionRegistry>();
         var mockViewRenderer = new Mock<ISseViewRenderer>();
         
         var services = new ServiceCollection();
@@ -22,9 +22,9 @@ public class SseEventBridgeTests
         var serviceProvider = services.BuildServiceProvider();
 
         var options = new SwapEventBusOptions();
-        var logger = new Mock<ILogger<SseEventBridge>>().Object;
+        var logger = new Mock<ILogger<RealtimeEventBridge>>().Object;
 
-        var bridge = new SseEventBridge(
+        var bridge = new RealtimeEventBridge(
             mockRegistry.Object,
             serviceProvider,
             options,
@@ -46,7 +46,7 @@ public class SseEventBridgeTests
     public async Task HandleSseEventAsync_RendersConfiguredPartials()
     {
         // Arrange
-        var mockRegistry = new Mock<ISseConnectionRegistry>();
+        var mockRegistry = new Mock<IRealtimeConnectionRegistry>();
         var mockViewRenderer = new Mock<ISseViewRenderer>();
         mockViewRenderer.Setup(r => r.RenderPartialAsync(It.IsAny<string>(), It.IsAny<object>()))
             .ReturnsAsync("<div>Rendered Content</div>");
@@ -59,9 +59,9 @@ public class SseEventBridgeTests
         options.When(SseEvents.Broadcast("stats-update"))
             .RefreshPartial("dashboard-stats", "~/Views/Dashboard/Stats.cshtml", _ => new { Total = 42 });
 
-        var logger = new Mock<ILogger<SseEventBridge>>().Object;
+        var logger = new Mock<ILogger<RealtimeEventBridge>>().Object;
 
-        var bridge = new SseEventBridge(
+        var bridge = new RealtimeEventBridge(
             mockRegistry.Object,
             serviceProvider,
             options,
@@ -88,7 +88,7 @@ public class SseEventBridgeTests
     public async Task HandleSseEventAsync_BroadcastsToSpecificRooms()
     {
         // Arrange
-        var mockRegistry = new Mock<ISseConnectionRegistry>();
+        var mockRegistry = new Mock<IRealtimeConnectionRegistry>();
         var mockViewRenderer = new Mock<ISseViewRenderer>();
         mockViewRenderer.Setup(r => r.RenderPartialAsync(It.IsAny<string>(), It.IsAny<object>()))
             .ReturnsAsync("<div>Room Content</div>");
@@ -101,9 +101,9 @@ public class SseEventBridgeTests
         options.When(SseEvents.Rooms("team-alpha").Send("team-update"))
             .RefreshPartial("team-info", "~/Views/Teams/Info.cshtml", _ => new { Team = "alpha" });
 
-        var logger = new Mock<ILogger<SseEventBridge>>().Object;
+        var logger = new Mock<ILogger<RealtimeEventBridge>>().Object;
 
-        var bridge = new SseEventBridge(
+        var bridge = new RealtimeEventBridge(
             mockRegistry.Object,
             serviceProvider,
             options,
@@ -126,7 +126,7 @@ public class SseEventBridgeTests
     public async Task HandleSseEventAsync_BroadcastsToSpecificUser()
     {
         // Arrange
-        var mockRegistry = new Mock<ISseConnectionRegistry>();
+        var mockRegistry = new Mock<IRealtimeConnectionRegistry>();
         var mockViewRenderer = new Mock<ISseViewRenderer>();
         mockViewRenderer.Setup(r => r.RenderPartialAsync(It.IsAny<string>(), It.IsAny<object>()))
             .ReturnsAsync("<div>User Content</div>");
@@ -139,9 +139,9 @@ public class SseEventBridgeTests
         options.When(SseEvents.User("notification", "user123"))
             .RefreshPartial("notification-badge", "~/Views/Notifications/Badge.cshtml", _ => new { Count = 5 });
 
-        var logger = new Mock<ILogger<SseEventBridge>>().Object;
+        var logger = new Mock<ILogger<RealtimeEventBridge>>().Object;
 
-        var bridge = new SseEventBridge(
+        var bridge = new RealtimeEventBridge(
             mockRegistry.Object,
             serviceProvider,
             options,
@@ -164,7 +164,7 @@ public class SseEventBridgeTests
     public async Task HandleSseEventAsync_HandlesMultiplePartials()
     {
         // Arrange
-        var mockRegistry = new Mock<ISseConnectionRegistry>();
+        var mockRegistry = new Mock<IRealtimeConnectionRegistry>();
         var mockViewRenderer = new Mock<ISseViewRenderer>();
         mockViewRenderer.Setup(r => r.RenderPartialAsync(It.IsAny<string>(), It.IsAny<object>()))
             .ReturnsAsync((string view, object model) => $"<div>{view}</div>");
@@ -178,9 +178,9 @@ public class SseEventBridgeTests
             .RefreshPartial("stats", "~/Views/Dashboard/Stats.cshtml", _ => new { })
             .RefreshPartial("activity", "~/Views/Dashboard/Activity.cshtml", _ => new { });
 
-        var logger = new Mock<ILogger<SseEventBridge>>().Object;
+        var logger = new Mock<ILogger<RealtimeEventBridge>>().Object;
 
-        var bridge = new SseEventBridge(
+        var bridge = new RealtimeEventBridge(
             mockRegistry.Object,
             serviceProvider,
             options,
@@ -201,7 +201,7 @@ public class SseEventBridgeTests
     public async Task HandleSseEventAsync_UsesPayloadInModel()
     {
         // Arrange
-        var mockRegistry = new Mock<ISseConnectionRegistry>();
+        var mockRegistry = new Mock<IRealtimeConnectionRegistry>();
         var mockViewRenderer = new Mock<ISseViewRenderer>();
         
         object? capturedModel = null;
@@ -221,9 +221,9 @@ public class SseEventBridgeTests
                 return new { TaskId = taskPayload?.TaskId ?? "default" };
             });
 
-        var logger = new Mock<ILogger<SseEventBridge>>().Object;
+        var logger = new Mock<ILogger<RealtimeEventBridge>>().Object;
 
-        var bridge = new SseEventBridge(
+        var bridge = new RealtimeEventBridge(
             mockRegistry.Object,
             serviceProvider,
             options,
@@ -245,7 +245,7 @@ public class SseEventBridgeTests
     public async Task HandleSseEventAsync_BroadcastsToSpecificRole()
     {
         // Arrange
-        var mockRegistry = new Mock<ISseConnectionRegistry>();
+        var mockRegistry = new Mock<IRealtimeConnectionRegistry>();
         var mockViewRenderer = new Mock<ISseViewRenderer>();
         mockViewRenderer.Setup(r => r.RenderPartialAsync(It.IsAny<string>(), It.IsAny<object>()))
             .ReturnsAsync("<div>Admin Content</div>");
@@ -258,9 +258,9 @@ public class SseEventBridgeTests
         options.When(SseEvents.Roles("system-alert", "Admin"))
             .RefreshPartial("alert-box", "~/Views/Shared/Alert.cshtml", _ => new { Message = "Alert" });
 
-        var logger = new Mock<ILogger<SseEventBridge>>().Object;
+        var logger = new Mock<ILogger<RealtimeEventBridge>>().Object;
 
-        var bridge = new SseEventBridge(
+        var bridge = new RealtimeEventBridge(
             mockRegistry.Object,
             serviceProvider,
             options,

@@ -15,6 +15,7 @@ public class SwapEventServiceTests
     private readonly Mock<IEventChainExecutor> _executorMock;
     private readonly Mock<ILogger<SwapEventService>> _loggerMock;
     private readonly Mock<IHttpContextAccessor> _httpContextAccessorMock;
+    private readonly Mock<ISwapEventBus> _eventBusMock;
     private readonly SwapEventService _service;
 
     public SwapEventServiceTests()
@@ -22,7 +23,8 @@ public class SwapEventServiceTests
         _executorMock = new Mock<IEventChainExecutor>();
         _loggerMock = new Mock<ILogger<SwapEventService>>();
         _httpContextAccessorMock = new Mock<IHttpContextAccessor>();
-        _service = new SwapEventService(_executorMock.Object, _loggerMock.Object, _httpContextAccessorMock.Object);
+        _eventBusMock = new Mock<ISwapEventBus>();
+        _service = new SwapEventService(_executorMock.Object, _loggerMock.Object, _httpContextAccessorMock.Object, _eventBusMock.Object);
     }
 
     [Fact]
