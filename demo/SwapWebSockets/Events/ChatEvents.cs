@@ -21,14 +21,12 @@ public class ChatEventConfiguration : ISwapEventConfiguration
             {
                 if (payload is JsonElement json)
                 {
-                    Console.WriteLine($"[ChatEvents] Payload Kind: {json.ValueKind}, Raw: {json}");
                     if (json.ValueKind == JsonValueKind.String)
                     {
                         return new ChatMessage { Payload = json.GetString() ?? "" };
                     }
                     return json.Deserialize<ChatMessage>(new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
                 }
-                Console.WriteLine($"[ChatEvents] Payload is not JsonElement: {payload?.GetType().Name ?? "null"}");
                 return payload;
             }, swapMode: SwapMode.BeforeEnd);
     }

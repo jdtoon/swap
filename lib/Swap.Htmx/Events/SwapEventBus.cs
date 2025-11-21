@@ -207,7 +207,7 @@ public class SwapEventBus : ISwapEventBus
                 {
                     if (!resolved.ContainsKey(c))
                     {
-                        resolved[c] = null; // chained events default to null payload
+                        resolved[c] = p.Payload; // Propagate payload to chained events
                     }
                 }
             }

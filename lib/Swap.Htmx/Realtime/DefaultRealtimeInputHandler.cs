@@ -38,7 +38,7 @@ public class DefaultRealtimeInputHandler : IRealtimeInputHandler
                     payload = payloadProp.Clone(); 
                 }
 
-                _logger.LogDebug("Received realtime event: {EventName}. Raw message: {Message}", eventName, message);
+                _logger.LogDebug("Received realtime event: {EventName}", eventName);
 
                 var eventService = _serviceProvider.GetRequiredService<ISwapEventService>();
                 var bus = _serviceProvider.GetRequiredService<ISwapEventBus>();
