@@ -40,6 +40,7 @@ jobs:
       run: |
         dotnet pack lib/Swap.Htmx/Swap.Htmx.csproj --configuration Release --output ./.nuget/local
         dotnet pack lib/Swap.Testing/Swap.Testing.csproj --configuration Release --output ./.nuget/local
+        dotnet pack templates/Swap.Templates.csproj --configuration Release --output ./.nuget/local
       env:
         DOTNET_NUGET_SIGNATURE_VERIFICATION: false
     

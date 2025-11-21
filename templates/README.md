@@ -1,5 +1,7 @@
 # Swap.Htmx Templates
 
+[![NuGet](https://img.shields.io/nuget/v/Swap.Templates.svg)](https://www.nuget.org/packages/Swap.Templates)
+
 This package contains project templates for building [Swap.Htmx](https://github.com/jdtoon/swap) applications.
 
 ## Installation

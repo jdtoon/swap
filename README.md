@@ -1,6 +1,7 @@
 # Swap
 
 [![NuGet - Swap.Htmx](https://img.shields.io/nuget/v/Swap.Htmx.svg?label=Swap.Htmx)](https://www.nuget.org/packages/Swap.Htmx)
+[![NuGet - Swap.Templates](https://img.shields.io/nuget/v/Swap.Templates.svg?label=Swap.Templates)](https://www.nuget.org/packages/Swap.Templates)
 [![NuGet - Swap.Testing](https://img.shields.io/nuget/v/Swap.Testing.svg?label=Swap.Testing)](https://www.nuget.org/packages/Swap.Testing)
 [![CI](https://github.com/jdtoon/swap/actions/workflows/ci-build.yml/badge.svg)](https://github.com/jdtoon/swap/actions/workflows/ci-build.yml)
 

@@ -6,17 +6,23 @@
     <PackageId>Swap.Templates</PackageId>
     <Title>Swap.Htmx Templates</Title>
     <Authors>jdtoon</Authors>
-    <Description>Templates for building Swap.Htmx applications.</Description>
-    <PackageTags>dotnet-new;templates;htmx;aspnetcore</PackageTags>
+    <Company>Swap</Company>
+    <Description>Project templates for Swap.Htmx - The Reactive UI Orchestration library for ASP.NET Core. Includes clean MVC templates with pre-configured HTMX, LibMan, and Source Generators.</Description>
+    <PackageTags>dotnet-new;templates;htmx;aspnetcore;mvc;swap</PackageTags>
     <TargetFramework>netstandard2.0</TargetFramework>
     <IncludeContentInPack>true</IncludeContentInPack>
     <IncludeBuildOutput>false</IncludeBuildOutput>
     <ContentTargetFolders>content</ContentTargetFolders>
     <NoWarn>$(NoWarn);NU5128</NoWarn>
     <NoDefaultExcludes>true</NoDefaultExcludes>
+    <PackageProjectUrl>https://github.com/jdtoon/swap</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/jdtoon/swap</RepositoryUrl>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
 
   <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="" />
     <Content Include="content\**\*" Exclude="content\**\bin\**;content\**\obj\**" />
     <Compile Remove="**\*" />
   </ItemGroup>
