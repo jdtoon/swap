@@ -30,17 +30,17 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Swap.Htmx.Generators\Swap.Htmx.Generators.csproj"
+    <ProjectReference Include="..\..\framework\Swap.Htmx.Generators\Swap.Htmx.Generators.csproj"
                       OutputItemType="Analyzer"
                       ReferenceOutputAssembly="false" />
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="..\Swap.Htmx.Generators\bin\$(Configuration)\netstandard2.0\Swap.Htmx.Generators.dll"
+    <None Include="..\..\framework\Swap.Htmx.Generators\bin\$(Configuration)\netstandard2.0\Swap.Htmx.Generators.dll"
           Pack="true"
           PackagePath="analyzers/dotnet/cs" />
 
-    <None Include="..\Swap.Htmx.Generators\bin\$(Configuration)\netstandard2.0\Swap.Htmx.Generators.pdb"
+    <None Include="..\..\framework\Swap.Htmx.Generators\bin\$(Configuration)\netstandard2.0\Swap.Htmx.Generators.pdb"
           Pack="true"
           PackagePath="analyzers/dotnet/cs" />
   </ItemGroup>
