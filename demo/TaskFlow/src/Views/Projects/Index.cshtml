@@ -7,6 +7,9 @@
 }
 
 <div class="projects-page" hx-ext="sse" sse-connect="/projects/stream">
+    <!-- Hidden SSE Listener for OOB updates -->
+    <div style="display:none" sse-swap="project-list-update" hx-swap="none"></div>
+
     <div class="header">
         <h1>Projects</h1>
         <button class="btn" onclick="document.getElementById('create-form').style.display='block'">+ New Project</button>

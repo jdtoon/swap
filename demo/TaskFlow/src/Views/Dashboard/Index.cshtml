@@ -7,6 +7,12 @@
 @inject TaskFlow.Services.IProjectService ProjectService
 
 <div class="dashboard" hx-ext="sse" sse-connect="/dashboard/stream">
+    <!-- Hidden SSE Listeners for OOB updates -->
+    <div style="display:none" sse-swap="stats-update" hx-swap="none"></div>
+    <div style="display:none" sse-swap="team-update" hx-swap="none"></div>
+    <div style="display:none" sse-swap="activity-update" hx-swap="none"></div>
+    <div style="display:none" sse-swap="project-progress-update" hx-swap="none"></div>
+
     <h1>Team Dashboard 
         <small style="color: #666; font-size: 0.5em;">
             <span id="sse-status" style="color: orange;">Connecting to SSE...</span>
@@ -26,24 +32,24 @@
     </div>
 
     <!-- Stats Section (SSE auto-update) -->
-    <div id="@DashboardElements.Stats" class="stats-grid" sse-swap="stats-update">
+    <div id="@DashboardElements.Stats" class="stats-grid">
         @{ await Html.RenderPartialAsync(DashboardViews.Stats, (TeamStats)model.Stats); }
     </div>
 
     <!-- Team Presence -->
-    <div id="@DashboardElements.TeamList" class="team-section" sse-swap="team-update">
+    <div id="@DashboardElements.TeamList" class="team-section">
         @{ await Html.RenderPartialAsync(DashboardViews.TeamList, (List<TeamMember>)model.TeamMembers); }
     </div>
 
     <!-- Recent Activity Feed (SSE-powered) -->
-    <div id="@DashboardElements.Activity" class="activity-feed" sse-swap="activity-update">
+    <div id="@DashboardElements.Activity" class="activity-feed">
         @{ await Html.RenderPartialAsync(DashboardViews.Activity, (List<Activity>)model.Activities); }
     </div>
 
     <!-- Projects Overview -->
     <div class="projects-overview">
         <h2>Projects</h2>
-        <div id="@DashboardElements.Projects" sse-swap="project-progress-update">
+        <div id="@DashboardElements.Projects">
             @{ await Html.RenderPartialAsync(DashboardViews.ProjectsOverview, (List<Project>)model.Projects); }
         </div>
     </div>

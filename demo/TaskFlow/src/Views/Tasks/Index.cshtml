@@ -21,30 +21,36 @@
 </h1>
 
 <div class="kanban-board" hx-ext="sse" sse-connect="/tasks/stream">
+    <!-- Hidden SSE Listeners for OOB updates -->
+    <div style="display:none" sse-swap="task-column-todo-update" hx-swap="none"></div>
+    <div style="display:none" sse-swap="task-column-inprogress-update" hx-swap="none"></div>
+    <div style="display:none" sse-swap="task-column-review-update" hx-swap="none"></div>
+    <div style="display:none" sse-swap="task-column-done-update" hx-swap="none"></div>
+
     <div class="kanban-column">
         <h3 class="column-header todo">📝 To Do</h3>
-        <div id="@TaskElements.Column(TaskStatus.Todo)" class="task-list" sse-swap="task-column-todo-update">
+        <div id="@TaskElements.Column(TaskStatus.Todo)" class="task-list">
             @await Html.PartialAsync(TaskViews.TaskColumn, todoTasks)
         </div>
     </div>
 
     <div class="kanban-column">
         <h3 class="column-header in-progress">⚡ In Progress</h3>
-        <div id="@TaskElements.Column(TaskStatus.InProgress)" class="task-list" sse-swap="task-column-inprogress-update">
+        <div id="@TaskElements.Column(TaskStatus.InProgress)" class="task-list">
             @await Html.PartialAsync(TaskViews.TaskColumn, inProgressTasks)
         </div>
     </div>
 
     <div class="kanban-column">
         <h3 class="column-header review">👀 Review</h3>
-        <div id="@TaskElements.Column(TaskStatus.Review)" class="task-list" sse-swap="task-column-review-update">
+        <div id="@TaskElements.Column(TaskStatus.Review)" class="task-list">
             @await Html.PartialAsync(TaskViews.TaskColumn, reviewTasks)
         </div>
     </div>
 
     <div class="kanban-column">
         <h3 class="column-header done">✅ Done</h3>
-        <div id="@TaskElements.Column(TaskStatus.Done)" class="task-list" sse-swap="task-column-done-update">
+        <div id="@TaskElements.Column(TaskStatus.Done)" class="task-list">
             @await Html.PartialAsync(TaskViews.TaskColumn, doneTasks)
         </div>
     </div>
