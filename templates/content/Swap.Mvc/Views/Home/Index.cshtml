@@ -1,0 +1,57 @@
+@{
+    ViewData["Title"] = "Home Page";
+}
+
+<div class="container">
+    <div class="hero">
+        <h1>Welcome to Swap.Htmx</h1>
+        <p class="text-muted" style="font-size: 1.25rem;">A clean, type-safe way to build HTMX apps in ASP.NET Core.</p>
+    </div>
+
+    <div class="grid">
+        <div class="feature">
+            <h3>Type-Safe Events</h3>
+            <p>Trigger client-side events from your C# controllers with strong typing.</p>
+        </div>
+        <div class="feature">
+            <h3>Clean Architecture</h3>
+            <p>Keep your UI logic decoupled using the Event-Driven approach.</p>
+        </div>
+        <div class="feature">
+            <h3>HTMX 2.0 Ready</h3>
+            <p>Built for the latest version of HTMX with modern best practices.</p>
+        </div>
+    </div>
+
+    <div class="card text-center">
+        <h2>Interactive Demo</h2>
+        <p class="text-muted" style="margin-bottom: 1.5rem">
+            Click the button below. The server will process the click and trigger an event.<br/>
+            The message area listens for that event and updates itself.
+        </p>
+        
+        <button class="btn" hx-post="/Home/ClickMe" hx-swap="none">
+            Trigger Server Event
+        </button>
+
+        <div id="message-area" 
+             class="mt-4" 
+             style="margin-top: 1.5rem; min-height: 60px;"
+             hx-trigger="@SwapMvc.Events.AppEvents.User.Clicked from:body" 
+             hx-get="/Home/Message" 
+             hx-swap="innerHTML">
+            <p class="text-muted" style="font-size: 0.9rem">Waiting for event...</p>
+        </div>
+    </div>
+
+    <div class="card" style="text-align: left;">
+        <h2>How it works</h2>
+        <p>1. The button sends a POST request to <code>/Home/ClickMe</code>.</p>
+        <p>2. The controller returns a <code>SwapResult</code> that triggers <code>AppEvents.User.Clicked</code>.</p>
+        <p>3. The message div listens for this event and fetches <code>/Home/Message</code>.</p>
+        
+        <div style="margin-top: 1rem;">
+            <p><strong>Try it yourself:</strong> Open <code>Controllers/HomeController.cs</code> and modify the toast message!</p>
+        </div>
+    </div>
+</div>

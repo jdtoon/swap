@@ -1,0 +1,28 @@
+{
+  "$schema": "http://json.schemastore.org/template",
+  "author": "jdtoon",
+  "classifications": [ "Web", "MVC", "Htmx" ],
+  "name": "Swap.Htmx MVC App",
+  "identity": "Swap.Htmx.Mvc",
+  "shortName": "swap-mvc",
+  "tags": {
+    "language": "C#",
+    "type": "project"
+  },
+  "sourceName": "SwapMvc",
+  "preferNameDirectory": true,
+  "symbols": {
+    "UseLocalRef": {
+      "type": "parameter",
+      "datatype": "bool",
+      "description": "Use local project reference instead of NuGet package",
+      "defaultValue": "false"
+    },
+    "IncludeSse": {
+      "type": "parameter",
+      "datatype": "bool",
+      "description": "Include HTMX SSE extension",
+      "defaultValue": "false"
+    }
+  }
+}
