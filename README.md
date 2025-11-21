@@ -1,6 +1,7 @@
 # Swap
 
 [![NuGet - Swap.Htmx](https://img.shields.io/nuget/v/Swap.Htmx.svg?label=Swap.Htmx)](https://www.nuget.org/packages/Swap.Htmx)
+[![NuGet - Swap.Templates](https://img.shields.io/nuget/v/Swap.Templates.svg?label=Swap.Templates)](https://www.nuget.org/packages/Swap.Templates)
 [![NuGet - Swap.Testing](https://img.shields.io/nuget/v/Swap.Testing.svg?label=Swap.Testing)](https://www.nuget.org/packages/Swap.Testing)
 [![CI](https://github.com/jdtoon/swap/actions/workflows/ci-build.yml/badge.svg)](https://github.com/jdtoon/swap/actions/workflows/ci-build.yml)
 
@@ -26,7 +27,17 @@ It handles the "messy middle" of modern web apps—validation, partial updates, 
 
 ## Quick Start
 
-**Install the package:**
+**The easiest way to get started is using the project templates:**
+
+```bash
+# Install the templates
+dotnet new install Swap.Templates
+
+# Create a new project
+dotnet new swap-mvc -n MyProject
+```
+
+**Or install the package manually:**
 ```bash
 dotnet add package Swap.Htmx
 ```

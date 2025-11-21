@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!--#if (UseLocalRef) -->
+    <ProjectReference Include="..\..\..\lib\Swap.Htmx\Swap.Htmx.csproj" />
+    <!--#else -->
+    <PackageReference Include="Swap.Htmx" Version="*" />
+    <!--#endif -->
+  </ItemGroup>
+
+</Project>

@@ -72,3 +72,6 @@ yarn.lock
 
 # LibMan cache
 **/wwwroot/lib/
+
+# test projects
+template-test/

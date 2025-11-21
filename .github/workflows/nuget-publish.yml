@@ -44,6 +44,7 @@ jobs:
       run: |
         dotnet pack lib/Swap.Htmx/Swap.Htmx.csproj --configuration Release --output ./.nuget/local
         dotnet pack lib/Swap.Testing/Swap.Testing.csproj --configuration Release --output ./.nuget/local
+        dotnet pack templates/Swap.Templates.csproj --configuration Release --output ./.nuget/local
       env:
         DOTNET_NUGET_SIGNATURE_VERIFICATION: false
     
@@ -85,6 +86,7 @@ jobs:
         # Pack library packages
         dotnet pack lib/Swap.Htmx/Swap.Htmx.csproj --configuration Release --no-restore --output ./nupkg
         dotnet pack lib/Swap.Testing/Swap.Testing.csproj --configuration Release --no-restore --output ./nupkg
+        dotnet pack templates/Swap.Templates.csproj --configuration Release --no-restore --output ./nupkg
         
         # Publish all packages (skip-duplicate will handle already published versions)
         dotnet nuget push ./nupkg/*.nupkg --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate

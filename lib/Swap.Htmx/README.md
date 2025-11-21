@@ -18,6 +18,15 @@
 
 ## Install
 
+**Using Templates (Recommended):**
+
+```bash
+dotnet new install Swap.Templates
+dotnet new swap-mvc -n MyProject
+```
+
+**Manual Installation:**
+
 ```bash
 dotnet add package Swap.Htmx
 ```
