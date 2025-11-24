@@ -49,11 +49,8 @@ Add the following to your `_Layout.cshtml` to enable the Toast system and client
 
 Swap includes built-in support for Server-Sent Events (SSE) to push updates to the client.
 
-### Redis Backplane (Scaling)
-
-For multi-server deployments, Swap.Htmx supports a Redis backplane to synchronize events across all instances.
-
-[Read the Redis Backplane Documentation](docs/RedisBackplane.md)
+-   **[Single Server (In-Memory)](docs/Realtime.md)**: Zero-config setup for simple apps.
+-   **[Distributed (Redis)](docs/RedisBackplane.md)**: Scale horizontally with Redis.
 
 ### Configuration
 

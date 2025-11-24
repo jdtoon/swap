@@ -206,47 +206,17 @@ public class TodosTests : IClassFixture<HtmxTestFixture<Program>>
 - [`Swap.Htmx`](https://www.nuget.org/packages/Swap.Htmx) – HTMX‑friendly building blocks for ASP.NET Core MVC apps. [Docs](lib/Swap.Htmx/README.md)
 - [`Swap.Testing`](https://www.nuget.org/packages/Swap.Testing) – fluent integration tests for HTMX endpoints. [Docs](lib/Swap.Testing/README.md)
 
-## Demo Applications
-
-### [SwapShop](demo/SwapShop/README.md) – E-commerce Foundation
-
 ## Demos
 
-Explore the `demo/` folder to see Swap.Htmx in action:
+Explore the `demo/` folder for example applications:
 
-### 1. [SwapShop](demo/SwapShop) (MVC)
-A fully functional e-commerce demo showcasing the core features:
-- **SwapView** & **SwapResponse** basics
-- Coordinated multi-part updates (Cart + Badge + Total)
-- Session persistence and Toast notifications
-
-### 2. [TaskFlow](demo/TaskFlow) (Advanced MVC)
-A collaborative task management app showcasing advanced patterns:
-- **Server-Sent Events (SSE)** for real-time dashboards
-- Complex event chains and payload access
-- All swap modes (Delete, BeforeEnd, etc.)
-
-### 3. [SwapChat](demo/SwapChat) (Distributed SSE)
-**New in v0.9.0!** A real-time chat application demonstrating scalability:
-- **Distributed SSE** using `ISseBackplane`
-- Multi-server synchronization (simulated with file system)
-- Room-based broadcasting
-
-### 4. [SwapMinimal](demo/SwapMinimal) (Minimal APIs)
-Demonstrates first-class support for Minimal APIs:
-- `SwapResults` factory for `IResult` endpoints
-- Functional endpoint organization
-
-### 5. [SwapPages](demo/SwapPages) (Razor Pages)
-Demonstrates native Razor Pages support:
-- `PageModel` extensions (`this.SwapResponse()`)
-- `OnGet`/`OnPost` handler integration
-
-### 6. [SwapWebSockets](demo/SwapWebSockets) (WebSockets)
-**New!** Demonstrates full WebSocket integration:
-- Bi-directional communication
-- Triggering Swap Events from client messages
-- Real-time HTML broadcasting
+-   **[SwapShop](demo/SwapShop)**: A fully functional e-commerce demo showcasing core features (Cart, Badges, Toasts).
+-   **[SwapChat](demo/SwapChat)**: A real-time chat application using SSE and Rooms.
+-   **[SwapRedisDemo](demo/SwapRedisDemo)**: Demonstrates scaling SSE across multiple servers using the Redis Backplane.
+-   **[TaskFlow](demo/TaskFlow)**: Collaborative task management with advanced event chains.
+-   **[SwapMinimal](demo/SwapMinimal)**: Shows how to use Swap with Minimal APIs.
+-   **[SwapPages](demo/SwapPages)**: Shows how to use Swap with Razor Pages.
+-   **[SwapWebSockets](demo/SwapWebSockets)**: Demonstrates full WebSocket integration.
 
 ## Documentation
 
