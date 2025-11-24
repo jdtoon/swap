@@ -16,7 +16,7 @@
     <!-- HTMX -->
     <script src="~/lib/htmx/dist/htmx.min.js"></script>
     <!-- Swap.Htmx -->
-    <script src="~/_content/Swap.Htmx/js/swap.js"></script>
+    <script src="~/_content/Swap.Htmx/js/swap.client.js"></script>
 </head>
 <body>
     <header>
@@ -67,7 +67,7 @@
         </div>
     </footer>
 
-    <!-- Toast container injected by swap.js -->
+    <!-- Toast container injected by swap.client.js -->
     
     @await RenderSectionAsync("Scripts", required: false)
 </body>

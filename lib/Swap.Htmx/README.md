@@ -41,7 +41,7 @@ Add the following to your `_Layout.cshtml` to enable the Toast system and client
     <link rel="stylesheet" href="~/_content/Swap.Htmx/css/swap.css" />
     
     <!-- ... htmx script ... -->
-    <script src="~/_content/Swap.Htmx/js/swap.js"></script>
+    <script src="~/_content/Swap.Htmx/js/swap.client.js"></script>
 </head>
 ```
 
