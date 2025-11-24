@@ -45,6 +45,52 @@ Add the following to your `_Layout.cshtml` to enable the Toast system and client
 </head>
 ```
 
+## Real-time Updates (SSE)
+
+Swap includes built-in support for Server-Sent Events (SSE) to push updates to the client.
+
+### Configuration
+
+In `Program.cs`:
+
+```csharp
+// Basic In-Memory (Single Server)
+builder.Services.AddSwapHtmx()
+                .AddSseEventBridge();
+
+// Distributed (Redis Backplane)
+builder.Services.AddSwapHtmx()
+                .AddSseEventBridge()
+                .AddSwapRedisBackplane(options => 
+                {
+                    options.Configuration = "localhost:6379";
+                    options.ChannelName = "my-app-events";
+                });
+```
+
+### Usage
+
+Inject `ISseEventBridge` and broadcast events:
+
+```csharp
+public class OrderService
+{
+    private readonly ISseEventBridge _sse;
+
+    public async Task CompleteOrder(int orderId)
+    {
+        // Broadcast to everyone
+        await _sse.BroadcastAsync("OrderCompleted", new { id = orderId });
+        
+        // Send to specific user
+        await _sse.SendToUserAsync("user-123", "Notification", "Your order is ready!");
+        
+        // Send to specific room/group
+        await _sse.SendToRoomAsync("admin-dashboard", "StatsUpdated", new { ... });
+    }
+}
+```
+
 ## Four Ways to Build Responses
 
 ### 1. Simple View (80% of use cases)

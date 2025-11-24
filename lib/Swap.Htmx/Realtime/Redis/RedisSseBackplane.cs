@@ -1,4 +1,5 @@
 using System;
+using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -16,6 +17,7 @@ public class RedisSseBackplane : ISseBackplane
     private readonly ILogger<RedisSseBackplane> _logger;
     private readonly ISubscriber _subscriber;
     private readonly RedisChannel _channel;
+    private readonly JsonSerializerOptions _jsonOptions;
 
     public RedisSseBackplane(
         IConnectionMultiplexer redis,
@@ -27,13 +29,18 @@ public class RedisSseBackplane : ISseBackplane
         _logger = logger;
         _subscriber = _redis.GetSubscriber();
         _channel = RedisChannel.Literal(_options.ChannelName);
+        _jsonOptions = new JsonSerializerOptions
+        {
+            Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+        };
     }
 
     public async Task PublishAsync(SseMessage message, CancellationToken cancellationToken = default)
     {
         try
         {
-            var json = JsonSerializer.Serialize(message);
+            var json = JsonSerializer.Serialize(message, _jsonOptions);
             await _subscriber.PublishAsync(_channel, json);
         }
         catch (Exception ex)
@@ -49,7 +56,7 @@ public class RedisSseBackplane : ISseBackplane
         {
             try
             {
-                var message = JsonSerializer.Deserialize<SseMessage>(value.ToString());
+                var message = JsonSerializer.Deserialize<SseMessage>(value.ToString(), _jsonOptions);
                 if (message != null)
                 {
                     // We pass CancellationToken.None here because the Redis callback doesn't provide one
