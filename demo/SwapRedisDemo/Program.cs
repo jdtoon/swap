@@ -31,7 +31,7 @@ app.UseSseEventBridge();
 
 app.UseAuthorization();
 
-app.MapStaticAssets();
+// app.MapStaticAssets();
 
 app.MapGet("/swap/sse", (ISseConnectionRegistry registry) => SwapResults.Sse(registry));
 
