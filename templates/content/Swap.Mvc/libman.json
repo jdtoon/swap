@@ -8,15 +8,13 @@
       "files": [
         "dist/htmx.min.js"
       ]
-    }
-    //#if (IncludeSse)
-    ,{
+    },
+    {
       "library": "htmx-ext-sse@2.2.4",
       "destination": "wwwroot/lib/htmx/ext",
       "files": [
         "sse.js"
       ]
     }
-    //#endif
   ]
 }
