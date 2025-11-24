@@ -1,10 +1,16 @@
 using Swap.Htmx;
+//#if (IncludeSse)
+using Swap.Htmx.Realtime;
+//#endif
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 builder.Services.AddSwapHtmx();
+//#if (IncludeSse)
+builder.Services.AddSseEventBridge();
+//#endif
 
 var app = builder.Build();
 
@@ -19,13 +25,18 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
 
+app.UseSwapHtmx();
+//#if (IncludeSse)
+app.UseSseEventBridge();
+//#endif
+
 app.UseAuthorization();
 
-app.MapStaticAssets();
+// app.MapStaticAssets();
 
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Home}/{action=Index}/{id?}")
-    .WithStaticAssets();
+    pattern: "{controller=Home}/{action=Index}/{id?}");
+    // .WithStaticAssets();
 
 app.Run();
