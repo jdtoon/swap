@@ -17,7 +17,7 @@
 
         <div class="mt-4" style="padding: 20px; border: 1px solid #eee; border-radius: 8px;">
             <h3>Last Broadcast:</h3>
-            <div id="time-display" hx-on:sse-message="if(event.detail.type === 'ServerTime') this.innerText = JSON.parse(event.detail.data).time">
+            <div id="time-display" hx-on:sse-message="if(event.detail.type === 'redis-test') this.innerText = JSON.parse(event.detail.data).time">
                 Waiting for updates...
             </div>
         </div>

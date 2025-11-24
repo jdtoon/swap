@@ -22,7 +22,7 @@ public class HomeController : Controller
     [HttpPost]
     public async Task<IActionResult> Broadcast(string message)
     {
-        await _sse.HandleSseEventAsync("redis-test", new { Message = message, Time = DateTime.Now });
+        await _sse.HandleSseEventAsync("sse:redis-test", new { Message = message, Time = DateTime.Now });
         
         return this.SwapResponse()
             .WithSuccessToast("Broadcast sent via Redis!")
