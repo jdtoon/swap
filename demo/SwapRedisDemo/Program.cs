@@ -10,7 +10,7 @@ builder.Services.AddSwapHtmx()
     .AddSwapRedisBackplane(options =>
     {
         options.Configuration = builder.Configuration.GetConnectionString("Redis") ?? "localhost:6379";
-        options.ChannelName = "swap-redis-demo";
+        options.ChannelName = "swapredisdemo";
     });
 
 var app = builder.Build();

@@ -182,6 +182,16 @@ internal sealed class RealtimeEventBridge : IRealtimeEventBridge, ISseEventBridg
                 if (!configs.TryGetValue(eventName, out config))
                 {
                     _logger.LogDebug("No configuration found for event {EventName} or {FullEventName}", eventName, fullEventName);
+                    
+                    if (payload != null)
+                    {
+                        if (payload is string strPayload)
+                        {
+                            return strPayload;
+                        }
+                        return System.Text.Json.JsonSerializer.Serialize(payload);
+                    }
+
                     return $"<div data-event=\"{eventName}\"></div>";
                 }
             }

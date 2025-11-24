@@ -8,10 +8,12 @@ namespace SwapRedisDemo.Controllers;
 public class HomeController : Controller
 {
     private readonly ISseEventBridge _sse;
+    private readonly ISseConnectionRegistry _registry;
 
-    public HomeController(ISseEventBridge sse)
+    public HomeController(ISseEventBridge sse, ISseConnectionRegistry registry)
     {
         _sse = sse;
+        _registry = registry;
     }
 
     public IActionResult Index()
@@ -20,9 +22,13 @@ public class HomeController : Controller
     }
 
     [HttpPost]
-    public async Task<IActionResult> Broadcast(string message)
+    public async Task<IActionResult> Broadcast()
     {
-        await _sse.HandleSseEventAsync("sse:redis-test", new { Message = message, Time = DateTime.Now });
+        var time = DateTime.Now.ToString("HH:mm:ss.fff");
+        var html = $"<div id=\"time-display\" hx-swap-oob=\"true\">{time}</div>";
+        
+        // Use the registry to broadcast the HTML directly
+        await _registry.BroadcastAsync("sse:broadcast:redis-test", html);
         
         return this.SwapResponse()
             .WithSuccessToast("Broadcast sent via Redis!")
