@@ -1,16 +1,17 @@
 using Swap.Htmx;
-//#if (IncludeSse)
 using Swap.Htmx.Realtime;
-//#endif
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
-builder.Services.AddSwapHtmx();
-//#if (IncludeSse)
-builder.Services.AddSseEventBridge();
-//#endif
+builder.Services.AddSwapHtmx()
+    .AddSseEventBridge()
+    .AddSwapRedisBackplane(options =>
+    {
+        options.Configuration = builder.Configuration.GetConnectionString("Redis") ?? "localhost:6379";
+        options.ChannelName = "swapredisdemo";
+    });
 
 var app = builder.Build();
 
@@ -26,13 +27,13 @@ app.UseStaticFiles();
 app.UseRouting();
 
 app.UseSwapHtmx();
-//#if (IncludeSse)
 app.UseSseEventBridge();
-//#endif
 
 app.UseAuthorization();
 
 // app.MapStaticAssets();
+
+app.MapGet("/swap/sse", (ISseConnectionRegistry registry) => SwapResults.Sse(registry));
 
 app.MapControllerRoute(
     name: "default",

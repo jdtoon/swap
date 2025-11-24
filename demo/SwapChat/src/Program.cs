@@ -4,7 +4,6 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using System.Security.Claims;
 using Swap.Htmx;
 using Swap.Htmx.Realtime;
-using SwapChat.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -23,8 +22,8 @@ builder.Services.AddRazorPages();
 builder.Services.AddSwapHtmx();
 builder.Services.AddSseEventBridge();
 
-// Register our custom backplane for distributed demo
-builder.Services.AddSingleton<ISseBackplane, FileSseBackplane>();
+// Use the default in-memory backplane (single server)
+builder.Services.AddInMemorySseBackplane();
 
 var app = builder.Build();
 

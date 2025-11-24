@@ -50,7 +50,7 @@ In `Views/Shared/_Layout.cshtml`, add HTMX and the Swap.Htmx client assets befor
     <script src="https://unpkg.com/htmx.org@2.0.3"></script>
     
     <!-- 3. Add Swap.Htmx Script (for Toasts and Events) -->
-    <script src="~/_content/Swap.Htmx/js/swap.js"></script>
+    <script src="~/_content/Swap.Htmx/js/swap.client.js"></script>
 </head>
 ```
 

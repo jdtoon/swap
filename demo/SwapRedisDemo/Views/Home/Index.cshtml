@@ -1,0 +1,53 @@
+@{
+    ViewData["Title"] = "Redis Backplane Demo";
+}
+
+<div class="container" hx-ext="sse" sse-connect="/swap/sse">
+    <div hidden sse-swap="sse:broadcast:redis-test"></div>
+    <div class="hero">
+        <h1>Redis Backplane Demo</h1>
+        <p class="text-muted">Open this page in multiple tabs/browsers to test the broadcast.</p>
+    </div>
+
+    <div class="card text-center">
+        <button class="btn btn-primary" 
+                hx-post="@Url.Action("Broadcast")"
+                hx-swap="none">
+            Broadcast Time via Redis
+        </button>
+
+        <div class="mt-4" style="padding: 20px; border: 1px solid #eee; border-radius: 8px;">
+            <h3>Last Broadcast:</h3>
+            <div id="time-display">
+                Waiting for updates...
+            </div>
+        </div>
+    </div>
+</div>
+        </p>
+        
+        <button class="btn" hx-post="/Home/ClickMe" hx-swap="none">
+            Trigger Server Event
+        </button>
+
+        <div id="message-area" 
+             class="mt-4" 
+             style="margin-top: 1.5rem; min-height: 60px;"
+             hx-trigger="@SwapRedisDemo.Events.AppEvents.User.Clicked from:body" 
+             hx-get="/Home/Message" 
+             hx-swap="innerHTML">
+            <p class="text-muted" style="font-size: 0.9rem">Waiting for event...</p>
+        </div>
+    </div>
+
+    <div class="card" style="text-align: left;">
+        <h2>How it works</h2>
+        <p>1. The button sends a POST request to <code>/Home/ClickMe</code>.</p>
+        <p>2. The controller returns a <code>SwapResult</code> that triggers <code>AppEvents.User.Clicked</code>.</p>
+        <p>3. The message div listens for this event and fetches <code>/Home/Message</code>.</p>
+        
+        <div style="margin-top: 1rem;">
+            <p><strong>Try it yourself:</strong> Open <code>Controllers/HomeController.cs</code> and modify the toast message!</p>
+        </div>
+    </div>
+</div>
