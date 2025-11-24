@@ -18,6 +18,7 @@ app.MapGet("/", () => Results.Content(@"
 <head>
     <title>SwapMinimal</title>
     <script src=""https://unpkg.com/htmx.org@2.0.8""></script>
+    <script src=""/_content/Swap.Htmx/js/swap.client.js""></script>
 </head>
 <body>
     <h1>SwapMinimal Demo</h1>
