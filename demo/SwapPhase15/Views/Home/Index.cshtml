@@ -1,0 +1,112 @@
+@using SwapPhase15.Events
+@{
+    ViewData["Title"] = "Home Page";
+}
+
+<div class="container">
+    <div class="hero">
+        <h1>Welcome to Swap.Htmx</h1>
+        <p class="text-muted" style="font-size: 1.25rem;">A clean, type-safe way to build HTMX apps in ASP.NET Core.</p>
+    </div>
+
+    <div class="grid">
+        <div class="feature">
+            <h3>Type-Safe Events</h3>
+            <p>Trigger client-side events from your C# controllers with strong typing.</p>
+        </div>
+        <div class="feature">
+            <h3>Clean Architecture</h3>
+            <p>Keep your UI logic decoupled using the Event-Driven approach.</p>
+        </div>
+        <div class="feature">
+            <h3>HTMX 2.0 Ready</h3>
+            <p>Built for the latest version of HTMX with modern best practices.</p>
+        </div>
+    </div>
+
+    <div class="card text-center mb-5">
+        <div class="card-body">
+            <h2 class="card-title">🚀 New: Task Board Demo</h2>
+            <p class="card-text">
+                Check out the new Task Board demo to see how <strong>Swap.Htmx</strong> handles complex, distributed UI updates.
+                See how one action triggers multiple independent handlers to update the Task List, Stats, and Activity Log simultaneously.
+            </p>
+            <a href="/TaskBoard" 
+               class="btn btn-primary btn-lg"
+               hx-get="/TaskBoard" 
+               hx-target="#main-content" 
+               hx-push-url="true">Launch Task Board Demo</a>
+        </div>
+    </div>
+
+    <div class="card text-center">
+        <h2>Interactive Demo (Basic)</h2>
+        <p class="text-muted" style="margin-bottom: 1.5rem">
+            Click the button below or submit the form. The server will process the action and trigger events.<br/>
+            Handlers will update the UI and perform client actions.
+        </p>
+        
+        <form id="main-form" hx-post="/Home/SubmitForm" hx-swap="none" class="mb-4"
+              hx-on:htmx:validation:failed="this.querySelector('#message-error').textContent = 'Message is required.'">
+            <input type="text" name="message" id="input-field" placeholder="Enter a message (required)" required class="form-control mb-2" />
+            <span class="text-danger" hx-swap-oob="true" id="message-error"></span>
+            <button type="submit" class="btn">Submit Form</button>
+        </form>
+        <div id="form-feedback" class="mb-4"></div>
+
+        <div class="mb-4 border-top pt-4">
+            <h3>Validation Demo</h3>
+            <p class="text-muted small">This form is designed to fail validation (email is required).</p>
+            <form hx-post="/Home/SubmitFailForm" hx-swap="none">
+                <input type="text" name="email" placeholder="Enter email (required)" class="form-control mb-2" />
+                <button type="submit" class="btn btn-warning">Submit Invalid Form</button>
+            </form>
+        </div>
+        
+        <button class="btn" hx-post="/Home/ClickMe" hx-swap="none">
+            Trigger Server Event
+        </button>
+        <div id="server-message" class="mt-2 text-success fw-bold"></div>
+
+        <div id="counter-section" class="mt-4 card">
+            <partial name="_Counter" model="0" />
+        </div>
+
+        <div id="stats-section" class="mt-4 card"
+             hx-trigger="@AppEvents.Stats.Updated.Name from:body"
+             hx-get="/Home/UpdateStats"
+             hx-swap="innerHTML">
+            <h4>Stats</h4>
+            <p>Total Increments: 0</p>
+        </div>
+    </div>
+
+    <div class="card" style="text-align: left;">
+        <h2>How it works</h2>
+        <p>1. Submit the form or click the button to trigger server-side events.</p>
+        <p>2. The controller uses [SwapForm] for auto-validation and triggers events with payloads.</p>
+        <p>3. Distributed handlers process the events, update the UI, and perform client actions.</p>
+        <p>4. The message div listens for events and updates itself.</p>
+        
+        <div style="margin-top: 1rem;">
+            <p><strong>Try it yourself:</strong> Open <code>Controllers/HomeController.cs</code> and modify the toast message!</p>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.body.addEventListener('swap:clientAction', function(e) {
+            const { action, target, value } = e.detail;
+            const el = target ? document.querySelector(target) : null;
+            
+            if (action === 'reset' && el) {
+                el.reset();
+            } else if (action === 'focus' && el) {
+                el.focus();
+            } else if (action === 'value' && el) {
+                el.value = value;
+            }
+        });
+    </script>
+}

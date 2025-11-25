@@ -1,0 +1,15 @@
+@model SwapPhase15.Controllers.TaskItem
+
+<tr id="task-@Model.Id">
+    <td class="align-middle">
+        <span class="fw-medium">@Model.Title</span>
+    </td>
+    <td class="text-end">
+        <button class="btn btn-sm btn-success"
+                hx-post="/TaskBoard/Complete"
+                hx-vals='{"id": @Model.Id}'
+                hx-swap="none">
+            Complete
+        </button>
+    </td>
+</tr>

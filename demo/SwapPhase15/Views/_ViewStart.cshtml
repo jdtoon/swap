@@ -1,0 +1,10 @@
+@{
+    if (Context.Request.Headers.ContainsKey("HX-Request"))
+    {
+        Layout = null;
+    }
+    else
+    {
+        Layout = "_Layout";
+    }
+}

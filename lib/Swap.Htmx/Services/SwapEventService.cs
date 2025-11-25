@@ -18,17 +18,20 @@ public class SwapEventService : ISwapEventService
     private readonly ILogger<SwapEventService> _logger;
     private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly ISwapEventBus _eventBus;
+    private readonly SwapEventHandlerExecutor _handlerExecutor;
 
     public SwapEventService(
         IEventChainExecutor executor, 
         ILogger<SwapEventService> logger, 
         IHttpContextAccessor httpContextAccessor,
-        ISwapEventBus eventBus)
+        ISwapEventBus eventBus,
+        SwapEventHandlerExecutor handlerExecutor)
     {
         _executor = executor;
         _logger = logger;
         _httpContextAccessor = httpContextAccessor;
         _eventBus = eventBus;
+        _handlerExecutor = handlerExecutor;
     }
 
     public SwapResponseBuilder Response()
@@ -72,6 +75,11 @@ public class SwapEventService : ISwapEventService
             {
                 result.WithTrigger(eventKey, payload);
             }
+            // Execute distributed handlers
+            if (payload != null)
+            {
+                _handlerExecutor.ExecuteHandlersAsync(payload.GetType(), payload, result).GetAwaiter().GetResult();
+            }
             return result;
         }
 
@@ -81,6 +89,8 @@ public class SwapEventService : ISwapEventService
         if (payload != null)
         {
             builder.WithTrigger(eventKey, payload);
+            // Execute distributed handlers
+            _handlerExecutor.ExecuteHandlersAsync(payload.GetType(), payload, builder).GetAwaiter().GetResult();
         }
         
         return builder;
@@ -102,6 +112,8 @@ public class SwapEventService : ISwapEventService
             if (payload != null)
             {
                 result.WithTrigger(eventKey, payload);
+                // Execute distributed handlers
+                _handlerExecutor.ExecuteHandlersAsync(payload.GetType(), payload, result).GetAwaiter().GetResult();
             }
             return result;
         }
@@ -112,6 +124,8 @@ public class SwapEventService : ISwapEventService
         if (payload != null)
         {
             builder.WithTrigger(eventKey, payload);
+            // Execute distributed handlers
+            _handlerExecutor.ExecuteHandlersAsync(payload.GetType(), payload, builder).GetAwaiter().GetResult();
         }
         
         return builder;
@@ -123,6 +137,9 @@ public class SwapEventService : ISwapEventService
         
         _logger.EventTriggered(eventKey.Name, payload?.GetType().Name ?? "null");
         
+        // Ensure the event is recorded on the bus so ResolveChains can find it and its downstream events
+        _eventBus.Emit(eventKey, payload);
+        
         var result = _executor.Execute(eventKey, httpContext, pageModel, payload);
         
         if (result != null)
@@ -130,6 +147,8 @@ public class SwapEventService : ISwapEventService
             if (payload != null)
             {
                 result.WithTrigger(eventKey, payload);
+                // Execute distributed handlers
+                _handlerExecutor.ExecuteHandlersAsync(payload.GetType(), payload, result).GetAwaiter().GetResult();
             }
             return result;
         }
@@ -140,6 +159,8 @@ public class SwapEventService : ISwapEventService
         if (payload != null)
         {
             builder.WithTrigger(eventKey, payload);
+            // Execute distributed handlers
+            _handlerExecutor.ExecuteHandlersAsync(payload.GetType(), payload, builder).GetAwaiter().GetResult();
         }
         
         return builder;

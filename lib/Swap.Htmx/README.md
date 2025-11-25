@@ -2,128 +2,194 @@
 
 [![NuGet](https://img.shields.io/nuget/v/Swap.Htmx.svg)](https://www.nuget.org/packages/Swap.Htmx)
 
-`Swap.Htmx` is a lightweight library that makes it easy to build HTMX-powered ASP.NET Core applications with a clean, fluent API.
+HTMX + ASP.NET Core MVC, but ergonomic.
 
-## Key Features
+`Swap.Htmx` is a lightweight orchestration layer for HTMX‑powered ASP.NET Core apps. It gives you:
 
-- **Fluent response builder** - Coordinate view rendering, out-of-band swaps, toasts, and triggers in one clean chain
-- **Minimal API Support** - Use `SwapResults` to return HTMX responses from Minimal API endpoints
-- **Razor Pages Support** - Use `this.SwapResponse()` directly in your `PageModel`
-- **Type-safe API** - No magic strings for swap modes or event names
-- **Source Generators** - Automatically generate strongly-typed event keys from your constants
-- **SwapController base class** - Automatically handles HTMX requests vs full page loads
-- **Real-time updates** - Built-in WebSockets and Server-Sent Events (SSE) support with automatic connection management, room-based broadcasting, and `ISseBackplane` for distributed scaling
-- **Observability** - Full OpenTelemetry support (Tracing & Metrics) and structured logging
-- **Event system** - Build `HX-Trigger` headers declaratively and chain complex UI updates
+- A `SwapController` base class and controller/PageModel extensions
+- A fluent response builder for coordinated partial updates, toasts, and triggers
+- A type‑safe event system and event chains
+- Built‑in real‑time support (WebSockets + Server‑Sent Events)
+- Observability hooks (logging + OpenTelemetry)
 
-## Install
+If you want the *conceptual* overview of Swap as a whole, see the root `README.md`. This document focuses specifically on the `Swap.Htmx` package.
 
-**Using Templates (Recommended):**
+---
+
+## When Should I Use Swap.Htmx?
+
+Use `Swap.Htmx` when:
+
+- You're building an ASP.NET Core MVC / Razor Pages / Minimal API app with HTMX
+- You want to avoid scattered `ViewData`, magic IDs, and ad‑hoc headers
+- You need coordinated updates (multiple partials, toasts, triggers) per action
+- You want a central place to define “when X happens, update Y on the UI”
+- You’d like real‑time HTML updates without going full SPA
+
+If you just need a few custom HTMX headers, the low‑level helpers here work fine; as your app grows, the fluent builder and event chains keep things sane.
+
+---
+
+## Core Building Blocks
+
+- **`SwapController`** – Base controller that:
+  - Auto‑detects HTMX vs full page requests
+  - Chooses full views or partials appropriately
+  - Exposes helpers like `SwapView`, `SwapResponse`, `SwapEvent`, `ServerSentEvents`, etc.
+
+- **Controller / PageModel Extensions** – Use Swap without inheriting:
+  - `this.SwapView(...)` / `this.SwapResponse()` on `Controller`/`ControllerBase`
+  - `this.SwapResponse()` on `PageModel`
+  - `SwapResults` for Minimal APIs
+
+- **Fluent Response Builder** (`SwapResponseBuilder`)
+  - `WithView(viewName, model)` – main response payload
+  - `AlsoUpdate(targetId, viewName, model, swapMode)` – out‑of‑band swaps
+  - `WithSuccessToast(...)`, `WithErrorToast(...)`, `WithInfoToast(...)`, `WithWarningToast(...)`
+  - `WithTrigger(eventKeyOrName, payload?)` – strongly‑typed or string events
+  - All triggers and toasts are merged into a single `HX-Trigger` header.
+
+- **Event System & Event Chains**
+  - Type‑safe `EventKey` and `SwapEvents` helpers
+  - `ISwapEventConfiguration` for central “when X happens, update Y” definitions
+  - Declarative chains that render partials, show toasts, and trigger additional events
+
+- **Realtime**
+  - Server‑Sent Events helpers
+  - WebSocket integration and connection registry
+  - Optional Redis backplane (`ISseBackplane`) for multi‑server setups
+
+- **Dev & Diagnostics**
+  - Dev endpoints (`app.MapSwapHtmxDevEndpoints()`) for inspecting chains and connections
+  - Structured logs and OpenTelemetry hooks
+
+---
+
+## Installation
+
+### Option 1 – Templates (Recommended)
+
+Install the templates and scaffold a ready‑to‑go project:
 
 ```bash
 dotnet new install Swap.Templates
 dotnet new swap-mvc -n MyProject
 ```
 
-**Manual Installation:**
+This wires up `Swap.Htmx`, HTMX, dev tooling, and sample views for you. See `templates/README.md` and the demo apps under `demo/` for patterns.
+
+### Option 2 – Manual Installation
+
+Add the package to an existing ASP.NET Core app:
 
 ```bash
 dotnet add package Swap.Htmx
 ```
 
-## Setup
+Then follow the setup below.
 
-Add the following to your `_Layout.cshtml` to enable the Toast system and client-side event handling:
+---
 
-```html
-<head>
-    <!-- ... other styles ... -->
-    <link rel="stylesheet" href="~/_content/Swap.Htmx/css/swap.css" />
-    
-    <!-- ... htmx script ... -->
-    <script src="~/_content/Swap.Htmx/js/swap.client.js"></script>
-</head>
-```
+## Basic Setup
 
-## Real-time Updates (SSE)
-
-Swap includes built-in support for Server-Sent Events (SSE) to push updates to the client.
-
--   **[Single Server (In-Memory)](docs/Realtime.md)**: Zero-config setup for simple apps.
--   **[Distributed (Redis)](docs/RedisBackplane.md)**: Scale horizontally with Redis.
-
-### Configuration
+### 1. Register Services
 
 In `Program.cs`:
 
 ```csharp
-// Basic In-Memory (Single Server)
-builder.Services.AddSwapHtmx()
-                .AddSseEventBridge();
+var builder = WebApplication.CreateBuilder(args);
 
-// Distributed (Redis Backplane)
-builder.Services.AddSwapHtmx()
-                .AddSseEventBridge()
-                .AddSwapRedisBackplane(options => 
-                {
-                    options.Configuration = "localhost:6379";
-                    options.ChannelName = "my-app-events";
-                });
+builder.Services.AddControllersWithViews();
+
+// Registers core Swap services, event bus, middleware, etc.
+builder.Services.AddSwapHtmx();
+
+var app = builder.Build();
+
+app.UseStaticFiles();
+app.UseRouting();
+
+// Enables Swap middleware (HTMX helpers, event handling, dev tooling hooks)
+app.UseSwapHtmx();
+
+app.MapControllers();
+
+app.Run();
 ```
 
-### Usage
+See: `docs/GettingStarted.md` for a step‑by‑step walkthrough.
 
-Inject `ISseEventBridge` and broadcast events:
+### 2. Add Client Assets
 
-```csharp
-public class OrderService
-{
-    private readonly ISseEventBridge _sse;
+In your main layout (e.g. `Views/Shared/_Layout.cshtml`), add Swap’s CSS and JS along with HTMX:
 
-    public async Task CompleteOrder(int orderId)
-    {
-        // Broadcast to everyone
-        await _sse.BroadcastAsync("OrderCompleted", new { id = orderId });
-        
-        // Send to specific user
-        await _sse.SendToUserAsync("user-123", "Notification", "Your order is ready!");
-        
-        // Send to specific room/group
-        await _sse.SendToRoomAsync("admin-dashboard", "StatsUpdated", new { ... });
-    }
-}
+```html
+<head>
+    <!-- ... existing head content ... -->
+
+    <!-- Swap.Htmx toasts/styles -->
+    <link rel="stylesheet" href="~/_content/Swap.Htmx/css/swap.css" />
+
+    <!-- HTMX (from CDN or LibMan) -->
+    <script src="https://unpkg.com/htmx.org@2.0.8"></script>
+
+    <!-- Swap.Htmx client script (toasts + client events) -->
+    <script src="~/_content/Swap.Htmx/js/swap.client.js"></script>
+</head>
 ```
 
-## Four Ways to Build Responses
+> For LibMan‑managed HTMX and assets, see the templates and `docs/GettingStarted.md`.
 
-### 1. Simple View (80% of use cases)
+---
 
-For single updates with automatic partial/full view detection:
+## Using Swap in Controllers
+
+### 1. Simple View (80% of cases)
+
+Use `SwapController` or the `SwapView` extension to automatically handle full vs partial renders:
 
 ```csharp
+using Microsoft.AspNetCore.Mvc;
+using Swap.Htmx;
+
 public class ProductsController : SwapController
 {
     public IActionResult Details(int id)
     {
         var product = _db.Products.Find(id);
         return SwapView("Details", product);
-        // Returns full view for normal requests
-        // Returns partial for HTMX requests
+        // Normal request  -> full view
+        // HTMX request    -> partial view
     }
 }
 ```
 
-### 2. Coordinated Updates (Manual Control)
+On a regular controller:
 
-When you need to update multiple parts of the page:
+```csharp
+public class ProductsController : Controller
+{
+    public IActionResult Details(int id)
+    {
+        var product = _db.Products.Find(id);
+        return this.SwapView("Details", product);
+    }
+}
+```
+
+See: `docs/GettingStarted.md` and `docs/RazorPages.md` for more patterns.
+
+### 2. Coordinated Updates (Fluent Response Builder)
+
+When an action needs to update multiple parts of the page, send a main view and out‑of‑band swaps in one chain:
 
 ```csharp
 public class CartController : SwapController
 {
-    public ActionResult AddToCart(int productId)
+    public IActionResult AddToCart(int productId)
     {
         _cart.Add(productId);
-        
+
         return SwapResponse()
             .WithView(CartViews.ProductAdded)
             .AlsoUpdate(CartElements.Count, CartViews.Count, _cart.Count, SwapMode.InnerHTML)
@@ -134,43 +200,47 @@ public class CartController : SwapController
 }
 ```
 
-**Available methods:**
-- `WithView(viewName, model)` - Set the main view to render
-- `AlsoUpdate(targetId, viewName, model, swapMode)` - Add out-of-band swap
-- `WithSuccessToast(message)` / `WithErrorToast(message)` / `WithWarningToast(message)` / `WithInfoToast(message)`
-- `WithTrigger(eventName, payload)` - Add custom HX-Trigger event
+Key APIs:
 
-**Note:** All triggers and toasts are automatically merged into a single `HX-Trigger` header. Multiple calls to `WithTrigger` and toast methods will create a JSON object containing all events.
+- `WithView(viewName, model)` – main HTML payload
+- `AlsoUpdate(targetId, viewName, model, swapMode?)` – out‑of‑band swaps
+- `WithSuccessToast(message)` / `WithErrorToast` / `WithWarningToast` / `WithInfoToast`
+- `WithTrigger(eventKeyOrName, payload?)` – add HTMX triggers (merged into `HX-Trigger`)
 
-**SwapMode options:**
-- `SwapMode.OuterHTML` (default) - Replace entire element
-- `SwapMode.InnerHTML` - Replace inner content only
-- `SwapMode.BeforeBegin` / `AfterBegin` / `BeforeEnd` / `AfterEnd` - Insert content
-- `SwapMode.Delete` - Remove the element
+Swap modes are strongly typed via `SwapMode` (OuterHTML, InnerHTML, BeforeBegin, AfterBegin, BeforeEnd, AfterEnd, Delete).
+
+See: `docs/OutOfBandSwaps.md`.
 
 ### 3. Minimal APIs
 
-Swap provides first-class support for Minimal APIs via `SwapResults`.
+`SwapResults` lets Minimal API endpoints return Swap responses:
 
 ```csharp
-app.MapPost("/todo", (TodoItem item, ITodoService service) => 
+using Swap.Htmx;
+
+app.MapPost("/todo", (TodoItem item, ITodoService service) =>
 {
     service.Add(item);
-    
+
     return SwapResults.Response()
         .WithView("_TodoItem", item)
         .WithSuccessToast("Added!");
 });
 ```
 
+See: `docs/MinimalApis.md`.
+
 ### 4. Razor Pages
 
-Swap works natively with Razor Pages using extension methods.
+Use Swap directly from `PageModel` via extension methods:
 
 ```csharp
+using Microsoft.AspNetCore.Mvc.RazorPages;
+using Swap.Htmx;
+
 public class IndexModel : PageModel
 {
-    public IActionResult OnGetUpdate()
+    public IActionResult OnPostUpdate()
     {
         return this.SwapResponse()
             .WithView("_Partial", this)
@@ -178,17 +248,55 @@ public class IndexModel : PageModel
     }
 }
 ```
-        .AlsoUpdate("todo-count", "_TodoCount", service.Count())
-        .WithSuccessToast("Item added!");
-});
-```
 
-### 5. Event-Driven (Configuration-Based Updates)
+See: `docs/RazorPages.md`.
 
-For complex apps where multiple controllers need coordinated updates, configure event chains once and trigger them anywhere:
+### 5. Composition Over Inheritance
+
+All fluent APIs are available as extension methods on `ControllerBase` and `PageModel`, so you can opt‑out of inheriting from `SwapController` entirely:
 
 ```csharp
-// Define constants for element IDs and view names (avoids magic strings)
+using Microsoft.AspNetCore.Mvc;
+using Swap.Htmx;
+
+public class ReviewsController : Controller
+{
+    [HttpPost]
+    public IActionResult Add(Review review)
+    {
+        if (!ModelState.IsValid)
+        {
+            return this.SwapValidationErrors(ModelState)
+                .AlsoUpdate("review-form", "_ReviewForm", review)
+                .Build();
+        }
+
+        _service.Add(review);
+
+        return this.SwapResponse()
+            .WithSuccessToast("Review added!")
+            .WithTrigger(ReviewEvents.Added, review)
+            .Build();
+    }
+}
+``;
+
+See: `Extensions/SwapControllerExtensions.cs`, `Extensions/SwapPageModelExtensions.cs`, `Extensions/SwapValidationExtensions.cs`.
+
+---
+
+## Event System & Event Chains
+
+As your UI grows, you can centralize “when event X happens, refresh Y and show Z toast” declarations.
+
+### Configuration
+
+Create a config class implementing `ISwapEventConfiguration` and register it via `AddSwapHtmx`:
+
+```csharp
+using Swap.Htmx;
+using Swap.Htmx.Events;
+
 public static class ProductViews
 {
     public const string List = "_ProductList";
@@ -201,13 +309,6 @@ public static class ProductElements
     public const string Count = "product-count";
 }
 
-// Configuration in Program.cs
-builder.Services.AddSwapHtmx(options => 
-{
-    options.AddConfig<ProductEventConfig>();
-});
-
-// Define configuration class
 public class ProductEventConfig : ISwapEventConfiguration
 {
     public void Configure(SwapEventBusOptions events)
@@ -218,154 +319,51 @@ public class ProductEventConfig : ISwapEventConfiguration
               .SuccessToast("Product created!");
     }
 }
+
+// Program.cs
+builder.Services.AddSwapHtmx(options =>
+{
+    options.AddConfig<ProductEventConfig>();
+});
 ```
 
-### 4. Composition Over Inheritance (New in v1.2)
-
-You don't have to inherit from `SwapController`. You can use standard ASP.NET Core controllers and access all Swap features via extension methods:
+From a controller, just emit the event:
 
 ```csharp
-using Swap.Htmx; // Import extension methods
-
-public class ReviewsController : Controller
-{
-    [HttpPost]
-    public IActionResult Add(Review review)
-    {
-        if (!ModelState.IsValid)
-        {
-            // New in v1.3: First-class validation support
-            return this.SwapValidationErrors(ModelState)
-                .AlsoUpdate("review-form", "_ReviewForm", review)
-                .Build();
-        }
-
-        _service.Add(review);
-        
-        // Use extension methods on 'this' (ControllerBase)
-        return this.SwapResponse()
-            .WithSuccessToast("Review added!")
-            .WithTrigger(ReviewEvents.Added, review)
-            .Build();
-    }
-
-    [HttpGet]
-    public IActionResult List(int productId)
-    {
-        var reviews = _service.GetByProductId(productId);
-        
-        // Use SwapView extension to handle partial/full view automatically
-        return this.SwapView("_ReviewList", reviews);
-    }
-}
-```
-
-## Documentation
-
-- [Getting Started](docs/GettingStarted.md)
-- [Events & Triggers](docs/Events.md)
-- [Event Chains](docs/EventChains.md)
-- [Out-of-Band Swaps](docs/OutOfBandSwaps.md)
-- [Server-Sent Events](docs/ServerSentEvents.md)
-- [Debugging & Logging](docs/DebuggingAndLogging.md)
-
-## License
-
-MIT
-
-    
-    events.When(SwapEvents.Entity.Updated("Product"))
-          .RefreshPartial(ProductElements.List, ProductViews.List, ctx => GetProducts(ctx))
-          .InfoToast("Product updated!");
-    
-    events.When(SwapEvents.Entity.Deleted("Product"))
-          .RefreshPartial(ProductElements.List, ProductViews.List, ctx => GetProducts(ctx))
-          .RefreshPartial(ProductElements.Count, ProductViews.Count, ctx => GetProductCount(ctx))
-          .WarningToast("Product deleted!");
-});
-
-// In your controller - just emit the event
 public class ProductsController : SwapController
 {
     public IActionResult Create(Product product)
     {
         _db.Products.Add(product);
-        _db.SaveChangesAsync();
-        
-        // Event chain handles ALL UI updates based on configuration
+        _db.SaveChanges();
+
         return SwapEvent(SwapEvents.Entity.Created("Product"));
     }
 }
 ```
 
-### Async Event Chains (v1.1)
-
-Avoid thread starvation by using async model factories for database operations:
+Async model factories avoid thread starvation for DB work:
 
 ```csharp
-// Configuration
 events.When(ProductEvents.StockChecked)
-      .RefreshPartialAsync(ProductElements.Stock, ProductViews.Stock, async ctx => 
+      .RefreshPartialAsync(ProductElements.Stock, ProductViews.Stock, async ctx =>
       {
           var service = ctx.RequestServices.GetRequiredService<IProductService>();
-          return await service.GetStockAsync(); // Safe async execution
+          return await service.GetStockAsync();
       });
-
-// Controller
-public async Task<IActionResult> CheckStock(int id)
-{
-    // ... logic ...
-    return await SwapEventAsync(ProductEvents.StockChecked);
-}
 ```
 
-**Benefits:**
-- Centralized UI update configuration
-- No repetition across controllers
-- Easy to understand what updates when an event fires
-- Change UI behavior without touching controller code
+See: `docs/Events.md` and `docs/EventChains.md`.
 
-**Event chain builder methods:**
-- `RefreshPartial(targetId, viewName, modelFactory, swapMode)` - Render and swap a partial
-- `SuccessToast(message)` / `ErrorToast(message)` / `WarningToast(message)` / `InfoToast(message)` - Show toast
-- `AlsoTrigger(eventKey)` - Trigger additional client-side events
-- `Build()` - Complete the chain configuration
+---
 
-See [Events Documentation](Events/README_EVENTS.md) for more details on type-safe events.
+## Realtime: SSE & WebSockets
 
-## Setup
+`Swap.Htmx` includes primitives for streaming HTML over SSE and WebSockets.
 
-### Basic Configuration
+### Server‑Sent Events (SSE)
 
-```csharp
-var builder = WebApplication.CreateBuilder(args);
-
-builder.Services.AddControllersWithViews();
-builder.Services.AddSwapHtmx(); // Registers core services
-
-var app = builder.Build();
-
-app.UseSwapHtmx(); // Adds middleware for event handling
-app.MapControllers();
-
-app.Run();
-```
-
-### With Server-Sent Events
-
-```csharp
-builder.Services
-    .AddSwapHtmx()
-    .AddSseEventBridge(); // Enables SSE with connection management
-
-app.UseSwapHtmx(); // Handles both HTTP responses and SSE broadcasts
-```
-
-## Server-Sent Events (SSE)
-
-Stream real-time HTML updates to connected clients:
-
-### Basic SSE
+Basic SSE endpoint from a `SwapController`:
 
 ```csharp
 public const string NotificationView = "_Notification";
@@ -385,7 +383,7 @@ public IActionResult StreamNotifications()
 }
 ```
 
-### Enhanced SSE with Connection Management
+Enhanced SSE with rooms and subscriptions:
 
 ```csharp
 public static class SseRooms
@@ -404,12 +402,10 @@ public IActionResult Dashboard()
     return EnhancedServerSentEvents(async (builder, ct) =>
     {
         var connection = builder.Connection;
-        
-        // Join rooms for targeted broadcasting
+
         connection.JoinRoom(SseRooms.Dashboard);
         connection.SubscribeToEvent(SseEventNames.MetricsUpdated);
-        
-        // Keep connection alive
+
         while (!ct.IsCancellationRequested)
         {
             await Task.Delay(30000, ct);
@@ -418,15 +414,52 @@ public IActionResult Dashboard()
 }
 ```
 
-## Manual HTMX Helpers
-
-For low-level control, extension methods are available:
+To broadcast from services, inject `ISseEventBridge`:
 
 ```csharp
-// Check if request is from HTMX
+public class OrderService
+{
+    private readonly ISseEventBridge _sse;
+
+    public OrderService(ISseEventBridge sse) => _sse = sse;
+
+    public async Task CompleteOrder(int orderId)
+    {
+        await _sse.BroadcastAsync("OrderCompleted", new { id = orderId });
+        await _sse.SendToUserAsync("user-123", "Notification", "Your order is ready!");
+        await _sse.SendToRoomAsync("admin-dashboard", "StatsUpdated", new { id = orderId });
+    }
+}
+```
+
+Configure in `Program.cs`:
+
+```csharp
+// Single‑server, in‑memory
+builder.Services.AddSwapHtmx()
+                .AddSseEventBridge();
+
+// With Redis backplane
+builder.Services.AddSwapHtmx()
+                .AddSseEventBridge()
+                .AddSwapRedisBackplane(options =>
+                {
+                    options.Configuration = "localhost:6379";
+                    options.ChannelName = "my-app-events";
+                });
+```
+
+See: `docs/ServerSentEvents.md`, `docs/WebSockets.md`, `docs/Realtime.md`, and `docs/RedisBackplane.md`.
+
+---
+
+## Low‑Level HTMX Helpers
+
+If you just need to set headers manually, use the `HttpRequest`/`HttpResponse` extensions in `Swap.Htmx.Extensions`:
+
+```csharp
 if (Request.IsHtmxRequest())
 {
-    // Set response headers
     Response.HxTrigger("todoCreated");
     Response.HxTrigger("todoCreated", new { id = 123 });
     Response.HxRedirect("/todos");
@@ -434,209 +467,70 @@ if (Request.IsHtmxRequest())
 }
 ```
 
-## Dev Tooling
+There are also helpers for `HX-Location`, `HX-Reswap`, and more. See: `Extensions/SwapHtmxExtensions.cs`.
 
-Visualize event chains and inspect SSE connections in development:
+---
 
-```csharp
-app.MapSwapHtmxDevEndpoints(); // Available at /_swap/dev/*
-```
+## Dev Tooling & Observability
 
-## Migration from Manual Patterns
+- **Dev endpoints** – expose Swap dev UIs:
 
-### Before (Manual Coordination)
+  ```csharp
+  app.MapSwapHtmxDevEndpoints(); // /_swap/dev/*
+  ```
 
-```csharp
-public static class TodoViews { public const string Todo = "_Todo"; }
-public static class TodoElements { public const string Counter = "counter"; public const string Status = "status"; }
-public static class TodoEvents { public static readonly EventKey Created = new("todo.created"); }
+  Useful for inspecting event chains, SSE/WebSocket connections, and troubleshooting.
 
-public IActionResult Create(TodoInput input)
-{
-    var todo = _service.Create(input);
-    
-    Response.ShowSuccessToast("Todo created!");
-    Response.HxTrigger(TodoEvents.Created.Name);
-    
-    ViewData["OobCounter"] = RenderOobPanel(TodoElements.Counter, GetCount());
-    ViewData["OobStatus"] = RenderOobPanel(TodoElements.Status, "Active");
-    
-    return SwapView(TodoViews.Todo, todo);
-}
-```
+- **Logging & Telemetry** – `SwapTelemetry` and `SwapLog` integrate with ASP.NET logging and OpenTelemetry.
 
-### After (Fluent Builder)
+  - To see verbose logs, add e.g. to `appsettings.Development.json`:
 
-```csharp
-public static class TodoViews 
-{ 
-    public const string Todo = "_Todo";
-    public const string Counter = "_Counter";
-    public const string Status = "_Status";
-}
-
-public ActionResult Create(TodoInput input)
-{
-    var todo = _service.Create(input);
-    
-    return SwapResponse()
-        .WithView(TodoViews.Todo, todo)
-        .AlsoUpdate(TodoElements.Counter, TodoViews.Counter, GetCount(), SwapMode.InnerHTML)
-        .AlsoUpdate(TodoElements.Status, TodoViews.Status, "Active")
-        .WithSuccessToast("Todo created!")
-        .WithTrigger(TodoEvents.Created);
-}
-```
-
-## Examples
-
-### Complete Product Management Example
-
-This example shows all three approaches in a single controller:
-
-```csharp
-// Constants for type safety (no magic strings!)
-public static class ProductViews
-{
-    public const string List = "_ProductList";
-    public const string Count = "_ProductCount";
-    public const string Added = "_ProductAdded";
-}
-
-public static class ProductElements
-{
-    public const string List = "product-list";
-    public const string Count = "product-count";
-}
-
-public static class CartElements
-{
-    public const string Badge = "cart-badge";
-    public const string Total = "cart-total";
-}
-
-public static class CartViews
-{
-    public const string Badge = "_CartBadge";
-    public const string Total = "_CartTotal";
-}
-
-// 1. Configure event chains (Program.cs)
-builder.Services.AddSwapHtmx(events =>
-{
-    events.When(SwapEvents.Entity.Created("Product"))
-          .RefreshPartial(ProductElements.List, ProductViews.List, ctx => 
-              ctx.RequestServices.GetRequiredService<ProductService>().GetAll())
-          .RefreshPartial(ProductElements.Count, ProductViews.Count, ctx => 
-              ctx.RequestServices.GetRequiredService<ProductService>().GetCount())
-          .SuccessToast("Product created successfully!");
-});
-
-// 2. Controller using all three approaches
-public class ProductsController : SwapController
-{
-    private readonly ProductService _service;
-    
-    public ProductsController(ProductService service) => _service = service;
-    
-    // Approach 1: Simple view (list page)
-    public IActionResult Index()
-    {
-        var products = _service.GetAll();
-        return SwapView(products);
-        // Auto-detects: full page on first load, partial on HTMX requests
+    ```json
+    "Logging": {
+      "LogLevel": {
+        "Swap.Htmx": "Debug"
+      }
     }
-    
-    // Approach 2: Coordinated updates (manual control for cart)
-    public IActionResult AddToCart(int id)
-    {
-        var product = _service.Get(id);
-        _cart.Add(product);
-        
-        return SwapResponse()
-            .WithView(ProductViews.Added, product)
-            .AlsoUpdate(CartElements.Badge, CartViews.Badge, _cart.ItemCount, SwapMode.InnerHTML)
-            .AlsoUpdate(CartElements.Total, CartViews.Total, _cart.Total)
-            .WithSuccessToast($"{product.Name} added to cart!")
-            .WithTrigger(SwapEvents.UI.UpdateCounter, new { count = _cart.ItemCount });
-    }
-    
-    // Approach 3: Event-driven (DRY for repeated patterns)
-    public IActionResult Create(Product product)
-    {
-        _service.Create(product);
-        
-        // All UI updates happen automatically via configured event chain
-        return SwapEvent(SwapEvents.Entity.Created("Product"));
-    }
-}
-```
+    ```
 
-### Migration from Manual Patterns
+See: `docs/DebuggingAndLogging.md`.
 
-**Before (manual ViewData + Response headers):**
-```csharp
-public IActionResult Create(Todo todo)
-{
-    _db.Todos.Add(todo);
-    _db.SaveChangesAsync();
-    
-    // Scattered UI logic with magic strings everywhere
-    ViewData["OobTodoList"] = await RenderPartialAsync("_TodoList", _db.Todos.ToList());
-    ViewData["OobTodoCount"] = await RenderPartialAsync("_TodoCount", _db.Todos.Count());
-    Response.AddSuccessToast("Todo created!");
-    Response.AddTrigger("todoCreated");
-    
-    return PartialView("_TodoCreated", todo);
-}
-```
+---
 
-**After (fluent API with type-safe constants):**
-```csharp
-// Define once, use everywhere
-public static class TodoViews
-{
-    public const string Created = "_TodoCreated";
-    public const string List = "_TodoList";
-    public const string Count = "_TodoCount";
-}
+## Demos & Templates
 
-public static class TodoElements
-{
-    public const string List = "todo-list";
-    public const string Count = "todo-count";
-}
+This repo ships with several demos that exercise different parts of `Swap.Htmx`:
 
-public IActionResult Create(Todo todo)
-{
-    _db.Todos.Add(todo);
-    _db.SaveChangesAsync();
-    
-    // Clean, discoverable, type-safe - no magic strings!
-    return SwapResponse()
-        .WithView(TodoViews.Created, todo)
-        .AlsoUpdate(TodoElements.List, TodoViews.List, _db.Todos.ToList())
-        .AlsoUpdate(TodoElements.Count, TodoViews.Count, _db.Todos.Count())
-        .WithSuccessToast("Todo created!")
-        .WithTrigger(SwapEvents.UI.RefreshList);
-}
-```
+- `demo/SwapMinimal` – minimal API + Swap example
+- `demo/SwapShop` – e‑commerce style MVC app showing controllers, events, and chains
+- `demo/TaskFlow` – team task management with realtime features
+- `demo/SwapWebSockets`, `demo/SwapRedisDemo`, `demo/SwapPhase15`, etc. – focused samples for realtime and orchestration features
 
-For complete working examples, see the `Swap.Htmx.TestApp` project in this repository.
+For a production‑ready starting point, use the `swap-mvc` template from `Swap.Templates`.
 
-## Documentation
+---
 
-- **[Getting Started Guide](docs/GettingStarted.md)** - Step-by-step tutorial for building your first HTMX app
-- **[Type-Safe Events Guide](docs/Events.md)** - Learn how to define and use strongly-typed event keys to eliminate magic strings
-- **[Event Chains Guide](docs/EventChains.md)** - Configure automatic UI updates when events are triggered
-- **[Realtime (WebSockets & SSE)](docs/WebSockets.md)** - Detailed guide on realtime features
-- **[Server-Sent Events Guide](docs/ServerSentEvents.md)** - Complete guide to real-time updates with SSE
-- **[Out-of-Band Swaps Guide](docs/OutOfBandSwaps.md)** - Complete guide to multi-part page updates
-- **[Minimal APIs Guide](docs/MinimalApis.md)** - Using Swap with Minimal APIs
-- **[Razor Pages Guide](docs/RazorPages.md)** - Using Swap with Razor Pages
-- **[Source Generators Guide](docs/SourceGenerators.md)** - Automatically generate type-safe event keys
-- **[User Context & Identity](docs/UserContext.md)** - Abstracted user ID resolution
-- **[Debugging & Observability](docs/DebuggingAndLogging.md)** - Configure OpenTelemetry tracing, metrics, and structured logging for production monitoring
+## Documentation Map
+
+All library docs live under `docs/` in this folder:
+
+- **Getting Started** – `docs/GettingStarted.md`
+- **Events & Triggers** – `docs/Events.md`
+- **Event Chains** – `docs/EventChains.md`
+- **Out‑of‑Band Swaps** – `docs/OutOfBandSwaps.md`
+- **Server‑Sent Events** – `docs/ServerSentEvents.md`
+- **Realtime Overview** – `docs/Realtime.md`
+- **WebSockets** – `docs/WebSockets.md`
+- **Redis Backplane** – `docs/RedisBackplane.md`
+- **Minimal APIs** – `docs/MinimalApis.md`
+- **Razor Pages** – `docs/RazorPages.md`
+- **Source Generators** – `docs/SourceGenerators.md`
+- **User Context & Identity** – `docs/UserContext.md`
+- **Debugging & Logging** – `docs/DebuggingAndLogging.md`
+
+For a higher‑level view of all Swap packages (`Swap.Htmx`, `Swap.Testing`, templates, etc.), see the root‑level `README.md`.
+
+---
 
 ## License
 

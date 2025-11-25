@@ -1,12 +1,71 @@
 # Event-Driven HTTP Responses
 
-This guide explains how to use event chains to automatically coordinate UI updates when events are triggered.
+This guide explains how to use event chains and distributed handlers to automatically coordinate UI updates when events are triggered.
 
 ## Overview
 
-Instead of manually building responses in every controller action, you can configure **event chains** that define what should happen when specific events occur. This eliminates repetition and centralizes UI update logic.
+Instead of manually building responses in every controller action, you can use **Distributed Handlers** (recommended) or **Event Chains** to define what should happen when specific events occur. This eliminates repetition and centralizes UI update logic.
 
-## Quick Start
+## Distributed Handlers (Recommended)
+
+Distributed handlers allow you to decouple your UI logic completely. Each handler is responsible for updating a specific part of the UI in response to an event.
+
+### 1. Define an Event
+
+```csharp
+public class TaskCompletedEvent
+{
+    public int TaskId { get; set; }
+    public string Title { get; set; }
+}
+```
+
+### 2. Create Handlers
+
+Implement `ISwapEventHandler<T>` and decorate with `[SwapHandler]`.
+
+```csharp
+// Handler 1: Removes the task row
+[SwapHandler]
+public class TaskListHandler : ISwapEventHandler<TaskCompletedEvent>
+{
+    public Task HandleAsync(TaskCompletedEvent @event, SwapResponseBuilder builder, CancellationToken ct)
+    {
+        builder.AlsoUpdate($"task-{@event.TaskId}", "", null, SwapMode.Delete);
+        return Task.CompletedTask;
+    }
+}
+
+// Handler 2: Updates the stats counter
+[SwapHandler]
+public class StatsHandler : ISwapEventHandler<TaskCompletedEvent>
+{
+    public Task HandleAsync(TaskCompletedEvent @event, SwapResponseBuilder builder, CancellationToken ct)
+    {
+        // Fetch new stats...
+        var stats = new StatsViewModel { ... };
+        builder.AlsoUpdate("stats-widget", "_Stats", stats);
+        return Task.CompletedTask;
+    }
+}
+```
+
+### 3. Trigger in Controller
+
+```csharp
+[HttpPost]
+public IActionResult Complete(int id)
+{
+    // ... business logic ...
+    
+    return this.SwapEvent(new TaskCompletedEvent { TaskId = id, Title = "..." })
+               .Build();
+}
+```
+
+## Centralized Event Chains (Legacy)
+
+You can also configure event chains centrally using `ISwapEventConfiguration`.
 
 ### 1. Configure Event Chains
 

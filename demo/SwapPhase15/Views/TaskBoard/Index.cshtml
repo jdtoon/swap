@@ -1,0 +1,104 @@
+@model SwapPhase15.Controllers.TaskBoardViewModel
+
+@{
+    ViewData["Title"] = "Task Board Demo";
+}
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1>Task Board</h1>
+            <p class="text-muted">
+                Demonstrating <strong>Decoupled UI Updates</strong>. 
+                One controller action triggers multiple independent handlers.
+            </p>
+        </div>
+        <button class="btn btn-outline-secondary"
+                hx-post="/TaskBoard/Reset" 
+                hx-target="#main-content">Reset Demo</button>
+    </div>
+
+    <div class="row">
+        <!-- Left Column: Task List -->
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">My Tasks</h5>
+                    <span id="task-count-badge" class="badge bg-primary rounded-pill">@Model.Tasks.Count pending</span>
+                </div>
+                <div class="card-body p-0">
+                    <table class="table table-hover mb-0">
+                        <tbody id="task-list">
+                            @foreach (var task in Model.Tasks)
+                            {
+                                <partial name="_TaskRow" model="task" />
+                            }
+                            @if (!Model.Tasks.Any())
+                            {
+                                <tr id="no-tasks-message">
+                                    <td colspan="2" class="text-center py-4 text-muted">No tasks remaining!</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column: Stats & Activity -->
+        <div class="col-md-4">
+            <!-- Stats Widget -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">Project Status</h5>
+                    <div id="project-stats">
+                        <partial name="_Stats" model="Model" />
+                    </div>
+                </div>
+            </div>
+
+            <!-- Activity Log Widget -->
+            <div class="card shadow-sm">
+                <div class="card-header bg-light">
+                    <h6 class="mb-0">Activity Log</h6>
+                </div>
+                <div class="card-body p-0" style="max-height: 300px; overflow-y: auto;">
+                    <ul class="list-group list-group-flush" id="activity-log-list">
+                        <li class="list-group-item text-muted small">Session started...</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.body.addEventListener('swap:clientAction', function(e) {
+            const { action, target, value } = e.detail;
+            
+            if (action === 'confetti') {
+                // Simple confetti simulation
+                const colors = ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff'];
+                for(let i=0; i<50; i++) {
+                    const el = document.createElement('div');
+                    el.style.position = 'fixed';
+                    el.style.left = Math.random() * 100 + 'vw';
+                    el.style.top = '-10px';
+                    el.style.width = '10px';
+                    el.style.height = '10px';
+                    el.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                    el.style.transition = 'top 2s ease-in, transform 2s linear';
+                    el.style.zIndex = '9999';
+                    document.body.appendChild(el);
+                    
+                    // Trigger animation
+                    requestAnimationFrame(() => {
+                        el.style.top = '110vh';
+                        el.style.transform = 'rotate(' + (Math.random() * 360) + 'deg)';
+                    });
+                    
+                    setTimeout(() => el.remove(), 2000);
+                }
+            }
+        });
+    </script>

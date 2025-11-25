@@ -6,6 +6,7 @@ using Moq;
 using Swap.Htmx.Events;
 using Swap.Htmx.Models;
 using Swap.Htmx.Services;
+using System;
 using Xunit;
 
 namespace Swap.Htmx.Tests;
@@ -16,6 +17,7 @@ public class SwapEventServiceTests
     private readonly Mock<ILogger<SwapEventService>> _loggerMock;
     private readonly Mock<IHttpContextAccessor> _httpContextAccessorMock;
     private readonly Mock<ISwapEventBus> _eventBusMock;
+    private readonly SwapEventHandlerExecutor _handlerExecutor;
     private readonly SwapEventService _service;
 
     public SwapEventServiceTests()
@@ -24,7 +26,17 @@ public class SwapEventServiceTests
         _loggerMock = new Mock<ILogger<SwapEventService>>();
         _httpContextAccessorMock = new Mock<IHttpContextAccessor>();
         _eventBusMock = new Mock<ISwapEventBus>();
-        _service = new SwapEventService(_executorMock.Object, _loggerMock.Object, _httpContextAccessorMock.Object, _eventBusMock.Object);
+        
+        var registry = new SwapEventHandlerRegistry();
+        var serviceProviderMock = new Mock<IServiceProvider>();
+        _handlerExecutor = new SwapEventHandlerExecutor(serviceProviderMock.Object, registry);
+
+        _service = new SwapEventService(
+            _executorMock.Object, 
+            _loggerMock.Object, 
+            _httpContextAccessorMock.Object, 
+            _eventBusMock.Object,
+            _handlerExecutor);
     }
 
     [Fact]

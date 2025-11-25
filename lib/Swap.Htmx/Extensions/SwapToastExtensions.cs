@@ -111,12 +111,26 @@ public static class SwapToastExtensions
 
     private static string EscapeJson(string str)
     {
-        return str
-            .Replace("\\", "\\\\")
-            .Replace("\"", "\\\"")
-            .Replace("\n", "\\n")
-            .Replace("\r", "\\r")
-            .Replace("\t", "\\t");
+        if (string.IsNullOrEmpty(str)) return str;
+        
+        var sb = new System.Text.StringBuilder();
+        foreach (var c in str)
+        {
+            if (c == '\\') sb.Append("\\\\");
+            else if (c == '"') sb.Append("\\\"");
+            else if (c == '\n') sb.Append("\\n");
+            else if (c == '\r') sb.Append("\\r");
+            else if (c == '\t') sb.Append("\\t");
+            else if (c < 32 || c > 127)
+            {
+                sb.AppendFormat("\\u{0:X4}", (int)c);
+            }
+            else
+            {
+                sb.Append(c);
+            }
+        }
+        return sb.ToString();
     }
 }
 

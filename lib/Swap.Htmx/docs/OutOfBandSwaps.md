@@ -16,6 +16,25 @@ When a user adds an item to their cart, you want to:
 
 All from one request!
 
+## Generating OOB Swaps from Handlers (Recommended)
+
+In larger applications, you should decouple OOB generation from your controllers using **Distributed Handlers**.
+
+```csharp
+[SwapHandler]
+public class CartCountHandler : ISwapEventHandler<ItemAddedEvent>
+{
+    public Task HandleAsync(ItemAddedEvent @event, SwapResponseBuilder builder, CancellationToken ct)
+    {
+        // This handler ONLY cares about updating the cart count
+        builder.AlsoUpdate("cart-count", "_CartCount", @event.NewCount);
+        return Task.CompletedTask;
+    }
+}
+```
+
+This allows your controller to just trigger the event, and multiple handlers can attach OOB updates to the response independently.
+
 ## Basic Out-of-Band Swap
 
 ### Using SwapResponse Builder
