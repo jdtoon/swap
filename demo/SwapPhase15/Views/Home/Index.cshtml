@@ -46,12 +46,22 @@
             Handlers will update the UI and perform client actions.
         </p>
         
-        <form hx-post="/Home/SubmitForm" hx-swap="none" class="mb-4"
+        <form id="main-form" hx-post="/Home/SubmitForm" hx-swap="none" class="mb-4"
               hx-on:htmx:validation:failed="this.querySelector('#message-error').textContent = 'Message is required.'">
             <input type="text" name="message" id="input-field" placeholder="Enter a message (required)" required class="form-control mb-2" />
             <span class="text-danger" hx-swap-oob="true" id="message-error"></span>
             <button type="submit" class="btn">Submit Form</button>
         </form>
+        <div id="form-feedback" class="mb-4"></div>
+
+        <div class="mb-4 border-top pt-4">
+            <h3>Validation Demo</h3>
+            <p class="text-muted small">This form is designed to fail validation (email is required).</p>
+            <form hx-post="/Home/SubmitFailForm" hx-swap="none">
+                <input type="text" name="email" placeholder="Enter email (required)" class="form-control mb-2" />
+                <button type="submit" class="btn btn-warning">Submit Invalid Form</button>
+            </form>
+        </div>
         
         <button class="btn" hx-post="/Home/ClickMe" hx-swap="none">
             Trigger Server Event
@@ -83,3 +93,20 @@
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        document.body.addEventListener('swap:clientAction', function(e) {
+            const { action, target, value } = e.detail;
+            const el = target ? document.querySelector(target) : null;
+            
+            if (action === 'reset' && el) {
+                el.reset();
+            } else if (action === 'focus' && el) {
+                el.focus();
+            } else if (action === 'value' && el) {
+                el.value = value;
+            }
+        });
+    </script>
+}

@@ -25,6 +25,13 @@ public class HomeController : Controller
     }
 
     [HttpPost]
+    [SwapForm]
+    public IActionResult SubmitFailForm([System.ComponentModel.DataAnnotations.Required] string email)
+    {
+        return this.SwapResponse().WithSuccessToast("This shouldn't happen!").Build();
+    }
+
+    [HttpPost]
     public IActionResult ClickMe()
     {
         return this.SwapResponse()
