@@ -41,17 +41,15 @@ public class TaskBoardController : Controller
         _completedCount++;
 
         // 2. Trigger Event
-        // Notice: The controller knows NOTHING about the UI updates (stats, logs, removing the row).
-        // It just says "This happened".
-        return this.SwapResponse()
-            .WithTrigger(TaskEvents.Task.Completed, new TaskCompletedEvent 
-            { 
-                TaskId = task.Id, 
-                TaskTitle = task.Title,
-                RemainingTasks = _tasks.Count,
-                TotalTasks = _tasks.Count + _completedCount
-            })
-            .Build();
+        // Use SwapEvent to execute server-side handlers and generate OOB updates
+        return this.SwapEvent(TaskEvents.Task.Completed, new TaskCompletedEvent 
+        { 
+            TaskId = task.Id, 
+            TaskTitle = task.Title,
+            RemainingTasks = _tasks.Count,
+            TotalTasks = _tasks.Count + _completedCount
+        })
+        .Build();
     }
     
     [HttpPost]
@@ -67,7 +65,9 @@ public class TaskBoardController : Controller
             new(5, "Write Unit Tests", "Pending"),
         });
         _completedCount = 0;
-        return RedirectToAction(nameof(Index));
+        
+        // Return the Index view directly for HTMX to swap the main content
+        return Index();
     }
 }
 

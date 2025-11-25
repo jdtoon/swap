@@ -13,7 +13,7 @@
                 One controller action triggers multiple independent handlers.
             </p>
         </div>
-        <form action="/TaskBoard/Reset" method="post">
+        <form hx-post="/TaskBoard/Reset" hx-target="#main-content" hx-push-url="true">
             <button class="btn btn-outline-secondary">Reset Demo</button>
         </form>
     </div>

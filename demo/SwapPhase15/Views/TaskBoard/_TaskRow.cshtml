@@ -5,9 +5,11 @@
         <span class="fw-medium">@Model.Title</span>
     </td>
     <td class="text-end">
-        <form hx-post="/TaskBoard/Complete" hx-swap="none" style="display:inline;">
-            <input type="hidden" name="id" value="@Model.Id" />
-            <button type="submit" class="btn btn-sm btn-success">Complete</button>
-        </form>
+        <button class="btn btn-sm btn-success"
+                hx-post="/TaskBoard/Complete"
+                hx-vals='{"id": @Model.Id}'
+                hx-swap="none">
+            Complete
+        </button>
     </td>
 </tr>
