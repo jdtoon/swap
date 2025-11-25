@@ -177,6 +177,11 @@ public sealed class SwapResult : IResult
         ITempDataDictionary tempData, 
         OobSwap oob)
     {
+        if (oob.SwapMode == SwapMode.Delete)
+        {
+            return $"<div id=\"{oob.TargetId}\" hx-swap-oob=\"delete\"></div>";
+        }
+
         var viewEngine = context.HttpContext.RequestServices.GetRequiredService<ICompositeViewEngine>();
         
         // Create a new ViewData for the OOB swap to avoid polluting the main one
