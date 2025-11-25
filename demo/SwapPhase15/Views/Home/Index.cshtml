@@ -31,7 +31,11 @@
                 Check out the new Task Board demo to see how <strong>Swap.Htmx</strong> handles complex, distributed UI updates.
                 See how one action triggers multiple independent handlers to update the Task List, Stats, and Activity Log simultaneously.
             </p>
-            <a href="/TaskBoard" class="btn btn-primary btn-lg">Launch Task Board Demo</a>
+            <a href="/TaskBoard" 
+               class="btn btn-primary btn-lg"
+               hx-get="/TaskBoard" 
+               hx-target="#main-content" 
+               hx-push-url="true">Launch Task Board Demo</a>
         </div>
     </div>
 
@@ -55,12 +59,7 @@
         <div id="server-message" class="mt-2 text-success fw-bold"></div>
 
         <div id="counter-section" class="mt-4 card">
-            <h3>Counter Demo</h3>
-            <form hx-post="/Home/IncrementCounter" hx-target="#counter-section" hx-swap="innerHTML">
-                <input type="hidden" name="count" value="0" />
-                <p>Count: <span>0</span></p>
-                <button type="submit" class="btn">Increment Counter</button>
-            </form>
+            <partial name="_Counter" model="0" />
         </div>
 
         <div id="stats-section" class="mt-4 card"

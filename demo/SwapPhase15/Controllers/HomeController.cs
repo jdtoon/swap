@@ -38,6 +38,8 @@ public class HomeController : Controller
     {
         var newCount = count + 1;
         _totalIncrements++;
+        // The view _Counter will be swapped into #counter-section (innerHTML)
+        // The handler will update the stats section via OOB
         return this.SwapResponse()
             .WithView("_Counter", newCount)
             .WithTrigger(AppEvents.Counter.Updated, new CounterUpdatedEvent { Count = newCount })

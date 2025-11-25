@@ -5,7 +5,7 @@
 }
 
 <h3>Counter Demo</h3>
-<form hx-post="/Home/IncrementCounter" hx-swap="none">
+<form hx-post="/Home/IncrementCounter" hx-target="#counter-section" hx-swap="innerHTML">
     <input type="hidden" name="count" value="@Model" />
     <p>Count: <span>@Model</span></p>
     <button type="submit" class="btn">Increment Counter</button>
