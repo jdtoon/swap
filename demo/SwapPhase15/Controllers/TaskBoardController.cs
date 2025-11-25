@@ -52,7 +52,28 @@ public class TaskBoardController : Controller
         .Build();
     }
     
-    // Reset method removed as per instructions
+    [HttpPost]
+    public IActionResult Reset()
+    {
+        _tasks.Clear();
+        _tasks.AddRange(new List<TaskItem>
+        {
+            new(1, "Review PR #102", "Pending"),
+            new(2, "Update Documentation", "Pending"),
+            new(3, "Fix CSS Grid Issue", "Pending"),
+            new(4, "Optimize Database Queries", "Pending"),
+            new(5, "Write Unit Tests", "Pending"),
+        });
+        _completedCount = 0;
+        
+        var model = new TaskBoardViewModel
+        {
+            Tasks = _tasks.Where(t => t.Status == "Pending").ToList(),
+            CompletedCount = _completedCount,
+            TotalTasks = _tasks.Count + _completedCount
+        };
+        return this.SwapView("Index", model);
+    }
 }
 
 public record TaskItem(int Id, string Title, string Status);
