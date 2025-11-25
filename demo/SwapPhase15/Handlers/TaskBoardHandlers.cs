@@ -71,7 +71,7 @@ public class CelebrationHandler : ISwapEventHandler<TaskCompletedEvent>
     {
         if (@event.RemainingTasks == 0)
         {
-            builder.WithSuccessToast("🎉 All tasks completed! Great job!");
+            builder.WithSuccessToast("All tasks completed! Great job!");
             builder.WithClientAction("confetti", "body"); // Imaginary client action
         }
         else

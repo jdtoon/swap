@@ -52,23 +52,7 @@ public class TaskBoardController : Controller
         .Build();
     }
     
-    [HttpPost]
-    public IActionResult Reset()
-    {
-        _tasks.Clear();
-        _tasks.AddRange(new List<TaskItem>
-        {
-            new(1, "Review PR #102", "Pending"),
-            new(2, "Update Documentation", "Pending"),
-            new(3, "Fix CSS Grid Issue", "Pending"),
-            new(4, "Optimize Database Queries", "Pending"),
-            new(5, "Write Unit Tests", "Pending"),
-        });
-        _completedCount = 0;
-        
-        // Return the Index view directly for HTMX to swap the main content
-        return Index();
-    }
+    // Reset method removed as per instructions
 }
 
 public record TaskItem(int Id, string Title, string Status);
