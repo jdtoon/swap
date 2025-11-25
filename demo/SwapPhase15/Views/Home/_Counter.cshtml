@@ -1,5 +1,9 @@
 @model int
 
+@{
+    Layout = null;
+}
+
 <h3>Counter Demo</h3>
 <form hx-post="/Home/IncrementCounter" hx-swap="none">
     <input type="hidden" name="count" value="@Model" />

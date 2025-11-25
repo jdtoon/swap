@@ -12,13 +12,21 @@
         <div class="container d-flex justify-content-between align-items-center py-3">
             <a href="/" class="text-decoration-none text-dark fs-4 fw-bold">Swap.Htmx Demo</a>
             <nav>
-                <a href="/" class="text-dark text-decoration-none me-3">Home</a>
-                <a href="/TaskBoard" class="text-dark text-decoration-none">Task Board</a>
+                <a href="/" 
+                   class="text-dark text-decoration-none me-3"
+                   hx-get="/" 
+                   hx-target="#main-content" 
+                   hx-push-url="true">Home</a>
+                <a href="/TaskBoard" 
+                   class="text-dark text-decoration-none"
+                   hx-get="/TaskBoard" 
+                   hx-target="#main-content" 
+                   hx-push-url="true">Task Board</a>
             </nav>
         </div>
     </header>
 
-    <main role="main">
+    <main role="main" id="main-content">
         @RenderBody()
     </main>
 

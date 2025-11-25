@@ -12,7 +12,8 @@ public class UserClickedHandler : ISwapEventHandler<UserClickedEvent>
     {
         // Example: Update a counter or show a toast
         builder.WithSuccessToast($"User {@event.Source}: {@event.Message}")
-               .WithClientAction("focus", "#input-field");
+               .WithClientAction("focus", "#input-field")
+               .AlsoUpdate("server-message", "_ServerMessage", $"Server received: {@event.Message} at {DateTime.Now:T}");
         return Task.CompletedTask;
     }
 }
