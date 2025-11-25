@@ -64,6 +64,15 @@ public sealed record TriggerEvent(
 );
 
 /// <summary>
+/// Represents a pending client-side action.
+/// </summary>
+public sealed record ClientAction(
+    string Action,
+    string? Target = null,
+    object? Value = null
+);
+
+/// <summary>
 /// Fluent builder for constructing coordinated HTMX responses with multiple updates.
 /// Replaces manual ViewData manipulation and Response.AddTrigger() calls with a clean, discoverable API.
 /// Implements IResult for direct usage in Minimal APIs.
@@ -75,6 +84,7 @@ public sealed class SwapResponseBuilder : IResult
     private readonly List<OobSwap> _oobSwaps = new();
     private readonly List<ToastNotification> _toasts = new();
     private readonly List<TriggerEvent> _triggers = new();
+    private readonly List<ClientAction> _clientActions = new();
     private string? _redirectUrl;
     
     // Store controller reference for implicit conversion
@@ -233,6 +243,19 @@ public sealed class SwapResponseBuilder : IResult
     }
 
     /// <summary>
+    /// Adds a client-side action to execute after the swap.
+    /// </summary>
+    /// <param name="action">The action to perform (e.g., "focus", "reset", "scroll").</param>
+    /// <param name="target">Optional target selector or element ID.</param>
+    /// <param name="value">Optional value for the action.</param>
+    /// <returns>The builder for chaining.</returns>
+    public SwapResponseBuilder WithClientAction(string action, string? target = null, object? value = null)
+    {
+        _clientActions.Add(new ClientAction(action, target, value));
+        return this;
+    }
+
+    /// <summary>
     /// Gets the configured view name.
     /// </summary>
     internal string? ViewName => _viewName;
@@ -256,6 +279,11 @@ public sealed class SwapResponseBuilder : IResult
     /// Gets all configured triggers.
     /// </summary>
     public IReadOnlyList<TriggerEvent> Triggers => _triggers;
+
+    /// <summary>
+    /// Gets all configured client actions.
+    /// </summary>
+    public IReadOnlyList<ClientAction> ClientActions => _clientActions;
     
     /// <summary>
     /// Gets the configured redirect URL.

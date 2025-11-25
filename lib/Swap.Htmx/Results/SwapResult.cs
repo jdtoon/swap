@@ -82,6 +82,13 @@ public sealed class SwapResult : IResult
             }
         }
 
+        // 3.5. Apply client actions as triggers
+        foreach (var action in _builder.ClientActions)
+        {
+            var payload = new { action = action.Action, target = action.Target, value = action.Value };
+            response.HxTrigger("swap:clientAction", payload);
+        }
+
         // Prepare ActionContext for view rendering
         var routeData = httpContext.GetRouteData() ?? new RouteData();
         var actionDescriptor = new ActionDescriptor();

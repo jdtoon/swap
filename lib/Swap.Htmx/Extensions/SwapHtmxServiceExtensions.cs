@@ -48,6 +48,17 @@ public static class SwapHtmxServiceExtensions
         var options = new SwapHtmxOptions();
         configure?.Invoke(options);
         
+        // Default assemblies to scan
+        if (options.AssembliesToScan.Count == 0)
+        {
+            options.AssembliesToScan.Add(typeof(SwapHtmxOptions).Assembly); // Swap.Htmx
+            var entryAssembly = System.Reflection.Assembly.GetEntryAssembly();
+            if (entryAssembly != null)
+            {
+                options.AssembliesToScan.Add(entryAssembly);
+            }
+        }
+        
         // Apply decentralized configurations
         foreach (var configType in options.ConfigurationTypes)
         {
@@ -65,6 +76,12 @@ public static class SwapHtmxServiceExtensions
         services.AddScoped<ISwapEventBus, SwapEventBus>();
         services.AddScoped<IEventChainExecutor>(sp => new EventChainExecutor(options.EventBus));
         services.AddScoped<ISwapEventService, SwapEventService>();
+        
+        // Register distributed handlers
+        var registry = new SwapEventHandlerRegistry();
+        registry.ScanAndRegisterHandlers(services, options.AssembliesToScan.ToArray());
+        services.AddSingleton(registry);
+        services.AddScoped<SwapEventHandlerExecutor>();
         
         // Register user context (default to Session)
         services.TryAddScoped<ISwapUserContext, SessionSwapUserContext>();

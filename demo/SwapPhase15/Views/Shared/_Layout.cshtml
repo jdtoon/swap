@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - SwapPhase15</title>
+    <link rel="stylesheet" href="~/css/app.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/_content/Swap.Htmx/css/swap.css" asp-append-version="true" />
+</head>
+<body>
+    <main role="main">
+        @RenderBody()
+    </main>
+
+    <div id="toast-container"></div>
+
+    <script src="~/lib/htmx/dist/htmx.min.js"></script>
+    <script src="~/lib/htmx/ext/sse.js"></script>
+    <script src="~/_content/Swap.Htmx/js/swap.client.js"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>
