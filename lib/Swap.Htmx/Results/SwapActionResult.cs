@@ -164,6 +164,12 @@ public sealed class SwapActionResult : ActionResult
 
     private async Task<string> RenderOobSwapAsync(ActionContext context, OobSwap oob)
     {
+        // Handle Delete mode specially - no view rendering needed
+        if (oob.SwapMode == SwapMode.Delete)
+        {
+            return $"<div id=\"{oob.TargetId}\" hx-swap-oob=\"delete\"></div>";
+        }
+
         var viewEngine = context.HttpContext.RequestServices.GetRequiredService<ICompositeViewEngine>();
         var modelMetadataProvider = context.HttpContext.RequestServices.GetRequiredService<IModelMetadataProvider>();
         var viewData = new ViewDataDictionary(modelMetadataProvider, context.ModelState)
