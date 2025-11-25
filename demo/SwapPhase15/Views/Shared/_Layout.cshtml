@@ -8,6 +8,16 @@
     <link rel="stylesheet" href="~/_content/Swap.Htmx/css/swap.css" asp-append-version="true" />
 </head>
 <body>
+    <header class="mb-4 border-bottom">
+        <div class="container d-flex justify-content-between align-items-center py-3">
+            <a href="/" class="text-decoration-none text-dark fs-4 fw-bold">Swap.Htmx Demo</a>
+            <nav>
+                <a href="/" class="text-dark text-decoration-none me-3">Home</a>
+                <a href="/TaskBoard" class="text-dark text-decoration-none">Task Board</a>
+            </nav>
+        </div>
+    </header>
+
     <main role="main">
         @RenderBody()
     </main>
