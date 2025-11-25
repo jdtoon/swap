@@ -1,3 +1,4 @@
+@using SwapPhase15.Events
 @{
     ViewData["Title"] = "Home Page";
 }
@@ -30,8 +31,10 @@
             Handlers will update the UI and perform client actions.
         </p>
         
-        <form hx-post="/Home/SubmitForm" hx-swap="none" class="mb-4">
-            <input type="text" name="message" id="input-field" placeholder="Enter a message" required class="form-control mb-2" />
+        <form hx-post="/Home/SubmitForm" hx-swap="none" class="mb-4"
+              hx-on:htmx:validation:failed="this.querySelector('#message-error').textContent = 'Message is required.'">
+            <input type="text" name="message" id="input-field" placeholder="Enter a message (required)" required class="form-control mb-2" />
+            <span class="text-danger" hx-swap-oob="true" id="message-error"></span>
             <button type="submit" class="btn">Submit Form</button>
         </form>
         
@@ -39,13 +42,21 @@
             Trigger Server Event
         </button>
 
-        <div id="message-area" 
-             class="mt-4" 
-             style="margin-top: 1.5rem; min-height: 60px;"
-             hx-trigger="user.clicked from:body" 
-             hx-get="/Home/Message" 
+        <div id="counter-section" class="mt-4 card">
+            <h3>Counter Demo</h3>
+            <form hx-post="/Home/IncrementCounter" hx-target="#counter-section" hx-swap="innerHTML">
+                <input type="hidden" name="count" value="0" />
+                <p>Count: <span>0</span></p>
+                <button type="submit" class="btn">Increment Counter</button>
+            </form>
+        </div>
+
+        <div id="stats-section" class="mt-4 card"
+             hx-trigger="@AppEvents.Stats.Updated.Name from:body"
+             hx-get="/Home/UpdateStats"
              hx-swap="innerHTML">
-            <p class="text-muted" style="font-size: 0.9rem">Waiting for event...</p>
+            <h4>Stats</h4>
+            <p>Total Increments: 0</p>
         </div>
     </div>
 

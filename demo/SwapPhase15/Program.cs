@@ -1,10 +1,14 @@
 using Swap.Htmx;
+using SwapPhase15.Events;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
-builder.Services.AddSwapHtmx();
+builder.Services.AddSwapHtmx(options =>
+{
+    options.AddConfig<AppEventConfig>();
+});
 
 var app = builder.Build();
 

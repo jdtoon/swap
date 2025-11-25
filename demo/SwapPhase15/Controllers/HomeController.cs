@@ -7,6 +7,7 @@ namespace SwapPhase15.Controllers;
 
 public class HomeController : Controller
 {
+    private static int _totalIncrements = 0;
     public IActionResult Index()
     {
         return this.SwapView();
@@ -19,7 +20,7 @@ public class HomeController : Controller
         // If we get here, validation passed
         return this.SwapResponse()
             .WithSuccessToast("Form submitted successfully!")
-            .WithTrigger(AppEvents.User.Clicked, message)
+            .WithTrigger(AppEvents.User.Clicked, new UserClickedEvent { Message = message, Source = "form" })
             .Build();
     }
 
@@ -28,13 +29,24 @@ public class HomeController : Controller
     {
         return this.SwapResponse()
             .WithSuccessToast("Hello from Swap.Htmx!")
-            .WithTrigger(AppEvents.User.Clicked, "button clicked")
+            .WithTrigger(AppEvents.User.Clicked, new UserClickedEvent { Message = "button clicked", Source = "button" })
+            .Build();
+    }
+
+    [HttpPost]
+    public IActionResult IncrementCounter(int count = 0)
+    {
+        var newCount = count + 1;
+        _totalIncrements++;
+        return this.SwapResponse()
+            .WithView("_Counter", newCount)
+            .WithTrigger(AppEvents.Counter.Updated, new CounterUpdatedEvent { Count = newCount })
             .Build();
     }
 
     [HttpGet]
-    public IActionResult Message()
+    public IActionResult UpdateStats()
     {
-        return PartialView("_Message");
+        return PartialView("_Stats", _totalIncrements);
     }
 }
