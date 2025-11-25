@@ -33,16 +33,18 @@ This demo showcases the new features introduced in Phase 1.5 of Swap.Htmx, focus
 ## Running the Demo
 
 1. Start the application.
-2. Submit the form with a message - see validation and handler execution.
-3. Click the button to trigger events and client actions.
-4. Increment the counter to see event chaining: counter updates and stats refresh simultaneously.
+2. Navigate to the **Task Board** demo.
+3. Click "Complete" on tasks to see:
+   - The task row disappears (Handler 1).
+   - The stats counter updates (Handler 2).
+   - The activity log adds an entry (Handler 3).
+   - A toast notification appears (Handler 4).
+4. Click "Reset Demo" to restore the tasks.
 
 ## Code Highlights
 
-- `Events/UserClickedEvent.cs` & `CounterUpdatedEvent.cs`: Strongly-typed event payloads.
-- `Handlers/UserClickedHandler.cs` & `CounterUpdatedHandler.cs`: Distributed handlers.
-- `Events/AppEventConfig.cs`: Event chains for orchestration.
-- `Controllers/HomeController.cs`: Uses `[SwapForm]` and triggers events with payloads.
-- `Views/Home/Index.cshtml`: Form with HTMX, validation, and event listening.
-- `Views/Home/_Counter.cshtml` & `_Stats.cshtml`: Partial views updated via event chains.</content>
-<parameter name="filePath">c:\jd\swap\demo\SwapPhase15\README.md
+- `Events/TaskEvents.cs`: Strongly-typed event payloads (`TaskCompletedEvent`).
+- `Handlers/TaskBoardHandlers.cs`: Distributed handlers (`TaskListHandler`, `TaskStatsHandler`, `ActivityLogHandler`).
+- `Controllers/TaskBoardController.cs`: Triggers `TaskEvents.Task.Completed` without knowing about UI updates.
+- `Views/TaskBoard/Index.cshtml`: Main view with HTMX attributes and client-side event listeners.
+- `Views/TaskBoard/_TaskRow.cshtml`, `_Stats.cshtml`, `_LogEntry.cshtml`: Partial views updated via OOB swaps.

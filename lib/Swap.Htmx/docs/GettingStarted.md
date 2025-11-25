@@ -63,7 +63,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllersWithViews();
 
-// Add Swap.Htmx
+// Add Swap.Htmx (automatically scans for [SwapHandler] in the current assembly)
 builder.Services.AddSwapHtmx();
 
 var app = builder.Build();

@@ -18,7 +18,7 @@ It handles the "messy middle" of modern web apps—validation, partial updates, 
 
 ## Why Swap?
 
-- **Orchestrate, Don't Glue** – Decouple controller actions from view rendering using Event Chains.
+- **Orchestrate, Don't Glue** – Decouple controller actions from view rendering using Event Chains and Distributed Handlers.
 - **Stay Server‑Side** – Build rich, reactive apps using standard Razor views and HTMX.
 - **Type-Safe Events** – Coordinate partials, toasts, and triggers with a strongly-typed event system and Source Generators.
 - **Minimal APIs** – First-class support for `IResult` endpoints with `SwapResults`.

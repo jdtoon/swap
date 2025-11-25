@@ -74,6 +74,18 @@ app.MapDelete("/todo/{id}", (int id, ITodoService service) =>
 });
 ```
 
+## Triggering Distributed Handlers
+
+You can trigger events that are handled by `ISwapEventHandler<T>` implementations.
+
+```csharp
+app.MapPost("/complete/{id}", (int id) => 
+{
+    // Trigger an event for distributed handlers
+    return SwapResults.Event(new TaskCompletedEvent { Id = id });
+});
+```
+
 ## Form Validation
 
 For validation, you can use `SwapValidationErrors` manually or integrate with a validation library.
