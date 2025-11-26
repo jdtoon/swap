@@ -15,7 +15,7 @@
     
     <button style="margin-bottom: 1.5rem;"
             hx-post="/Patterns/SlowAction"
-            hx-target="#slow-result"
+            hx-target="#@PatternIds.SlowResult"
             hx-swap="innerHTML">
         <span class="btn-text">➤ Submit</span>
         <span class="spinner">⏳ Loading...</span>
@@ -33,9 +33,9 @@
     <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem;">
         <button class="secondary"
                 hx-post="/Patterns/SlowAction"
-                hx-target="#indicator-result"
+                hx-target="#@PatternIds.IndicatorResult"
                 hx-swap="innerHTML"
-                hx-indicator="#loading-indicator">
+                hx-indicator="#@PatternIds.LoadingIndicator">
             ↻ Fetch Data
         </button>
         <div id="loading-indicator" class="htmx-indicator">

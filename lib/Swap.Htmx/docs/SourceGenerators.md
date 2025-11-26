@@ -250,6 +250,36 @@ return this.SwapResponse()
     .Build();
 ```
 
+### Using Generated Constants in Views
+
+You can also use the generated constants in your Razor views for `hx-target` and other reference attributes.
+
+**Important:** Keep literal string IDs in the `id="..."` attribute so the generator can extract them.
+Use constants only when *referencing* IDs (like `hx-target`).
+
+```html
+@using MyApp.Views  <!-- Contains PatternIds -->
+
+<!-- ✅ Correct: id uses literal string, hx-target uses constant -->
+<div id="product-grid">
+    ...
+</div>
+<button hx-get="/products" 
+        hx-target="#@ProductIds.ProductGrid">
+    Refresh
+</button>
+
+<!-- ❌ Incorrect: Generator can't extract IDs from Razor expressions -->
+<div id="@ProductIds.ProductGrid">  <!-- Won't be found by generator -->
+    ...
+</div>
+```
+
+This pattern gives you:
+- **Type-safe references** - Compile-time checking for hx-target attributes
+- **Single source of truth** - ID values defined once in HTML, constants auto-generated
+- **Refactoring support** - Rename an ID in HTML, rebuild, and compiler shows all references
+
 ---
 
 ## Installation

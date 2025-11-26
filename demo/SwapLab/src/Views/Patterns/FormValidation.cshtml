@@ -11,7 +11,7 @@
 <h2>Live Demo</h2>
 <div class="demo-area">
     <form hx-post="/Patterns/ValidateForm"
-          hx-target="#form-result"
+          hx-target="#@PatternIds.FormResult"
           hx-swap="innerHTML">
         
         <div style="margin-bottom: 1rem;">
@@ -22,7 +22,7 @@
                    placeholder="Enter username"
                    hx-post="/Patterns/ValidateUsername"
                    hx-trigger="blur changed"
-                   hx-target="#username-feedback"
+                   hx-target="#@PatternIds.UsernameFeedback"
                    hx-swap="innerHTML">
             <div id="username-feedback" style="font-size: 0.875rem; margin-top: 0.25rem;"></div>
         </div>
@@ -35,7 +35,7 @@
                    placeholder="Enter email"
                    hx-post="/Patterns/ValidateEmail"
                    hx-trigger="blur changed"
-                   hx-target="#email-feedback"
+                   hx-target="#@PatternIds.EmailFeedback"
                    hx-swap="innerHTML">
             <div id="email-feedback" style="font-size: 0.875rem; margin-top: 0.25rem;"></div>
         </div>
@@ -48,7 +48,7 @@
                    placeholder="Enter password"
                    hx-post="/Patterns/ValidatePassword"
                    hx-trigger="keyup changed delay:300ms"
-                   hx-target="#password-feedback"
+                   hx-target="#@PatternIds.PasswordFeedback"
                    hx-swap="innerHTML">
             <div id="password-feedback" style="font-size: 0.875rem; margin-top: 0.25rem;"></div>
         </div>

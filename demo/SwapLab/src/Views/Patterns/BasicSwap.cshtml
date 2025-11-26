@@ -13,7 +13,7 @@
     <div id="message-container">
         <p>Click the button to load a message from the server.</p>
         <button hx-get="/Patterns/GetMessage" 
-                hx-target="#message-container" 
+                hx-target="#@PatternIds.MessageContainer" 
                 hx-swap="innerHTML">
             Load Message
         </button>
