@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
@@ -9,6 +10,7 @@ using Swap.Htmx.Dev;
 using Swap.Htmx.Realtime;
 using Swap.Htmx.Models;
 using Swap.Htmx.Services;
+using Swap.Htmx.State;
 
 namespace Swap.Htmx;
 
@@ -121,6 +123,12 @@ public static class SwapHtmxServiceExtensions
         
         // Register user context (default to Session)
         services.TryAddScoped<ISwapUserContext, SessionSwapUserContext>();
+        
+        // Register SwapState model binder provider
+        services.Configure<MvcOptions>(mvcOptions =>
+        {
+            mvcOptions.ModelBinderProviders.Insert(0, new SwapStateModelBinderProvider());
+        });
         
         return services;
     }

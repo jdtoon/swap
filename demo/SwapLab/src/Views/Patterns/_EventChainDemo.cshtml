@@ -1,30 +1,27 @@
 @model SwapLab.Models.ProductGridViewModel
 @* This partial contains the tabs + grid so the active tab state updates correctly *@
 
-<!-- State Container (hidden fields) -->
-<div id="state-container" style="display: none;">
-    <input type="hidden" name="Tab" value="@Model.State.Tab" />
-    <input type="hidden" name="Page" value="@Model.State.Page" />
-</div>
+<!-- State Container: Uses SwapState for automatic state management -->
+<swap-state state="Model.State" />
 
 <!-- Tabs -->
 <div class="tabs" style="margin-bottom: 1rem;">
     <button class="@(Model.State.Tab == "all" ? "active" : "")"
             hx-post="/Patterns/ChangeTab?tab=all"
             hx-target="#event-chain-demo"
-            hx-include="#state-container">
+            hx-include="#product-search-state">
         All Products
     </button>
     <button class="@(Model.State.Tab == "electronics" ? "active" : "")"
             hx-post="/Patterns/ChangeTab?tab=electronics"
             hx-target="#event-chain-demo"
-            hx-include="#state-container">
+            hx-include="#product-search-state">
         Electronics
     </button>
     <button class="@(Model.State.Tab == "furniture" ? "active" : "")"
             hx-post="/Patterns/ChangeTab?tab=furniture"
             hx-target="#event-chain-demo"
-            hx-include="#state-container">
+            hx-include="#product-search-state">
         Furniture
     </button>
 </div>

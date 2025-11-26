@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Swap.Htmx;
+using Swap.Htmx.State;
 using SwapLab.Events;
 using SwapLab.Models;
 
@@ -153,7 +154,7 @@ public class PatternsController : Controller
     }
 
     [HttpGet]
-    public IActionResult SearchProducts(ProductSearchState state)
+    public IActionResult SearchProducts([FromSwapState] ProductSearchState state)
     {
         var results = FilterProducts(state);
         var viewModel = new ProductGridViewModel
@@ -166,6 +167,7 @@ public class PatternsController : Controller
         return this.SwapResponse()
             .WithView("_ProductGrid", viewModel)
             .WithTrigger(ProductEvents.Product.Searched)
+            .WithState(state)
             .Build();
     }
 
@@ -180,7 +182,7 @@ public class PatternsController : Controller
     }
 
     [HttpGet]
-    public IActionResult SearchProductsWithUrl(ProductSearchState state)
+    public IActionResult SearchProductsWithUrl([FromSwapState] ProductSearchState state)
     {
         var results = FilterProducts(state);
         var viewModel = new ProductGridViewModel
@@ -329,7 +331,7 @@ public class PatternsController : Controller
     }
 
     [HttpPost]
-    public IActionResult ChangeTab(string tab, ProductSearchState state)
+    public IActionResult ChangeTab(string tab, [FromSwapState] ProductSearchState state)
     {
         // Create a new state object with the updated tab to avoid any binding issues
         var newState = new ProductSearchState
@@ -351,9 +353,11 @@ public class PatternsController : Controller
         };
         
         // Return the entire demo area so tabs show active state
+        // WithState() will automatically update the state container via OOB swap
         return this.SwapResponse()
             .WithView("_EventChainDemo", viewModel)
             .WithTrigger(ProductEvents.Product.TabChanged)
+            .WithState(newState)
             .Build();
     }
 
@@ -388,7 +392,7 @@ public class PatternsController : Controller
     }
 
     [HttpGet]
-    public IActionResult MultiComponentSearch(ProductSearchState state)
+    public IActionResult MultiComponentSearch([FromSwapState] ProductSearchState state)
     {
         state.Page = 1; // Reset to first page on search
         var results = FilterProducts(state);
@@ -403,11 +407,12 @@ public class PatternsController : Controller
             .WithView("_ProductGrid", viewModel)
             .AlsoUpdate("product-count", "_ProductCount", new { Count = GetFilteredCount(state) })
             .AlsoUpdate("pagination", "_Pagination", viewModel)
+            .WithState(state)
             .Build();
     }
 
     [HttpGet]
-    public IActionResult MultiComponentPage(ProductSearchState state)
+    public IActionResult MultiComponentPage([FromSwapState] ProductSearchState state)
     {
         var results = FilterProducts(state);
         var viewModel = new ProductGridViewModel
@@ -419,6 +424,7 @@ public class PatternsController : Controller
         
         return this.SwapResponse()
             .WithView("_ProductGrid", viewModel)
+            .WithState(state)
             .Build();
     }
 

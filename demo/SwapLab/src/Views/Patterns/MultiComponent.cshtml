@@ -11,20 +11,15 @@
 
 <h2>Live Demo</h2>
 <div class="demo-area">
-    <!-- State Container: Hidden fields hold current state -->
-    <div id="state-container">
-        <input type="hidden" name="Tab" value="@Model.State.Tab" />
-        <input type="hidden" name="Page" value="@Model.State.Page" />
-        <input type="hidden" name="Search" value="@Model.State.Search" />
-        <input type="hidden" name="SortBy" value="@Model.State.SortBy" />
-    </div>
+    <!-- State Container: Uses SwapState for automatic state management -->
+    <swap-state state="Model.State" />
     
     <!-- Tabs -->
     <div class="tabs">
         <button class="@(Model.State.Tab == "all" ? "active" : "")"
                 hx-get="/Patterns/MultiComponentSearch"
                 hx-target="#product-grid"
-                hx-include="#state-container"
+                hx-include="#product-search-state"
                 hx-vals='{"Tab": "all"}'
                 hx-on::before-request="document.querySelector('[name=Tab]').value = 'all'; document.querySelector('[name=Page]').value = '1'">
             All
@@ -32,7 +27,7 @@
         <button class="@(Model.State.Tab == "electronics" ? "active" : "")"
                 hx-get="/Patterns/MultiComponentSearch"
                 hx-target="#product-grid"
-                hx-include="#state-container"
+                hx-include="#product-search-state"
                 hx-vals='{"Tab": "electronics"}'
                 hx-on::before-request="document.querySelector('[name=Tab]').value = 'electronics'; document.querySelector('[name=Page]').value = '1'">
             Electronics
@@ -40,7 +35,7 @@
         <button class="@(Model.State.Tab == "furniture" ? "active" : "")"
                 hx-get="/Patterns/MultiComponentSearch"
                 hx-target="#product-grid"
-                hx-include="#state-container"
+                hx-include="#product-search-state"
                 hx-vals='{"Tab": "furniture"}'
                 hx-on::before-request="document.querySelector('[name=Tab]').value = 'furniture'; document.querySelector('[name=Page]').value = '1'">
             Furniture
@@ -48,7 +43,7 @@
         <button class="@(Model.State.Tab == "office" ? "active" : "")"
                 hx-get="/Patterns/MultiComponentSearch"
                 hx-target="#product-grid"
-                hx-include="#state-container"
+                hx-include="#product-search-state"
                 hx-vals='{"Tab": "office"}'
                 hx-on::before-request="document.querySelector('[name=Tab]').value = 'office'; document.querySelector('[name=Page]').value = '1'">
             Office
@@ -63,9 +58,9 @@
                value="@Model.State.Search"
                hx-get="/Patterns/MultiComponentSearch"
                hx-target="#product-grid"
-               hx-include="#state-container"
+               hx-include="#product-search-state"
                hx-trigger="input changed delay:300ms, search"
-               hx-on::before-request="document.querySelector('#state-container [name=Search]').value = this.value; document.querySelector('[name=Page]').value = '1'" />
+               hx-on::before-request="document.querySelector('#product-search-state [name=Search]').value = this.value; document.querySelector('[name=Page]').value = '1'" />
         
         <span id="product-count" style="align-self: center;">
             @Model.TotalCount products

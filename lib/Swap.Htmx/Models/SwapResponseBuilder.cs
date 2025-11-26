@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Swap.Htmx.Events;
 using Swap.Htmx.Extensions;
 using Swap.Htmx.Results;
+using Swap.Htmx.State;
 
 namespace Swap.Htmx.Models;
 
@@ -86,6 +87,8 @@ public sealed class SwapResponseBuilder : IResult
     private readonly List<TriggerEvent> _triggers = new();
     private readonly List<ClientAction> _clientActions = new();
     private string? _redirectUrl;
+    private SwapState? _state;
+    private string? _stateViewName;
     
     // Store controller reference for implicit conversion
     internal Controller? Controller { get; set; }
@@ -256,6 +259,34 @@ public sealed class SwapResponseBuilder : IResult
     }
 
     /// <summary>
+    /// Includes a SwapState container as an OOB swap in the response.
+    /// The state will be rendered as hidden fields and swapped into the page.
+    /// </summary>
+    /// <param name="state">The SwapState instance to include.</param>
+    /// <param name="viewName">Optional custom partial view name for rendering. Defaults to "_SwapStateContainer".</param>
+    /// <returns>The builder for chaining.</returns>
+    /// <remarks>
+    /// Usage:
+    /// <code>
+    /// return SwapResponse()
+    ///     .WithView("_Grid", model)
+    ///     .WithState(state)  // Auto-renders and swaps state container
+    ///     .Build();
+    /// </code>
+    /// 
+    /// This is equivalent to:
+    /// <code>
+    /// .AlsoUpdate(state.ContainerId, "_SwapStateContainer", state)
+    /// </code>
+    /// </remarks>
+    public SwapResponseBuilder WithState(SwapState state, string? viewName = null)
+    {
+        _state = state ?? throw new ArgumentNullException(nameof(state));
+        _stateViewName = viewName;
+        return this;
+    }
+
+    /// <summary>
     /// Gets the configured view name.
     /// </summary>
     internal string? ViewName => _viewName;
@@ -284,6 +315,16 @@ public sealed class SwapResponseBuilder : IResult
     /// Gets all configured client actions.
     /// </summary>
     public IReadOnlyList<ClientAction> ClientActions => _clientActions;
+
+    /// <summary>
+    /// Gets the configured SwapState to include in the response.
+    /// </summary>
+    internal SwapState? State => _state;
+
+    /// <summary>
+    /// Gets the custom view name for rendering state, if specified.
+    /// </summary>
+    internal string? StateViewName => _stateViewName;
     
     /// <summary>
     /// Gets the configured redirect URL.

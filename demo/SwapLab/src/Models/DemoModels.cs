@@ -1,3 +1,5 @@
+using Swap.Htmx.State;
+
 namespace SwapLab.Models;
 
 /// <summary>
@@ -12,9 +14,13 @@ public record Product(
 );
 
 /// <summary>
-/// Product search state - demonstrates state management patterns.
+/// Product search state - demonstrates SwapState automatic binding.
+/// Inheriting from SwapState provides:
+/// - Automatic model binding with [FromSwapState]
+/// - Automatic OOB state sync with .WithState()
+/// - Change tracking
 /// </summary>
-public class ProductSearchState
+public class ProductSearchState : SwapState
 {
     public string Tab { get; set; } = "all";
     public int Page { get; set; } = 1;
