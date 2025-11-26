@@ -1,120 +1,98 @@
 @model SwapLab.Models.ProductGridViewModel
 @{
     ViewData["Title"] = "Multi-Component Coordination";
+    Layout = Context.Request.Headers.ContainsKey("HX-Request") ? "_PartialLayout" : "_Layout";
 }
 
-<div class="sidebar">
-    <div class="logo">Swap<span>Lab</span></div>
-    <h3>Basics</h3>
-    <a href="/Patterns/BasicSwap">Basic Swap</a>
-    <a href="/Patterns/BasicPost">Form POST</a>
-    <a href="/Patterns/OobSwap">Out-of-Band Swaps</a>
-    <a href="/Patterns/Toasts">Toast Notifications</a>
-    <h3>State Management</h3>
-    <a href="/Patterns/HiddenFields">Hidden Field State</a>
-    <a href="/Patterns/UrlState">URL State</a>
-    <h3>Event Chains</h3>
-    <a href="/Patterns/EventChains">Event Chains</a>
-    <a href="/Patterns/EventTiming">Event Timing</a>
-    <h3>Multi-Component</h3>
-    <a href="/Patterns/MultiComponent" class="active">Multi-Component</a>
-    <a href="/Patterns/SearchDebounce">Search with Debounce</a>
-    <a href="/Patterns/InfiniteScroll">Infinite Scroll</a>
-    <h3>Forms</h3>
-    <a href="/Patterns/FormValidation">Form Validation</a>
-    <a href="/Patterns/ModalForms">Modal Forms</a>
-</div>
+<hgroup>
+    <h1>Multi-Component Coordination</h1>
+    <p>The most common real-world pattern: tabs + search + pagination + grid</p>
+</hgroup>
 
-<div class="main-content">
-    <hgroup>
-        <h1>Multi-Component Coordination</h1>
-        <p>The most common real-world pattern: tabs + search + pagination + grid</p>
-    </hgroup>
-    
-    <h2>Live Demo</h2>
-    <div class="demo-area">
-        <!-- State Container: Hidden fields hold current state -->
-        <div id="state-container">
-            <input type="hidden" name="Tab" value="@Model.State.Tab" />
-            <input type="hidden" name="Page" value="@Model.State.Page" />
-            <input type="hidden" name="Search" value="@Model.State.Search" />
-            <input type="hidden" name="SortBy" value="@Model.State.SortBy" />
-        </div>
-        
-        <!-- Tabs -->
-        <div class="tabs">
-            <button class="@(Model.State.Tab == "all" ? "active" : "")"
-                    hx-get="/Patterns/MultiComponentSearch"
-                    hx-target="#product-grid"
-                    hx-include="#state-container"
-                    hx-vals='{"Tab": "all"}'
-                    hx-on::before-request="document.querySelector('[name=Tab]').value = 'all'; document.querySelector('[name=Page]').value = '1'">
-                All
-            </button>
-            <button class="@(Model.State.Tab == "electronics" ? "active" : "")"
-                    hx-get="/Patterns/MultiComponentSearch"
-                    hx-target="#product-grid"
-                    hx-include="#state-container"
-                    hx-vals='{"Tab": "electronics"}'
-                    hx-on::before-request="document.querySelector('[name=Tab]').value = 'electronics'; document.querySelector('[name=Page]').value = '1'">
-                Electronics
-            </button>
-            <button class="@(Model.State.Tab == "furniture" ? "active" : "")"
-                    hx-get="/Patterns/MultiComponentSearch"
-                    hx-target="#product-grid"
-                    hx-include="#state-container"
-                    hx-vals='{"Tab": "furniture"}'
-                    hx-on::before-request="document.querySelector('[name=Tab]').value = 'furniture'; document.querySelector('[name=Page]').value = '1'">
-                Furniture
-            </button>
-            <button class="@(Model.State.Tab == "office" ? "active" : "")"
-                    hx-get="/Patterns/MultiComponentSearch"
-                    hx-target="#product-grid"
-                    hx-include="#state-container"
-                    hx-vals='{"Tab": "office"}'
-                    hx-on::before-request="document.querySelector('[name=Tab]').value = 'office'; document.querySelector('[name=Page]').value = '1'">
-                Office
-            </button>
-        </div>
-        
-        <!-- Search -->
-        <div style="display: flex; gap: 1rem; margin-bottom: 1rem;">
-            <input type="search" 
-                   name="Search"
-                   placeholder="Search products..."
-                   value="@Model.State.Search"
-                   hx-get="/Patterns/MultiComponentSearch"
-                   hx-target="#product-grid"
-                   hx-include="#state-container"
-                   hx-trigger="input changed delay:300ms, search"
-                   hx-on::before-request="document.querySelector('#state-container [name=Search]').value = this.value; document.querySelector('[name=Page]').value = '1'" />
-            
-            <span id="product-count" style="align-self: center;">
-                @Model.TotalCount products
-            </span>
-        </div>
-        
-        <!-- Product Grid -->
-        <div id="product-grid">
-            @await Html.PartialAsync("_ProductGrid", Model)
-        </div>
-        
-        <!-- Pagination -->
-        <div id="pagination">
-            @await Html.PartialAsync("_Pagination", Model)
-        </div>
+<h2>Live Demo</h2>
+<div class="demo-area">
+    <!-- State Container: Hidden fields hold current state -->
+    <div id="state-container">
+        <input type="hidden" name="Tab" value="@Model.State.Tab" />
+        <input type="hidden" name="Page" value="@Model.State.Page" />
+        <input type="hidden" name="Search" value="@Model.State.Search" />
+        <input type="hidden" name="SortBy" value="@Model.State.SortBy" />
     </div>
     
-    <h2>How It Works</h2>
-    <ol>
-        <li><strong>State Container</strong> — Hidden fields store current tab, page, search, sort</li>
-        <li><strong>hx-include</strong> — All requests include the state container</li>
-        <li><strong>before-request</strong> — Update state BEFORE request is built (critical!)</li>
-        <li><strong>AlsoUpdate()</strong> — Server updates grid AND count AND pagination</li>
-    </ol>
+    <!-- Tabs -->
+    <div class="tabs">
+        <button class="@(Model.State.Tab == "all" ? "active" : "")"
+                hx-get="/Patterns/MultiComponentSearch"
+                hx-target="#product-grid"
+                hx-include="#state-container"
+                hx-vals='{"Tab": "all"}'
+                hx-on::before-request="document.querySelector('[name=Tab]').value = 'all'; document.querySelector('[name=Page]').value = '1'">
+            All
+        </button>
+        <button class="@(Model.State.Tab == "electronics" ? "active" : "")"
+                hx-get="/Patterns/MultiComponentSearch"
+                hx-target="#product-grid"
+                hx-include="#state-container"
+                hx-vals='{"Tab": "electronics"}'
+                hx-on::before-request="document.querySelector('[name=Tab]').value = 'electronics'; document.querySelector('[name=Page]').value = '1'">
+            Electronics
+        </button>
+        <button class="@(Model.State.Tab == "furniture" ? "active" : "")"
+                hx-get="/Patterns/MultiComponentSearch"
+                hx-target="#product-grid"
+                hx-include="#state-container"
+                hx-vals='{"Tab": "furniture"}'
+                hx-on::before-request="document.querySelector('[name=Tab]').value = 'furniture'; document.querySelector('[name=Page]').value = '1'">
+            Furniture
+        </button>
+        <button class="@(Model.State.Tab == "office" ? "active" : "")"
+                hx-get="/Patterns/MultiComponentSearch"
+                hx-target="#product-grid"
+                hx-include="#state-container"
+                hx-vals='{"Tab": "office"}'
+                hx-on::before-request="document.querySelector('[name=Tab]').value = 'office'; document.querySelector('[name=Page]').value = '1'">
+            Office
+        </button>
+    </div>
     
-    <h2>The State Container Pattern</h2>
-    <div class="code-view">
+    <!-- Search -->
+    <div style="display: flex; gap: 1rem; margin-bottom: 1rem;">
+        <input type="search" 
+               name="Search"
+               placeholder="Search products..."
+               value="@Model.State.Search"
+               hx-get="/Patterns/MultiComponentSearch"
+               hx-target="#product-grid"
+               hx-include="#state-container"
+               hx-trigger="input changed delay:300ms, search"
+               hx-on::before-request="document.querySelector('#state-container [name=Search]').value = this.value; document.querySelector('[name=Page]').value = '1'" />
+        
+        <span id="product-count" style="align-self: center;">
+            @Model.TotalCount products
+        </span>
+    </div>
+    
+    <!-- Product Grid -->
+    <div id="product-grid">
+        @await Html.PartialAsync("_ProductGrid", Model)
+    </div>
+    
+    <!-- Pagination -->
+    <div id="pagination">
+        @await Html.PartialAsync("_Pagination", Model)
+    </div>
+</div>
+
+<h2>How It Works</h2>
+<ol>
+    <li><strong>State Container</strong> — Hidden fields store current tab, page, search, sort</li>
+    <li><strong>hx-include</strong> — All requests include the state container</li>
+    <li><strong>before-request</strong> — Update state BEFORE request is built (critical!)</li>
+    <li><strong>AlsoUpdate()</strong> — Server updates grid AND count AND pagination</li>
+</ol>
+
+<h2>The State Container Pattern</h2>
+<div class="code-view">
 <pre>&lt;!-- All state lives here --&gt;
 &lt;div id="state-container"&gt;
     &lt;input type="hidden" name="Tab" value="all" /&gt;
@@ -122,10 +100,10 @@
     &lt;input type="hidden" name="Search" value="" /&gt;
     &lt;input type="hidden" name="SortBy" value="name" /&gt;
 &lt;/div&gt;</pre>
-    </div>
-    
-    <h2>Tab Button Pattern</h2>
-    <div class="code-view">
+</div>
+
+<h2>Tab Button Pattern</h2>
+<div class="code-view">
 <pre>&lt;button hx-get="/Patterns/MultiComponentSearch"
         hx-target="#product-grid"
         hx-include="#state-container"
@@ -135,44 +113,37 @@
             document.querySelector('[name=Page]').value = '1';"&gt;
     Electronics
 &lt;/button&gt;</pre>
-    </div>
-    
-    <h2>⚠️ Critical: Event Timing</h2>
-    <p>
-        Use <code>hx-on::before-request</code> to update state, NOT <code>hx-on::after-request</code>.
-        The state must be updated BEFORE HTMX builds the request parameters.
-    </p>
-    
-    <h2>Controller Code</h2>
-    <div class="code-view">
+</div>
+
+<h2>⚠️ Critical: Event Timing</h2>
+<p>
+    Use <code>hx-on::before-request</code> to update state, NOT <code>hx-on::after-request</code>.
+    The state must be updated BEFORE HTMX builds the request parameters.
+</p>
+
+<h2>Controller Code</h2>
+<div class="code-view">
 <pre>[HttpGet]
 public IActionResult MultiComponentSearch(ProductSearchState state)
 {
-    state.Page = 1; // Reset to first page on search
+    state.Page = 1;
     var results = FilterProducts(state);
     
-    return Swap()
-        .Target("#product-grid")
-        .Partial("_ProductGrid", new ProductGridViewModel
-        {
-            Products = results,
-            State = state,
-            TotalCount = GetFilteredCount(state)
-        })
-        // Update these ADDITIONAL elements
+    return this.SwapResponse()
+        .WithView("_ProductGrid", new ProductGridViewModel { ... })
         .AlsoUpdate("#product-count", "_ProductCount", 
             new { Count = GetFilteredCount(state) })
         .AlsoUpdate("#pagination", "_Pagination", 
-            new ProductGridViewModel { ... });
+            new ProductGridViewModel { ... })
+        .Build();
 }</pre>
-    </div>
-    
-    <h2>Key Points</h2>
-    <ul>
-        <li><strong>Single Source of Truth</strong> — State container holds all state</li>
-        <li><strong>hx-include</strong> — All requests carry the full state</li>
-        <li><strong>before-request</strong> — Update state before request is built</li>
-        <li><strong>AlsoUpdate()</strong> — Update multiple components in one response</li>
-        <li><strong>Model Binding</strong> — ASP.NET binds state automatically</li>
-    </ul>
 </div>
+
+<h2>Key Points</h2>
+<ul>
+    <li><strong>Single Source of Truth</strong> — State container holds all state</li>
+    <li><strong>hx-include</strong> — All requests carry the full state</li>
+    <li><strong>before-request</strong> — Update state before request is built</li>
+    <li><strong>AlsoUpdate()</strong> — Update multiple components in one response</li>
+    <li><strong>Model Binding</strong> — ASP.NET binds state automatically</li>
+</ul>

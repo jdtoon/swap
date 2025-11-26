@@ -1,36 +1,66 @@
 @model IEnumerable<SwapLab.Models.Product>
 @{
     ViewData["Title"] = "Modal Forms";
-    ViewData["Description"] = "Edit forms in modal dialogs";
+    Layout = Context.Request.Headers.ContainsKey("HX-Request") ? "_PartialLayout" : "_Layout";
 }
 
-<div class="row">
-    <div class="col-lg-5">
-        <div class="card mb-4">
-            <div class="card-header">
-                <h5 class="mb-0">🪟 Modal Form Pattern</h5>
-            </div>
-            <div class="card-body">
-                <p>
-                    Load edit forms into a modal dialog, then update the underlying
-                    data when the form is submitted.
-                </p>
+<hgroup>
+    <h1>Modal Forms</h1>
+    <p>Edit forms in modal dialogs</p>
+</hgroup>
 
-                <h6>Pattern Steps:</h6>
-                <ol>
-                    <li>Click edit → Load form into modal</li>
-                    <li>Submit form → Close modal + update row</li>
-                    <li>Use OOB swap to update the row in place</li>
-                </ol>
-            </div>
-        </div>
+<h2>Live Demo</h2>
+<div class="demo-area">
+    <table style="width: 100%; border-collapse: collapse;">
+        <thead>
+            <tr style="background: var(--color-bg-tertiary);">
+                <th style="padding: 0.75rem 1rem; text-align: left;">Name</th>
+                <th style="padding: 0.75rem 1rem; text-align: right;">Price</th>
+                <th style="padding: 0.75rem 1rem; text-align: right;">Stock</th>
+                <th style="padding: 0.75rem 1rem; text-align: center;">Action</th>
+            </tr>
+        </thead>
+        <tbody id="products-table">
+            @foreach (var product in Model.Take(5))
+            {
+                <tr id="product-row-@product.Id" style="border-bottom: 1px solid var(--color-border);">
+                    <td style="padding: 0.75rem 1rem;">@product.Name</td>
+                    <td style="padding: 0.75rem 1rem; text-align: right;">$@product.Price.ToString("F2")</td>
+                    <td style="padding: 0.75rem 1rem; text-align: right;">@product.Stock</td>
+                    <td style="padding: 0.75rem 1rem; text-align: center;">
+                        <button class="secondary"
+                                style="padding: 0.25rem 0.75rem; font-size: 0.875rem;"
+                                hx-get="/Patterns/EditProductModal?id=@product.Id"
+                                hx-target="#modal-container"
+                                hx-swap="innerHTML">
+                            Edit
+                        </button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
 
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0">&lt;/&gt; The Code</h5>
-            </div>
-            <div class="card-body">
-<pre><code>// Load modal content
+    <!-- Modal Container -->
+    <div id="modal-container"></div>
+</div>
+
+<h2>Modal Form Pattern</h2>
+<p>
+    Load edit forms into a modal dialog, then update the underlying
+    data when the form is submitted.
+</p>
+
+<h2>Pattern Steps</h2>
+<ol>
+    <li>Click edit → Load form into modal</li>
+    <li>Submit form → Close modal + update row</li>
+    <li>Use OOB swap to update the row in place</li>
+</ol>
+
+<h2>Controller Code</h2>
+<div class="code-view">
+<pre>// Load modal content
 [HttpGet]
 public IActionResult EditModal(int id)
 {
@@ -49,52 +79,16 @@ public IActionResult Save(Item item)
             "_Row", item)
         .WithSuccessToast("Saved!")
         .Build();
-}</code></pre>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-lg-7">
-        <div class="card">
-            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">▶ Live Demo</h5>
-            </div>
-            <div class="card-body p-0">
-                <table class="w-100" style="border-collapse: collapse;">
-                    <thead>
-                        <tr style="background: var(--color-bg-tertiary);">
-                            <th style="padding: 0.75rem 1rem; text-align: left;">Name</th>
-                            <th style="padding: 0.75rem 1rem; text-align: right;">Price</th>
-                            <th style="padding: 0.75rem 1rem; text-align: right;">Stock</th>
-                            <th style="padding: 0.75rem 1rem; text-align: center;">Action</th>
-                        </tr>
-                    </thead>
-                    <tbody id="products-table">
-                        @foreach (var product in Model.Take(5))
-                        {
-                            <tr id="product-row-@product.Id" style="border-bottom: 1px solid var(--color-border);">
-                                <td style="padding: 0.75rem 1rem;">@product.Name</td>
-                                <td style="padding: 0.75rem 1rem; text-align: right;">$@product.Price.ToString("F2")</td>
-                                <td style="padding: 0.75rem 1rem; text-align: right;">@product.Stock</td>
-                                <td style="padding: 0.75rem 1rem; text-align: center;">
-                                    <button class="btn btn-sm btn-secondary"
-                                            hx-get="@Url.Action("EditProductModal", "Patterns", new { id = product.Id })"
-                                            hx-target="#modal-container"
-                                            hx-swap="innerHTML">
-                                        Edit
-                                    </button>
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- Modal Container -->
-        <div id="modal-container"></div>
-    </div>
+}</pre>
 </div>
+
+<h2>Key Points</h2>
+<ul>
+    <li>Modal loads via HTMX into a container div</li>
+    <li>Form submits via HTMX, closes modal via OOB swap</li>
+    <li>Row updates in place without page reload</li>
+    <li>Toast notification confirms the action</li>
+</ul>
 
 <style>
     .modal-backdrop {

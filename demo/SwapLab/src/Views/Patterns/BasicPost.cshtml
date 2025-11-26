@@ -1,84 +1,75 @@
 @{
     ViewData["Title"] = "Form POST";
-    ViewData["Description"] = "Submit a form and update the page";
+    Layout = Context.Request.Headers.ContainsKey("HX-Request") ? "_PartialLayout" : "_Layout";
 }
 
-<div class="row">
-    <div class="col-lg-6">
-        <div class="card mb-4">
-            <div class="card-header">
-                <h5 class="mb-0">📝 Form POST Pattern</h5>
-            </div>
-            <div class="card-body">
-                <p>
-                    Use <code>hx-post</code> on a form or button to submit data without
-                    a full page reload. The response replaces only the target element.
-                </p>
+<hgroup>
+    <h1>Form POST</h1>
+    <p>Submit a form and update the page without a full reload</p>
+</hgroup>
 
-                <h6>Key Attributes:</h6>
-                <ul>
-                    <li><code>hx-post</code> — Send POST request</li>
-                    <li><code>hx-target</code> — Where to put response</li>
-                    <li><code>hx-swap</code> — How to swap (innerHTML, outerHTML, etc.)</li>
-                </ul>
-            </div>
+<h2>Live Demo</h2>
+<div class="demo-area">
+    <form hx-post="/Patterns/SubmitForm"
+          hx-target="#form-result"
+          hx-swap="innerHTML">
+        <div style="margin-bottom: 1rem;">
+            <label for="name">Your Name</label>
+            <input type="text" 
+                   id="name" 
+                   name="name"
+                   placeholder="Enter your name"
+                   required />
         </div>
+        <button type="submit" style="width: 100%;">Submit</button>
+    </form>
 
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0">&lt;/&gt; The Code</h5>
-            </div>
-            <div class="card-body">
-<pre><code>&lt;!-- Form with hx-post --&gt;
-&lt;form hx-post="/submit"
-      hx-target="#result"
+    <div id="form-result" style="margin-top: 1.5rem; padding: 1rem; background: var(--color-bg-tertiary); border-radius: var(--radius);">
+        <p style="text-align: center; color: var(--color-text-muted); margin: 0;">Submit the form to see the result</p>
+    </div>
+</div>
+
+<h2>How It Works</h2>
+<ol>
+    <li>Form has <code>hx-post="/Patterns/SubmitForm"</code> to send a POST request</li>
+    <li>Response targets <code>#form-result</code></li>
+    <li>Server returns a partial view and a toast notification</li>
+</ol>
+
+<h2>Key Attributes</h2>
+<ul>
+    <li><code>hx-post</code> — Send POST request to URL</li>
+    <li><code>hx-target</code> — CSS selector for where to put response</li>
+    <li><code>hx-swap</code> — How to swap content (innerHTML, outerHTML, etc.)</li>
+</ul>
+
+<h2>View Code</h2>
+<div class="code-view">
+<pre>&lt;form hx-post="/Patterns/SubmitForm"
+      hx-target="#form-result"
       hx-swap="innerHTML"&gt;
     &lt;input type="text" name="name" /&gt;
     &lt;button type="submit"&gt;Submit&lt;/button&gt;
 &lt;/form&gt;
+&lt;div id="form-result"&gt;&lt;/div&gt;</pre>
+</div>
 
-// Controller
-[HttpPost]
-public IActionResult Submit(string name)
+<h2>Controller Code</h2>
+<div class="code-view">
+<pre>[HttpPost]
+public IActionResult SubmitForm(string name)
 {
     return this.SwapResponse()
-        .WithView("_Greeting", name)
+        .WithView("_Greeting", new { Name = name })
         .WithSuccessToast($"Hello, {name}!")
         .Build();
-}</code></pre>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-lg-6">
-        <div class="card">
-            <div class="card-header bg-primary text-white">
-                <h5 class="mb-0">▶ Live Demo</h5>
-            </div>
-            <div class="card-body">
-                <form hx-post="@Url.Action("SubmitForm", "Patterns")"
-                      hx-target="#form-result"
-                      hx-swap="innerHTML">
-                    <div class="form-group mb-3">
-                        <label for="name" class="form-label">Your Name</label>
-                        <input type="text" 
-                               class="form-control" 
-                               id="name" 
-                               name="name"
-                               placeholder="Enter your name"
-                               required />
-                    </div>
-                    <button type="submit" class="btn btn-primary w-100">
-                        ➤ Submit
-                    </button>
-                </form>
-
-                <hr class="my-4">
-
-                <div id="form-result" class="p-3 bg-light rounded">
-                    <p class="text-muted mb-0 text-center">Submit the form to see the result</p>
-                </div>
-            </div>
-        </div>
-    </div>
+}</pre>
 </div>
+
+<h2>Key Points</h2>
+<ul>
+    <li>Form submission happens via AJAX, no page reload</li>
+    <li>Only the target element is updated</li>
+    <li>Toast notifications can be added to any response</li>
+    <li>Model binding works normally with form data</li>
+</ul>

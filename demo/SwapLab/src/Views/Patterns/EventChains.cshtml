@@ -1,96 +1,74 @@
 @{
     ViewData["Title"] = "Event Chains";
+    Layout = Context.Request.Headers.ContainsKey("HX-Request") ? "_PartialLayout" : "_Layout";
 }
 @model SwapLab.Models.ProductGridViewModel
 
-<div class="sidebar">
-    <div class="logo">Swap<span>Lab</span></div>
-    <h3>Basics</h3>
-    <a href="/Patterns/BasicSwap">Basic Swap</a>
-    <a href="/Patterns/BasicPost">Form POST</a>
-    <a href="/Patterns/OobSwap">Out-of-Band Swaps</a>
-    <a href="/Patterns/Toasts">Toast Notifications</a>
-    <h3>State Management</h3>
-    <a href="/Patterns/HiddenFields">Hidden Field State</a>
-    <a href="/Patterns/UrlState">URL State</a>
-    <h3>Event Chains</h3>
-    <a href="/Patterns/EventChains" class="active">Event Chains</a>
-    <a href="/Patterns/EventTiming">Event Timing</a>
-    <h3>Multi-Component</h3>
-    <a href="/Patterns/MultiComponent">Multi-Component</a>
-    <a href="/Patterns/SearchDebounce">Search with Debounce</a>
-    <a href="/Patterns/InfiniteScroll">Infinite Scroll</a>
-    <h3>Forms</h3>
-    <a href="/Patterns/FormValidation">Form Validation</a>
-    <a href="/Patterns/ModalForms">Modal Forms</a>
-</div>
+<hgroup>
+    <h1>Event Chains</h1>
+    <p>Configure cascading updates with ISwapEventConfiguration</p>
+</hgroup>
 
-<div class="main-content">
-    <hgroup>
-        <h1>Event Chains</h1>
-        <p>Configure cascading updates with ISwapEventConfiguration</p>
-    </hgroup>
+<h2>Live Demo</h2>
+<div class="demo-area">
+    <p>When you change tabs, the "TabChanged" event triggers a chain that updates:</p>
+    <ul>
+        <li>Product Grid</li>
+        <li>Product Count</li>
+        <li>Pagination</li>
+    </ul>
     
-    <h2>Live Demo</h2>
-    <div class="demo-area">
-        <p>When you change tabs, the "TabChanged" event triggers a chain that updates:</p>
-        <ul>
-            <li>Product Grid</li>
-            <li>Product Count</li>
-            <li>Pagination</li>
-        </ul>
-        
-        <!-- State Container -->
-        <div id="state-container">
-            <input type="hidden" name="Tab" value="@Model.State.Tab" />
-            <input type="hidden" name="Page" value="@Model.State.Page" />
-        </div>
-        
-        <!-- Tabs that trigger events -->
-        <div class="tabs">
-            <button class="@(Model.State.Tab == "all" ? "active" : "")"
-                    hx-post="/Patterns/ChangeTab?tab=all"
-                    hx-target="#product-grid"
-                    hx-include="#state-container">
-                All Products
-            </button>
-            <button class="@(Model.State.Tab == "electronics" ? "active" : "")"
-                    hx-post="/Patterns/ChangeTab?tab=electronics"
-                    hx-target="#product-grid"
-                    hx-include="#state-container">
-                Electronics
-            </button>
-            <button class="@(Model.State.Tab == "furniture" ? "active" : "")"
-                    hx-post="/Patterns/ChangeTab?tab=furniture"
-                    hx-target="#product-grid"
-                    hx-include="#state-container">
-                Furniture
-            </button>
-        </div>
-        
-        <div id="product-count" style="margin-bottom: 1rem;">
-            @Model.TotalCount products
-        </div>
-        
-        <div id="product-grid">
-            @await Html.PartialAsync("_ProductGrid", Model)
-        </div>
-        
-        <div id="pagination">
-            @await Html.PartialAsync("_Pagination", Model)
-        </div>
+    <!-- State Container -->
+    <div id="state-container">
+        <input type="hidden" name="Tab" value="@Model.State.Tab" />
+        <input type="hidden" name="Page" value="@Model.State.Page" />
     </div>
     
-    <h2>How Event Chains Work</h2>
-    <ol>
-        <li>Controller triggers an event with <code>.Trigger("TabChanged")</code></li>
-        <li>Swap.Htmx looks up the event chain configuration</li>
-        <li>Each configured partial is rendered and added to the response</li>
-        <li>All targets are updated in a single round-trip</li>
-    </ol>
+    <!-- Tabs that trigger events -->
+    <div class="tabs">
+        <button class="@(Model.State.Tab == "all" ? "active" : "")"
+                hx-post="/Patterns/ChangeTab?tab=all"
+                hx-target="#product-grid"
+                hx-include="#state-container">
+            All Products
+        </button>
+        <button class="@(Model.State.Tab == "electronics" ? "active" : "")"
+                hx-post="/Patterns/ChangeTab?tab=electronics"
+                hx-target="#product-grid"
+                hx-include="#state-container">
+            Electronics
+        </button>
+        <button class="@(Model.State.Tab == "furniture" ? "active" : "")"
+                hx-post="/Patterns/ChangeTab?tab=furniture"
+                hx-target="#product-grid"
+                hx-include="#state-container">
+            Furniture
+        </button>
+    </div>
     
-    <h2>Event Configuration</h2>
-    <div class="code-view">
+    <div id="product-count" style="margin-bottom: 1rem;">
+        @Model.TotalCount products
+    </div>
+    
+    <div id="product-grid">
+        @await Html.PartialAsync("_ProductGrid", Model)
+    </div>
+    
+    <div id="pagination">
+        @await Html.PartialAsync("_Pagination", Model)
+    </div>
+</div>
+
+<h2>How Event Chains Work</h2>
+<ol>
+    <li>Controller triggers an event with <code>.WithTrigger("TabChanged")</code></li>
+    <li>Swap.Htmx looks up the event chain configuration</li>
+    <li>Each configured partial is rendered and added to the response</li>
+    <li>All targets are updated in a single round-trip</li>
+</ol>
+
+<h2>Event Configuration</h2>
+<div class="code-view">
 <pre>public class ProductEvents : ISwapEventConfiguration
 {
     public void Configure(SwapEventBuilder builder)
@@ -102,18 +80,18 @@
             .RefreshPartial("_Pagination", "#pagination");
     }
 }</pre>
-    </div>
-    
-    <h2>Registration in Program.cs</h2>
-    <div class="code-view">
+</div>
+
+<h2>Registration in Program.cs</h2>
+<div class="code-view">
 <pre>builder.Services.AddSwapHtmx(options =>
 {
     options.Events.Add&lt;ProductEvents&gt;();
 });</pre>
-    </div>
-    
-    <h2>Controller Code</h2>
-    <div class="code-view">
+</div>
+
+<h2>Controller Code</h2>
+<div class="code-view">
 <pre>[HttpPost]
 public IActionResult ChangeTab(string tab, ProductSearchState state)
 {
@@ -122,39 +100,37 @@ public IActionResult ChangeTab(string tab, ProductSearchState state)
     
     var results = FilterProducts(state);
     
-    // Trigger the event chain
-    return Swap()
-        .Target("#product-grid")
-        .Partial("_ProductGrid", viewModel)
-        .Trigger("TabChanged");  // &lt;-- This triggers the chain!
+    return this.SwapResponse()
+        .WithView("_ProductGrid", viewModel)
+        .WithTrigger("TabChanged")  // Triggers the event chain!
+        .Build();
 }</pre>
-    </div>
-    
-    <h2>Event Chain vs AlsoUpdate()</h2>
-    <table>
-        <thead>
-            <tr>
-                <th>Approach</th>
-                <th>Use When</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr>
-                <td><code>.AlsoUpdate()</code></td>
-                <td>One-off additional updates in a specific action</td>
-            </tr>
-            <tr>
-                <td><code>ISwapEventConfiguration</code></td>
-                <td>Reusable patterns triggered from multiple places</td>
-            </tr>
-        </tbody>
-    </table>
-    
-    <h2>Key Points</h2>
-    <ul>
-        <li><strong>Centralized</strong> — Event chains are defined once, used everywhere</li>
-        <li><strong>Type-Safe</strong> — Use <code>EventKey</code> constants for event names</li>
-        <li><strong>Testable</strong> — Event configurations can be unit tested</li>
-        <li><strong>Efficient</strong> — All updates happen in a single response</li>
-    </ul>
 </div>
+
+<h2>Event Chain vs AlsoUpdate()</h2>
+<table>
+    <thead>
+        <tr>
+            <th>Approach</th>
+            <th>Use When</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><code>.AlsoUpdate()</code></td>
+            <td>One-off additional updates in a specific action</td>
+        </tr>
+        <tr>
+            <td><code>ISwapEventConfiguration</code></td>
+            <td>Reusable patterns triggered from multiple places</td>
+        </tr>
+    </tbody>
+</table>
+
+<h2>Key Points</h2>
+<ul>
+    <li><strong>Centralized</strong> — Event chains are defined once, used everywhere</li>
+    <li><strong>Type-Safe</strong> — Use <code>EventKey</code> constants for event names</li>
+    <li><strong>Testable</strong> — Event configurations can be unit tested</li>
+    <li><strong>Efficient</strong> — All updates happen in a single response</li>
+</ul>

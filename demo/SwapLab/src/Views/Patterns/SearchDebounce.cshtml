@@ -1,60 +1,38 @@
 @{
     ViewData["Title"] = "Search with Debounce";
+    Layout = Context.Request.Headers.ContainsKey("HX-Request") ? "_PartialLayout" : "_Layout";
 }
 @model IReadOnlyList<SwapLab.Models.Product>
 
-<div class="sidebar">
-    <div class="logo">Swap<span>Lab</span></div>
-    <h3>Basics</h3>
-    <a href="/Patterns/BasicSwap">Basic Swap</a>
-    <a href="/Patterns/BasicPost">Form POST</a>
-    <a href="/Patterns/OobSwap">Out-of-Band Swaps</a>
-    <a href="/Patterns/Toasts">Toast Notifications</a>
-    <h3>State Management</h3>
-    <a href="/Patterns/HiddenFields">Hidden Field State</a>
-    <a href="/Patterns/UrlState">URL State</a>
-    <h3>Event Chains</h3>
-    <a href="/Patterns/EventChains">Event Chains</a>
-    <a href="/Patterns/EventTiming">Event Timing</a>
-    <h3>Multi-Component</h3>
-    <a href="/Patterns/MultiComponent">Multi-Component</a>
-    <a href="/Patterns/SearchDebounce" class="active">Search with Debounce</a>
-    <a href="/Patterns/InfiniteScroll">Infinite Scroll</a>
-    <h3>Forms</h3>
-    <a href="/Patterns/FormValidation">Form Validation</a>
-    <a href="/Patterns/ModalForms">Modal Forms</a>
+<hgroup>
+    <h1>Search with Debounce</h1>
+    <p>Real-time search with input debouncing</p>
+</hgroup>
+
+<h2>Live Demo</h2>
+<div class="demo-area">
+    <input type="search" 
+           name="query"
+           placeholder="Type to search products..."
+           hx-get="/Patterns/LiveSearch"
+           hx-target="#search-results"
+           hx-trigger="input changed delay:300ms, search"
+           style="margin-bottom: 1rem;" />
+    
+    <div id="search-results">
+        @await Html.PartialAsync("_SearchResults", Model)
+    </div>
 </div>
 
-<div class="main-content">
-    <hgroup>
-        <h1>Search with Debounce</h1>
-        <p>Real-time search with input debouncing</p>
-    </hgroup>
-    
-    <h2>Live Demo</h2>
-    <div class="demo-area">
-        <input type="search" 
-               name="query"
-               placeholder="Type to search products..."
-               hx-get="/Patterns/LiveSearch"
-               hx-target="#search-results"
-               hx-trigger="input changed delay:300ms, search"
-               style="margin-bottom: 1rem;" />
-        
-        <div id="search-results">
-            @await Html.PartialAsync("_SearchResults", Model)
-        </div>
-    </div>
-    
-    <h2>How It Works</h2>
-    <ol>
-        <li><code>hx-trigger="input changed delay:300ms"</code> waits 300ms after typing stops</li>
-        <li>Only fires if the value actually changed</li>
-        <li><code>search</code> also triggers on pressing Enter or clicking the search clear button</li>
-    </ol>
-    
-    <h2>View Code</h2>
-    <div class="code-view">
+<h2>How It Works</h2>
+<ol>
+    <li><code>hx-trigger="input changed delay:300ms"</code> waits 300ms after typing stops</li>
+    <li>Only fires if the value actually changed</li>
+    <li><code>search</code> also triggers on pressing Enter or clicking the search clear button</li>
+</ol>
+
+<h2>View Code</h2>
+<div class="code-view">
 <pre>&lt;input type="search" 
        name="query"
        placeholder="Type to search products..."
@@ -65,10 +43,10 @@
 &lt;div id="search-results"&gt;
     @@await Html.PartialAsync("_SearchResults", Model)
 &lt;/div&gt;</pre>
-    </div>
-    
-    <h2>Controller Code</h2>
-    <div class="code-view">
+</div>
+
+<h2>Controller Code</h2>
+<div class="code-view">
 <pre>[HttpGet]
 public IActionResult LiveSearch(string? query)
 {
@@ -79,49 +57,48 @@ public IActionResult LiveSearch(string? query)
             p.Category.Contains(query, StringComparison.OrdinalIgnoreCase))
           .ToList();
     
-    return Swap()
-        .Target("#search-results")
-        .Partial("_SearchResults", results);
+    return this.SwapResponse()
+        .WithView("_SearchResults", results)
+        .Build();
 }</pre>
-    </div>
-    
-    <h2>Trigger Options</h2>
-    <table>
-        <thead>
-            <tr>
-                <th>Trigger</th>
-                <th>Description</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr>
-                <td><code>input</code></td>
-                <td>Fires on every keystroke</td>
-            </tr>
-            <tr>
-                <td><code>input changed</code></td>
-                <td>Fires only when value changes</td>
-            </tr>
-            <tr>
-                <td><code>delay:300ms</code></td>
-                <td>Waits 300ms after last event</td>
-            </tr>
-            <tr>
-                <td><code>keyup[key=='Enter']</code></td>
-                <td>Fires only on Enter key</td>
-            </tr>
-            <tr>
-                <td><code>search</code></td>
-                <td>Fires on search clear or Enter</td>
-            </tr>
-        </tbody>
-    </table>
-    
-    <h2>Key Points</h2>
-    <ul>
-        <li><strong>Debouncing</strong> prevents excessive server requests</li>
-        <li><strong>changed</strong> modifier avoids duplicate requests</li>
-        <li>Combine multiple triggers with commas</li>
-        <li>Use <code>type="search"</code> for the native clear button</li>
-    </ul>
 </div>
+
+<h2>Trigger Options</h2>
+<table>
+    <thead>
+        <tr>
+            <th>Trigger</th>
+            <th>Description</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><code>input</code></td>
+            <td>Fires on every keystroke</td>
+        </tr>
+        <tr>
+            <td><code>input changed</code></td>
+            <td>Fires only when value changes</td>
+        </tr>
+        <tr>
+            <td><code>delay:300ms</code></td>
+            <td>Waits 300ms after last event</td>
+        </tr>
+        <tr>
+            <td><code>keyup[key=='Enter']</code></td>
+            <td>Fires only on Enter key</td>
+        </tr>
+        <tr>
+            <td><code>search</code></td>
+            <td>Fires on search clear or Enter</td>
+        </tr>
+    </tbody>
+</table>
+
+<h2>Key Points</h2>
+<ul>
+    <li><strong>Debouncing</strong> prevents excessive server requests</li>
+    <li><strong>changed</strong> modifier avoids duplicate requests</li>
+    <li>Combine multiple triggers with commas</li>
+    <li>Use <code>type="search"</code> for the native clear button</li>
+</ul>

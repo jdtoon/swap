@@ -1,69 +1,47 @@
 @{
     ViewData["Title"] = "Basic Swap";
+    Layout = Context.Request.Headers.ContainsKey("HX-Request") ? "_PartialLayout" : "_Layout";
 }
 
-<div class="sidebar">
-    <div class="logo">Swap<span>Lab</span></div>
-    <h3>Basics</h3>
-    <a href="/Patterns/BasicSwap" class="active">Basic Swap</a>
-    <a href="/Patterns/BasicPost">Form POST</a>
-    <a href="/Patterns/OobSwap">Out-of-Band Swaps</a>
-    <a href="/Patterns/Toasts">Toast Notifications</a>
-    <h3>State Management</h3>
-    <a href="/Patterns/HiddenFields">Hidden Field State</a>
-    <a href="/Patterns/UrlState">URL State</a>
-    <h3>Event Chains</h3>
-    <a href="/Patterns/EventChains">Event Chains</a>
-    <a href="/Patterns/EventTiming">Event Timing</a>
-    <h3>Multi-Component</h3>
-    <a href="/Patterns/MultiComponent">Multi-Component</a>
-    <a href="/Patterns/SearchDebounce">Search with Debounce</a>
-    <a href="/Patterns/InfiniteScroll">Infinite Scroll</a>
-    <h3>Forms</h3>
-    <a href="/Patterns/FormValidation">Form Validation</a>
-    <a href="/Patterns/ModalForms">Modal Forms</a>
+<hgroup>
+    <h1>Basic Swap</h1>
+    <p>The simplest HTMX + Swap.Htmx interaction</p>
+</hgroup>
+
+<h2>Live Demo</h2>
+<div class="demo-area">
+    <div id="message-container">
+        <p>Click the button to load a message from the server.</p>
+        <button hx-get="/Patterns/GetMessage" 
+                hx-target="#message-container" 
+                hx-swap="innerHTML">
+            Load Message
+        </button>
+    </div>
 </div>
 
-<div class="main-content">
-    <hgroup>
-        <h1>Basic Swap</h1>
-        <p>The simplest HTMX + Swap.Htmx interaction</p>
-    </hgroup>
-    
-    <h2>Live Demo</h2>
-    <div class="demo-area">
-        <div id="message-container">
-            <p>Click the button to load a message from the server.</p>
-            <button hx-get="/Patterns/GetMessage" 
-                    hx-target="#message-container" 
-                    hx-swap="innerHTML">
-                Load Message
-            </button>
-        </div>
-    </div>
-    
-    <h2>How It Works</h2>
-    <ol>
-        <li>Button has <code>hx-get="/Patterns/GetMessage"</code> to make a GET request</li>
-        <li>Response targets <code>#message-container</code></li>
-        <li>Server returns a partial view using <code>Swap().Target().Partial()</code></li>
-    </ol>
-    
-    <h2>Controller Code</h2>
-    <div class="code-view">
+<h2>How It Works</h2>
+<ol>
+    <li>Button has <code>hx-get="/Patterns/GetMessage"</code> to make a GET request</li>
+    <li>Response targets <code>#message-container</code></li>
+    <li>Server returns a partial view using <code>SwapResponse().WithView()</code></li>
+</ol>
+
+<h2>Controller Code</h2>
+<div class="code-view">
 <pre>[HttpGet]
 public IActionResult GetMessage()
 {
-    return Swap()
-        .Target("#message-container")
-        .Partial("_Message", new { 
+    return this.SwapResponse()
+        .WithView("_Message", new { 
             Message = $"Hello! The time is {DateTime.Now:HH:mm:ss}" 
-        });
+        })
+        .Build();
 }</pre>
-    </div>
-    
-    <h2>View Code</h2>
-    <div class="code-view">
+</div>
+
+<h2>View Code</h2>
+<div class="code-view">
 <pre>&lt;div id="message-container"&gt;
     &lt;button hx-get="/Patterns/GetMessage" 
             hx-target="#message-container" 
@@ -71,10 +49,10 @@ public IActionResult GetMessage()
         Load Message
     &lt;/button&gt;
 &lt;/div&gt;</pre>
-    </div>
-    
-    <h2>Partial View (_Message.cshtml)</h2>
-    <div class="code-view">
+</div>
+
+<h2>Partial View (_Message.cshtml)</h2>
+<div class="code-view">
 <pre>@@model dynamic
 &lt;p&gt;@@Model.Message&lt;/p&gt;
 &lt;button hx-get="/Patterns/GetMessage" 
@@ -82,13 +60,11 @@ public IActionResult GetMessage()
         hx-swap="innerHTML"&gt;
     Refresh
 &lt;/button&gt;</pre>
-    </div>
-    
-    <h2>Key Points</h2>
-    <ul>
-        <li><code>Swap()</code> is available on <code>SwapController</code> base class</li>
-        <li><code>.Target()</code> sets the CSS selector for the swap</li>
-        <li><code>.Partial()</code> renders a Razor partial view</li>
-        <li>The response replaces only the targeted element</li>
-    </ul>
 </div>
+
+<h2>Key Points</h2>
+<ul>
+    <li><code>SwapResponse()</code> is the extension method for building responses</li>
+    <li><code>.WithView()</code> renders a Razor partial view</li>
+    <li>The response replaces only the targeted element</li>
+</ul>

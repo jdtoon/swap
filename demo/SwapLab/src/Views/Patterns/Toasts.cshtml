@@ -1,138 +1,102 @@
 @{
     ViewData["Title"] = "Toast Notifications";
+    Layout = Context.Request.Headers.ContainsKey("HX-Request") ? "_PartialLayout" : "_Layout";
 }
 
-<div class="sidebar">
-    <div class="logo">Swap<span>Lab</span></div>
-    <h3>Basics</h3>
-    <a href="/Patterns/BasicSwap">Basic Swap</a>
-    <a href="/Patterns/BasicPost">Form POST</a>
-    <a href="/Patterns/OobSwap">Out-of-Band Swaps</a>
-    <a href="/Patterns/Toasts" class="active">Toast Notifications</a>
-    <h3>State Management</h3>
-    <a href="/Patterns/HiddenFields">Hidden Field State</a>
-    <a href="/Patterns/UrlState">URL State</a>
-    <h3>Event Chains</h3>
-    <a href="/Patterns/EventChains">Event Chains</a>
-    <a href="/Patterns/EventTiming">Event Timing</a>
-    <h3>Multi-Component</h3>
-    <a href="/Patterns/MultiComponent">Multi-Component</a>
-    <a href="/Patterns/SearchDebounce">Search with Debounce</a>
-    <a href="/Patterns/InfiniteScroll">Infinite Scroll</a>
-    <h3>Forms</h3>
-    <a href="/Patterns/FormValidation">Form Validation</a>
-    <a href="/Patterns/ModalForms">Modal Forms</a>
+<hgroup>
+    <h1>Toast Notifications</h1>
+    <p>Show success, error, and custom toast messages</p>
+</hgroup>
+
+<h2>Live Demo</h2>
+<div class="demo-area">
+    <div style="display: flex; gap: 1rem; margin-bottom: 1rem;">
+        <button hx-post="/Patterns/ShowSuccessToast" 
+                hx-target="#toast-result">
+            Success Toast
+        </button>
+        <button hx-post="/Patterns/ShowErrorToast" 
+                hx-target="#toast-result"
+                class="secondary">
+            Error Toast
+        </button>
+        <button hx-post="/Patterns/ShowInfoToast" 
+                hx-target="#toast-result"
+                class="contrast">
+            Info Toast
+        </button>
+    </div>
+    <div id="toast-result">
+        <p>Click a button to show a toast notification.</p>
+    </div>
 </div>
 
-<div class="main-content">
-    <hgroup>
-        <h1>Toast Notifications</h1>
-        <p>Show success, error, and custom toast messages</p>
-    </hgroup>
-    
-    <h2>Live Demo</h2>
-    <div class="demo-area">
-        <div style="display: flex; gap: 1rem; margin-bottom: 1rem;">
-            <button hx-post="/Patterns/ShowSuccessToast" 
-                    hx-target="#toast-result">
-                Success Toast
-            </button>
-            <button hx-post="/Patterns/ShowErrorToast" 
-                    hx-target="#toast-result"
-                    class="secondary">
-                Error Toast
-            </button>
-            <button hx-post="/Patterns/ShowInfoToast" 
-                    hx-target="#toast-result"
-                    class="contrast">
-                Info Toast
-            </button>
-        </div>
-        <div id="toast-result">
-            <p>Click a button to show a toast notification.</p>
-        </div>
-    </div>
-    
-    <h2>How It Works</h2>
-    <ol>
-        <li>Server adds a toast to the response with <code>.WithSuccessToast()</code></li>
-        <li>Swap.Htmx adds an <code>HX-Trigger</code> header with the toast data</li>
-        <li>Client-side JavaScript listens for <code>showToast</code> event</li>
-        <li>Toast is displayed in the UI</li>
-    </ol>
-    
-    <h2>Controller Code</h2>
-    <div class="code-view">
+<h2>How It Works</h2>
+<ol>
+    <li>Server adds a toast to the response with <code>.WithSuccessToast()</code></li>
+    <li>Swap.Htmx adds an <code>HX-Trigger</code> header with the toast data</li>
+    <li>Client-side <code>swap.client.js</code> listens for the toast event</li>
+    <li>Toast is displayed automatically</li>
+</ol>
+
+<h2>Controller Code</h2>
+<div class="code-view">
 <pre>[HttpPost]
 public IActionResult ShowSuccessToast()
 {
-    return Swap()
-        .Target("#toast-result")
-        .Html("&lt;p&gt;Success toast triggered!&lt;/p&gt;")
-        .WithSuccessToast("Operation completed successfully!");
+    return this.SwapResponse()
+        .WithHtml("&lt;p&gt;Success toast triggered!&lt;/p&gt;")
+        .WithSuccessToast("Operation completed successfully!")
+        .Build();
 }
 
 [HttpPost]
 public IActionResult ShowErrorToast()
 {
-    return Swap()
-        .Target("#toast-result")
-        .Html("&lt;p&gt;Error toast triggered!&lt;/p&gt;")
-        .WithErrorToast("Something went wrong!");
+    return this.SwapResponse()
+        .WithHtml("&lt;p&gt;Error toast triggered!&lt;/p&gt;")
+        .WithErrorToast("Something went wrong!")
+        .Build();
 }
 
 [HttpPost]
 public IActionResult ShowInfoToast()
 {
-    return Swap()
-        .Target("#toast-result")
-        .Html("&lt;p&gt;Info toast triggered!&lt;/p&gt;")
-        .WithToast("info", "Here's some information for you.");
+    return this.SwapResponse()
+        .WithHtml("&lt;p&gt;Info toast triggered!&lt;/p&gt;")
+        .WithToast("info", "Here's some information for you.")
+        .Build();
 }</pre>
-    </div>
-    
-    <h2>Client-Side Handler</h2>
-    <div class="code-view">
-<pre>document.body.addEventListener('showToast', function(evt) {
-    const { type, message } = evt.detail;
-    const toast = document.createElement('div');
-    toast.className = `toast toast-${type}`;
-    toast.textContent = message;
-    document.getElementById('toast-container').appendChild(toast);
-    
-    setTimeout(() => toast.remove(), 3000);
-});</pre>
-    </div>
-    
-    <h2>Toast Methods</h2>
-    <table>
-        <thead>
-            <tr>
-                <th>Method</th>
-                <th>Description</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr>
-                <td><code>.WithSuccessToast(message)</code></td>
-                <td>Green success toast</td>
-            </tr>
-            <tr>
-                <td><code>.WithErrorToast(message)</code></td>
-                <td>Red error toast</td>
-            </tr>
-            <tr>
-                <td><code>.WithToast(type, message)</code></td>
-                <td>Custom toast with any type (info, warning, etc.)</td>
-            </tr>
-        </tbody>
-    </table>
-    
-    <h2>Key Points</h2>
-    <ul>
-        <li>Toasts are triggered via <code>HX-Trigger</code> header</li>
-        <li>No additional HTML is needed in the response for toasts</li>
-        <li>You can combine toasts with any other response</li>
-        <li>Client-side handler is simple vanilla JavaScript</li>
-    </ul>
 </div>
+
+<h2>Toast Methods</h2>
+<table>
+    <thead>
+        <tr>
+            <th>Method</th>
+            <th>Description</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><code>.WithSuccessToast(message)</code></td>
+            <td>Green success toast</td>
+        </tr>
+        <tr>
+            <td><code>.WithErrorToast(message)</code></td>
+            <td>Red error toast</td>
+        </tr>
+        <tr>
+            <td><code>.WithToast(type, message)</code></td>
+            <td>Custom toast with any type (info, warning, etc.)</td>
+        </tr>
+    </tbody>
+</table>
+
+<h2>Key Points</h2>
+<ul>
+    <li>Toasts are triggered via <code>HX-Trigger</code> header</li>
+    <li>No additional HTML is needed in the response for toasts</li>
+    <li>You can combine toasts with any other response</li>
+    <li><code>swap.client.js</code> handles toast display automatically</li>
+</ul>

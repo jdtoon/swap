@@ -1,91 +1,105 @@
 @{
     ViewData["Title"] = "Form Validation";
-    ViewData["Description"] = "Real-time validation patterns with HTMX and Swap.Htmx";
+    Layout = Context.Request.Headers.ContainsKey("HX-Request") ? "_PartialLayout" : "_Layout";
 }
 
-<div class="row">
-    <div class="col-lg-6">
-        <div class="card mb-4">
-            <div class="card-header">
-                <h5 class="mb-0"><i class="bi bi-check2-square me-2"></i>Validation Patterns</h5>
-            </div>
-            <div class="card-body">
-                <p>
-                    HTMX enables several validation strategies:
-                </p>
-                <ul>
-                    <li><strong>On-blur validation:</strong> Validate individual fields</li>
-                    <li><strong>Real-time feedback:</strong> Show errors as user types</li>
-                    <li><strong>Server-side validation:</strong> Full form validation on submit</li>
-                </ul>
+<hgroup>
+    <h1>Form Validation</h1>
+    <p>Real-time validation patterns with HTMX and Swap.Htmx</p>
+</hgroup>
 
-                <div class="alert alert-warning mb-0">
-                    <i class="bi bi-exclamation-triangle me-2"></i>
-                    <strong>Always validate server-side!</strong> Client validation is for UX only.
-                </div>
-            </div>
+<h2>Live Demo</h2>
+<div class="demo-area">
+    <form hx-post="/Patterns/ValidateForm"
+          hx-target="#form-result"
+          hx-swap="innerHTML">
+        
+        <div style="margin-bottom: 1rem;">
+            <label for="username">Username</label>
+            <input type="text" 
+                   id="username" 
+                   name="username"
+                   placeholder="Enter username"
+                   hx-post="/Patterns/ValidateUsername"
+                   hx-trigger="blur changed"
+                   hx-target="#username-feedback"
+                   hx-swap="innerHTML">
+            <div id="username-feedback" style="font-size: 0.875rem; margin-top: 0.25rem;"></div>
         </div>
-    </div>
 
-    <div class="col-lg-6">
-        <div class="card">
-            <div class="card-header bg-primary text-white">
-                <h5 class="mb-0"><i class="bi bi-play-circle me-2"></i>Live Demo</h5>
-            </div>
-            <div class="card-body">
-                <form hx-post="@Url.Action("ValidateForm", "Patterns")"
-                      hx-target="#form-result"
-                      hx-swap="innerHTML">
-                    
-                    <div class="mb-3">
-                        <label for="username" class="form-label">Username</label>
-                        <input type="text" 
-                               class="form-control" 
-                               id="username" 
-                               name="username"
-                               placeholder="Enter username"
-                               hx-post="@Url.Action("ValidateUsername", "Patterns")"
-                               hx-trigger="blur changed"
-                               hx-target="#username-feedback"
-                               hx-swap="innerHTML">
-                        <div id="username-feedback" class="form-text"></div>
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="email" class="form-label">Email</label>
-                        <input type="email" 
-                               class="form-control" 
-                               id="email" 
-                               name="email"
-                               placeholder="Enter email"
-                               hx-post="@Url.Action("ValidateEmail", "Patterns")"
-                               hx-trigger="blur changed"
-                               hx-target="#email-feedback"
-                               hx-swap="innerHTML">
-                        <div id="email-feedback" class="form-text"></div>
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="password" class="form-label">Password</label>
-                        <input type="password" 
-                               class="form-control" 
-                               id="password" 
-                               name="password"
-                               placeholder="Enter password"
-                               hx-post="@Url.Action("ValidatePassword", "Patterns")"
-                               hx-trigger="keyup changed delay:300ms"
-                               hx-target="#password-feedback"
-                               hx-swap="innerHTML">
-                        <div id="password-feedback" class="form-text"></div>
-                    </div>
-
-                    <button type="submit" class="btn btn-primary w-100">
-                        <i class="bi bi-person-plus me-2"></i>Create Account
-                    </button>
-                </form>
-
-                <div id="form-result" class="mt-3"></div>
-            </div>
+        <div style="margin-bottom: 1rem;">
+            <label for="email">Email</label>
+            <input type="email" 
+                   id="email" 
+                   name="email"
+                   placeholder="Enter email"
+                   hx-post="/Patterns/ValidateEmail"
+                   hx-trigger="blur changed"
+                   hx-target="#email-feedback"
+                   hx-swap="innerHTML">
+            <div id="email-feedback" style="font-size: 0.875rem; margin-top: 0.25rem;"></div>
         </div>
-    </div>
+
+        <div style="margin-bottom: 1rem;">
+            <label for="password">Password</label>
+            <input type="password" 
+                   id="password" 
+                   name="password"
+                   placeholder="Enter password"
+                   hx-post="/Patterns/ValidatePassword"
+                   hx-trigger="keyup changed delay:300ms"
+                   hx-target="#password-feedback"
+                   hx-swap="innerHTML">
+            <div id="password-feedback" style="font-size: 0.875rem; margin-top: 0.25rem;"></div>
+        </div>
+
+        <button type="submit" style="width: 100%;">Create Account</button>
+    </form>
+
+    <div id="form-result" style="margin-top: 1rem;"></div>
 </div>
+
+<h2>Validation Patterns</h2>
+<ul>
+    <li><strong>On-blur validation:</strong> Validate individual fields when they lose focus</li>
+    <li><strong>Real-time feedback:</strong> Show errors as user types (with debounce)</li>
+    <li><strong>Server-side validation:</strong> Full form validation on submit</li>
+</ul>
+
+<p style="background: var(--color-warning); color: #000; padding: 1rem; border-radius: var(--radius);">
+    <strong>⚠️ Always validate server-side!</strong> Client validation is for UX only.
+</p>
+
+<h2>View Code</h2>
+<div class="code-view">
+<pre>&lt;input type="text" 
+       name="username"
+       hx-post="/Patterns/ValidateUsername"
+       hx-trigger="blur changed"
+       hx-target="#username-feedback"
+       hx-swap="innerHTML"&gt;
+&lt;div id="username-feedback"&gt;&lt;/div&gt;</pre>
+</div>
+
+<h2>Controller Code</h2>
+<div class="code-view">
+<pre>[HttpPost]
+public IActionResult ValidateUsername(string username)
+{
+    if (string.IsNullOrWhiteSpace(username))
+        return Content("&lt;span style='color: var(--color-error)'&gt;Username required&lt;/span&gt;");
+    
+    if (username.Length &lt; 3)
+        return Content("&lt;span style='color: var(--color-error)'&gt;Min 3 characters&lt;/span&gt;");
+    
+    return Content("&lt;span style='color: var(--color-success)'&gt;✓ Available&lt;/span&gt;");
+}</pre>
+</div>
+
+<h2>Key Points</h2>
+<ul>
+    <li><code>hx-trigger="blur changed"</code> — Validate on field blur only if value changed</li>
+    <li><code>hx-trigger="keyup changed delay:300ms"</code> — Real-time with debounce</li>
+    <li>Return styled HTML for validation feedback</li>
+    <li>Combine field and form validation for best UX</li>
+</ul>

@@ -1,36 +1,70 @@
 @{
     ViewData["Title"] = "Loading States";
-    ViewData["Description"] = "Provide visual feedback during HTMX requests";
+    Layout = Context.Request.Headers.ContainsKey("HX-Request") ? "_PartialLayout" : "_Layout";
 }
 
-<div class="row">
-    <div class="col-lg-6">
-        <div class="card mb-4">
-            <div class="card-header">
-                <h5 class="mb-0"><i class="bi bi-hourglass-split me-2"></i>Why Loading States?</h5>
-            </div>
-            <div class="card-body">
-                <p>
-                    Users need feedback when something is happening. HTMX provides the 
-                    <code>htmx-request</code> class automatically, and you can use indicators
-                    for more complex feedback.
-                </p>
+<hgroup>
+    <h1>Loading States</h1>
+    <p>Provide visual feedback during HTMX requests</p>
+</hgroup>
 
-                <h6>Methods:</h6>
-                <ul>
-                    <li><strong>CSS-based:</strong> Use <code>.htmx-request</code> class</li>
-                    <li><strong>Indicator:</strong> Use <code>hx-indicator</code> attribute</li>
-                    <li><strong>Disabled state:</strong> Prevent double-clicks</li>
-                </ul>
-            </div>
+<h2>Live Demo</h2>
+<div class="demo-area">
+    <h4>Button with Spinner</h4>
+    <p style="color: var(--color-text-muted); font-size: 0.875rem;">Click to see the loading state (simulated 1.5s delay)</p>
+    
+    <button style="margin-bottom: 1.5rem;"
+            hx-post="/Patterns/SlowAction"
+            hx-target="#slow-result"
+            hx-swap="innerHTML">
+        <span class="btn-text">➤ Submit</span>
+        <span class="spinner">⏳ Loading...</span>
+    </button>
+
+    <div id="slow-result" style="margin-bottom: 2rem;">
+        <p style="color: var(--color-text-muted);">Result will appear here...</p>
+    </div>
+
+    <hr style="border-color: var(--color-border); margin: 2rem 0;">
+
+    <h4>External Indicator</h4>
+    <p style="color: var(--color-text-muted); font-size: 0.875rem;">Uses hx-indicator to show separate loading element</p>
+    
+    <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem;">
+        <button class="secondary"
+                hx-post="/Patterns/SlowAction"
+                hx-target="#indicator-result"
+                hx-swap="innerHTML"
+                hx-indicator="#loading-indicator">
+            ↻ Fetch Data
+        </button>
+        <div id="loading-indicator" class="htmx-indicator">
+            <span>⏳ Loading...</span>
         </div>
+    </div>
 
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0"><i class="bi bi-code-slash me-2"></i>CSS Approach</h5>
-            </div>
-            <div class="card-body">
-<pre class="bg-light p-3 rounded"><code>/* Hide button text, show spinner during request */
+    <div id="indicator-result">
+        <p style="color: var(--color-text-muted);">Result will appear here...</p>
+    </div>
+</div>
+
+<h2>Why Loading States?</h2>
+<p>
+    Users need feedback when something is happening. HTMX provides the 
+    <code>htmx-request</code> class automatically, and you can use indicators
+    for more complex feedback.
+</p>
+
+<h2>Methods</h2>
+<ul>
+    <li><strong>CSS-based:</strong> Use <code>.htmx-request</code> class</li>
+    <li><strong>Indicator:</strong> Use <code>hx-indicator</code> attribute</li>
+    <li><strong>Disabled state:</strong> Prevent double-clicks</li>
+</ul>
+
+<h2>CSS Approach</h2>
+<div class="code-view">
+<pre>/* Hide button text, show spinner during request */
 .htmx-request .btn-text { display: none; }
 .htmx-request .spinner { display: inline-block; }
 .spinner { display: none; }
@@ -39,63 +73,16 @@
 .htmx-request { 
     pointer-events: none;
     opacity: 0.7;
-}</code></pre>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-lg-6">
-        <div class="card">
-            <div class="card-header bg-primary text-white">
-                <h5 class="mb-0"><i class="bi bi-play-circle me-2"></i>Live Demo</h5>
-            </div>
-            <div class="card-body">
-                <h6>Button with Spinner</h6>
-                <p class="text-muted small">Click to see the loading state (simulated 1.5s delay)</p>
-                
-                <button class="btn btn-primary mb-4"
-                        hx-post="@Url.Action("SlowAction", "Patterns")"
-                        hx-target="#slow-result"
-                        hx-swap="innerHTML">
-                    <span class="btn-text">
-                        <i class="bi bi-send me-2"></i>Submit
-                    </span>
-                    <span class="spinner">
-                        <span class="spinner-border spinner-border-sm me-2"></span>
-                        Loading...
-                    </span>
-                </button>
-
-                <div id="slow-result" class="mb-4">
-                    <p class="text-muted">Result will appear here...</p>
-                </div>
-
-                <hr>
-
-                <h6>External Indicator</h6>
-                <p class="text-muted small">Uses hx-indicator to show separate loading element</p>
-                
-                <div class="d-flex align-items-center gap-3 mb-4">
-                    <button class="btn btn-outline-primary"
-                            hx-post="@Url.Action("SlowAction", "Patterns")"
-                            hx-target="#indicator-result"
-                            hx-swap="innerHTML"
-                            hx-indicator="#loading-indicator">
-                        <i class="bi bi-arrow-repeat me-2"></i>Fetch Data
-                    </button>
-                    <div id="loading-indicator" class="htmx-indicator">
-                        <span class="spinner-border spinner-border-sm text-primary me-2"></span>
-                        <span class="text-muted">Loading...</span>
-                    </div>
-                </div>
-
-                <div id="indicator-result">
-                    <p class="text-muted">Result will appear here...</p>
-                </div>
-            </div>
-        </div>
-    </div>
+}</pre>
 </div>
+
+<h2>Key Points</h2>
+<ul>
+    <li>HTMX adds <code>.htmx-request</code> class during requests</li>
+    <li>Use CSS to show/hide elements based on this class</li>
+    <li><code>hx-indicator</code> shows a specific element during the request</li>
+    <li>Combine with <code>pointer-events: none</code> to prevent double-clicks</li>
+</ul>
 
 <style>
     .htmx-request .btn-text { display: none; }

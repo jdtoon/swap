@@ -1,40 +1,57 @@
 @{
     ViewData["Title"] = "Data Attribute State";
-    ViewData["Description"] = "Store state in data-* attributes";
+    Layout = Context.Request.Headers.ContainsKey("HX-Request") ? "_PartialLayout" : "_Layout";
 }
 
-<div class="row">
-    <div class="col-lg-6">
-        <div class="card mb-4">
-            <div class="card-header">
-                <h5 class="mb-0">📊 Data Attributes for State</h5>
-            </div>
-            <div class="card-body">
-                <p>
-                    Data attributes (<code>data-*</code>) can store state directly on elements.
-                    Use <code>hx-vals</code> to include these values in your requests.
-                </p>
+<hgroup>
+    <h1>Data Attribute State</h1>
+    <p>Store state in data-* attributes</p>
+</hgroup>
 
-                <h6>Key Techniques:</h6>
-                <ul>
-                    <li><code>data-id="123"</code> — Store values on elements</li>
-                    <li><code>hx-vals='{"id": "123"}'</code> — Send static values</li>
-                    <li><code>hx-vals='js:{...}'</code> — Dynamic JavaScript values</li>
-                </ul>
+<h2>Live Demo</h2>
+<div class="demo-area">
+    <p style="color: var(--color-text-muted); margin-bottom: 1rem;">
+        Each item below stores its own state in data attributes.
+        Click to toggle and see the state change.
+    </p>
 
-                <div class="alert alert-info mb-0">
-                    <strong>💡 When to use:</strong> Data attributes are great for row-level
-                    actions where each item needs its own state (like edit/delete buttons).
-                </div>
+    <div id="items-list">
+        @for (int i = 1; i <= 4; i++)
+        {
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1rem; background: var(--color-bg-tertiary); border-radius: var(--radius); margin-bottom: 0.5rem;"
+                 id="item-@i"
+                 data-id="@i"
+                 data-active="false">
+                <span>Item @i</span>
+                <button class="secondary"
+                        style="padding: 0.25rem 0.75rem; font-size: 0.875rem;"
+                        hx-post="/Patterns/ToggleDataItem"
+                        hx-vals='js:{"id": document.getElementById("item-@i").dataset.id, "active": document.getElementById("item-@i").dataset.active}'
+                        hx-target="#item-@i"
+                        hx-swap="outerHTML">
+                    Toggle
+                </button>
             </div>
-        </div>
+        }
+    </div>
+</div>
 
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0">&lt;/&gt; The Code</h5>
-            </div>
-            <div class="card-body">
-<pre><code>&lt;!-- Using hx-vals for static data --&gt;
+<h2>Data Attributes for State</h2>
+<p>
+    Data attributes (<code>data-*</code>) can store state directly on elements.
+    Use <code>hx-vals</code> to include these values in your requests.
+</p>
+
+<h2>Key Techniques</h2>
+<ul>
+    <li><code>data-id="123"</code> — Store values on elements</li>
+    <li><code>hx-vals='{"id": "123"}'</code> — Send static values</li>
+    <li><code>hx-vals='js:{...}'</code> — Dynamic JavaScript values</li>
+</ul>
+
+<h2>View Code</h2>
+<div class="code-view">
+<pre>&lt;!-- Using hx-vals for static data --&gt;
 &lt;button hx-delete="/items/123"
         hx-vals='{"id": 123, "confirm": true}'&gt;
     Delete
@@ -49,50 +66,20 @@
         data-id="456"
         data-active="true"&gt;
     Toggle
-&lt;/button&gt;</code></pre>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-lg-6">
-        <div class="card">
-            <div class="card-header bg-primary text-white">
-                <h5 class="mb-0">▶ Live Demo</h5>
-            </div>
-            <div class="card-body">
-                <p class="text-muted mb-3">
-                    Each item below stores its own state in data attributes.
-                    Click to toggle and see the state change.
-                </p>
-
-                <div id="items-list">
-                    @for (int i = 1; i <= 4; i++)
-                    {
-                        <div class="list-group-item d-flex justify-content-between align-items-center"
-                             id="item-@i"
-                             data-id="@i"
-                             data-active="false">
-                            <span>Item @i</span>
-                            <button class="btn btn-sm btn-secondary"
-                                    hx-post="@Url.Action("ToggleDataItem", "Patterns")"
-                                    hx-vals='js:{"id": document.getElementById("item-@i").dataset.id, "active": document.getElementById("item-@i").dataset.active}'
-                                    hx-target="#item-@i"
-                                    hx-swap="outerHTML">
-                                Toggle
-                            </button>
-                        </div>
-                    }
-                </div>
-
-                <hr class="my-4">
-
-                <h6>How It Works:</h6>
-                <ol class="mb-0 text-muted">
-                    <li>Each item has <code>data-id</code> and <code>data-active</code></li>
-                    <li><code>hx-vals='js:{...}'</code> reads these at click time</li>
-                    <li>Server toggles the state and returns updated HTML</li>
-                </ol>
-            </div>
-        </div>
-    </div>
+&lt;/button&gt;</pre>
 </div>
+
+<h2>How It Works</h2>
+<ol>
+    <li>Each item has <code>data-id</code> and <code>data-active</code> attributes</li>
+    <li><code>hx-vals='js:{...}'</code> reads these values at click time</li>
+    <li>Server toggles the state and returns updated HTML</li>
+</ol>
+
+<h2>Key Points</h2>
+<ul>
+    <li>Data attributes are great for row-level actions</li>
+    <li>Each item can have its own isolated state</li>
+    <li>Use <code>js:</code> prefix for dynamic values</li>
+    <li>Perfect for edit/delete buttons on list items</li>
+</ul>
