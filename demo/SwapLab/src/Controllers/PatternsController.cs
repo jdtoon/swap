@@ -3,6 +3,7 @@ using Swap.Htmx;
 using Swap.Htmx.State;
 using SwapLab.Events;
 using SwapLab.Models;
+using SwapLab.Views;
 
 namespace SwapLab.Controllers;
 
@@ -96,10 +97,11 @@ public class PatternsController : Controller
         
         // Update primary target AND additional elements via OOB
         // Note: AlsoUpdate takes just the ID without the # prefix
+        // Using generated view constants from PatternViews.Partials
         return this.SwapResponse()
-            .WithView("_ClickResult", _clickCount)
-            .AlsoUpdate("click-counter", "_Counter", _clickCount)
-            .AlsoUpdate("last-click", "_LastUpdated", now)
+            .WithView(PatternViews.Partials.ClickResult, _clickCount)
+            .AlsoUpdate("click-counter", PatternViews.Partials.Counter, _clickCount)
+            .AlsoUpdate("last-click", PatternViews.Partials.LastUpdated, now)
             .Build();
     }
 
@@ -116,7 +118,7 @@ public class PatternsController : Controller
     public IActionResult ShowSuccessToast()
     {
         return this.SwapResponse()
-            .WithView("_ToastResult", new { Message = "Success toast triggered!" })
+            .WithView(PatternViews.Partials.ToastResult, new { Message = "Success toast triggered!" })
             .WithSuccessToast("Operation completed successfully!")
             .Build();
     }
@@ -125,7 +127,7 @@ public class PatternsController : Controller
     public IActionResult ShowErrorToast()
     {
         return this.SwapResponse()
-            .WithView("_ToastResult", new { Message = "Error toast triggered!" })
+            .WithView(PatternViews.Partials.ToastResult, new { Message = "Error toast triggered!" })
             .WithErrorToast("Something went wrong!")
             .Build();
     }
@@ -134,7 +136,7 @@ public class PatternsController : Controller
     public IActionResult ShowInfoToast()
     {
         return this.SwapResponse()
-            .WithView("_ToastResult", new { Message = "Info toast triggered!" })
+            .WithView(PatternViews.Partials.ToastResult, new { Message = "Info toast triggered!" })
             .WithToast("Here's some information for you.")
             .Build();
     }
@@ -164,8 +166,9 @@ public class PatternsController : Controller
             TotalCount = GetFilteredCount(state)
         };
         
+        // Using generated constants - PatternViews.Partials.ProductGrid instead of "_ProductGrid"
         return this.SwapResponse()
-            .WithView("_ProductGrid", viewModel)
+            .WithView(PatternViews.Partials.ProductGrid, viewModel)
             .WithTrigger(ProductEvents.Product.Searched)
             .WithState(state)
             .Build();
@@ -403,10 +406,11 @@ public class PatternsController : Controller
             TotalCount = GetFilteredCount(state)
         };
         
+        // Demonstrating generated view constants for multi-component updates
         return this.SwapResponse()
-            .WithView("_ProductGrid", viewModel)
-            .AlsoUpdate("product-count", "_ProductCount", new { Count = GetFilteredCount(state) })
-            .AlsoUpdate("pagination", "_Pagination", viewModel)
+            .WithView(PatternViews.Partials.ProductGrid, viewModel)
+            .AlsoUpdate("product-count", PatternViews.Partials.ProductCount, new { Count = GetFilteredCount(state) })
+            .AlsoUpdate("pagination", PatternViews.Partials.Pagination, viewModel)
             .WithState(state)
             .Build();
     }
