@@ -331,7 +331,7 @@ public class PatternsController : Controller
     }
 
     [HttpPost]
-    public IActionResult ChangeTab(string tab, [FromSwapState] ProductSearchState state)
+    public IActionResult ChangeTab([FromQuery] string tab, [FromSwapState] ProductSearchState state)
     {
         // Create a new state object with the updated tab to avoid any binding issues
         var newState = new ProductSearchState
