@@ -64,6 +64,12 @@ public sealed class SwapStateModelBinder : IModelBinder
             state.SetStateValues(values);
         }
 
+        // Also read from query string if UrlSync is enabled
+        if (state.UrlSync)
+        {
+            state.FromQueryString(bindingContext.HttpContext.Request.Query);
+        }
+
         // Clear change tracking since this is initial load
         state.AcceptChanges();
 

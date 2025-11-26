@@ -282,6 +282,128 @@ This pattern gives you:
 
 ---
 
+## State Class Generator
+
+Automatically generates SwapState properties from view annotations.
+
+### 1. Define State Container Class
+
+Create a partial class inheriting from `SwapState`:
+
+```csharp
+using Swap.Htmx.Attributes;
+using Swap.Htmx.State;
+
+[SwapStateSource("Views/Inventory/_InventoryState.cshtml")]
+public partial class InventoryState : SwapState { }
+```
+
+### 2. Define Properties in View
+
+Add `swap-state-prop` annotations to hidden inputs:
+
+```html
+<!-- Views/Inventory/_InventoryState.cshtml -->
+<div data-swap-state>
+    <input type="hidden" swap-state-prop="Tab:string=all" />
+    <input type="hidden" swap-state-prop="Page:int=1" />
+    <input type="hidden" swap-state-prop="Search:string?" />
+    <input type="hidden" swap-state-prop="SortBy:string=name" />
+    <input type="hidden" swap-state-prop="SortDesc:bool=false" />
+</div>
+```
+
+### 3. Generated Output
+
+```csharp
+// Auto-generated
+public partial class InventoryState
+{
+    public string Tab { get; set; } = "all";
+    public int Page { get; set; } = 1;
+    public string? Search { get; set; }
+    public string SortBy { get; set; } = "name";
+    public bool SortDesc { get; set; } = false;
+}
+```
+
+### Property Syntax
+
+```
+swap-state-prop="PropertyName:Type=DefaultValue"
+```
+
+| Component | Required | Description |
+|-----------|----------|-------------|
+| PropertyName | Yes | PascalCase property name |
+| Type | Yes | C# type (string, int, bool, decimal, etc.) |
+| DefaultValue | No | Default value for the property |
+
+**Supported Types:**
+- `string`, `string?`
+- `int`, `int?`, `long`, `short`, `byte`
+- `bool`, `bool?`
+- `decimal`, `double`, `float`
+- `DateTime`, `Guid`
+
+---
+
+## Handler Validation Analyzer
+
+A Roslyn diagnostic analyzer that validates event handler configurations at compile-time.
+
+### Diagnostics
+
+| Code | Severity | Message |
+|------|----------|---------|
+| `SWAP001` | Warning | Event '{0}' is triggered but no ISwapEventConfiguration handles it |
+| `SWAP002` | Warning | Event key '{0}' is referenced but not defined in any [SwapEventSource] class |
+| `SWAP003` | Warning | Event chain for '{0}' may create a circular dependency |
+| `SWAP004` | Info | Event '{0}' has multiple handlers in the same configuration |
+
+### Example: SWAP001 - No Handler
+
+```csharp
+// ⚠️ SWAP001: Event 'product.updated' is triggered but no ISwapEventConfiguration handles it
+return SwapResponse()
+    .WithTrigger("product.updated")
+    .Build();
+```
+
+**Fix:** Add a handler in an ISwapEventConfiguration:
+
+```csharp
+public class ProductEventConfig : ISwapEventConfiguration
+{
+    public void Configure(SwapEventBusOptions events)
+    {
+        events.When("product.updated")
+            .RefreshPartial("#product-grid", "_Grid");
+    }
+}
+```
+
+### Suppressing Warnings
+
+For events handled only on the client-side:
+
+```csharp
+#pragma warning disable SWAP001
+return SwapResponse()
+    .WithTrigger("client.only.event")  // Handled by JavaScript
+    .Build();
+#pragma warning restore SWAP001
+```
+
+Or in `.editorconfig`:
+
+```ini
+[*.cs]
+dotnet_diagnostic.SWAP001.severity = none
+```
+
+---
+
 ## Installation
 
 The generators are included automatically when you reference `Swap.Htmx`.

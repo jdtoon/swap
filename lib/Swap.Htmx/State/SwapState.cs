@@ -1,6 +1,8 @@
 using System.ComponentModel;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Web;
+using Microsoft.AspNetCore.Http;
 
 namespace Swap.Htmx.State;
 
@@ -58,6 +60,32 @@ public abstract class SwapState : INotifyPropertyChanged
     public bool HasChanges => _changedProperties.Count > 0;
 
     /// <summary>
+    /// Gets or sets whether this state should be synchronized with the URL query string.
+    /// When enabled, state properties are appended to URLs and read from query parameters.
+    /// </summary>
+    /// <remarks>
+    /// Enable URL sync for state that should be bookmarkable or shareable.
+    /// This works in conjunction with hx-push-url="true" to maintain browser history.
+    /// </remarks>
+    public virtual bool UrlSync => false;
+
+    /// <summary>
+    /// Gets the prefix used for URL parameters when UrlSync is enabled.
+    /// Override to customize the prefix. Defaults to empty (no prefix).
+    /// </summary>
+    /// <remarks>
+    /// Useful when multiple state containers are on the same page to avoid parameter conflicts.
+    /// For example, with prefix "inv", the "Page" property becomes "invPage" in the URL.
+    /// </remarks>
+    public virtual string UrlPrefix => string.Empty;
+
+    /// <summary>
+    /// Gets the list of property names that should be excluded from URL sync.
+    /// Override to exclude sensitive or large properties from the URL.
+    /// </summary>
+    protected virtual IEnumerable<string> UrlExcludedProperties => Array.Empty<string>();
+
+    /// <summary>
     /// Clears the change tracking state.
     /// </summary>
     public void AcceptChanges()
@@ -88,6 +116,152 @@ public abstract class SwapState : INotifyPropertyChanged
         }
 
         return result;
+    }
+
+    /// <summary>
+    /// Generates a query string from the current state values for URL synchronization.
+    /// Only includes non-default values to keep URLs clean.
+    /// </summary>
+    /// <returns>A query string like "?Page=2&amp;Tab=active" or empty if at defaults.</returns>
+    public string ToQueryString()
+    {
+        if (!UrlSync)
+            return string.Empty;
+
+        var excludedProps = new HashSet<string>(UrlExcludedProperties, StringComparer.OrdinalIgnoreCase);
+        var parts = new List<string>();
+        var defaultInstance = CreateDefaultInstance();
+        var properties = GetStateProperties();
+
+        foreach (var prop in properties)
+        {
+            if (excludedProps.Contains(prop.Name))
+                continue;
+
+            var currentValue = prop.GetValue(this);
+            var defaultValue = defaultInstance != null ? prop.GetValue(defaultInstance) : GetDefaultForType(prop.PropertyType);
+
+            // Only include non-default values
+            if (!ValuesEqual(currentValue, defaultValue))
+            {
+                var paramName = string.IsNullOrEmpty(UrlPrefix) ? prop.Name : $"{UrlPrefix}{prop.Name}";
+                var valueStr = FormatUrlValue(currentValue);
+                if (valueStr != null)
+                {
+                    parts.Add($"{Uri.EscapeDataString(paramName)}={Uri.EscapeDataString(valueStr)}");
+                }
+            }
+        }
+
+        return parts.Count > 0 ? "?" + string.Join("&", parts) : string.Empty;
+    }
+
+    /// <summary>
+    /// Populates state properties from an HTTP query string.
+    /// </summary>
+    /// <param name="query">The query string collection from the request.</param>
+    public void FromQueryString(IQueryCollection query)
+    {
+        if (!UrlSync || query == null)
+            return;
+
+        using (SuspendChangeTracking())
+        {
+            var excludedProps = new HashSet<string>(UrlExcludedProperties, StringComparer.OrdinalIgnoreCase);
+            var properties = GetStateProperties().ToDictionary(p => p.Name, StringComparer.OrdinalIgnoreCase);
+
+            foreach (var key in query.Keys)
+            {
+                // Handle prefixed parameters
+                var propName = key;
+                if (!string.IsNullOrEmpty(UrlPrefix) && key.StartsWith(UrlPrefix, StringComparison.OrdinalIgnoreCase))
+                {
+                    propName = key.Substring(UrlPrefix.Length);
+                }
+                else if (!string.IsNullOrEmpty(UrlPrefix))
+                {
+                    continue; // Skip parameters that don't match our prefix
+                }
+
+                if (excludedProps.Contains(propName))
+                    continue;
+
+                if (properties.TryGetValue(propName, out var prop) && prop.CanWrite)
+                {
+                    var stringValue = query[key].ToString();
+                    try
+                    {
+                        var convertedValue = ConvertValue(stringValue, prop.PropertyType);
+                        prop.SetValue(this, convertedValue);
+                    }
+                    catch
+                    {
+                        // Skip parameters that can't be converted
+                    }
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// Appends current state to a base URL as query parameters.
+    /// </summary>
+    /// <param name="baseUrl">The base URL to append state to.</param>
+    /// <returns>The URL with state parameters appended.</returns>
+    public string AppendToUrl(string baseUrl)
+    {
+        if (!UrlSync)
+            return baseUrl;
+
+        var queryString = ToQueryString();
+        if (string.IsNullOrEmpty(queryString))
+            return baseUrl;
+
+        var separator = baseUrl.Contains("?") ? "&" : "";
+        var query = queryString.TrimStart('?');
+        
+        return baseUrl.Contains("?") 
+            ? $"{baseUrl}&{query}" 
+            : $"{baseUrl}{queryString}";
+    }
+
+    private SwapState? CreateDefaultInstance()
+    {
+        try
+        {
+            return (SwapState?)Activator.CreateInstance(GetType());
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private static object? GetDefaultForType(Type type)
+    {
+        return type.IsValueType ? Activator.CreateInstance(type) : null;
+    }
+
+    private static bool ValuesEqual(object? a, object? b)
+    {
+        if (a == null && b == null) return true;
+        if (a == null || b == null) return false;
+        return a.Equals(b);
+    }
+
+    private static string? FormatUrlValue(object? value)
+    {
+        if (value == null)
+            return null;
+
+        return value switch
+        {
+            bool b => b ? "true" : "false",
+            DateTime dt => dt.ToString("O"),
+            DateTimeOffset dto => dto.ToString("O"),
+            IFormattable f => f.ToString(null, System.Globalization.CultureInfo.InvariantCulture),
+            _ => value.ToString()
+        };
     }
 
     /// <summary>
