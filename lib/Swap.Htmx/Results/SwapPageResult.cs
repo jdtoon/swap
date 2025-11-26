@@ -226,7 +226,7 @@ public sealed class SwapPageResult : ActionResult
         );
 
         await viewResult.View.RenderAsync(viewContext);
-        var html = sw.ToString();
+        var html = sw.ToString().Trim();
 
         var swapModeStr = oob.SwapMode switch
         {
@@ -241,11 +241,21 @@ public sealed class SwapPageResult : ActionResult
             _ => "true"
         };
 
-        if (!html.Contains("hx-swap-oob"))
+        // If the rendered HTML already contains hx-swap-oob, return as-is
+        if (html.Contains("hx-swap-oob"))
         {
-            return $"<div id=\"{oob.TargetId}\" hx-swap-oob=\"{swapModeStr}\">{html}</div>";
+            return html;
+        }
+        
+        // If the rendered HTML already has an element with the target ID, add the oob attribute to it
+        var idPattern = $"id=\"{oob.TargetId}\"";
+        if (html.Contains(idPattern))
+        {
+            // Insert hx-swap-oob attribute after the id attribute
+            return html.Replace(idPattern, $"{idPattern} hx-swap-oob=\"{swapModeStr}\"");
         }
 
-        return html;
+        // Otherwise wrap in a div (fallback for views without the id)
+        return $"<div id=\"{oob.TargetId}\" hx-swap-oob=\"{swapModeStr}\">{html}</div>";
     }
 }

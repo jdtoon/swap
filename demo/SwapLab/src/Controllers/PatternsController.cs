@@ -331,15 +331,23 @@ public class PatternsController : Controller
     [HttpPost]
     public IActionResult ChangeTab(string tab, ProductSearchState state)
     {
-        state.Tab = tab;
-        state.Page = 1; // Reset page on tab change
+        // Create a new state object with the updated tab to avoid any binding issues
+        var newState = new ProductSearchState
+        {
+            Tab = tab,  // Use the tab from query string
+            Page = 1,   // Reset page on tab change
+            PageSize = state.PageSize,
+            Search = state.Search,
+            SortBy = state.SortBy,
+            SortDesc = state.SortDesc
+        };
         
-        var results = FilterProducts(state);
+        var results = FilterProducts(newState);
         var viewModel = new ProductGridViewModel
         {
             Products = results,
-            State = state,
-            TotalCount = GetFilteredCount(state)
+            State = newState,
+            TotalCount = GetFilteredCount(newState)
         };
         
         // Return the entire demo area so tabs show active state
@@ -589,7 +597,7 @@ public class PatternsController : Controller
     {
         // Simulate slow operation
         await Task.Delay(1500);
-        return PartialView("_Message", "Operation completed successfully after 1.5 seconds!");
+        return PartialView("_Message", new { Message = "Operation completed successfully after 1.5 seconds!" });
     }
 
     /// <summary>
