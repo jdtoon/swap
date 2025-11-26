@@ -208,15 +208,20 @@ public class TodosTests : IClassFixture<HtmxTestFixture<Program>>
 
 ## Demos
 
-Explore the `demo/` folder for example applications:
+**Start here: [SwapLab](demo/SwapLab)** — The interactive pattern library showcasing all Swap.Htmx features with live demos, code samples, and explanations.
 
--   **[SwapShop](demo/SwapShop)**: A fully functional e-commerce demo showcasing core features (Cart, Badges, Toasts).
--   **[SwapChat](demo/SwapChat)**: A real-time chat application using SSE and Rooms.
--   **[SwapRedisDemo](demo/SwapRedisDemo)**: Demonstrates scaling SSE across multiple servers using the Redis Backplane.
--   **[TaskFlow](demo/TaskFlow)**: Collaborative task management with advanced event chains.
--   **[SwapMinimal](demo/SwapMinimal)**: Shows how to use Swap with Minimal APIs.
--   **[SwapPages](demo/SwapPages)**: Shows how to use Swap with Razor Pages.
--   **[SwapWebSockets](demo/SwapWebSockets)**: Demonstrates full WebSocket integration.
+Other examples in `demo/`:
+
+| Demo | Description |
+|------|-------------|
+| **[SwapLab](demo/SwapLab)** | 🎯 **Interactive pattern library** — Start here! Live demos of all patterns |
+| [SwapShop](demo/SwapShop) | E-commerce demo (Cart, Badges, Toasts) |
+| [SwapChat](demo/SwapChat) | Real-time chat with SSE and Rooms |
+| [TaskFlow](demo/TaskFlow) | Collaborative task management with event chains |
+| [SwapMinimal](demo/SwapMinimal) | Minimal APIs integration |
+| [SwapPages](demo/SwapPages) | Razor Pages integration |
+| [SwapWebSockets](demo/SwapWebSockets) | WebSocket integration |
+| [SwapRedisDemo](demo/SwapRedisDemo) | Redis backplane for scaling SSE |
 
 ## Documentation
 

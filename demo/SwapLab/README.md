@@ -31,12 +31,15 @@ Each pattern includes:
 | **Multi-Component** | Tabs + Search + Pagination + Grid |
 | **Event Chains** | Cascading updates with `ISwapEventConfiguration` |
 | **State Management** | Hidden fields, URL params, data attributes |
+| **URL Sync** | Bookmarkable state with `SyncToUrl` property |
+| **Conditional Swaps** | `AlsoUpdateIfExists()` and `AlsoUpdateIf()` for safe OOB swaps |
 | **OOB Swaps** | Out-of-band updates with `AlsoUpdate()` |
 | **Toasts** | Success, error, and custom notifications |
 | **Modals** | Modal dialogs with form handling |
 | **Infinite Scroll** | Lazy loading with `hx-trigger="revealed"` |
 | **Search Debounce** | Real-time search with debouncing |
 | **Form Validation** | Server-side validation with inline errors |
+| **Source Generators** | Type-safe view paths, element IDs, and events |
 
 ### 🛠️ DevTools
 

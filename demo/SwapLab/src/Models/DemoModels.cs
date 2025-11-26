@@ -81,3 +81,36 @@ public class InfiniteScrollViewModel
     public bool HasMore { get; init; }
     public int NextPage => CurrentPage + 1;
 }
+
+/// <summary>
+/// State for URL sync demo - demonstrates UrlSync feature.
+/// </summary>
+public class UrlSyncState : SwapState
+{
+    /// <summary>
+    /// Enable URL synchronization - state is read from query string on load.
+    /// </summary>
+    public override bool UrlSync => true;
+    
+    public string Category { get; set; } = "all";
+    public string PriceRange { get; set; } = "all";
+    public string SortBy { get; set; } = "name";
+}
+
+/// <summary>
+/// View model for URL sync demo.
+/// </summary>
+public class UrlSyncViewModel
+{
+    public required UrlSyncState State { get; init; }
+    public required IReadOnlyList<Product> Products { get; init; }
+}
+
+/// <summary>
+/// View model for conditional swaps demo.
+/// </summary>
+public class ConditionalSwapViewModel
+{
+    public string? Role { get; set; }
+    public decimal OrderValue { get; set; }
+}

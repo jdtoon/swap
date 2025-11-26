@@ -1,0 +1,13 @@
+@model dynamic
+
+<div class="alert alert-success">
+    <strong>Action completed!</strong> 
+    @if (Model?.Message != null)
+    {
+        <span>@Model.Message</span>
+    }
+    else
+    {
+        <span>The operation was successful.</span>
+    }
+</div>

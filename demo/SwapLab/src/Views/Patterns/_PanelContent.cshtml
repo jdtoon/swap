@@ -1,0 +1,7 @@
+@model dynamic
+
+<span class="fw-bold">@DateTime.Now.ToString("HH:mm:ss")</span>
+@if (Model?.Label != null)
+{
+    <span> - @Model.Label</span>
+}
