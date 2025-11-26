@@ -197,6 +197,115 @@ public class PatternsController : Controller
             .Build();
     }
 
+    /// <summary>
+    /// Pattern: Data Attributes
+    /// Shows storing state in data-* attributes.
+    /// </summary>
+    public IActionResult DataAttributes()
+    {
+        return View();
+    }
+
+    [HttpPost]
+    public IActionResult ToggleDataItem(int id, bool active)
+    {
+        var newActive = !active;
+        var html = $@"
+            <div class=""list-group-item d-flex justify-content-between align-items-center""
+                 id=""item-{id}""
+                 data-id=""{id}""
+                 data-active=""{newActive.ToString().ToLower()}"">
+                <span>Item {id} {(newActive ? "✓ Active" : "")}</span>
+                <button class=""btn btn-sm {(newActive ? "btn-success" : "btn-secondary")}""
+                        hx-post=""{Url.Action("ToggleDataItem", "Patterns")}""
+                        hx-vals='js:{{""id"": document.getElementById(""item-{id}"").dataset.id, ""active"": document.getElementById(""item-{id}"").dataset.active}}'
+                        hx-target=""#item-{id}""
+                        hx-swap=""outerHTML"">
+                    {(newActive ? "Active" : "Toggle")}
+                </button>
+            </div>";
+        return Content(html, "text/html");
+    }
+
+    [HttpPost]
+    public IActionResult IncrementHiddenCounter(int counter, string lastAction)
+    {
+        var newCounter = counter + 1;
+        var html = $@"
+            <div class=""alert alert-success"">
+                <strong>Counter incremented!</strong><br/>
+                Previous: {counter} → New: {newCounter}
+            </div>
+            <script>
+                document.getElementById('counter-value').value = '{newCounter}';
+                document.getElementById('last-action').value = 'increment';
+                document.getElementById('counter-display').textContent = '{newCounter}';
+                document.getElementById('action-display').textContent = 'increment';
+            </script>";
+        return Content(html, "text/html");
+    }
+
+    [HttpPost]
+    public IActionResult DecrementHiddenCounter(int counter, string lastAction)
+    {
+        var newCounter = counter - 1;
+        var html = $@"
+            <div class=""alert alert-warning"">
+                <strong>Counter decremented!</strong><br/>
+                Previous: {counter} → New: {newCounter}
+            </div>
+            <script>
+                document.getElementById('counter-value').value = '{newCounter}';
+                document.getElementById('last-action').value = 'decrement';
+                document.getElementById('counter-display').textContent = '{newCounter}';
+                document.getElementById('action-display').textContent = 'decrement';
+            </script>";
+        return Content(html, "text/html");
+    }
+
+    [HttpPost]
+    public IActionResult ResetHiddenCounter(int counter, string lastAction)
+    {
+        var html = @"
+            <div class=""alert alert-info"">
+                <strong>Counter reset!</strong><br/>
+                Value set to 0
+            </div>
+            <script>
+                document.getElementById('counter-value').value = '0';
+                document.getElementById('last-action').value = 'reset';
+                document.getElementById('counter-display').textContent = '0';
+                document.getElementById('action-display').textContent = 'reset';
+            </script>";
+        return Content(html, "text/html");
+    }
+
+    [HttpGet]
+    public IActionResult UrlStateTab(string tab)
+    {
+        var content = tab switch
+        {
+            "orders" => "<h4>Orders Tab</h4><p>Your orders would appear here.</p><p class='text-muted'>Notice the URL now includes <code>?tab=orders</code></p>",
+            "settings" => "<h4>Settings Tab</h4><p>Settings configuration would go here.</p><p class='text-muted'>Notice the URL now includes <code>?tab=settings</code></p>",
+            _ => "<h4>Products Tab</h4><p>Product listings would appear here.</p><p class='text-muted'>Notice the URL now includes <code>?tab=products</code></p>"
+        };
+        
+        Response.HxPushUrl($"/Patterns/UrlState?tab={tab}");
+        return Content(content, "text/html");
+    }
+
+    [HttpPost]
+    public IActionResult EventTimingDemo()
+    {
+        var newValue = new Random().Next(1, 100);
+        var html = $@"
+            <div class=""p-3 bg-light rounded text-center"">
+                <p class=""text-muted mb-0"">Current state: <strong id=""state-display"">{newValue}</strong></p>
+            </div>
+            <script>document.getElementById('demo-state').value = '{newValue}';</script>";
+        return Content(html, "text/html");
+    }
+
     #endregion
 
     #region Event Chain Patterns

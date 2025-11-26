@@ -1,0 +1,98 @@
+@{
+    ViewData["Title"] = "Data Attribute State";
+    ViewData["Description"] = "Store state in data-* attributes";
+}
+
+<div class="row">
+    <div class="col-lg-6">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">📊 Data Attributes for State</h5>
+            </div>
+            <div class="card-body">
+                <p>
+                    Data attributes (<code>data-*</code>) can store state directly on elements.
+                    Use <code>hx-vals</code> to include these values in your requests.
+                </p>
+
+                <h6>Key Techniques:</h6>
+                <ul>
+                    <li><code>data-id="123"</code> — Store values on elements</li>
+                    <li><code>hx-vals='{"id": "123"}'</code> — Send static values</li>
+                    <li><code>hx-vals='js:{...}'</code> — Dynamic JavaScript values</li>
+                </ul>
+
+                <div class="alert alert-info mb-0">
+                    <strong>💡 When to use:</strong> Data attributes are great for row-level
+                    actions where each item needs its own state (like edit/delete buttons).
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">&lt;/&gt; The Code</h5>
+            </div>
+            <div class="card-body">
+<pre><code>&lt;!-- Using hx-vals for static data --&gt;
+&lt;button hx-delete="/items/123"
+        hx-vals='{"id": 123, "confirm": true}'&gt;
+    Delete
+&lt;/button&gt;
+
+&lt;!-- Using JavaScript for dynamic values --&gt;
+&lt;button hx-post="/toggle"
+        hx-vals='js:{
+            id: this.dataset.id,
+            state: this.dataset.active
+        }'
+        data-id="456"
+        data-active="true"&gt;
+    Toggle
+&lt;/button&gt;</code></pre>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">▶ Live Demo</h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted mb-3">
+                    Each item below stores its own state in data attributes.
+                    Click to toggle and see the state change.
+                </p>
+
+                <div id="items-list">
+                    @for (int i = 1; i <= 4; i++)
+                    {
+                        <div class="list-group-item d-flex justify-content-between align-items-center"
+                             id="item-@i"
+                             data-id="@i"
+                             data-active="false">
+                            <span>Item @i</span>
+                            <button class="btn btn-sm btn-secondary"
+                                    hx-post="@Url.Action("ToggleDataItem", "Patterns")"
+                                    hx-vals='js:{"id": document.getElementById("item-@i").dataset.id, "active": document.getElementById("item-@i").dataset.active}'
+                                    hx-target="#item-@i"
+                                    hx-swap="outerHTML">
+                                Toggle
+                            </button>
+                        </div>
+                    }
+                </div>
+
+                <hr class="my-4">
+
+                <h6>How It Works:</h6>
+                <ol class="mb-0 text-muted">
+                    <li>Each item has <code>data-id</code> and <code>data-active</code></li>
+                    <li><code>hx-vals='js:{...}'</code> reads these at click time</li>
+                    <li>Server toggles the state and returns updated HTML</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>

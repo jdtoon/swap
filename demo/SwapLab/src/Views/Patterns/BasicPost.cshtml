@@ -1,0 +1,84 @@
+@{
+    ViewData["Title"] = "Form POST";
+    ViewData["Description"] = "Submit a form and update the page";
+}
+
+<div class="row">
+    <div class="col-lg-6">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">📝 Form POST Pattern</h5>
+            </div>
+            <div class="card-body">
+                <p>
+                    Use <code>hx-post</code> on a form or button to submit data without
+                    a full page reload. The response replaces only the target element.
+                </p>
+
+                <h6>Key Attributes:</h6>
+                <ul>
+                    <li><code>hx-post</code> — Send POST request</li>
+                    <li><code>hx-target</code> — Where to put response</li>
+                    <li><code>hx-swap</code> — How to swap (innerHTML, outerHTML, etc.)</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">&lt;/&gt; The Code</h5>
+            </div>
+            <div class="card-body">
+<pre><code>&lt;!-- Form with hx-post --&gt;
+&lt;form hx-post="/submit"
+      hx-target="#result"
+      hx-swap="innerHTML"&gt;
+    &lt;input type="text" name="name" /&gt;
+    &lt;button type="submit"&gt;Submit&lt;/button&gt;
+&lt;/form&gt;
+
+// Controller
+[HttpPost]
+public IActionResult Submit(string name)
+{
+    return this.SwapResponse()
+        .WithView("_Greeting", name)
+        .WithSuccessToast($"Hello, {name}!")
+        .Build();
+}</code></pre>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">▶ Live Demo</h5>
+            </div>
+            <div class="card-body">
+                <form hx-post="@Url.Action("SubmitForm", "Patterns")"
+                      hx-target="#form-result"
+                      hx-swap="innerHTML">
+                    <div class="form-group mb-3">
+                        <label for="name" class="form-label">Your Name</label>
+                        <input type="text" 
+                               class="form-control" 
+                               id="name" 
+                               name="name"
+                               placeholder="Enter your name"
+                               required />
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">
+                        ➤ Submit
+                    </button>
+                </form>
+
+                <hr class="my-4">
+
+                <div id="form-result" class="p-3 bg-light rounded">
+                    <p class="text-muted mb-0 text-center">Submit the form to see the result</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

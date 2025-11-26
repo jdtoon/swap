@@ -7,17 +7,26 @@
 <div class="sidebar">
     <div class="logo">Swap<span>Lab</span></div>
     
+    <a href="/"
+       hx-get="/"
+       hx-target="#main-content"
+       hx-push-url="true"
+       class="sidebar-home">🏠 Home</a>
+    
     @foreach (var category in Model)
     {
         <h3>@category.Key</h3>
         @foreach (var pattern in category.Value)
         {
-            <a href="/Patterns/@pattern.Id.Replace("-", "")">@pattern.Title</a>
+            <a hx-get="/Patterns/@pattern.Id.Replace("-", "")"
+               hx-target="#main-content"
+               hx-push-url="true"
+               hx-swap="innerHTML">@pattern.Title</a>
         }
     }
 </div>
 
-<div class="main-content">
+<div class="main-content" id="main-content">
     <hgroup>
         <h1>Welcome to SwapLab</h1>
         <p>Interactive pattern library for Swap.Htmx</p>
@@ -31,17 +40,17 @@
     <h2>Getting Started</h2>
     
     <div class="grid">
-        <article>
+        <article hx-get="/Patterns/BasicSwap" hx-target="#main-content" hx-push-url="true" style="cursor: pointer;">
             <h3>1. Start Simple</h3>
-            <p>Begin with <a href="/Patterns/BasicSwap">Basic Swap</a> to understand the fundamentals.</p>
+            <p>Begin with Basic Swap to understand the fundamentals.</p>
         </article>
-        <article>
+        <article hx-get="/Patterns/EventChains" hx-target="#main-content" hx-push-url="true" style="cursor: pointer;">
             <h3>2. Learn Events</h3>
-            <p>Move to <a href="/Patterns/EventChains">Event Chains</a> to see cascading updates.</p>
+            <p>Move to Event Chains to see cascading updates.</p>
         </article>
-        <article>
+        <article hx-get="/Patterns/MultiComponent" hx-target="#main-content" hx-push-url="true" style="cursor: pointer;">
             <h3>3. Go Multi-Component</h3>
-            <p>Try <a href="/Patterns/MultiComponent">Multi-Component</a> for real-world patterns.</p>
+            <p>Try Multi-Component for real-world patterns.</p>
         </article>
     </div>
     
@@ -65,7 +74,10 @@
         <div class="grid">
             @foreach (var pattern in category.Value)
             {
-                <a href="/Patterns/@pattern.Id.Replace("-", "")" class="pattern-card">
+                <a hx-get="/Patterns/@pattern.Id.Replace("-", "")" 
+                   hx-target="#main-content" 
+                   hx-push-url="true"
+                   class="pattern-card">
                     <h4>@pattern.Title</h4>
                     <p>@pattern.Description</p>
                     <div>

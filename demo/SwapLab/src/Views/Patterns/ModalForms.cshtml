@@ -1,0 +1,141 @@
+@model IEnumerable<SwapLab.Models.Product>
+@{
+    ViewData["Title"] = "Modal Forms";
+    ViewData["Description"] = "Edit forms in modal dialogs";
+}
+
+<div class="row">
+    <div class="col-lg-5">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">🪟 Modal Form Pattern</h5>
+            </div>
+            <div class="card-body">
+                <p>
+                    Load edit forms into a modal dialog, then update the underlying
+                    data when the form is submitted.
+                </p>
+
+                <h6>Pattern Steps:</h6>
+                <ol>
+                    <li>Click edit → Load form into modal</li>
+                    <li>Submit form → Close modal + update row</li>
+                    <li>Use OOB swap to update the row in place</li>
+                </ol>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">&lt;/&gt; The Code</h5>
+            </div>
+            <div class="card-body">
+<pre><code>// Load modal content
+[HttpGet]
+public IActionResult EditModal(int id)
+{
+    var item = GetItem(id);
+    return PartialView("_EditModal", item);
+}
+
+// Save and update row
+[HttpPost]
+public IActionResult Save(Item item)
+{
+    SaveItem(item);
+    return this.SwapResponse()
+        .WithView("_ModalClosed")
+        .AlsoUpdate($"#row-{item.Id}", 
+            "_Row", item)
+        .WithSuccessToast("Saved!")
+        .Build();
+}</code></pre>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-7">
+        <div class="card">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">▶ Live Demo</h5>
+            </div>
+            <div class="card-body p-0">
+                <table class="w-100" style="border-collapse: collapse;">
+                    <thead>
+                        <tr style="background: var(--color-bg-tertiary);">
+                            <th style="padding: 0.75rem 1rem; text-align: left;">Name</th>
+                            <th style="padding: 0.75rem 1rem; text-align: right;">Price</th>
+                            <th style="padding: 0.75rem 1rem; text-align: right;">Stock</th>
+                            <th style="padding: 0.75rem 1rem; text-align: center;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="products-table">
+                        @foreach (var product in Model.Take(5))
+                        {
+                            <tr id="product-row-@product.Id" style="border-bottom: 1px solid var(--color-border);">
+                                <td style="padding: 0.75rem 1rem;">@product.Name</td>
+                                <td style="padding: 0.75rem 1rem; text-align: right;">$@product.Price.ToString("F2")</td>
+                                <td style="padding: 0.75rem 1rem; text-align: right;">@product.Stock</td>
+                                <td style="padding: 0.75rem 1rem; text-align: center;">
+                                    <button class="btn btn-sm btn-secondary"
+                                            hx-get="@Url.Action("EditProductModal", "Patterns", new { id = product.Id })"
+                                            hx-target="#modal-container"
+                                            hx-swap="innerHTML">
+                                        Edit
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Modal Container -->
+        <div id="modal-container"></div>
+    </div>
+</div>
+
+<style>
+    .modal-backdrop {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+    }
+    
+    .modal-dialog {
+        background: var(--color-bg-secondary);
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius);
+        width: 100%;
+        max-width: 400px;
+        box-shadow: var(--shadow-lg);
+    }
+    
+    .modal-header {
+        padding: 1rem 1.25rem;
+        border-bottom: 1px solid var(--color-border);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .modal-body {
+        padding: 1.25rem;
+    }
+    
+    .modal-footer {
+        padding: 0.75rem 1.25rem;
+        border-top: 1px solid var(--color-border);
+        display: flex;
+        justify-content: flex-end;
+        gap: 0.5rem;
+    }
+</style>

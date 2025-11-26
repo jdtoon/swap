@@ -1,0 +1,97 @@
+@{
+    ViewData["Title"] = "URL State";
+    ViewData["Description"] = "Sync state with URL for bookmarkable pages";
+}
+
+<div class="row">
+    <div class="col-lg-6">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">🔗 URL State Management</h5>
+            </div>
+            <div class="card-body">
+                <p>
+                    Use <code>hx-push-url</code> to update the browser URL when making HTMX requests.
+                    This enables bookmarkable pages and browser back/forward navigation.
+                </p>
+
+                <h6>Key Attributes:</h6>
+                <ul>
+                    <li><code>hx-push-url="true"</code> — Push current URL to history</li>
+                    <li><code>hx-push-url="/custom/path"</code> — Push custom URL</li>
+                    <li><code>Response.HxPushUrl()</code> — Server-side URL push</li>
+                </ul>
+
+                <div class="alert alert-warning mb-0">
+                    <strong>⚠️ Note:</strong> URL state is best for filterable/searchable pages
+                    where users might want to share or bookmark a specific view.
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">&lt;/&gt; The Code</h5>
+            </div>
+            <div class="card-body">
+<pre><code>// Controller action
+[HttpGet]
+public IActionResult Search(string? q, int page = 1)
+{
+    var results = SearchProducts(q, page);
+    
+    // Push URL with query params
+    Response.HxPushUrl($"/search?q={q}&page={page}");
+    
+    return this.SwapResponse()
+        .WithView("_Results", results)
+        .Build();
+}</code></pre>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">▶ Live Demo</h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted">
+                    Try the tabs below and watch your browser's address bar update.
+                    You can use back/forward to navigate between states.
+                </p>
+
+                <div class="tabs mb-4">
+                    <button class="tab-btn active"
+                            hx-get="@Url.Action("UrlStateTab", "Patterns", new { tab = "products" })"
+                            hx-target="#tab-content"
+                            hx-push-url="true">
+                        Products
+                    </button>
+                    <button class="tab-btn"
+                            hx-get="@Url.Action("UrlStateTab", "Patterns", new { tab = "orders" })"
+                            hx-target="#tab-content"
+                            hx-push-url="true">
+                        Orders
+                    </button>
+                    <button class="tab-btn"
+                            hx-get="@Url.Action("UrlStateTab", "Patterns", new { tab = "settings" })"
+                            hx-target="#tab-content"
+                            hx-push-url="true">
+                        Settings
+                    </button>
+                </div>
+
+                <div id="tab-content" class="p-3 bg-light rounded">
+                    <h4>Products Tab</h4>
+                    <p>This is the products content. Notice the URL hasn't changed yet.</p>
+                    <p class="text-muted mb-0">Click another tab to see URL state in action.</p>
+                </div>
+            </div>
+            <div class="card-footer">
+                <small>ℹ️ Check your browser's address bar as you click tabs</small>
+            </div>
+        </div>
+    </div>
+</div>

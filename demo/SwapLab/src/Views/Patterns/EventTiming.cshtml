@@ -1,0 +1,112 @@
+@{
+    ViewData["Title"] = "Event Timing";
+    ViewData["Description"] = "Understanding before-request vs after-request timing";
+}
+
+<div class="row">
+    <div class="col-lg-6">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">⏱️ The Event Timing Trap</h5>
+            </div>
+            <div class="card-body">
+                <p>
+                    A common mistake is using <code>hx-on:htmx:before-request</code> to read
+                    state that was just changed. The problem? State updates happen in the
+                    response, <strong>after</strong> the request completes.
+                </p>
+
+                <div class="alert alert-danger">
+                    <strong>❌ Wrong:</strong> Reading state in before-request
+<pre class="mb-0 mt-2"><code>hx-on:htmx:before-request="
+    // State hasn't updated yet!
+    console.log(getState())
+"</code></pre>
+                </div>
+
+                <div class="alert alert-success">
+                    <strong>✓ Correct:</strong> Reading state in after-request
+<pre class="mb-0 mt-2"><code>hx-on:htmx:after-request="
+    // Now state is updated
+    console.log(getState())
+"</code></pre>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">📋 Event Sequence</h5>
+            </div>
+            <div class="card-body">
+                <ol>
+                    <li><code>htmx:configRequest</code> — Configure request</li>
+                    <li><code>htmx:beforeRequest</code> — Before request sent</li>
+                    <li><code>htmx:beforeSend</code> — Just before XHR</li>
+                    <li class="text-muted">— Request happens —</li>
+                    <li><code>htmx:afterRequest</code> — Response received</li>
+                    <li><code>htmx:beforeSwap</code> — Before DOM update</li>
+                    <li><code>htmx:afterSwap</code> — After DOM update</li>
+                    <li><code>htmx:afterSettle</code> — After settle delay</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">▶ Live Demo</h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted">
+                    Click the button and watch the event log to understand timing.
+                </p>
+
+                <input type="hidden" id="demo-state" value="0" />
+
+                <button class="btn btn-primary btn-lg w-100 mb-4"
+                        hx-post="@Url.Action("EventTimingDemo", "Patterns")"
+                        hx-target="#timing-result"
+                        hx-on:htmx:before-request="logEvent('before-request', document.getElementById('demo-state').value)"
+                        hx-on:htmx:after-request="logEvent('after-request', document.getElementById('demo-state').value)"
+                        hx-on:htmx:after-swap="logEvent('after-swap', document.getElementById('demo-state').value)">
+                    Trigger Request
+                </button>
+
+                <div id="timing-result" class="mb-4">
+                    <div class="p-3 bg-light rounded text-center">
+                        <p class="text-muted mb-0">Current state: <strong id="state-display">0</strong></p>
+                    </div>
+                </div>
+
+                <h6>Event Log:</h6>
+                <div id="event-log" class="p-3 bg-light rounded" style="max-height: 200px; overflow-y: auto; font-family: monospace; font-size: 0.8rem;">
+                    <div class="text-muted">Events will appear here...</div>
+                </div>
+
+                <button class="btn btn-sm btn-secondary mt-2" onclick="document.getElementById('event-log').innerHTML = '<div class=\'text-muted\'>Events will appear here...</div>'">
+                    Clear Log
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function logEvent(eventName, stateValue) {
+        const log = document.getElementById('event-log');
+        const time = new Date().toLocaleTimeString();
+        const entry = document.createElement('div');
+        entry.innerHTML = `<span class="text-muted">${time}</span> <strong>${eventName}</strong>: state=${stateValue}`;
+        
+        // Remove placeholder if present
+        const placeholder = log.querySelector('.text-muted:only-child');
+        if (placeholder && placeholder.textContent.includes('Events will appear')) {
+            placeholder.remove();
+        }
+        
+        log.appendChild(entry);
+        log.scrollTop = log.scrollHeight;
+    }
+</script>

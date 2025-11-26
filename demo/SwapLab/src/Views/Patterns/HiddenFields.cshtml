@@ -1,0 +1,115 @@
+@{
+    ViewData["Title"] = "Hidden Field State";
+    ViewData["Description"] = "Store state in hidden fields using hx-include";
+}
+
+<div class="row">
+    <div class="col-lg-6">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">📦 What Are Hidden Fields?</h5>
+            </div>
+            <div class="card-body">
+                <p>
+                    Hidden fields are the most common way to maintain state between HTMX requests.
+                    Use <code>hx-include</code> to send hidden field values with your requests.
+                </p>
+
+                <h6>Key Concepts:</h6>
+                <ul>
+                    <li><code>&lt;input type="hidden"&gt;</code> — Stores state invisibly</li>
+                    <li><code>hx-include</code> — Includes form fields in request</li>
+                    <li>State container pattern — Group related state together</li>
+                </ul>
+
+                <div class="alert alert-info mb-0">
+                    <strong>💡 Tip:</strong> Use a state container div with all your hidden fields,
+                    then reference it with <code>hx-include="#state-container"</code>.
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">&lt;/&gt; The Code</h5>
+            </div>
+            <div class="card-body">
+<pre><code>&lt;!-- State container with hidden fields --&gt;
+&lt;div id="state-container"&gt;
+    &lt;input type="hidden" name="tab" value="all" /&gt;
+    &lt;input type="hidden" name="page" value="1" /&gt;
+    &lt;input type="hidden" name="search" value="" /&gt;
+&lt;/div&gt;
+
+&lt;!-- Button includes state in request --&gt;
+&lt;button hx-get="/search"
+        hx-include="#state-container"
+        hx-target="#results"&gt;
+    Search
+&lt;/button&gt;</code></pre>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">▶ Live Demo</h5>
+            </div>
+            <div class="card-body">
+                <!-- State Container -->
+                <div id="state-container">
+                    <input type="hidden" name="counter" id="counter-value" value="0" />
+                    <input type="hidden" name="lastAction" id="last-action" value="none" />
+                </div>
+
+                <div class="row g-3 mb-4">
+                    <div class="col-6">
+                        <div class="card bg-light">
+                            <div class="card-body text-center py-3">
+                                <small class="text-muted d-block">Counter Value</small>
+                                <div id="counter-display" class="fs-2 fw-bold text-primary">0</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="card bg-light">
+                            <div class="card-body text-center py-3">
+                                <small class="text-muted d-block">Last Action</small>
+                                <div id="action-display">none</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-flex gap-2 mb-4">
+                    <button class="btn btn-primary"
+                            hx-post="@Url.Action("IncrementHiddenCounter", "Patterns")"
+                            hx-include="#state-container"
+                            hx-target="#demo-result"
+                            hx-swap="innerHTML">
+                        + Increment
+                    </button>
+                    <button class="btn btn-secondary"
+                            hx-post="@Url.Action("DecrementHiddenCounter", "Patterns")"
+                            hx-include="#state-container"
+                            hx-target="#demo-result"
+                            hx-swap="innerHTML">
+                        − Decrement
+                    </button>
+                    <button class="btn btn-secondary"
+                            hx-post="@Url.Action("ResetHiddenCounter", "Patterns")"
+                            hx-include="#state-container"
+                            hx-target="#demo-result"
+                            hx-swap="innerHTML">
+                        ↻ Reset
+                    </button>
+                </div>
+
+                <div id="demo-result" class="p-3 bg-light rounded">
+                    <p class="text-muted mb-0 text-center">Click a button to see hidden field state in action</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
