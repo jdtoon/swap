@@ -45,7 +45,7 @@ public class PatternsController : Controller
     /// </summary>
     public IActionResult BasicSwap()
     {
-        return View();
+        return this.SwapView();
     }
 
     [HttpGet]
@@ -63,14 +63,14 @@ public class PatternsController : Controller
     /// </summary>
     public IActionResult BasicPost()
     {
-        return View();
+        return this.SwapView();
     }
 
     [HttpPost]
     public IActionResult SubmitForm(string name)
     {
         return this.SwapResponse()
-            .WithView("_Greeting", new { Name = name })
+            .WithView("_Greeting", name ?? "Guest")
             .WithSuccessToast($"Hello, {name}!")
             .Build();
     }
@@ -84,7 +84,7 @@ public class PatternsController : Controller
     public IActionResult OobSwap()
     {
         _clickCount = 0; // Reset for demo
-        return View();
+        return this.SwapView();
     }
 
     [HttpPost]
@@ -94,10 +94,11 @@ public class PatternsController : Controller
         var now = DateTime.Now;
         
         // Update primary target AND additional elements via OOB
+        // Note: AlsoUpdate takes just the ID without the # prefix
         return this.SwapResponse()
             .WithView("_ClickResult", _clickCount)
-            .AlsoUpdate("#click-counter", "_Counter", _clickCount)
-            .AlsoUpdate("#last-click", "_LastUpdated", now)
+            .AlsoUpdate("click-counter", "_Counter", _clickCount)
+            .AlsoUpdate("last-click", "_LastUpdated", now)
             .Build();
     }
 
@@ -107,7 +108,7 @@ public class PatternsController : Controller
     /// </summary>
     public IActionResult Toasts()
     {
-        return View();
+        return this.SwapView();
     }
 
     [HttpPost]
@@ -148,7 +149,7 @@ public class PatternsController : Controller
     public IActionResult HiddenFields()
     {
         var state = new ProductSearchState();
-        return View(state);
+        return this.SwapView(state);
     }
 
     [HttpGet]
@@ -175,7 +176,7 @@ public class PatternsController : Controller
     public IActionResult UrlState(ProductSearchState? state)
     {
         state ??= new ProductSearchState();
-        return View(state);
+        return this.SwapView(state);
     }
 
     [HttpGet]
@@ -203,7 +204,7 @@ public class PatternsController : Controller
     /// </summary>
     public IActionResult DataAttributes()
     {
-        return View();
+        return this.SwapView();
     }
 
     [HttpPost]
@@ -319,7 +320,7 @@ public class PatternsController : Controller
         var state = new ProductSearchState();
         var products = FilterProducts(state);
         
-        return View(new ProductGridViewModel
+        return this.SwapView(new ProductGridViewModel
         {
             Products = products,
             State = state,
@@ -341,9 +342,9 @@ public class PatternsController : Controller
             TotalCount = GetFilteredCount(state)
         };
         
-        // The "TabChanged" event triggers the event chain
+        // Return the entire demo area so tabs show active state
         return this.SwapResponse()
-            .WithView("_ProductGrid", viewModel)
+            .WithView("_EventChainDemo", viewModel)
             .WithTrigger(ProductEvents.Product.TabChanged)
             .Build();
     }
@@ -354,7 +355,7 @@ public class PatternsController : Controller
     /// </summary>
     public IActionResult EventTiming()
     {
-        return View();
+        return this.SwapView();
     }
 
     #endregion
@@ -370,7 +371,7 @@ public class PatternsController : Controller
         var state = new ProductSearchState();
         var products = FilterProducts(state);
         
-        return View(new ProductGridViewModel
+        return this.SwapView(new ProductGridViewModel
         {
             Products = products,
             State = state,
@@ -392,8 +393,8 @@ public class PatternsController : Controller
         
         return this.SwapResponse()
             .WithView("_ProductGrid", viewModel)
-            .AlsoUpdate("#product-count", "_ProductCount", new { Count = GetFilteredCount(state) })
-            .AlsoUpdate("#pagination", "_Pagination", viewModel)
+            .AlsoUpdate("product-count", "_ProductCount", new { Count = GetFilteredCount(state) })
+            .AlsoUpdate("pagination", "_Pagination", viewModel)
             .Build();
     }
 
@@ -419,7 +420,7 @@ public class PatternsController : Controller
     /// </summary>
     public IActionResult SearchDebounce()
     {
-        return View(Products);
+        return this.SwapView(Products);
     }
 
     [HttpGet]
@@ -443,7 +444,7 @@ public class PatternsController : Controller
     /// </summary>
     public IActionResult InfiniteScroll()
     {
-        return View();
+        return this.SwapView();
     }
 
     [HttpGet]
@@ -483,7 +484,7 @@ public class PatternsController : Controller
     /// </summary>
     public IActionResult FormValidation()
     {
-        return View();
+        return this.SwapView();
     }
 
     [HttpPost]
@@ -580,7 +581,7 @@ public class PatternsController : Controller
     /// </summary>
     public IActionResult LoadingStates()
     {
-        return View();
+        return this.SwapView();
     }
 
     [HttpPost]
@@ -597,7 +598,7 @@ public class PatternsController : Controller
     /// </summary>
     public IActionResult ModalForms()
     {
-        return View(Products);
+        return this.SwapView(Products);
     }
 
     [HttpGet]
@@ -617,7 +618,7 @@ public class PatternsController : Controller
         // In a real app, you'd save to database
         return this.SwapResponse()
             .WithView("_ModalClosed")
-            .AlsoUpdate($"#product-row-{id}", "_ProductRow", new Product(id, name, "Electronics", price, stock))
+            .AlsoUpdate($"product-row-{id}", "_ProductRow", new Product(id, name, "Electronics", price, stock))
             .WithSuccessToast("Product updated!")
             .Build();
     }

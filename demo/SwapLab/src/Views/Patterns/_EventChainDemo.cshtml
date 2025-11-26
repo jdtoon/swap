@@ -1,0 +1,74 @@
+@model SwapLab.Models.ProductGridViewModel
+@* This partial contains the tabs + grid so the active tab state updates correctly *@
+
+<!-- State Container (hidden fields) -->
+<div id="state-container" style="display: none;">
+    <input type="hidden" name="Tab" value="@Model.State.Tab" />
+    <input type="hidden" name="Page" value="@Model.State.Page" />
+</div>
+
+<!-- Tabs -->
+<div class="tabs" style="margin-bottom: 1rem;">
+    <button class="@(Model.State.Tab == "all" ? "active" : "")"
+            hx-post="/Patterns/ChangeTab?tab=all"
+            hx-target="#event-chain-demo"
+            hx-include="#state-container">
+        All Products
+    </button>
+    <button class="@(Model.State.Tab == "electronics" ? "active" : "")"
+            hx-post="/Patterns/ChangeTab?tab=electronics"
+            hx-target="#event-chain-demo"
+            hx-include="#state-container">
+        Electronics
+    </button>
+    <button class="@(Model.State.Tab == "furniture" ? "active" : "")"
+            hx-post="/Patterns/ChangeTab?tab=furniture"
+            hx-target="#event-chain-demo"
+            hx-include="#state-container">
+        Furniture
+    </button>
+</div>
+
+<!-- Product Count -->
+<div id="product-count" style="margin-bottom: 1rem; color: var(--color-text-muted);">
+    Showing @Model.Products.Count of @Model.TotalCount products
+</div>
+
+<!-- Product Grid -->
+<div id="product-grid">
+    @if (Model.Products.Any())
+    {
+        <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr style="background: var(--color-bg-tertiary);">
+                    <th style="padding: 0.75rem 1rem; text-align: left;">Name</th>
+                    <th style="padding: 0.75rem 1rem; text-align: left;">Category</th>
+                    <th style="padding: 0.75rem 1rem; text-align: right;">Price</th>
+                    <th style="padding: 0.75rem 1rem; text-align: right;">Stock</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var product in Model.Products)
+                {
+                    <tr style="border-bottom: 1px solid var(--color-border);">
+                        <td style="padding: 0.75rem 1rem;">@product.Name</td>
+                        <td style="padding: 0.75rem 1rem;">@product.Category</td>
+                        <td style="padding: 0.75rem 1rem; text-align: right;">$@product.Price.ToString("F2")</td>
+                        <td style="padding: 0.75rem 1rem; text-align: right;">@product.Stock</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+    else
+    {
+        <div style="text-align: center; padding: 2rem; color: var(--color-text-muted);">
+            No products found in this category.
+        </div>
+    }
+</div>
+
+<!-- Pagination -->
+<div id="pagination" style="margin-top: 1rem;">
+    @await Html.PartialAsync("_Pagination", Model)
+</div>
