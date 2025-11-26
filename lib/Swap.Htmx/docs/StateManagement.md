@@ -2,6 +2,8 @@
 
 Swap.Htmx applications manage state differently than traditional SPAs. This guide covers the patterns and best practices for handling state in HTMX-powered applications.
 
+> **💡 New in v0.13:** For strongly-typed state management with automatic binding, see the **[SwapState Guide](SwapState.md)**.
+
 ---
 
 ## State Philosophy
@@ -17,11 +19,50 @@ In Swap.Htmx, state lives in the **HTML** rather than in JavaScript. This is a f
 
 ---
 
-## Where Should State Live?
+## Recommended: SwapState System
+
+For most applications, we recommend using the **SwapState** system which provides:
+
+- **Strongly-typed state classes** instead of loose hidden fields
+- **Automatic model binding** via `[FromSwapState]`
+- **Automatic OOB updates** via `.WithState()`
+- **Change tracking** for debugging
+
+```csharp
+// Define state
+public class InventoryState : SwapState
+{
+    public string Tab { get; set; } = "all";
+    public int Page { get; set; } = 1;
+}
+
+// Bind and update automatically
+public IActionResult Grid([FromSwapState] InventoryState state)
+{
+    return this.SwapResponse()
+        .WithView("_Grid", data)
+        .WithState(state)  // Auto-updates hidden fields
+        .Build();
+}
+```
+
+```html
+<swap-state state="Model.State" />
+```
+
+📖 **[Full SwapState Documentation →](SwapState.md)**
+
+---
+
+## Manual State Management
+
+For simpler cases or legacy code, you can manage hidden fields manually.
+
+### Where Should State Live?
 
 Choose the right storage based on your requirements:
 
-### Hidden Fields (Recommended for UI State)
+### Hidden Fields (Manual Approach)
 
 **Best for:** Page-level state that multiple components share
 
