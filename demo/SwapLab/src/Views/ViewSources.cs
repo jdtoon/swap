@@ -36,3 +36,25 @@ public static partial class HomeViews { }
 /// </summary>
 [SwapViewSource("Views/Shared")]
 public static partial class SharedViews { }
+
+/// <summary>
+/// Generated element ID constants for the Patterns folder.
+/// The [SwapElementSource] attribute scans Views/Patterns/*.cshtml files
+/// for id="..." attributes and generates strongly-typed constants.
+/// </summary>
+/// <remarks>
+/// Usage in controller:
+/// <code>
+/// return this.SwapResponse()
+///     .WithView("_Grid", model)
+///     .AlsoUpdate(PatternIds.Pagination, "_Pagination", model)
+///     .Build();
+/// </code>
+/// 
+/// Instead of magic strings:
+/// <code>
+/// .AlsoUpdate("pagination", "_Pagination", model)  // Typo-prone!
+/// </code>
+/// </remarks>
+[SwapElementSource("Views/Patterns")]
+public static partial class PatternIds { }

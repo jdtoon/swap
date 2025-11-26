@@ -96,12 +96,11 @@ public class PatternsController : Controller
         var now = DateTime.Now;
         
         // Update primary target AND additional elements via OOB
-        // Note: AlsoUpdate takes just the ID without the # prefix
-        // Using generated view constants from PatternViews.Partials
+        // Using generated constants: PatternViews.Partials for view names, PatternIds for element IDs
         return this.SwapResponse()
             .WithView(PatternViews.Partials.ClickResult, _clickCount)
-            .AlsoUpdate("click-counter", PatternViews.Partials.Counter, _clickCount)
-            .AlsoUpdate("last-click", PatternViews.Partials.LastUpdated, now)
+            .AlsoUpdate(PatternIds.ClickCounter, PatternViews.Partials.Counter, _clickCount)
+            .AlsoUpdate(PatternIds.LastClick, PatternViews.Partials.LastUpdated, now)
             .Build();
     }
 
@@ -406,11 +405,11 @@ public class PatternsController : Controller
             TotalCount = GetFilteredCount(state)
         };
         
-        // Demonstrating generated view constants for multi-component updates
+        // Demonstrating generated constants: PatternViews for views, PatternIds for element IDs
         return this.SwapResponse()
             .WithView(PatternViews.Partials.ProductGrid, viewModel)
-            .AlsoUpdate("product-count", PatternViews.Partials.ProductCount, new { Count = GetFilteredCount(state) })
-            .AlsoUpdate("pagination", PatternViews.Partials.Pagination, viewModel)
+            .AlsoUpdate(PatternIds.ProductCount, PatternViews.Partials.ProductCount, new { Count = GetFilteredCount(state) })
+            .AlsoUpdate(PatternIds.Pagination, PatternViews.Partials.Pagination, viewModel)
             .WithState(state)
             .Build();
     }

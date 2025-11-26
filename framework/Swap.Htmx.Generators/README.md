@@ -11,6 +11,7 @@ This project provides build-time code generation to enhance the developer experi
 |-----------|-----------|---------|
 | `EventSourceGenerator` | `[SwapEventSource]` | Type-safe event keys from string constants |
 | `ViewPathGenerator` | `[SwapViewSource]` | View name constants from .cshtml files |
+| `ElementIdGenerator` | `[SwapElementSource]` | Element ID constants from id="..." in .cshtml files |
 
 ---
 
@@ -78,6 +79,65 @@ public static partial class InventoryViews
     {
         public const string Grid = "_Grid";
         public const string Pagination = "_Pagination";
+    }
+}
+```
+
+### Usage
+1. Add `.cshtml` files as `<AdditionalFiles>` in your `.csproj`.
+2. Mark a class with `[SwapViewSource("path/to/views")]`.
+3. Build the project to generate the constants.
+
+### Options
+- `IncludeSubdirectories = true` - Include views from nested folders.
+
+---
+
+## Element ID Generator
+
+Automatically generates string constants for element IDs found in `.cshtml` files.
+
+**Setup (.csproj):**
+```xml
+<ItemGroup>
+  <AdditionalFiles Include="Views\**\*.cshtml" />
+</ItemGroup>
+```
+
+**Input:**
+```csharp
+[SwapElementSource("Views/Inventory")]
+public static partial class InventoryIds { }
+```
+
+**HTML in Views/Inventory/*.cshtml:**
+```html
+<div id="product-grid">...</div>
+<div id="pagination">...</div>
+```
+
+**Generated Output:**
+```csharp
+public static partial class InventoryIds
+{
+    public const string Pagination = "pagination";
+    public const string ProductGrid = "product-grid";
+}
+```
+
+### Usage
+1. Add `.cshtml` files as `<AdditionalFiles>` in your `.csproj`.
+2. Mark a class with `[SwapElementSource("path/to/views")]`.
+3. Build the project to generate the constants.
+
+### Options
+- `IncludeSubdirectories = true` - Include IDs from nested folders.
+- `Prefix = "product-"` - Only include IDs starting with the specified prefix.
+
+### Notes
+- Dynamic Razor IDs (`id="@Model.Id"`) are automatically skipped.
+- IDs are deduplicated across all files in the folder.
+- kebab-case and snake_case are converted to PascalCase.
     }
 }
 ```
