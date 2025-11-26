@@ -1,9 +1,15 @@
 using Swap.Htmx;
 using SwapLab.Events;
+using SwapLab.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllersWithViews();
+builder.Services.AddControllersWithViews(options =>
+{
+    // Insert decimal binder at the beginning to handle locale-agnostic decimals
+    options.ModelBinderProviders.Insert(0, new InvariantDecimalModelBinderProvider());
+});
+
 builder.Services.AddSwapHtmx(options =>
 {
     // Enable all DevTools features for the demo

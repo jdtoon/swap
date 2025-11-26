@@ -615,11 +615,24 @@ public class PatternsController : Controller
     [HttpPost]
     public IActionResult SaveProduct(int id, string name, decimal price, int stock)
     {
-        // In a real app, you'd save to database
+        // Find and update the product in our demo list
+        var index = Products.FindIndex(p => p.Id == id);
+        if (index >= 0)
+        {
+            var existingProduct = Products[index];
+            var updatedProduct = existingProduct with { Name = name, Price = price, Stock = stock };
+            Products[index] = updatedProduct;
+            
+            return this.SwapResponse()
+                .WithView("_ModalClosed")
+                .AlsoUpdate($"product-row-{id}", "_ProductRow", updatedProduct)
+                .WithSuccessToast($"Product '{name}' updated!")
+                .Build();
+        }
+        
         return this.SwapResponse()
             .WithView("_ModalClosed")
-            .AlsoUpdate($"product-row-{id}", "_ProductRow", new Product(id, name, "Electronics", price, stock))
-            .WithSuccessToast("Product updated!")
+            .WithErrorToast("Product not found!")
             .Build();
     }
 

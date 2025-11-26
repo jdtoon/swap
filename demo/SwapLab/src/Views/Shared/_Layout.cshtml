@@ -822,7 +822,46 @@
     </style>
 </head>
 <body>
-    @RenderBody()
+    <div class="app-layout">
+        <div class="sidebar">
+            <div class="logo">Swap<span>Lab</span></div>
+            
+            <a href="/"
+               hx-get="/"
+               hx-target="#main-content"
+               hx-push-url="true"
+               class="sidebar-home">🏠 Home</a>
+            
+            <h3>Basics</h3>
+            <a hx-get="/Patterns/BasicSwap" hx-target="#main-content" hx-push-url="true">Basic Swap</a>
+            <a hx-get="/Patterns/BasicPost" hx-target="#main-content" hx-push-url="true">Form POST</a>
+            <a hx-get="/Patterns/OobSwap" hx-target="#main-content" hx-push-url="true">OOB Swaps</a>
+            <a hx-get="/Patterns/Toasts" hx-target="#main-content" hx-push-url="true">Toasts</a>
+            <a hx-get="/Patterns/LoadingStates" hx-target="#main-content" hx-push-url="true">Loading States</a>
+            
+            <h3>State</h3>
+            <a hx-get="/Patterns/HiddenFields" hx-target="#main-content" hx-push-url="true">Hidden Fields</a>
+            <a hx-get="/Patterns/UrlState" hx-target="#main-content" hx-push-url="true">URL State</a>
+            <a hx-get="/Patterns/DataAttributes" hx-target="#main-content" hx-push-url="true">Data Attributes</a>
+            
+            <h3>Events</h3>
+            <a hx-get="/Patterns/EventChains" hx-target="#main-content" hx-push-url="true">Event Chains</a>
+            <a hx-get="/Patterns/EventTiming" hx-target="#main-content" hx-push-url="true">Event Timing</a>
+            
+            <h3>Components</h3>
+            <a hx-get="/Patterns/MultiComponent" hx-target="#main-content" hx-push-url="true">Multi-Component</a>
+            <a hx-get="/Patterns/SearchDebounce" hx-target="#main-content" hx-push-url="true">Search Debounce</a>
+            <a hx-get="/Patterns/InfiniteScroll" hx-target="#main-content" hx-push-url="true">Infinite Scroll</a>
+            
+            <h3>Forms</h3>
+            <a hx-get="/Patterns/FormValidation" hx-target="#main-content" hx-push-url="true">Form Validation</a>
+            <a hx-get="/Patterns/ModalForms" hx-target="#main-content" hx-push-url="true">Modal Forms</a>
+        </div>
+        
+        <div class="main-content" id="main-content">
+            @RenderBody()
+        </div>
+    </div>
     
     <!-- Swap DevTools (shows debug panel in development) -->
     <swap-devtools />

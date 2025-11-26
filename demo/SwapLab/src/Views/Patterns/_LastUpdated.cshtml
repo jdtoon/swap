@@ -1,5 +1,2 @@
 @model DateTime
-<small class="text-muted">
-    <i class="bi bi-clock me-1"></i>
-    Last updated: @Model.ToString("HH:mm:ss")
-</small>
+<span style="color: var(--color-text-muted);">@Model.ToString("HH:mm:ss")</span>

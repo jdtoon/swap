@@ -4,90 +4,67 @@
 @addTagHelper *, Swap.Htmx
 @model Dictionary<string, List<SwapLab.Models.PatternInfo>>
 
-<div class="sidebar">
-    <div class="logo">Swap<span>Lab</span></div>
-    
-    <a href="/"
-       hx-get="/"
-       hx-target="#main-content"
-       hx-push-url="true"
-       class="sidebar-home">🏠 Home</a>
-    
-    @foreach (var category in Model)
-    {
-        <h3>@category.Key</h3>
-        @foreach (var pattern in category.Value)
-        {
-            <a hx-get="/Patterns/@pattern.Id.Replace("-", "")"
-               hx-target="#main-content"
-               hx-push-url="true"
-               hx-swap="innerHTML">@pattern.Title</a>
-        }
-    }
+@* Content only - sidebar is in _Layout.cshtml *@
+<hgroup>
+    <h1>Welcome to SwapLab</h1>
+    <p>Interactive pattern library for Swap.Htmx</p>
+</hgroup>
+
+<p>
+    SwapLab is a hands-on demo application that showcases all major Swap.Htmx patterns. 
+    Click on any pattern in the sidebar to see a working example, view the code, and copy it to your project.
+</p>
+
+<h2>Getting Started</h2>
+
+<div class="grid">
+    <article hx-get="/Patterns/BasicSwap" hx-target="#main-content" hx-push-url="true" style="cursor: pointer;">
+        <h3>1. Start Simple</h3>
+        <p>Begin with Basic Swap to understand the fundamentals.</p>
+    </article>
+    <article hx-get="/Patterns/EventChains" hx-target="#main-content" hx-push-url="true" style="cursor: pointer;">
+        <h3>2. Learn Events</h3>
+        <p>Move to Event Chains to see cascading updates.</p>
+    </article>
+    <article hx-get="/Patterns/MultiComponent" hx-target="#main-content" hx-push-url="true" style="cursor: pointer;">
+        <h3>3. Go Multi-Component</h3>
+        <p>Try Multi-Component for real-world patterns.</p>
+    </article>
 </div>
 
-<div class="main-content" id="main-content">
-    <hgroup>
-        <h1>Welcome to SwapLab</h1>
-        <p>Interactive pattern library for Swap.Htmx</p>
-    </hgroup>
-    
-    <p>
-        SwapLab is a hands-on demo application that showcases all major Swap.Htmx patterns. 
-        Click on any pattern in the sidebar to see a working example, view the code, and copy it to your project.
-    </p>
-    
-    <h2>Getting Started</h2>
-    
+<h2>DevTools Enabled</h2>
+
+<p>
+    SwapLab has DevTools enabled by default. Look for the 🔧 button in the bottom-right corner to see:
+</p>
+
+<ul>
+    <li><strong>Event Timeline</strong> — Real-time log of all HTMX events</li>
+    <li><strong>Console Logging</strong> — Detailed event info in browser console (F12)</li>
+    <li><strong>State Inspection</strong> — Track hidden fields and data attributes</li>
+</ul>
+
+<h2>All Patterns</h2>
+
+@foreach (var category in Model)
+{
+    <h3>@category.Key</h3>
     <div class="grid">
-        <article hx-get="/Patterns/BasicSwap" hx-target="#main-content" hx-push-url="true" style="cursor: pointer;">
-            <h3>1. Start Simple</h3>
-            <p>Begin with Basic Swap to understand the fundamentals.</p>
-        </article>
-        <article hx-get="/Patterns/EventChains" hx-target="#main-content" hx-push-url="true" style="cursor: pointer;">
-            <h3>2. Learn Events</h3>
-            <p>Move to Event Chains to see cascading updates.</p>
-        </article>
-        <article hx-get="/Patterns/MultiComponent" hx-target="#main-content" hx-push-url="true" style="cursor: pointer;">
-            <h3>3. Go Multi-Component</h3>
-            <p>Try Multi-Component for real-world patterns.</p>
-        </article>
+        @foreach (var pattern in category.Value)
+        {
+            <a hx-get="/Patterns/@pattern.Id.Replace("-", "")" 
+               hx-target="#main-content" 
+               hx-push-url="true"
+               class="pattern-card">
+                <h4>@pattern.Title</h4>
+                <p>@pattern.Description</p>
+                <div>
+                    @foreach (var tag in pattern.Tags)
+                    {
+                        <span class="tag">@tag</span>
+                    }
+                </div>
+            </a>
+        }
     </div>
-    
-    <h2>DevTools Enabled</h2>
-    
-    <p>
-        SwapLab has DevTools enabled by default. Look for the 🔧 button in the bottom-right corner to see:
-    </p>
-    
-    <ul>
-        <li><strong>Event Timeline</strong> — Real-time log of all HTMX events</li>
-        <li><strong>Console Logging</strong> — Detailed event info in browser console (F12)</li>
-        <li><strong>State Inspection</strong> — Track hidden fields and data attributes</li>
-    </ul>
-    
-    <h2>All Patterns</h2>
-    
-    @foreach (var category in Model)
-    {
-        <h3>@category.Key</h3>
-        <div class="grid">
-            @foreach (var pattern in category.Value)
-            {
-                <a hx-get="/Patterns/@pattern.Id.Replace("-", "")" 
-                   hx-target="#main-content" 
-                   hx-push-url="true"
-                   class="pattern-card">
-                    <h4>@pattern.Title</h4>
-                    <p>@pattern.Description</p>
-                    <div>
-                        @foreach (var tag in pattern.Tags)
-                        {
-                            <span class="tag">@tag</span>
-                        }
-                    </div>
-                </a>
-            }
-        </div>
-    }
-</div>
+}
