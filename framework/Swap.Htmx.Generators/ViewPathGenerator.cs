@@ -94,7 +94,7 @@ public class ViewPathGenerator : IIncrementalGenerator
         // Filter cshtml files to those matching the path
         var matchingFiles = cshtmlFiles
             .Where(f => PathMatchesViewsFolder(f.Path, viewsPath, classInfo.IncludeSubdirectories))
-            .Select(f => Path.GetFileNameWithoutExtension(f.Path))
+            .Select(f => Path.GetFileNameWithoutExtension(NormalizePath(f.Path)))
             .Distinct()
             .OrderBy(n => n)
             .ToList();
