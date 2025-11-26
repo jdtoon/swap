@@ -8,6 +8,7 @@ HTMX + ASP.NET Core MVC, but ergonomic.
 
 - A `SwapController` base class and controller/PageModel extensions
 - A fluent response builder for coordinated partial updates, toasts, and triggers
+- **SwapState** – Strongly-typed state management with automatic model binding
 - A type‑safe event system and event chains
 - Built‑in real‑time support (WebSockets + Server‑Sent Events)
 - Observability hooks (logging + OpenTelemetry)
@@ -285,9 +286,57 @@ See: `Extensions/SwapControllerExtensions.cs`, `Extensions/SwapPageModelExtensio
 
 ---
 
+## State Management with SwapState
+
+SwapState provides strongly-typed state containers with automatic model binding:
+
+```csharp
+using Swap.Htmx.State;
+
+// 1. Define your state
+public class InventoryState : SwapState
+{
+    public string Tab { get; set; } = "all";
+    public int Page { get; set; } = 1;
+    public string? Search { get; set; }
+}
+
+// 2. Bind automatically in actions
+public IActionResult Grid([FromSwapState] InventoryState state)
+{
+    var items = _service.GetItems(state);
+    
+    return this.SwapResponse()
+        .WithView("_Grid", items)
+        .WithState(state)  // Auto-updates state via OOB swap
+        .Build();
+}
+```
+
+```html
+<!-- 3. Render in views -->
+<swap-state state="Model.State" />
+
+<button hx-get="/Inventory/Grid"
+        hx-target="#results"
+        hx-include="#inventory-state">
+    Load
+</button>
+```
+
+**Benefits:**
+- **Strongly-typed** – No magic strings for hidden fields
+- **Automatic binding** – `[FromSwapState]` handles model binding
+- **Auto-sync** – `.WithState()` updates hidden fields via OOB swap
+- **Change tracking** – `state.HasChanges`, `state.ChangedProperties`
+
+See: `docs/SwapState.md` for full documentation.
+
+---
+
 ## Event System & Event Chains
 
-As your UI grows, you can centralize “when event X happens, refresh Y and show Z toast” declarations.
+As your UI grows, you can centralize "when event X happens, refresh Y and show Z toast" declarations.
 
 ### Configuration
 

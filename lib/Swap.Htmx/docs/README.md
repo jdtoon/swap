@@ -11,7 +11,8 @@ Welcome to the Swap.Htmx documentation. These guides will help you build reactiv
 | Get started with Swap.Htmx | [Getting Started](GettingStarted.md) |
 | Migrate an existing MVC app | [Migration Guide](MigrationGuide.md) |
 | Build complex multi-component UIs | [Multi-Component Coordination](MultiComponentCoordination.md) |
-| Understand state management | [State Management](StateManagement.md) |
+| Use strongly-typed state | [SwapState Guide](SwapState.md) ⭐ NEW |
+| Understand state patterns | [State Management](StateManagement.md) |
 | Avoid common mistakes | [Anti-Patterns](AntiPatterns.md) |
 | Use events and triggers | [Events Guide](Events.md) |
 | Set up real-time updates | [Realtime Overview](Realtime.md) |
@@ -25,16 +26,19 @@ These guides cover the fundamental patterns for building Swap.Htmx applications:
 ### [Getting Started](GettingStarted.md)
 Step-by-step guide to your first Swap.Htmx application. Covers installation, configuration, and basic usage.
 
-### [Migration Guide](MigrationGuide.md) ⭐ NEW
+### [Migration Guide](MigrationGuide.md)
 How to incrementally migrate an existing ASP.NET Core MVC application to use Swap.Htmx for partial-based UI updates.
 
-### [Multi-Component Coordination](MultiComponentCoordination.md) ⭐ NEW
+### [Multi-Component Coordination](MultiComponentCoordination.md)
 The definitive guide to building pages with multiple interactive components (tabs, search, pagination, grids) that work together through events and shared state.
 
-### [State Management](StateManagement.md) ⭐ NEW
-Where should state live? Hidden fields, URL parameters, session, data attributes? This guide covers all the patterns.
+### [SwapState Guide](SwapState.md) ⭐ NEW
+First-class state management with strongly-typed classes, automatic model binding via `[FromSwapState]`, and OOB updates via `.WithState()`.
 
-### [Anti-Patterns](AntiPatterns.md) ⭐ NEW
+### [State Management](StateManagement.md)
+Where should state live? Hidden fields, URL parameters, session, data attributes? This guide covers all the patterns including SwapState.
+
+### [Anti-Patterns](AntiPatterns.md)
 Learn from others' mistakes. Common pitfalls and how to avoid them when building Swap.Htmx applications.
 
 ---
