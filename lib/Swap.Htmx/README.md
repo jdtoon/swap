@@ -514,18 +514,31 @@ For a production‑ready starting point, use the `swap-mvc` template from `Swap.
 
 All library docs live under `docs/` in this folder:
 
+### Core Concepts
 - **Getting Started** – `docs/GettingStarted.md`
+- **Migration Guide** – `docs/MigrationGuide.md` ⭐ *NEW*
+- **Multi-Component Coordination** – `docs/MultiComponentCoordination.md` ⭐ *NEW*
+- **State Management** – `docs/StateManagement.md` ⭐ *NEW*
+- **Anti-Patterns** – `docs/AntiPatterns.md` ⭐ *NEW*
+
+### Events & Updates
 - **Events & Triggers** – `docs/Events.md`
 - **Event Chains** – `docs/EventChains.md`
 - **Out‑of‑Band Swaps** – `docs/OutOfBandSwaps.md`
-- **Server‑Sent Events** – `docs/ServerSentEvents.md`
+
+### Realtime
 - **Realtime Overview** – `docs/Realtime.md`
+- **Server‑Sent Events** – `docs/ServerSentEvents.md`
 - **WebSockets** – `docs/WebSockets.md`
 - **Redis Backplane** – `docs/RedisBackplane.md`
+
+### Framework Integration
 - **Minimal APIs** – `docs/MinimalApis.md`
 - **Razor Pages** – `docs/RazorPages.md`
 - **Source Generators** – `docs/SourceGenerators.md`
 - **User Context & Identity** – `docs/UserContext.md`
+
+### Development
 - **Debugging & Logging** – `docs/DebuggingAndLogging.md`
 
 For a higher‑level view of all Swap packages (`Swap.Htmx`, `Swap.Testing`, templates, etc.), see the root‑level `README.md`.
