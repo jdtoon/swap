@@ -1,0 +1,10 @@
+@model List<string>
+<div class="alert alert-danger">
+    <h6 class="alert-heading"><i class="bi bi-exclamation-triangle me-2"></i>Validation Errors</h6>
+    <ul class="mb-0">
+        @foreach (var error in Model)
+        {
+            <li>@error</li>
+        }
+    </ul>
+</div>

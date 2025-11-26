@@ -106,13 +106,13 @@ public sealed class SwapResult : IResult
         var tempData = new TempDataDictionary(httpContext, tempDataProvider);
 
         // 4. Render OOB swaps
-        var oobContent = new Dictionary<string, string>();
+        var oobContent = new List<string>();
         if (_builder.OobSwaps.Count > 0)
         {
             foreach (var oob in _builder.OobSwaps)
             {
                 var html = await RenderOobSwapAsync(actionContext, viewData, tempData, oob);
-                oobContent[oob.TargetId] = html;
+                oobContent.Add(html);
             }
         }
 
@@ -149,22 +149,25 @@ public sealed class SwapResult : IResult
                 new HtmlHelperOptions()
             );
 
-            // Inject OOB content into ViewData for the view to potentially use (though less common in Minimal API)
-            foreach (var kvp in oobContent)
-            {
-                viewData[$"Oob_{kvp.Key}"] = kvp.Value;
-            }
-
             await viewResult.View.RenderAsync(viewContext);
             
+            // Build final response: main view + OOB swaps
+            var responseBuilder = new StringBuilder();
+            responseBuilder.Append(writer.ToString());
+            
+            foreach (var oob in oobContent)
+            {
+                responseBuilder.Append(oob);
+            }
+            
             response.ContentType = "text/html; charset=utf-8";
-            await response.WriteAsync(writer.ToString());
+            await response.WriteAsync(responseBuilder.ToString());
         }
-        else if (_builder.OobSwaps.Count > 0)
+        else if (oobContent.Count > 0)
         {
             // Only OOB swaps
             response.ContentType = "text/html; charset=utf-8";
-            foreach (var html in oobContent.Values)
+            foreach (var html in oobContent)
             {
                 await response.WriteAsync(html);
             }
@@ -224,7 +227,7 @@ public sealed class SwapResult : IResult
         );
 
         await viewResult.View.RenderAsync(viewContext);
-        var html = sw.ToString();
+        var html = sw.ToString().Trim();
 
         var swapModeStr = oob.SwapMode switch
         {
@@ -239,11 +242,21 @@ public sealed class SwapResult : IResult
             _ => "true"
         };
 
-        if (!html.Contains("hx-swap-oob"))
+        // If the rendered HTML already contains hx-swap-oob, return as-is
+        if (html.Contains("hx-swap-oob"))
         {
-            return $"<div id=\"{oob.TargetId}\" hx-swap-oob=\"{swapModeStr}\">{html}</div>";
+            return html;
+        }
+        
+        // If the rendered HTML already has an element with the target ID, add the oob attribute to it
+        var idPattern = $"id=\"{oob.TargetId}\"";
+        if (html.Contains(idPattern))
+        {
+            // Insert hx-swap-oob attribute after the id attribute
+            return html.Replace(idPattern, $"{idPattern} hx-swap-oob=\"{swapModeStr}\"");
         }
 
-        return html;
+        // Otherwise wrap in a div (fallback for views without the id)
+        return $"<div id=\"{oob.TargetId}\" hx-swap-oob=\"{swapModeStr}\">{html}</div>";
     }
 }

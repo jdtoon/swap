@@ -1,0 +1,95 @@
+@{
+    ViewData["Title"] = "Hidden Field State";
+    
+}
+
+<hgroup>
+    <h1>Hidden Field State</h1>
+    <p>Store state in hidden fields using hx-include</p>
+</hgroup>
+
+<h2>Live Demo</h2>
+<div class="demo-area">
+    <!-- State Container -->
+    <div id="state-container">
+        <input type="hidden" name="counter" id="counter-value" value="0" />
+        <input type="hidden" name="lastAction" id="last-action" value="none" />
+    </div>
+
+    <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+        <div style="background: var(--color-bg-tertiary); padding: 1rem; border-radius: var(--radius); text-align: center;">
+            <small style="color: var(--color-text-muted);">Counter Value</small>
+            <div id="counter-display" style="font-size: 2rem; font-weight: bold; color: var(--color-primary);">0</div>
+        </div>
+        <div style="background: var(--color-bg-tertiary); padding: 1rem; border-radius: var(--radius); text-align: center;">
+            <small style="color: var(--color-text-muted);">Last Action</small>
+            <div id="action-display">none</div>
+        </div>
+    </div>
+
+    <div style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem;">
+        <button hx-post="/Patterns/IncrementHiddenCounter"
+                hx-include="#state-container"
+                hx-target="#demo-result"
+                hx-swap="innerHTML">
+            + Increment
+        </button>
+        <button class="secondary"
+                hx-post="/Patterns/DecrementHiddenCounter"
+                hx-include="#state-container"
+                hx-target="#demo-result"
+                hx-swap="innerHTML">
+            − Decrement
+        </button>
+        <button class="secondary"
+                hx-post="/Patterns/ResetHiddenCounter"
+                hx-include="#state-container"
+                hx-target="#demo-result"
+                hx-swap="innerHTML">
+            ↻ Reset
+        </button>
+    </div>
+
+    <div id="demo-result" style="padding: 1rem; background: var(--color-bg-tertiary); border-radius: var(--radius);">
+        <p style="text-align: center; color: var(--color-text-muted); margin: 0;">Click a button to see hidden field state in action</p>
+    </div>
+</div>
+
+<h2>What Are Hidden Fields?</h2>
+<p>
+    Hidden fields are the most common way to maintain state between HTMX requests.
+    Use <code>hx-include</code> to send hidden field values with your requests.
+</p>
+
+<h2>The State Container Pattern</h2>
+<div class="code-view">
+<pre>&lt;!-- State container with hidden fields --&gt;
+&lt;div id="state-container"&gt;
+    &lt;input type="hidden" name="tab" value="all" /&gt;
+    &lt;input type="hidden" name="page" value="1" /&gt;
+    &lt;input type="hidden" name="search" value="" /&gt;
+&lt;/div&gt;
+
+&lt;!-- Button includes state in request --&gt;
+&lt;button hx-get="/search"
+        hx-include="#state-container"
+        hx-target="#results"&gt;
+    Search
+&lt;/button&gt;</pre>
+</div>
+
+<h2>Key Concepts</h2>
+<ul>
+    <li><code>&lt;input type="hidden"&gt;</code> — Stores state invisibly in the DOM</li>
+    <li><code>hx-include</code> — Includes form fields in the request</li>
+    <li><strong>State container pattern</strong> — Group related state in one div</li>
+    <li><strong>Update state in OOB swaps</strong> — Server can update hidden fields</li>
+</ul>
+
+<h2>Key Points</h2>
+<ul>
+    <li>Hidden fields persist across partial page updates</li>
+    <li>Use a single state container for all related state</li>
+    <li>Server can update hidden fields via OOB swaps</li>
+    <li>ASP.NET model binding works automatically with hidden fields</li>
+</ul>

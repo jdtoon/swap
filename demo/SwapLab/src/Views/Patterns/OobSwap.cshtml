@@ -1,0 +1,81 @@
+@{
+    ViewData["Title"] = "Out-of-Band Updates";
+    
+}
+
+<hgroup>
+    <h1>Out-of-Band Updates</h1>
+    <p>Update multiple targets from a single request using OOB swaps</p>
+</hgroup>
+
+<h2>Live Demo</h2>
+<div class="demo-area">
+    <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+        <div style="background: var(--color-bg-tertiary); padding: 1rem; border-radius: var(--radius); text-align: center;">
+            <small style="color: var(--color-text-muted);">Click Counter</small>
+            <div id="click-counter">
+                <span style="font-size: 2rem; font-weight: bold; color: var(--color-primary);">0</span>
+            </div>
+        </div>
+        <div style="background: var(--color-bg-tertiary); padding: 1rem; border-radius: var(--radius); text-align: center;">
+            <small style="color: var(--color-text-muted);">Last Click</small>
+            <div id="last-click">
+                <span style="color: var(--color-text-muted);">Never</span>
+            </div>
+        </div>
+    </div>
+
+    <div id="result-area" style="background: var(--color-bg-tertiary); padding: 1.5rem; border-radius: var(--radius); margin-bottom: 1rem; min-height: 80px;">
+        <p style="text-align: center; color: var(--color-text-muted); margin: 0;">
+            Click the button to see OOB updates in action
+        </p>
+    </div>
+
+    <button hx-post="/Patterns/DoOobSwap"
+            hx-target="#result-area"
+            hx-swap="innerHTML"
+            style="width: 100%;">
+        ⚡ Click Me (Updates 3 Areas!)
+    </button>
+</div>
+
+<h2>What Happens</h2>
+<ol>
+    <li><strong>#result-area</strong> — Shows the click result (primary target)</li>
+    <li><strong>#click-counter</strong> — Increments via OOB swap</li>
+    <li><strong>#last-click</strong> — Shows timestamp via OOB swap</li>
+</ol>
+
+<h2>What is OOB?</h2>
+<p>
+    <strong>Out-of-Band (OOB)</strong> swaps let you update multiple parts of the page
+    from a single HTMX request. This is perfect for:
+</p>
+<ul>
+    <li>Updating a counter after adding an item</li>
+    <li>Refreshing notifications after an action</li>
+    <li>Showing success messages alongside main content</li>
+</ul>
+
+<h2>Controller Code</h2>
+<div class="code-view">
+<pre>public IActionResult DoOobSwap()
+{
+    _clickCount++;
+    
+    return this.SwapResponse()
+        .WithView("_ClickResult", new { Count = _clickCount })
+        .AlsoUpdate("#click-counter", "_Counter", _clickCount)
+        .AlsoUpdate("#last-click", "_LastUpdated", DateTime.Now)
+        .WithSuccessToast($"Clicked {_clickCount} times!")
+        .Build();
+}</pre>
+</div>
+
+<h2>Key Points</h2>
+<ul>
+    <li><code>.AlsoUpdate()</code> adds OOB targets to the response</li>
+    <li>Each OOB target renders its own partial view</li>
+    <li>All updates happen in a single HTTP response</li>
+    <li>The primary target uses <code>hx-swap</code>, OOB targets use <code>hx-swap-oob="true"</code></li>
+</ul>

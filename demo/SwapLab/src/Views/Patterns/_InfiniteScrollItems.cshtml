@@ -1,0 +1,30 @@
+@model SwapLab.Models.InfiniteScrollViewModel
+
+@foreach (var item in Model.Items)
+{
+    <div class="list-group-item d-flex justify-content-between align-items-center">
+        <div>
+            <i class="bi bi-box me-2 text-primary"></i>
+            @item.Title
+        </div>
+        <span class="badge bg-secondary">ID: @item.Id</span>
+    </div>
+}
+
+@if (Model.HasMore)
+{
+    <div class="list-group-item text-center text-muted"
+         hx-get="@Url.Action("LoadMoreItems", "Patterns", new { page = Model.NextPage })"
+         hx-trigger="revealed"
+         hx-swap="outerHTML">
+        <span class="spinner-border spinner-border-sm me-2"></span>
+        Loading more items...
+    </div>
+}
+else
+{
+    <div class="list-group-item text-center text-muted bg-light">
+        <i class="bi bi-check-circle me-2"></i>
+        All @Model.Items.Count items loaded - You've reached the end!
+    </div>
+}

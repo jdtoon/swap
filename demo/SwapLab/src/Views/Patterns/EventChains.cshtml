@@ -1,0 +1,95 @@
+@{
+    ViewData["Title"] = "Event Chains";
+    
+}
+@model SwapLab.Models.ProductGridViewModel
+
+<hgroup>
+    <h1>Event Chains</h1>
+    <p>Configure cascading updates with ISwapEventConfiguration</p>
+</hgroup>
+
+<h2>Live Demo</h2>
+<div class="demo-area">
+    <p>When you change tabs, the response updates the grid, count, pagination, and tab buttons all at once:</p>
+    
+    <div id="event-chain-demo">
+        @await Html.PartialAsync("_EventChainDemo", Model)
+    </div>
+</div>
+
+<h2>How Event Chains Work</h2>
+<ol>
+    <li>Controller triggers an event with <code>.WithTrigger("TabChanged")</code></li>
+    <li>Swap.Htmx looks up the event chain configuration</li>
+    <li>Each configured partial is rendered and added to the response</li>
+    <li>All targets are updated in a single round-trip</li>
+</ol>
+
+<h2>Event Configuration</h2>
+<div class="code-view">
+<pre>public class ProductEvents : ISwapEventConfiguration
+{
+    public void Configure(SwapEventBuilder builder)
+    {
+        // When tab changes, update multiple components
+        builder.On("TabChanged")
+            .RefreshPartial("_ProductGrid", "#product-grid")
+            .RefreshPartial("_ProductCount", "#product-count")
+            .RefreshPartial("_Pagination", "#pagination");
+    }
+}</pre>
+</div>
+
+<h2>Registration in Program.cs</h2>
+<div class="code-view">
+<pre>builder.Services.AddSwapHtmx(options =>
+{
+    options.Events.Add&lt;ProductEvents&gt;();
+});</pre>
+</div>
+
+<h2>Controller Code</h2>
+<div class="code-view">
+<pre>[HttpPost]
+public IActionResult ChangeTab(string tab, ProductSearchState state)
+{
+    state.Tab = tab;
+    state.Page = 1;
+    
+    var results = FilterProducts(state);
+    
+    return this.SwapResponse()
+        .WithView("_ProductGrid", viewModel)
+        .WithTrigger("TabChanged")  // Triggers the event chain!
+        .Build();
+}</pre>
+</div>
+
+<h2>Event Chain vs AlsoUpdate()</h2>
+<table>
+    <thead>
+        <tr>
+            <th>Approach</th>
+            <th>Use When</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><code>.AlsoUpdate()</code></td>
+            <td>One-off additional updates in a specific action</td>
+        </tr>
+        <tr>
+            <td><code>ISwapEventConfiguration</code></td>
+            <td>Reusable patterns triggered from multiple places</td>
+        </tr>
+    </tbody>
+</table>
+
+<h2>Key Points</h2>
+<ul>
+    <li><strong>Centralized</strong> — Event chains are defined once, used everywhere</li>
+    <li><strong>Type-Safe</strong> — Use <code>EventKey</code> constants for event names</li>
+    <li><strong>Testable</strong> — Event configurations can be unit tested</li>
+    <li><strong>Efficient</strong> — All updates happen in a single response</li>
+</ul>

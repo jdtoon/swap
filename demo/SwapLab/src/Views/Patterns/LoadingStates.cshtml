@@ -1,0 +1,94 @@
+@{
+    ViewData["Title"] = "Loading States";
+    
+}
+
+<hgroup>
+    <h1>Loading States</h1>
+    <p>Provide visual feedback during HTMX requests</p>
+</hgroup>
+
+<h2>Live Demo</h2>
+<div class="demo-area">
+    <h4>Button with Spinner</h4>
+    <p style="color: var(--color-text-muted); font-size: 0.875rem;">Click to see the loading state (simulated 1.5s delay)</p>
+    
+    <button style="margin-bottom: 1.5rem;"
+            hx-post="/Patterns/SlowAction"
+            hx-target="#slow-result"
+            hx-swap="innerHTML">
+        <span class="btn-text">➤ Submit</span>
+        <span class="spinner">⏳ Loading...</span>
+    </button>
+
+    <div id="slow-result" style="margin-bottom: 2rem;">
+        <p style="color: var(--color-text-muted);">Result will appear here...</p>
+    </div>
+
+    <hr style="border-color: var(--color-border); margin: 2rem 0;">
+
+    <h4>External Indicator</h4>
+    <p style="color: var(--color-text-muted); font-size: 0.875rem;">Uses hx-indicator to show separate loading element</p>
+    
+    <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem;">
+        <button class="secondary"
+                hx-post="/Patterns/SlowAction"
+                hx-target="#indicator-result"
+                hx-swap="innerHTML"
+                hx-indicator="#loading-indicator">
+            ↻ Fetch Data
+        </button>
+        <div id="loading-indicator" class="htmx-indicator">
+            <span>⏳ Loading...</span>
+        </div>
+    </div>
+
+    <div id="indicator-result">
+        <p style="color: var(--color-text-muted);">Result will appear here...</p>
+    </div>
+</div>
+
+<h2>Why Loading States?</h2>
+<p>
+    Users need feedback when something is happening. HTMX provides the 
+    <code>htmx-request</code> class automatically, and you can use indicators
+    for more complex feedback.
+</p>
+
+<h2>Methods</h2>
+<ul>
+    <li><strong>CSS-based:</strong> Use <code>.htmx-request</code> class</li>
+    <li><strong>Indicator:</strong> Use <code>hx-indicator</code> attribute</li>
+    <li><strong>Disabled state:</strong> Prevent double-clicks</li>
+</ul>
+
+<h2>CSS Approach</h2>
+<div class="code-view">
+<pre>/* Hide button text, show spinner during request */
+.htmx-request .btn-text { display: none; }
+.htmx-request .spinner { display: inline-block; }
+.spinner { display: none; }
+
+/* Disable pointer events during request */
+.htmx-request { 
+    pointer-events: none;
+    opacity: 0.7;
+}</pre>
+</div>
+
+<h2>Key Points</h2>
+<ul>
+    <li>HTMX adds <code>.htmx-request</code> class during requests</li>
+    <li>Use CSS to show/hide elements based on this class</li>
+    <li><code>hx-indicator</code> shows a specific element during the request</li>
+    <li>Combine with <code>pointer-events: none</code> to prevent double-clicks</li>
+</ul>
+
+<style>
+    .htmx-request .btn-text { display: none; }
+    .htmx-request .spinner { display: inline-block !important; }
+    .spinner { display: none; }
+    .htmx-indicator { display: none; }
+    .htmx-request .htmx-indicator,
+    .htmx-request.htmx-indicator { display: inline-flex !important; }
+</style>

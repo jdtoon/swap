@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
+using Swap.Htmx.Diagnostics;
 using Swap.Htmx.Events;
 using Swap.Htmx.Middleware;
 using Swap.Htmx.Dev;
@@ -48,6 +49,20 @@ public static class SwapHtmxServiceExtensions
         var options = new SwapHtmxOptions();
         configure?.Invoke(options);
         
+        // Auto-enable diagnostics in Development environment
+        var env = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
+        var isDev = string.Equals(env, "Development", StringComparison.OrdinalIgnoreCase);
+        if (isDev)
+        {
+            // Enable dev-friendly defaults unless explicitly configured
+            if (!options.Diagnostics.EnableClientLogging)
+            {
+                options.Diagnostics.EnableClientLogging = true;
+            }
+            options.Diagnostics.WarnOnUnhandledEvents = true;
+            options.Diagnostics.WarnOnMissingOobTargets = true;
+        }
+        
         // Default assemblies to scan
         if (options.AssembliesToScan.Count == 0)
         {
@@ -66,6 +81,17 @@ public static class SwapHtmxServiceExtensions
             config.Configure(options.EventBus);
         }
         
+        // Validate event chains at startup if enabled
+        if (options.Diagnostics.ValidateEventChainsOnStartup)
+        {
+            var diag = options.EventBus.Validate();
+            if (diag.HasErrors && isDev)
+            {
+                var msg = "Swap.Htmx event chain validation failed:\n - " + string.Join("\n - ", diag.Errors);
+                throw new InvalidOperationException(msg);
+            }
+        }
+        
         // Register options singleton
         services.AddSingleton(options);
         
@@ -82,6 +108,16 @@ public static class SwapHtmxServiceExtensions
         registry.ScanAndRegisterHandlers(services, options.AssembliesToScan.ToArray());
         services.AddSingleton(registry);
         services.AddScoped<SwapEventHandlerExecutor>();
+        
+        // Register diagnostics
+        if (isDev || options.Diagnostics.WarnOnUnhandledEvents || options.Diagnostics.WarnOnMissingOobTargets)
+        {
+            services.AddSingleton<ISwapDiagnostics, Diagnostics.SwapDiagnostics>();
+        }
+        else
+        {
+            services.AddSingleton<ISwapDiagnostics>(Diagnostics.NullSwapDiagnostics.Instance);
+        }
         
         // Register user context (default to Session)
         services.TryAddScoped<ISwapUserContext, SessionSwapUserContext>();

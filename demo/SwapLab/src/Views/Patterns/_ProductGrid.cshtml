@@ -1,0 +1,31 @@
+@model SwapLab.Models.ProductGridViewModel
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Category</th>
+            <th>Price</th>
+            <th>Stock</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var product in Model.Products)
+        {
+            <tr id="product-row-@product.Id">
+                <td>@product.Name</td>
+                <td>@product.Category</td>
+                <td>$@product.Price.ToString("F2")</td>
+                <td>@product.Stock</td>
+            </tr>
+        }
+        @if (!Model.Products.Any())
+        {
+            <tr>
+                <td colspan="4" style="text-align: center; padding: 2rem;">
+                    No products found.
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

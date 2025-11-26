@@ -1,0 +1,104 @@
+@{
+    ViewData["Title"] = "Search with Debounce";
+    
+}
+@model IReadOnlyList<SwapLab.Models.Product>
+
+<hgroup>
+    <h1>Search with Debounce</h1>
+    <p>Real-time search with input debouncing</p>
+</hgroup>
+
+<h2>Live Demo</h2>
+<div class="demo-area">
+    <input type="search" 
+           name="query"
+           placeholder="Type to search products..."
+           hx-get="/Patterns/LiveSearch"
+           hx-target="#search-results"
+           hx-trigger="input changed delay:300ms, search"
+           style="margin-bottom: 1rem;" />
+    
+    <div id="search-results">
+        @await Html.PartialAsync("_SearchResults", Model)
+    </div>
+</div>
+
+<h2>How It Works</h2>
+<ol>
+    <li><code>hx-trigger="input changed delay:300ms"</code> waits 300ms after typing stops</li>
+    <li>Only fires if the value actually changed</li>
+    <li><code>search</code> also triggers on pressing Enter or clicking the search clear button</li>
+</ol>
+
+<h2>View Code</h2>
+<div class="code-view">
+<pre>&lt;input type="search" 
+       name="query"
+       placeholder="Type to search products..."
+       hx-get="/Patterns/LiveSearch"
+       hx-target="#search-results"
+       hx-trigger="input changed delay:300ms, search" /&gt;
+
+&lt;div id="search-results"&gt;
+    @@await Html.PartialAsync("_SearchResults", Model)
+&lt;/div&gt;</pre>
+</div>
+
+<h2>Controller Code</h2>
+<div class="code-view">
+<pre>[HttpGet]
+public IActionResult LiveSearch(string? query)
+{
+    var results = string.IsNullOrWhiteSpace(query)
+        ? Products
+        : Products.Where(p => 
+            p.Name.Contains(query, StringComparison.OrdinalIgnoreCase) ||
+            p.Category.Contains(query, StringComparison.OrdinalIgnoreCase))
+          .ToList();
+    
+    return this.SwapResponse()
+        .WithView("_SearchResults", results)
+        .Build();
+}</pre>
+</div>
+
+<h2>Trigger Options</h2>
+<table>
+    <thead>
+        <tr>
+            <th>Trigger</th>
+            <th>Description</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><code>input</code></td>
+            <td>Fires on every keystroke</td>
+        </tr>
+        <tr>
+            <td><code>input changed</code></td>
+            <td>Fires only when value changes</td>
+        </tr>
+        <tr>
+            <td><code>delay:300ms</code></td>
+            <td>Waits 300ms after last event</td>
+        </tr>
+        <tr>
+            <td><code>keyup[key=='Enter']</code></td>
+            <td>Fires only on Enter key</td>
+        </tr>
+        <tr>
+            <td><code>search</code></td>
+            <td>Fires on search clear or Enter</td>
+        </tr>
+    </tbody>
+</table>
+
+<h2>Key Points</h2>
+<ul>
+    <li><strong>Debouncing</strong> prevents excessive server requests</li>
+    <li><strong>changed</strong> modifier avoids duplicate requests</li>
+    <li>Combine multiple triggers with commas</li>
+    <li>Use <code>type="search"</code> for the native clear button</li>
+</ul>

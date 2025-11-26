@@ -1,0 +1,15 @@
+@model SwapLab.Models.Product
+<tr id="product-row-@Model.Id" style="border-bottom: 1px solid var(--color-border);">
+    <td style="padding: 0.75rem 1rem;">@Model.Name</td>
+    <td style="padding: 0.75rem 1rem; text-align: right;">$@Model.Price.ToString("F2")</td>
+    <td style="padding: 0.75rem 1rem; text-align: right;">@Model.Stock</td>
+    <td style="padding: 0.75rem 1rem; text-align: center;">
+        <button class="secondary"
+                style="padding: 0.25rem 0.75rem; font-size: 0.875rem;"
+                hx-get="/Patterns/EditProductModal?id=@Model.Id"
+                hx-target="#modal-container"
+                hx-swap="innerHTML">
+            Edit
+        </button>
+    </td>
+</tr>

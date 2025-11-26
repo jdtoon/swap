@@ -1,0 +1,98 @@
+@model SwapLab.Models.Product
+<div class="modal-backdrop" onclick="document.getElementById('modal-container').innerHTML = ''">
+    <div class="modal-content" onclick="event.stopPropagation()">
+        <div class="modal-header">
+            <h3 style="margin: 0;">Edit Product</h3>
+            <button type="button" 
+                    onclick="document.getElementById('modal-container').innerHTML = ''"
+                    style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--color-text);">
+                &times;
+            </button>
+        </div>
+        <form hx-post="/Patterns/SaveProduct" hx-target="#modal-container">
+            <input type="hidden" name="id" value="@Model.Id" />
+            
+            <div class="form-group">
+                <label for="name">Product Name</label>
+                <input type="text" id="name" name="name" value="@Model.Name" required />
+            </div>
+            
+            <div class="form-group">
+                <label for="price">Price ($)</label>
+                <input type="number" id="price" name="price" value="@Model.Price.ToString(System.Globalization.CultureInfo.InvariantCulture)" step="0.01" min="0" required />
+            </div>
+            
+            <div class="form-group">
+                <label for="stock">Stock</label>
+                <input type="number" id="stock" name="stock" value="@Model.Stock" min="0" required />
+            </div>
+            
+            <div class="modal-footer">
+                <button type="button" 
+                        class="secondary"
+                        onclick="document.getElementById('modal-container').innerHTML = ''">
+                    Cancel
+                </button>
+                <button type="submit">Save Changes</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+    .modal-backdrop {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.7);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+    }
+    
+    .modal-content {
+        background: var(--color-bg-secondary);
+        border-radius: var(--radius);
+        width: 100%;
+        max-width: 400px;
+        box-shadow: var(--shadow-lg);
+    }
+    
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid var(--color-border);
+    }
+    
+    .modal-content form {
+        padding: 1.5rem;
+    }
+    
+    .modal-content .form-group {
+        margin-bottom: 1rem;
+    }
+    
+    .modal-content label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 500;
+    }
+    
+    .modal-content input {
+        width: 100%;
+    }
+    
+    .modal-footer {
+        display: flex;
+        justify-content: flex-end;
+        gap: 0.75rem;
+        padding-top: 1rem;
+        border-top: 1px solid var(--color-border);
+        margin-top: 1rem;
+    }
+</style>

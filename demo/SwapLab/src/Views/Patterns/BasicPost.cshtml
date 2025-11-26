@@ -1,0 +1,75 @@
+@{
+    ViewData["Title"] = "Form POST";
+    
+}
+
+<hgroup>
+    <h1>Form POST</h1>
+    <p>Submit a form and update the page without a full reload</p>
+</hgroup>
+
+<h2>Live Demo</h2>
+<div class="demo-area">
+    <form hx-post="/Patterns/SubmitForm"
+          hx-target="#form-result"
+          hx-swap="innerHTML">
+        <div style="margin-bottom: 1rem;">
+            <label for="name">Your Name</label>
+            <input type="text" 
+                   id="name" 
+                   name="name"
+                   placeholder="Enter your name"
+                   required />
+        </div>
+        <button type="submit" style="width: 100%;">Submit</button>
+    </form>
+
+    <div id="form-result" style="margin-top: 1.5rem; padding: 1rem; background: var(--color-bg-tertiary); border-radius: var(--radius);">
+        <p style="text-align: center; color: var(--color-text-muted); margin: 0;">Submit the form to see the result</p>
+    </div>
+</div>
+
+<h2>How It Works</h2>
+<ol>
+    <li>Form has <code>hx-post="/Patterns/SubmitForm"</code> to send a POST request</li>
+    <li>Response targets <code>#form-result</code></li>
+    <li>Server returns a partial view and a toast notification</li>
+</ol>
+
+<h2>Key Attributes</h2>
+<ul>
+    <li><code>hx-post</code> — Send POST request to URL</li>
+    <li><code>hx-target</code> — CSS selector for where to put response</li>
+    <li><code>hx-swap</code> — How to swap content (innerHTML, outerHTML, etc.)</li>
+</ul>
+
+<h2>View Code</h2>
+<div class="code-view">
+<pre>&lt;form hx-post="/Patterns/SubmitForm"
+      hx-target="#form-result"
+      hx-swap="innerHTML"&gt;
+    &lt;input type="text" name="name" /&gt;
+    &lt;button type="submit"&gt;Submit&lt;/button&gt;
+&lt;/form&gt;
+&lt;div id="form-result"&gt;&lt;/div&gt;</pre>
+</div>
+
+<h2>Controller Code</h2>
+<div class="code-view">
+<pre>[HttpPost]
+public IActionResult SubmitForm(string name)
+{
+    return this.SwapResponse()
+        .WithView("_Greeting", new { Name = name })
+        .WithSuccessToast($"Hello, {name}!")
+        .Build();
+}</pre>
+</div>
+
+<h2>Key Points</h2>
+<ul>
+    <li>Form submission happens via AJAX, no page reload</li>
+    <li>Only the target element is updated</li>
+    <li>Toast notifications can be added to any response</li>
+    <li>Model binding works normally with form data</li>
+</ul>

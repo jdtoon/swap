@@ -1,0 +1,66 @@
+@{
+    ViewData["Title"] = "Infinite Scroll";
+    
+}
+
+<hgroup>
+    <h1>Infinite Scroll</h1>
+    <p>Load more content as the user scrolls</p>
+</hgroup>
+
+<h2>Live Demo</h2>
+<div class="demo-area">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <span style="color: var(--color-text-muted);">Scroll down to load more items</span>
+        <button class="secondary" style="font-size: 0.875rem;" onclick="location.reload()">↻ Reset</button>
+    </div>
+    
+    <div id="scroll-container" style="max-height: 400px; overflow-y: auto; border: 1px solid var(--color-border); border-radius: var(--radius);">
+        <div id="item-list">
+            @await Html.PartialAsync("_InfiniteScrollItems", new SwapLab.Models.InfiniteScrollViewModel 
+            { 
+                Items = Enumerable.Range(1, 10).Select(i => new SwapLab.Models.ScrollItem { Id = i, Title = $"Item {i}" }).ToList(),
+                CurrentPage = 1,
+                HasMore = true
+            })
+        </div>
+    </div>
+</div>
+
+<h2>How It Works</h2>
+<p>
+    Infinite scroll uses <code>hx-trigger="revealed"</code> to load more
+    content when an element becomes visible in the viewport.
+</p>
+
+<h2>Key Attributes</h2>
+<ul>
+    <li><code>hx-trigger="revealed"</code> — Fires when element is visible</li>
+    <li><code>hx-swap="outerHTML"</code> — Replace the trigger element</li>
+    <li><code>hx-get</code> — Endpoint returns more items + new trigger</li>
+</ul>
+
+<h2>The Pattern</h2>
+<div class="code-view">
+<pre>@@foreach (var item in Model.Items)
+{
+    &lt;div class="item"&gt;@@item.Name&lt;/div&gt;
+}
+
+@@if (Model.HasMore)
+{
+    &lt;div hx-get="/load-more?page=@@Model.NextPage"
+         hx-trigger="revealed"
+         hx-swap="outerHTML"&gt;
+        Loading more...
+    &lt;/div&gt;
+}</pre>
+</div>
+
+<h2>Key Points</h2>
+<ul>
+    <li>The trigger element replaces itself with more items</li>
+    <li>If more data exists, include a new trigger at the end</li>
+    <li>Works great for feeds, lists, and search results</li>
+    <li>Combine with loading indicators for better UX</li>
+</ul>
