@@ -1,0 +1,226 @@
+@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - SwapLab</title>
+    
+    <!-- Pico CSS for simple, beautiful styling -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@@picocss/pico@@2/css/pico.min.css">
+    
+    <!-- HTMX -->
+    <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+    
+    <!-- Swap.Htmx client -->
+    <script src="/_content/Swap.Htmx/js/swap.client.js"></script>
+    
+    <style>
+        :root {
+            --pico-font-size: 16px;
+        }
+        
+        .pattern-card {
+            border: 1px solid var(--pico-muted-border-color);
+            border-radius: var(--pico-border-radius);
+            padding: 1rem;
+            margin-bottom: 1rem;
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+        
+        .pattern-card:hover {
+            border-color: var(--pico-primary);
+        }
+        
+        .pattern-card h4 {
+            margin-bottom: 0.5rem;
+        }
+        
+        .pattern-card p {
+            margin-bottom: 0.5rem;
+            color: var(--pico-muted-color);
+        }
+        
+        .tag {
+            display: inline-block;
+            padding: 0.2rem 0.5rem;
+            background: var(--pico-secondary-background);
+            border-radius: 0.25rem;
+            font-size: 0.75rem;
+            margin-right: 0.25rem;
+        }
+        
+        .demo-area {
+            background: var(--pico-card-background-color);
+            border: 1px solid var(--pico-muted-border-color);
+            border-radius: var(--pico-border-radius);
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+        }
+        
+        .code-view {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 1rem;
+            border-radius: var(--pico-border-radius);
+            overflow-x: auto;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.875rem;
+            margin-bottom: 1rem;
+        }
+        
+        .code-view pre {
+            margin: 0;
+            background: transparent;
+            color: inherit;
+        }
+        
+        .tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            border-bottom: 1px solid var(--pico-muted-border-color);
+            padding-bottom: 0.5rem;
+        }
+        
+        .tabs button {
+            padding: 0.5rem 1rem;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+        }
+        
+        .tabs button.active {
+            border-bottom-color: var(--pico-primary);
+            color: var(--pico-primary);
+        }
+        
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 250px;
+            height: 100vh;
+            background: var(--pico-card-background-color);
+            border-right: 1px solid var(--pico-muted-border-color);
+            padding: 1rem;
+            overflow-y: auto;
+        }
+        
+        .main-content {
+            margin-left: 270px;
+            padding: 2rem;
+        }
+        
+        .sidebar h3 {
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--pico-muted-color);
+            margin-top: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .sidebar h3:first-child {
+            margin-top: 0;
+        }
+        
+        .sidebar a {
+            display: block;
+            padding: 0.5rem;
+            text-decoration: none;
+            color: var(--pico-color);
+            border-radius: var(--pico-border-radius);
+        }
+        
+        .sidebar a:hover {
+            background: var(--pico-secondary-background);
+        }
+        
+        .sidebar a.active {
+            background: var(--pico-primary-background);
+            color: var(--pico-primary-inverse);
+        }
+        
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--pico-muted-border-color);
+        }
+        
+        .logo span {
+            color: var(--pico-primary);
+        }
+        
+        /* Toast container styling */
+        #toast-container {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            z-index: 1000;
+        }
+        
+        .toast {
+            padding: 1rem;
+            border-radius: var(--pico-border-radius);
+            margin-bottom: 0.5rem;
+            animation: slideIn 0.3s ease;
+        }
+        
+        .toast-success {
+            background: #22c55e;
+            color: white;
+        }
+        
+        .toast-error {
+            background: #ef4444;
+            color: white;
+        }
+        
+        .toast-info {
+            background: #3b82f6;
+            color: white;
+        }
+        
+        @@keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="toast-container"></div>
+    
+    @RenderBody()
+    
+    <!-- Swap DevTools -->
+    <swap-devtools />
+    
+    <script>
+        // Toast handling
+        document.body.addEventListener('showToast', function(evt) {
+            const { type, message } = evt.detail;
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+            toast.textContent = message;
+            document.getElementById('toast-container').appendChild(toast);
+            
+            setTimeout(() => toast.remove(), 3000);
+        });
+    </script>
+    
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

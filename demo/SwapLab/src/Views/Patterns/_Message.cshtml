@@ -1,0 +1,7 @@
+@model dynamic
+<p>@Model.Message</p>
+<button hx-get="/Patterns/GetMessage" 
+        hx-target="#message-container" 
+        hx-swap="innerHTML">
+    Refresh
+</button>

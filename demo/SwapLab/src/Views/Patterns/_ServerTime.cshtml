@@ -1,0 +1,10 @@
+@{
+    var time = DateTime.Now;
+}
+<div class="card">
+    <div class="card-body text-center">
+        <h5 class="card-title text-muted mb-1">Server Time</h5>
+        <p class="display-6 mb-0">@time.ToString("HH:mm:ss")</p>
+        <small class="text-muted">@time.ToString("dddd, MMMM d, yyyy")</small>
+    </div>
+</div>

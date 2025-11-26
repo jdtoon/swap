@@ -1,0 +1,24 @@
+@model SwapLab.Models.ProductGridViewModel
+
+@if (Model.TotalPages > 1)
+{
+    <nav>
+        <ul style="display: flex; gap: 0.5rem; list-style: none; padding: 0;">
+            @for (int i = 1; i <= Model.TotalPages; i++)
+            {
+                var pageNum = i;
+                <li>
+                    <button class="@(Model.State.Page == pageNum ? "outline" : "secondary")"
+                            style="padding: 0.5rem 1rem;"
+                            hx-get="/Patterns/MultiComponentPage"
+                            hx-target="#product-grid"
+                            hx-include="#state-container"
+                            hx-vals='{"Page": @pageNum}'
+                            hx-on::before-request="document.querySelector('[name=Page]').value = '@pageNum'">
+                        @pageNum
+                    </button>
+                </li>
+            }
+        </ul>
+    </nav>
+}
