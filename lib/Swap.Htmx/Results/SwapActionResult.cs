@@ -86,47 +86,77 @@ public sealed class SwapActionResult : ActionResult
             }
         }
 
-        // 4. Render OOB swaps and store in ViewData
+        // 4. Render OOB swaps
+        var oobContent = new List<string>();
         if (_builder.OobSwaps.Count > 0)
         {
             foreach (var oob in _builder.OobSwaps)
             {
                 var html = await RenderOobSwapAsync(context, oob);
-                var oobKey = $"Oob_{oob.TargetId}_{Guid.NewGuid():N}";
-                _controller.ViewData[oobKey] = html;
+                oobContent.Add(html);
             }
         }
 
         // 5. Render main view (if one is specified) or just OOB swaps
         if (!string.IsNullOrEmpty(_builder.ViewName) || _builder.Model != null)
         {
-            // Has a main view to render
-            var viewResult = new ViewResult
+            // Has a main view to render - render manually so we can append OOB content
+            var viewEngine = context.HttpContext.RequestServices.GetRequiredService<ICompositeViewEngine>();
+            var viewName = _builder.ViewName ?? context.RouteData.Values["action"]?.ToString();
+
+            if (string.IsNullOrEmpty(viewName))
             {
-                ViewName = _builder.ViewName,
-                ViewData = _controller.ViewData,
-                TempData = _controller.TempData
-            };
+                throw new InvalidOperationException("View name could not be determined. Please specify a view name explicitly.");
+            }
+
+            var viewResult = viewEngine.FindView(context, viewName, isMainPage: false);
+            if (!viewResult.Success)
+            {
+                viewResult = viewEngine.GetView(null, viewName, isMainPage: false);
+            }
+
+            if (!viewResult.Success)
+            {
+                throw new InvalidOperationException($"Could not find view '{viewName}'.");
+            }
 
             if (_builder.Model != null)
             {
-                viewResult.ViewData.Model = _builder.Model;
+                _controller.ViewData.Model = _builder.Model;
             }
 
-            await viewResult.ExecuteResultAsync(context);
+            await using var writer = new StringWriter();
+            var viewContext = new ViewContext(
+                context,
+                viewResult.View,
+                _controller.ViewData,
+                _controller.TempData,
+                writer,
+                new HtmlHelperOptions()
+            );
+
+            await viewResult.View.RenderAsync(viewContext);
+            
+            // Build final response: main view + OOB swaps
+            var responseBuilder = new StringBuilder();
+            responseBuilder.Append(writer.ToString());
+            
+            foreach (var oob in oobContent)
+            {
+                responseBuilder.Append(oob);
+            }
+            
+            response.ContentType = "text/html; charset=utf-8";
+            await response.WriteAsync(responseBuilder.ToString());
         }
-        else if (_builder.OobSwaps.Count > 0)
+        else if (oobContent.Count > 0)
         {
-            // No main view, but we have OOB swaps - use ContentResult to ensure proper header handling
+            // No main view, but we have OOB swaps
             var htmlContent = new StringBuilder();
             
-            foreach (var key in _controller.ViewData.Keys.Where(k => k.StartsWith("Oob_")))
+            foreach (var oob in oobContent)
             {
-                var oobHtml = _controller.ViewData[key] as string;
-                if (!string.IsNullOrEmpty(oobHtml))
-                {
-                    htmlContent.Append(oobHtml);
-                }
+                htmlContent.Append(oob);
             }
             
             if (context.HttpContext.Response.Headers.ContainsKey("HX-Trigger"))

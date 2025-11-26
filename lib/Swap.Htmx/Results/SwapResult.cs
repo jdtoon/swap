@@ -106,13 +106,13 @@ public sealed class SwapResult : IResult
         var tempData = new TempDataDictionary(httpContext, tempDataProvider);
 
         // 4. Render OOB swaps
-        var oobContent = new Dictionary<string, string>();
+        var oobContent = new List<string>();
         if (_builder.OobSwaps.Count > 0)
         {
             foreach (var oob in _builder.OobSwaps)
             {
                 var html = await RenderOobSwapAsync(actionContext, viewData, tempData, oob);
-                oobContent[oob.TargetId] = html;
+                oobContent.Add(html);
             }
         }
 
@@ -149,22 +149,25 @@ public sealed class SwapResult : IResult
                 new HtmlHelperOptions()
             );
 
-            // Inject OOB content into ViewData for the view to potentially use (though less common in Minimal API)
-            foreach (var kvp in oobContent)
-            {
-                viewData[$"Oob_{kvp.Key}"] = kvp.Value;
-            }
-
             await viewResult.View.RenderAsync(viewContext);
             
+            // Build final response: main view + OOB swaps
+            var responseBuilder = new StringBuilder();
+            responseBuilder.Append(writer.ToString());
+            
+            foreach (var oob in oobContent)
+            {
+                responseBuilder.Append(oob);
+            }
+            
             response.ContentType = "text/html; charset=utf-8";
-            await response.WriteAsync(writer.ToString());
+            await response.WriteAsync(responseBuilder.ToString());
         }
-        else if (_builder.OobSwaps.Count > 0)
+        else if (oobContent.Count > 0)
         {
             // Only OOB swaps
             response.ContentType = "text/html; charset=utf-8";
-            foreach (var html in oobContent.Values)
+            foreach (var html in oobContent)
             {
                 await response.WriteAsync(html);
             }
