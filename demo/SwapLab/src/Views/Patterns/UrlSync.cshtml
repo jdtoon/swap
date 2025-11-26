@@ -1,0 +1,177 @@
+@{
+    ViewData["Title"] = "URL Sync";
+}
+@model SwapLab.Models.UrlSyncViewModel
+
+<hgroup>
+    <h1>URL Sync</h1>
+    <p>Automatically sync SwapState to the browser URL for bookmarkable, shareable pages</p>
+</hgroup>
+
+<h2>Live Demo</h2>
+<div class="demo-area">
+    <p class="text-muted mb-3">Change the filters below and watch the URL update. Bookmark or share the URL to restore the exact state!</p>
+    
+    <div id="url-sync-demo">
+        <!-- The swap-state component with SyncToUrl enabled -->
+        @await Html.PartialAsync("_SwapState", Model.State)
+        
+        <div class="row mb-4">
+            <div class="col-md-4">
+                <label class="form-label">Category</label>
+                <select class="form-select" name="category"
+                        hx-get="@Url.Action("UrlSyncSearch", "Patterns")"
+                        hx-target="#url-sync-results"
+                        hx-include="[data-swap-state]"
+                        hx-push-url="true">
+                    <option value="all" selected="@(Model.State.Category == "all")">All Categories</option>
+                    <option value="Electronics" selected="@(Model.State.Category == "Electronics")">Electronics</option>
+                    <option value="Furniture" selected="@(Model.State.Category == "Furniture")">Furniture</option>
+                    <option value="Office" selected="@(Model.State.Category == "Office")">Office</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Price Range</label>
+                <select class="form-select" name="priceRange"
+                        hx-get="@Url.Action("UrlSyncSearch", "Patterns")"
+                        hx-target="#url-sync-results"
+                        hx-include="[data-swap-state]"
+                        hx-push-url="true">
+                    <option value="all" selected="@(Model.State.PriceRange == "all")">Any Price</option>
+                    <option value="low" selected="@(Model.State.PriceRange == "low")">Under $50</option>
+                    <option value="mid" selected="@(Model.State.PriceRange == "mid")">$50 - $200</option>
+                    <option value="high" selected="@(Model.State.PriceRange == "high")">Over $200</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Sort By</label>
+                <select class="form-select" name="sortBy"
+                        hx-get="@Url.Action("UrlSyncSearch", "Patterns")"
+                        hx-target="#url-sync-results"
+                        hx-include="[data-swap-state]"
+                        hx-push-url="true">
+                    <option value="name" selected="@(Model.State.SortBy == "name")">Name</option>
+                    <option value="price" selected="@(Model.State.SortBy == "price")">Price</option>
+                    <option value="stock" selected="@(Model.State.SortBy == "stock")">Stock</option>
+                </select>
+            </div>
+        </div>
+        
+        <div class="mb-3 p-3 bg-light rounded">
+            <strong>Current URL:</strong> <code id="current-url">@Context.Request.Path@Context.Request.QueryString</code>
+            <button class="btn btn-sm btn-outline-primary ms-2" onclick="navigator.clipboard.writeText(window.location.href)">
+                <i class="bi bi-clipboard"></i> Copy
+            </button>
+        </div>
+        
+        <div id="url-sync-results">
+            @await Html.PartialAsync("_UrlSyncResults", Model)
+        </div>
+    </div>
+</div>
+
+<h2>How URL Sync Works</h2>
+<ol>
+    <li>Create a <code>SwapState</code> class with <code>SyncToUrl = true</code></li>
+    <li>The <code>SwapStateModelBinder</code> automatically reads from query string on page load</li>
+    <li>Use <code>hx-push-url="true"</code> so HTMX updates the browser URL</li>
+    <li>The state travels with the URL - bookmarkable and shareable!</li>
+</ol>
+
+<h2>State Class</h2>
+<div class="code-view">
+<pre>public class UrlSyncState : SwapState
+{
+    // Enable URL synchronization
+    public override bool UrlSync => true;
+    
+    public string Category { get; set; } = "all";
+    public string PriceRange { get; set; } = "all";
+    public string SortBy { get; set; } = "name";
+}
+
+// Generate query string programmatically
+var qs = state.ToQueryString();
+// "Category=Electronics&PriceRange=mid&SortBy=price"
+
+// Populate from query string
+state.ApplyFromQueryString(Request.QueryString.Value);</pre>
+</div>
+
+<h2>Controller Code</h2>
+<div class="code-view">
+<pre>[HttpGet]
+public IActionResult UrlSyncSearch([FromSwapState] UrlSyncState state)
+{
+    // State is automatically populated from:
+    // 1. Query string (when SyncToUrl = true)
+    // 2. Request body / hidden fields
+    
+    var results = FilterProducts(state);
+    
+    // Push URL includes the state automatically
+    Response.HxPushUrl($"/Patterns/UrlSync?{state.ToQueryString()}");
+    
+    return this.SwapResponse()
+        .WithView("_UrlSyncResults", results)
+        .WithState(state)  // Updates hidden fields
+        .Build();
+}</pre>
+</div>
+
+<h2>View with URL Push</h2>
+<div class="code-view">
+<pre>&lt;select name="category"
+        hx-get="/Patterns/UrlSyncSearch"
+        hx-target="#results"
+        hx-include="[data-swap-state]"
+        hx-push-url="true"&gt;  &lt;!-- This pushes to browser history --&gt;
+    &lt;option value="all"&gt;All&lt;/option&gt;
+    &lt;option value="Electronics"&gt;Electronics&lt;/option&gt;
+&lt;/select&gt;</pre>
+</div>
+
+<h2>URL Sync vs Hidden Fields</h2>
+<table>
+    <thead>
+        <tr>
+            <th>Feature</th>
+            <th>URL Sync (<code>UrlSync = true</code>)</th>
+            <th>Hidden Fields (default)</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>Bookmarkable</td>
+            <td>✅ Yes</td>
+            <td>❌ No</td>
+        </tr>
+        <tr>
+            <td>Shareable</td>
+            <td>✅ Yes</td>
+            <td>❌ No</td>
+        </tr>
+        <tr>
+            <td>Back/Forward</td>
+            <td>✅ Works naturally</td>
+            <td>⚠️ May lose state</td>
+        </tr>
+        <tr>
+            <td>SEO Friendly</td>
+            <td>✅ Yes</td>
+            <td>❌ No</td>
+        </tr>
+        <tr>
+            <td>Sensitive Data</td>
+            <td>⚠️ Visible in URL</td>
+            <td>✅ Not in URL</td>
+        </tr>
+    </tbody>
+</table>
+
+<script>
+    // Update URL display on HTMX swaps
+    document.body.addEventListener('htmx:pushedIntoHistory', function(e) {
+        document.getElementById('current-url').textContent = window.location.pathname + window.location.search;
+    });
+</script>

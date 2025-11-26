@@ -3,6 +3,7 @@ using Swap.Htmx;
 using Swap.Htmx.State;
 using SwapLab.Events;
 using SwapLab.Models;
+using SwapLab.Views;
 
 namespace SwapLab.Controllers;
 
@@ -95,11 +96,11 @@ public class PatternsController : Controller
         var now = DateTime.Now;
         
         // Update primary target AND additional elements via OOB
-        // Note: AlsoUpdate takes just the ID without the # prefix
+        // Using generated constants: PatternViews.Partials for view names, PatternIds for element IDs
         return this.SwapResponse()
-            .WithView("_ClickResult", _clickCount)
-            .AlsoUpdate("click-counter", "_Counter", _clickCount)
-            .AlsoUpdate("last-click", "_LastUpdated", now)
+            .WithView(PatternViews.Partials.ClickResult, _clickCount)
+            .AlsoUpdate(PatternIds.ClickCounter, PatternViews.Partials.Counter, _clickCount)
+            .AlsoUpdate(PatternIds.LastClick, PatternViews.Partials.LastUpdated, now)
             .Build();
     }
 
@@ -116,7 +117,7 @@ public class PatternsController : Controller
     public IActionResult ShowSuccessToast()
     {
         return this.SwapResponse()
-            .WithView("_ToastResult", new { Message = "Success toast triggered!" })
+            .WithView(PatternViews.Partials.ToastResult, new { Message = "Success toast triggered!" })
             .WithSuccessToast("Operation completed successfully!")
             .Build();
     }
@@ -125,7 +126,7 @@ public class PatternsController : Controller
     public IActionResult ShowErrorToast()
     {
         return this.SwapResponse()
-            .WithView("_ToastResult", new { Message = "Error toast triggered!" })
+            .WithView(PatternViews.Partials.ToastResult, new { Message = "Error toast triggered!" })
             .WithErrorToast("Something went wrong!")
             .Build();
     }
@@ -134,7 +135,7 @@ public class PatternsController : Controller
     public IActionResult ShowInfoToast()
     {
         return this.SwapResponse()
-            .WithView("_ToastResult", new { Message = "Info toast triggered!" })
+            .WithView(PatternViews.Partials.ToastResult, new { Message = "Info toast triggered!" })
             .WithToast("Here's some information for you.")
             .Build();
     }
@@ -164,8 +165,9 @@ public class PatternsController : Controller
             TotalCount = GetFilteredCount(state)
         };
         
+        // Using generated constants - PatternViews.Partials.ProductGrid instead of "_ProductGrid"
         return this.SwapResponse()
-            .WithView("_ProductGrid", viewModel)
+            .WithView(PatternViews.Partials.ProductGrid, viewModel)
             .WithTrigger(ProductEvents.Product.Searched)
             .WithState(state)
             .Build();
@@ -403,10 +405,11 @@ public class PatternsController : Controller
             TotalCount = GetFilteredCount(state)
         };
         
+        // Demonstrating generated constants: PatternViews for views, PatternIds for element IDs
         return this.SwapResponse()
-            .WithView("_ProductGrid", viewModel)
-            .AlsoUpdate("product-count", "_ProductCount", new { Count = GetFilteredCount(state) })
-            .AlsoUpdate("pagination", "_Pagination", viewModel)
+            .WithView(PatternViews.Partials.ProductGrid, viewModel)
+            .AlsoUpdate(PatternIds.ProductCount, PatternViews.Partials.ProductCount, new { Count = GetFilteredCount(state) })
+            .AlsoUpdate(PatternIds.Pagination, PatternViews.Partials.Pagination, viewModel)
             .WithState(state)
             .Build();
     }
@@ -692,6 +695,135 @@ public class PatternsController : Controller
             query = query.Where(p => p.Name.Contains(state.Search, StringComparison.OrdinalIgnoreCase));
         
         return query.Count();
+    }
+
+    private List<Product> FilterProductsForUrlSync(UrlSyncState state)
+    {
+        var query = Products.AsEnumerable();
+        
+        // Filter by category
+        if (state.Category != "all")
+            query = query.Where(p => p.Category.Equals(state.Category, StringComparison.OrdinalIgnoreCase));
+        
+        // Filter by price range
+        query = state.PriceRange switch
+        {
+            "low" => query.Where(p => p.Price < 50),
+            "mid" => query.Where(p => p.Price >= 50 && p.Price <= 200),
+            "high" => query.Where(p => p.Price > 200),
+            _ => query
+        };
+        
+        // Sort
+        query = state.SortBy.ToLower() switch
+        {
+            "price" => query.OrderBy(p => p.Price),
+            "stock" => query.OrderBy(p => p.Stock),
+            _ => query.OrderBy(p => p.Name)
+        };
+        
+        return query.ToList();
+    }
+
+    #endregion
+
+    #region URL Sync Pattern
+
+    /// <summary>
+    /// Pattern: URL Sync
+    /// Shows SwapState with SyncToUrl for bookmarkable, shareable URLs.
+    /// </summary>
+    public IActionResult UrlSync([FromSwapState] UrlSyncState? state)
+    {
+        state ??= new UrlSyncState();
+        var products = FilterProductsForUrlSync(state);
+        
+        return this.SwapView(new UrlSyncViewModel
+        {
+            State = state,
+            Products = products
+        });
+    }
+
+    [HttpGet]
+    public IActionResult UrlSyncSearch([FromSwapState] UrlSyncState state)
+    {
+        var products = FilterProductsForUrlSync(state);
+        
+        // Push URL with state - generates query string automatically
+        Response.HxPushUrl($"/Patterns/UrlSync?{state.ToQueryString()}");
+        
+        return this.SwapResponse()
+            .WithView("_UrlSyncResults", new UrlSyncViewModel
+            {
+                State = state,
+                Products = products
+            })
+            .WithState(state)
+            .Build();
+    }
+
+    #endregion
+
+    #region Conditional Swaps Pattern
+
+    /// <summary>
+    /// Pattern: Conditional Swaps
+    /// Shows AlsoUpdateIfExists() and AlsoUpdateIf() for conditional OOB swaps.
+    /// </summary>
+    public IActionResult ConditionalSwaps()
+    {
+        return this.SwapView(new ConditionalSwapViewModel());
+    }
+
+    [HttpPost]
+    public IActionResult TriggerWithNotification()
+    {
+        // AlsoUpdateIfExists - gracefully skips if #notification-content doesn't exist
+        return this.SwapResponse()
+            .WithView("_ActionResult", new { Message = "Action triggered successfully!" })
+            .AlsoUpdateIfExists("notification-content", "_Notification", new { Message = "New notification received!" })
+            .WithSuccessToast("Action completed!")
+            .Build();
+    }
+
+    private static int _orderCounter = 1000;
+
+    [HttpPost]
+    public IActionResult ConditionalUpdate(string role, decimal orderValue)
+    {
+        var orderId = ++_orderCounter;
+        var isManager = role == "manager" || role == "admin";
+        var isAdmin = role == "admin";
+        var isHighValue = orderValue > 500;
+        
+        var response = this.SwapResponse()
+            .WithView("_OrderResult", new { OrderId = orderId, OrderValue = orderValue });
+        
+        // AlsoUpdateIf - conditionally include OOB swaps based on server-side logic
+        if (isManager)
+        {
+            response.AlsoUpdateIf(isManager, "manager-content", "_PanelContent", new { Label = "Manager view updated" });
+        }
+        
+        if (isAdmin)
+        {
+            response.AlsoUpdateIf(isAdmin, "admin-content", "_PanelContent", new { Label = "Admin audit logged" });
+        }
+        
+        if (isHighValue)
+        {
+            response.AlsoUpdateIf(isHighValue, "high-value-content", "_PanelContent", new { Label = $"High-value order: {orderValue:C}" });
+        }
+        
+        // Also show/hide panels via script
+        var showManagerPanel = isManager ? "block" : "none";
+        var showAdminPanel = isAdmin ? "block" : "none";
+        var showHighValueAlert = isHighValue ? "block" : "none";
+        
+        response.WithTrigger("updatePanels", new { showManagerPanel, showAdminPanel, showHighValueAlert });
+        
+        return response.Build();
     }
 
     #endregion

@@ -45,7 +45,8 @@ public sealed record OobSwap(
     string TargetId,
     string ViewName,
     object? Model,
-    SwapMode SwapMode
+    SwapMode SwapMode,
+    bool ConditionalExists = false
 );
 
 /// <summary>
@@ -169,6 +170,72 @@ public sealed class SwapResponseBuilder : IResult
         foreach (var item in items)
         {
             AlsoUpdate(idSelector(item), viewName, item, swapMode);
+        }
+        return this;
+    }
+
+    /// <summary>
+    /// Adds an out-of-band swap that only executes if the target element exists in the DOM.
+    /// This is useful for optional page regions that may or may not be present.
+    /// </summary>
+    /// <param name="targetId">The ID of the element to update (if it exists).</param>
+    /// <param name="viewName">The partial view to render for this target.</param>
+    /// <param name="model">The model for the partial view.</param>
+    /// <param name="swapMode">How to swap the content (defaults to OuterHTML).</param>
+    /// <returns>The builder for chaining.</returns>
+    /// <remarks>
+    /// Unlike <see cref="AlsoUpdate"/>, this method will not produce warnings or errors
+    /// if the target element doesn't exist. The swap is marked as conditional and
+    /// the client-side code will check for existence before attempting the swap.
+    /// 
+    /// Example:
+    /// <code>
+    /// return SwapResponse()
+    ///     .WithView("_Grid", model)
+    ///     .AlsoUpdateIfExists("#sidebar-stats", "_Stats", stats)  // May not exist
+    ///     .Build();
+    /// </code>
+    /// </remarks>
+    public SwapResponseBuilder AlsoUpdateIfExists(
+        string targetId,
+        string viewName,
+        object? model = null,
+        SwapMode swapMode = SwapMode.OuterHTML)
+    {
+        _oobSwaps.Add(new OobSwap(targetId, viewName, model, swapMode, ConditionalExists: true));
+        return this;
+    }
+
+    /// <summary>
+    /// Conditionally adds an out-of-band swap based on a server-side condition.
+    /// The swap is only included in the response if the condition is true.
+    /// </summary>
+    /// <param name="condition">Whether to include this OOB swap.</param>
+    /// <param name="targetId">The ID of the element to update.</param>
+    /// <param name="viewName">The partial view to render for this target.</param>
+    /// <param name="model">The model for the partial view.</param>
+    /// <param name="swapMode">How to swap the content (defaults to OuterHTML).</param>
+    /// <returns>The builder for chaining.</returns>
+    /// <remarks>
+    /// Example:
+    /// <code>
+    /// var hasChart = user.HasPermission("ViewAnalytics");
+    /// return SwapResponse()
+    ///     .WithView("_Grid", model)
+    ///     .AlsoUpdateIf(hasChart, "#analytics-chart", "_Chart", chartData)
+    ///     .Build();
+    /// </code>
+    /// </remarks>
+    public SwapResponseBuilder AlsoUpdateIf(
+        bool condition,
+        string targetId,
+        string viewName,
+        object? model = null,
+        SwapMode swapMode = SwapMode.OuterHTML)
+    {
+        if (condition)
+        {
+            _oobSwaps.Add(new OobSwap(targetId, viewName, model, swapMode));
         }
         return this;
     }

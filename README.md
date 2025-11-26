@@ -42,7 +42,7 @@ dotnet new swap-mvc -n MyProject
 dotnet add package Swap.Htmx
 ```
 
-**Minimal API (New!):**
+**Minimal API:**
 ```csharp
 app.MapPost("/subscribe", (string email) => 
     SwapResults.Response()
@@ -50,7 +50,7 @@ app.MapPost("/subscribe", (string email) =>
         .WithView("_SuccessMessage", email));
 ```
 
-**Razor Pages (New!):**
+**Razor Pages:**
 ```csharp
 public class CounterModel : PageModel
 {
@@ -93,8 +93,9 @@ public class HomeController : Controller
 - 📦 **Event Payload Access** - Pass data through event chains efficiently
 - 📊 **Observability** - Full OpenTelemetry tracing, metrics, and structured logging
 - 🔧 **OOB Helpers** - Tools for managing dynamic lists and instance IDs
+- ⚡ **Source Generators** - Compile-time view paths, element IDs, and event validation
 
-## Tiny example
+## Complete Example
 
 `Program.cs` (minimal wiring):
 
@@ -208,15 +209,30 @@ public class TodosTests : IClassFixture<HtmxTestFixture<Program>>
 
 ## Demos
 
-Explore the `demo/` folder for example applications:
+**Start here: [SwapLab](demo/SwapLab)** — The interactive pattern library showcasing all Swap.Htmx features with live demos, code samples, and explanations.
 
--   **[SwapShop](demo/SwapShop)**: A fully functional e-commerce demo showcasing core features (Cart, Badges, Toasts).
--   **[SwapChat](demo/SwapChat)**: A real-time chat application using SSE and Rooms.
--   **[SwapRedisDemo](demo/SwapRedisDemo)**: Demonstrates scaling SSE across multiple servers using the Redis Backplane.
--   **[TaskFlow](demo/TaskFlow)**: Collaborative task management with advanced event chains.
--   **[SwapMinimal](demo/SwapMinimal)**: Shows how to use Swap with Minimal APIs.
--   **[SwapPages](demo/SwapPages)**: Shows how to use Swap with Razor Pages.
--   **[SwapWebSockets](demo/SwapWebSockets)**: Demonstrates full WebSocket integration.
+Other examples in `demo/`:
+
+| Demo | Description |
+|------|-------------|
+| **[SwapLab](demo/SwapLab)** | 🎯 **Interactive pattern library** — Start here! Live demos of all patterns |
+| [SwapShop](demo/SwapShop) | E-commerce demo (Cart, Badges, Toasts) |
+| [SwapChat](demo/SwapChat) | Real-time chat with SSE and Rooms |
+| [TaskFlow](demo/TaskFlow) | Collaborative task management with event chains |
+| [SwapMinimal](demo/SwapMinimal) | Minimal APIs integration |
+| [SwapPages](demo/SwapPages) | Razor Pages integration |
+| [SwapWebSockets](demo/SwapWebSockets) | WebSocket integration |
+| [SwapRedisDemo](demo/SwapRedisDemo) | Redis backplane for scaling SSE |
+
+## What's New
+
+See the [ROADMAP](ROADMAP.md) for the full development plan and recent updates.
+
+**Recent highlights:**
+- ⚡ **Source Generators** - Type-safe view paths, element IDs, and events with compile-time validation
+- 🔍 **Handler Validation Analyzer** - Compile-time warnings for unhandled events (SWAP001-SWAP004)
+- 🔗 **URL Sync** - Bookmarkable state with `SwapState.UrlSync`
+- 🎯 **Conditional OOB Swaps** - `AlsoUpdateIfExists()` and `AlsoUpdateIf()` for safer updates
 
 ## Documentation
 
