@@ -334,6 +334,92 @@ See: `docs/SwapState.md` for full documentation.
 
 ---
 
+## Form Validation
+
+Use the `<swap-validation>` tag helper and `SwapValidationErrors()` for seamless server-side validation:
+
+```html
+<!-- In your form -->
+<div class="form-group">
+    <label asp-for="Name"></label>
+    <input asp-for="Name" />
+    <swap-validation for="Name" />
+</div>
+
+<div class="form-group">
+    <label asp-for="Email"></label>
+    <input asp-for="Email" />
+    <swap-validation for="Email" />
+</div>
+```
+
+```csharp
+[HttpPost]
+public IActionResult Create(CreateDto dto)
+{
+    if (!ModelState.IsValid)
+    {
+        return this.SwapValidationErrors(ModelState)
+            .WithView("_CreateForm", dto)
+            .Build();
+    }
+    
+    var item = _service.Create(dto);
+    return this.SwapRedirect("/Items", "Item created!");
+}
+```
+
+The validation errors are automatically displayed in the corresponding `<swap-validation>` elements.
+
+See: `docs/Validation.md` for full documentation.
+
+---
+
+## CRUD Toast Presets
+
+Standard success messages for common operations:
+
+```csharp
+// After creating
+.WithCreatedToast("Product", product.Name)  // "Product 'Widget' created successfully"
+
+// After updating
+.WithUpdatedToast("Settings")               // "Settings updated"
+
+// After deleting
+.WithDeletedToast("User", "john@test.com")  // "User 'john@test.com' deleted"
+
+// Generic CRUD toast
+.WithCrudToast(CrudOperation.Archived, "Record")  // "Record archived"
+```
+
+See: `docs/CrudToasts.md` for all operations.
+
+---
+
+## State Coordination with swap-include-state
+
+Simplify `hx-include` by referencing state containers by ID:
+
+```html
+<!-- Instead of listing all hidden field IDs -->
+<button hx-get="/Items/Search"
+        hx-include="#filter-tab, #filter-search, #filter-page">
+
+<!-- Use swap-include-state -->
+<button hx-get="/Items/Search"
+        swap-include-state="filter-state">
+```
+
+Multiple state containers:
+```html
+<div hx-get="/Report" swap-include-state="filter-state, sort-state">
+```
+
+The JavaScript automatically expands this to the proper `hx-include` selector.
+
+---
+
 ## Event System & Event Chains
 
 As your UI grows, you can centralize "when event X happens, refresh Y and show Z toast" declarations.

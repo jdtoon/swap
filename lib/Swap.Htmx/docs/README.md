@@ -11,7 +11,10 @@ Welcome to the Swap.Htmx documentation. These guides will help you build reactiv
 | Get started with Swap.Htmx | [Getting Started](GettingStarted.md) |
 | Migrate an existing MVC app | [Migration Guide](MigrationGuide.md) |
 | Build complex multi-component UIs | [Multi-Component Coordination](MultiComponentCoordination.md) |
-| Use strongly-typed state | [SwapState Guide](SwapState.md) ⭐ NEW |
+| Use strongly-typed state | [SwapState Guide](SwapState.md) |
+| Copy-paste common patterns | [Recipes](Recipes.md) ⭐ NEW |
+| Handle form validation | [Validation Guide](Validation.md) ⭐ NEW |
+| Show success toasts for CRUD | [CRUD Toasts](CrudToasts.md) ⭐ NEW |
 | Understand state patterns | [State Management](StateManagement.md) |
 | Avoid common mistakes | [Anti-Patterns](AntiPatterns.md) |
 | Use events and triggers | [Events Guide](Events.md) |
@@ -32,14 +35,27 @@ How to incrementally migrate an existing ASP.NET Core MVC application to use Swa
 ### [Multi-Component Coordination](MultiComponentCoordination.md)
 The definitive guide to building pages with multiple interactive components (tabs, search, pagination, grids) that work together through events and shared state.
 
-### [SwapState Guide](SwapState.md) ⭐ NEW
+### [SwapState Guide](SwapState.md)
 First-class state management with strongly-typed classes, automatic model binding via `[FromSwapState]`, and OOB updates via `.WithState()`.
+
+### [Recipes](Recipes.md) ⭐ NEW
+Copy-paste patterns for common UI scenarios: filterable lists, multi-select pickers, split-view builders, inline edit, modals, wizards, and more.
 
 ### [State Management](StateManagement.md)
 Where should state live? Hidden fields, URL parameters, session, data attributes? This guide covers all the patterns including SwapState.
 
 ### [Anti-Patterns](AntiPatterns.md)
 Learn from others' mistakes. Common pitfalls and how to avoid them when building Swap.Htmx applications.
+
+---
+
+## Forms & Validation
+
+### [Validation Guide](Validation.md) ⭐ NEW
+Server-side validation with inline error display. Use `<swap-validation>` tag helper and `SwapValidationErrors()` for seamless form validation.
+
+### [CRUD Toasts](CrudToasts.md) ⭐ NEW
+Standard success messages for create, update, delete operations with `.WithCreatedToast()`, `.WithUpdatedToast()`, `.WithDeletedToast()`.
 
 ---
 
