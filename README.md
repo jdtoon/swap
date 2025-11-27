@@ -4,9 +4,9 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![.NET 9.0](https://img.shields.io/badge/.NET-9.0-purple.svg)](https://dotnet.microsoft.com/)
 
-**An event-driven orchestration layer for HTMX and ASP.NET Core.**
+**A UI orchestration library for HTMX and ASP.NET Core.**
 
-Swap.Htmx gives you type-safe events, decoupled handlers, coordinated partial updates, and server-side state — all wired together so your UI updates happen automatically when events fire.
+Swap.Htmx coordinates what updates where when events fire. Type-safe events, decoupled handlers, multi-target partial updates, server-side state — all working together so you define the rules once and the UI updates itself.
 
 ---
 
@@ -26,7 +26,7 @@ public class TaskRowHandler : ISwapEventHandler<TaskCompletedEvent>
 {
     public Task HandleAsync(TaskCompletedEvent e, SwapResponseBuilder builder, CancellationToken ct)
     {
-        builder.AlsoUpdate($"task-{e.TaskId}", "", null, SwapMode.Delete);
+        builder.AlsoUpdate(TaskElements.Row(e.TaskId), Views.Empty, null, SwapMode.Delete);
         return Task.CompletedTask;
     }
 }
@@ -41,12 +41,14 @@ public class ProgressHandler : ISwapEventHandler<TaskCompletedEvent>
     public async Task HandleAsync(TaskCompletedEvent e, SwapResponseBuilder builder, CancellationToken ct)
     {
         var progress = await _tasks.GetProgressAsync();
-        builder.AlsoUpdate("progress-bar", "_Progress", progress);
+        builder.AlsoUpdate(TaskElements.ProgressBar, TaskViews.Partials.Progress, progress);
     }
 }
 ```
 
 The controller doesn't know which parts of the UI need updating. The handlers don't know about each other. **That's the point.**
+
+> Element IDs and view paths above use [source-generated constants](#source-generators). Strings work too, but static types catch typos at compile time.
 
 ---
 
@@ -56,6 +58,21 @@ The controller doesn't know which parts of the UI need updating. The handlers do
 
 No magic strings. Define events once, use everywhere.
 
+**Option 1: Source Generated (Recommended)**
+
+```csharp
+[SwapEventSource]
+public partial class CartEvents
+{
+    public const string ItemAdded = "cart.item.added";
+    public const string Cleared = "cart.cleared";
+}
+
+// Generated: CartEvents.Cart.Item.Added, CartEvents.Cart.Cleared
+```
+
+**Option 2: Manual EventKey**
+
 ```csharp
 public static class CartEvents
 {
@@ -64,9 +81,11 @@ public static class CartEvents
 }
 ```
 
+**Usage:**
+
 ```csharp
 return SwapResponse()
-    .WithTrigger(CartEvents.ItemAdded, new { productId, count })
+    .WithTrigger(CartEvents.Cart.Item.Added, new { productId, count })
     .Build();
 ```
 
@@ -74,7 +93,11 @@ return SwapResponse()
 
 ---
 
-### Distributed Handlers
+### Event Chains
+
+Two approaches to coordinate UI updates when events fire.
+
+**Option 1: Distributed Handlers**
 
 Each handler updates one piece of the UI. Add new handlers without touching controllers.
 
@@ -84,7 +107,7 @@ public class CartBadgeHandler : ISwapEventHandler<CartItemAddedEvent>
 {
     public Task HandleAsync(CartItemAddedEvent e, SwapResponseBuilder builder, CancellationToken ct)
     {
-        builder.AlsoUpdate("cart-badge", "_CartBadge", e.NewCount);
+        builder.AlsoUpdate(CartElements.Badge, CartViews.Partials.Badge, e.NewCount);
         return Task.CompletedTask;
     }
 }
@@ -94,11 +117,35 @@ public class CartTotalHandler : ISwapEventHandler<CartItemAddedEvent>
 {
     public Task HandleAsync(CartItemAddedEvent e, SwapResponseBuilder builder, CancellationToken ct)
     {
-        builder.AlsoUpdate("cart-total", "_CartTotal", e.NewTotal);
+        builder.AlsoUpdate(CartElements.Total, CartViews.Partials.Total, e.NewTotal);
         return Task.CompletedTask;
     }
 }
 ```
+
+**Option 2: Centralized Configuration**
+
+Define all event reactions in one place with `ISwapEventConfiguration`.
+
+```csharp
+public class CartEventConfig : ISwapEventConfiguration
+{
+    public void Configure(SwapEventBusOptions events)
+    {
+        events.When(CartEvents.Cart.Item.Added)
+            .RefreshPartial(CartElements.Badge, CartViews.Partials.Badge, ctx => GetCount(ctx))
+            .RefreshPartial(CartElements.Total, CartViews.Partials.Total, ctx => GetTotal(ctx))
+            .SuccessToast("Added to cart!");
+    }
+}
+```
+
+```csharp
+// Register in Program.cs
+builder.Services.AddSwapHtmx(options => options.AddConfig<CartEventConfig>());
+```
+
+Both approaches work. Distributed handlers scale better for complex apps. Centralized config is easier to read for simpler cases.
 
 → [Event Chains Documentation](lib/Swap.Htmx/docs/EventChains.md)
 
@@ -203,19 +250,34 @@ if (!ModelState.IsValid)
 
 ### Source Generators
 
-Compile-time safety for view paths and element IDs.
+Compile-time safety for events, view paths, and element IDs. Typos become compiler errors.
 
 ```csharp
-[GenerateViewPaths]
-public static partial class Views { }
+// Events — generates nested hierarchy from dot notation
+[SwapEventSource]
+public partial class AppEvents
+{
+    public const string CartItemAdded = "cart.item.added";  // → AppEvents.Cart.Item.Added
+}
 
-[GenerateElementIds]
-public static partial class Elements { }
+// Views — scans folder, generates constants for .cshtml files
+[SwapViewSource("Views/Cart")]
+public static partial class CartViews { }  // → CartViews.Index, CartViews.Partials.Badge
+
+// Elements — scans .cshtml files for id="..." attributes
+[SwapElementSource("Views/Cart")]
+public static partial class CartElements { }  // → CartElements.Badge, CartElements.Total
 ```
 
-Generated at build time. Typos become compiler errors.
+Requires `.cshtml` files as AdditionalFiles in `.csproj`:
 
-→ [Source Generators](framework/Swap.Htmx.Generators/README.md)
+```xml
+<ItemGroup>
+  <AdditionalFiles Include="Views\**\*.cshtml" />
+</ItemGroup>
+```
+
+→ [Source Generators](lib/Swap.Htmx/docs/SourceGenerators.md)
 
 ---
 
