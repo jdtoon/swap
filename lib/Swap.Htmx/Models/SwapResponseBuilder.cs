@@ -39,6 +39,33 @@ public enum SwapMode
 }
 
 /// <summary>
+/// Common CRUD operations for toast messages.
+/// </summary>
+public enum CrudOperation
+{
+    /// <summary>An item was created.</summary>
+    Created,
+    
+    /// <summary>An item was updated.</summary>
+    Updated,
+    
+    /// <summary>An item was deleted.</summary>
+    Deleted,
+    
+    /// <summary>An item was saved (create or update).</summary>
+    Saved,
+    
+    /// <summary>An item was archived.</summary>
+    Archived,
+    
+    /// <summary>An item was restored.</summary>
+    Restored,
+    
+    /// <summary>An item was duplicated.</summary>
+    Duplicated
+}
+
+/// <summary>
 /// Represents a pending out-of-band swap update.
 /// </summary>
 public sealed record OobSwap(
@@ -275,6 +302,80 @@ public sealed class SwapResponseBuilder : IResult
     /// </summary>
     public SwapResponseBuilder WithInfoToast(string message)
         => WithToast(message, ToastType.Info);
+
+    /// <summary>
+    /// Adds a success toast for common CRUD operations with consistent messaging.
+    /// </summary>
+    /// <param name="operation">The CRUD operation that was performed.</param>
+    /// <param name="entityName">The name of the entity type (e.g., "Rate Card", "Quote").</param>
+    /// <param name="itemName">Optional specific item name or identifier.</param>
+    /// <returns>The builder for chaining.</returns>
+    /// <remarks>
+    /// Examples:
+    /// <code>
+    /// .WithCrudToast(CrudOperation.Created, "Rate Card")           // → "Rate Card created successfully"
+    /// .WithCrudToast(CrudOperation.Updated, "Quote", "QT-2025-01") // → "Quote 'QT-2025-01' updated"
+    /// .WithCrudToast(CrudOperation.Deleted, "Item")                // → "Item deleted"
+    /// </code>
+    /// </remarks>
+    public SwapResponseBuilder WithCrudToast(CrudOperation operation, string entityName, string? itemName = null)
+    {
+        var message = FormatCrudMessage(operation, entityName, itemName);
+        return WithSuccessToast(message);
+    }
+
+    /// <summary>
+    /// Adds a toast for a created item.
+    /// </summary>
+    /// <param name="entityName">The name of the entity type.</param>
+    /// <param name="itemName">Optional specific item name.</param>
+    /// <returns>The builder for chaining.</returns>
+    public SwapResponseBuilder WithCreatedToast(string entityName, string? itemName = null)
+        => WithCrudToast(CrudOperation.Created, entityName, itemName);
+
+    /// <summary>
+    /// Adds a toast for an updated item.
+    /// </summary>
+    /// <param name="entityName">The name of the entity type.</param>
+    /// <param name="itemName">Optional specific item name.</param>
+    /// <returns>The builder for chaining.</returns>
+    public SwapResponseBuilder WithUpdatedToast(string entityName, string? itemName = null)
+        => WithCrudToast(CrudOperation.Updated, entityName, itemName);
+
+    /// <summary>
+    /// Adds a toast for a deleted item.
+    /// </summary>
+    /// <param name="entityName">The name of the entity type.</param>
+    /// <param name="itemName">Optional specific item name.</param>
+    /// <returns>The builder for chaining.</returns>
+    public SwapResponseBuilder WithDeletedToast(string entityName, string? itemName = null)
+        => WithCrudToast(CrudOperation.Deleted, entityName, itemName);
+
+    /// <summary>
+    /// Adds a toast for a saved item (create or update).
+    /// </summary>
+    /// <param name="entityName">The name of the entity type.</param>
+    /// <param name="itemName">Optional specific item name.</param>
+    /// <returns>The builder for chaining.</returns>
+    public SwapResponseBuilder WithSavedToast(string entityName, string? itemName = null)
+        => WithCrudToast(CrudOperation.Saved, entityName, itemName);
+
+    private static string FormatCrudMessage(CrudOperation operation, string entityName, string? itemName)
+    {
+        var itemPart = string.IsNullOrEmpty(itemName) ? "" : $" '{itemName}'";
+        
+        return operation switch
+        {
+            CrudOperation.Created => $"{entityName}{itemPart} created successfully",
+            CrudOperation.Updated => $"{entityName}{itemPart} updated",
+            CrudOperation.Deleted => $"{entityName}{itemPart} deleted",
+            CrudOperation.Saved => $"{entityName}{itemPart} saved",
+            CrudOperation.Archived => $"{entityName}{itemPart} archived",
+            CrudOperation.Restored => $"{entityName}{itemPart} restored",
+            CrudOperation.Duplicated => $"{entityName}{itemPart} duplicated",
+            _ => $"{entityName}{itemPart} {operation.ToString().ToLowerInvariant()}"
+        };
+    }
 
     /// <summary>
     /// Adds a custom HX-Trigger event with a type-safe event key.

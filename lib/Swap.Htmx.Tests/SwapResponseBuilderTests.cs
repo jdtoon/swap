@@ -449,4 +449,136 @@ public class SwapResponseBuilderTests
         Assert.Equal("_ItemRow", builder.OobSwaps[1].ViewName);
         Assert.Equal(items[1], builder.OobSwaps[1].Model);
     }
+
+    #region CRUD Toast Tests
+
+    [Fact]
+    public void WithCrudToast_Created_FormatsCorrectly()
+    {
+        // Arrange
+        var controller = CreateController();
+
+        // Act
+        var builder = controller.TestSwapResponse()
+            .WithCrudToast(CrudOperation.Created, "Rate Card");
+
+        // Assert
+        Assert.Single(builder.Toasts);
+        Assert.Equal("Rate Card created successfully", builder.Toasts[0].Message);
+        Assert.Equal(ToastType.Success, builder.Toasts[0].Type);
+    }
+
+    [Fact]
+    public void WithCrudToast_WithItemName_IncludesItemName()
+    {
+        // Arrange
+        var controller = CreateController();
+
+        // Act
+        var builder = controller.TestSwapResponse()
+            .WithCrudToast(CrudOperation.Updated, "Quote", "QT-2025-01");
+
+        // Assert
+        Assert.Single(builder.Toasts);
+        Assert.Equal("Quote 'QT-2025-01' updated", builder.Toasts[0].Message);
+    }
+
+    [Fact]
+    public void WithCrudToast_Deleted_FormatsCorrectly()
+    {
+        // Arrange
+        var controller = CreateController();
+
+        // Act
+        var builder = controller.TestSwapResponse()
+            .WithCrudToast(CrudOperation.Deleted, "Item");
+
+        // Assert
+        Assert.Single(builder.Toasts);
+        Assert.Equal("Item deleted", builder.Toasts[0].Message);
+    }
+
+    [Fact]
+    public void WithCreatedToast_Shorthand_Works()
+    {
+        // Arrange
+        var controller = CreateController();
+
+        // Act
+        var builder = controller.TestSwapResponse()
+            .WithCreatedToast("Product", "Widget Pro");
+
+        // Assert
+        Assert.Single(builder.Toasts);
+        Assert.Equal("Product 'Widget Pro' created successfully", builder.Toasts[0].Message);
+    }
+
+    [Fact]
+    public void WithUpdatedToast_Shorthand_Works()
+    {
+        // Arrange
+        var controller = CreateController();
+
+        // Act
+        var builder = controller.TestSwapResponse()
+            .WithUpdatedToast("Settings");
+
+        // Assert
+        Assert.Single(builder.Toasts);
+        Assert.Equal("Settings updated", builder.Toasts[0].Message);
+    }
+
+    [Fact]
+    public void WithDeletedToast_Shorthand_Works()
+    {
+        // Arrange
+        var controller = CreateController();
+
+        // Act
+        var builder = controller.TestSwapResponse()
+            .WithDeletedToast("User", "john@example.com");
+
+        // Assert
+        Assert.Single(builder.Toasts);
+        Assert.Equal("User 'john@example.com' deleted", builder.Toasts[0].Message);
+    }
+
+    [Fact]
+    public void WithSavedToast_Shorthand_Works()
+    {
+        // Arrange
+        var controller = CreateController();
+
+        // Act
+        var builder = controller.TestSwapResponse()
+            .WithSavedToast("Document");
+
+        // Assert
+        Assert.Single(builder.Toasts);
+        Assert.Equal("Document saved", builder.Toasts[0].Message);
+    }
+
+    [Theory]
+    [InlineData(CrudOperation.Archived, "Record", null, "Record archived")]
+    [InlineData(CrudOperation.Restored, "Record", "R-123", "Record 'R-123' restored")]
+    [InlineData(CrudOperation.Duplicated, "Template", "Main", "Template 'Main' duplicated")]
+    public void WithCrudToast_AllOperations_FormatCorrectly(
+        CrudOperation operation, 
+        string entityName, 
+        string? itemName, 
+        string expectedMessage)
+    {
+        // Arrange
+        var controller = CreateController();
+
+        // Act
+        var builder = controller.TestSwapResponse()
+            .WithCrudToast(operation, entityName, itemName);
+
+        // Assert
+        Assert.Single(builder.Toasts);
+        Assert.Equal(expectedMessage, builder.Toasts[0].Message);
+    }
+
+    #endregion
 }
