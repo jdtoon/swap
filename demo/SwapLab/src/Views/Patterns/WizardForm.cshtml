@@ -1,0 +1,83 @@
+@model SwapLab.Models.CheckoutWizardViewModel
+@addTagHelper *, Swap.Htmx
+@{
+    ViewData["Title"] = "Wizard Form";
+}
+
+<hgroup>
+    <h1>Wizard Form</h1>
+    <p>Multi-step form with per-step validation</p>
+</hgroup>
+
+<h2>Live Demo</h2>
+<div class="demo-area">
+    @await Html.PartialAsync("_CheckoutWizard", Model)
+</div>
+
+<h2>How It Works</h2>
+<ol>
+    <li>State tracks current step and all field values</li>
+    <li>Each step validates before advancing</li>
+    <li>Invalid fields show errors inline with <code>&lt;swap-validation&gt;</code></li>
+    <li>Back button decrements step (preserves data)</li>
+    <li>Entire wizard partial re-renders on step change</li>
+</ol>
+
+<h2>State Class</h2>
+<div class="code-view">
+<pre>public class CheckoutWizardState : SwapState
+{
+    public int CurrentStep { get; set; } = 1;
+    
+    // Step 1: Shipping
+    public string ShippingName { get; set; } = "";
+    public string ShippingAddress { get; set; } = "";
+    public string ShippingCity { get; set; } = "";
+    
+    // Step 2: Payment
+    public string CardNumber { get; set; } = "";
+    public string CardExpiry { get; set; } = "";
+    public string CardCvv { get; set; } = "";
+}</pre>
+</div>
+
+<h2>Controller Code</h2>
+<div class="code-view">
+<pre>[HttpPost]
+public IActionResult ValidateShipping([FromSwapState] CheckoutWizardState state,
+    string shippingName, string shippingAddress, string shippingCity)
+{
+    state.ShippingName = shippingName;
+    state.ShippingAddress = shippingAddress;
+    state.ShippingCity = shippingCity;
+    
+    var errors = new Dictionary&lt;string, string&gt;();
+    if (string.IsNullOrWhiteSpace(shippingName))
+        errors["ShippingName"] = "Name is required";
+    if (string.IsNullOrWhiteSpace(shippingAddress))
+        errors["ShippingAddress"] = "Address is required";
+    
+    if (errors.Any())
+    {
+        return this.SwapResponse()
+            .WithView("_CheckoutWizard", new CheckoutWizardViewModel { State = state, Errors = errors })
+            .WithState(state)
+            .Build();
+    }
+    
+    state.CurrentStep = 2;
+    return this.SwapResponse()
+        .WithView("_CheckoutWizard", new CheckoutWizardViewModel { State = state })
+        .WithState(state)
+        .Build();
+}</pre>
+</div>
+
+<h2>Key Points</h2>
+<ul>
+    <li>All wizard data lives in one <code>SwapState</code> class</li>
+    <li>Each step has its own validation logic</li>
+    <li>Step indicator shows progress visually</li>
+    <li>Back always works, preserving entered data</li>
+    <li>Final step shows review before submit</li>
+</ul>

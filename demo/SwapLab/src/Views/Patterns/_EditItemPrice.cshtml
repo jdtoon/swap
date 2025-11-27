@@ -1,0 +1,16 @@
+@model SwapLab.Models.EditableItem
+
+<form hx-post="/Patterns/UpdateItemPrice?id=@Model.Id"
+      hx-target="#row-@Model.Id"
+      hx-swap="outerHTML"
+      style="margin: 0; text-align: right;">
+    <input type="number" 
+           name="price" 
+           value="@Model.Price"
+           step="0.01"
+           min="0"
+           autofocus
+           style="width: 100px; padding: 0.25rem 0.5rem; border: 2px solid var(--color-primary); border-radius: var(--radius-sm); background: var(--color-bg); color: var(--color-text); text-align: right;"
+           hx-on:keydown="if(event.key==='Escape') { htmx.ajax('GET', '/Patterns/GetEditableRow?id=@Model.Id', {target:'#row-@Model.Id', swap:'outerHTML'}); event.preventDefault(); }"
+           hx-on:blur="this.form.requestSubmit()" />
+</form>

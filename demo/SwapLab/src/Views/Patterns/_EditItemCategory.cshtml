@@ -1,0 +1,14 @@
+@model SwapLab.Models.EditableItem
+
+<form hx-post="/Patterns/UpdateItemCategory?id=@Model.Id"
+      hx-target="#row-@Model.Id"
+      hx-swap="outerHTML"
+      style="margin: 0;">
+    <input type="text" 
+           name="category" 
+           value="@Model.Category" 
+           autofocus
+           style="width: 100%; padding: 0.25rem 0.5rem; border: 2px solid var(--color-primary); border-radius: var(--radius-sm); background: var(--color-bg); color: var(--color-text);"
+           hx-on:keydown="if(event.key==='Escape') { htmx.ajax('GET', '/Patterns/GetEditableRow?id=@Model.Id', {target:'#row-@Model.Id', swap:'outerHTML'}); event.preventDefault(); }"
+           hx-on:blur="this.form.requestSubmit()" />
+</form>

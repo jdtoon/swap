@@ -30,6 +30,18 @@ public static partial class TaskEvents
 }
 
 /// <summary>
+/// Event keys for recipe demos.
+/// </summary>
+[SwapEventSource]
+public static partial class RecipeEvents
+{
+    public const string SelectionChanged = "recipe.selection.changed";
+    public const string ConfigChanged = "recipe.config.changed";
+    public const string WizardStepChanged = "recipe.wizard.step.changed";
+    public const string ItemUpdated = "recipe.item.updated";
+}
+
+/// <summary>
 /// Event chain configuration for product demos.
 /// </summary>
 public class ProductEventConfig : ISwapEventConfiguration

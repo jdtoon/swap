@@ -1,0 +1,152 @@
+@model SwapLab.Models.QuoteBuilderViewModel
+@addTagHelper *, Swap.Htmx
+@{
+    ViewData["Title"] = "Split-View Builder";
+}
+
+<hgroup>
+    <h1>Split-View Builder</h1>
+    <p>Configuration panel with live preview updates</p>
+</hgroup>
+
+<h2>Live Demo</h2>
+<div class="demo-area">
+    <div id="quote-builder">
+        <swap-state state="Model.State" />
+        
+        <div style="display: grid; grid-template-columns: 300px 1fr; gap: 2rem;">
+            <!-- Config Panel -->
+            <div class="config-panel" style="background: var(--color-bg-secondary); padding: 1.5rem; border-radius: var(--radius);">
+                <h3 style="margin-bottom: 1.5rem;">Configuration</h3>
+                
+                <div style="margin-bottom: 1rem;">
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Currency</label>
+                    <select name="currency"
+                            style="width: 100%; padding: 0.5rem; border-radius: var(--radius-sm); border: 1px solid var(--color-border); background: var(--color-bg); color: var(--color-text);"
+                            hx-post="/Patterns/UpdateQuoteConfig"
+                            hx-target="#quote-preview"
+                            hx-swap="outerHTML"
+                            swap-include-state="quote-builder-state">
+                        <option value="USD" selected="@(Model.State.Currency == "USD")">USD ($)</option>
+                        <option value="EUR" selected="@(Model.State.Currency == "EUR")">EUR (€)</option>
+                        <option value="GBP" selected="@(Model.State.Currency == "GBP")">GBP (£)</option>
+                    </select>
+                </div>
+                
+                <div style="margin-bottom: 1rem;">
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Markup %</label>
+                    <input type="number" 
+                           name="markupPercent"
+                           value="@Model.State.MarkupPercent"
+                           min="0"
+                           max="100"
+                           step="1"
+                           style="width: 100%; padding: 0.5rem; border-radius: var(--radius-sm); border: 1px solid var(--color-border); background: var(--color-bg); color: var(--color-text);"
+                           hx-post="/Patterns/UpdateQuoteConfig"
+                           hx-target="#quote-preview"
+                           hx-swap="outerHTML"
+                           hx-trigger="change, keyup changed delay:300ms"
+                           swap-include-state="quote-builder-state" />
+                </div>
+                
+                <div style="margin-bottom: 1rem;">
+                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                        <input type="checkbox" 
+                               name="showImages"
+                               value="true"
+                               @(Model.State.ShowImages ? "checked" : "")
+                               style="width: 1.25rem; height: 1.25rem;"
+                               hx-post="/Patterns/UpdateQuoteConfig"
+                               hx-target="#quote-preview"
+                               hx-swap="outerHTML"
+                               swap-include-state="quote-builder-state" />
+                        Show images
+                    </label>
+                </div>
+                
+                <div style="margin-bottom: 1rem;">
+                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                        <input type="checkbox" 
+                               name="showDescriptions"
+                               value="true"
+                               @(Model.State.ShowDescriptions ? "checked" : "")
+                               style="width: 1.25rem; height: 1.25rem;"
+                               hx-post="/Patterns/UpdateQuoteConfig"
+                               hx-target="#quote-preview"
+                               hx-swap="outerHTML"
+                               swap-include-state="quote-builder-state" />
+                        Show descriptions
+                    </label>
+                </div>
+                
+                <div style="margin-bottom: 1rem;">
+                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                        <input type="checkbox" 
+                               name="includeTax"
+                               value="true"
+                               @(Model.State.IncludeTax ? "checked" : "")
+                               style="width: 1.25rem; height: 1.25rem;"
+                               hx-post="/Patterns/UpdateQuoteConfig"
+                               hx-target="#quote-preview"
+                               hx-swap="outerHTML"
+                               swap-include-state="quote-builder-state" />
+                        Include tax (8%)
+                    </label>
+                </div>
+            </div>
+            
+            <!-- Preview Panel -->
+            @await Html.PartialAsync("_QuotePreview", Model)
+        </div>
+    </div>
+</div>
+
+<h2>How It Works</h2>
+<ol>
+    <li>Configuration inputs post changes to server</li>
+    <li><code>swap-include-state</code> sends current config with each request</li>
+    <li>Server updates state and returns new preview</li>
+    <li>Preview updates instantly without full page reload</li>
+</ol>
+
+<h2>State Class</h2>
+<div class="code-view">
+<pre>public class QuoteBuilderState : SwapState
+{
+    public string Currency { get; set; } = "USD";
+    public decimal MarkupPercent { get; set; } = 15;
+    public bool ShowImages { get; set; } = true;
+    public bool ShowDescriptions { get; set; } = true;
+    public bool IncludeTax { get; set; } = false;
+}</pre>
+</div>
+
+<h2>Controller Code</h2>
+<div class="code-view">
+<pre>[HttpPost]
+public IActionResult UpdateQuoteConfig([FromSwapState] QuoteBuilderState state,
+    string? currency, decimal? markupPercent, 
+    bool? showImages, bool? showDescriptions, bool? includeTax)
+{
+    // Update state with provided values
+    if (currency != null) state.Currency = currency;
+    if (markupPercent != null) state.MarkupPercent = markupPercent.Value;
+    // Checkboxes: if not in form data, they're unchecked
+    state.ShowImages = showImages ?? false;
+    state.ShowDescriptions = showDescriptions ?? false;
+    state.IncludeTax = includeTax ?? false;
+    
+    return this.SwapResponse()
+        .WithView("_QuotePreview", BuildQuoteViewModel(state))
+        .WithState(state)
+        .Build();
+}</pre>
+</div>
+
+<h2>Key Points</h2>
+<ul>
+    <li>Config panel and preview are visually split</li>
+    <li>Only preview updates on config change (not whole page)</li>
+    <li><code>delay:300ms</code> debounces text input</li>
+    <li>Checkbox handling requires null coalescing to detect unchecked</li>
+</ul>

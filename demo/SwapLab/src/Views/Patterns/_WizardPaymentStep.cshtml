@@ -1,0 +1,64 @@
+@model SwapLab.Models.CheckoutWizardViewModel
+@addTagHelper *, Swap.Htmx
+
+<form hx-post="/Patterns/ValidatePayment"
+      hx-target="#checkout-wizard"
+      hx-swap="outerHTML"
+      swap-include-state="checkout-wizard-state">
+    <h3 style="margin-bottom: 1.5rem;">Payment Information</h3>
+    
+    <div style="margin-bottom: 1rem;">
+        <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Card Number</label>
+        <input type="text" 
+               name="cardNumber" 
+               value="@Model.State.CardNumber"
+               placeholder="4242 4242 4242 4242"
+               maxlength="19"
+               style="width: 100%; padding: 0.75rem; border: 1px solid @(Model.Errors.ContainsKey("CardNumber") ? "var(--color-error)" : "var(--color-border)"); border-radius: var(--radius-sm); background: var(--color-bg); color: var(--color-text);" />
+        @if (Model.Errors.TryGetValue("CardNumber", out var cardError))
+        {
+            <span style="color: var(--color-error); font-size: 0.875rem; margin-top: 0.25rem; display: block;">@cardError</span>
+        }
+    </div>
+    
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+        <div>
+            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Expiry</label>
+            <input type="text" 
+                   name="cardExpiry" 
+                   value="@Model.State.CardExpiry"
+                   placeholder="MM/YY"
+                   maxlength="5"
+                   style="width: 100%; padding: 0.75rem; border: 1px solid @(Model.Errors.ContainsKey("CardExpiry") ? "var(--color-error)" : "var(--color-border)"); border-radius: var(--radius-sm); background: var(--color-bg); color: var(--color-text);" />
+            @if (Model.Errors.TryGetValue("CardExpiry", out var expiryError))
+            {
+                <span style="color: var(--color-error); font-size: 0.875rem; margin-top: 0.25rem; display: block;">@expiryError</span>
+            }
+        </div>
+        <div>
+            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">CVV</label>
+            <input type="text" 
+                   name="cardCvv" 
+                   value="@Model.State.CardCvv"
+                   placeholder="123"
+                   maxlength="4"
+                   style="width: 100%; padding: 0.75rem; border: 1px solid @(Model.Errors.ContainsKey("CardCvv") ? "var(--color-error)" : "var(--color-border)"); border-radius: var(--radius-sm); background: var(--color-bg); color: var(--color-text);" />
+            @if (Model.Errors.TryGetValue("CardCvv", out var cvvError))
+            {
+                <span style="color: var(--color-error); font-size: 0.875rem; margin-top: 0.25rem; display: block;">@cvvError</span>
+            }
+        </div>
+    </div>
+    
+    <div style="display: flex; justify-content: space-between;">
+        <button type="button" 
+                class="secondary"
+                hx-post="/Patterns/WizardGoBack"
+                hx-target="#checkout-wizard"
+                hx-swap="outerHTML"
+                swap-include-state="checkout-wizard-state">
+            ← Back
+        </button>
+        <button type="submit">Continue to Review →</button>
+    </div>
+</form>

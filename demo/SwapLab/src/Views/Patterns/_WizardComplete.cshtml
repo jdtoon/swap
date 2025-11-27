@@ -1,0 +1,17 @@
+@model SwapLab.Models.CheckoutWizardViewModel
+@addTagHelper *, Swap.Htmx
+
+<div id="checkout-wizard">
+    <div style="text-align: center; padding: 3rem;">
+        <div style="font-size: 4rem; margin-bottom: 1rem;">🎉</div>
+        <h2 style="margin-bottom: 0.5rem;">Order Complete!</h2>
+        <p style="color: var(--color-text-muted); margin-bottom: 2rem;">
+            Thank you, @Model.State.ShippingName! Your order has been placed.
+        </p>
+        <button hx-get="/Patterns/WizardForm"
+                hx-target="#main-content"
+                hx-push-url="true">
+            Start New Order
+        </button>
+    </div>
+</div>

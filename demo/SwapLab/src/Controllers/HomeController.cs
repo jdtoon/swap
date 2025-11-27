@@ -26,6 +26,11 @@ public class HomeController : Controller
         
         new("form-validation", "Form Validation", "Server-side validation with inline errors", PatternCategories.Forms, ["validation", "blur"]),
         new("modal-forms", "Modal Forms", "Edit forms in modal dialogs", PatternCategories.Forms, ["modal", "dialog"]),
+        
+        new("multi-select-picker", "Multi-Select Picker", "Select multiple items with state sync", PatternCategories.Recipes, ["state", "selection"]),
+        new("split-view-builder", "Split-View Builder", "Config panel + Live preview", PatternCategories.Recipes, ["config", "preview"]),
+        new("inline-edit", "Inline Edit", "Click-to-edit table cells", PatternCategories.Recipes, ["edit", "table"]),
+        new("wizard-form", "Wizard Form", "Multi-step form with validation", PatternCategories.Recipes, ["wizard", "steps"]),
     ];
 
     public IActionResult Index()

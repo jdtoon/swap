@@ -1,0 +1,119 @@
+@model SwapLab.Models.RateCardPickerViewModel
+@addTagHelper *, Swap.Htmx
+@{
+    ViewData["Title"] = "Multi-Select Picker";
+}
+
+<hgroup>
+    <h1>Multi-Select Picker</h1>
+    <p>Select multiple items with synchronized state and summary</p>
+</hgroup>
+
+<h2>Live Demo</h2>
+<div class="demo-area">
+    <div id="rate-card-picker">
+        <swap-state state="Model.State" />
+        
+        <h3 style="margin-bottom: 1rem;">Select Rate Cards</h3>
+        
+        <div id="rate-card-list" style="display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1.5rem;">
+            @foreach (var card in Model.RateCards)
+            {
+                var isSelected = Model.State.GetSelectedIdList().Contains(card.Id);
+                <label class="picker-item @(isSelected ? "selected" : "")"
+                       style="display: flex; align-items: center; gap: 1rem; padding: 1rem; background: var(--color-bg-secondary); border-radius: var(--radius); cursor: pointer; border: 2px solid @(isSelected ? "var(--color-primary)" : "transparent"); transition: all 0.2s;"
+                       hx-post="/Patterns/ToggleRateCard?id=@card.Id"
+                       hx-target="#rate-card-picker"
+                       hx-swap="outerHTML"
+                       swap-include-state="rate-card-picker-state">
+                    <input type="checkbox" @(isSelected ? "checked" : "") style="width: 1.25rem; height: 1.25rem;" onclick="event.stopPropagation();" />
+                    <div style="flex: 1;">
+                        <div style="font-weight: 600;">@card.Name</div>
+                        <div style="font-size: 0.875rem; color: var(--color-text-muted);">@card.Description</div>
+                    </div>
+                    <div style="font-weight: 600; color: var(--color-primary);">@card.Price.ToString("C")</div>
+                </label>
+            }
+        </div>
+        
+        <div id="selection-summary" style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; background: var(--color-bg-tertiary); border-radius: var(--radius);">
+            <div>
+                <strong>Selected:</strong> @Model.SelectedCount items
+                @if (Model.SelectedTotal > 0)
+                {
+                    <span style="margin-left: 1rem;"><strong>Total:</strong> @Model.SelectedTotal.ToString("C")</span>
+                }
+            </div>
+            <div style="display: flex; gap: 0.5rem;">
+                <button class="secondary"
+                        hx-post="/Patterns/ClearRateCardSelection"
+                        hx-target="#rate-card-picker"
+                        hx-swap="outerHTML"
+                        swap-include-state="rate-card-picker-state"
+                        @(Model.SelectedCount == 0 ? "disabled" : "")>
+                    Clear
+                </button>
+                <button hx-post="/Patterns/ConfirmRateCardSelection"
+                        hx-target="#rate-card-picker"
+                        hx-swap="outerHTML"
+                        swap-include-state="rate-card-picker-state"
+                        @(Model.SelectedCount == 0 ? "disabled" : "")>
+                    Continue →
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<h2>How It Works</h2>
+<ol>
+    <li>State stores selected IDs as comma-separated string</li>
+    <li>Each item click toggles selection via <code>hx-post</code></li>
+    <li><code>swap-include-state</code> sends current selection with each request</li>
+    <li>Server returns updated picker with new selection state</li>
+</ol>
+
+<h2>State Class</h2>
+<div class="code-view">
+<pre>public class RateCardPickerState : SwapState
+{
+    public string SelectedIds { get; set; } = "";
+    
+    public List&lt;int&gt; GetSelectedIdList() =&gt; 
+        string.IsNullOrEmpty(SelectedIds) 
+            ? [] 
+            : SelectedIds.Split(',').Select(int.Parse).ToList();
+    
+    public void SetSelectedIds(IEnumerable&lt;int&gt; ids) =&gt;
+        SelectedIds = string.Join(",", ids);
+}</pre>
+</div>
+
+<h2>Controller Code</h2>
+<div class="code-view">
+<pre>[HttpPost]
+public IActionResult ToggleRateCard([FromSwapState] RateCardPickerState state, int id)
+{
+    var selected = state.GetSelectedIdList();
+    
+    if (selected.Contains(id))
+        selected.Remove(id);
+    else
+        selected.Add(id);
+    
+    state.SetSelectedIds(selected);
+    
+    return this.SwapResponse()
+        .WithView("_RateCardPicker", BuildPickerViewModel(state))
+        .WithState(state)
+        .Build();
+}</pre>
+</div>
+
+<h2>Key Points</h2>
+<ul>
+    <li>Comma-separated IDs work well with form state</li>
+    <li>Helper methods convert between string and list</li>
+    <li>Summary updates instantly with selection</li>
+    <li>Buttons enable/disable based on selection count</li>
+</ul>
