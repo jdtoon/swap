@@ -524,6 +524,15 @@ public class PatternsController : Controller
     ];
 
     // ==========================================
+    // Recipes Index Page
+    // ==========================================
+
+    public IActionResult Recipes()
+    {
+        return this.SwapView();
+    }
+
+    // ==========================================
     // Multi-Select Picker Recipe
     // ==========================================
 

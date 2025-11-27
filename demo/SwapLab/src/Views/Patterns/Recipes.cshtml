@@ -1,0 +1,69 @@
+@{
+    ViewData["Title"] = "Recipes";
+}
+
+<hgroup>
+    <h1>Recipes</h1>
+    <p>Common UI patterns built with Swap.Htmx primitives</p>
+</hgroup>
+
+<p>
+    These recipes demonstrate how to compose small partials with the UI orchestrator. 
+    Each pattern follows the philosophy: <strong>many small partials working together, coordinated by events, sharing state.</strong>
+</p>
+
+<h2>Available Recipes</h2>
+
+<div class="grid" style="gap: 1rem;">
+    <article style="cursor: pointer;" hx-get="/Patterns/MultiSelectPicker" hx-target="#main-content" hx-push-url="true">
+        <h3>☑️ Multi-Select Picker</h3>
+        <p>Select multiple items from a list with state synchronization. Shows comma-separated ID storage, toggle selection, and live summary updates.</p>
+        <div>
+            <span class="tag">state</span>
+            <span class="tag">selection</span>
+            <span class="tag">Medium</span>
+        </div>
+    </article>
+    
+    <article style="cursor: pointer;" hx-get="/Patterns/SplitViewBuilder" hx-target="#main-content" hx-push-url="true">
+        <h3>⚡ Split-View Builder</h3>
+        <p>Configuration panel alongside a live preview that updates as options change. Great for quote builders, report designers, or any config-driven UI.</p>
+        <div>
+            <span class="tag">config</span>
+            <span class="tag">preview</span>
+            <span class="tag">Medium</span>
+        </div>
+    </article>
+    
+    <article style="cursor: pointer;" hx-get="/Patterns/InlineEdit" hx-target="#main-content" hx-push-url="true">
+        <h3>✏️ Inline Edit</h3>
+        <p>Click-to-edit table cells with instant save. Edit in place, cancel with Escape, auto-save on blur.</p>
+        <div>
+            <span class="tag">edit</span>
+            <span class="tag">table</span>
+            <span class="tag">Low</span>
+        </div>
+    </article>
+    
+    <article style="cursor: pointer;" hx-get="/Patterns/WizardForm" hx-target="#main-content" hx-push-url="true">
+        <h3>🧙 Wizard Form</h3>
+        <p>Multi-step form with per-step validation. Progress indicator, back/next navigation, all data preserved in state.</p>
+        <div>
+            <span class="tag">wizard</span>
+            <span class="tag">steps</span>
+            <span class="tag">High</span>
+        </div>
+    </article>
+</div>
+
+<h2 style="margin-top: 2rem;">Key Principles</h2>
+
+<div style="background: var(--color-bg-secondary); padding: 1.5rem; border-radius: var(--radius);">
+    <ol style="margin: 0; padding-left: 1.25rem;">
+        <li><strong>State lives in <code>&lt;swap-state&gt;</code></strong> — One source of truth, outside swapped regions</li>
+        <li><strong>Small partials</strong> — Each partial does one thing well</li>
+        <li><strong>Events coordinate</strong> — Components listen to events, not each other</li>
+        <li><strong><code>swap-include-state</code></strong> — Every HTMX request includes the state</li>
+        <li><strong>Server renders</strong> — No client-side templates, server decides what to show</li>
+    </ol>
+</div>
