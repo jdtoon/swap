@@ -1,8 +1,17 @@
 @model SwapLab.Models.CheckoutWizardViewModel
 @addTagHelper *, Swap.Htmx
 
-<div>
+<div id="wizard-review-step">
     <h3 style="margin-bottom: 1.5rem;">Review Your Order</h3>
+    
+    <!-- Hidden state for back/complete buttons -->
+    <input type="hidden" name="checkout-wizard-state.CurrentStep" value="@Model.State.CurrentStep" />
+    <input type="hidden" name="checkout-wizard-state.ShippingName" value="@Model.State.ShippingName" />
+    <input type="hidden" name="checkout-wizard-state.ShippingAddress" value="@Model.State.ShippingAddress" />
+    <input type="hidden" name="checkout-wizard-state.ShippingCity" value="@Model.State.ShippingCity" />
+    <input type="hidden" name="checkout-wizard-state.CardNumber" value="@Model.State.CardNumber" />
+    <input type="hidden" name="checkout-wizard-state.CardExpiry" value="@Model.State.CardExpiry" />
+    <input type="hidden" name="checkout-wizard-state.CardCvv" value="@Model.State.CardCvv" />
     
     <div style="margin-bottom: 1.5rem;">
         <h4 style="color: var(--color-text-muted); font-size: 0.875rem; margin-bottom: 0.5rem;">SHIPPING</h4>
@@ -42,13 +51,13 @@
                 hx-post="/Patterns/WizardGoBack"
                 hx-target="#checkout-wizard"
                 hx-swap="outerHTML"
-                swap-include-state="checkout-wizard-state">
+                hx-include="#wizard-review-step">
             ← Back
         </button>
         <button hx-post="/Patterns/CompleteCheckout"
                 hx-target="#checkout-wizard"
                 hx-swap="outerHTML"
-                swap-include-state="checkout-wizard-state">
+                hx-include="#wizard-review-step">
             Place Order 🎉
         </button>
     </div>

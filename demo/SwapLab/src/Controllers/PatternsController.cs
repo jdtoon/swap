@@ -610,17 +610,43 @@ public class PatternsController : Controller
     public IActionResult UpdateQuoteConfig(
         [FromSwapState] QuoteBuilderState state,
         string? currency, 
-        decimal? markupPercent, 
-        bool? showImages, 
-        bool? showDescriptions, 
-        bool? includeTax)
+        decimal? markupPercent)
     {
         if (currency != null) state.Currency = currency;
         if (markupPercent != null) state.MarkupPercent = markupPercent.Value;
-        // Checkboxes: if not present in form, they're unchecked
-        state.ShowImages = showImages ?? false;
-        state.ShowDescriptions = showDescriptions ?? false;
-        state.IncludeTax = includeTax ?? false;
+        
+        return this.SwapResponse()
+            .WithView("_QuotePreview", BuildQuoteViewModel(state))
+            .WithState(state)
+            .Build();
+    }
+
+    [HttpPost]
+    public IActionResult ToggleShowImages([FromSwapState] QuoteBuilderState state)
+    {
+        state.ShowImages = !state.ShowImages;
+        
+        return this.SwapResponse()
+            .WithView("_QuotePreview", BuildQuoteViewModel(state))
+            .WithState(state)
+            .Build();
+    }
+
+    [HttpPost]
+    public IActionResult ToggleShowDescriptions([FromSwapState] QuoteBuilderState state)
+    {
+        state.ShowDescriptions = !state.ShowDescriptions;
+        
+        return this.SwapResponse()
+            .WithView("_QuotePreview", BuildQuoteViewModel(state))
+            .WithState(state)
+            .Build();
+    }
+
+    [HttpPost]
+    public IActionResult ToggleIncludeTax([FromSwapState] QuoteBuilderState state)
+    {
+        state.IncludeTax = !state.IncludeTax;
         
         return this.SwapResponse()
             .WithView("_QuotePreview", BuildQuoteViewModel(state))
