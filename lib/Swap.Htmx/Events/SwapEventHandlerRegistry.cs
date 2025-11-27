@@ -7,7 +7,7 @@ namespace Swap.Htmx.Events;
 /// <summary>
 /// Registry for discovered Swap event handlers.
 /// </summary>
-public class SwapEventHandlerRegistry
+internal class SwapEventHandlerRegistry
 {
     private readonly Dictionary<Type, List<HandlerDescriptor>> _handlers = new();
 
@@ -52,10 +52,10 @@ public class SwapEventHandlerRegistry
     /// <summary>
     /// Gets handlers for the specified event type.
     /// </summary>
-    public IReadOnlyList<HandlerDescriptor> GetHandlers(Type eventType)
+    internal IReadOnlyList<HandlerDescriptor> GetHandlers(Type eventType)
     {
         return _handlers.TryGetValue(eventType, out var list) ? list : Array.Empty<HandlerDescriptor>();
     }
 
-    public record HandlerDescriptor(Type HandlerType, int Priority);
+    internal record HandlerDescriptor(Type HandlerType, int Priority);
 }

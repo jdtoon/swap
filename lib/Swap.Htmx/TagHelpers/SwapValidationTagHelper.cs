@@ -67,12 +67,15 @@ public class SwapValidationTagHelper : TagHelper
         output.TagMode = TagMode.StartTagAndEndTag;
         output.Attributes.SetAttribute("id", id);
         output.Attributes.SetAttribute("data-swap-validation", For);
+        output.Attributes.SetAttribute("role", "alert");
+        output.Attributes.SetAttribute("aria-live", "polite");
 
         // Check if there's an existing validation error in ModelState
         if (ViewContext?.ModelState.TryGetValue(For, out var entry) == true && entry.Errors.Count > 0)
         {
             output.Content.SetContent(entry.Errors[0].ErrorMessage);
             output.Attributes.SetAttribute("class", $"{baseCssClass} field-validation-error");
+            output.Attributes.SetAttribute("aria-invalid", "true");
         }
         else
         {

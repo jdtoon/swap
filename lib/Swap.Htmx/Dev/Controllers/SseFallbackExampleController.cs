@@ -8,7 +8,7 @@ namespace Swap.Htmx.Dev.Controllers;
 /// the optional polling helpers in <see cref="Swap.Htmx.Realtime.SseFallbackExtensions"/>.
 /// These endpoints are intended for development and documentation only.
 /// </summary>
-public class SseFallbackExampleController : SwapController
+internal class SseFallbackExampleController : SwapController
 {
     private readonly ISseFallbackService _fallbackService;
     private readonly ISseConnectionRegistry _connectionRegistry;

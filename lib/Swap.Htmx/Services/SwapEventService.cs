@@ -12,7 +12,7 @@ namespace Swap.Htmx.Services;
 /// <summary>
 /// Default implementation of ISwapEventService.
 /// </summary>
-public class SwapEventService : ISwapEventService
+internal class SwapEventService : ISwapEventService
 {
     private readonly IEventChainExecutor _executor;
     private readonly ILogger<SwapEventService> _logger;

@@ -29,7 +29,7 @@ public interface ISwapDiagnostics
 /// <summary>
 /// Default implementation of Swap diagnostics.
 /// </summary>
-public class SwapDiagnostics : ISwapDiagnostics
+internal class SwapDiagnostics : ISwapDiagnostics
 {
     private readonly SwapHtmxOptions _options;
     private readonly SwapEventBusOptions _eventBusOptions;
