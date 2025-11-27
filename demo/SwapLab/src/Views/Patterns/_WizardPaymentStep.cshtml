@@ -3,14 +3,9 @@
 
 <form hx-post="/Patterns/ValidatePayment"
       hx-target="#checkout-wizard"
-      hx-swap="outerHTML">
+      hx-swap="outerHTML"
+      swap-include-state="checkout-wizard-state">
     <h3 style="margin-bottom: 1.5rem;">Payment Information</h3>
-    
-    <!-- Include state as hidden fields -->
-    <input type="hidden" name="checkout-wizard-state.CurrentStep" value="@Model.State.CurrentStep" />
-    <input type="hidden" name="checkout-wizard-state.ShippingName" value="@Model.State.ShippingName" />
-    <input type="hidden" name="checkout-wizard-state.ShippingAddress" value="@Model.State.ShippingAddress" />
-    <input type="hidden" name="checkout-wizard-state.ShippingCity" value="@Model.State.ShippingCity" />
     
     <div style="margin-bottom: 1rem;">
         <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Card Number</label>
@@ -61,7 +56,7 @@
                 hx-post="/Patterns/WizardGoBack"
                 hx-target="#checkout-wizard"
                 hx-swap="outerHTML"
-                hx-include="closest form">
+                swap-include-state="checkout-wizard-state">
             ← Back
         </button>
         <button type="submit">Continue to Review →</button>

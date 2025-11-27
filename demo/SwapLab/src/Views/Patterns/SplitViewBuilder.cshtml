@@ -56,7 +56,7 @@
                                value="true"
                                @(Model.State.ShowImages ? "checked" : "")
                                style="width: 1.25rem; height: 1.25rem;"
-                               hx-post="/Patterns/ToggleShowImages"
+                               hx-post="/Patterns/UpdateQuoteConfig?toggleField=showImages"
                                hx-target="#quote-preview"
                                hx-swap="outerHTML"
                                swap-include-state="quote-builder-state" />
@@ -71,7 +71,7 @@
                                value="true"
                                @(Model.State.ShowDescriptions ? "checked" : "")
                                style="width: 1.25rem; height: 1.25rem;"
-                               hx-post="/Patterns/ToggleShowDescriptions"
+                               hx-post="/Patterns/UpdateQuoteConfig?toggleField=showDescriptions"
                                hx-target="#quote-preview"
                                hx-swap="outerHTML"
                                swap-include-state="quote-builder-state" />
@@ -86,7 +86,7 @@
                                value="true"
                                @(Model.State.IncludeTax ? "checked" : "")
                                style="width: 1.25rem; height: 1.25rem;"
-                               hx-post="/Patterns/ToggleIncludeTax"
+                               hx-post="/Patterns/UpdateQuoteConfig?toggleField=includeTax"
                                hx-target="#quote-preview"
                                hx-swap="outerHTML"
                                swap-include-state="quote-builder-state" />

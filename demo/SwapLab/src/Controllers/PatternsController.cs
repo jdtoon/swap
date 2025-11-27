@@ -610,43 +610,19 @@ public class PatternsController : Controller
     public IActionResult UpdateQuoteConfig(
         [FromSwapState] QuoteBuilderState state,
         string? currency, 
-        decimal? markupPercent)
+        decimal? markupPercent,
+        string? toggleField)  // Which checkbox was toggled
     {
         if (currency != null) state.Currency = currency;
         if (markupPercent != null) state.MarkupPercent = markupPercent.Value;
         
-        return this.SwapResponse()
-            .WithView("_QuotePreview", BuildQuoteViewModel(state))
-            .WithState(state)
-            .Build();
-    }
-
-    [HttpPost]
-    public IActionResult ToggleShowImages([FromSwapState] QuoteBuilderState state)
-    {
-        state.ShowImages = !state.ShowImages;
-        
-        return this.SwapResponse()
-            .WithView("_QuotePreview", BuildQuoteViewModel(state))
-            .WithState(state)
-            .Build();
-    }
-
-    [HttpPost]
-    public IActionResult ToggleShowDescriptions([FromSwapState] QuoteBuilderState state)
-    {
-        state.ShowDescriptions = !state.ShowDescriptions;
-        
-        return this.SwapResponse()
-            .WithView("_QuotePreview", BuildQuoteViewModel(state))
-            .WithState(state)
-            .Build();
-    }
-
-    [HttpPost]
-    public IActionResult ToggleIncludeTax([FromSwapState] QuoteBuilderState state)
-    {
-        state.IncludeTax = !state.IncludeTax;
+        // Toggle the specific checkbox that was clicked
+        switch (toggleField)
+        {
+            case "showImages": state.ShowImages = !state.ShowImages; break;
+            case "showDescriptions": state.ShowDescriptions = !state.ShowDescriptions; break;
+            case "includeTax": state.IncludeTax = !state.IncludeTax; break;
+        }
         
         return this.SwapResponse()
             .WithView("_QuotePreview", BuildQuoteViewModel(state))
