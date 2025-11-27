@@ -1,0 +1,52 @@
+@model SwapLab.Models.CheckoutWizardViewModel
+@addTagHelper *, Swap.Htmx
+
+<form hx-post="/Patterns/ValidateShipping"
+      hx-target="#checkout-wizard"
+      hx-swap="outerHTML"
+      swap-include-state="checkout-wizard-state">
+    <h3 style="margin-bottom: 1.5rem;">Shipping Information</h3>
+    
+    <div style="margin-bottom: 1rem;">
+        <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Full Name</label>
+        <input type="text" 
+               name="shippingName" 
+               value="@Model.State.ShippingName"
+               placeholder="John Doe"
+               style="width: 100%; padding: 0.75rem; border: 1px solid @(Model.Errors.ContainsKey("ShippingName") ? "var(--color-error)" : "var(--color-border)"); border-radius: var(--radius-sm); background: var(--color-bg); color: var(--color-text);" />
+        @if (Model.Errors.TryGetValue("ShippingName", out var nameError))
+        {
+            <span style="color: var(--color-error); font-size: 0.875rem; margin-top: 0.25rem; display: block;">@nameError</span>
+        }
+    </div>
+    
+    <div style="margin-bottom: 1rem;">
+        <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Address</label>
+        <input type="text" 
+               name="shippingAddress" 
+               value="@Model.State.ShippingAddress"
+               placeholder="123 Main St"
+               style="width: 100%; padding: 0.75rem; border: 1px solid @(Model.Errors.ContainsKey("ShippingAddress") ? "var(--color-error)" : "var(--color-border)"); border-radius: var(--radius-sm); background: var(--color-bg); color: var(--color-text);" />
+        @if (Model.Errors.TryGetValue("ShippingAddress", out var addressError))
+        {
+            <span style="color: var(--color-error); font-size: 0.875rem; margin-top: 0.25rem; display: block;">@addressError</span>
+        }
+    </div>
+    
+    <div style="margin-bottom: 1.5rem;">
+        <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">City</label>
+        <input type="text" 
+               name="shippingCity" 
+               value="@Model.State.ShippingCity"
+               placeholder="New York"
+               style="width: 100%; padding: 0.75rem; border: 1px solid @(Model.Errors.ContainsKey("ShippingCity") ? "var(--color-error)" : "var(--color-border)"); border-radius: var(--radius-sm); background: var(--color-bg); color: var(--color-text);" />
+        @if (Model.Errors.TryGetValue("ShippingCity", out var cityError))
+        {
+            <span style="color: var(--color-error); font-size: 0.875rem; margin-top: 0.25rem; display: block;">@cityError</span>
+        }
+    </div>
+    
+    <div style="display: flex; justify-content: flex-end;">
+        <button type="submit">Continue to Payment →</button>
+    </div>
+</form>

@@ -48,6 +48,47 @@ public static class SwapControllerExtensions
     }
 
     /// <summary>
+    /// Returns a redirect response using the HX-Redirect header.
+    /// This is a shorthand for SwapResponse().WithRedirect(url).Build().
+    /// </summary>
+    /// <param name="controller">The controller instance.</param>
+    /// <param name="url">The URL to redirect to.</param>
+    /// <returns>An ActionResult that sets the HX-Redirect header.</returns>
+    /// <remarks>
+    /// Use this after successful form submissions or actions that should navigate to a new page.
+    /// Example:
+    /// <code>
+    /// [HttpPost]
+    /// public IActionResult Create(CreateDto dto)
+    /// {
+    ///     _service.Create(dto);
+    ///     return this.SwapRedirect("/items");
+    /// }
+    /// </code>
+    /// </remarks>
+    public static IActionResult SwapRedirect(this ControllerBase controller, string url)
+    {
+        return controller.SwapResponse()
+            .WithRedirect(url)
+            .Build();
+    }
+
+    /// <summary>
+    /// Returns a redirect response with a success toast using the HX-Redirect header.
+    /// </summary>
+    /// <param name="controller">The controller instance.</param>
+    /// <param name="url">The URL to redirect to.</param>
+    /// <param name="message">The success toast message to display.</param>
+    /// <returns>An ActionResult that sets the HX-Redirect header and triggers a toast.</returns>
+    public static IActionResult SwapRedirect(this ControllerBase controller, string url, string message)
+    {
+        return controller.SwapResponse()
+            .WithRedirect(url)
+            .WithSuccessToast(message)
+            .Build();
+    }
+
+    /// <summary>
     /// Returns a view result that automatically chooses between full page or partial view
     /// based on whether the request is an HTMX request (HX-Request header present).
     /// </summary>

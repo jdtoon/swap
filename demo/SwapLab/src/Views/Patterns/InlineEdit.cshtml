@@ -1,0 +1,89 @@
+@model List<SwapLab.Models.EditableItem>
+@{
+    ViewData["Title"] = "Inline Edit";
+}
+
+<hgroup>
+    <h1>Inline Edit</h1>
+    <p>Click-to-edit table cells with instant save</p>
+</hgroup>
+
+<h2>Live Demo</h2>
+<div class="demo-area">
+    <p style="color: var(--color-text-muted); margin-bottom: 1rem;">Click any cell to edit it inline. Press Enter to save or Escape to cancel.</p>
+    
+    <table id="editable-table" style="width: 100%; border-collapse: collapse;">
+        <thead>
+            <tr style="background: var(--color-bg-tertiary);">
+                <th style="padding: 0.75rem 1rem; text-align: left;">Name</th>
+                <th style="padding: 0.75rem 1rem; text-align: left;">Category</th>
+                <th style="padding: 0.75rem 1rem; text-align: right;">Price</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model)
+            {
+                @await Html.PartialAsync("_EditableRow", item)
+            }
+        </tbody>
+    </table>
+</div>
+
+<h2>How It Works</h2>
+<ol>
+    <li>Click text to switch to edit mode (loads input via <code>hx-get</code>)</li>
+    <li>Edit input auto-focuses with current value</li>
+    <li>Enter submits the change via <code>hx-post</code></li>
+    <li>Escape cancels and reverts to display mode</li>
+    <li>Row updates in place with toast confirmation</li>
+</ol>
+
+<h2>Display Cell Code</h2>
+<div class="code-view">
+<pre>&lt;td&gt;
+    &lt;span class="editable"
+          hx-get="/Items/@@item.Id/EditName"
+          hx-target="closest td"
+          hx-swap="innerHTML"
+          style="cursor: pointer;"&gt;
+        @@item.Name
+    &lt;/span&gt;
+&lt;/td&gt;</pre>
+</div>
+
+<h2>Edit Cell Partial</h2>
+<div class="code-view">
+<pre>&lt;form hx-post="/Items/@@Model.Id/UpdateName"
+      hx-target="#row-@@Model.Id"
+      hx-swap="outerHTML"&gt;
+    &lt;input type="text" 
+           name="name" 
+           value="@@Model.Name" 
+           autofocus
+           hx-on:keydown="if(event.key==='Escape') { 
+               htmx.ajax('GET', '/Items/@@Model.Id/Row', {target:'#row-@@Model.Id', swap:'outerHTML'});
+               event.preventDefault();
+           }" /&gt;
+&lt;/form&gt;</pre>
+</div>
+
+<h2>Controller Code</h2>
+<div class="code-view">
+<pre>[HttpPost("{id}/UpdateName")]
+public IActionResult UpdateName(int id, string name)
+{
+    var item = UpdateItem(id, name);
+    return this.SwapResponse()
+        .WithView("_EditableRow", item)
+        .WithUpdatedToast("Item", name)
+        .Build();
+}</pre>
+</div>
+
+<h2>Key Points</h2>
+<ul>
+    <li>Edit mode replaces cell content, not whole row</li>
+    <li>Save replaces entire row to ensure consistency</li>
+    <li>Escape handler uses <code>htmx.ajax()</code> to cancel</li>
+    <li>Toast confirms successful save</li>
+</ul>

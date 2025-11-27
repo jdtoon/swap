@@ -6,7 +6,7 @@ namespace Swap.Htmx.Events;
 /// <summary>
 /// Executes discovered event handlers for a given event.
 /// </summary>
-public class SwapEventHandlerExecutor
+internal class SwapEventHandlerExecutor
 {
     private readonly IServiceProvider _services;
     private readonly SwapEventHandlerRegistry _registry;

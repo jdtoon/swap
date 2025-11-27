@@ -114,3 +114,114 @@ public class ConditionalSwapViewModel
     public string? Role { get; set; }
     public decimal OrderValue { get; set; }
 }
+
+// ==========================================
+// Recipe Models
+// ==========================================
+
+/// <summary>
+/// State for the multi-select picker recipe.
+/// </summary>
+public class RateCardPickerState : SwapState
+{
+    public string SelectedIds { get; set; } = "";
+    
+    public List<int> GetSelectedIdList() => 
+        string.IsNullOrEmpty(SelectedIds) 
+            ? [] 
+            : SelectedIds.Split(',', StringSplitOptions.RemoveEmptyEntries).Select(int.Parse).ToList();
+    
+    public void SetSelectedIds(IEnumerable<int> ids) =>
+        SelectedIds = string.Join(",", ids);
+}
+
+/// <summary>
+/// A rate card for the multi-select picker.
+/// </summary>
+public record RateCard(int Id, string Name, decimal Price, string Description);
+
+/// <summary>
+/// View model for rate card picker.
+/// </summary>
+public class RateCardPickerViewModel
+{
+    public required RateCardPickerState State { get; init; }
+    public required List<RateCard> RateCards { get; init; }
+    public int SelectedCount => State.GetSelectedIdList().Count;
+    public decimal SelectedTotal { get; init; }
+}
+
+/// <summary>
+/// State for the split-view quote builder recipe.
+/// </summary>
+public class QuoteBuilderState : SwapState
+{
+    public string Currency { get; set; } = "USD";
+    public decimal MarkupPercent { get; set; } = 15;
+    public bool ShowImages { get; set; } = true;
+    public bool ShowDescriptions { get; set; } = true;
+    public bool IncludeTax { get; set; } = false;
+}
+
+/// <summary>
+/// A line item in a quote.
+/// </summary>
+public record QuoteLineItem(int Id, string Name, decimal BasePrice, string? ImageUrl = null, string? Description = null);
+
+/// <summary>
+/// View model for quote builder.
+/// </summary>
+public class QuoteBuilderViewModel
+{
+    public required QuoteBuilderState State { get; init; }
+    public required List<QuoteLineItem> Items { get; init; }
+    public decimal Subtotal => Items.Sum(i => i.BasePrice);
+    public decimal MarkupAmount => Subtotal * (State.MarkupPercent / 100);
+    public decimal TaxAmount => State.IncludeTax ? (Subtotal + MarkupAmount) * 0.08m : 0;
+    public decimal Total => Subtotal + MarkupAmount + TaxAmount;
+    
+    public string FormatCurrency(decimal amount) => State.Currency switch
+    {
+        "EUR" => $"€{amount:N2}",
+        "GBP" => $"£{amount:N2}",
+        _ => $"${amount:N2}"
+    };
+}
+
+/// <summary>
+/// State for the wizard/multi-step form recipe.
+/// </summary>
+public class CheckoutWizardState : SwapState
+{
+    public int CurrentStep { get; set; } = 1;
+    
+    // Step 1: Shipping
+    public string ShippingName { get; set; } = "";
+    public string ShippingAddress { get; set; } = "";
+    public string ShippingCity { get; set; } = "";
+    
+    // Step 2: Payment
+    public string CardNumber { get; set; } = "";
+    public string CardExpiry { get; set; } = "";
+    public string CardCvv { get; set; } = "";
+}
+
+/// <summary>
+/// View model for checkout wizard.
+/// </summary>
+public class CheckoutWizardViewModel
+{
+    public required CheckoutWizardState State { get; init; }
+    public Dictionary<string, string> Errors { get; init; } = [];
+}
+
+/// <summary>
+/// An editable item for the inline edit recipe.
+/// </summary>
+public class EditableItem
+{
+    public int Id { get; set; }
+    public string Name { get; set; } = "";
+    public string Category { get; set; } = "";
+    public decimal Price { get; set; }
+}

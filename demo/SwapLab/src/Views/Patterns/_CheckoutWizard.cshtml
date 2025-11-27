@@ -1,0 +1,40 @@
+@model SwapLab.Models.CheckoutWizardViewModel
+@addTagHelper *, Swap.Htmx
+
+<div id="checkout-wizard">
+    <swap-state state="Model.State" />
+    
+    <!-- Progress Steps -->
+    <div style="display: flex; justify-content: center; gap: 2rem; margin-bottom: 2rem;">
+        <div class="wizard-step @(Model.State.CurrentStep >= 1 ? "active" : "")" style="display: flex; align-items: center; gap: 0.5rem;">
+            <span style="width: 2rem; height: 2rem; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 600; @(Model.State.CurrentStep >= 1 ? "background: var(--color-primary); color: white;" : "background: var(--color-bg-tertiary); color: var(--color-text-muted);")">1</span>
+            <span style="@(Model.State.CurrentStep >= 1 ? "color: var(--color-text);" : "color: var(--color-text-muted);")">Shipping</span>
+        </div>
+        <div style="width: 3rem; height: 2px; background: @(Model.State.CurrentStep >= 2 ? "var(--color-primary)" : "var(--color-bg-tertiary)"); align-self: center;"></div>
+        <div class="wizard-step @(Model.State.CurrentStep >= 2 ? "active" : "")" style="display: flex; align-items: center; gap: 0.5rem;">
+            <span style="width: 2rem; height: 2rem; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 600; @(Model.State.CurrentStep >= 2 ? "background: var(--color-primary); color: white;" : "background: var(--color-bg-tertiary); color: var(--color-text-muted);")">2</span>
+            <span style="@(Model.State.CurrentStep >= 2 ? "color: var(--color-text);" : "color: var(--color-text-muted);")">Payment</span>
+        </div>
+        <div style="width: 3rem; height: 2px; background: @(Model.State.CurrentStep >= 3 ? "var(--color-primary)" : "var(--color-bg-tertiary)"); align-self: center;"></div>
+        <div class="wizard-step @(Model.State.CurrentStep >= 3 ? "active" : "")" style="display: flex; align-items: center; gap: 0.5rem;">
+            <span style="width: 2rem; height: 2rem; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 600; @(Model.State.CurrentStep >= 3 ? "background: var(--color-primary); color: white;" : "background: var(--color-bg-tertiary); color: var(--color-text-muted);")">3</span>
+            <span style="@(Model.State.CurrentStep >= 3 ? "color: var(--color-text);" : "color: var(--color-text-muted);")">Review</span>
+        </div>
+    </div>
+    
+    <!-- Step Content -->
+    <div style="background: var(--color-bg-secondary); padding: 2rem; border-radius: var(--radius); max-width: 500px; margin: 0 auto;">
+        @switch (Model.State.CurrentStep)
+        {
+            case 1:
+                @await Html.PartialAsync("_WizardShippingStep", Model)
+                break;
+            case 2:
+                @await Html.PartialAsync("_WizardPaymentStep", Model)
+                break;
+            case 3:
+                @await Html.PartialAsync("_WizardReviewStep", Model)
+                break;
+        }
+    </div>
+</div>

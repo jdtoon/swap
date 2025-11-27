@@ -493,6 +493,325 @@ public class PatternsController : Controller
 
     #endregion
 
+    #region Recipe Patterns
+
+    // ==========================================
+    // Sample Data for Recipes
+    // ==========================================
+    
+    private static readonly List<RateCard> RateCards =
+    [
+        new(1, "Premium Package", 299.99m, "Full-featured plan with priority support"),
+        new(2, "Standard Package", 199.99m, "Most popular choice for small teams"),
+        new(3, "Budget Package", 99.99m, "Essential features at a great price"),
+        new(4, "Enterprise", 499.99m, "Custom solutions for large organizations"),
+    ];
+
+    private static readonly List<QuoteLineItem> QuoteItems =
+    [
+        new(1, "Laptop Pro 15\"", 1299.99m, null, "High-performance laptop with M3 chip"),
+        new(2, "Wireless Mouse", 49.99m, null, "Ergonomic design, 6-month battery"),
+        new(3, "USB-C Hub", 79.99m, null, "7-in-1 connectivity solution"),
+    ];
+
+    private static List<EditableItem> EditableItems =
+    [
+        new() { Id = 1, Name = "Laptop Pro", Category = "Electronics", Price = 1299.99m },
+        new() { Id = 2, Name = "Wireless Mouse", Category = "Electronics", Price = 29.99m },
+        new() { Id = 3, Name = "USB-C Hub", Category = "Electronics", Price = 49.99m },
+        new() { Id = 4, Name = "Desk Chair", Category = "Furniture", Price = 249.99m },
+        new() { Id = 5, Name = "Standing Desk", Category = "Furniture", Price = 599.99m },
+    ];
+
+    // ==========================================
+    // Recipes Index Page
+    // ==========================================
+
+    public IActionResult Recipes()
+    {
+        return this.SwapView();
+    }
+
+    // ==========================================
+    // Multi-Select Picker Recipe
+    // ==========================================
+
+    public IActionResult MultiSelectPicker()
+    {
+        var state = new RateCardPickerState();
+        return this.SwapView(BuildPickerViewModel(state));
+    }
+
+    [HttpPost]
+    public IActionResult ToggleRateCard([FromSwapState] RateCardPickerState state, int id)
+    {
+        var selected = state.GetSelectedIdList();
+        
+        if (selected.Contains(id))
+            selected.Remove(id);
+        else
+            selected.Add(id);
+        
+        state.SetSelectedIds(selected);
+        
+        return this.SwapResponse()
+            .WithView("_RateCardPicker", BuildPickerViewModel(state))
+            .WithState(state)
+            .Build();
+    }
+
+    [HttpPost]
+    public IActionResult ClearRateCardSelection([FromSwapState] RateCardPickerState state)
+    {
+        state.SelectedIds = "";
+        
+        return this.SwapResponse()
+            .WithView("_RateCardPicker", BuildPickerViewModel(state))
+            .WithState(state)
+            .Build();
+    }
+
+    [HttpPost]
+    public IActionResult ConfirmRateCardSelection([FromSwapState] RateCardPickerState state)
+    {
+        var selectedCards = RateCards.Where(c => state.GetSelectedIdList().Contains(c.Id)).ToList();
+        
+        return this.SwapResponse()
+            .WithView("_RateCardPicker", BuildPickerViewModel(state))
+            .WithState(state)
+            .WithSuccessToast($"Selected {selectedCards.Count} cards totaling {selectedCards.Sum(c => c.Price):C}!")
+            .Build();
+    }
+
+    private RateCardPickerViewModel BuildPickerViewModel(RateCardPickerState state)
+    {
+        var selectedIds = state.GetSelectedIdList();
+        var selectedTotal = RateCards.Where(c => selectedIds.Contains(c.Id)).Sum(c => c.Price);
+        
+        return new RateCardPickerViewModel
+        {
+            State = state,
+            RateCards = RateCards,
+            SelectedTotal = selectedTotal
+        };
+    }
+
+    // ==========================================
+    // Split-View Builder Recipe
+    // ==========================================
+
+    public IActionResult SplitViewBuilder()
+    {
+        var state = new QuoteBuilderState();
+        return this.SwapView(BuildQuoteViewModel(state));
+    }
+
+    [HttpPost]
+    public IActionResult UpdateQuoteConfig(
+        [FromSwapState] QuoteBuilderState state,
+        string? currency, 
+        decimal? markupPercent,
+        string? toggleField)  // Which checkbox was toggled
+    {
+        if (currency != null) state.Currency = currency;
+        if (markupPercent != null) state.MarkupPercent = markupPercent.Value;
+        
+        // Toggle the specific checkbox that was clicked
+        switch (toggleField)
+        {
+            case "showImages": state.ShowImages = !state.ShowImages; break;
+            case "showDescriptions": state.ShowDescriptions = !state.ShowDescriptions; break;
+            case "includeTax": state.IncludeTax = !state.IncludeTax; break;
+        }
+        
+        return this.SwapResponse()
+            .WithView("_QuotePreview", BuildQuoteViewModel(state))
+            .WithState(state)
+            .Build();
+    }
+
+    private QuoteBuilderViewModel BuildQuoteViewModel(QuoteBuilderState state)
+    {
+        return new QuoteBuilderViewModel
+        {
+            State = state,
+            Items = QuoteItems
+        };
+    }
+
+    // ==========================================
+    // Inline Edit Recipe
+    // ==========================================
+
+    public IActionResult InlineEdit()
+    {
+        return this.SwapView(EditableItems.ToList());
+    }
+
+    [HttpGet]
+    public IActionResult EditItemName(int id)
+    {
+        var item = EditableItems.First(i => i.Id == id);
+        return PartialView("_EditItemName", item);
+    }
+
+    [HttpGet]
+    public IActionResult EditItemCategory(int id)
+    {
+        var item = EditableItems.First(i => i.Id == id);
+        return PartialView("_EditItemCategory", item);
+    }
+
+    [HttpGet]
+    public IActionResult EditItemPrice(int id)
+    {
+        var item = EditableItems.First(i => i.Id == id);
+        return PartialView("_EditItemPrice", item);
+    }
+
+    [HttpGet]
+    public IActionResult GetEditableRow(int id)
+    {
+        var item = EditableItems.First(i => i.Id == id);
+        return PartialView("_EditableRow", item);
+    }
+
+    [HttpPost]
+    public IActionResult UpdateItemName(int id, string name)
+    {
+        var item = EditableItems.First(i => i.Id == id);
+        item.Name = name;
+        
+        return this.SwapResponse()
+            .WithView("_EditableRow", item)
+            .WithUpdatedToast("Item", name)
+            .Build();
+    }
+
+    [HttpPost]
+    public IActionResult UpdateItemCategory(int id, string category)
+    {
+        var item = EditableItems.First(i => i.Id == id);
+        item.Category = category;
+        
+        return this.SwapResponse()
+            .WithView("_EditableRow", item)
+            .WithUpdatedToast("Category", category)
+            .Build();
+    }
+
+    [HttpPost]
+    public IActionResult UpdateItemPrice(int id, decimal price)
+    {
+        var item = EditableItems.First(i => i.Id == id);
+        item.Price = price;
+        
+        return this.SwapResponse()
+            .WithView("_EditableRow", item)
+            .WithUpdatedToast("Price", price.ToString("C"))
+            .Build();
+    }
+
+    // ==========================================
+    // Wizard Form Recipe
+    // ==========================================
+
+    public IActionResult WizardForm()
+    {
+        var state = new CheckoutWizardState();
+        return this.SwapView(new CheckoutWizardViewModel { State = state });
+    }
+
+    [HttpPost]
+    public IActionResult ValidateShipping(
+        [FromSwapState] CheckoutWizardState state,
+        string? shippingName, 
+        string? shippingAddress, 
+        string? shippingCity)
+    {
+        state.ShippingName = shippingName ?? "";
+        state.ShippingAddress = shippingAddress ?? "";
+        state.ShippingCity = shippingCity ?? "";
+        
+        var errors = new Dictionary<string, string>();
+        if (string.IsNullOrWhiteSpace(shippingName))
+            errors["ShippingName"] = "Name is required";
+        if (string.IsNullOrWhiteSpace(shippingAddress))
+            errors["ShippingAddress"] = "Address is required";
+        if (string.IsNullOrWhiteSpace(shippingCity))
+            errors["ShippingCity"] = "City is required";
+        
+        if (errors.Count > 0)
+        {
+            return this.SwapResponse()
+                .WithView("_CheckoutWizard", new CheckoutWizardViewModel { State = state, Errors = errors })
+                .WithState(state)
+                .Build();
+        }
+        
+        state.CurrentStep = 2;
+        return this.SwapResponse()
+            .WithView("_CheckoutWizard", new CheckoutWizardViewModel { State = state })
+            .WithState(state)
+            .Build();
+    }
+
+    [HttpPost]
+    public IActionResult ValidatePayment(
+        [FromSwapState] CheckoutWizardState state,
+        string? cardNumber, 
+        string? cardExpiry, 
+        string? cardCvv)
+    {
+        state.CardNumber = cardNumber ?? "";
+        state.CardExpiry = cardExpiry ?? "";
+        state.CardCvv = cardCvv ?? "";
+        
+        var errors = new Dictionary<string, string>();
+        if (string.IsNullOrWhiteSpace(cardNumber) || cardNumber.Replace(" ", "").Length < 13)
+            errors["CardNumber"] = "Valid card number is required";
+        if (string.IsNullOrWhiteSpace(cardExpiry) || !cardExpiry.Contains('/'))
+            errors["CardExpiry"] = "Valid expiry (MM/YY) is required";
+        if (string.IsNullOrWhiteSpace(cardCvv) || cardCvv.Length < 3)
+            errors["CardCvv"] = "Valid CVV is required";
+        
+        if (errors.Count > 0)
+        {
+            return this.SwapResponse()
+                .WithView("_CheckoutWizard", new CheckoutWizardViewModel { State = state, Errors = errors })
+                .WithState(state)
+                .Build();
+        }
+        
+        state.CurrentStep = 3;
+        return this.SwapResponse()
+            .WithView("_CheckoutWizard", new CheckoutWizardViewModel { State = state })
+            .WithState(state)
+            .Build();
+    }
+
+    [HttpPost]
+    public IActionResult WizardGoBack([FromSwapState] CheckoutWizardState state)
+    {
+        state.CurrentStep = Math.Max(1, state.CurrentStep - 1);
+        
+        return this.SwapResponse()
+            .WithView("_CheckoutWizard", new CheckoutWizardViewModel { State = state })
+            .WithState(state)
+            .Build();
+    }
+
+    [HttpPost]
+    public IActionResult CompleteCheckout([FromSwapState] CheckoutWizardState state)
+    {
+        return this.SwapResponse()
+            .WithView("_WizardComplete", new CheckoutWizardViewModel { State = state })
+            .WithSuccessToast("Order placed successfully!")
+            .Build();
+    }
+
+    #endregion
+
     #region Form Patterns
 
     /// <summary>

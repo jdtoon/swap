@@ -1,0 +1,37 @@
+@model SwapLab.Models.EditableItem
+
+<tr id="row-@Model.Id" style="border-bottom: 1px solid var(--color-border);">
+    <td style="padding: 0.75rem 1rem;">
+        <span class="editable"
+              hx-get="/Patterns/EditItemName?id=@Model.Id"
+              hx-target="closest td"
+              hx-swap="innerHTML"
+              style="cursor: pointer; padding: 0.25rem 0.5rem; border-radius: var(--radius-sm); transition: background 0.2s;"
+              onmouseover="this.style.background='var(--color-bg-tertiary)'"
+              onmouseout="this.style.background='transparent'">
+            @Model.Name
+        </span>
+    </td>
+    <td style="padding: 0.75rem 1rem;">
+        <span class="editable"
+              hx-get="/Patterns/EditItemCategory?id=@Model.Id"
+              hx-target="closest td"
+              hx-swap="innerHTML"
+              style="cursor: pointer; padding: 0.25rem 0.5rem; border-radius: var(--radius-sm); transition: background 0.2s;"
+              onmouseover="this.style.background='var(--color-bg-tertiary)'"
+              onmouseout="this.style.background='transparent'">
+            @Model.Category
+        </span>
+    </td>
+    <td style="padding: 0.75rem 1rem; text-align: right;">
+        <span class="editable"
+              hx-get="/Patterns/EditItemPrice?id=@Model.Id"
+              hx-target="closest td"
+              hx-swap="innerHTML"
+              style="cursor: pointer; padding: 0.25rem 0.5rem; border-radius: var(--radius-sm); transition: background 0.2s;"
+              onmouseover="this.style.background='var(--color-bg-tertiary)'"
+              onmouseout="this.style.background='transparent'">
+            @Model.Price.ToString("C")
+        </span>
+    </td>
+</tr>

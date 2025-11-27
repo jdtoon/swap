@@ -1,0 +1,55 @@
+@model SwapLab.Models.CheckoutWizardViewModel
+@addTagHelper *, Swap.Htmx
+
+<div>
+    <h3 style="margin-bottom: 1.5rem;">Review Your Order</h3>
+    
+    <div style="margin-bottom: 1.5rem;">
+        <h4 style="color: var(--color-text-muted); font-size: 0.875rem; margin-bottom: 0.5rem;">SHIPPING</h4>
+        <div style="background: var(--color-bg); padding: 1rem; border-radius: var(--radius-sm);">
+            <div style="font-weight: 600;">@Model.State.ShippingName</div>
+            <div style="color: var(--color-text-muted);">@Model.State.ShippingAddress</div>
+            <div style="color: var(--color-text-muted);">@Model.State.ShippingCity</div>
+        </div>
+    </div>
+    
+    <div style="margin-bottom: 1.5rem;">
+        <h4 style="color: var(--color-text-muted); font-size: 0.875rem; margin-bottom: 0.5rem;">PAYMENT</h4>
+        <div style="background: var(--color-bg); padding: 1rem; border-radius: var(--radius-sm);">
+            <div style="font-weight: 600;">Card ending in @(Model.State.CardNumber.Length >= 4 ? Model.State.CardNumber[^4..] : "****")</div>
+            <div style="color: var(--color-text-muted);">Expires @Model.State.CardExpiry</div>
+        </div>
+    </div>
+    
+    <div style="background: var(--color-bg); padding: 1rem; border-radius: var(--radius-sm); margin-bottom: 1.5rem;">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+            <span>Subtotal</span>
+            <span>$99.00</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; color: var(--color-text-muted);">
+            <span>Shipping</span>
+            <span>$9.99</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; font-weight: 600; border-top: 1px solid var(--color-border); padding-top: 0.5rem; margin-top: 0.5rem;">
+            <span>Total</span>
+            <span>$108.99</span>
+        </div>
+    </div>
+    
+    <div style="display: flex; justify-content: space-between;">
+        <button type="button" 
+                class="secondary"
+                hx-post="/Patterns/WizardGoBack"
+                hx-target="#checkout-wizard"
+                hx-swap="outerHTML"
+                swap-include-state="checkout-wizard-state">
+            ← Back
+        </button>
+        <button hx-post="/Patterns/CompleteCheckout"
+                hx-target="#checkout-wizard"
+                hx-swap="outerHTML"
+                swap-include-state="checkout-wizard-state">
+            Place Order 🎉
+        </button>
+    </div>
+</div>

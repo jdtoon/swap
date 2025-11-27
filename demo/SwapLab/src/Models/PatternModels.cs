@@ -33,5 +33,6 @@ public static class PatternCategories
     public const string Events = "Event Chains";
     public const string Components = "Multi-Component";
     public const string Forms = "Forms & Validation";
+    public const string Recipes = "Recipes";
     public const string Realtime = "Realtime";
 }
