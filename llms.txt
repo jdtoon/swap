@@ -1,0 +1,1050 @@
+# Swap.Htmx - Complete LLM Reference
+
+> Repository: https://github.com/jdtoon/swap
+> Documentation: https://github.com/jdtoon/swap/tree/main/lib/Swap.Htmx/docs
+
+Swap.Htmx is a UI orchestration library for HTMX and ASP.NET Core. It coordinates what updates where when events fire through type-safe events, decoupled handlers, multi-target partial updates, and server-side state.
+
+---
+
+## INSTALLATION
+
+```bash
+dotnet add package Swap.Htmx
+```
+
+### Program.cs Setup
+
+```csharp
+var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddControllersWithViews();  // or AddRazorPages()
+builder.Services.AddSwapHtmx();  // Core services + handler auto-discovery
+
+var app = builder.Build();
+
+app.UseStaticFiles();
+app.UseSwapHtmx();  // Middleware
+app.MapControllers();
+
+app.Run();
+```
+
+### Layout Requirements
+
+```html
+<head>
+    <link rel="stylesheet" href="~/_content/Swap.Htmx/css/swap.css" />
+    <script src="https://unpkg.com/htmx.org@2.0.8"></script>
+    <script src="~/_content/Swap.Htmx/js/swap.client.js"></script>
+</head>
+```
+
+### Project File (for Source Generators)
+
+```xml
+<ItemGroup>
+  <AdditionalFiles Include="Views\**\*.cshtml" />
+</ItemGroup>
+```
+
+---
+
+## CORE CONCEPT: SwapResponseBuilder
+
+All responses flow through `SwapResponseBuilder`. Access it via:
+
+```csharp
+// In SwapController
+return SwapResponse().WithView("_Partial", model).Build();
+
+// In standard Controller
+return this.SwapResponse().WithView("_Partial", model).Build();
+
+// In PageModel
+return this.SwapResponse().WithView("_Partial", this).Build();
+
+// In Minimal API
+return SwapResults.Response().WithView("_Partial", model);
+```
+
+### Full API
+
+```csharp
+SwapResponseBuilder
+    // Main view
+    .WithView(string viewName, object? model = null)
+    
+    // Out-of-band swaps (update other elements)
+    .AlsoUpdate(string targetId, string viewName, object? model = null, SwapMode swapMode = SwapMode.OuterHTML)
+    .AlsoUpdateMany<T>(IEnumerable<T> items, Func<T, string> idSelector, string viewName, SwapMode swapMode = SwapMode.OuterHTML)
+    .AlsoUpdateIf(bool condition, string targetId, string viewName, object? model = null, SwapMode swapMode = SwapMode.OuterHTML)
+    .AlsoUpdateIfExists(string targetId, string viewName, object? model = null, SwapMode swapMode = SwapMode.OuterHTML)
+    
+    // Toasts
+    .WithToast(string message, ToastType type = ToastType.Info)
+    .WithSuccessToast(string message)
+    .WithErrorToast(string message)
+    .WithWarningToast(string message)
+    .WithInfoToast(string message)
+    .WithCreatedToast(string entityName, string? itemName = null)
+    .WithUpdatedToast(string entityName, string? itemName = null)
+    .WithDeletedToast(string entityName, string? itemName = null)
+    .WithSavedToast(string entityName, string? itemName = null)
+    .WithCrudToast(CrudOperation operation, string entityName, string? itemName = null)
+    
+    // Triggers (client-side events)
+    .WithTrigger(EventKey eventKey, object? payload = null)
+    .WithTrigger(string eventName, object? payload = null)
+    
+    // State management
+    .WithState(SwapState state, string? viewName = null)
+    
+    // Validation
+    .WithValidationErrors(ModelStateDictionary modelState)
+    
+    // Navigation
+    .WithRedirect(string url)
+    
+    // SSE broadcast
+    .BroadcastSse(string eventName, object? payload = null)
+    
+    // Build
+    .Build()  // Returns IActionResult
+```
+
+### SwapMode Enum
+
+```csharp
+public enum SwapMode
+{
+    OuterHTML,    // Replace entire element (default)
+    InnerHTML,    // Replace inner content only
+    BeforeBegin,  // Insert before element
+    AfterBegin,   // Insert as first child
+    BeforeEnd,    // Insert as last child (append)
+    AfterEnd,     // Insert after element
+    Delete,       // Remove the element
+    None          // No swap
+}
+```
+
+---
+
+## SOURCE GENERATORS
+
+Swap.Htmx provides three source generators to eliminate magic strings.
+
+### 1. Event Source Generator
+
+Generates type-safe event keys from string constants with dot notation.
+
+```csharp
+using Swap.Htmx.Attributes;
+
+[SwapEventSource]
+public partial class AppEvents
+{
+    public const string CartItemAdded = "cart.item.added";
+    public const string CartCleared = "cart.cleared";
+    public const string UserLoggedIn = "user.logged_in";
+}
+
+// Generated output:
+// AppEvents.Cart.Item.Added  → "cart.item.added"
+// AppEvents.Cart.Cleared     → "cart.cleared"
+// AppEvents.User.LoggedIn    → "user.logged_in"
+```
+
+Usage:
+```csharp
+.WithTrigger(AppEvents.Cart.Item.Added, new { productId })
+```
+
+### 2. View Path Generator
+
+Generates constants for .cshtml files in a folder.
+
+```csharp
+using Swap.Htmx.Attributes;
+
+[SwapViewSource("Views/Products")]
+public static partial class ProductViews { }
+
+// Given files:
+//   Views/Products/Index.cshtml
+//   Views/Products/Edit.cshtml
+//   Views/Products/_Grid.cshtml
+//   Views/Products/_Row.cshtml
+
+// Generated:
+// ProductViews.Index         → "Index"
+// ProductViews.Edit          → "Edit"
+// ProductViews.Partials.Grid → "_Grid"
+// ProductViews.Partials.Row  → "_Row"
+```
+
+### 3. Element ID Generator
+
+Generates constants for element IDs found in .cshtml files.
+
+```csharp
+using Swap.Htmx.Attributes;
+
+[SwapElementSource("Views/Products")]
+public static partial class ProductElements { }
+
+// Scans for id="..." attributes in .cshtml files
+// Given: <div id="product-grid">, <div id="pagination">
+
+// Generated:
+// ProductElements.ProductGrid → "product-grid"
+// ProductElements.Pagination  → "pagination"
+```
+
+### Combined Usage
+
+```csharp
+return this.SwapResponse()
+    .WithView(ProductViews.Partials.Grid, products)
+    .AlsoUpdate(ProductElements.Pagination, ProductViews.Partials.Pagination, paginationModel)
+    .WithTrigger(AppEvents.Products.Listed)
+    .Build();
+```
+
+---
+
+## EVENT SYSTEM
+
+### Option 1: EventKey (Manual)
+
+```csharp
+using Swap.Htmx.Events;
+
+public static class CartEvents
+{
+    public static readonly EventKey ItemAdded = new("cart.itemAdded");
+    public static readonly EventKey Cleared = new("cart.cleared");
+}
+```
+
+### Option 2: SwapEventSource (Generated) — RECOMMENDED
+
+```csharp
+[SwapEventSource]
+public partial class CartEvents
+{
+    public const string ItemAdded = "cart.item.added";
+    public const string Cleared = "cart.cleared";
+}
+// Use: CartEvents.Cart.Item.Added
+```
+
+### Built-in SwapEvents Helper
+
+```csharp
+SwapEvents.Entity.Created("Product")   // "entity.product.created"
+SwapEvents.Entity.Updated("Product")   // "entity.product.updated"
+SwapEvents.Entity.Deleted("Product")   // "entity.product.deleted"
+SwapEvents.UI.Refresh                  // "ui.refresh"
+```
+
+---
+
+## EVENT CHAINS
+
+Two approaches for automatic UI coordination when events fire.
+
+### Approach 1: Distributed Handlers (RECOMMENDED)
+
+Each handler updates one piece of the UI. Completely decoupled.
+
+```csharp
+// 1. Define event class
+public class TaskCompletedEvent
+{
+    public int TaskId { get; set; }
+    public string Title { get; set; } = "";
+}
+
+// 2. Create handlers (auto-discovered via [SwapHandler])
+[SwapHandler]
+public class TaskRowHandler : ISwapEventHandler<TaskCompletedEvent>
+{
+    public Task HandleAsync(TaskCompletedEvent e, SwapResponseBuilder builder, CancellationToken ct)
+    {
+        builder.AlsoUpdate($"task-{e.TaskId}", "", null, SwapMode.Delete);
+        return Task.CompletedTask;
+    }
+}
+
+[SwapHandler]
+public class StatsHandler : ISwapEventHandler<TaskCompletedEvent>
+{
+    private readonly IStatsService _stats;
+    
+    public StatsHandler(IStatsService stats) => _stats = stats;
+    
+    public async Task HandleAsync(TaskCompletedEvent e, SwapResponseBuilder builder, CancellationToken ct)
+    {
+        var stats = await _stats.GetAsync();
+        builder.AlsoUpdate("stats-panel", "_Stats", stats);
+    }
+}
+
+// 3. Trigger from controller
+[HttpPost]
+public IActionResult Complete(int id)
+{
+    _service.Complete(id);
+    return this.SwapEvent(new TaskCompletedEvent { TaskId = id }).Build();
+}
+```
+
+### Approach 2: Centralized Configuration (ISwapEventConfiguration)
+
+Define all reactions in one place.
+
+```csharp
+public class ProductEventConfig : ISwapEventConfiguration
+{
+    public void Configure(SwapEventBusOptions events)
+    {
+        events.When(ProductEvents.Created)
+            .RefreshPartial("product-list", "_ProductList", ctx =>
+            {
+                var svc = ctx.RequestServices.GetRequiredService<IProductService>();
+                return svc.GetAll();
+            })
+            .RefreshPartial("product-count", "_ProductCount", ctx =>
+            {
+                var svc = ctx.RequestServices.GetRequiredService<IProductService>();
+                return new { Count = svc.Count() };
+            })
+            .SuccessToast("Product created!");
+    }
+}
+
+// Register in Program.cs
+builder.Services.AddSwapHtmx(options =>
+{
+    options.AddConfig<ProductEventConfig>();
+});
+
+// Trigger from controller
+return SwapEvent(ProductEvents.Created);
+```
+
+### Event Chain Builder API
+
+```csharp
+events.When(eventKey)
+    .RefreshPartial(targetId, viewName, modelFactory)
+    .RefreshPartialAsync(targetId, viewName, asyncModelFactory)
+    .SuccessToast(message)
+    .ErrorToast(message)
+    .WarningToast(message)
+    .InfoToast(message)
+    .AlsoTrigger(anotherEventKey)
+    .Broadcast()  // SSE broadcast
+    .Broadcast("room:roomName")  // SSE to specific room
+```
+
+---
+
+## SWAPSTATE (Server-Side State)
+
+Strongly-typed state management with automatic model binding.
+
+### 1. Define State Class
+
+```csharp
+using Swap.Htmx.State;
+
+public class InventoryState : SwapState
+{
+    public string Tab { get; set; } = "all";
+    public int Page { get; set; } = 1;
+    public int PageSize { get; set; } = 20;
+    public string? Search { get; set; }
+    public string SortBy { get; set; } = "name";
+    public bool SortDesc { get; set; } = false;
+}
+```
+
+### 2. Use in View
+
+```html
+@model InventoryViewModel
+
+<!-- Renders hidden inputs in a container div -->
+<swap-state state="Model.State" />
+
+<!-- Reference with hx-include -->
+<button hx-get="/Inventory/Grid"
+        hx-target="#grid"
+        hx-include="#inventory-state">
+    Load
+</button>
+```
+
+Renders as:
+```html
+<div id="inventory-state" data-swap-state style="display: none;">
+    <input type="hidden" name="Tab" value="all" />
+    <input type="hidden" name="Page" value="1" />
+    ...
+</div>
+```
+
+### 3. Bind in Controller
+
+```csharp
+public IActionResult Grid([FromSwapState] InventoryState state)
+{
+    var items = _service.Query(state.Tab, state.Page, state.Search);
+    
+    return this.SwapResponse()
+        .WithView("_Grid", new GridViewModel { Items = items, State = state })
+        .WithState(state)  // Auto-syncs state via OOB swap
+        .Build();
+}
+```
+
+### SwapState Base Class
+
+```csharp
+public abstract class SwapState
+{
+    // Auto-generated from class name (InventoryState → "inventory-state")
+    public virtual string ContainerId { get; }
+    
+    // Change tracking
+    public IReadOnlySet<string> ChangedProperties { get; }
+    public bool HasChanges { get; }
+    public void AcceptChanges();
+    public IDisposable SuspendChangeTracking();
+    
+    // URL sync (for bookmarkable state)
+    public virtual bool UrlSync => false;
+    public virtual string UrlPrefix => "";
+    
+    // Serialization
+    public Dictionary<string, string?> GetStateValues();
+    public void SetStateValues(Dictionary<string, string?> values);
+}
+```
+
+### Tag Helper Options
+
+```html
+<!-- Basic -->
+<swap-state state="Model.State" />
+
+<!-- Custom ID -->
+<swap-state state="Model.State" id="my-state" />
+
+<!-- With prefix for nested state -->
+<swap-state state="Model.State" prefix="filter" />
+
+<!-- Without container div -->
+<swap-state state="Model.State" include-container="false" />
+```
+
+---
+
+## VALIDATION
+
+Server-side validation with client-side display.
+
+### View Setup
+
+```html
+<form hx-post="/Products/Create" hx-target="#form-container">
+    <div class="form-group">
+        <label asp-for="Name"></label>
+        <input asp-for="Name" class="form-control" />
+        <swap-validation for="Name" />
+    </div>
+    
+    <div class="form-group">
+        <label asp-for="Price"></label>
+        <input asp-for="Price" type="number" class="form-control" />
+        <swap-validation for="Price" />
+    </div>
+    
+    <button type="submit">Create</button>
+</form>
+```
+
+### Controller
+
+```csharp
+[HttpPost]
+public IActionResult Create(CreateProductDto dto)
+{
+    if (!ModelState.IsValid)
+    {
+        return this.SwapValidationErrors(ModelState)
+            .WithView("_CreateForm", dto)
+            .Build();
+    }
+    
+    var product = _service.Create(dto);
+    return this.SwapRedirect("/Products", "Product created!");
+}
+```
+
+### Validation Methods
+
+```csharp
+// Event-based (triggers client-side update)
+this.SwapValidationErrors(ModelState)
+
+// OOB-based (server renders each error)
+this.SwapValidationErrorsOob(ModelState)
+
+// Add to existing builder
+.WithValidationErrors(ModelState)
+
+// Clear specific fields
+.ClearValidationErrors(new[] { "Name", "Email" })
+```
+
+---
+
+## OUT-OF-BAND SWAPS
+
+Update multiple page elements in a single response.
+
+### Basic Pattern
+
+```csharp
+return this.SwapResponse()
+    .WithView("_ProductAdded", product)                          // Main target
+    .AlsoUpdate("cart-count", "_CartCount", cart.ItemCount)      // OOB 1
+    .AlsoUpdate("cart-total", "_CartTotal", cart.Total)          // OOB 2
+    .WithSuccessToast("Added to cart!")
+    .Build();
+```
+
+### HTML Output
+
+```html
+<!-- Main content (goes to hx-target) -->
+<div class="product-added">Product added!</div>
+
+<!-- OOB swap 1 -->
+<div id="cart-count" hx-swap-oob="true">5</div>
+
+<!-- OOB swap 2 -->
+<div id="cart-total" hx-swap-oob="true">$99.99</div>
+```
+
+### Conditional OOB
+
+```csharp
+// Only include if condition is true
+.AlsoUpdateIf(user.IsAdmin, "admin-panel", "_AdminPanel", adminData)
+
+// Only swap if element exists in DOM
+.AlsoUpdateIfExists("sidebar-stats", "_Stats", stats)
+```
+
+### Bulk Updates
+
+```csharp
+// Update multiple items
+.AlsoUpdateMany(
+    items: changedProducts,
+    idSelector: p => $"product-{p.Id}",
+    viewName: "_ProductRow"
+)
+```
+
+---
+
+## REALTIME: SERVER-SENT EVENTS (SSE)
+
+Push updates to connected clients.
+
+### Setup
+
+```csharp
+// Program.cs
+builder.Services.AddSwapHtmx()
+    .AddSseEventBridge();
+
+app.UseSwapHtmx()
+   .UseSseEventBridge();
+```
+
+### Create SSE Endpoint
+
+```csharp
+public class DashboardController : SwapController
+{
+    [HttpGet("/dashboard/stream")]
+    public IActionResult DashboardStream()
+    {
+        return ServerSentEvents(async (conn, ct) =>
+        {
+            conn.WithEvents("stats-update", "activity-update");
+            await conn.KeepAlive(TimeSpan.FromSeconds(30), ct);
+        });
+    }
+}
+```
+
+### Client-Side
+
+```html
+<div hx-ext="sse" sse-connect="/dashboard/stream">
+    <div id="stats" sse-swap="stats-update">
+        <!-- Updated via SSE -->
+    </div>
+</div>
+```
+
+### Configure Event Reactions
+
+```csharp
+public class DashboardSseConfig : ISwapEventConfiguration
+{
+    public void Configure(SwapEventBusOptions events)
+    {
+        events.When(SseEvents.Broadcast("stats-update"))
+            .RefreshPartial("stats", "_Stats", ctx =>
+            {
+                var svc = ctx.RequestServices.GetRequiredService<IStatsService>();
+                return svc.GetStats();
+            });
+    }
+}
+```
+
+### Broadcast from Controller
+
+```csharp
+return this.SwapResponse()
+    .WithView("_Task", task)
+    .BroadcastSse("stats-update")  // All connected clients receive update
+    .Build();
+```
+
+---
+
+## REALTIME: WEBSOCKETS
+
+Full-duplex communication.
+
+### Setup
+
+```csharp
+// Program.cs
+builder.Services.AddSwapHtmx()
+    .AddSseEventBridge();
+
+app.UseWebSockets();
+app.UseSwapHtmx()
+   .UseSseEventBridge();
+
+// Endpoint
+app.MapGet("/swap/ws", (IRealtimeConnectionRegistry registry) => 
+    SwapResults.WebSocket(registry, options =>
+    {
+        options.AutoSubscribeRooms = new[] { "global" };
+    }));
+```
+
+### Client-Side
+
+```html
+<div hx-ext="ws" ws-connect="/swap/ws">
+    <div id="notifications"></div>
+    
+    <form ws-send>
+        <input type="hidden" name="event" value="chat.message" />
+        <input type="text" name="payload" />
+        <button type="submit">Send</button>
+    </form>
+</div>
+```
+
+### Rooms
+
+```csharp
+// Join room
+connection.JoinRoom("room-1");
+
+// Broadcast to room
+events.When(RoomEvents.Update)
+    .Broadcast("room:room-1")
+    .RefreshPartial(...);
+```
+
+---
+
+## CONTROLLER PATTERNS
+
+### SwapController (Inheritance)
+
+```csharp
+public class ProductsController : SwapController
+{
+    // SwapView auto-detects HTMX vs full page
+    public IActionResult Index()
+    {
+        return SwapView(products);  // Full page or partial based on HX-Request
+    }
+    
+    // SwapResponse for coordinated updates
+    public IActionResult Create(ProductDto dto)
+    {
+        var product = _service.Create(dto);
+        return SwapResponse()
+            .WithView("_ProductRow", product)
+            .AlsoUpdate("product-count", "_ProductCount", _service.Count())
+            .WithCreatedToast("Product", product.Name)
+            .Build();
+    }
+    
+    // SwapEvent for event chains
+    public IActionResult Delete(int id)
+    {
+        _service.Delete(id);
+        return SwapEvent(ProductEvents.Deleted, new { Id = id });
+    }
+}
+```
+
+### Standard Controller (Composition)
+
+```csharp
+using Swap.Htmx;
+
+public class ProductsController : Controller
+{
+    public IActionResult Index()
+    {
+        return this.SwapView(products);
+    }
+    
+    public IActionResult Create(ProductDto dto)
+    {
+        var product = _service.Create(dto);
+        return this.SwapResponse()
+            .WithView("_ProductRow", product)
+            .WithCreatedToast("Product", product.Name)
+            .Build();
+    }
+    
+    public IActionResult Delete(int id)
+    {
+        _service.Delete(id);
+        return this.SwapEvent(ProductEvents.Deleted).Build();
+    }
+}
+```
+
+---
+
+## RAZOR PAGES
+
+```csharp
+using Swap.Htmx;
+
+public class IndexModel : PageModel
+{
+    public IActionResult OnPostUpdate()
+    {
+        return this.SwapResponse()
+            .WithView("_Partial", this)
+            .Build();
+    }
+    
+    public IActionResult OnPostDelete(int id)
+    {
+        _service.Delete(id);
+        return this.SwapEvent(new ItemDeletedEvent { Id = id }).Build();
+    }
+}
+```
+
+---
+
+## MINIMAL APIs
+
+```csharp
+using Swap.Htmx;
+
+// Basic response
+app.MapGet("/products", () => 
+    SwapResults.Response()
+        .WithView("_ProductList", products));
+
+// With OOB and toast
+app.MapPost("/products", (ProductDto dto, IProductService service) =>
+{
+    var product = service.Create(dto);
+    return SwapResults.Response()
+        .WithView("_ProductRow", product)
+        .AlsoUpdate("product-count", "_ProductCount", service.Count())
+        .WithCreatedToast("Product");
+});
+
+// Trigger event
+app.MapDelete("/products/{id}", (int id) =>
+    SwapResults.Event(ProductEvents.Deleted, new { Id = id }));
+```
+
+---
+
+## CRUD TOAST PRESETS
+
+```csharp
+.WithCreatedToast("Product")              // "Product created successfully"
+.WithCreatedToast("Product", "Widget")    // "Product 'Widget' created successfully"
+.WithUpdatedToast("Settings")             // "Settings updated"
+.WithDeletedToast("User", "john@example.com")  // "User 'john@example.com' deleted"
+.WithSavedToast("Document")               // "Document saved"
+.WithCrudToast(CrudOperation.Archived, "Record")  // "Record archived"
+.WithCrudToast(CrudOperation.Restored, "Record")  // "Record restored"
+.WithCrudToast(CrudOperation.Duplicated, "Template")  // "Template duplicated"
+```
+
+---
+
+## COMMON PATTERNS
+
+### Tab Navigation with State
+
+```csharp
+public class TabState : SwapState
+{
+    public string Tab { get; set; } = "all";
+}
+
+public IActionResult ChangeTab([FromQuery] string tab, [FromSwapState] TabState state)
+{
+    state.Tab = tab;
+    return this.SwapResponse()
+        .WithView("_TabContent", GetContent(tab))
+        .WithState(state)
+        .WithTrigger(AppEvents.UI.StateChanged)
+        .Build();
+}
+```
+
+```html
+<swap-state state="Model.State" />
+
+<button hx-post="/Items/ChangeTab?tab=all"
+        hx-target="#content"
+        hx-include="#tab-state">All</button>
+
+<button hx-post="/Items/ChangeTab?tab=active"
+        hx-target="#content"
+        hx-include="#tab-state">Active</button>
+```
+
+### Search + Pagination
+
+```csharp
+public class SearchState : SwapState
+{
+    public string? Query { get; set; }
+    public int Page { get; set; } = 1;
+}
+
+public IActionResult Search([FromSwapState] SearchState state, string? query)
+{
+    state.Query = query;
+    state.Page = 1;  // Reset on new search
+    
+    var results = _service.Search(state.Query, state.Page);
+    return this.SwapResponse()
+        .WithView("_Results", results)
+        .AlsoUpdate("pagination", "_Pagination", results.TotalPages)
+        .WithState(state)
+        .Build();
+}
+```
+
+### Modal Form
+
+```csharp
+// Open modal
+public IActionResult EditModal(int id)
+{
+    var item = _service.Get(id);
+    return this.SwapResponse()
+        .AlsoUpdate("modal-container", "_EditModal", item)
+        .Build();
+}
+
+// Save and close
+public IActionResult Save(int id, EditDto dto)
+{
+    if (!ModelState.IsValid)
+        return this.SwapValidationErrors(ModelState).WithView("_EditForm", dto).Build();
+    
+    var item = _service.Update(id, dto);
+    return this.SwapResponse()
+        .AlsoUpdate($"item-{id}", "_ItemRow", item)
+        .AlsoUpdate("modal-container", "_Empty", null)  // Close modal
+        .WithUpdatedToast("Item", item.Name)
+        .Build();
+}
+```
+
+### Infinite Scroll
+
+```csharp
+public IActionResult LoadMore([FromSwapState] ListState state)
+{
+    state.Page++;
+    var items = _service.GetPage(state.Page);
+    
+    return this.SwapResponse()
+        .AlsoUpdate("item-list", "_Items", items, SwapMode.BeforeEnd)  // Append
+        .AlsoUpdateIf(items.HasMore, "load-more", "_LoadMore", state.Page + 1)
+        .AlsoUpdateIf(!items.HasMore, "load-more", "_Empty", null, SwapMode.Delete)
+        .WithState(state)
+        .Build();
+}
+```
+
+---
+
+## TAG HELPERS REFERENCE
+
+### swap-state
+
+```html
+<swap-state state="Model.State" />
+<swap-state state="Model.State" id="custom-id" />
+<swap-state state="Model.State" prefix="filter" />
+<swap-state state="Model.State" include-container="false" />
+```
+
+### swap-validation
+
+```html
+<swap-validation for="PropertyName" />
+<swap-validation for="PropertyName" class="text-danger" />
+<swap-validation for="PropertyName" id-prefix="err-" />
+```
+
+### swap-include-state
+
+```html
+<!-- Auto-includes state container in HTMX requests -->
+<button hx-get="/Action" swap-include-state="my-state">Load</button>
+```
+
+---
+
+## DEBUGGING
+
+Enable debug logging:
+```json
+// appsettings.Development.json
+{
+  "Logging": {
+    "LogLevel": {
+      "Swap.Htmx": "Debug"
+    }
+  }
+}
+```
+
+Dev dashboard (if enabled):
+```
+/_swap/dashboard
+```
+
+---
+
+## DOCUMENTATION LINKS
+
+Full documentation: https://github.com/jdtoon/swap/tree/main/lib/Swap.Htmx/docs
+
+| Guide | URL |
+|-------|-----|
+| Getting Started | /docs/GettingStarted.md |
+| Events | /docs/Events.md |
+| Event Chains | /docs/EventChains.md |
+| SwapState | /docs/SwapState.md |
+| Out-of-Band Swaps | /docs/OutOfBandSwaps.md |
+| Validation | /docs/Validation.md |
+| Server-Sent Events | /docs/ServerSentEvents.md |
+| WebSockets | /docs/WebSockets.md |
+| Source Generators | /docs/SourceGenerators.md |
+| Minimal APIs | /docs/MinimalApis.md |
+| Razor Pages | /docs/RazorPages.md |
+| CRUD Toasts | /docs/CrudToasts.md |
+| Recipes | /docs/Recipes.md |
+| Multi-Component Coordination | /docs/MultiComponentCoordination.md |
+| Anti-Patterns | /docs/AntiPatterns.md |
+| Debugging | /docs/DebuggingAndLogging.md |
+
+---
+
+## QUICK REFERENCE
+
+### Response Building
+
+```csharp
+// Controller
+return this.SwapResponse()
+    .WithView("_View", model)
+    .AlsoUpdate("target", "_Partial", data)
+    .WithSuccessToast("Done!")
+    .WithTrigger(Events.Updated)
+    .WithState(state)
+    .Build();
+
+// Minimal API
+return SwapResults.Response()
+    .WithView("_View", model)
+    .AlsoUpdate("target", "_Partial", data);
+```
+
+### Event Triggering
+
+```csharp
+// Distributed handlers
+return this.SwapEvent(new MyEvent { ... }).Build();
+
+// Event key
+return this.SwapEvent(MyEvents.SomethingHappened).Build();
+return SwapResults.Event(MyEvents.SomethingHappened);
+```
+
+### State Binding
+
+```csharp
+public IActionResult Action([FromSwapState] MyState state)
+{
+    // state is populated from hidden fields
+    state.Property = newValue;
+    return this.SwapResponse()
+        .WithView("_View", model)
+        .WithState(state)  // Syncs back to client
+        .Build();
+}
+```
+
+### Validation
+
+```csharp
+if (!ModelState.IsValid)
+    return this.SwapValidationErrors(ModelState).WithView("_Form", dto).Build();
+```
+
+---
+
+## VERSION
+
+This document describes Swap.Htmx v1.0.0 for .NET 9.0.
