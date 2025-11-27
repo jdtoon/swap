@@ -1,251 +1,311 @@
-# Swap
+# Swap.Htmx
 
-[![NuGet - Swap.Htmx](https://img.shields.io/nuget/v/Swap.Htmx.svg?label=Swap.Htmx)](https://www.nuget.org/packages/Swap.Htmx)
-[![NuGet - Swap.Templates](https://img.shields.io/nuget/v/Swap.Templates.svg?label=Swap.Templates)](https://www.nuget.org/packages/Swap.Templates)
-[![NuGet - Swap.Testing](https://img.shields.io/nuget/v/Swap.Testing.svg?label=Swap.Testing)](https://www.nuget.org/packages/Swap.Testing)
-[![CI](https://github.com/jdtoon/swap/actions/workflows/ci-build.yml/badge.svg)](https://github.com/jdtoon/swap/actions/workflows/ci-build.yml)
+[![NuGet](https://img.shields.io/nuget/v/Swap.Htmx.svg)](https://www.nuget.org/packages/Swap.Htmx)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![.NET 9.0](https://img.shields.io/badge/.NET-9.0-purple.svg)](https://dotnet.microsoft.com/)
 
-HTMX + ASP.NET Core MVC, but ergonomic.
+**An event-driven orchestration layer for HTMX and ASP.NET Core.**
 
-**Reactive UI Orchestration for ASP.NET Core.**
+Swap.Htmx gives you type-safe events, decoupled handlers, coordinated partial updates, and server-side state — all wired together so your UI updates happen automatically when events fire.
 
-Swap transforms standard MVC controllers into an **orchestration layer** for your user interface. It decouples **User Actions** (Events) from **UI Updates** (Reactions), giving you the interactivity of a SPA with the simplicity of server-side HTML.
+---
 
-It handles the "messy middle" of modern web apps—validation, partial updates, and real-time events—so you can focus on building features, not glue code.
+## What It Does
 
-- `Swap.Htmx` – runtime orchestration: HTMX‑aware controllers, decentralized event configuration, SSE bridge, and type-safe event system.
-- `Swap.Testing` – testing helpers: HTMX‑aware integration test client and rich HTML/HTMX assertions.
+**Trigger an event. UI updates itself.**
 
-## Why Swap?
+```csharp
+// Controller just emits an event
+return this.SwapEvent(new TaskCompletedEvent { TaskId = id }).Build();
+```
 
-- **Orchestrate, Don't Glue** – Decouple controller actions from view rendering using Event Chains and Distributed Handlers.
-- **Stay Server‑Side** – Build rich, reactive apps using standard Razor views and HTMX.
-- **Type-Safe Events** – Coordinate partials, toasts, and triggers with a strongly-typed event system and Source Generators.
-- **Minimal APIs** – First-class support for `IResult` endpoints with `SwapResults`.
-- **Razor Pages** – Native support for `PageModel` with `this.SwapResponse()`.
-- **Real-Time Ready** – Built-in Server-Sent Events (SSE) and WebSocket bridge with `ISseBackplane` support for web farms and `CanJoinRoom` security hooks.
+```csharp
+// Handler 1: Removes the task row
+[SwapHandler]
+public class TaskRowHandler : ISwapEventHandler<TaskCompletedEvent>
+{
+    public Task HandleAsync(TaskCompletedEvent e, SwapResponseBuilder builder, CancellationToken ct)
+    {
+        builder.AlsoUpdate($"task-{e.TaskId}", "", null, SwapMode.Delete);
+        return Task.CompletedTask;
+    }
+}
 
-## Quick Start
+// Handler 2: Updates the progress bar (completely decoupled)
+[SwapHandler]
+public class ProgressHandler : ISwapEventHandler<TaskCompletedEvent>
+{
+    private readonly ITaskService _tasks;
+    public ProgressHandler(ITaskService tasks) => _tasks = tasks;
+    
+    public async Task HandleAsync(TaskCompletedEvent e, SwapResponseBuilder builder, CancellationToken ct)
+    {
+        var progress = await _tasks.GetProgressAsync();
+        builder.AlsoUpdate("progress-bar", "_Progress", progress);
+    }
+}
+```
 
-**The easiest way to get started is using the project templates:**
+The controller doesn't know which parts of the UI need updating. The handlers don't know about each other. **That's the point.**
+
+---
+
+## Core Capabilities
+
+### Type-Safe Events
+
+No magic strings. Define events once, use everywhere.
+
+```csharp
+public static class CartEvents
+{
+    public static readonly EventKey ItemAdded = new("cart.itemAdded");
+    public static readonly EventKey Cleared = new("cart.cleared");
+}
+```
+
+```csharp
+return SwapResponse()
+    .WithTrigger(CartEvents.ItemAdded, new { productId, count })
+    .Build();
+```
+
+→ [Events Documentation](lib/Swap.Htmx/docs/Events.md)
+
+---
+
+### Distributed Handlers
+
+Each handler updates one piece of the UI. Add new handlers without touching controllers.
+
+```csharp
+[SwapHandler]
+public class CartBadgeHandler : ISwapEventHandler<CartItemAddedEvent>
+{
+    public Task HandleAsync(CartItemAddedEvent e, SwapResponseBuilder builder, CancellationToken ct)
+    {
+        builder.AlsoUpdate("cart-badge", "_CartBadge", e.NewCount);
+        return Task.CompletedTask;
+    }
+}
+
+[SwapHandler]
+public class CartTotalHandler : ISwapEventHandler<CartItemAddedEvent>
+{
+    public Task HandleAsync(CartItemAddedEvent e, SwapResponseBuilder builder, CancellationToken ct)
+    {
+        builder.AlsoUpdate("cart-total", "_CartTotal", e.NewTotal);
+        return Task.CompletedTask;
+    }
+}
+```
+
+→ [Event Chains Documentation](lib/Swap.Htmx/docs/EventChains.md)
+
+---
+
+### Fluent Response Builder
+
+Coordinate multiple partial updates, toasts, and triggers in a single response.
+
+```csharp
+return SwapResponse()
+    .WithView("_ProductDetails", product)
+    .AlsoUpdate("cart-count", "_CartCount", count)
+    .AlsoUpdate("sidebar-total", "_Total", total)
+    .WithSuccessToast("Added to cart!")
+    .WithTrigger(CartEvents.Updated)
+    .Build();
+```
+
+All out-of-band swaps, toasts, and triggers merge into a single `HX-Trigger` header.
+
+→ [Out-of-Band Swaps](lib/Swap.Htmx/docs/OutOfBandSwaps.md)
+
+---
+
+### SwapState
+
+Strongly-typed server-side state with automatic model binding and sync.
+
+```csharp
+public class WizardState : SwapState
+{
+    public int Step { get; set; } = 1;
+    public string Name { get; set; } = "";
+    public string Email { get; set; } = "";
+}
+```
+
+```csharp
+public IActionResult NextStep([FromSwapState] WizardState state)
+{
+    state.Step++;
+    
+    return this.SwapResponse()
+        .WithView($"_Step{state.Step}", state)
+        .WithState(state)  // Auto-syncs to client
+        .Build();
+}
+```
+
+```html
+<swap-state state="Model.State" />
+```
+
+State is encrypted, tamper-proof, and automatically round-trips.
+
+→ [SwapState Documentation](lib/Swap.Htmx/docs/SwapState.md)
+
+---
+
+### Real-Time (SSE & WebSockets)
+
+Push events to connected clients.
+
+```csharp
+await _eventService.BroadcastAsync("notification", new { message = "New order received" });
+```
+
+```html
+<div swap-sse="notification" swap-target="#alerts" swap-partial="_Alert"></div>
+```
+
+Multi-server? Use the Redis backplane.
+
+→ [Server-Sent Events](lib/Swap.Htmx/docs/ServerSentEvents.md)  
+→ [WebSockets](lib/Swap.Htmx/docs/WebSockets.md)  
+→ [Redis Backplane](lib/Swap.Htmx/docs/RedisBackplane.md)
+
+---
+
+### Form Validation
+
+Server-side validation that displays inline.
+
+```html
+<input asp-for="Email" />
+<swap-validation for="Email" />
+```
+
+```csharp
+if (!ModelState.IsValid)
+{
+    return this.SwapValidationErrors(ModelState)
+        .WithView("_Form", model)
+        .Build();
+}
+```
+
+→ [Validation Documentation](lib/Swap.Htmx/docs/Validation.md)
+
+---
+
+### Source Generators
+
+Compile-time safety for view paths and element IDs.
+
+```csharp
+[GenerateViewPaths]
+public static partial class Views { }
+
+[GenerateElementIds]
+public static partial class Elements { }
+```
+
+Generated at build time. Typos become compiler errors.
+
+→ [Source Generators](framework/Swap.Htmx.Generators/README.md)
+
+---
+
+## Installation
+
+### Templates (Recommended)
 
 ```bash
-# Install the templates
 dotnet new install Swap.Templates
-
-# Create a new project
 dotnet new swap-mvc -n MyProject
 ```
 
-**Or install the package manually:**
+### Manual
+
 ```bash
 dotnet add package Swap.Htmx
 ```
 
-**Minimal API:**
 ```csharp
-app.MapPost("/subscribe", (string email) => 
-    SwapResults.Response()
-        .WithSuccessToast("Subscribed!")
-        .WithView("_SuccessMessage", email));
+// Program.cs
+builder.Services.AddSwapHtmx();
+app.UseSwapHtmx();
 ```
 
-**Razor Pages:**
-```csharp
-public class CounterModel : PageModel
-{
-    public IActionResult OnGetIncrement() => 
-        this.SwapResponse()
-            .WithView("_Counter", this)
-            .Build();
-}
+```html
+<!-- Layout -->
+<link rel="stylesheet" href="~/_content/Swap.Htmx/css/swap.css" />
+<script src="https://unpkg.com/htmx.org@2.0.8"></script>
+<script src="~/_content/Swap.Htmx/js/swap.client.js"></script>
 ```
 
-**Inherit from SwapController:**
-```csharp
-public class HomeController : SwapController
-{
-    public IActionResult Index() => SwapView();
-}
-```
+→ [Getting Started](lib/Swap.Htmx/docs/GettingStarted.md)
 
-**Or use Composition (Standard Controller):**
-```csharp
-public class HomeController : Controller
-{
-    // Use extension methods on 'this'
-    public IActionResult Index() => this.SwapView();
-}
-```
+---
 
-**That's it!** Your controller now:
-- Returns partials for HTMX requests, full pages otherwise
-- Has access to `SwapResponse()` for multi-part updates
-- Has access to `SwapEvent()` for event-driven UI updates
-- Automatically handles user context resolution via `GetOrInitializeSessionId()` (defaults to Session)
+## Works With
 
-## Features
+- **Controllers** — Inherit `SwapController` or use extension methods
+- **Razor Pages** — Extension methods on `PageModel`
+- **Minimal APIs** — `SwapResults.Response()`
 
-- 🧩 **Composition Over Inheritance** - Use `Swap.Htmx` with standard Controllers via extension methods
-- 🎯 **Pluggable User Context** - Abstracted user ID resolution (Session, Cookie, JWT, etc.)
-- 📁 **View Search Paths** - Share OOB partials across controllers easily
-- 🎨 **Built-in Toasts** - Zero-dependency toast notifications included
-- 📦 **Event Payload Access** - Pass data through event chains efficiently
-- 📊 **Observability** - Full OpenTelemetry tracing, metrics, and structured logging
-- 🔧 **OOB Helpers** - Tools for managing dynamic lists and instance IDs
-- ⚡ **Source Generators** - Compile-time view paths, element IDs, and event validation
+→ [Razor Pages](lib/Swap.Htmx/docs/RazorPages.md)  
+→ [Minimal APIs](lib/Swap.Htmx/docs/MinimalApis.md)
 
-## Complete Example
-
-`Program.cs` (minimal wiring):
-
-```csharp
-var builder = WebApplication.CreateBuilder(args);
-
-builder.Services.AddControllersWithViews();
-
-// Add Swap.Htmx with optional configuration
-builder.Services.AddSwapHtmx(options =>
-{
-    // Optional: Configure view search paths for cross-controller OOB swaps
-    options.PartialViewSearchPaths.Add("Shared");
-    
-    // Optional: Register decentralized event configurations
-    options.AddConfig<TodoEventConfig>();
-});
-
-var app = builder.Build();
-
-app.UseStaticFiles();
-app.UseRouting();
-app.UseSwapHtmx(); // Add Swap.Htmx middleware
-app.MapControllers();
-
-app.Run();
-```
-
-`TodosController.cs`:
-
-```csharp
-public class TodosController : SwapController
-{
-    private readonly ITodoService _service;
-    
-    public TodosController(ITodoService service)
-    {
-        _service = service;
-    }
-
-    // Tier 1: SwapView - Automatically handles HTMX vs full page
-    [HttpGet("/todos")]
-    public IActionResult Index()
-    {
-        var todos = _service.GetTodos();
-        return SwapView(todos);
-    }
-
-    // Tier 2: SwapResponse - Coordinated multi-part updates
-    [HttpPost("/todos")]
-    public IActionResult Create(TodoInput input)
-    {
-        var todo = _service.Create(input);
-        
-        return SwapResponse()
-            .AlsoUpdate("todo-count", "_TodoCount", _service.GetCount())
-            .WithSuccessToast("Todo created!")
-            .Build();
-    }
-    
-    // Tier 3: SwapEvent - Event-driven updates (uses configured event chains)
-    [HttpDelete("/todos/{id}")]
-    public IActionResult Delete(int id)
-    {
-        _service.Delete(id);
-        return SwapEvent(new EventKey("todo.deleted")).Build();
-    }
-}
-```
-
-`TodosTests.cs` (using `Swap.Testing`):
-
-```csharp
-public class TodosTests : IClassFixture<HtmxTestFixture<Program>>
-{
-    private readonly HtmxTestClient _client;
-
-    public TodosTests(HtmxTestFixture<Program> fixture)
-    {
-        _client = fixture.Client;
-    }
-
-    [Fact]
-    public async Task GetTodos_ReturnsPartialWithItems()
-    {
-        var response = await _client.HtmxGetAsync("/todos");
-
-        await response
-            .AssertSuccess()
-            .AssertPartialViewAsync()
-            .AssertElementCountAsync(".todo-item", expectedCount: 5);
-    }
-    
-    [Fact]
-    public async Task CreateTodo_ReturnsOobSwapAndToast()
-    {
-        var response = await _client.HtmxPostAsync("/todos", new { Title = "New Todo" });
-        
-        await response
-            .AssertSuccess()
-            .AssertHasOobSwapAsync("todo-count")
-            .AssertHasTriggerAsync("showToast");
-    }
-}
-```
-
-## Packages
-
-- [`Swap.Htmx`](https://www.nuget.org/packages/Swap.Htmx) – HTMX‑friendly building blocks for ASP.NET Core MVC apps. [Docs](lib/Swap.Htmx/README.md)
-- [`Swap.Testing`](https://www.nuget.org/packages/Swap.Testing) – fluent integration tests for HTMX endpoints. [Docs](lib/Swap.Testing/README.md)
-
-## Demos
-
-**Start here: [SwapLab](demo/SwapLab)** — The interactive pattern library showcasing all Swap.Htmx features with live demos, code samples, and explanations.
-
-Other examples in `demo/`:
-
-| Demo | Description |
-|------|-------------|
-| **[SwapLab](demo/SwapLab)** | 🎯 **Interactive pattern library** — Start here! Live demos of all patterns |
-| [SwapShop](demo/SwapShop) | E-commerce demo (Cart, Badges, Toasts) |
-| [SwapChat](demo/SwapChat) | Real-time chat with SSE and Rooms |
-| [TaskFlow](demo/TaskFlow) | Collaborative task management with event chains |
-| [SwapMinimal](demo/SwapMinimal) | Minimal APIs integration |
-| [SwapPages](demo/SwapPages) | Razor Pages integration |
-| [SwapWebSockets](demo/SwapWebSockets) | WebSocket integration |
-| [SwapRedisDemo](demo/SwapRedisDemo) | Redis backplane for scaling SSE |
-
-## What's New
-
-See the [ROADMAP](ROADMAP.md) for the full development plan and recent updates.
-
-**Recent highlights:**
-- ⚡ **Source Generators** - Type-safe view paths, element IDs, and events with compile-time validation
-- 🔍 **Handler Validation Analyzer** - Compile-time warnings for unhandled events (SWAP001-SWAP004)
-- 🔗 **URL Sync** - Bookmarkable state with `SwapState.UrlSync`
-- 🎯 **Conditional OOB Swaps** - `AlsoUpdateIfExists()` and `AlsoUpdateIf()` for safer updates
+---
 
 ## Documentation
 
-- [**Getting Started**](lib/Swap.Htmx/docs/GettingStarted.md)
-- [**Events & Triggers**](lib/Swap.Htmx/docs/Events.md)
-- [**Event Chains**](lib/Swap.Htmx/docs/EventChains.md)
-- [**Realtime (WebSockets & SSE)**](lib/Swap.Htmx/docs/WebSockets.md)
-- [**Server-Sent Events**](lib/Swap.Htmx/docs/ServerSentEvents.md)
-- [**Out-of-Band Swaps**](lib/Swap.Htmx/docs/OutOfBandSwaps.md)
-- [**Minimal APIs**](lib/Swap.Htmx/docs/MinimalApis.md)
-- [**Razor Pages**](lib/Swap.Htmx/docs/RazorPages.md)
-- [**Source Generators**](lib/Swap.Htmx/docs/SourceGenerators.md)
-- [**User Context & Identity**](lib/Swap.Htmx/docs/UserContext.md)
-- [**Debugging & Logging**](lib/Swap.Htmx/docs/DebuggingAndLogging.md)
+| Guide | Description |
+|-------|-------------|
+| [Getting Started](lib/Swap.Htmx/docs/GettingStarted.md) | Setup and first steps |
+| [Events](lib/Swap.Htmx/docs/Events.md) | Type-safe event system |
+| [Event Chains](lib/Swap.Htmx/docs/EventChains.md) | Distributed handlers and decoupled updates |
+| [SwapState](lib/Swap.Htmx/docs/SwapState.md) | Server-side state management |
+| [Out-of-Band Swaps](lib/Swap.Htmx/docs/OutOfBandSwaps.md) | Multi-target updates |
+| [Validation](lib/Swap.Htmx/docs/Validation.md) | Form validation |
+| [Server-Sent Events](lib/Swap.Htmx/docs/ServerSentEvents.md) | Real-time push |
+| [WebSockets](lib/Swap.Htmx/docs/WebSockets.md) | Full-duplex real-time |
+| [Redis Backplane](lib/Swap.Htmx/docs/RedisBackplane.md) | Multi-server real-time |
+| [Source Generators](lib/Swap.Htmx/docs/SourceGenerators.md) | Compile-time validation |
+| [Recipes](lib/Swap.Htmx/docs/Recipes.md) | Common patterns |
+| [Anti-Patterns](lib/Swap.Htmx/docs/AntiPatterns.md) | What to avoid |
+| [Debugging](lib/Swap.Htmx/docs/DebuggingAndLogging.md) | Diagnostics and logging |
 
+---
 
+## Demo Applications
+
+Working examples in `/demo`:
+
+| Demo | What It Shows |
+|------|---------------|
+| [SwapMinimal](demo/SwapMinimal) | Basic setup and patterns |
+| [SwapPages](demo/SwapPages) | Razor Pages integration |
+| [SwapLab](demo/SwapLab) | Feature showcase |
+| [SwapShop](demo/SwapShop) | E-commerce (cart, checkout) |
+| [SwapChat](demo/SwapChat) | Real-time chat with SSE |
+| [SwapExpenses](demo/SwapExpenses) | Full CRUD application |
+| [TaskFlow](demo/TaskFlow) | Kanban board |
+
+---
+
+## Requirements
+
+- .NET 9.0+
+- ASP.NET Core (MVC, Razor Pages, or Minimal APIs)
+- HTMX 2.x
+
+---
+
+## License
+
+MIT — see [LICENSE](LICENSE)
