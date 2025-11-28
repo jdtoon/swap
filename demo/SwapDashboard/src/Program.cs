@@ -16,10 +16,15 @@ builder.Services.AddSingleton<ITeamService, TeamService>();
 
 builder.Services.AddSwapHtmx(options =>
 {
+    // Add Dashboard folder to view search paths for OOB swaps
+    options.PartialViewSearchPaths.Add("Dashboard");
+    
     // Enable all DevTools features for the demo
     options.Diagnostics.EnableClientLogging = true;
     options.Diagnostics.EnableDevToolsPanel = true;
     options.Diagnostics.WarnOnUnhandledEvents = true;
+    options.Diagnostics.WarnOnMissingOobTargets = true;
+    options.Diagnostics.EnableTimingLogs = true;
 });
 
 var app = builder.Build();

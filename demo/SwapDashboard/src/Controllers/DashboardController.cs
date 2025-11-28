@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Swap.Htmx;
 using Swap.Htmx.Models;
+using Swap.Htmx.State;
 using SwapDashboard.Events;
 using SwapDashboard.Handlers;
 using SwapDashboard.Models;
@@ -163,7 +164,7 @@ public class DashboardController : SwapController
     /// Select a project - updates the main content area.
     /// </summary>
     [HttpGet]
-    public IActionResult SelectProject(int id, DashboardState? state = null)
+    public IActionResult SelectProject(int id, [FromSwapState] DashboardState? state = null)
     {
         state ??= new DashboardState();
         state.SelectedProjectId = id;
@@ -173,8 +174,23 @@ public class DashboardController : SwapController
         var kanban = _tasks.GetKanban(id);
         var stats = _tasks.GetStats(id);
 
+        // Build proper view model for _MainContent
+        var vm = new DashboardViewModel
+        {
+            State = state,
+            Projects = _projects.GetAll(),
+            SelectedProject = project,
+            Tasks = tasks,
+            TeamMembers = _team.GetAll(),
+            Activities = _activities.GetRecent(10),
+            Notifications = _notifications.GetAll(),
+            Stats = stats,
+            UnreadNotificationCount = _notifications.GetUnreadCount()
+        };
+
         return SwapResponse()
-            .WithView("_MainContent", new { Project = project, Tasks = tasks, Kanban = kanban, Stats = stats, State = state })
+            .WithView("_MainContent", vm)
+            .WithState(state)
             .AlsoUpdate("project-header", "_ProjectHeader", project)
             .AlsoUpdate("stats-panel", "_StatsPanel", stats)
             .AlsoUpdate("kanban-todo", "_KanbanColumn", new KanbanColumnModel("Todo", kanban.TodoTasks, "bg-gray-100"))
@@ -202,10 +218,20 @@ public class DashboardController : SwapController
 
     /// <summary>
     /// Filter tasks by status/priority/assignee.
+    /// State is read from hidden fields, filter values from dropdowns.
     /// </summary>
     [HttpGet]
-    public IActionResult FilterTasks(DashboardState state)
+    public IActionResult FilterTasks(
+        string? StatusFilter,
+        string? PriorityFilter,
+        [FromSwapState] DashboardState state)
     {
+        // Update state with dropdown values
+        if (!string.IsNullOrEmpty(StatusFilter))
+            state.StatusFilter = StatusFilter;
+        if (!string.IsNullOrEmpty(PriorityFilter))
+            state.PriorityFilter = PriorityFilter;
+        
         var tasks = _tasks.GetFiltered(
             state.SelectedProjectId, 
             state.StatusFilter, 
@@ -215,6 +241,7 @@ public class DashboardController : SwapController
 
         return SwapResponse()
             .WithView("_TaskList", tasks)
+            .AlsoUpdate("filter-bar", "_FilterBar", state) // Update filter bar with new state
             .AlsoUpdate("filter-results-count", "_FilterResultsCount", tasks.Count)
             .WithTrigger(DashboardEvents.Filter.Changed)
             .Build();
@@ -224,7 +251,7 @@ public class DashboardController : SwapController
     /// Search tasks.
     /// </summary>
     [HttpGet]
-    public IActionResult Search(string q, DashboardState state)
+    public IActionResult Search(string q, [FromSwapState] DashboardState state)
     {
         state.SearchTerm = q;
         var tasks = _tasks.GetFiltered(
@@ -236,6 +263,7 @@ public class DashboardController : SwapController
 
         return SwapResponse()
             .WithView("_TaskList", tasks)
+            .WithState(state)
             .AlsoUpdate("filter-results-count", "_FilterResultsCount", tasks.Count)
             .Build();
     }
@@ -310,7 +338,7 @@ public class DashboardController : SwapController
     /// Switch view mode (board/list/timeline).
     /// </summary>
     [HttpGet]
-    public IActionResult SwitchView(string mode, DashboardState state)
+    public IActionResult SwitchView(string mode, [FromSwapState] DashboardState state)
     {
         state.ViewMode = mode;
         var tasks = _tasks.GetFiltered(
@@ -327,6 +355,7 @@ public class DashboardController : SwapController
                 "timeline" => "_TimelineView",
                 _ => "_BoardView"
             }, tasks)
+            .WithState(state)
             .WithTrigger(DashboardEvents.View.Mode.Changed, new { Mode = mode })
             .Build();
     }

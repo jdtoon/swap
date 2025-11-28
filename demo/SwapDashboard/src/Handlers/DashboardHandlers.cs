@@ -22,7 +22,7 @@ public class StatsHandler :
     public Task HandleAsync(TaskEvent e, SwapResponseBuilder builder, CancellationToken ct)
     {
         var stats = _tasks.GetStats(e.ProjectId);
-        builder.AlsoUpdate("stats-panel", "Dashboard/_StatsPanel", stats);
+        builder.AlsoUpdate("stats-panel", "_StatsPanel", stats);
         return Task.CompletedTask;
     }
 }
@@ -42,7 +42,7 @@ public class ProjectListHandler :
     public Task HandleAsync(TaskEvent e, SwapResponseBuilder builder, CancellationToken ct)
     {
         var projects = _projects.GetAll();
-        builder.AlsoUpdate("project-list", "Dashboard/_ProjectList", projects);
+        builder.AlsoUpdate("project-list", "_ProjectList", projects);
         return Task.CompletedTask;
     }
 }
@@ -61,13 +61,13 @@ public class KanbanHandler :
     public Task HandleAsync(TaskEvent e, SwapResponseBuilder builder, CancellationToken ct)
     {
         var kanban = _tasks.GetKanban(e.ProjectId);
-        builder.AlsoUpdate("kanban-todo", "Dashboard/_KanbanColumn", 
+        builder.AlsoUpdate("kanban-todo", "_KanbanColumn", 
             new KanbanColumnModel("Todo", kanban.TodoTasks, "bg-gray-100"));
-        builder.AlsoUpdate("kanban-inprogress", "Dashboard/_KanbanColumn", 
+        builder.AlsoUpdate("kanban-inprogress", "_KanbanColumn", 
             new KanbanColumnModel("In Progress", kanban.InProgressTasks, "bg-blue-100"));
-        builder.AlsoUpdate("kanban-review", "Dashboard/_KanbanColumn", 
+        builder.AlsoUpdate("kanban-review", "_KanbanColumn", 
             new KanbanColumnModel("Review", kanban.ReviewTasks, "bg-yellow-100"));
-        builder.AlsoUpdate("kanban-done", "Dashboard/_KanbanColumn", 
+        builder.AlsoUpdate("kanban-done", "_KanbanColumn", 
             new KanbanColumnModel("Done", kanban.DoneTasks, "bg-green-100"));
         return Task.CompletedTask;
     }
@@ -89,7 +89,7 @@ public class ActivityFeedHandler :
     public Task HandleAsync(TaskEvent e, SwapResponseBuilder builder, CancellationToken ct)
     {
         var activities = _activities.GetRecent(10);
-        builder.AlsoUpdate("activity-feed", "Dashboard/_ActivityFeed", activities);
+        builder.AlsoUpdate("activity-feed", "_ActivityFeed", activities);
         return Task.CompletedTask;
     }
 }
@@ -111,7 +111,7 @@ public class TaskDetailHandler :
         var task = _tasks.GetById(e.TaskId);
         if (task != null)
         {
-            builder.AlsoUpdateIfExists($"task-detail-{e.TaskId}", "Dashboard/_TaskDetail", task);
+            builder.AlsoUpdateIfExists($"task-detail-{e.TaskId}", "_TaskDetailPanel", task);
         }
         return Task.CompletedTask;
     }
@@ -131,7 +131,7 @@ public class TeamWorkloadHandler :
     public Task HandleAsync(TaskEvent e, SwapResponseBuilder builder, CancellationToken ct)
     {
         var members = _team.GetAll();
-        builder.AlsoUpdate("team-panel", "Dashboard/_TeamPanel", members);
+        builder.AlsoUpdate("team-panel", "_TeamPanel", members);
         return Task.CompletedTask;
     }
 }
@@ -150,7 +150,7 @@ public class ProgressBarHandler :
     public Task HandleAsync(TaskEvent e, SwapResponseBuilder builder, CancellationToken ct)
     {
         var stats = _tasks.GetStats(e.ProjectId);
-        builder.AlsoUpdate("progress-bar", "Dashboard/_ProgressBar", stats);
+        builder.AlsoUpdate("progress-bar", "_ProgressBar", stats);
         return Task.CompletedTask;
     }
 }
@@ -169,7 +169,7 @@ public class NotificationBadgeHandler :
     public Task HandleAsync(TaskEvent e, SwapResponseBuilder builder, CancellationToken ct)
     {
         var count = _notifications.GetUnreadCount();
-        builder.AlsoUpdate("notification-badge", "Dashboard/_NotificationBadge", count);
+        builder.AlsoUpdate("notification-badge", "_NotificationBadge", count);
         return Task.CompletedTask;
     }
 }
@@ -188,7 +188,7 @@ public class OverdueHandler :
     public Task HandleAsync(TaskEvent e, SwapResponseBuilder builder, CancellationToken ct)
     {
         var stats = _tasks.GetStats(e.ProjectId);
-        builder.AlsoUpdate("overdue-widget", "Dashboard/_OverdueWidget", stats.OverdueTasks);
+        builder.AlsoUpdate("overdue-widget", "_OverdueWidget", stats.OverdueTasks);
         return Task.CompletedTask;
     }
 }
@@ -207,7 +207,7 @@ public class TaskCounterHandler :
     public Task HandleAsync(TaskEvent e, SwapResponseBuilder builder, CancellationToken ct)
     {
         var stats = _tasks.GetStats(e.ProjectId);
-        builder.AlsoUpdate("task-counter", "Dashboard/_TaskCounter", stats);
+        builder.AlsoUpdate("task-counter", "_TaskCounter", stats);
         return Task.CompletedTask;
     }
 }
@@ -228,7 +228,7 @@ public class CommentListHandler :
         var task = _tasks.GetById(e.TaskId);
         if (task != null)
         {
-            builder.AlsoUpdateIfExists($"task-comments-{e.TaskId}", "Dashboard/_CommentList", task);
+            builder.AlsoUpdateIfExists($"task-comments-{e.TaskId}", "_CommentList", task);
         }
         return Task.CompletedTask;
     }
@@ -248,7 +248,7 @@ public class FilterResultsHandler :
     public Task HandleAsync(FilterChangedEvent e, SwapResponseBuilder builder, CancellationToken ct)
     {
         var tasks = _tasks.GetFiltered(null, e.Status, e.Priority, e.AssigneeId, null);
-        builder.AlsoUpdate("filter-results-count", "Dashboard/_FilterResultsCount", tasks.Count);
+        builder.AlsoUpdate("filter-results-count", "_FilterResultsCount", tasks.Count);
         return Task.CompletedTask;
     }
 }

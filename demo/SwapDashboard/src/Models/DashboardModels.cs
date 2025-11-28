@@ -1,9 +1,12 @@
+using Swap.Htmx.State;
+
 namespace SwapDashboard.Models;
 
 /// <summary>
 /// Dashboard state that coordinates all components.
+/// Inherits from SwapState for automatic binding and OOB sync.
 /// </summary>
-public class DashboardState
+public class DashboardState : SwapState
 {
     public int? SelectedProjectId { get; set; }
     public int? SelectedTaskId { get; set; }
