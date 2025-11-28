@@ -1,0 +1,65 @@
+@model DashboardStats
+
+<div class="grid grid-cols-4 gap-4">
+    
+    <!-- Total Tasks -->
+    <div class="bg-white rounded-xl border border-gray-200 p-4">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-sm text-gray-500">Total Tasks</p>
+                <p class="text-2xl font-bold text-gray-900">@Model.TotalTasks</p>
+            </div>
+            <div class="w-12 h-12 bg-indigo-100 rounded-xl flex items-center justify-center">
+                <svg class="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                </svg>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Completed -->
+    <div class="bg-white rounded-xl border border-gray-200 p-4">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-sm text-gray-500">Completed</p>
+                <p class="text-2xl font-bold text-green-600">@Model.CompletedTasks</p>
+            </div>
+            <div class="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
+                <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                </svg>
+            </div>
+        </div>
+    </div>
+    
+    <!-- In Progress -->
+    <div class="bg-white rounded-xl border border-gray-200 p-4">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-sm text-gray-500">In Progress</p>
+                <p class="text-2xl font-bold text-blue-600">@Model.InProgressTasks</p>
+            </div>
+            <div class="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
+                <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Overdue -->
+    <div class="bg-white rounded-xl border border-gray-200 p-4">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-sm text-gray-500">Overdue</p>
+                <p class="text-2xl font-bold @(Model.OverdueTasks > 0 ? "text-red-600" : "text-gray-400")">@Model.OverdueTasks</p>
+            </div>
+            <div class="w-12 h-12 @(Model.OverdueTasks > 0 ? "bg-red-100" : "bg-gray-100") rounded-xl flex items-center justify-center">
+                <svg class="w-6 h-6 @(Model.OverdueTasks > 0 ? "text-red-600" : "text-gray-400")" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+            </div>
+        </div>
+    </div>
+    
+</div>

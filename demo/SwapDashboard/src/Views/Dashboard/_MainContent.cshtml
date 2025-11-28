@@ -1,0 +1,40 @@
+@model DashboardViewModel
+
+<div>
+    @if (Model.SelectedProject != null)
+    {
+        <!-- PARTIAL 10: Project Header -->
+        <div id="project-header" class="mb-6">
+            <partial name="_ProjectHeader" model="Model.SelectedProject" />
+        </div>
+        
+        <!-- PARTIAL 11: Stats Panel -->
+        <div id="stats-panel" class="mb-6">
+            <partial name="_StatsPanel" model="Model.Stats" />
+        </div>
+        
+        <!-- PARTIAL 13: Progress Bar -->
+        <div id="progress-bar" class="mb-6">
+            <partial name="_ProgressBar" model="Model.Stats" />
+        </div>
+        
+        <!-- PARTIAL 14: Filter Bar -->
+        <div id="filter-bar" class="mb-6">
+            <partial name="_FilterBar" model="Model.State" />
+        </div>
+        
+        <!-- PARTIAL 16: Kanban Board -->
+        <div id="kanban-board">
+            <partial name="_KanbanBoard" model="Model" />
+        </div>
+    }
+    else
+    {
+        <div class="text-center py-12 text-gray-500">
+            <svg class="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+            </svg>
+            <p class="text-lg">Select a project to get started</p>
+        </div>
+    }
+</div>

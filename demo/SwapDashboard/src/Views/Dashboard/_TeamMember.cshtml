@@ -1,0 +1,23 @@
+@model TeamMember
+
+<div 
+    class="flex items-center space-x-3 px-2 py-1.5 rounded-lg hover:bg-gray-100 cursor-pointer"
+    hx-get="/Dashboard/FilterTasks?SelectedMemberId=@Model.Id"
+    hx-target="#task-list">
+    
+    <div class="relative">
+        <div class="w-8 h-8 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center text-xs font-medium">
+            @Model.Avatar
+        </div>
+        @if (Model.IsOnline)
+        {
+            <div class="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-white rounded-full"></div>
+        }
+    </div>
+    
+    <div class="flex-1 min-w-0">
+        <p class="text-sm font-medium text-gray-900 truncate">@Model.Name</p>
+        <p class="text-xs text-gray-500">@Model.ActiveTaskCount active tasks</p>
+    </div>
+    
+</div>

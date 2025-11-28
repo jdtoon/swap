@@ -1,0 +1,32 @@
+@model Project
+
+<a 
+    href="#"
+    class="block px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors group"
+    hx-get="/Dashboard/SelectProject/@Model.Id"
+    hx-target="#main-content"
+    hx-push-url="/Dashboard?projectId=@Model.Id">
+    
+    <div class="flex items-center space-x-3">
+        <div class="w-3 h-3 rounded-full" style="background-color: @Model.Color"></div>
+        <div class="flex-1 min-w-0">
+            <p class="text-sm font-medium text-gray-900 truncate">@Model.Name</p>
+            <div class="flex items-center space-x-2 text-xs text-gray-500">
+                <span>@Model.CompletedCount/@Model.TaskCount tasks</span>
+                @if (Model.Progress == 100)
+                {
+                    <span class="text-green-600">✓</span>
+                }
+            </div>
+        </div>
+    </div>
+    
+    <!-- Progress bar -->
+    <div class="mt-2 h-1 bg-gray-200 rounded-full overflow-hidden">
+        <div 
+            class="h-full rounded-full transition-all duration-300" 
+            style="width: @Model.Progress%; background-color: @Model.Color">
+        </div>
+    </div>
+    
+</a>

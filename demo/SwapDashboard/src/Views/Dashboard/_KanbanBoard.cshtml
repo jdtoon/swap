@@ -1,0 +1,33 @@
+@using SwapDashboard.Handlers
+@model DashboardViewModel
+
+@{
+    var kanban = new KanbanViewModel
+    {
+        TodoTasks = Model.Tasks.Where(t => t.Status == TaskStatus.Todo).ToList(),
+        InProgressTasks = Model.Tasks.Where(t => t.Status == TaskStatus.InProgress).ToList(),
+        ReviewTasks = Model.Tasks.Where(t => t.Status == TaskStatus.Review).ToList(),
+        DoneTasks = Model.Tasks.Where(t => t.Status == TaskStatus.Done).ToList()
+    };
+}
+
+<div class="grid grid-cols-4 gap-4">
+    
+    <!-- PARTIAL 17: Kanban Columns -->
+    <div id="kanban-todo" class="kanban-column">
+        <partial name="_KanbanColumn" model="@(new KanbanColumnModel("To Do", kanban.TodoTasks, "bg-gray-100"))" />
+    </div>
+    
+    <div id="kanban-inprogress" class="kanban-column">
+        <partial name="_KanbanColumn" model="@(new KanbanColumnModel("In Progress", kanban.InProgressTasks, "bg-blue-100"))" />
+    </div>
+    
+    <div id="kanban-review" class="kanban-column">
+        <partial name="_KanbanColumn" model="@(new KanbanColumnModel("Review", kanban.ReviewTasks, "bg-yellow-100"))" />
+    </div>
+    
+    <div id="kanban-done" class="kanban-column">
+        <partial name="_KanbanColumn" model="@(new KanbanColumnModel("Done", kanban.DoneTasks, "bg-green-100"))" />
+    </div>
+    
+</div>

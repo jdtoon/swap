@@ -1,0 +1,42 @@
+@model TaskItem
+
+<div>
+    <h4 class="font-semibold text-gray-900 mb-4">Comments (@Model.CommentCount)</h4>
+    
+    @if (Model.CommentCount > 0)
+    {
+        <div class="space-y-4 mb-4">
+            <!-- Example comments -->
+            <div class="flex space-x-3">
+                <div class="w-8 h-8 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center text-xs font-medium flex-shrink-0">
+                    SC
+                </div>
+                <div class="flex-1">
+                    <div class="flex items-center space-x-2 mb-1">
+                        <span class="text-sm font-medium text-gray-900">Sarah Chen</span>
+                        <span class="text-xs text-gray-500">2 hours ago</span>
+                    </div>
+                    <p class="text-sm text-gray-600">Looking good! Just need to verify the responsive behavior on tablets.</p>
+                </div>
+            </div>
+        </div>
+    }
+    
+    <!-- Add Comment Form -->
+    <form 
+        class="flex space-x-3"
+        hx-post="/Dashboard/AddComment?taskId=@Model.Id"
+        hx-target="#task-comments-@Model.Id"
+        hx-swap="innerHTML">
+        <input 
+            type="text" 
+            name="content"
+            placeholder="Add a comment..."
+            class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+        <button 
+            type="submit"
+            class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm">
+            Send
+        </button>
+    </form>
+</div>

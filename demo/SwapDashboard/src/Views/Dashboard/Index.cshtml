@@ -1,0 +1,102 @@
+@model DashboardViewModel
+@{
+    ViewData["Title"] = "Dashboard";
+}
+
+<!-- 
+    SwapDashboard: Complex Front-End Demo
+    
+    This page has 20+ partials that all coordinate through events.
+    When a task is completed, 10+ partials update automatically.
+    
+    PARTIALS ON THIS PAGE:
+    1.  _Header           - Top navigation bar
+    2.  _NotificationBadge - Notification count in header
+    3.  _NotificationList  - Notification dropdown
+    4.  _SearchBox        - Global search
+    5.  _ProjectList      - Sidebar project list
+    6.  _ProjectItem      - Individual project in sidebar
+    7.  _TeamPanel        - Team members sidebar
+    8.  _TeamMember       - Individual team member
+    9.  _MainContent      - Main content area
+    10. _ProjectHeader    - Selected project header
+    11. _StatsPanel       - Stats cards (4 sub-partials)
+    12. _TaskCounter      - Task count in header
+    13. _ProgressBar      - Project progress bar
+    14. _FilterBar        - Filter controls
+    15. _FilterResultsCount - Filtered count
+    16. _KanbanBoard      - The kanban board container
+    17. _KanbanColumn     - Individual kanban column (x4)
+    18. _TaskCard         - Task card in kanban
+    19. _TaskDetailPanel  - Task detail side panel
+    20. _CommentList      - Comments on task
+    21. _ActivityFeed     - Activity feed sidebar
+    22. _ActivityItem     - Individual activity
+    23. _OverdueWidget    - Overdue tasks alert
+    24. _QuickActions     - Quick action buttons
+    
+    All these partials update independently based on events!
+-->
+
+<div class="flex h-screen overflow-hidden">
+    
+    <!-- PARTIAL 1: Left Sidebar (Projects + Team) -->
+    <aside class="w-64 bg-white border-r border-gray-200 flex flex-col">
+        
+        <!-- Logo -->
+        <div class="p-4 border-b border-gray-200">
+            <h1 class="text-xl font-bold text-indigo-600">SwapDashboard</h1>
+            <p class="text-xs text-gray-500 mt-1">Complex UI Demo - 20+ Partials</p>
+        </div>
+        
+        <!-- PARTIAL 5: Project List -->
+        <div id="project-list" class="flex-1 overflow-y-auto">
+            <partial name="_ProjectList" model="Model.Projects" />
+        </div>
+        
+        <!-- PARTIAL 7: Team Panel -->
+        <div id="team-panel" class="border-t border-gray-200">
+            <partial name="_TeamPanel" model="Model.TeamMembers" />
+        </div>
+        
+    </aside>
+    
+    <!-- Main Area -->
+    <div class="flex-1 flex flex-col overflow-hidden">
+        
+        <!-- PARTIAL 1: Header -->
+        <header id="header" class="bg-white border-b border-gray-200">
+            <partial name="_Header" model="Model" />
+        </header>
+        
+        <!-- Main Content -->
+        <main class="flex-1 flex overflow-hidden">
+            
+            <!-- PARTIAL 9: Main Content Area -->
+            <div id="main-content" class="flex-1 overflow-y-auto p-6">
+                <partial name="_MainContent" model="Model" />
+            </div>
+            
+            <!-- Right Sidebar -->
+            <aside class="w-80 bg-white border-l border-gray-200 flex flex-col overflow-hidden">
+                
+                <!-- PARTIAL 21: Activity Feed -->
+                <div id="activity-feed" class="flex-1 overflow-y-auto">
+                    <partial name="_ActivityFeed" model="Model.Activities" />
+                </div>
+                
+                <!-- PARTIAL 23: Overdue Widget -->
+                <div id="overdue-widget" class="border-t border-gray-200">
+                    <partial name="_OverdueWidget" model="Model.Stats.OverdueTasks" />
+                </div>
+                
+            </aside>
+            
+        </main>
+        
+    </div>
+    
+</div>
+
+<!-- Modal container for task details -->
+<div id="modal-container"></div>

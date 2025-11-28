@@ -1,0 +1,65 @@
+@model DashboardState
+
+<div class="flex items-center justify-between">
+    
+    <!-- View Modes -->
+    <div class="flex items-center space-x-1 bg-gray-100 rounded-lg p-1">
+        <button 
+            class="px-3 py-1.5 text-sm rounded-md transition-colors @(Model.ViewMode == "board" ? "bg-white shadow text-gray-900" : "text-gray-600 hover:text-gray-900")"
+            hx-get="/Dashboard/SwitchView?mode=board"
+            hx-target="#kanban-board">
+            Board
+        </button>
+        <button 
+            class="px-3 py-1.5 text-sm rounded-md transition-colors @(Model.ViewMode == "list" ? "bg-white shadow text-gray-900" : "text-gray-600 hover:text-gray-900")"
+            hx-get="/Dashboard/SwitchView?mode=list"
+            hx-target="#kanban-board">
+            List
+        </button>
+        <button 
+            class="px-3 py-1.5 text-sm rounded-md transition-colors @(Model.ViewMode == "timeline" ? "bg-white shadow text-gray-900" : "text-gray-600 hover:text-gray-900")"
+            hx-get="/Dashboard/SwitchView?mode=timeline"
+            hx-target="#kanban-board">
+            Timeline
+        </button>
+    </div>
+    
+    <!-- Filters -->
+    <div class="flex items-center space-x-3">
+        
+        <!-- Status Filter -->
+        <select 
+            class="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            hx-get="/Dashboard/FilterTasks"
+            hx-target="#task-list"
+            hx-include="[name='state']"
+            name="StatusFilter">
+            <option value="all" selected="@(Model.StatusFilter == "all")">All Status</option>
+            <option value="todo" selected="@(Model.StatusFilter == "todo")">To Do</option>
+            <option value="inprogress" selected="@(Model.StatusFilter == "inprogress")">In Progress</option>
+            <option value="review" selected="@(Model.StatusFilter == "review")">Review</option>
+            <option value="done" selected="@(Model.StatusFilter == "done")">Done</option>
+        </select>
+        
+        <!-- Priority Filter -->
+        <select 
+            class="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            hx-get="/Dashboard/FilterTasks"
+            hx-target="#task-list"
+            hx-include="[name='state']"
+            name="PriorityFilter">
+            <option value="all" selected="@(Model.PriorityFilter == "all")">All Priority</option>
+            <option value="urgent" selected="@(Model.PriorityFilter == "urgent")">Urgent</option>
+            <option value="high" selected="@(Model.PriorityFilter == "high")">High</option>
+            <option value="medium" selected="@(Model.PriorityFilter == "medium")">Medium</option>
+            <option value="low" selected="@(Model.PriorityFilter == "low")">Low</option>
+        </select>
+        
+        <!-- Results Count -->
+        <div id="filter-results-count" class="text-sm text-gray-500">
+            <partial name="_FilterResultsCount" model="0" />
+        </div>
+        
+    </div>
+    
+</div>

@@ -1,0 +1,43 @@
+@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - SwapDashboard</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Swap.Htmx styles -->
+    <link rel="stylesheet" href="~/_content/Swap.Htmx/css/swap.css" />
+    
+    <!-- HTMX -->
+    <script src="https://unpkg.com/htmx.org@2.0.8"></script>
+    
+    <!-- Swap.Htmx client -->
+    <script src="~/_content/Swap.Htmx/js/swap.client.js"></script>
+    
+    <style>
+        /* Custom scrollbar */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        
+        /* Kanban drag styles */
+        .kanban-card { cursor: grab; }
+        .kanban-card:active { cursor: grabbing; }
+        .kanban-column { min-height: 200px; }
+        
+        /* Loading states */
+        .htmx-request .htmx-indicator { display: inline-block; }
+        .htmx-indicator { display: none; }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-900 min-h-screen">
+    @RenderBody()
+</body>
+</html>
