@@ -1,0 +1,117 @@
+@model List<SwapDashboard.Models.TaskItem>
+
+<div id="task-list-view" class="bg-white rounded-lg shadow overflow-hidden">
+    <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+            <tr>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Task</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Priority</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Assignee</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Due Date</th>
+                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+            </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
+            @foreach (var task in Model)
+            {
+                <tr id="task-row-@task.Id" class="hover:bg-gray-50">
+                    <td class="px-6 py-4">
+                        <div class="flex items-center">
+                            <div>
+                                <div class="text-sm font-medium text-gray-900">@task.Title</div>
+                                @if (!string.IsNullOrEmpty(task.Description))
+                                {
+                                    <div class="text-sm text-gray-500">@task.Description</div>
+                                }
+                            </div>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full @GetStatusColor(task.Status)">
+                            @task.Status
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full @GetPriorityColor(task.Priority)">
+                            @task.Priority
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        @if (task.Assignee != null)
+                        {
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0 h-8 w-8 rounded-full bg-indigo-500 flex items-center justify-center text-white text-xs font-medium">
+                                    @task.Assignee.Avatar
+                                </div>
+                                <div class="ml-3">
+                                    <div class="text-sm font-medium text-gray-900">@task.Assignee.Name</div>
+                                </div>
+                            </div>
+                        }
+                        else
+                        {
+                            <span class="text-gray-400 text-sm">Unassigned</span>
+                        }
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        @if (task.DueDate.HasValue)
+                        {
+                            <span class="@(task.DueDate < DateTime.Now && task.Status != TaskStatus.Done ? "text-red-600 font-medium" : "")">
+                                @task.DueDate.Value.ToString("MMM d, yyyy")
+                            </span>
+                        }
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        @if (task.Status != TaskStatus.Done)
+                        {
+                            <button hx-post="/Dashboard/CompleteTask?id=@task.Id" 
+                                    hx-target="#task-row-@task.Id"
+                                    hx-swap="outerHTML"
+                                    class="text-green-600 hover:text-green-900 mr-3">
+                                Complete
+                            </button>
+                        }
+                        <button hx-get="/Dashboard/TaskDetail?id=@task.Id"
+                                hx-target="#task-detail-panel"
+                                hx-swap="innerHTML"
+                                class="text-indigo-600 hover:text-indigo-900">
+                            Details
+                        </button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+    
+    @if (!Model.Any())
+    {
+        <div class="text-center py-12">
+            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+            </svg>
+            <h3 class="mt-2 text-sm font-medium text-gray-900">No tasks</h3>
+            <p class="mt-1 text-sm text-gray-500">Get started by creating a new task.</p>
+        </div>
+    }
+</div>
+
+@functions {
+    string GetStatusColor(TaskStatus status) => status switch
+    {
+        TaskStatus.Todo => "bg-gray-100 text-gray-800",
+        TaskStatus.InProgress => "bg-blue-100 text-blue-800",
+        TaskStatus.Review => "bg-yellow-100 text-yellow-800",
+        TaskStatus.Done => "bg-green-100 text-green-800",
+        _ => "bg-gray-100 text-gray-800"
+    };
+
+    string GetPriorityColor(SwapDashboard.Models.TaskPriority priority) => priority switch
+    {
+        SwapDashboard.Models.TaskPriority.Urgent => "bg-red-100 text-red-800",
+        SwapDashboard.Models.TaskPriority.High => "bg-orange-100 text-orange-800",
+        SwapDashboard.Models.TaskPriority.Medium => "bg-yellow-100 text-yellow-800",
+        SwapDashboard.Models.TaskPriority.Low => "bg-green-100 text-green-800",
+        _ => "bg-gray-100 text-gray-800"
+    };
+}

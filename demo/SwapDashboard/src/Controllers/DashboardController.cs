@@ -62,7 +62,7 @@ public class DashboardController : SwapController
         _notifications.Add("Task created", $"New task: {task.Title}", "success");
 
         // Fire the event - all registered handlers will update their partials
-        return SwapEvent(new TaskEvent(task.Id, projectId, task.Title))
+        return SwapEvent(DashboardEvents.Task.Created, new TaskEvent(task.Id, projectId, task.Title))
             .WithSuccessToast($"Created: {task.Title}")
             .Build();
     }
@@ -94,7 +94,7 @@ public class DashboardController : SwapController
         _notifications.Add("Task completed", $"Completed: {task.Title}", "success");
 
         // Single event → 10+ handlers → 10+ partial updates → 1 HTTP response
-        return SwapEvent(new TaskEvent(task.Id, task.ProjectId, task.Title))
+        return SwapEvent(DashboardEvents.Task.Completed, new TaskEvent(task.Id, task.ProjectId, task.Title))
             .WithSuccessToast($"Completed: {task.Title}")
             .Build();
     }
@@ -111,7 +111,7 @@ public class DashboardController : SwapController
         _tasks.UpdateStatus(id, status);
         _activities.Add("task_status", $"moved to {status}", null, "You", task.Id, task.Title, task.ProjectId);
 
-        return SwapEvent(new TaskEvent(task.Id, task.ProjectId, task.Title))
+        return SwapEvent(DashboardEvents.Task.Moved, new TaskEvent(task.Id, task.ProjectId, task.Title))
             .WithInfoToast($"Moved to {status}")
             .Build();
     }
@@ -134,7 +134,7 @@ public class DashboardController : SwapController
             _notifications.Add("Task assigned", $"{task.Title} assigned to {assignee.Name}", "info");
         }
 
-        return SwapEvent(new TaskEvent(task.Id, task.ProjectId, task.Title))
+        return SwapEvent(DashboardEvents.Task.Assigned, new TaskEvent(task.Id, task.ProjectId, task.Title))
             .WithInfoToast(assignee != null ? $"Assigned to {assignee.Name}" : "Unassigned")
             .Build();
     }
@@ -154,7 +154,7 @@ public class DashboardController : SwapController
         _tasks.Delete(id);
         _activities.Add("task_deleted", "deleted task", null, "You", null, title, projectId);
 
-        return SwapEvent(new TaskEvent(id, projectId, title))
+        return SwapEvent(DashboardEvents.Task.Deleted, new TaskEvent(id, projectId, title))
             .WithWarningToast($"Deleted: {title}")
             .Build();
     }
@@ -289,7 +289,7 @@ public class DashboardController : SwapController
 
         _activities.Add("comment", "commented on", null, "You", taskId, task.Title, task.ProjectId);
 
-        return SwapEvent(new CommentAddedEvent(taskId, content))
+        return SwapEvent(DashboardEvents.Comment.Added, new CommentAddedEvent(taskId, content))
             .WithSuccessToast("Comment added")
             .Build();
     }
@@ -327,7 +327,7 @@ public class DashboardController : SwapController
                 "timeline" => "_TimelineView",
                 _ => "_BoardView"
             }, tasks)
-            .WithTrigger(DashboardEvents.View.ModeChanged, new { Mode = mode })
+            .WithTrigger(DashboardEvents.View.Mode.Changed, new { Mode = mode })
             .Build();
     }
 

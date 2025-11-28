@@ -1,0 +1,12 @@
+@model List<SwapDashboard.Models.TaskItem>
+
+<!-- Board View - Same as Kanban but embedded -->
+<div id="task-board-view">
+    @await Html.PartialAsync("_KanbanBoard", new SwapDashboard.Models.KanbanViewModel
+    {
+        TodoTasks = Model.Where(t => t.Status == TaskStatus.Todo).ToList(),
+        InProgressTasks = Model.Where(t => t.Status == TaskStatus.InProgress).ToList(),
+        ReviewTasks = Model.Where(t => t.Status == TaskStatus.Review).ToList(),
+        DoneTasks = Model.Where(t => t.Status == TaskStatus.Done).ToList()
+    })
+</div>

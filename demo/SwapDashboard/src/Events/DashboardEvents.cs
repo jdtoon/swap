@@ -10,7 +10,7 @@ namespace SwapDashboard.Events;
 /// "task.created" becomes DashboardEvents.Task.Created
 /// </summary>
 [SwapEventSource]
-public static partial class DashboardEvents
+public partial class DashboardEvents
 {
     // Task events
     public const string TaskCreated = "task.created";
