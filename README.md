@@ -356,6 +356,7 @@ Working examples in `/demo`:
 | [SwapShop](demo/SwapShop) | E-commerce (cart, checkout) |
 | [SwapChat](demo/SwapChat) | Real-time chat with SSE |
 | [SwapExpenses](demo/SwapExpenses) | Full CRUD application |
+| [SwapDashboard](demo/SwapDashboard) | Complex UI orchestration (20+ partials, distributed handlers) |
 | [TaskFlow](demo/TaskFlow) | Kanban board |
 
 ---
