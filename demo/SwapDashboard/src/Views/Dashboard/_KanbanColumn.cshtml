@@ -1,0 +1,23 @@
+@using SwapDashboard.Handlers
+@model KanbanColumnModel
+
+<div class="rounded-xl @Model.ColorClass p-3">
+    <div class="flex items-center justify-between mb-3">
+        <h3 class="font-semibold text-gray-700">@Model.Title</h3>
+        <span class="text-sm text-gray-500 bg-white px-2 py-0.5 rounded-full">@Model.Tasks.Count</span>
+    </div>
+    
+    <div class="task-list-@Model.Status space-y-2 min-h-[100px]">
+        @foreach (var task in Model.Tasks)
+        {
+            <partial name="_TaskCard" model="task" />
+        }
+        
+        @if (!Model.Tasks.Any())
+        {
+            <div class="text-center py-8 text-gray-400 text-sm">
+                No tasks
+            </div>
+        }
+    </div>
+</div>

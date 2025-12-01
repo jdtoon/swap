@@ -1,0 +1,23 @@
+@using SwapDashboard.Handlers
+@model KanbanViewModel
+
+<div class="grid grid-cols-4 gap-4">
+    
+    <!-- PARTIAL 17: Kanban Columns -->
+    <div id="kanban-todo" class="kanban-column">
+        <partial name="_KanbanColumn" model="@(new KanbanColumnModel("To Do", "todo", Model.TodoTasks, "bg-gray-100"))" />
+    </div>
+    
+    <div id="kanban-inprogress" class="kanban-column">
+        <partial name="_KanbanColumn" model="@(new KanbanColumnModel("In Progress", "inprogress", Model.InProgressTasks, "bg-blue-100"))" />
+    </div>
+    
+    <div id="kanban-review" class="kanban-column">
+        <partial name="_KanbanColumn" model="@(new KanbanColumnModel("Review", "review", Model.ReviewTasks, "bg-yellow-100"))" />
+    </div>
+    
+    <div id="kanban-done" class="kanban-column">
+        <partial name="_KanbanColumn" model="@(new KanbanColumnModel("Done", "done", Model.DoneTasks, "bg-green-100"))" />
+    </div>
+    
+</div>

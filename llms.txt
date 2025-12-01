@@ -966,6 +966,171 @@ Dev dashboard (if enabled):
 
 ---
 
+## COMPLEX FRONT-ENDS (50+ Partials)
+
+Swap.Htmx scales to pages with 50-100+ partials through distributed handlers.
+
+### The Problem
+
+A complex page might have dozens of components that need to stay in sync. When a task is completed:
+
+1. The task card moves to "Done" column
+2. Stats panel updates (completed count, progress %)
+3. Activity feed shows new entry
+4. Notification badge updates
+5. Progress bar animates
+6. Team workload section updates
+7. Overdue widget recalculates
+8. ... and potentially 10+ more partials
+
+### The Solution
+
+**Controller fires ONE event:**
+
+```csharp
+[HttpPost]
+public IActionResult CompleteTask(int id)
+{
+    var task = _tasks.GetById(id);
+    _tasks.UpdateStatus(id, TaskStatus.Done);
+    
+    // Controller doesn't know what updates
+    return SwapEvent(new TaskCompletedEvent(task.Id, task.ProjectId, task.Title))
+        .WithSuccessToast($"Completed: {task.Title}")
+        .Build();
+}
+```
+
+**Distributed handlers each update ONE partial:**
+
+```csharp
+// Handler 1: Stats panel
+[SwapHandler]
+public class StatsHandler : ISwapEventHandler<TaskCompletedEvent>
+{
+    public Task HandleAsync(TaskCompletedEvent e, SwapResponseBuilder builder, CancellationToken ct)
+    {
+        var stats = _tasks.GetStats(e.ProjectId);
+        builder.AlsoUpdate("stats-panel", "_StatsPanel", stats);
+        return Task.CompletedTask;
+    }
+}
+
+// Handler 2: Kanban columns
+[SwapHandler]
+public class KanbanHandler : ISwapEventHandler<TaskCompletedEvent>
+{
+    public Task HandleAsync(TaskCompletedEvent e, SwapResponseBuilder builder, CancellationToken ct)
+    {
+        var kanban = _tasks.GetKanban(e.ProjectId);
+        builder.AlsoUpdate("kanban-todo", "_KanbanColumn", kanban.TodoTasks);
+        builder.AlsoUpdate("kanban-done", "_KanbanColumn", kanban.DoneTasks);
+        return Task.CompletedTask;
+    }
+}
+
+// Handler 3: Activity feed
+[SwapHandler]
+public class ActivityHandler : ISwapEventHandler<TaskCompletedEvent>
+{
+    public Task HandleAsync(TaskCompletedEvent e, SwapResponseBuilder builder, CancellationToken ct)
+    {
+        var activities = _activities.GetRecent(10);
+        builder.AlsoUpdate("activity-feed", "_ActivityFeed", activities);
+        return Task.CompletedTask;
+    }
+}
+
+// Handler 4: Progress bar
+[SwapHandler]
+public class ProgressHandler : ISwapEventHandler<TaskCompletedEvent>
+{
+    public Task HandleAsync(TaskCompletedEvent e, SwapResponseBuilder builder, CancellationToken ct)
+    {
+        var stats = _tasks.GetStats(e.ProjectId);
+        builder.AlsoUpdate("progress-bar", "_ProgressBar", stats);
+        return Task.CompletedTask;
+    }
+}
+
+// ... 6+ more handlers for other partials
+```
+
+### How It Works
+
+```
+User clicks "Complete" → Controller fires TaskCompletedEvent
+        │
+        ▼
+Event Bus finds all handlers for TaskCompletedEvent
+        │
+        ├──→ StatsHandler         → AlsoUpdate("stats-panel")
+        ├──→ KanbanHandler        → AlsoUpdate("kanban-*")
+        ├──→ ActivityHandler      → AlsoUpdate("activity-feed")
+        ├──→ ProgressHandler      → AlsoUpdate("progress-bar")
+        ├──→ NotificationHandler  → AlsoUpdate("notification-badge")
+        └──→ TeamHandler          → AlsoUpdate("team-workload")
+        │
+        ▼
+Response Builder collects all OOB swaps into ONE response
+        │
+        ▼
+Browser (HTMX) swaps each element in place
+```
+
+### Why This Scales
+
+| Concern | Without Swap.Htmx | With Swap.Htmx |
+|---------|-------------------|----------------|
+| Adding new partial | Edit controller + wire up hx-trigger | Add handler class |
+| Controller complexity | Knows all 10+ targets | Just fires event |
+| Testing | Hard to test partials | Each handler is unit testable |
+| Performance | N/A | Only relevant handlers run |
+
+### Conditional Updates
+
+```csharp
+// Only update if element exists on page
+builder.AlsoUpdateIfExists($"task-detail-{e.TaskId}", "_TaskDetail", task);
+
+// Only update if condition is true
+if (_userContext.IsAdmin)
+{
+    builder.AlsoUpdate("admin-panel", "_AdminPanel", adminData);
+}
+```
+
+### Bulk Updates
+
+```csharp
+// Update many similar elements
+builder.AlsoUpdateMany(
+    items: affectedProducts,
+    idSelector: p => $"product-{p.Id}",
+    viewName: "_ProductRow"
+);
+```
+
+### Organizing Handlers
+
+```
+Handlers/
+├── Tasks/
+│   ├── TaskCardHandler.cs
+│   ├── KanbanHandler.cs
+│   └── TaskDetailHandler.cs
+├── Dashboard/
+│   ├── StatsHandler.cs
+│   ├── ProgressHandler.cs
+│   └── ActivityHandler.cs
+└── Notifications/
+    └── BadgeHandler.cs
+```
+
+**Demo:** See `/demo/SwapDashboard` for a working example with 20+ partials.
+
+---
+
 ## DOCUMENTATION LINKS
 
 Full documentation: https://github.com/jdtoon/swap/tree/main/lib/Swap.Htmx/docs
@@ -986,6 +1151,7 @@ Full documentation: https://github.com/jdtoon/swap/tree/main/lib/Swap.Htmx/docs
 | CRUD Toasts | /docs/CrudToasts.md |
 | Recipes | /docs/Recipes.md |
 | Multi-Component Coordination | /docs/MultiComponentCoordination.md |
+| Complex Front-Ends | /docs/ComplexFrontEnds.md |
 | Anti-Patterns | /docs/AntiPatterns.md |
 | Debugging | /docs/DebuggingAndLogging.md |
 

@@ -1,0 +1,30 @@
+@model ActivityItem
+
+<div class="flex space-x-3">
+    <div class="w-8 h-8 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center text-xs font-medium flex-shrink-0">
+        @Model.UserAvatar
+    </div>
+    <div class="flex-1 min-w-0">
+        <p class="text-sm text-gray-900">
+            <span class="font-medium">@Model.UserName</span>
+            <span class="text-gray-500">@Model.Description</span>
+            @if (!string.IsNullOrEmpty(Model.TaskTitle))
+            {
+                <span class="font-medium text-indigo-600 hover:underline cursor-pointer">@Model.TaskTitle</span>
+            }
+        </p>
+        <p class="text-xs text-gray-400 mt-1">@FormatTimeAgo(Model.Timestamp)</p>
+    </div>
+</div>
+
+@functions {
+    string FormatTimeAgo(DateTime timestamp)
+    {
+        var diff = DateTime.Now - timestamp;
+        if (diff.TotalMinutes < 1) return "just now";
+        if (diff.TotalMinutes < 60) return $"{(int)diff.TotalMinutes}m ago";
+        if (diff.TotalHours < 24) return $"{(int)diff.TotalHours}h ago";
+        if (diff.TotalDays < 7) return $"{(int)diff.TotalDays}d ago";
+        return timestamp.ToString("MMM d");
+    }
+}

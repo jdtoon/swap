@@ -1,0 +1,149 @@
+@model TaskItem
+
+@{
+    var priorityColor = Model.Priority switch
+    {
+        TaskPriority.Urgent => "text-red-600 bg-red-100",
+        TaskPriority.High => "text-orange-600 bg-orange-100",
+        TaskPriority.Medium => "text-yellow-600 bg-yellow-100",
+        _ => "text-gray-600 bg-gray-100"
+    };
+}
+
+<!-- Modal Backdrop -->
+<div 
+    id="task-detail-modal" 
+    class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-end"
+    onclick="if(event.target === this) this.remove()">
+    
+    <!-- Side Panel -->
+    <div class="w-[500px] h-full bg-white shadow-xl animate-slide-in-right overflow-y-auto">
+        
+        <!-- Header -->
+        <div class="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+            <h2 class="text-lg font-semibold text-gray-900">Task Details</h2>
+            <button 
+                class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg"
+                onclick="document.getElementById('task-detail-modal').remove()">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+        
+        <!-- Content -->
+        <div id="task-detail-@Model.Id" class="p-6">
+            
+            <!-- Status & Priority -->
+            <div class="flex items-center space-x-3 mb-4">
+                <span class="px-3 py-1 rounded-full text-sm font-medium @(Model.Status == TaskStatus.Done ? "bg-green-100 text-green-600" : "bg-blue-100 text-blue-600")">
+                    @Model.Status
+                </span>
+                <span class="px-3 py-1 rounded-full text-sm font-medium @priorityColor capitalize">
+                    @Model.Priority
+                </span>
+            </div>
+            
+            <!-- Title -->
+            <h3 class="text-xl font-bold text-gray-900 mb-2">@Model.Title</h3>
+            
+            <!-- Description -->
+            <p class="text-gray-600 mb-6">@Model.Description</p>
+            
+            <!-- Meta -->
+            <div class="space-y-4 mb-6">
+                
+                <!-- Assignee -->
+                <div class="flex items-center justify-between">
+                    <span class="text-sm text-gray-500">Assignee</span>
+                    @if (Model.Assignee != null)
+                    {
+                        <div class="flex items-center space-x-2">
+                            <div class="w-6 h-6 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center text-xs font-medium">
+                                @Model.Assignee.Avatar
+                            </div>
+                            <span class="text-sm font-medium text-gray-900">@Model.Assignee.Name</span>
+                        </div>
+                    }
+                    else
+                    {
+                        <span class="text-sm text-gray-400">Unassigned</span>
+                    }
+                </div>
+                
+                <!-- Due Date -->
+                <div class="flex items-center justify-between">
+                    <span class="text-sm text-gray-500">Due Date</span>
+                    <span class="text-sm font-medium text-gray-900">
+                        @(Model.DueDate?.ToString("MMM d, yyyy") ?? "No due date")
+                    </span>
+                </div>
+                
+                <!-- Created -->
+                <div class="flex items-center justify-between">
+                    <span class="text-sm text-gray-500">Created</span>
+                    <span class="text-sm font-medium text-gray-900">@Model.CreatedAt.ToString("MMM d, yyyy")</span>
+                </div>
+                
+            </div>
+            
+            <!-- Tags -->
+            @if (Model.Tags.Any())
+            {
+                <div class="mb-6">
+                    <span class="text-sm text-gray-500 block mb-2">Tags</span>
+                    <div class="flex flex-wrap gap-2">
+                        @foreach (var tag in Model.Tags)
+                        {
+                            <span class="px-3 py-1 bg-indigo-100 text-indigo-600 rounded-full text-sm">@tag</span>
+                        }
+                    </div>
+                </div>
+            }
+            
+            <!-- Actions -->
+            <div class="flex space-x-3 pt-4 border-t border-gray-200">
+                @if (Model.Status != TaskStatus.Done)
+                {
+                    <button 
+                        class="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center space-x-2"
+                        hx-post="/Dashboard/CompleteTask/@Model.Id"
+                        hx-swap="none"
+                        onclick="setTimeout(() => document.getElementById('task-detail-modal')?.remove(), 100)">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                        </svg>
+                        <span>Complete</span>
+                    </button>
+                }
+                
+                <button 
+                    class="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                    hx-post="/Dashboard/DeleteTask/@Model.Id"
+                    hx-swap="none"
+                    hx-confirm="Are you sure you want to delete this task?"
+                    onclick="setTimeout(() => document.getElementById('task-detail-modal')?.remove(), 100)">
+                    Delete
+                </button>
+            </div>
+            
+        </div>
+        
+        <!-- PARTIAL 20: Comments Section -->
+        <div id="task-comments-@Model.Id" class="border-t border-gray-200 p-6">
+            <partial name="_CommentList" model="Model" />
+        </div>
+        
+    </div>
+    
+</div>
+
+<style>
+    @@keyframes slide-in-right {
+        from { transform: translateX(100%); }
+        to { transform: translateX(0); }
+    }
+    .animate-slide-in-right {
+        animation: slide-in-right 0.2s ease-out;
+    }
+</style>

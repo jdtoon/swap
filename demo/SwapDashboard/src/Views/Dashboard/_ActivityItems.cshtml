@@ -1,0 +1,10 @@
+@model List<ActivityItem>
+
+@* This partial is used for infinite scroll - appends activity items to the feed *@
+
+@foreach (var activity in Model)
+{
+    <div class="activity-item">
+        <partial name="_ActivityItem" model="activity" />
+    </div>
+}

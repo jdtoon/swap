@@ -1,0 +1,18 @@
+@model DashboardStats
+
+<div class="bg-white rounded-xl border border-gray-200 p-4">
+    <div class="flex items-center justify-between mb-2">
+        <span class="text-sm font-medium text-gray-700">Overall Progress</span>
+        <span class="text-sm font-bold text-indigo-600">@Model.CompletionRate.ToString("F0")%</span>
+    </div>
+    <div class="h-3 bg-gray-200 rounded-full overflow-hidden">
+        <div 
+            class="h-full bg-gradient-to-r from-indigo-500 to-indigo-600 rounded-full transition-all duration-500"
+            style="width: @Model.CompletionRate%">
+        </div>
+    </div>
+    <div class="flex justify-between mt-2 text-xs text-gray-500">
+        <span>@Model.CompletedTasks completed</span>
+        <span>@(Model.TotalTasks - Model.CompletedTasks) remaining</span>
+    </div>
+</div>

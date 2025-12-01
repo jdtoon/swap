@@ -1,0 +1,12 @@
+@model List<TeamMember>
+
+<div class="p-4">
+    <h2 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Team</h2>
+    
+    <div class="space-y-2">
+        @foreach (var member in Model)
+        {
+            <partial name="_TeamMember" model="member" />
+        }
+    </div>
+</div>

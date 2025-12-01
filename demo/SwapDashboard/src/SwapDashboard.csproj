@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\lib\Swap.Htmx\Swap.Htmx.csproj" />
+    <ProjectReference Include="..\..\..\framework\Swap.Htmx.Generators\Swap.Htmx.Generators.csproj" 
+                      OutputItemType="Analyzer" 
+                      ReferenceOutputAssembly="false" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+    <CompilerGeneratedFilesOutputPath>$(BaseIntermediateOutputPath)\GeneratedFiles</CompilerGeneratedFilesOutputPath>
+  </PropertyGroup>
+
+  <!-- Include .cshtml files as AdditionalFiles for source generators -->
+  <ItemGroup>
+    <AdditionalFiles Include="Views\**\*.cshtml" />
+  </ItemGroup>
+
+</Project>
