@@ -15,8 +15,9 @@
 <div 
     id="task-card-@Model.Id"
     class="kanban-card bg-white rounded-lg p-3 shadow-sm border border-gray-200 hover:shadow-md transition-shadow"
-    hx-get="/Dashboard/TaskDetail/@Model.Id"
-    hx-target="#modal-container">
+    hx-get="/Dashboard/TaskDetail?id=@Model.Id"
+    hx-target="#modal-container"
+    hx-include="#dashboard-state">
     
     <!-- Priority indicator -->
     <div class="flex items-center justify-between mb-2">
@@ -29,7 +30,8 @@
         {
             <button 
                 class="text-gray-400 hover:text-green-600 transition-colors"
-                hx-post="/Dashboard/CompleteTask/@Model.Id"
+                hx-post="/Dashboard/CompleteTask?id=@Model.Id"
+                hx-include="#dashboard-state"
                 hx-swap="none"
                 onclick="event.stopPropagation()">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -7,7 +7,7 @@
         <span class="text-sm text-gray-500 bg-white px-2 py-0.5 rounded-full">@Model.Tasks.Count</span>
     </div>
     
-    <div id="task-list" class="space-y-2 min-h-[100px]">
+    <div class="task-list-@Model.Status space-y-2 min-h-[100px]">
         @foreach (var task in Model.Tasks)
         {
             <partial name="_TaskCard" model="task" />

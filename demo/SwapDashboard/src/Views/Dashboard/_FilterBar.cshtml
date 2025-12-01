@@ -1,16 +1,6 @@
 @model DashboardState
 
-<div id="filter-bar" class="flex items-center justify-between">
-    
-    <!-- State container - hidden inputs for state persistence -->
-    <div id="filter-state" style="display: none;">
-        <input type="hidden" name="SelectedProjectId" value="@Model.SelectedProjectId" />
-        <input type="hidden" name="SelectedTaskId" value="@Model.SelectedTaskId" />
-        <input type="hidden" name="SelectedMemberId" value="@Model.SelectedMemberId" />
-        <input type="hidden" name="ViewMode" value="@Model.ViewMode" />
-        <input type="hidden" name="SearchTerm" value="@Model.SearchTerm" />
-        <!-- StatusFilter and PriorityFilter are in visible selects below, not hidden -->
-    </div>
+<div class="flex items-center justify-between">
     
     <!-- View Modes -->
     <div class="flex items-center space-x-1 bg-gray-100 rounded-lg p-1">
@@ -18,21 +8,21 @@
             class="px-3 py-1.5 text-sm rounded-md transition-colors @(Model.ViewMode == "board" ? "bg-white shadow text-gray-900" : "text-gray-600 hover:text-gray-900")"
             hx-get="/Dashboard/SwitchView?mode=board"
             hx-target="#kanban-board"
-            hx-include="#filter-bar">
+            hx-include="#dashboard-state">
             Board
         </button>
         <button 
             class="px-3 py-1.5 text-sm rounded-md transition-colors @(Model.ViewMode == "list" ? "bg-white shadow text-gray-900" : "text-gray-600 hover:text-gray-900")"
             hx-get="/Dashboard/SwitchView?mode=list"
             hx-target="#kanban-board"
-            hx-include="#filter-bar">
+            hx-include="#dashboard-state">
             List
         </button>
         <button 
             class="px-3 py-1.5 text-sm rounded-md transition-colors @(Model.ViewMode == "timeline" ? "bg-white shadow text-gray-900" : "text-gray-600 hover:text-gray-900")"
             hx-get="/Dashboard/SwitchView?mode=timeline"
             hx-target="#kanban-board"
-            hx-include="#filter-bar">
+            hx-include="#dashboard-state">
             Timeline
         </button>
     </div>
@@ -44,8 +34,8 @@
         <select 
             class="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
             hx-get="/Dashboard/FilterTasks"
-            hx-target="#task-list"
-            hx-include="#filter-bar"
+            hx-target="#kanban-board"
+            hx-include="#dashboard-state"
             name="StatusFilter">
             @{ var status = Model.StatusFilter ?? "all"; }
             <option value="all" selected="@(status == "all")">All Status</option>
@@ -59,8 +49,8 @@
         <select 
             class="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
             hx-get="/Dashboard/FilterTasks"
-            hx-target="#task-list"
-            hx-include="#filter-bar"
+            hx-target="#kanban-board"
+            hx-include="#dashboard-state"
             name="PriorityFilter">
             @{ var priority = Model.PriorityFilter ?? "all"; }
             <option value="all" selected="@(priority == "all")">All Priority</option>

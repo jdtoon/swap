@@ -9,6 +9,13 @@
     This page has 20+ partials that all coordinate through events.
     When a task is completed, 10+ partials update automatically.
     
+    KEY SWAP.HTMX FEATURES DEMONSTRATED:
+    1. Distributed Handlers - Each handler updates one piece of UI
+    2. Specific Event Types - TaskCreatedEvent, TaskCompletedEvent, etc.
+    3. SwapState - Server-side state with automatic sync
+    4. OOB Swaps - Multiple partials updated in single response
+    5. CRUD Toasts - Built-in toast helpers
+    
     PARTIALS ON THIS PAGE:
     1.  _Header           - Top navigation bar
     2.  _NotificationBadge - Notification count in header
@@ -37,6 +44,9 @@
     
     All these partials update independently based on events!
 -->
+
+<!-- SwapState: Renders hidden inputs for state persistence across HTMX requests -->
+<swap-state state="Model.State" />
 
 <div class="flex h-screen overflow-hidden">
     
@@ -98,5 +108,5 @@
     
 </div>
 
-<!-- Modal container for task details -->
+<!-- Modal container for task details and create forms -->
 <div id="modal-container"></div>

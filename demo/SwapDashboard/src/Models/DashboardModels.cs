@@ -168,3 +168,17 @@ public class KanbanViewModel
     public List<TaskItem> ReviewTasks { get; set; } = new();
     public List<TaskItem> DoneTasks { get; set; } = new();
 }
+
+/// <summary>
+/// View model for creating a new task.
+/// </summary>
+public class CreateTaskViewModel
+{
+    public int ProjectId { get; set; }
+    public string Title { get; set; } = "";
+    public string Description { get; set; } = "";
+    public TaskPriority Priority { get; set; } = TaskPriority.Medium;
+    public int? AssigneeId { get; set; }
+    public List<Project> Projects { get; set; } = new();
+    public List<TeamMember> TeamMembers { get; set; } = new();
+}

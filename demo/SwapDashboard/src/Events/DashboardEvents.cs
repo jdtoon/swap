@@ -36,10 +36,53 @@ public partial class DashboardEvents
     public const string CommentAdded = "comment.added";
 }
 
+// ============================================================================
+// SPECIFIC EVENT TYPES
+// ============================================================================
+// Using specific event types allows handlers to subscribe to exactly what they need.
+// This is more efficient than one generic TaskEvent where every handler fires.
+// ============================================================================
+
 /// <summary>
-/// Event payload for task-related events.
+/// Base record for all task events with common properties.
 /// </summary>
-public record TaskEvent(int TaskId, int? ProjectId = null, string? Title = null);
+public abstract record TaskEventBase(int TaskId, int? ProjectId, string? Title);
+
+/// <summary>
+/// Fired when a new task is created.
+/// Handlers: Stats, ProjectList, Kanban, Activity, TaskCounter, ProgressBar
+/// </summary>
+public record TaskCreatedEvent(int TaskId, int? ProjectId, string? Title) 
+    : TaskEventBase(TaskId, ProjectId, Title);
+
+/// <summary>
+/// Fired when a task is marked as completed.
+/// Handlers: Stats, ProjectList, Kanban, Activity, TaskDetail, ProgressBar, 
+///           Overdue, TaskCounter, NotificationBadge, TeamWorkload
+/// </summary>
+public record TaskCompletedEvent(int TaskId, int? ProjectId, string? Title) 
+    : TaskEventBase(TaskId, ProjectId, Title);
+
+/// <summary>
+/// Fired when a task is deleted.
+/// Handlers: Stats, ProjectList, Kanban, Activity, TaskCounter, ProgressBar, Overdue
+/// </summary>
+public record TaskDeletedEvent(int TaskId, int? ProjectId, string? Title) 
+    : TaskEventBase(TaskId, ProjectId, Title);
+
+/// <summary>
+/// Fired when a task is moved to a different status (kanban drag-drop).
+/// Handlers: Stats, Kanban, Activity, TaskDetail, ProgressBar
+/// </summary>
+public record TaskMovedEvent(int TaskId, int? ProjectId, string? Title) 
+    : TaskEventBase(TaskId, ProjectId, Title);
+
+/// <summary>
+/// Fired when a task is assigned to a team member.
+/// Handlers: Kanban, Activity, TaskDetail, TeamWorkload, NotificationBadge
+/// </summary>
+public record TaskAssignedEvent(int TaskId, int? ProjectId, string? Title, int? AssigneeId) 
+    : TaskEventBase(TaskId, ProjectId, Title);
 
 /// <summary>
 /// Event payload for project selection.

@@ -66,8 +66,7 @@
                         @if (task.Status != TaskStatus.Done)
                         {
                             <button hx-post="/Dashboard/CompleteTask?id=@task.Id" 
-                                    hx-target="#task-row-@task.Id"
-                                    hx-swap="outerHTML"
+                                    hx-include="#dashboard-state"
                                     class="text-green-600 hover:text-green-900 mr-3">
                                 Complete
                             </button>
@@ -75,6 +74,7 @@
                         <button hx-get="/Dashboard/TaskDetail?id=@task.Id"
                                 hx-target="#task-detail-panel"
                                 hx-swap="innerHTML"
+                                hx-include="#dashboard-state"
                                 class="text-indigo-600 hover:text-indigo-900">
                             Details
                         </button>

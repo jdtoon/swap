@@ -43,7 +43,7 @@ public class DashboardController : SwapController
     /// <summary>
     /// Main dashboard page - loads all components.
     /// </summary>
-    public IActionResult Index(DashboardState? state = null)
+    public IActionResult Index([FromSwapState] DashboardState? state = null)
     {
         state ??= new DashboardState();
         var vm = BuildViewModel(state);
@@ -52,19 +52,29 @@ public class DashboardController : SwapController
 
     /// <summary>
     /// Create a new task.
-    /// Fires TaskCreated event - handlers update all affected partials.
+    /// Fires TaskCreatedEvent - handlers update all affected partials.
     /// </summary>
     [HttpPost]
-    public IActionResult CreateTask(int projectId, string title, string description, TaskPriority priority, int? assigneeId)
+    public IActionResult CreateTask(
+        int projectId, 
+        string title, 
+        string? description, 
+        TaskPriority priority, 
+        int? assigneeId,
+        [FromSwapState] DashboardState? state = null)
     {
-        var task = _tasks.Create(projectId, title, description, priority, assigneeId);
+        state ??= new DashboardState();
+        
+        var task = _tasks.Create(projectId, title, description ?? "", priority, assigneeId);
         
         _activities.Add("task_created", "created task", null, "You", task.Id, task.Title, projectId);
         _notifications.Add("Task created", $"New task: {task.Title}", "success");
 
-        // Fire the event - all registered handlers will update their partials
-        return SwapEvent(DashboardEvents.Task.Created, new TaskEvent(task.Id, projectId, task.Title))
-            .WithSuccessToast($"Created: {task.Title}")
+        // Fire the SPECIFIC event - EventKey + payload
+        // DashboardEvents.Task.Created is generated from [SwapEventSource]
+        return SwapEvent(DashboardEvents.Task.Created, new TaskCreatedEvent(task.Id, projectId, task.Title))
+            .WithCreatedToast("Task", task.Title)
+            .WithState(state)
             .Build();
     }
 
@@ -84,8 +94,10 @@ public class DashboardController : SwapController
     /// ALL from one event - the controller doesn't know or care about any of these!
     /// </summary>
     [HttpPost]
-    public IActionResult CompleteTask(int id)
+    public IActionResult CompleteTask(int id, [FromSwapState] DashboardState? state = null)
     {
+        state ??= new DashboardState();
+        
         var task = _tasks.GetById(id);
         if (task == null) return NotFound();
 
@@ -95,8 +107,9 @@ public class DashboardController : SwapController
         _notifications.Add("Task completed", $"Completed: {task.Title}", "success");
 
         // Single event → 10+ handlers → 10+ partial updates → 1 HTTP response
-        return SwapEvent(DashboardEvents.Task.Completed, new TaskEvent(task.Id, task.ProjectId, task.Title))
+        return SwapEvent(DashboardEvents.Task.Completed, new TaskCompletedEvent(task.Id, task.ProjectId, task.Title))
             .WithSuccessToast($"Completed: {task.Title}")
+            .WithState(state)
             .Build();
     }
 
@@ -104,16 +117,19 @@ public class DashboardController : SwapController
     /// Move task to a different status (kanban drag-drop).
     /// </summary>
     [HttpPost]
-    public IActionResult MoveTask(int id, TaskStatus status)
+    public IActionResult MoveTask(int id, TaskStatus status, [FromSwapState] DashboardState? state = null)
     {
+        state ??= new DashboardState();
+        
         var task = _tasks.GetById(id);
         if (task == null) return NotFound();
 
         _tasks.UpdateStatus(id, status);
         _activities.Add("task_status", $"moved to {status}", null, "You", task.Id, task.Title, task.ProjectId);
 
-        return SwapEvent(DashboardEvents.Task.Moved, new TaskEvent(task.Id, task.ProjectId, task.Title))
+        return SwapEvent(DashboardEvents.Task.Moved, new TaskMovedEvent(task.Id, task.ProjectId, task.Title))
             .WithInfoToast($"Moved to {status}")
+            .WithState(state)
             .Build();
     }
 
@@ -121,8 +137,10 @@ public class DashboardController : SwapController
     /// Assign task to team member.
     /// </summary>
     [HttpPost]
-    public IActionResult AssignTask(int id, int? assigneeId)
+    public IActionResult AssignTask(int id, int? assigneeId, [FromSwapState] DashboardState? state = null)
     {
+        state ??= new DashboardState();
+        
         var task = _tasks.GetById(id);
         if (task == null) return NotFound();
 
@@ -135,8 +153,9 @@ public class DashboardController : SwapController
             _notifications.Add("Task assigned", $"{task.Title} assigned to {assignee.Name}", "info");
         }
 
-        return SwapEvent(DashboardEvents.Task.Assigned, new TaskEvent(task.Id, task.ProjectId, task.Title))
+        return SwapEvent(DashboardEvents.Task.Assigned, new TaskAssignedEvent(task.Id, task.ProjectId, task.Title, assigneeId))
             .WithInfoToast(assignee != null ? $"Assigned to {assignee.Name}" : "Unassigned")
+            .WithState(state)
             .Build();
     }
 
@@ -144,8 +163,10 @@ public class DashboardController : SwapController
     /// Delete a task.
     /// </summary>
     [HttpPost]
-    public IActionResult DeleteTask(int id)
+    public IActionResult DeleteTask(int id, [FromSwapState] DashboardState? state = null)
     {
+        state ??= new DashboardState();
+        
         var task = _tasks.GetById(id);
         if (task == null) return NotFound();
 
@@ -155,8 +176,9 @@ public class DashboardController : SwapController
         _tasks.Delete(id);
         _activities.Add("task_deleted", "deleted task", null, "You", null, title, projectId);
 
-        return SwapEvent(DashboardEvents.Task.Deleted, new TaskEvent(id, projectId, title))
-            .WithWarningToast($"Deleted: {title}")
+        return SwapEvent(DashboardEvents.Task.Deleted, new TaskDeletedEvent(id, projectId, title))
+            .WithDeletedToast("Task", title)
+            .WithState(state)
             .Build();
     }
 
@@ -193,10 +215,10 @@ public class DashboardController : SwapController
             .WithState(state)
             .AlsoUpdate("project-header", "_ProjectHeader", project)
             .AlsoUpdate("stats-panel", "_StatsPanel", stats)
-            .AlsoUpdate("kanban-todo", "_KanbanColumn", new KanbanColumnModel("Todo", kanban.TodoTasks, "bg-gray-100"))
-            .AlsoUpdate("kanban-inprogress", "_KanbanColumn", new KanbanColumnModel("In Progress", kanban.InProgressTasks, "bg-blue-100"))
-            .AlsoUpdate("kanban-review", "_KanbanColumn", new KanbanColumnModel("Review", kanban.ReviewTasks, "bg-yellow-100"))
-            .AlsoUpdate("kanban-done", "_KanbanColumn", new KanbanColumnModel("Done", kanban.DoneTasks, "bg-green-100"))
+            .AlsoUpdate("kanban-todo", "_KanbanColumn", new KanbanColumnModel("To Do", "todo", kanban.TodoTasks, "bg-gray-100"))
+            .AlsoUpdate("kanban-inprogress", "_KanbanColumn", new KanbanColumnModel("In Progress", "inprogress", kanban.InProgressTasks, "bg-blue-100"))
+            .AlsoUpdate("kanban-review", "_KanbanColumn", new KanbanColumnModel("Review", "review", kanban.ReviewTasks, "bg-yellow-100"))
+            .AlsoUpdate("kanban-done", "_KanbanColumn", new KanbanColumnModel("Done", "done", kanban.DoneTasks, "bg-green-100"))
             .AlsoUpdate("progress-bar", "_ProgressBar", stats)
             .WithTrigger(DashboardEvents.Project.Selected, new { ProjectId = id })
             .Build();
@@ -217,6 +239,26 @@ public class DashboardController : SwapController
     }
 
     /// <summary>
+    /// Show the create task modal.
+    /// </summary>
+    [HttpGet]
+    public IActionResult CreateTaskModal([FromSwapState] DashboardState? state = null)
+    {
+        state ??= new DashboardState();
+        
+        var vm = new CreateTaskViewModel
+        {
+            ProjectId = state.SelectedProjectId ?? _projects.GetAll().FirstOrDefault()?.Id ?? 0,
+            Projects = _projects.GetAll(),
+            TeamMembers = _team.GetAll()
+        };
+        
+        return SwapResponse()
+            .WithView("_CreateTaskModal", vm)
+            .Build();
+    }
+
+    /// <summary>
     /// Filter tasks by status/priority/assignee.
     /// State is read from hidden fields, filter values from dropdowns.
     /// </summary>
@@ -224,13 +266,16 @@ public class DashboardController : SwapController
     public IActionResult FilterTasks(
         string? StatusFilter,
         string? PriorityFilter,
+        int? SelectedMemberId,
         [FromSwapState] DashboardState state)
     {
-        // Update state with dropdown values
+        // Update state with filter values
         if (!string.IsNullOrEmpty(StatusFilter))
             state.StatusFilter = StatusFilter;
         if (!string.IsNullOrEmpty(PriorityFilter))
             state.PriorityFilter = PriorityFilter;
+        if (SelectedMemberId.HasValue)
+            state.SelectedMemberId = SelectedMemberId;
         
         var tasks = _tasks.GetFiltered(
             state.SelectedProjectId, 
@@ -238,11 +283,19 @@ public class DashboardController : SwapController
             state.PriorityFilter, 
             state.SelectedMemberId,
             state.SearchTerm);
+        
+        var kanban = new KanbanViewModel
+        {
+            TodoTasks = tasks.Where(t => t.Status == TaskStatus.Todo).ToList(),
+            InProgressTasks = tasks.Where(t => t.Status == TaskStatus.InProgress).ToList(),
+            ReviewTasks = tasks.Where(t => t.Status == TaskStatus.Review).ToList(),
+            DoneTasks = tasks.Where(t => t.Status == TaskStatus.Done).ToList()
+        };
 
         return SwapResponse()
-            .WithView("_TaskList", tasks)
-            .AlsoUpdate("filter-bar", "_FilterBar", state) // Update filter bar with new state
+            .WithView("_KanbanBoard", kanban)
             .AlsoUpdate("filter-results-count", "_FilterResultsCount", tasks.Count)
+            .WithState(state)
             .WithTrigger(DashboardEvents.Filter.Changed)
             .Build();
     }
@@ -261,8 +314,16 @@ public class DashboardController : SwapController
             state.SelectedMemberId,
             q);
 
+        var kanban = new KanbanViewModel
+        {
+            TodoTasks = tasks.Where(t => t.Status == TaskStatus.Todo).ToList(),
+            InProgressTasks = tasks.Where(t => t.Status == TaskStatus.InProgress).ToList(),
+            ReviewTasks = tasks.Where(t => t.Status == TaskStatus.Review).ToList(),
+            DoneTasks = tasks.Where(t => t.Status == TaskStatus.Done).ToList()
+        };
+
         return SwapResponse()
-            .WithView("_TaskList", tasks)
+            .WithView("_KanbanBoard", kanban)
             .WithState(state)
             .AlsoUpdate("filter-results-count", "_FilterResultsCount", tasks.Count)
             .Build();
@@ -310,8 +371,10 @@ public class DashboardController : SwapController
     /// Add comment to task.
     /// </summary>
     [HttpPost]
-    public IActionResult AddComment(int taskId, string content)
+    public IActionResult AddComment(int taskId, string content, [FromSwapState] DashboardState? state = null)
     {
+        state ??= new DashboardState();
+        
         var task = _tasks.GetById(taskId);
         if (task == null) return NotFound();
 
@@ -319,6 +382,7 @@ public class DashboardController : SwapController
 
         return SwapEvent(DashboardEvents.Comment.Added, new CommentAddedEvent(taskId, content))
             .WithSuccessToast("Comment added")
+            .WithState(state)
             .Build();
     }
 
@@ -348,13 +412,15 @@ public class DashboardController : SwapController
             state.SelectedMemberId,
             state.SearchTerm);
 
+        var viewName = mode switch
+        {
+            "list" => "_ListView",
+            "timeline" => "_TimelineView",
+            _ => "_BoardView"
+        };
+
         return SwapResponse()
-            .WithView(mode switch
-            {
-                "list" => "_ListView",
-                "timeline" => "_TimelineView",
-                _ => "_BoardView"
-            }, tasks)
+            .WithView(viewName, tasks)
             .WithState(state)
             .WithTrigger(DashboardEvents.View.Mode.Changed, new { Mode = mode })
             .Build();

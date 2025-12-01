@@ -3,7 +3,8 @@
 <div 
     class="flex items-center space-x-3 px-2 py-1.5 rounded-lg hover:bg-gray-100 cursor-pointer"
     hx-get="/Dashboard/FilterTasks?SelectedMemberId=@Model.Id"
-    hx-target="#task-list">
+    hx-target="#kanban-board"
+    hx-include="#dashboard-state">
     
     <div class="relative">
         <div class="w-8 h-8 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center text-xs font-medium">

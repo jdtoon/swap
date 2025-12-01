@@ -1,5 +1,15 @@
 @model DashboardViewModel
 
+@{
+    var kanban = new KanbanViewModel
+    {
+        TodoTasks = Model.Tasks.Where(t => t.Status == TaskStatus.Todo).ToList(),
+        InProgressTasks = Model.Tasks.Where(t => t.Status == TaskStatus.InProgress).ToList(),
+        ReviewTasks = Model.Tasks.Where(t => t.Status == TaskStatus.Review).ToList(),
+        DoneTasks = Model.Tasks.Where(t => t.Status == TaskStatus.Done).ToList()
+    };
+}
+
 <div>
     @if (Model.SelectedProject != null)
     {
@@ -25,7 +35,7 @@
         
         <!-- PARTIAL 16: Kanban Board -->
         <div id="kanban-board">
-            <partial name="_KanbanBoard" model="Model" />
+            <partial name="_KanbanBoard" model="kanban" />
         </div>
     }
     else
