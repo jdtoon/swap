@@ -36,7 +36,11 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+// UseStaticFiles must come before UseRouting
+// This serves wwwroot files AND RCL static web assets (_content/*)
 app.UseStaticFiles();
+
 app.UseRouting();
 app.UseSwapHtmx();
 
