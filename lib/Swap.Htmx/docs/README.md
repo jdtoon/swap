@@ -9,12 +9,13 @@ Welcome to the Swap.Htmx documentation. These guides will help you build reactiv
 | I want to... | Read this |
 |--------------|-----------|
 | Get started with Swap.Htmx | [Getting Started](GettingStarted.md) |
+| Navigate with toasts/triggers | [Navigation](Navigation.md) ⭐ NEW |
 | Migrate an existing MVC app | [Migration Guide](MigrationGuide.md) |
 | Build complex multi-component UIs | [Multi-Component Coordination](MultiComponentCoordination.md) |
 | Use strongly-typed state | [SwapState Guide](SwapState.md) |
-| Copy-paste common patterns | [Recipes](Recipes.md) ⭐ NEW |
-| Handle form validation | [Validation Guide](Validation.md) ⭐ NEW |
-| Show success toasts for CRUD | [CRUD Toasts](CrudToasts.md) ⭐ NEW |
+| Copy-paste common patterns | [Recipes](Recipes.md) |
+| Handle form validation | [Validation Guide](Validation.md) |
+| Show success toasts for CRUD | [CRUD Toasts](CrudToasts.md) |
 | Understand state patterns | [State Management](StateManagement.md) |
 | Avoid common mistakes | [Anti-Patterns](AntiPatterns.md) |
 | Use events and triggers | [Events Guide](Events.md) |
@@ -28,6 +29,9 @@ These guides cover the fundamental patterns for building Swap.Htmx applications:
 
 ### [Getting Started](GettingStarted.md)
 Step-by-step guide to your first Swap.Htmx application. Covers installation, configuration, and basic usage.
+
+### [Navigation](Navigation.md) ⭐ NEW
+SPA-style navigation with `.WithNavigation()`. Navigate users while preserving toasts and triggers using the `HX-Location` header.
 
 ### [Migration Guide](MigrationGuide.md)
 How to incrementally migrate an existing ASP.NET Core MVC application to use Swap.Htmx for partial-based UI updates.
@@ -142,6 +146,8 @@ The repository includes several demo applications showing different patterns:
 | Demo | Description |
 |------|-------------|
 | `SwapMinimal` | Minimal API + Swap.Htmx basics |
+| `SwapNavDemo` | Navigation with `.WithNavigation()` ⭐ NEW |
+| `SwapStateDemo` | Hidden field state with `<swap-hidden>` |
 | `SwapShop` | E-commerce with cart, products, events |
 | `TaskFlow` | Task management with real-time updates |
 | `SwapWebSockets` | WebSocket integration example |

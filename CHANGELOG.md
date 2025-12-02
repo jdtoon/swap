@@ -5,6 +5,34 @@ All notable changes to Swap.Htmx will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.1] - 2025-12-02
+
+### Added
+
+#### Navigation (NEW)
+- **`.WithNavigation(path)`** - SPA-style navigation via `HX-Location` header
+- **`.WithNavigation(path, target, swap)`** - Navigate with target element and swap mode
+- **`NavigationOptions`** record for full control over navigation behavior
+- Navigate while preserving toasts and triggers (unlike redirects which lose headers)
+
+#### Tag Helpers
+- **`<swap-hidden>`** tag helper for hidden form fields with auto-formatting
+  - DateTime → `yyyy-MM-dd` format
+  - bool → lowercase `true`/`false`
+  - Collections → comma-separated values
+  - Custom date formats via `date-format` attribute
+
+#### Demo Applications
+- **SwapNavDemo** - Navigation patterns with `.WithNavigation()`
+- **SwapStateDemo** - Hidden field state patterns
+
+### Documentation
+- Added [Navigation Guide](lib/Swap.Htmx/docs/Navigation.md)
+- Updated main README with navigation examples
+- Updated docs index with new guides and demos
+
+---
+
 ## [1.0.0] - 2025-11-27
 
 ### 🎉 First Stable Release

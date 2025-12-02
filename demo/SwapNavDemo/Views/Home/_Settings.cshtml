@@ -1,0 +1,56 @@
+@model SwapNavDemo.Controllers.UserSettings
+
+<div id="main-content">
+    <h2>⚙️ Settings</h2>
+    
+    <form style="max-width: 400px;">
+        <div style="margin-bottom: 1rem;">
+            <label style="display: block; margin-bottom: 0.25rem; font-weight: 500;">Username</label>
+            <input type="text" value="@Model.Username" style="width: 100%; padding: 0.5rem; border: 1px solid #e2e8f0; border-radius: 0.375rem;">
+        </div>
+        
+        <div style="margin-bottom: 1rem;">
+            <label style="display: block; margin-bottom: 0.25rem; font-weight: 500;">Email</label>
+            <input type="email" value="@Model.Email" style="width: 100%; padding: 0.5rem; border: 1px solid #e2e8f0; border-radius: 0.375rem;">
+        </div>
+        
+        <div style="margin-bottom: 1rem;">
+            <label style="display: block; margin-bottom: 0.25rem; font-weight: 500;">Theme</label>
+            <select style="width: 100%; padding: 0.5rem; border: 1px solid #e2e8f0; border-radius: 0.375rem;">
+                @if (Model.Theme == "light")
+                {
+                    <option value="light" selected>Light</option>
+                    <option value="dark">Dark</option>
+                }
+                else
+                {
+                    <option value="light">Light</option>
+                    <option value="dark" selected>Dark</option>
+                }
+            </select>
+        </div>
+        
+        <div style="margin-bottom: 1rem;">
+            <label>
+                @if (Model.NotificationsEnabled)
+                {
+                    <input type="checkbox" checked>
+                }
+                else
+                {
+                    <input type="checkbox">
+                }
+                Enable notifications
+            </label>
+        </div>
+        
+        <button type="button" class="btn btn-primary" hx-post="/Home/SaveAndNavigate" hx-swap="none">
+            Save & Return to Inbox
+        </button>
+    </form>
+    
+    <div style="margin-top: 1rem; padding: 1rem; background: #f0fdf4; border-radius: 0.375rem;">
+        <strong>✅ Navigated via:</strong>
+        <code>.WithNavigation("/Home/Settings").WithInfoToast("...")</code>
+    </div>
+</div>

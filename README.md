@@ -167,6 +167,18 @@ return SwapResponse()
 
 All out-of-band swaps, toasts, and triggers merge into a single `HX-Trigger` header.
 
+**Navigate with toasts:**
+
+```csharp
+return SwapResponse()
+    .WithNavigation($"/orders/{order.Id}")
+    .WithCreatedToast("Order", order.OrderNumber)
+    .Build();
+```
+
+Uses `HX-Location` for SPA-style navigation while preserving toast display.
+
+→ [Navigation](lib/Swap.Htmx/docs/Navigation.md)  
 → [Out-of-Band Swaps](lib/Swap.Htmx/docs/OutOfBandSwaps.md)
 
 ---
@@ -329,6 +341,7 @@ app.UseSwapHtmx();
 | Guide | Description |
 |-------|-------------|
 | [Getting Started](lib/Swap.Htmx/docs/GettingStarted.md) | Setup and first steps |
+| [Navigation](lib/Swap.Htmx/docs/Navigation.md) | SPA-style navigation with toasts |
 | [Events](lib/Swap.Htmx/docs/Events.md) | Type-safe event system |
 | [Event Chains](lib/Swap.Htmx/docs/EventChains.md) | Distributed handlers and decoupled updates |
 | [SwapState](lib/Swap.Htmx/docs/SwapState.md) | Server-side state management |
@@ -351,6 +364,7 @@ Working examples in `/demo`:
 | Demo | What It Shows |
 |------|---------------|
 | [SwapMinimal](demo/SwapMinimal) | Basic setup and patterns |
+| [SwapNavDemo](demo/SwapNavDemo) | Navigation with `.WithNavigation()` |
 | [SwapPages](demo/SwapPages) | Razor Pages integration |
 | [SwapLab](demo/SwapLab) | Feature showcase |
 | [SwapShop](demo/SwapShop) | E-commerce (cart, checkout) |

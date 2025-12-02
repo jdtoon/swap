@@ -46,6 +46,7 @@ If you just need a few custom HTMX headers, the low‑level helpers here work fi
 - **Fluent Response Builder** (`SwapResponseBuilder`)
   - `WithView(viewName, model)` – main response payload
   - `AlsoUpdate(targetId, viewName, model, swapMode)` – out‑of‑band swaps
+  - `WithNavigation(path, target?, swap?)` – SPA-style navigation via `HX-Location`
   - `WithSuccessToast(...)`, `WithErrorToast(...)`, `WithInfoToast(...)`, `WithWarningToast(...)`
   - `WithTrigger(eventKeyOrName, payload?)` – strongly‑typed or string events
   - All triggers and toasts are merged into a single `HX-Trigger` header.
@@ -205,6 +206,7 @@ Key APIs:
 
 - `WithView(viewName, model)` – main HTML payload
 - `AlsoUpdate(targetId, viewName, model, swapMode?)` – out‑of‑band swaps
+- `WithNavigation(path, target?, swap?)` – SPA-style navigation
 - `WithSuccessToast(message)` / `WithErrorToast` / `WithWarningToast` / `WithInfoToast`
 - `WithTrigger(eventKeyOrName, payload?)` – add HTMX triggers (merged into `HX-Trigger`)
 
@@ -212,7 +214,32 @@ Swap modes are strongly typed via `SwapMode` (OuterHTML, InnerHTML, BeforeBegin,
 
 See: `docs/OutOfBandSwaps.md`.
 
-### 3. Minimal APIs
+### 3. Navigation with Toasts
+
+Use `.WithNavigation()` to redirect users while preserving toasts and triggers:
+
+```csharp
+public class OrderController : SwapController
+{
+    [HttpPost]
+    public IActionResult Create(OrderForm form)
+    {
+        var order = _service.CreateOrder(form);
+        
+        // Navigate to order detail AND show success toast
+        return SwapResponse()
+            .WithNavigation($"/orders/{order.Id}")
+            .WithCreatedToast("Order", order.OrderNumber)
+            .Build();
+    }
+}
+```
+
+This uses `HX-Location` instead of a redirect, so the toast is displayed during the navigation.
+
+See: `docs/Navigation.md`.
+
+### 4. Minimal APIs
 
 `SwapResults` lets Minimal API endpoints return Swap responses:
 
@@ -231,7 +258,7 @@ app.MapPost("/todo", (TodoItem item, ITodoService service) =>
 
 See: `docs/MinimalApis.md`.
 
-### 4. Razor Pages
+### 5. Razor Pages
 
 Use Swap directly from `PageModel` via extension methods:
 
@@ -252,7 +279,7 @@ public class IndexModel : PageModel
 
 See: `docs/RazorPages.md`.
 
-### 5. Composition Over Inheritance
+### 6. Composition Over Inheritance
 
 All fluent APIs are available as extension methods on `ControllerBase` and `PageModel`, so you can opt‑out of inheriting from `SwapController` entirely:
 
@@ -638,6 +665,8 @@ This repo ships with several demos that exercise different parts of `Swap.Htmx`:
 
 - `demo/SwapMinimal` – minimal API + Swap example
 - `demo/SwapShop` – e‑commerce style MVC app showing controllers, events, and chains
+- `demo/SwapNavDemo` – navigation patterns with `.WithNavigation()` ⭐ *NEW*
+- `demo/SwapStateDemo` – hidden field state patterns with `<swap-hidden>` ⭐ *NEW*
 - `demo/TaskFlow` – team task management with realtime features
 - `demo/SwapWebSockets`, `demo/SwapRedisDemo`, `demo/SwapPhase15`, etc. – focused samples for realtime and orchestration features
 
@@ -651,8 +680,9 @@ All library docs live under `docs/` in this folder:
 
 ### Core Concepts
 - **Getting Started** – `docs/GettingStarted.md`
-- **Migration Guide** – `docs/MigrationGuide.md` ⭐ *NEW*
-- **Multi-Component Coordination** – `docs/MultiComponentCoordination.md` ⭐ *NEW*
+- **Navigation** – `docs/Navigation.md` ⭐ *NEW*
+- **Migration Guide** – `docs/MigrationGuide.md`
+- **Multi-Component Coordination** – `docs/MultiComponentCoordination.md`
 - **State Management** – `docs/StateManagement.md` ⭐ *NEW*
 - **Anti-Patterns** – `docs/AntiPatterns.md` ⭐ *NEW*
 

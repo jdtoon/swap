@@ -81,6 +81,11 @@ SwapResponseBuilder
     .AlsoUpdateIf(bool condition, string targetId, string viewName, object? model = null, SwapMode swapMode = SwapMode.OuterHTML)
     .AlsoUpdateIfExists(string targetId, string viewName, object? model = null, SwapMode swapMode = SwapMode.OuterHTML)
     
+    // Navigation (SPA-style via HX-Location)
+    .WithNavigation(string path)
+    .WithNavigation(string path, string? target, SwapMode? swap)
+    .WithNavigation(NavigationOptions options)
+    
     // Toasts
     .WithToast(string message, ToastType type = ToastType.Info)
     .WithSuccessToast(string message)
@@ -449,6 +454,101 @@ public abstract class SwapState
 
 <!-- Without container div -->
 <swap-state state="Model.State" include-container="false" />
+```
+
+---
+
+## NAVIGATION
+
+SPA-style navigation that preserves toasts and triggers.
+
+### The Problem
+
+```csharp
+// ❌ Redirect loses toast - response headers are discarded
+return Redirect("/dashboard");
+Response.HxTrigger("showToast", "Saved!");  // Never received!
+```
+
+### The Solution
+
+```csharp
+// ✅ WithNavigation uses HX-Location header
+return this.SwapResponse()
+    .WithNavigation("/dashboard")
+    .WithSuccessToast("Saved!")
+    .Build();
+```
+
+### Basic Usage
+
+```csharp
+// Simple navigation
+.WithNavigation("/orders")
+
+// Navigate to specific target
+.WithNavigation("/inbox", target: "#main-content")
+
+// Navigate with swap mode
+.WithNavigation("/notifications", target: "#alerts", swap: SwapMode.BeforeEnd)
+```
+
+### Full Control
+
+```csharp
+.WithNavigation(new NavigationOptions
+{
+    Path = "/orders/123",
+    Target = "#order-detail",
+    Swap = SwapMode.OuterHTML,
+    Select = "#order-content",     // CSS selector to pick from response
+    Values = new { refresh = true }, // Additional values to send
+    Headers = new { ["X-Custom"] = "value" }
+})
+```
+
+### Common Patterns
+
+```csharp
+// Post-save redirect with toast
+[HttpPost]
+public IActionResult Create(OrderForm form)
+{
+    var order = _service.Create(form);
+    
+    return this.SwapResponse()
+        .WithNavigation($"/orders/{order.Id}")
+        .WithCreatedToast("Order", order.OrderNumber)
+        .Build();
+}
+
+// Wizard step navigation
+public IActionResult CompleteStep1(Step1Form form)
+{
+    _wizard.SaveStep1(form);
+    
+    return this.SwapResponse()
+        .WithNavigation("/wizard/step2", target: "#wizard-content")
+        .WithInfoToast("Step 1 complete!")
+        .Build();
+}
+
+// Conditional navigation
+[HttpPost]
+public IActionResult Checkout()
+{
+    if (_cart.IsEmpty)
+    {
+        return this.SwapResponse()
+            .WithNavigation("/products")
+            .WithWarningToast("Your cart is empty")
+            .Build();
+    }
+    
+    return this.SwapResponse()
+        .WithNavigation("/checkout/payment")
+        .Build();
+}
 ```
 
 ---
@@ -1138,6 +1238,7 @@ Full documentation: https://github.com/jdtoon/swap/tree/main/lib/Swap.Htmx/docs
 | Guide | URL |
 |-------|-----|
 | Getting Started | /docs/GettingStarted.md |
+| Navigation | /docs/Navigation.md |
 | Events | /docs/Events.md |
 | Event Chains | /docs/EventChains.md |
 | SwapState | /docs/SwapState.md |
@@ -1213,4 +1314,4 @@ if (!ModelState.IsValid)
 
 ## VERSION
 
-This document describes Swap.Htmx v1.0.0 for .NET 9.0.
+This document describes Swap.Htmx v1.0.1 for .NET 9.0.

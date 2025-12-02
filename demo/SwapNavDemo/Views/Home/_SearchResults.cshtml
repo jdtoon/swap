@@ -1,0 +1,20 @@
+@model SwapNavDemo.Controllers.SearchResultsModel
+
+<div id="main-content">
+    <h2>🔍 Search Results</h2>
+    <p>Showing results for "<strong>@Model.Query</strong>" in <strong>@Model.Category</strong></p>
+    
+    <div style="display: flex; flex-direction: column; gap: 0.75rem; margin-top: 1rem;">
+        @foreach (var result in Model.Results)
+        {
+            <div style="background: #f8fafc; padding: 1rem; border-radius: 0.5rem; border-left: 3px solid #16a34a;">
+                @result
+            </div>
+        }
+    </div>
+    
+    <div style="margin-top: 1rem; padding: 1rem; background: #f0fdf4; border-radius: 0.375rem;">
+        <strong>✅ Navigated via:</strong>
+        <code>.WithNavigation(new HxLocationOptions { Path = "/search", Values = { ["query"] = "@Model.Query", ["category"] = "@Model.Category" } })</code>
+    </div>
+</div>
