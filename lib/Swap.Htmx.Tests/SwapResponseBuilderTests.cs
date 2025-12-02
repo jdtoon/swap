@@ -581,4 +581,98 @@ public class SwapResponseBuilderTests
     }
 
     #endregion
+
+    #region Navigation Tests
+
+    [Fact]
+    public void WithNavigation_SetsNavigationOptions()
+    {
+        // Arrange
+        var controller = CreateController();
+
+        // Act
+        var builder = controller.TestSwapResponse()
+            .WithNavigation("/inbox");
+
+        // Assert
+        Assert.NotNull(builder.Navigation);
+        Assert.Equal("/inbox", builder.Navigation.Path);
+        Assert.Equal("#main-content", builder.Navigation.Target);
+        Assert.True(builder.Navigation.PushUrl);
+    }
+
+    [Fact]
+    public void WithNavigation_CustomTarget_SetsCorrectly()
+    {
+        // Arrange
+        var controller = CreateController();
+
+        // Act
+        var builder = controller.TestSwapResponse()
+            .WithNavigation("/settings", target: "#sidebar");
+
+        // Assert
+        Assert.NotNull(builder.Navigation);
+        Assert.Equal("/settings", builder.Navigation.Path);
+        Assert.Equal("#sidebar", builder.Navigation.Target);
+    }
+
+    [Fact]
+    public void WithNavigation_DisablePushUrl_SetsCorrectly()
+    {
+        // Arrange
+        var controller = CreateController();
+
+        // Act
+        var builder = controller.TestSwapResponse()
+            .WithNavigation("/modal-content", pushUrl: false);
+
+        // Assert
+        Assert.NotNull(builder.Navigation);
+        Assert.False(builder.Navigation.PushUrl);
+    }
+
+    [Fact]
+    public void WithNavigation_HxLocationOptions_SetsCorrectly()
+    {
+        // Arrange
+        var controller = CreateController();
+        var options = new HxLocationOptions
+        {
+            Path = "/api/data",
+            Target = "#data-grid",
+            Swap = "innerHTML",
+            Values = new Dictionary<string, object?> { ["filter"] = "active" }
+        };
+
+        // Act
+        var builder = controller.TestSwapResponse()
+            .WithNavigation(options);
+
+        // Assert
+        Assert.NotNull(builder.NavigationOptions);
+        Assert.Equal("/api/data", builder.NavigationOptions.Path);
+        Assert.Equal("#data-grid", builder.NavigationOptions.Target);
+        Assert.Equal("innerHTML", builder.NavigationOptions.Swap);
+    }
+
+    [Fact]
+    public void WithNavigation_ChainsWithOtherMethods()
+    {
+        // Arrange
+        var controller = CreateController();
+
+        // Act
+        var builder = controller.TestSwapResponse()
+            .WithNavigation("/statements")
+            .WithSuccessToast("Statement generated")
+            .WithTrigger("statementCreated");
+
+        // Assert
+        Assert.NotNull(builder.Navigation);
+        Assert.Single(builder.Toasts);
+        Assert.Single(builder.Triggers);
+    }
+
+    #endregion
 }

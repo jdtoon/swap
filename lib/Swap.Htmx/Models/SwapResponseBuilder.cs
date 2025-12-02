@@ -102,6 +102,15 @@ public sealed record ClientAction(
 );
 
 /// <summary>
+/// Represents SPA-style navigation options for HX-Location.
+/// </summary>
+public sealed record NavigationOptions(
+    string Path,
+    string Target = "#main-content",
+    bool PushUrl = true
+);
+
+/// <summary>
 /// Fluent builder for constructing coordinated HTMX responses with multiple updates.
 /// Replaces manual ViewData manipulation and Response.AddTrigger() calls with a clean, discoverable API.
 /// Implements IResult for direct usage in Minimal APIs.
@@ -115,6 +124,8 @@ public sealed class SwapResponseBuilder : IResult
     private readonly List<TriggerEvent> _triggers = new();
     private readonly List<ClientAction> _clientActions = new();
     private string? _redirectUrl;
+    private NavigationOptions? _navigation;
+    private HxLocationOptions? _navigationOptions;
     private SwapState? _state;
     private string? _stateViewName;
     
@@ -404,12 +415,53 @@ public sealed class SwapResponseBuilder : IResult
 
     /// <summary>
     /// Sets a redirect URL for the response using HX-Redirect header.
+    /// This triggers a full page reload to the specified URL.
     /// </summary>
     /// <param name="url">The URL to redirect to.</param>
     /// <returns>The builder for chaining.</returns>
     public SwapResponseBuilder WithRedirect(string url)
     {
         _redirectUrl = url;
+        return this;
+    }
+
+    /// <summary>
+    /// Navigates to a URL using HTMX's HX-Location header (SPA-style, no full page reload).
+    /// Content is fetched and swapped into the target element, and the browser URL is updated.
+    /// </summary>
+    /// <param name="path">The URL path to navigate to.</param>
+    /// <param name="target">The CSS selector for the target element (defaults to "#main-content").</param>
+    /// <param name="pushUrl">Whether to push the URL to browser history (defaults to true).</param>
+    /// <returns>The builder for chaining.</returns>
+    /// <remarks>
+    /// Usage:
+    /// <code>
+    /// // SPA-style navigation - content swapped, URL updated, no reload
+    /// return SwapResponse()
+    ///     .WithNavigation("/debtors/statements")
+    ///     .WithSuccessToast("Statement generated")
+    ///     .Build();
+    /// 
+    /// // Navigate to specific target
+    /// return SwapResponse()
+    ///     .WithNavigation("/inbox", target: "#sidebar")
+    ///     .Build();
+    /// </code>
+    /// </remarks>
+    public SwapResponseBuilder WithNavigation(string path, string target = "#main-content", bool pushUrl = true)
+    {
+        _navigation = new NavigationOptions(path, target, pushUrl);
+        return this;
+    }
+
+    /// <summary>
+    /// Navigates using HTMX's HX-Location with full control over options.
+    /// </summary>
+    /// <param name="options">The HX-Location options.</param>
+    /// <returns>The builder for chaining.</returns>
+    public SwapResponseBuilder WithNavigation(HxLocationOptions options)
+    {
+        _navigationOptions = options;
         return this;
     }
 
@@ -498,6 +550,16 @@ public sealed class SwapResponseBuilder : IResult
     /// Gets the configured redirect URL.
     /// </summary>
     internal string? RedirectUrl => _redirectUrl;
+
+    /// <summary>
+    /// Gets the configured SPA navigation options.
+    /// </summary>
+    internal NavigationOptions? Navigation => _navigation;
+
+    /// <summary>
+    /// Gets the configured HX-Location options for advanced navigation.
+    /// </summary>
+    internal HxLocationOptions? NavigationOptions => _navigationOptions;
     
     /// <summary>
     /// Builds and returns the final IActionResult.

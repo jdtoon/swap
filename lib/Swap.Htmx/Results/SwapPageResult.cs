@@ -44,6 +44,25 @@ public sealed class SwapPageResult : ActionResult
         {
             response.HxRedirect(_builder.RedirectUrl);
         }
+
+        // 1b. Apply SPA navigation if configured (HX-Location)
+        if (_builder.Navigation != null)
+        {
+            var nav = _builder.Navigation;
+            response.HxLocation(new HxLocationOptions
+            {
+                Path = nav.Path,
+                Target = nav.Target,
+            });
+            if (!nav.PushUrl)
+            {
+                response.HxPreventPushUrl();
+            }
+        }
+        else if (_builder.NavigationOptions != null)
+        {
+            response.HxLocation(_builder.NavigationOptions);
+        }
         
         // 2. Apply toasts
         foreach (var toast in _builder.Toasts)
