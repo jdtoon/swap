@@ -19,15 +19,18 @@
         <input type="text" 
                placeholder="Search products..." 
                value="@search"
-               name="searchInput"
+               name="search"
                hx-get="/Home/ProductSearch"
                hx-trigger="keyup changed delay:300ms"
                hx-target="#product-container"
-               hx-vals='js:{"search": event.target.value, "sortBy": "@sortBy", "page": 1}' />
+               hx-include="closest #product-search"
+               hx-vals='{"page": 1}' />
         
-        <select hx-get="/Home/ProductSearch"
+        <select name="sortBy"
+                hx-get="/Home/ProductSearch"
                 hx-target="#product-container"
-                hx-vals='js:{"search": "@search", "sortBy": event.target.value, "page": 1}'>
+                hx-include="closest #product-search"
+                hx-vals='{"page": 1}'>
             <option value="name" selected="@(sortBy == "name")">Sort by Name</option>
             <option value="price" selected="@(sortBy == "price")">Sort by Price</option>
             <option value="stock" selected="@(sortBy == "stock")">Sort by Stock</option>
@@ -72,7 +75,8 @@
             <button class="btn btn-secondary" 
                     hx-get="/Home/ProductSearch"
                     hx-target="#product-container"
-                    hx-vals='{"search": "@search", "sortBy": "@sortBy", "page": @(currentPage - 1)}'
+                    hx-include="closest #product-search"
+                    hx-vals='{"page": @(currentPage - 1)}'
                     @(currentPage <= 1 ? "disabled" : "")>
                 ← Prev
             </button>
@@ -82,7 +86,8 @@
             <button class="btn btn-secondary"
                     hx-get="/Home/ProductSearch"
                     hx-target="#product-container"
-                    hx-vals='{"search": "@search", "sortBy": "@sortBy", "page": @(currentPage + 1)}'
+                    hx-include="closest #product-search"
+                    hx-vals='{"page": @(currentPage + 1)}'
                     @(currentPage >= totalPages ? "disabled" : "")>
                 Next →
             </button>
