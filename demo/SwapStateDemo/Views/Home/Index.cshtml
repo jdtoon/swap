@@ -1,8 +1,7 @@
-@using SwapStateDemo.Models
 <!DOCTYPE html>
 <html>
 <head>
-    <title>SwapStateDemo - State Management Patterns</title>
+    <title>SwapStateDemo - Hidden Field Patterns</title>
     <script src="https://unpkg.com/htmx.org@2.0.4"></script>
     <style>
         * { box-sizing: border-box; }
@@ -10,281 +9,111 @@
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             margin: 0; 
             padding: 2rem;
-            background: #f5f5f5;
+            background: #f8fafc;
             line-height: 1.6;
         }
         h1 { color: #1e40af; margin-bottom: 0.5rem; }
         .subtitle { color: #64748b; margin-bottom: 2rem; }
-        .demo-grid {
-            display: grid;
-            gap: 2rem;
-        }
         .demo-section {
             background: white;
             border-radius: 0.75rem;
             padding: 1.5rem;
             box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            max-width: 900px;
         }
-        .demo-section h2 {
-            margin: 0 0 0.5rem;
-            color: #1e40af;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        .demo-section h2 .tag {
-            font-size: 0.75rem;
-            padding: 0.25rem 0.5rem;
-            border-radius: 9999px;
-            font-weight: normal;
-        }
-        .tag-hidden { background: #dbeafe; color: #1d4ed8; }
-        .tag-state { background: #dcfce7; color: #16a34a; }
-        .tag-both { background: #fef3c7; color: #d97706; }
+        .demo-section h2 { margin: 0 0 0.5rem; color: #1e40af; }
         .demo-section p.desc { color: #64748b; margin-bottom: 1rem; }
-        .code-block {
-            background: #1e293b;
-            color: #e2e8f0;
-            padding: 1rem;
-            border-radius: 0.5rem;
-            font-family: 'Monaco', 'Consolas', monospace;
-            font-size: 0.8rem;
-            margin: 1rem 0;
-            overflow-x: auto;
-        }
-        .code-block code { color: #93c5fd; }
-        .code-block .comment { color: #64748b; }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 1rem 0;
-        }
-        th, td {
-            padding: 0.75rem;
-            text-align: left;
-            border-bottom: 1px solid #e2e8f0;
-        }
+        table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+        th, td { padding: 0.75rem; text-align: left; border-bottom: 1px solid #e2e8f0; }
         th { background: #f8fafc; font-weight: 600; }
-        .btn {
-            padding: 0.5rem 1rem;
-            border: none;
-            border-radius: 0.375rem;
-            cursor: pointer;
+        .btn { 
+            padding: 0.5rem 1rem; 
+            border: none; 
+            border-radius: 0.375rem; 
+            cursor: pointer; 
             font-size: 0.875rem;
-            margin-right: 0.5rem;
-            margin-bottom: 0.5rem;
+            text-decoration: none;
+            display: inline-block;
         }
         .btn-primary { background: #2563eb; color: white; }
         .btn-primary:hover { background: #1d4ed8; }
         .btn-secondary { background: #e2e8f0; color: #475569; }
         .btn-secondary:hover { background: #cbd5e1; }
-        .btn-sm { padding: 0.375rem 0.75rem; font-size: 0.8rem; }
-        input, select {
-            padding: 0.5rem;
-            border: 1px solid #e2e8f0;
-            border-radius: 0.375rem;
-            font-size: 0.875rem;
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        input, select { 
+            padding: 0.5rem; 
+            border: 1px solid #e2e8f0; 
+            border-radius: 0.375rem; 
+            font-size: 0.875rem; 
         }
-        .form-row {
-            display: flex;
-            gap: 0.5rem;
-            flex-wrap: wrap;
-            align-items: center;
-            margin-bottom: 1rem;
+        .form-row { 
+            display: flex; 
+            gap: 0.75rem; 
+            flex-wrap: wrap; 
+            align-items: center; 
+            margin-bottom: 1rem; 
         }
-        .form-row label { font-weight: 500; color: #475569; }
-        .state-display {
+        .state-box {
             background: #fef3c7;
             padding: 0.75rem;
             border-radius: 0.375rem;
             font-size: 0.8rem;
             margin-top: 1rem;
+            font-family: 'Monaco', 'Consolas', monospace;
         }
-        .state-display strong { color: #92400e; }
-        .pagination {
-            display: flex;
-            gap: 0.5rem;
-            margin-top: 1rem;
-        }
-        .tabs {
-            display: flex;
-            border-bottom: 2px solid #e2e8f0;
-            margin-bottom: 1rem;
-        }
-        .tab-btn {
-            padding: 0.75rem 1.5rem;
-            background: none;
-            border: none;
-            cursor: pointer;
-            border-bottom: 2px solid transparent;
-            margin-bottom: -2px;
-            color: #64748b;
-        }
-        .tab-btn.active, .tab-btn:hover {
-            border-bottom-color: #2563eb;
-            color: #2563eb;
-        }
-        .widget {
-            border: 1px solid #e2e8f0;
-            border-radius: 0.5rem;
-            padding: 1rem;
-            margin-bottom: 1rem;
-        }
-        .widget h4 {
-            margin: 0 0 0.75rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .grid-2 {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1rem;
+        .pagination { 
+            display: flex; 
+            gap: 0.5rem; 
+            margin-top: 1rem; 
+            align-items: center; 
         }
         .badge {
             display: inline-block;
             padding: 0.125rem 0.5rem;
             border-radius: 9999px;
             font-size: 0.75rem;
-            margin-right: 0.25rem;
+            background: #dbeafe;
+            color: #1d4ed8;
         }
-        .badge-blue { background: #dbeafe; color: #1d4ed8; }
-        .badge-green { background: #dcfce7; color: #16a34a; }
-        .badge-yellow { background: #fef3c7; color: #d97706; }
     </style>
 </head>
 <body>
     <h1>🔄 SwapStateDemo</h1>
-    <p class="subtitle">Demonstrating state management patterns with <code>&lt;swap-hidden&gt;</code> and <code>&lt;swap-state&gt;</code></p>
+    <p class="subtitle">
+        Demonstrating <code>&lt;swap-hidden&gt;</code> - a tag helper for hidden form fields with auto-formatting.
+    </p>
     
-    <div class="demo-grid">
+    <div class="demo-section">
+        <h2>Product Search</h2>
+        <p class="desc">
+            Search, sort, and paginate products. Hidden fields preserve state across HTMX partial updates
+            using <code>hx-include="closest div"</code> to include sibling inputs.
+        </p>
         
-        <!-- Demo 1: swap-hidden Only -->
-        <div class="demo-section">
-            <h2>
-                Product Search
-                <span class="tag tag-hidden">&lt;swap-hidden&gt; only</span>
-            </h2>
-            <p class="desc">Simple colocated state - hidden fields live with the controls.</p>
-            
-            <div id="product-search-container" hx-get="/Home/ProductSearch" hx-trigger="load" hx-swap="innerHTML">
-                <p>Loading...</p>
-            </div>
-            
-            <div class="code-block">
-                <span class="comment">&lt;!-- State colocated with controls --&gt;</span><br>
-                <code>&lt;swap-hidden name="page" value="@@Model.Page" /&gt;</code><br>
-                <code>&lt;swap-hidden name="search" value="@@Model.Search" /&gt;</code><br>
-                <code>&lt;swap-hidden name="sortBy" value="@@Model.SortBy" /&gt;</code><br>
-                <code>&lt;button hx-get="/search" hx-include="closest div"&gt;Search&lt;/button&gt;</code>
-            </div>
+        <!-- Container that loads product search partial -->
+        <div id="product-container" 
+             hx-get="/Home/ProductSearch" 
+             hx-trigger="load" 
+             hx-swap="innerHTML">
+            <p>Loading...</p>
         </div>
-        
-        <!-- Demo 2: swap-hidden with Date Formatting -->
-        <div class="demo-section">
-            <h2>
-                Expense Filter
-                <span class="tag tag-hidden">&lt;swap-hidden&gt; only</span>
-            </h2>
-            <p class="desc">Dates auto-format to yyyy-MM-dd, booleans to lowercase true/false.</p>
-            
-            <div id="expense-filter-container" hx-get="/Home/ExpenseFilter" hx-trigger="load" hx-swap="innerHTML">
-                <p>Loading...</p>
-            </div>
-            
-            <div class="code-block">
-                <span class="comment">&lt;!-- Dates auto-format --&gt;</span><br>
-                <code>&lt;swap-hidden name="startDate" value="@@Model.StartDate" /&gt;</code>
-                <span class="comment"> → "2025-01-15"</span><br>
-                <code>&lt;swap-hidden name="endDate" value="@@Model.EndDate" /&gt;</code><br>
-                <span class="comment">&lt;!-- Custom format --&gt;</span><br>
-                <code>&lt;swap-hidden name="timestamp" value="@@Model.Time" date-format="O" /&gt;</code>
-            </div>
-        </div>
-        
-        <!-- Demo 3: swap-hidden with Collections -->
-        <div class="demo-section">
-            <h2>
-                Order List
-                <span class="tag tag-hidden">&lt;swap-hidden&gt; only</span>
-            </h2>
-            <p class="desc">Collections render as comma-separated or multiple inputs.</p>
-            
-            <div id="order-list-container" hx-get="/Home/OrderList" hx-trigger="load" hx-swap="innerHTML">
-                <p>Loading...</p>
-            </div>
-            
-            <div class="code-block">
-                <span class="comment">&lt;!-- Comma-separated (default) --&gt;</span><br>
-                <code>&lt;swap-hidden name="tags" value="@@Model.Tags" /&gt;</code>
-                <span class="comment"> → "urgent,retail"</span><br><br>
-                <span class="comment">&lt;!-- Multiple inputs --&gt;</span><br>
-                <code>&lt;swap-hidden name="ids" value="@@Model.Ids" multiple="true" /&gt;</code>
-            </div>
-        </div>
-        
-        <!-- Demo 4: swap-state Only -->
-        <div class="demo-section">
-            <h2>
-                Inventory Grid
-                <span class="tag tag-state">&lt;swap-state&gt; only</span>
-            </h2>
-            <p class="desc">Full state container with OOB sync - SwapState class auto-syncs via OOB swap.</p>
-            
-            <div id="inventory-container">
-                <swap-state state="new SwapStateDemo.Models.InventoryState()" />
-                <div id="inventory-grid" hx-get="/Home/InventoryGrid" hx-include="#inventory-state" hx-trigger="load" hx-swap="innerHTML">
-                    <p>Loading...</p>
-                </div>
-            </div>
-            
-            <div class="code-block">
-                <span class="comment">// State class</span><br>
-                <code>public class InventoryState : SwapState {</code><br>
-                <code>  public string Tab { get; set; } = "all";</code><br>
-                <code>  public int Page { get; set; } = 1;</code><br>
-                <code>  public string? Search { get; set; }</code><br>
-                <code>}</code><br><br>
-                <span class="comment">&lt;!-- View --&gt;</span><br>
-                <code>&lt;swap-state state="Model.State" /&gt;</code><br><br>
-                <span class="comment">// Controller - state auto-synced via OOB</span><br>
-                <code>return SwapResponse()</code><br>
-                <code>  .WithView("_Grid", products)</code><br>
-                <code>  .WithState(state)</code><br>
-                <code>  .Build();</code>
-            </div>
-        </div>
-        
-        <!-- Demo 5: Both Together -->
-        <div class="demo-section">
-            <h2>
-                Combined Dashboard
-                <span class="tag tag-both">Both Together</span>
-            </h2>
-            <p class="desc">Global SwapState for page-level filters + local swap-hidden for widget state.</p>
-            
-            <div id="combined-container">
-                <swap-state state="new SwapStateDemo.Models.InventoryState()" id="global-state" />
-                <div id="combined-content" hx-get="/Home/CombinedPage" hx-include="#global-state" hx-trigger="load" hx-swap="innerHTML">
-                    <p>Loading...</p>
-                </div>
-            </div>
-            
-            <div class="code-block">
-                <span class="comment">&lt;!-- Global state container (synced via OOB) --&gt;</span><br>
-                <code>&lt;swap-state state="Model.GlobalState" /&gt;</code><br><br>
-                <span class="comment">&lt;!-- Widget A has its own local state --&gt;</span><br>
-                <code>&lt;div id="widget-a"&gt;</code><br>
-                <code>  &lt;swap-hidden name="widgetSort" value="@@Model.SortA" /&gt;</code><br>
-                <code>  &lt;button hx-get="/widget-a" hx-include="closest div"&gt;...&lt;/button&gt;</code><br>
-                <code>&lt;/div&gt;</code><br><br>
-                <span class="comment">&lt;!-- Widget B has its own local state --&gt;</span><br>
-                <code>&lt;div id="widget-b"&gt;</code><br>
-                <code>  &lt;swap-hidden name="widgetFilter" value="@@Model.FilterB" /&gt;</code><br>
-                <code>&lt;/div&gt;</code>
-            </div>
-        </div>
-        
+    </div>
+    
+    <div style="margin-top: 2rem; padding: 1rem; background: #f1f5f9; border-radius: 0.5rem; max-width: 900px;">
+        <h3 style="margin: 0 0 0.5rem; font-size: 1rem;">How it works</h3>
+        <p style="margin: 0; color: #475569; font-size: 0.9rem;">
+            The <code>&lt;swap-hidden&gt;</code> tag helper renders <code>&lt;input type="hidden"&gt;</code> elements 
+            with automatic value formatting:
+        </p>
+        <ul style="margin: 0.5rem 0; padding-left: 1.5rem; color: #475569; font-size: 0.9rem;">
+            <li><strong>DateTime</strong> → <code>yyyy-MM-dd</code> format</li>
+            <li><strong>bool</strong> → lowercase <code>true</code>/<code>false</code></li>
+            <li><strong>Collections</strong> → comma-separated values</li>
+            <li><strong>null</strong> → empty string</li>
+        </ul>
+        <p style="margin: 0.5rem 0 0; color: #64748b; font-size: 0.85rem;">
+            This is a <em>convenience helper</em>. Using raw <code>&lt;input type="hidden"&gt;</code> with manual formatting works just as well.
+        </p>
     </div>
 </body>
 </html>
