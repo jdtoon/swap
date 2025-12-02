@@ -1,0 +1,89 @@
+@using SwapStateDemo.Models
+@model ProductListModel
+
+<div id="product-search-container">
+    <!-- Colocated state - lives WITH the controls -->
+    <swap-hidden name="page" value="@Model.Page" />
+    <swap-hidden name="search" value="@Model.Search" />
+    <swap-hidden name="sortBy" value="@Model.SortBy" />
+    <swap-hidden name="sortDesc" value="@Model.SortDescending" />
+    
+    <div class="form-row">
+        <input type="text" name="searchInput" placeholder="Search products..." value="@Model.Search"
+               hx-get="/Home/ProductSearch" 
+               hx-include="closest div"
+               hx-target="#product-search-container"
+               hx-trigger="keyup changed delay:300ms"
+               hx-vals='{"search": event.target.value, "page": 1}' />
+        
+        <select hx-get="/Home/ProductSearch" 
+                hx-include="closest div"
+                hx-target="#product-search-container"
+                hx-vals='js:{"sortBy": event.target.value, "page": 1}'>
+            @{
+                var sortOptions = new[] { ("name", "Sort by Name"), ("price", "Sort by Price"), ("stock", "Sort by Stock") };
+            }
+            @foreach (var (val, text) in sortOptions)
+            {
+                if (val == Model.SortBy)
+                {
+                    <option value="@val" selected>@text</option>
+                }
+                else
+                {
+                    <option value="@val">@text</option>
+                }
+            }
+        </select>
+    </div>
+    
+    <table>
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Category</th>
+                <th>Price</th>
+                <th>Stock</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var product in Model.Products)
+            {
+                <tr>
+                    <td>@product.Name</td>
+                    <td>@product.Category</td>
+                    <td>$@product.Price.ToString("N2")</td>
+                    <td>@product.Stock</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+    
+    <div class="pagination">
+        @if (Model.Page > 1)
+        {
+            <button class="btn btn-secondary btn-sm" 
+                    hx-get="/Home/ProductSearch"
+                    hx-include="closest div"
+                    hx-target="#product-search-container"
+                    hx-vals='{"page": @(Model.Page - 1)}'>
+                ← Prev
+            </button>
+        }
+        <span style="padding: 0.5rem;">Page @Model.Page of @Model.TotalPages</span>
+        @if (Model.Page < Model.TotalPages)
+        {
+            <button class="btn btn-secondary btn-sm"
+                    hx-get="/Home/ProductSearch"
+                    hx-include="closest div"
+                    hx-target="#product-search-container"
+                    hx-vals='{"page": @(Model.Page + 1)}'>
+                Next →
+            </button>
+        }
+    </div>
+    
+    <div class="state-display">
+        <strong>Current State:</strong> page=@Model.Page, search="@Model.Search", sortBy=@Model.SortBy, sortDesc=@Model.SortDescending
+    </div>
+</div>
