@@ -1,0 +1,40 @@
+@model Note?
+
+<div class="modal-overlay" onclick="if(event.target===this) this.remove()">
+    <div class="modal">
+        <div class="modal-header">
+            <h2>New Note</h2>
+            <button class="btn-icon" onclick="this.closest('.modal-overlay').remove()">✕</button>
+        </div>
+        <form hx-post="@Url.Action("Create")" hx-target="#modal-container">
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="Title">Title</label>
+                    <input type="text" id="Title" name="Title" class="form-control" 
+                           value="@Model?.Title" required autofocus />
+                </div>
+                <div class="form-group">
+                    <label for="Content">Content</label>
+                    <textarea id="Content" name="Content" class="form-control" rows="4">@Model?.Content</textarea>
+                </div>
+                <div class="form-group">
+                    <label for="Color">Color</label>
+                    <select id="Color" name="Color" class="form-control">
+                        <option value="gray" selected>Gray</option>
+                        <option value="blue">Blue</option>
+                        <option value="green">Green</option>
+                        <option value="yellow">Yellow</option>
+                        <option value="red">Red</option>
+                        <option value="purple">Purple</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline" onclick="this.closest('.modal-overlay').remove()">
+                    Cancel
+                </button>
+                <button type="submit" class="btn btn-primary">Create Note</button>
+            </div>
+        </form>
+    </div>
+</div>

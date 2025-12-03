@@ -1,0 +1,24 @@
+@model List<Note>
+@{
+    ViewData["Title"] = "Notes";
+}
+
+<header>
+    <h1 class="page-title">Notes</h1>
+    <button class="btn btn-primary"
+            hx-get="@Url.Action("Create")"
+            hx-target="#modal-container">
+        + New Note
+    </button>
+</header>
+
+<div class="content-scroll">
+    <div id="notes-list"
+         hx-get="@Url.Action("List")"
+         hx-trigger="@NotesEvents.Notes.ListChanged from:body"
+         hx-swap="innerHTML">
+        <partial name="_NotesList" model="Model" />
+    </div>
+</div>
+
+<div id="modal-container"></div>

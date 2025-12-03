@@ -16,37 +16,70 @@ dotnet new install Swap.Templates
 
 | Template Name | Short Name | Description |
 |--------------|------------|-------------|
-| **Swap.Htmx MVC App** | `swap-mvc` | A clean, "batteries-included" MVC project with Swap.Htmx pre-configured. |
+| **Swap.Htmx MVC App** | `swap-mvc` | A clean, minimal MVC project with Swap.Htmx pre-configured. |
+| **Swap.Htmx Modular Monolith** | `swap-modular` | A full-featured modular monolith with SQLite, EF Core, Docker, and a sample Notes module. |
 
 ## Usage
 
-### Create a new MVC Project
+### Create a Minimal MVC Project
 
 ```bash
 dotnet new swap-mvc -n MyProject
 ```
 
-### Options
+### Create a Modular Monolith Project
+
+```bash
+dotnet new swap-modular -n MyApp
+cd MyApp/src
+libman restore
+dotnet ef migrations add InitialCreate
+dotnet run
+```
+
+## Template Options
+
+### swap-mvc
 
 | Option | Description | Default |
 |--------|-------------|---------|
-| `--IncludeSse` | Include HTMX SSE extension and configuration for real-time updates. | `false` |
-| `--UseLocalRef` | Use local project references (for development of Swap itself). | `false` |
+| `--IncludeSse` | Include HTMX SSE extension for real-time updates. | `false` |
+| `--UseLocalRef` | Use local project references (for Swap development). | `false` |
 
-### Example with SSE
+### swap-modular
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| `--IncludeSse` | Include SSE real-time support. | `false` |
+| `--SkipSampleModule` | Skip the sample Notes module. | `false` |
+| `--UseLocalRef` | Use local project references (for Swap development). | `false` |
+
+### Examples
 
 ```bash
+# Minimal MVC with SSE
 dotnet new swap-mvc -n RealtimeApp --IncludeSse
+
+# Modular monolith without sample module
+dotnet new swap-modular -n CleanStart --SkipSampleModule
+
+# Modular monolith with SSE
+dotnet new swap-modular -n RealtimeApp --IncludeSse
 ```
 
 ## What's Included?
 
-The `swap-mvc` template provides a production-ready starting point:
+### swap-mvc (Minimal)
+- Basic MVC setup with Swap.Htmx
+- LibMan for HTMX
+- Source generators for type-safe events
+- Clean CSS foundation
 
-- **Clean Architecture**: No heavy CSS frameworks (Bootstrap/Tailwind) by default—just clean, custom CSS variables.
-- **LibMan Support**: Client-side libraries (HTMX) are managed via `libman.json`.
-- **Source Generators**: `[SwapEventSource]` is pre-configured for type-safe events.
-- **Best Practices**:
-  - Uses `this.SwapView()` and `this.SwapResponse()` extension methods.
-  - Includes a `_Message.cshtml` partial for demonstrating partial updates.
-  - Structured `Events/AppEvents.cs` for centralized event management.
+### swap-modular (Full-Featured)
+- **Modular Architecture**: Self-contained feature modules in `Modules/` folder
+- **SQLite + EF Core**: Database with migrations and audit fields
+- **Infrastructure Layer**: Compression, data protection, health checks
+- **WebOptimizer**: CSS/JS bundling and minification
+- **Docker Support**: Dockerfile and docker-compose.yml
+- **Sample Notes Module**: Full CRUD demonstrating the architecture
+- **Integration Tests**: xUnit test project with WebApplicationFactory

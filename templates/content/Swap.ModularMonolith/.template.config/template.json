@@ -1,0 +1,64 @@
+{
+  "$schema": "http://json.schemastore.org/template",
+  "author": "jdtoon",
+  "classifications": ["Web", "MVC", "Htmx", "Modular", "Monolith"],
+  "name": "Swap.Htmx Modular Monolith",
+  "identity": "Swap.Htmx.ModularMonolith",
+  "shortName": "swap-modular",
+  "tags": {
+    "language": "C#",
+    "type": "solution"
+  },
+  "sourceName": "SwapModularMonolith",
+  "preferNameDirectory": true,
+  "symbols": {
+    "UseLocalRef": {
+      "type": "parameter",
+      "datatype": "bool",
+      "description": "Use local project reference instead of NuGet package",
+      "defaultValue": "false"
+    },
+    "IncludeSse": {
+      "type": "parameter",
+      "datatype": "bool",
+      "description": "Include SSE real-time support",
+      "defaultValue": "false"
+    },
+    "SkipSampleModule": {
+      "type": "parameter",
+      "datatype": "bool",
+      "description": "Skip the sample Notes module",
+      "defaultValue": "false"
+    },
+    "IncludeSampleModule": {
+      "type": "computed",
+      "value": "!SkipSampleModule"
+    }
+  },
+  "sources": [
+    {
+      "modifiers": [
+        {
+          "condition": "SkipSampleModule",
+          "exclude": [
+            "src/Modules/Notes/**/*"
+          ]
+        }
+      ]
+    }
+  ],
+  "postActions": [
+    {
+      "description": "Restore NuGet packages",
+      "manualInstructions": [{ "text": "Run 'dotnet restore'" }],
+      "actionId": "210D431B-A78B-4D2F-B762-4ED3E3EA9025",
+      "continueOnError": true
+    },
+    {
+      "description": "Restore LibMan packages",
+      "manualInstructions": [{ "text": "Run 'libman restore' in the src folder" }],
+      "actionId": "3A7C4B45-1F5D-4A10-9F28-8D3E4E4F7B85",
+      "continueOnError": true
+    }
+  ]
+}
