@@ -13,6 +13,28 @@ Swap.Htmx is a UI orchestration library for HTMX and ASP.NET Core. It coordinate
 dotnet add package Swap.Htmx
 ```
 
+### Quick Start with Template (Recommended)
+
+The **Modular Monolith template** is the best way to start a new project. It provides a well-structured foundation that scales from prototype to production.
+
+```bash
+dotnet new install Swap.Templates
+dotnet new swap-modular -n MyApp
+cd MyApp/src
+libman restore
+dotnet run
+```
+
+This gives you:
+- **Modular architecture** — Self-contained feature modules in `Modules/` folder
+- **SQLite + EF Core** — Database with audit fields
+- **SPA-style navigation** — HTMX-powered routing with URL updates
+- **Docker ready** — Multi-stage Dockerfile and docker-compose
+- **Sample Notes module** — Full CRUD demonstrating all patterns
+- **Integration tests** — xUnit with WebApplicationFactory
+
+For a minimal starting point: `dotnet new swap-mvc -n MyProject`
+
 ### Program.cs Setup
 
 ```csharp
