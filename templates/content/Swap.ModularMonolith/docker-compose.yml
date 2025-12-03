@@ -1,0 +1,18 @@
+services:
+  app:
+    container_name: swapmodularmonolith_app
+    build:
+      context: ./src
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    volumes:
+      - sqlite-data:/app/data
+      - key-storage:/app/keys
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+    restart: unless-stopped
+
+volumes:
+  sqlite-data:
+  key-storage:

@@ -295,10 +295,32 @@ Requires `.cshtml` files as AdditionalFiles in `.csproj`:
 
 ## Installation
 
-### Templates (Recommended)
+### Quick Start (Recommended)
+
+The **Modular Monolith template** is the best way to start a new Swap.Htmx project. It provides a well-structured foundation with modular architecture, database setup, and production-ready infrastructure.
 
 ```bash
 dotnet new install Swap.Templates
+dotnet new swap-modular -n MyApp
+cd MyApp/src
+libman restore
+dotnet run
+```
+
+This gives you:
+- **Modular architecture** — Self-contained feature modules
+- **SQLite + EF Core** — Database with audit fields
+- **Docker ready** — Dockerfile and docker-compose included
+- **Sample module** — Full CRUD example showing the patterns
+- **Test project** — Integration tests with WebApplicationFactory
+
+→ [Full template documentation](templates/README.md)
+
+### Minimal Setup
+
+For a lightweight starting point or adding to existing projects:
+
+```bash
 dotnet new swap-mvc -n MyProject
 ```
 
