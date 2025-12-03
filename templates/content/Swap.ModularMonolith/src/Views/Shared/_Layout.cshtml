@@ -15,11 +15,11 @@
             <button class="btn-icon sidebar-toggle" onclick="toggleSidebar()">☰</button>
         </div>
         <nav class="nav-menu">
-            <a href="@Url.Action("Index", "Home")" class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Home" ? "active" : "")">
+            <a hx-get="@Url.Action("Index", "Home")" hx-target="#main-content" hx-push-url="true" class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Home" ? "active" : "")">
                 🏠 Dashboard
             </a>
 <!--#if (IncludeSampleModule) -->
-            <a href="@Url.Action("Index", "Notes")" class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Notes" ? "active" : "")">
+            <a hx-get="@Url.Action("Index", "Notes")" hx-target="#main-content" hx-push-url="true" class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Notes" ? "active" : "")">
                 📝 Notes
             </a>
 <!--#endif -->
@@ -27,7 +27,7 @@
     </aside>
 
     <!-- Main Content -->
-    <main class="main-content">
+    <main class="main-content" id="main-content">
         @RenderBody()
     </main>
 

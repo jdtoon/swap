@@ -17,7 +17,7 @@
         <div class="card">
             <h3>📝 Notes Module</h3>
             <p>A sample module demonstrating the modular architecture with full CRUD operations.</p>
-            <a href="@Url.Action("Index", "Notes")" class="btn btn-primary">Go to Notes</a>
+            <a hx-get="@Url.Action("Index", "Notes")" hx-target="#main-content" hx-push-url="true" class="btn btn-primary">Go to Notes</a>
         </div>
 <!--#endif -->
 
