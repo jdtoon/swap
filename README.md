@@ -260,9 +260,60 @@ if (!ModelState.IsValid)
 
 ---
 
+### `<swap-nav>` Tag Helper
+
+**SPA-style navigation without the boilerplate.**
+
+```html
+<!-- ❌ Before: Repetitive, error-prone -->
+<a href="/products" hx-get="/products" hx-target="#main-content" hx-push-url="true">Products</a>
+<a href="/orders" hx-get="/orders" hx-target="#main-content" hx-push-url="true">Orders</a>
+
+<!-- ✅ After: Clean, consistent -->
+<swap-nav to="/products">Products</swap-nav>
+<swap-nav to="/orders">Orders</swap-nav>
+```
+
+The tag helper automatically adds `hx-get`, `hx-target`, and `hx-push-url`. Configure the target once:
+
+```csharp
+builder.Services.AddSwapHtmx(options =>
+{
+    options.DefaultNavigationTarget = "#main-content";
+    options.AutoSuppressLayout = true;  // HTMX requests get partials
+});
+```
+
+With `AutoSuppressLayout`, your `_ViewStart.cshtml` becomes:
+
+```razor
+@{ Layout = Context.ShouldSuppressLayout() ? null : "_Layout"; }
+```
+
+- **Browser navigation** → Full page with layout
+- **`<swap-nav>` clicks** → Partial content only
+
+→ [`<swap-nav>` Documentation](lib/Swap.Htmx/docs/SwapNavTagHelper.md)
+
+---
+
 ### Source Generators
 
 Compile-time safety for events, view paths, and element IDs. Typos become compiler errors.
+
+**Auto-Scan (Recommended)** — Zero configuration, just add files:
+
+```xml
+<ItemGroup>
+  <AdditionalFiles Include="Views\**\*.cshtml" />
+</ItemGroup>
+```
+
+The generator automatically creates:
+- `SwapViews.Home.Index`, `SwapViews.Products.Details` — Constants for every view
+- `SwapElements.Home.Index.UserPanel` — Constants for every `id` attribute
+
+**Manual Attributes** — For custom naming or selective generation:
 
 ```csharp
 // Events — generates nested hierarchy from dot notation
@@ -281,15 +332,8 @@ public static partial class CartViews { }  // → CartViews.Index, CartViews.Par
 public static partial class CartElements { }  // → CartElements.Badge, CartElements.Total
 ```
 
-Requires `.cshtml` files as AdditionalFiles in `.csproj`:
-
-```xml
-<ItemGroup>
-  <AdditionalFiles Include="Views\**\*.cshtml" />
-</ItemGroup>
-```
-
-→ [Source Generators](lib/Swap.Htmx/docs/SourceGenerators.md)
+→ [Auto-Generated Constants](lib/Swap.Htmx/docs/AutoScanGenerator.md)  
+→ [Source Generators (Attributes)](lib/Swap.Htmx/docs/SourceGenerators.md)
 
 ---
 
@@ -363,7 +407,8 @@ app.UseSwapHtmx();
 | Guide | Description |
 |-------|-------------|
 | [Getting Started](lib/Swap.Htmx/docs/GettingStarted.md) | Setup and first steps |
-| [Navigation](lib/Swap.Htmx/docs/Navigation.md) | SPA-style navigation with toasts |
+| [`<swap-nav>` Tag Helper](lib/Swap.Htmx/docs/SwapNavTagHelper.md) | **SPA navigation without boilerplate** |
+| [Navigation](lib/Swap.Htmx/docs/Navigation.md) | Programmatic navigation with toasts |
 | [Events](lib/Swap.Htmx/docs/Events.md) | Type-safe event system |
 | [Event Chains](lib/Swap.Htmx/docs/EventChains.md) | Distributed handlers and decoupled updates |
 | [SwapState](lib/Swap.Htmx/docs/SwapState.md) | Server-side state management |
@@ -372,7 +417,8 @@ app.UseSwapHtmx();
 | [Server-Sent Events](lib/Swap.Htmx/docs/ServerSentEvents.md) | Real-time push |
 | [WebSockets](lib/Swap.Htmx/docs/WebSockets.md) | Full-duplex real-time |
 | [Redis Backplane](lib/Swap.Htmx/docs/RedisBackplane.md) | Multi-server real-time |
-| [Source Generators](lib/Swap.Htmx/docs/SourceGenerators.md) | Compile-time validation |
+| [Auto-Generated Constants](lib/Swap.Htmx/docs/AutoScanGenerator.md) | **Zero-config view/element constants** |
+| [Source Generators](lib/Swap.Htmx/docs/SourceGenerators.md) | Attribute-based generation |
 | [Recipes](lib/Swap.Htmx/docs/Recipes.md) | Common patterns |
 | [Anti-Patterns](lib/Swap.Htmx/docs/AntiPatterns.md) | What to avoid |
 | [Debugging](lib/Swap.Htmx/docs/DebuggingAndLogging.md) | Diagnostics and logging |
@@ -386,7 +432,7 @@ Working examples in `/demo`:
 | Demo | What It Shows |
 |------|---------------|
 | [SwapMinimal](demo/SwapMinimal) | Basic setup and patterns |
-| [SwapNavDemo](demo/SwapNavDemo) | Navigation with `.WithNavigation()` |
+| [SwapNavDemo](demo/SwapNavDemo) | **`<swap-nav>` tag helper and auto-layout suppression** |
 | [SwapPages](demo/SwapPages) | Razor Pages integration |
 | [SwapLab](demo/SwapLab) | Feature showcase |
 | [SwapShop](demo/SwapShop) | E-commerce (cart, checkout) |

@@ -43,6 +43,17 @@ If you just need a few custom HTMX headers, the low‑level helpers here work fi
   - `this.SwapResponse()` on `PageModel`
   - `SwapResults` for Minimal APIs
 
+- **`<swap-nav>` Tag Helper** (NEW)
+  - `<swap-nav to="/path">` – Clean SPA navigation without verbose HTMX attributes
+  - Auto-generates `hx-get`, `hx-target`, `hx-push-url`
+  - Configurable default target via `SwapHtmxOptions.DefaultNavigationTarget`
+  - See: `docs/SwapNavTagHelper.md`
+
+- **Auto-Layout Suppression** (NEW)
+  - `SwapHtmxOptions.AutoSuppressLayout = true` – HTMX requests get partials
+  - `Context.ShouldSuppressLayout()` – Extension for `_ViewStart.cshtml`
+  - Eliminates per-module `_ViewStart.cshtml` files
+
 - **Fluent Response Builder** (`SwapResponseBuilder`)
   - `WithView(viewName, model)` – main response payload
   - `AlsoUpdate(targetId, viewName, model, swapMode)` – out‑of‑band swaps

@@ -9,7 +9,9 @@ Welcome to the Swap.Htmx documentation. These guides will help you build reactiv
 | I want to... | Read this |
 |--------------|-----------|
 | Get started with Swap.Htmx | [Getting Started](GettingStarted.md) |
-| Navigate with toasts/triggers | [Navigation](Navigation.md) ⭐ NEW |
+| Clean navigation without boilerplate | [`<swap-nav>` Tag Helper](SwapNavTagHelper.md) ⭐ NEW |
+| Navigate programmatically with toasts | [Navigation](Navigation.md) |
+| Auto-generate view/element constants | [Auto-Scan Generator](AutoScanGenerator.md) ⭐ NEW |
 | Migrate an existing MVC app | [Migration Guide](MigrationGuide.md) |
 | Build complex multi-component UIs | [Multi-Component Coordination](MultiComponentCoordination.md) |
 | Use strongly-typed state | [SwapState Guide](SwapState.md) |
@@ -30,8 +32,11 @@ These guides cover the fundamental patterns for building Swap.Htmx applications:
 ### [Getting Started](GettingStarted.md)
 Step-by-step guide to your first Swap.Htmx application. Covers installation, configuration, and basic usage.
 
-### [Navigation](Navigation.md) ⭐ NEW
-SPA-style navigation with `.WithNavigation()`. Navigate users while preserving toasts and triggers using the `HX-Location` header.
+### [`<swap-nav>` Tag Helper](SwapNavTagHelper.md) ⭐ NEW
+SPA-style navigation without the boilerplate. Write `<swap-nav to="/products">Products</swap-nav>` instead of verbose HTMX attributes. Includes auto-layout suppression for seamless partial updates.
+
+### [Navigation](Navigation.md)
+Programmatic navigation with `.WithNavigation()`. Navigate users while preserving toasts and triggers using the `HX-Location` header.
 
 ### [Migration Guide](MigrationGuide.md)
 How to incrementally migrate an existing ASP.NET Core MVC application to use Swap.Htmx for partial-based UI updates.
@@ -42,7 +47,7 @@ The definitive guide to building pages with multiple interactive components (tab
 ### [SwapState Guide](SwapState.md)
 First-class state management with strongly-typed classes, automatic model binding via `[FromSwapState]`, and OOB updates via `.WithState()`.
 
-### [Recipes](Recipes.md) ⭐ NEW
+### [Recipes](Recipes.md)
 Copy-paste patterns for common UI scenarios: filterable lists, multi-select pickers, split-view builders, inline edit, modals, wizards, and more.
 
 ### [State Management](StateManagement.md)
@@ -100,8 +105,11 @@ Use `SwapResults` to return Swap responses from Minimal API endpoints.
 ### [Razor Pages](RazorPages.md)
 Integrate Swap.Htmx with `PageModel` using extension methods.
 
+### [Auto-Scan Generator](AutoScanGenerator.md) ⭐ NEW
+Zero-configuration generation of `SwapViews` and `SwapElements` constants. Just add `<AdditionalFiles>` to your `.csproj` — no attributes needed.
+
 ### [Source Generators](SourceGenerators.md)
-Auto-generate type-safe event keys with the `[SwapEventSource]` attribute.
+Attribute-based generation with `[SwapEventSource]`, `[SwapViewSource]`, and `[SwapElementSource]` for custom naming or selective generation.
 
 ### [User Context](UserContext.md)
 Customize how Swap.Htmx resolves user identity for session management and real-time targeting.

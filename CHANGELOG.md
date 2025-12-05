@@ -5,6 +5,47 @@ All notable changes to Swap.Htmx will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.2] - 2025-XX-XX
+
+### Added
+
+#### `<swap-nav>` Tag Helper (NEW)
+- **`<swap-nav to="/path">`** - Simplified SPA-style navigation links
+- Automatically renders `<a>` with `hx-get`, `hx-target`, and `hx-push-url`
+- Configurable default target via `SwapHtmxOptions.DefaultNavigationTarget`
+- `push-url` attribute to control browser history (default: `true`)
+- Passes through all HTML attributes (class, style, etc.) and `hx-*` attributes
+
+#### Auto-Layout Suppression (NEW)
+- **`SwapHtmxOptions.AutoSuppressLayout`** - Automatically suppress layout for HTMX requests
+- **`Context.ShouldSuppressLayout()`** - Extension method for `_ViewStart.cshtml`
+- Eliminates per-module `_ViewStart.cshtml` files
+- HTMX requests automatically return partials, browser requests return full pages
+
+#### Auto-Scan Source Generator (NEW)
+- **Zero-configuration generation** of `SwapViews` and `SwapElements` constants
+- Scans all `.cshtml` files via `<AdditionalFiles>` — no attributes required
+- Generates nested classes matching folder structure
+- Supports modular monolith structure (`Modules/*/Views/...`)
+- Extracts all `id="..."` attributes automatically
+
+#### Documentation
+- [SwapNavTagHelper.md](lib/Swap.Htmx/docs/SwapNavTagHelper.md) - Complete `<swap-nav>` guide
+- [AutoScanGenerator.md](lib/Swap.Htmx/docs/AutoScanGenerator.md) - Zero-config generator guide
+
+### Changed
+
+#### SwapNavDemo
+- Updated to demonstrate `<swap-nav>` tag helper (previously showed `.WithNavigation()`)
+
+#### Swap.ModularMonolith Template
+- Uses `<swap-nav>` for navigation links in layout
+- Configured with `AutoSuppressLayout = true`
+- Uses auto-generated constants (no `ViewSources.cs` or `ElementSources.cs` needed)
+- Simplified `_ViewStart.cshtml` with `ShouldSuppressLayout()` check
+
+---
+
 ## [1.0.1] - 2025-12-02
 
 ### Added
