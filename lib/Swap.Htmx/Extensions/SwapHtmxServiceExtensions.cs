@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
 using Swap.Htmx.Diagnostics;
 using Swap.Htmx.Events;
+using Swap.Htmx.Filters;
 using Swap.Htmx.Middleware;
 using Swap.Htmx.Dev;
 using Swap.Htmx.Realtime;
@@ -128,6 +129,12 @@ public static class SwapHtmxServiceExtensions
         services.Configure<MvcOptions>(mvcOptions =>
         {
             mvcOptions.ModelBinderProviders.Insert(0, new SwapStateModelBinderProvider());
+            
+            // Register layout filter if auto-suppress is enabled
+            if (options.AutoSuppressLayout)
+            {
+                mvcOptions.Filters.Add<SwapLayoutFilter>();
+            }
         });
         
         return services;

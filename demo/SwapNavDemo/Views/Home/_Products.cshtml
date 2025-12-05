@@ -1,0 +1,42 @@
+@model string?
+
+<h2>📦 Products</h2>
+@if (!string.IsNullOrEmpty(Model))
+{
+    <p>Filtered by category: <strong>@Model</strong></p>
+}
+else
+{
+    <p>Browse all products. Use the sidebar links to filter by category.</p>
+}
+
+<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem; margin: 1.5rem 0;">
+    @{
+        var products = new[]
+        {
+            ("Laptop Pro", "$1,299", "💻"),
+            ("Wireless Mouse", "$49", "🖱️"),
+            ("Mechanical Keyboard", "$129", "⌨️"),
+            ("Monitor 27\"", "$399", "🖥️"),
+            ("USB-C Hub", "$79", "🔌"),
+            ("Webcam HD", "$89", "📷")
+        };
+    }
+    @foreach (var (name, price, icon) in products)
+    {
+        <div style="background: white; padding: 1.25rem; border-radius: 0.5rem; border: 1px solid #e2e8f0; text-align: center;">
+            <div style="font-size: 2rem;">@icon</div>
+            <h4 style="margin: 0.5rem 0;">@name</h4>
+            <p style="margin: 0; color: #6366f1; font-weight: bold;">@price</p>
+            <button style="margin-top: 0.75rem; padding: 0.5rem 1rem; background: #6366f1; color: white; border: none; border-radius: 0.25rem; cursor: pointer;">
+                Add to Cart
+            </button>
+        </div>
+    }
+</div>
+
+<div style="background: #f8fafc; padding: 1rem; border-radius: 0.5rem; margin-top: 1rem;">
+    <small style="color: #64748b;">
+        💡 This view loaded via <code>&lt;swap-nav to="/Home/Products@(string.IsNullOrEmpty(Model) ? "" : $"?category={Model}")"&gt;</code>
+    </small>
+</div>

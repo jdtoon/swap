@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Text.Json;
 using System;
+using Swap.Htmx.Filters;
 using Swap.Htmx.Models;
 
 namespace Swap.Htmx;
@@ -30,6 +31,20 @@ public static class SwapHtmxExtensions
     public static bool IsHtmxBoosted(this HttpRequest request)
     {
         return request.Headers.ContainsKey(HxHeaders.Boosted);
+    }
+
+    /// <summary>
+    /// Checks if the layout should be suppressed for this request.
+    /// Use this in _ViewStart.cshtml when AutoSuppressLayout is enabled:
+    /// <code>
+    /// @{ Layout = Context.ShouldSuppressLayout() ? null : "_Layout"; }
+    /// </code>
+    /// </summary>
+    /// <param name="context">The HTTP context.</param>
+    /// <returns>True if layout should be suppressed (HTMX request, non-boosted).</returns>
+    public static bool ShouldSuppressLayout(this HttpContext context)
+    {
+        return context.Items[SwapLayoutFilter.SuppressLayoutKey] is true;
     }
 
     /// <summary>

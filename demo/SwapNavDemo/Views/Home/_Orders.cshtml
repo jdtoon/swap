@@ -1,0 +1,44 @@
+<h2>🛒 Orders</h2>
+<p>Recent orders displayed here.</p>
+
+<table style="width: 100%; border-collapse: collapse; margin: 1.5rem 0;">
+    <thead>
+        <tr style="background: #f8fafc;">
+            <th style="padding: 0.75rem; text-align: left; border-bottom: 2px solid #e2e8f0;">Order #</th>
+            <th style="padding: 0.75rem; text-align: left; border-bottom: 2px solid #e2e8f0;">Customer</th>
+            <th style="padding: 0.75rem; text-align: left; border-bottom: 2px solid #e2e8f0;">Amount</th>
+            <th style="padding: 0.75rem; text-align: left; border-bottom: 2px solid #e2e8f0;">Status</th>
+        </tr>
+    </thead>
+    <tbody>
+        @{
+            var orders = new[]
+            {
+                ("#1234", "Alice Johnson", "$299.00", "Shipped", "#16a34a"),
+                ("#1233", "Bob Smith", "$149.50", "Processing", "#eab308"),
+                ("#1232", "Charlie Brown", "$599.00", "Delivered", "#6366f1"),
+                ("#1231", "Diana Ross", "$79.99", "Pending", "#64748b"),
+                ("#1230", "Eve Wilson", "$1,299.00", "Shipped", "#16a34a"),
+            };
+        }
+        @foreach (var (id, customer, amount, status, color) in orders)
+        {
+            <tr>
+                <td style="padding: 0.75rem; border-bottom: 1px solid #e2e8f0; font-family: monospace;">@id</td>
+                <td style="padding: 0.75rem; border-bottom: 1px solid #e2e8f0;">@customer</td>
+                <td style="padding: 0.75rem; border-bottom: 1px solid #e2e8f0;">@amount</td>
+                <td style="padding: 0.75rem; border-bottom: 1px solid #e2e8f0;">
+                    <span style="background: @color; color: white; padding: 0.25rem 0.5rem; border-radius: 9999px; font-size: 0.75rem;">
+                        @status
+                    </span>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<div style="background: #f8fafc; padding: 1rem; border-radius: 0.5rem;">
+    <small style="color: #64748b;">
+        💡 Navigate via <code>&lt;swap-nav to="/Home/Orders"&gt;</code>
+    </small>
+</div>

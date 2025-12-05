@@ -11,6 +11,34 @@ public class SwapHtmxOptions
     /// Event bus configuration for event chains and SSE.
     /// </summary>
     public SwapEventBusOptions EventBus { get; set; } = new();
+
+    /// <summary>
+    /// Default CSS selector for navigation target. Used by &lt;swap-nav&gt; tag helper.
+    /// Default: "#main-content"
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// builder.Services.AddSwapHtmx(options => {
+    ///     options.DefaultNavigationTarget = "main"; // or "#content"
+    /// });
+    /// </code>
+    /// </example>
+    public string DefaultNavigationTarget { get; set; } = "#main-content";
+
+    /// <summary>
+    /// Automatically suppress layout for HTMX requests (non-boosted).
+    /// When true, views render without layout for HX-Request headers.
+    /// Eliminates the need for _ViewStart.cshtml in each module.
+    /// Default: false (for backward compatibility)
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// builder.Services.AddSwapHtmx(options => {
+    ///     options.AutoSuppressLayout = true;
+    /// });
+    /// </code>
+    /// </example>
+    public bool AutoSuppressLayout { get; set; } = false;
     
     /// <summary>
     /// Folders to search when rendering OOB partial views, relative to ~/Views/.

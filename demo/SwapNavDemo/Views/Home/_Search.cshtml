@@ -1,0 +1,29 @@
+@model string?
+
+<h2>🔍 Search Results</h2>
+<p>Searching for: <strong>"@(Model ?? "htmx")"</strong></p>
+
+<div style="margin: 1.5rem 0;">
+    @{
+        var results = new[]
+        {
+            ("HTMX Documentation", "Official docs for HTMX - the high power tools for HTML", "https://htmx.org/docs"),
+            ("HTMX Examples", "Collection of examples showing HTMX patterns", "https://htmx.org/examples"),
+            ("Swap.Htmx Library", "ASP.NET Core integration for HTMX", "https://github.com/jdtoon/swap"),
+        };
+    }
+    @foreach (var (title, desc, url) in results)
+    {
+        <div style="padding: 1rem; border: 1px solid #e2e8f0; border-radius: 0.5rem; margin-bottom: 0.75rem;">
+            <h4 style="margin: 0 0 0.25rem; color: #6366f1;">@title</h4>
+            <p style="margin: 0 0 0.5rem; color: #64748b; font-size: 0.9rem;">@desc</p>
+            <small style="color: #94a3b8;">@url</small>
+        </div>
+    }
+</div>
+
+<div style="background: #f8fafc; padding: 1rem; border-radius: 0.5rem;">
+    <small style="color: #64748b;">
+        💡 This view was loaded via <code>&lt;swap-nav to="/Home/Search" hx-vals='{"q": "@(Model ?? "htmx")"}'&gt;</code>
+    </small>
+</div>

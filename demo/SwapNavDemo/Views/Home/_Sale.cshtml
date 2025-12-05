@@ -1,0 +1,30 @@
+<h2>🏷️ On Sale</h2>
+<p>Limited time offers!</p>
+
+<div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin: 1.5rem 0;">
+    @{
+        var saleItems = new[]
+        {
+            ("Wireless Headphones", "$199", "$149", "25%"),
+            ("Smart Watch", "$299", "$199", "33%"),
+            ("Bluetooth Speaker", "$89", "$59", "34%"),
+        };
+    }
+    @foreach (var (name, original, sale, discount) in saleItems)
+    {
+        <div style="background: white; padding: 1.25rem; border-radius: 0.5rem; border: 2px solid #f5576c; text-align: center; position: relative;">
+            <span style="position: absolute; top: -10px; right: 10px; background: #f5576c; color: white; padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.75rem; font-weight: bold;">
+                -@discount
+            </span>
+            <h4 style="margin: 0.5rem 0;">@name</h4>
+            <p style="margin: 0;">
+                <span style="text-decoration: line-through; color: #94a3b8;">@original</span>
+                <span style="color: #f5576c; font-weight: bold; font-size: 1.25rem; margin-left: 0.5rem;">@sale</span>
+            </p>
+        </div>
+    }
+</div>
+
+<div style="background: #fef2f2; padding: 1rem; border-radius: 0.5rem; border: 1px solid #fecaca;">
+    <strong style="color: #dc2626;">⏰ Sale ends in 2 days!</strong>
+</div>
