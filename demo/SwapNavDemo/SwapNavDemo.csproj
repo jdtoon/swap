@@ -10,4 +10,9 @@
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
 
+  <!-- Enable source generators to scan .cshtml files -->
+  <ItemGroup>
+    <AdditionalFiles Include="Views\**\*.cshtml" />
+  </ItemGroup>
+
 </Project>

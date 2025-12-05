@@ -4,6 +4,7 @@ using SwapModularMonolith.Data;
 using SwapModularMonolith.Modules.Notes;
 //#endif
 //#if (IncludeSse)
+using Swap.Htmx;
 using Swap.Htmx.Realtime;
 //#endif
 

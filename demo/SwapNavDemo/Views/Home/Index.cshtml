@@ -1,314 +1,130 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>SwapNavDemo - Navigation Examples</title>
-    <script src="https://unpkg.com/htmx.org@2.0.4"></script>
-    <style>
-        * { box-sizing: border-box; }
-        body { 
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            margin: 0; 
-            padding: 0;
-            background: #f5f5f5;
-        }
-        .app-container {
-            display: grid;
-            grid-template-columns: 250px 1fr 250px;
-            grid-template-rows: auto 1fr;
-            min-height: 100vh;
-        }
-        header {
-            grid-column: 1 / -1;
-            background: #2563eb;
-            color: white;
-            padding: 1rem 2rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        header h1 { margin: 0; font-size: 1.5rem; }
-        nav {
-            background: #1e40af;
-            padding: 1rem;
-        }
-        nav button {
-            display: block;
-            width: 100%;
-            padding: 0.75rem 1rem;
-            margin-bottom: 0.5rem;
-            background: transparent;
-            border: none;
-            color: white;
-            text-align: left;
-            cursor: pointer;
-            border-radius: 0.5rem;
-            font-size: 0.9rem;
-        }
-        nav button:hover { background: rgba(255,255,255,0.1); }
-        nav h3 {
-            color: #93c5fd;
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            margin: 1.5rem 0 0.5rem;
-            padding: 0 0.5rem;
-        }
-        nav h3:first-child { margin-top: 0; }
-        #main-content {
-            padding: 2rem;
-            background: white;
-            overflow-y: auto;
-        }
-        #sidebar {
-            background: #f8fafc;
-            padding: 1rem;
-            border-left: 1px solid #e2e8f0;
-        }
-        .demo-section {
-            background: #f8fafc;
-            border: 1px solid #e2e8f0;
-            border-radius: 0.5rem;
-            padding: 1.5rem;
-            margin-bottom: 1.5rem;
-        }
-        .demo-section h3 { margin-top: 0; color: #1e40af; }
-        .btn {
-            padding: 0.5rem 1rem;
-            border: none;
-            border-radius: 0.375rem;
-            cursor: pointer;
-            font-size: 0.875rem;
-            margin-right: 0.5rem;
-            margin-bottom: 0.5rem;
-        }
-        .btn-primary { background: #2563eb; color: white; }
-        .btn-primary:hover { background: #1d4ed8; }
-        .btn-secondary { background: #64748b; color: white; }
-        .btn-secondary:hover { background: #475569; }
-        .btn-success { background: #16a34a; color: white; }
-        .btn-success:hover { background: #15803d; }
-        .btn-danger { background: #dc2626; color: white; }
-        .btn-danger:hover { background: #b91c1c; }
-        .code-note {
-            background: #1e293b;
-            color: #e2e8f0;
-            padding: 1rem;
-            border-radius: 0.375rem;
-            font-family: 'Monaco', 'Consolas', monospace;
-            font-size: 0.8rem;
-            margin-top: 1rem;
-            overflow-x: auto;
-        }
-        .code-note code { color: #93c5fd; }
-        #modal-container:empty { display: none; }
-        .modal-backdrop {
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.5);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 100;
-        }
-        .modal {
-            background: white;
-            padding: 2rem;
-            border-radius: 0.5rem;
-            max-width: 500px;
-            width: 90%;
-        }
-        #item-list {
-            border: 1px solid #e2e8f0;
-            border-radius: 0.375rem;
-            min-height: 100px;
-            padding: 0.5rem;
-        }
-        .list-item {
-            padding: 0.5rem;
-            border-bottom: 1px solid #e2e8f0;
-        }
-        .list-item:last-child { border-bottom: none; }
-        .search-form {
-            display: flex;
-            gap: 0.5rem;
-            flex-wrap: wrap;
-        }
-        .search-form input, .search-form select {
-            padding: 0.5rem;
-            border: 1px solid #e2e8f0;
-            border-radius: 0.375rem;
-        }
-        .tabs {
-            display: flex;
-            border-bottom: 2px solid #e2e8f0;
-            margin-bottom: 1rem;
-        }
-        .tab-btn {
-            padding: 0.75rem 1.5rem;
-            background: none;
-            border: none;
-            cursor: pointer;
-            border-bottom: 2px solid transparent;
-            margin-bottom: -2px;
-        }
-        .tab-btn.active, .tab-btn:hover {
-            border-bottom-color: #2563eb;
-            color: #2563eb;
-        }
-        #tab-content {
-            padding: 1rem;
-            background: #f8fafc;
-            border-radius: 0.375rem;
-        }
-        .toast-container {
-            position: fixed;
-            top: 1rem;
-            right: 1rem;
-            z-index: 1000;
-        }
-    </style>
-</head>
-<body>
-    <div class="app-container">
-        <header>
-            <h1>🧭 SwapNavDemo</h1>
-            <span>Demonstrating .WithNavigation() for SPA-style navigation</span>
-        </header>
-        
-        <nav>
-            <h3>Basic Navigation</h3>
-            <button hx-post="/Home/GoToInbox" hx-swap="none">📥 Inbox</button>
-            <button hx-post="/Home/GoToMessages" hx-swap="none">💬 Messages</button>
-            <button hx-post="/Home/GoToSettings" hx-swap="none">⚙️ Settings</button>
-            
-            <h3>Custom Targets</h3>
-            <button hx-post="/Home/LoadInSidebar" hx-swap="none">📌 Load in Sidebar</button>
-            <button hx-post="/Home/AppendToList" hx-swap="none">➕ Append to List</button>
-            
-            <h3>No URL Push</h3>
-            <button hx-post="/Home/LoadModalContent" hx-swap="none">🪟 Open Modal</button>
-            
-            <h3>Compare Methods</h3>
-            <button hx-post="/Home/FullRedirect" hx-swap="none" class="btn-danger">🔄 Full Redirect</button>
-            <button hx-post="/Home/SpaNavigate" hx-swap="none" class="btn-success">⚡ SPA Navigate</button>
-        </nav>
-        
-        <main id="main-content">
-            <h2>Welcome to SwapNavDemo</h2>
-            <p>This demo showcases the <code>.WithNavigation()</code> feature in Swap.Htmx.</p>
-            
-            <div class="demo-section">
-                <h3>🚀 Basic Navigation</h3>
-                <p>Click the nav buttons on the left to see SPA-style navigation in action.</p>
-                <p>Notice how:</p>
-                <ul>
-                    <li>The URL updates in the browser</li>
-                    <li>Only the content area changes (no full page reload)</li>
-                    <li>Toasts appear with navigation feedback</li>
-                </ul>
-                <div class="code-note">
-                    <code>.WithNavigation("/Home/Inbox")</code>
-                </div>
+@{
+    ViewData["Title"] = "swap-nav Demo";
+}
+
+<h2>Welcome to the &lt;swap-nav&gt; Demo</h2>
+<p>
+    This demo showcases the new <span class="inline-code">&lt;swap-nav&gt;</span> tag helper 
+    that simplifies SPA-style navigation in Swap.Htmx applications.
+</p>
+
+<div class="demo-section">
+    <h3><span>✨</span> The Problem</h3>
+    <p>Before <span class="inline-code">&lt;swap-nav&gt;</span>, navigation links required verbose, repetitive markup:</p>
+    
+    <div class="vs-block">
+        <div class="before">
+            <h4>❌ Before (verbose)</h4>
+            <div class="code-block" style="font-size: 0.75rem;">
+<span class="tag">&lt;a</span> <span class="attr">href</span>=<span class="value">"/Products"</span>
+   <span class="attr">hx-get</span>=<span class="value">"/Products"</span>
+   <span class="attr">hx-target</span>=<span class="value">"#main-content"</span>
+   <span class="attr">hx-push-url</span>=<span class="value">"true"</span><span class="tag">&gt;</span>Products<span class="tag">&lt;/a&gt;</span>
             </div>
-            
-            <div class="demo-section">
-                <h3>🎯 Custom Targets</h3>
-                <p>Navigate content into specific page regions:</p>
-                <button class="btn btn-primary" hx-post="/Home/LoadInSidebar" hx-swap="none">
-                    Load content into sidebar →
-                </button>
-                <div class="code-note">
-                    <code>.WithNavigation("/content", target: "#sidebar")</code>
-                </div>
+        </div>
+        <div class="after">
+            <h4>✅ After (clean)</h4>
+            <div class="code-block" style="font-size: 0.75rem;">
+<span class="tag">&lt;swap-nav</span> <span class="attr">to</span>=<span class="value">"/Products"</span><span class="tag">&gt;</span>Products<span class="tag">&lt;/swap-nav&gt;</span>
             </div>
-            
-            <div class="demo-section">
-                <h3>📝 Append to List</h3>
-                <p>Use HxLocationOptions for advanced scenarios like appending:</p>
-                <div id="item-list">
-                    <div class="list-item">Initial Item 1</div>
-                    <div class="list-item">Initial Item 2</div>
-                </div>
-                <button class="btn btn-success" hx-post="/Home/AppendToList" hx-swap="none" style="margin-top: 0.5rem;">
-                    Add Item
-                </button>
-                <div class="code-note">
-                    <code>.WithNavigation(new HxLocationOptions { Path = "/item", Target = "#list", Swap = "beforeend" })</code>
-                </div>
-            </div>
-            
-            <div class="demo-section">
-                <h3>🔍 Search with Values</h3>
-                <p>Pass values along with navigation:</p>
-                <form class="search-form" hx-post="/Home/SearchAndNavigate" hx-swap="none">
-                    <input type="text" name="query" placeholder="Search query..." value="htmx">
-                    <select name="category">
-                        <option value="all">All Categories</option>
-                        <option value="docs">Documentation</option>
-                        <option value="examples">Examples</option>
-                    </select>
-                    <button type="submit" class="btn btn-primary">Search & Navigate</button>
-                </form>
-                <div class="code-note">
-                    <code>.WithNavigation(new HxLocationOptions { Path = "/search", Values = { ["query"] = query } })</code>
-                </div>
-            </div>
-            
-            <div class="demo-section">
-                <h3>📑 Tabs (No URL Push)</h3>
-                <p>Switch tabs without updating URL:</p>
-                <div class="tabs">
-                    <button class="tab-btn active" hx-post="/Home/LoadTab?tab=overview" hx-swap="none">Overview</button>
-                    <button class="tab-btn" hx-post="/Home/LoadTab?tab=details" hx-swap="none">Details</button>
-                    <button class="tab-btn" hx-post="/Home/LoadTab?tab=history" hx-swap="none">History</button>
-                </div>
-                <div id="tab-content">
-                    <p>Click a tab to load content without URL change.</p>
-                </div>
-                <div class="code-note">
-                    <code>.WithNavigation("/tab", target: "#tab-content", pushUrl: false)</code>
-                </div>
-            </div>
-            
-            <div class="demo-section">
-                <h3>🆚 WithRedirect vs WithNavigation</h3>
-                <p>Compare the two approaches:</p>
-                <button class="btn btn-danger" hx-post="/Home/FullRedirect" hx-swap="none">
-                    WithRedirect (Full Reload)
-                </button>
-                <button class="btn btn-success" hx-post="/Home/SpaNavigate" hx-swap="none">
-                    WithNavigation (SPA Style)
-                </button>
-                <p style="margin-top: 1rem;"><em>Notice: WithRedirect causes a full page reload, while WithNavigation smoothly updates content.</em></p>
-            </div>
-        </main>
-        
-        <aside id="sidebar">
-            <h4>Sidebar</h4>
-            <p>Content can be loaded here using custom target navigation.</p>
-        </aside>
+        </div>
+    </div>
+</div>
+
+<div class="demo-section">
+    <h3><span>🚀</span> Features</h3>
+    <div class="feature-grid">
+        <div class="feature-card">
+            <h4>🎯 Auto Target</h4>
+            <p>Automatically uses configured default target (<span class="inline-code">#main-content</span>)</p>
+        </div>
+        <div class="feature-card">
+            <h4>📍 Auto Push URL</h4>
+            <p>Browser history updated automatically (disable with <span class="inline-code">push-url="false"</span>)</p>
+        </div>
+        <div class="feature-card">
+            <h4>🎨 Full Styling</h4>
+            <p>All HTML attributes pass through - class, style, id, data-*, etc.</p>
+        </div>
+        <div class="feature-card">
+            <h4>🔌 HTMX Compatible</h4>
+            <p>All hx-* attributes work: hx-vals, hx-swap, hx-indicator, etc.</p>
+        </div>
+    </div>
+</div>
+
+<div class="demo-section">
+    <h3><span>📝</span> Usage Examples</h3>
+    
+    <h4>Basic Navigation</h4>
+    <div class="code-block">
+<span class="comment">&lt;!-- Simple navigation --&gt;</span>
+<span class="tag">&lt;swap-nav</span> <span class="attr">to</span>=<span class="value">"/Products"</span><span class="tag">&gt;</span>Products<span class="tag">&lt;/swap-nav&gt;</span>
+
+<span class="comment">&lt;!-- With query parameters --&gt;</span>
+<span class="tag">&lt;swap-nav</span> <span class="attr">to</span>=<span class="value">"/Products?category=electronics"</span><span class="tag">&gt;</span>Electronics<span class="tag">&lt;/swap-nav&gt;</span>
     </div>
     
-    <div id="modal-container"></div>
+    <h4>With Styling</h4>
+    <div class="code-block">
+<span class="comment">&lt;!-- Button-styled nav link --&gt;</span>
+<span class="tag">&lt;swap-nav</span> <span class="attr">to</span>=<span class="value">"/Featured"</span> <span class="attr">class</span>=<span class="value">"btn btn-primary"</span><span class="tag">&gt;</span>
+    ⭐ Featured
+<span class="tag">&lt;/swap-nav&gt;</span>
+    </div>
     
-    <div class="toast-container" id="toast-container"></div>
+    <h4>With HTMX Attributes</h4>
+    <div class="code-block">
+<span class="comment">&lt;!-- Pass values via hx-vals --&gt;</span>
+<span class="tag">&lt;swap-nav</span> <span class="attr">to</span>=<span class="value">"/Search"</span> <span class="attr">hx-vals</span>=<span class="value">'{"q": "htmx", "page": 1}'</span><span class="tag">&gt;</span>Search<span class="tag">&lt;/swap-nav&gt;</span>
+
+<span class="comment">&lt;!-- Custom target --&gt;</span>
+<span class="tag">&lt;swap-nav</span> <span class="attr">to</span>=<span class="value">"/QuickView"</span> <span class="attr">hx-target</span>=<span class="value">"#sidebar"</span><span class="tag">&gt;</span>Quick View<span class="tag">&lt;/swap-nav&gt;</span>
+
+<span class="comment">&lt;!-- No URL push (for modals, tabs, etc) --&gt;</span>
+<span class="tag">&lt;swap-nav</span> <span class="attr">to</span>=<span class="value">"/Modal"</span> <span class="attr">push-url</span>=<span class="value">"false"</span><span class="tag">&gt;</span>Open Modal<span class="tag">&lt;/swap-nav&gt;</span>
+    </div>
+</div>
+
+<div class="demo-section">
+    <h3><span>⚙️</span> Configuration</h3>
+    <div class="code-block">
+<span class="comment">// Program.cs</span>
+builder.Services.AddSwapHtmx(options =>
+{
+    <span class="comment">// Default target for &lt;swap-nav&gt; (default: "#main-content")</span>
+    options.DefaultNavigationTarget = <span class="value">"#main-content"</span>;
     
-    <script>
-        // Simple toast handler
-        document.body.addEventListener('swap:toast', function(e) {
-            const toast = document.createElement('div');
-            toast.style.cssText = 'padding: 1rem; margin-bottom: 0.5rem; border-radius: 0.375rem; color: white; background: ' + 
-                (e.detail.type === 'success' ? '#16a34a' : e.detail.type === 'error' ? '#dc2626' : '#2563eb');
-            toast.textContent = e.detail.message;
-            document.getElementById('toast-container').appendChild(toast);
-            setTimeout(() => toast.remove(), 3000);
-        });
-        
-        // Close modal on backdrop click
-        document.addEventListener('click', function(e) {
-            if (e.target.classList.contains('modal-backdrop')) {
-                document.getElementById('modal-container').innerHTML = '';
-            }
-        });
-    </script>
-</body>
-</html>
+    <span class="comment">// Auto-suppress layout for HTMX requests - no _ViewStart.cshtml needed!</span>
+    options.AutoSuppressLayout = <span class="value">true</span>;
+});
+    </div>
+</div>
+
+<div class="demo-section">
+    <h3><span>🔄</span> Auto-Generated Constants</h3>
+    <p>The source generator automatically creates constants for your views and element IDs:</p>
+    <div class="code-block">
+<span class="comment">// Auto-generated SwapViews class</span>
+SwapViews.Home.Index        <span class="comment">// "~/Views/Home/Index.cshtml"</span>
+SwapViews.Home.Dashboard    <span class="comment">// "~/Views/Home/_Dashboard.cshtml"</span>
+SwapViews.Shared.Layout     <span class="comment">// "~/Views/Shared/_Layout.cshtml"</span>
+
+<span class="comment">// Auto-generated SwapElements class (from id="..." in .cshtml)</span>
+SwapElements.MainContent    <span class="comment">// "main-content"</span>
+SwapElements.QuickPanel     <span class="comment">// "quick-panel"</span>
+    </div>
+    <p style="margin-top: 1rem;">
+        <span class="badge badge-info">TIP</span>
+        Add <span class="inline-code">&lt;AdditionalFiles Include="Views\**\*.cshtml" /&gt;</span> to your .csproj
+    </p>
+</div>
+
+<div class="demo-section">
+    <h3><span>🎉</span> Try It!</h3>
+    <p>Click the navigation links in the sidebar to see <span class="inline-code">&lt;swap-nav&gt;</span> in action.</p>
+    <div style="margin-top: 1rem;">
+        <swap-nav to="/Home/Dashboard" class="btn btn-primary">Go to Dashboard</swap-nav>
+        <swap-nav to="/Home/Products" class="btn btn-secondary">Browse Products</swap-nav>
+    </div>
+</div>

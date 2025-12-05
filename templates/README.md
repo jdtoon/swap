@@ -98,9 +98,11 @@ A production-ready foundation with best practices built in:
 - `Data/` — EF Core DbContext with audit fields and configurations
 
 **Features**
+- **`<swap-nav>` Tag Helper** — Clean navigation links without verbose HTMX attributes
+- **Auto-Layout Suppression** — HTMX requests get partials, browser requests get full pages
+- **Auto-Generated Constants** — Type-safe `SwapViews` and `SwapElements` from your .cshtml files
 - **SPA-style Navigation** — HTMX-powered routing with URL updates
 - **SQLite Database** — Ready for development, easily swap for production DB
-- **Source Generators** — Type-safe events, views, and element IDs
 - **WebOptimizer** — CSS/JS bundling and minification
 - **Docker Support** — Multi-stage Dockerfile and docker-compose.yml
 - **Health Checks** — `/health` endpoint for container orchestration

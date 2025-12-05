@@ -1,0 +1,42 @@
+<h2>📊 Dashboard</h2>
+<p>Welcome to your dashboard! This view was loaded via <code>&lt;swap-nav to="/Home/Dashboard"&gt;</code>.</p>
+
+<div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin: 2rem 0;">
+    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 1.5rem; border-radius: 0.75rem;">
+        <h3 style="margin: 0 0 0.5rem;">Orders</h3>
+        <p style="font-size: 2rem; margin: 0; font-weight: bold;">156</p>
+        <small style="opacity: 0.8;">+12% from last week</small>
+    </div>
+    <div style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; padding: 1.5rem; border-radius: 0.75rem;">
+        <h3 style="margin: 0 0 0.5rem;">Revenue</h3>
+        <p style="font-size: 2rem; margin: 0; font-weight: bold;">$24,500</p>
+        <small style="opacity: 0.8;">+8% from last week</small>
+    </div>
+    <div style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; padding: 1.5rem; border-radius: 0.75rem;">
+        <h3 style="margin: 0 0 0.5rem;">Customers</h3>
+        <p style="font-size: 2rem; margin: 0; font-weight: bold;">2,847</p>
+        <small style="opacity: 0.8;">+23 new today</small>
+    </div>
+</div>
+
+<div style="background: #f8fafc; padding: 1.5rem; border-radius: 0.75rem; border: 1px solid #e2e8f0;">
+    <h3 style="margin-top: 0;">Quick Actions</h3>
+    <swap-nav to="/Home/Products" class="btn btn-primary">View Products</swap-nav>
+    <swap-nav to="/Home/Orders" class="btn btn-secondary">View Orders</swap-nav>
+</div>
+
+<style>
+    .btn {
+        display: inline-block;
+        padding: 0.625rem 1.25rem;
+        border: none;
+        border-radius: 0.375rem;
+        cursor: pointer;
+        font-size: 0.875rem;
+        margin-right: 0.5rem;
+        text-decoration: none;
+        color: white;
+    }
+    .btn-primary { background: #6366f1; }
+    .btn-secondary { background: #64748b; }
+</style>

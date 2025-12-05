@@ -4,7 +4,6 @@ using Swap.Htmx.Events;
 using SwapModularMonolith.Modules.Notes.Entities;
 using SwapModularMonolith.Modules.Notes.Events;
 using SwapModularMonolith.Modules.Notes.Services;
-using SwapModularMonolith.Modules.Notes.Views;
 
 namespace SwapModularMonolith.Modules.Notes.Controllers;
 
@@ -28,13 +27,13 @@ public class NotesController : SwapController
     public async Task<IActionResult> List()
     {
         var notes = await _service.GetAllAsync();
-        return SwapView(NotesViews.Partials.NotesList, notes);
+        return SwapView("_NotesList", notes);
     }
 
     [HttpGet]
     public IActionResult Create()
     {
-        return SwapView(NotesViews.Partials.CreateModal);
+        return SwapView("_CreateModal");
     }
 
     [HttpPost]
@@ -42,7 +41,7 @@ public class NotesController : SwapController
     {
         if (!ModelState.IsValid)
         {
-            return SwapView(NotesViews.Partials.CreateModal, note);
+            return SwapView("_CreateModal", note);
         }
 
         await _service.CreateAsync(note);
@@ -60,7 +59,7 @@ public class NotesController : SwapController
         var note = await _service.GetByIdAsync(id);
         if (note == null) return NotFound();
 
-        return SwapView(NotesViews.Partials.EditModal, note);
+        return SwapView("_EditModal", note);
     }
 
     [HttpPost]
@@ -68,7 +67,7 @@ public class NotesController : SwapController
     {
         if (!ModelState.IsValid)
         {
-            return SwapView(NotesViews.Partials.EditModal, note);
+            return SwapView("_EditModal", note);
         }
 
         try
@@ -92,7 +91,7 @@ public class NotesController : SwapController
         var note = await _service.GetByIdAsync(id);
         if (note == null) return NotFound();
 
-        return SwapView(NotesViews.Partials.DeleteConfirmModal, note);
+        return SwapView("_DeleteConfirmModal", note);
     }
 
     [HttpPost]

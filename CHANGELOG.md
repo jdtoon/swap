@@ -5,6 +5,80 @@ All notable changes to Swap.Htmx will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.2] - 2025-XX-XX
+
+### Added
+
+#### `<swap-nav>` Tag Helper (NEW)
+- **`<swap-nav to="/path">`** - Simplified SPA-style navigation links
+- Automatically renders `<a>` with `hx-get`, `hx-target`, and `hx-push-url`
+- Configurable default target via `SwapHtmxOptions.DefaultNavigationTarget`
+- `push-url` attribute to control browser history (default: `true`)
+- Passes through all HTML attributes (class, style, etc.) and `hx-*` attributes
+
+#### Auto-Layout Suppression (NEW)
+- **`SwapHtmxOptions.AutoSuppressLayout`** - Automatically suppress layout for HTMX requests
+- **`Context.ShouldSuppressLayout()`** - Extension method for `_ViewStart.cshtml`
+- Eliminates per-module `_ViewStart.cshtml` files
+- HTMX requests automatically return partials, browser requests return full pages
+
+#### Auto-Scan Source Generator (NEW)
+- **Zero-configuration generation** of `SwapViews` and `SwapElements` constants
+- Scans all `.cshtml` files via `<AdditionalFiles>` — no attributes required
+- Generates nested classes matching folder structure
+- Supports modular monolith structure (`Modules/*/Views/...`)
+- Extracts all `id="..."` attributes automatically
+
+#### Documentation
+- [SwapNavTagHelper.md](lib/Swap.Htmx/docs/SwapNavTagHelper.md) - Complete `<swap-nav>` guide
+- [AutoScanGenerator.md](lib/Swap.Htmx/docs/AutoScanGenerator.md) - Zero-config generator guide
+
+### Changed
+
+#### SwapNavDemo
+- Updated to demonstrate `<swap-nav>` tag helper (previously showed `.WithNavigation()`)
+
+#### Swap.ModularMonolith Template
+- Uses `<swap-nav>` for navigation links in layout
+- Configured with `AutoSuppressLayout = true`
+- Uses auto-generated constants (no `ViewSources.cs` or `ElementSources.cs` needed)
+- Simplified `_ViewStart.cshtml` with `ShouldSuppressLayout()` check
+
+### Upgrading from 1.0.x
+
+**No breaking changes.** All new features are opt-in and additive. To adopt:
+
+1. **`<swap-nav>` tag helper** — Replace verbose navigation links:
+   ```html
+   <!-- Before -->
+   <a href="/products" hx-get="/products" hx-target="#main-content" hx-push-url="true">Products</a>
+   
+   <!-- After -->
+   <swap-nav to="/products">Products</swap-nav>
+   ```
+   Configure target in `Program.cs`:
+   ```csharp
+   builder.Services.AddSwapHtmx(options => options.DefaultNavigationTarget = "#main-content");
+   ```
+
+2. **Auto-layout suppression** — Eliminate per-folder `_ViewStart.cshtml` files:
+   ```csharp
+   // Program.cs
+   builder.Services.AddSwapHtmx(options => options.AutoSuppressLayout = true);
+   ```
+   ```razor
+   // _ViewStart.cshtml
+   @{ Layout = Context.ShouldSuppressLayout() ? null : "_Layout"; }
+   ```
+
+3. **Auto-scan generator** — Delete manual `ViewSources.cs`/`ElementSources.cs`, add to `.csproj`:
+   ```xml
+   <AdditionalFiles Include="Views\**\*.cshtml" />
+   ```
+   Use generated `SwapViews.Home.Index` and `SwapElements.Home.Index.MainContent` constants.
+
+---
+
 ## [1.0.1] - 2025-12-02
 
 ### Added

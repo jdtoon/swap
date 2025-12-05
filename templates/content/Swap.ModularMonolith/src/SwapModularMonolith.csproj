@@ -33,6 +33,8 @@
     <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore" Version="9.0.0" />
     <!--#if (UseLocalRef) -->
     <ProjectReference Include="..\..\..\..\lib\Swap.Htmx\Swap.Htmx.csproj" />
+    <!-- When using local ref, we need to explicitly reference the generators since they don't flow through ProjectReference -->
+    <ProjectReference Include="..\..\..\..\framework\Swap.Htmx.Generators\Swap.Htmx.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
     <!--#else -->
     <PackageReference Include="Swap.Htmx" Version="*" />
     <!--#endif -->
