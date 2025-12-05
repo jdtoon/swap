@@ -57,7 +57,7 @@ public class AutoScanGenerator : IIncrementalGenerator
         System.Collections.Immutable.ImmutableArray<AdditionalText> files,
         string rootNamespace)
     {
-        var viewsByFolder = new Dictionary<string, List<ViewInfo>>(StringComparer.OrdinalIgnoreCase);
+        var viewsByFolder = new Dictionary<string, Dictionary<string, ViewInfo>>(StringComparer.OrdinalIgnoreCase);
 
         foreach (var file in files)
         {
@@ -67,13 +67,18 @@ public class AutoScanGenerator : IIncrementalGenerator
             if (viewInfo == null)
                 continue;
 
-            if (!viewsByFolder.TryGetValue(viewInfo.Folder, out var list))
+            if (!viewsByFolder.TryGetValue(viewInfo.Folder, out var viewsDict))
             {
-                list = new List<ViewInfo>();
-                viewsByFolder[viewInfo.Folder] = list;
+                viewsDict = new Dictionary<string, ViewInfo>(StringComparer.OrdinalIgnoreCase);
+                viewsByFolder[viewInfo.Folder] = viewsDict;
             }
             
-            list.Add(viewInfo);
+            // Use relativePath as key to avoid duplicates
+            var key = viewInfo.RelativePath;
+            if (!viewsDict.ContainsKey(key))
+            {
+                viewsDict[key] = viewInfo;
+            }
         }
 
         if (viewsByFolder.Count == 0)
@@ -94,16 +99,29 @@ public class AutoScanGenerator : IIncrementalGenerator
         foreach (var kvp in viewsByFolder.OrderBy(k => k.Key))
         {
             var folder = kvp.Key;
-            var views = kvp.Value.OrderBy(v => v.FileName).ToList();
+            var views = kvp.Value.Values.OrderBy(v => v.FileName).ToList();
             var className = ToValidClassName(folder);
 
             sb.AppendLine($"        public static class {className}");
             sb.AppendLine("        {");
 
+            // Track used constant names to avoid duplicates within a class
+            var usedNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            
             foreach (var view in views)
             {
                 var constantName = ToValidIdentifier(view.FileName);
-                sb.AppendLine($"            public const string {constantName} = \"{view.RelativePath}\";");
+                
+                // If duplicate name in same class, append number
+                var finalName = constantName;
+                var counter = 2;
+                while (usedNames.Contains(finalName))
+                {
+                    finalName = constantName + counter++;
+                }
+                usedNames.Add(finalName);
+                
+                sb.AppendLine($"            public const string {finalName} = \"{view.RelativePath}\";");
             }
 
             sb.AppendLine("        }");
@@ -199,65 +217,80 @@ public class AutoScanGenerator : IIncrementalGenerator
 
     private static ViewInfo? ParseViewPath(string fullPath)
     {
-        // Find the last "Views" folder or any folder containing .cshtml
-        // Patterns: Views/Home/Index.cshtml, Modules/Inventory/Views/Index.cshtml, Pages/Index.cshtml
+        // Handle patterns:
+        // - Views/Home/Index.cshtml -> folder="Home", path="~/Views/Home/Index.cshtml"
+        // - Views/Shared/_Layout.cshtml -> folder="Shared", path="~/Views/Shared/_Layout.cshtml"
+        // - Modules/Notes/Views/Index.cshtml -> folder="Notes", path="~/Modules/Notes/Views/Index.cshtml"
+        // - Modules/Notes/Views/_NoteCard.cshtml -> folder="Notes", path="~/Modules/Notes/Views/_NoteCard.cshtml"
+        // - Pages/Index.cshtml -> folder="Pages", path="~/Pages/Index.cshtml"
 
         var parts = fullPath.Split('/');
         var fileName = Path.GetFileNameWithoutExtension(parts[parts.Length - 1]);
 
-        // Find a good folder name for grouping
-        string folder = "Root";
+        string folder = "Shared";
         string relativePath = "";
 
-        // Look for Views folder pattern
-        for (int i = parts.Length - 2; i >= 0; i--)
+        // Find the Views or Pages folder
+        int viewsIndex = -1;
+        int modulesIndex = -1;
+        
+        for (int i = 0; i < parts.Length; i++)
         {
+            if (parts[i].Equals("Modules", StringComparison.OrdinalIgnoreCase))
+            {
+                modulesIndex = i;
+            }
             if (parts[i].Equals("Views", StringComparison.OrdinalIgnoreCase))
             {
-                // Next folder after Views is our group
-                if (i + 1 < parts.Length - 1)
-                {
-                    folder = parts[i + 1];
-                }
-                else
-                {
-                    folder = "Shared";
-                }
-
-                // Build relative path from Views folder
-                var pathParts = new List<string>();
-                for (int j = i; j < parts.Length; j++)
-                {
-                    pathParts.Add(parts[j]);
-                }
-                relativePath = "~/" + string.Join("/", pathParts);
-                break;
+                viewsIndex = i;
             }
-            else if (parts[i].Equals("Pages", StringComparison.OrdinalIgnoreCase))
+            if (parts[i].Equals("Pages", StringComparison.OrdinalIgnoreCase))
             {
+                viewsIndex = i;
                 folder = "Pages";
-                if (i + 1 < parts.Length - 1)
-                {
-                    folder = "Pages_" + parts[i + 1];
-                }
-                var pathParts = new List<string>();
-                for (int j = i; j < parts.Length; j++)
-                {
-                    pathParts.Add(parts[j]);
-                }
-                relativePath = "~/" + string.Join("/", pathParts);
-                break;
             }
         }
 
-        // If no Views/Pages folder found, use parent folder name
-        if (string.IsNullOrEmpty(relativePath))
+        if (viewsIndex >= 0)
         {
+            // If we have a Modules folder before Views, use the module name as folder
+            if (modulesIndex >= 0 && modulesIndex < viewsIndex && modulesIndex + 1 < viewsIndex)
+            {
+                folder = parts[modulesIndex + 1]; // e.g., "Notes" from "Modules/Notes/Views"
+                
+                // Build relative path from Modules folder
+                var pathParts = new List<string>();
+                for (int j = modulesIndex; j < parts.Length; j++)
+                {
+                    pathParts.Add(parts[j]);
+                }
+                relativePath = "~/" + string.Join("/", pathParts);
+            }
+            else
+            {
+                // Standard Views folder - use subfolder as the group
+                if (viewsIndex + 1 < parts.Length - 1)
+                {
+                    folder = parts[viewsIndex + 1]; // e.g., "Home" from "Views/Home/Index.cshtml"
+                }
+                
+                // Build relative path from Views/Pages folder
+                var pathParts = new List<string>();
+                for (int j = viewsIndex; j < parts.Length; j++)
+                {
+                    pathParts.Add(parts[j]);
+                }
+                relativePath = "~/" + string.Join("/", pathParts);
+            }
+        }
+        else
+        {
+            // No Views/Pages folder found, use parent folder
             if (parts.Length >= 2)
             {
                 folder = parts[parts.Length - 2];
             }
-            // Take last 3 parts
+            // Take last 3 parts for relative path
             var lastParts = new List<string>();
             int startIdx = Math.Max(0, parts.Length - 3);
             for (int j = startIdx; j < parts.Length; j++)

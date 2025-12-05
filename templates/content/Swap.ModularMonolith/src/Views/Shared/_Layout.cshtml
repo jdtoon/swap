@@ -15,13 +15,13 @@
             <button class="btn-icon sidebar-toggle" onclick="toggleSidebar()">☰</button>
         </div>
         <nav class="nav-menu">
-            <a hx-get="@Url.Action("Index", "Home")" hx-target="#main-content" hx-push-url="true" class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Home" ? "active" : "")">
+            <swap-nav to="/" class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Home" ? "active" : "")">
                 🏠 Dashboard
-            </a>
+            </swap-nav>
 <!--#if (IncludeSampleModule) -->
-            <a hx-get="@Url.Action("Index", "Notes")" hx-target="#main-content" hx-push-url="true" class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Notes" ? "active" : "")">
+            <swap-nav to="/Notes" class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Notes" ? "active" : "")">
                 📝 Notes
-            </a>
+            </swap-nav>
 <!--#endif -->
         </nav>
     </aside>

@@ -1,3 +1,5 @@
+@using Swap.Htmx
 @{
-    Layout = "_Layout";
+    // Auto-suppress layout for HTMX requests when AutoSuppressLayout is enabled
+    Layout = Context.ShouldSuppressLayout() ? null : "_Layout";
 }
