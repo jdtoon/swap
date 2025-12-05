@@ -44,6 +44,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Uses auto-generated constants (no `ViewSources.cs` or `ElementSources.cs` needed)
 - Simplified `_ViewStart.cshtml` with `ShouldSuppressLayout()` check
 
+### Upgrading from 1.0.x
+
+**No breaking changes.** All new features are opt-in and additive. To adopt:
+
+1. **`<swap-nav>` tag helper** — Replace verbose navigation links:
+   ```html
+   <!-- Before -->
+   <a href="/products" hx-get="/products" hx-target="#main-content" hx-push-url="true">Products</a>
+   
+   <!-- After -->
+   <swap-nav to="/products">Products</swap-nav>
+   ```
+   Configure target in `Program.cs`:
+   ```csharp
+   builder.Services.AddSwapHtmx(options => options.DefaultNavigationTarget = "#main-content");
+   ```
+
+2. **Auto-layout suppression** — Eliminate per-folder `_ViewStart.cshtml` files:
+   ```csharp
+   // Program.cs
+   builder.Services.AddSwapHtmx(options => options.AutoSuppressLayout = true);
+   ```
+   ```razor
+   // _ViewStart.cshtml
+   @{ Layout = Context.ShouldSuppressLayout() ? null : "_Layout"; }
+   ```
+
+3. **Auto-scan generator** — Delete manual `ViewSources.cs`/`ElementSources.cs`, add to `.csproj`:
+   ```xml
+   <AdditionalFiles Include="Views\**\*.cshtml" />
+   ```
+   Use generated `SwapViews.Home.Index` and `SwapElements.Home.Index.MainContent` constants.
+
 ---
 
 ## [1.0.1] - 2025-12-02
