@@ -1,0 +1,13 @@
+@model SwapSmallPartials.Modules.Partials.Events.Handlers.CounterModel
+
+<div id="partial-counter-@Model.Number" class="card h-100">
+    <div class="card-body text-center p-2">
+        <div class="small text-muted">Counter @Model.Number</div>
+        <div class="display-6 fw-bold text-primary">@Model.Value</div>
+        <button class="btn btn-sm btn-outline-primary mt-1" 
+                hx-post="/partials/counter/@Model.Number/increment" 
+                hx-swap="none">
+            +1
+        </button>
+    </div>
+</div>

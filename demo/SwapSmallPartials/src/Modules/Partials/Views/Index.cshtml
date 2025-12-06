@@ -1,0 +1,144 @@
+@model SwapSmallPartials.Modules.Partials.PartialsState
+@{
+    ViewData["Title"] = "Small Partials Demo";
+}
+
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="display-5">🧪 Small Partials Stress Test</h1>
+            <p class="lead text-muted">
+                25 tiny partials with interconnected event handlers. 
+                Click any button and watch multiple partials update via OOB swaps.
+            </p>
+        </div>
+    </div>
+
+    @* ========================================================================= *@
+    @* BULK ACTION BUTTONS *@
+    @* ========================================================================= *@
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card bg-dark text-white">
+                <div class="card-body">
+                    <h5 class="card-title">⚡ Bulk Actions</h5>
+                    <div class="btn-group" role="group">
+                        <button class="btn btn-primary" 
+                                hx-post="/partials/increment-all" 
+                                hx-swap="none">
+                            Increment All Counters (14 updates)
+                        </button>
+                        <button class="btn btn-info" 
+                                hx-post="/partials/toggle-all" 
+                                hx-swap="none">
+                            Toggle All Statuses (6 updates)
+                        </button>
+                        <button class="btn btn-success" 
+                                hx-post="/partials/progress-all" 
+                                hx-swap="none">
+                            Increase All Progress (5 updates)
+                        </button>
+                        <button class="btn btn-danger" 
+                                hx-post="/partials/reset" 
+                                hx-swap="none">
+                            🔄 Reset All (25 updates!)
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @* ========================================================================= *@
+    @* COUNTERS (10 partials) *@
+    @* ========================================================================= *@
+    <div class="row mb-4">
+        <div class="col-12">
+            <h4>📊 Counters (10 partials)</h4>
+            <p class="text-muted small">Each click updates: counter + total + average + max + min = 5 partials</p>
+        </div>
+        @for (int i = 1; i <= 10; i++)
+        {
+            <div class="col-md-2 col-sm-4 col-6 mb-3">
+                <partial name="_Counter" model="new SwapSmallPartials.Modules.Partials.Events.Handlers.CounterModel { Number = i, Value = Model.GetCounter(i) }" />
+            </div>
+        }
+    </div>
+
+    @* ========================================================================= *@
+    @* AGGREGATE VALUES (5 partials) *@
+    @* ========================================================================= *@
+    <div class="row mb-4">
+        <div class="col-12">
+            <h4>📈 Aggregates (5 partials)</h4>
+            <p class="text-muted small">These update automatically when any counter changes</p>
+        </div>
+        <div class="col-md-2 col-sm-4 col-6 mb-3">
+            <partial name="_Total" model="Model" />
+        </div>
+        <div class="col-md-2 col-sm-4 col-6 mb-3">
+            <partial name="_Average" model="Model" />
+        </div>
+        <div class="col-md-2 col-sm-4 col-6 mb-3">
+            <partial name="_Max" model="Model" />
+        </div>
+        <div class="col-md-2 col-sm-4 col-6 mb-3">
+            <partial name="_Min" model="Model" />
+        </div>
+        <div class="col-md-2 col-sm-4 col-6 mb-3">
+            <partial name="_ActiveStatuses" model="Model" />
+        </div>
+    </div>
+
+    @* ========================================================================= *@
+    @* STATUSES (5 partials) *@
+    @* ========================================================================= *@
+    <div class="row mb-4">
+        <div class="col-12">
+            <h4>🔘 Status Toggles (5 partials)</h4>
+            <p class="text-muted small">Each toggle updates: status + active count = 2 partials</p>
+        </div>
+        @for (int i = 1; i <= 5; i++)
+        {
+            <div class="col-md-2 col-sm-4 col-6 mb-3">
+                <partial name="_Status" model="new SwapSmallPartials.Modules.Partials.Events.Handlers.StatusModel { Number = i, IsActive = Model.GetStatus(i) }" />
+            </div>
+        }
+    </div>
+
+    @* ========================================================================= *@
+    @* PROGRESS BARS (5 partials) *@
+    @* ========================================================================= *@
+    <div class="row mb-4">
+        <div class="col-12">
+            <h4>📉 Progress Bars (5 partials)</h4>
+            <p class="text-muted small">Each update affects only that progress bar</p>
+        </div>
+        @for (int i = 1; i <= 5; i++)
+        {
+            <div class="col-md-4 col-sm-6 col-12 mb-3">
+                <partial name="_Progress" model="new SwapSmallPartials.Modules.Partials.Events.Handlers.ProgressModel { Number = i, Value = Model.GetProgress(i) }" />
+            </div>
+        }
+    </div>
+
+    @* ========================================================================= *@
+    @* STATS *@
+    @* ========================================================================= *@
+    <div class="row">
+        <div class="col-12">
+            <div class="card bg-light">
+                <div class="card-body">
+                    <h6 class="card-title">📋 Demo Stats</h6>
+                    <ul class="list-unstyled mb-0 small">
+                        <li>✅ <strong>25 partials</strong> on this page</li>
+                        <li>✅ <strong>Distributed handlers</strong> update partials via events</li>
+                        <li>✅ <strong>Event chains</strong> configured in PartialsEventConfig</li>
+                        <li>✅ <strong>Single click</strong> can update 5+ partials at once</li>
+                        <li>✅ <strong>Reset All</strong> updates all 25 partials in one response!</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

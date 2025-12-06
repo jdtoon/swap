@@ -1,0 +1,41 @@
+@model SwapSmallPartials.Modules.Partials.Events.Handlers.ProgressModel
+
+@{
+    var barColor = Model.Value switch
+    {
+        >= 80 => "bg-success",
+        >= 50 => "bg-info",
+        >= 25 => "bg-warning",
+        _ => "bg-danger"
+    };
+}
+
+<div id="partial-progress-@Model.Number" class="card h-100">
+    <div class="card-body p-2">
+        <div class="d-flex justify-content-between align-items-center mb-1">
+            <span class="small text-muted">Progress @Model.Number</span>
+            <span class="badge bg-dark">@Model.Value%</span>
+        </div>
+        <div class="progress mb-2" style="height: 20px;">
+            <div class="progress-bar @barColor" 
+                 role="progressbar" 
+                 style="width: @Model.Value%;" 
+                 aria-valuenow="@Model.Value" 
+                 aria-valuemin="0" 
+                 aria-valuemax="100">
+            </div>
+        </div>
+        <div class="btn-group btn-group-sm w-100" role="group">
+            <button class="btn btn-outline-danger" 
+                    hx-post="/partials/progress/@Model.Number/decrease" 
+                    hx-swap="none">
+                -10
+            </button>
+            <button class="btn btn-outline-success" 
+                    hx-post="/partials/progress/@Model.Number/increase" 
+                    hx-swap="none">
+                +10
+            </button>
+        </div>
+    </div>
+</div>

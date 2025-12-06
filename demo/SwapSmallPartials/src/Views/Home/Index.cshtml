@@ -1,0 +1,44 @@
+@{
+    ViewData["Title"] = "Dashboard";
+}
+
+<header>
+    <h1 class="page-title">Dashboard</h1>
+</header>
+
+<div class="content-scroll">
+    <div class="dashboard-grid">
+        <div class="card">
+            <h3>Welcome to SwapSmallPartials</h3>
+            <p>This is your modular monolith starter template powered by Swap.Htmx.</p>
+        </div>
+
+<!--#if (IncludeSampleModule) -->
+        <div class="card">
+            <h3>📝 Notes Module</h3>
+            <p>A sample module demonstrating the modular architecture with full CRUD operations.</p>
+            <a hx-get="@Url.Action("Index", "Notes")" hx-target="#main-content" hx-push-url="true" class="btn btn-primary">Go to Notes</a>
+        </div>
+<!--#endif -->
+
+        <div class="card">
+            <h3>Getting Started</h3>
+            <ul>
+                <li>Add new modules in the <code>Modules/</code> folder</li>
+                <li>Register modules in <code>Program.cs</code></li>
+                <li>Configure events in <code>Infrastructure/MvcExtensions.cs</code></li>
+                <li>Add view mappings in <code>ModuleViewLocationExpander.cs</code></li>
+            </ul>
+        </div>
+
+        <div class="card">
+            <h3>Architecture</h3>
+            <ul>
+                <li><strong>Infrastructure/</strong> - Cross-cutting concerns</li>
+                <li><strong>Data/</strong> - Database context and configurations</li>
+                <li><strong>Modules/</strong> - Self-contained feature modules</li>
+                <li><strong>Views/</strong> - Shared views and layout</li>
+            </ul>
+        </div>
+    </div>
+</div>

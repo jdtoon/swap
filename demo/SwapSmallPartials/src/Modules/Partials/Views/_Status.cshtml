@@ -1,0 +1,22 @@
+@model SwapSmallPartials.Modules.Partials.Events.Handlers.StatusModel
+
+<div id="partial-status-@Model.Number" class="card h-100 @(Model.IsActive ? "border-success" : "border-secondary")">
+    <div class="card-body text-center p-2">
+        <div class="small text-muted">Status @Model.Number</div>
+        <div class="my-2">
+            @if (Model.IsActive)
+            {
+                <span class="badge bg-success fs-6">ON</span>
+            }
+            else
+            {
+                <span class="badge bg-secondary fs-6">OFF</span>
+            }
+        </div>
+        <button class="btn btn-sm @(Model.IsActive ? "btn-outline-danger" : "btn-outline-success")" 
+                hx-post="/partials/status/@Model.Number/toggle" 
+                hx-swap="none">
+            Toggle
+        </button>
+    </div>
+</div>
