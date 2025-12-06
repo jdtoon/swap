@@ -575,6 +575,191 @@ public IActionResult Checkout()
 
 ---
 
+## `<swap-nav>` TAG HELPER
+
+Simplified SPA-style navigation links without verbose HTMX attributes.
+
+### The Problem
+
+```html
+<!-- Verbose and repetitive -->
+<a href="/products" hx-get="/products" hx-target="#main-content" hx-push-url="true">Products</a>
+<a href="/orders" hx-get="/orders" hx-target="#main-content" hx-push-url="true">Orders</a>
+```
+
+### The Solution
+
+```html
+<!-- Clean and declarative -->
+<swap-nav to="/products">Products</swap-nav>
+<swap-nav to="/orders">Orders</swap-nav>
+```
+
+### Configure Default Target
+
+```csharp
+// Program.cs
+builder.Services.AddSwapHtmx(options =>
+{
+    options.DefaultNavigationTarget = "#main-content";
+});
+```
+
+### Attributes
+
+| Attribute | Description | Default |
+|-----------|-------------|---------|
+| `to` | Required. The URL to navigate to | — |
+| `target` | CSS selector for target element | `SwapHtmxOptions.DefaultNavigationTarget` |
+| `push-url` | Whether to update browser URL | `true` |
+
+### Examples
+
+```html
+<!-- Basic navigation -->
+<swap-nav to="/dashboard">Dashboard</swap-nav>
+
+<!-- Override target -->
+<swap-nav to="/sidebar" target="#sidebar-content">Refresh Sidebar</swap-nav>
+
+<!-- Disable URL update -->
+<swap-nav to="/modal/edit" push-url="false">Edit</swap-nav>
+
+<!-- With CSS classes -->
+<swap-nav to="/products" class="btn btn-primary">View Products</swap-nav>
+
+<!-- Pass through hx-* attributes -->
+<swap-nav to="/items" hx-swap="innerHTML" hx-indicator="#loading">Load Items</swap-nav>
+```
+
+### Renders As
+
+```html
+<swap-nav to="/products">Products</swap-nav>
+
+<!-- Becomes -->
+<a href="/products" hx-get="/products" hx-target="#main-content" hx-push-url="true">Products</a>
+```
+
+---
+
+## AUTO-LAYOUT SUPPRESSION
+
+Automatically return partials for HTMX requests, full pages for browser requests.
+
+### The Problem
+
+Without auto-suppression, you need `_ViewStart.cshtml` in every folder or manual layout checks:
+
+```csharp
+// Every HTMX action needs this
+if (Request.IsHtmx())
+    return PartialView("_Content", model);
+return View(model);
+```
+
+### The Solution
+
+```csharp
+// Program.cs
+builder.Services.AddSwapHtmx(options =>
+{
+    options.AutoSuppressLayout = true;
+});
+```
+
+```razor
+@* _ViewStart.cshtml (root level only) *@
+@{
+    Layout = Context.ShouldSuppressLayout() ? null : "_Layout";
+}
+```
+
+### How It Works
+
+| Request Type | Layout |
+|--------------|--------|
+| Browser navigation | `_Layout` applied |
+| HTMX request (`HX-Request: true`) | Layout suppressed (partial only) |
+| `<swap-nav>` clicks | Layout suppressed (partial only) |
+
+### Benefits
+
+- **One `_ViewStart.cshtml`** — No per-folder files needed
+- **Same view, both contexts** — `return View(model)` works for HTMX and browser
+- **Bookmarkable URLs** — Direct URL access renders full page with layout
+
+---
+
+## AUTO-SCAN SOURCE GENERATOR
+
+Zero-configuration generation of view and element constants.
+
+### Setup
+
+```xml
+<!-- .csproj -->
+<ItemGroup>
+  <AdditionalFiles Include="Views\**\*.cshtml" />
+  <AdditionalFiles Include="Modules\**\Views\**\*.cshtml" />
+</ItemGroup>
+```
+
+### Generated Classes
+
+The generator automatically creates `SwapViews` and `SwapElements` classes:
+
+```csharp
+// Auto-generated from Views/Home/Index.cshtml, Views/Home/_Card.cshtml, etc.
+
+// Use view paths
+SwapViews.Home.Index         // "Index"
+SwapViews.Home.Partials.Card // "_Card"
+SwapViews.Shared.Layout      // "_Layout"
+
+// Use element IDs (from id="..." in cshtml)
+SwapElements.Home.Index.MainContent  // "main-content"
+SwapElements.Home.Index.ProductGrid  // "product-grid"
+```
+
+### Folder Structure Mapping
+
+```
+Views/
+├── Home/
+│   ├── Index.cshtml          → SwapViews.Home.Index
+│   ├── _Card.cshtml          → SwapViews.Home.Partials.Card
+│   └── _List.cshtml          → SwapViews.Home.Partials.List
+├── Products/
+│   ├── Index.cshtml          → SwapViews.Products.Index
+│   └── _Row.cshtml           → SwapViews.Products.Partials.Row
+└── Shared/
+    └── _Layout.cshtml        → SwapViews.Shared.Layout
+```
+
+### Modular Monolith Support
+
+```
+Modules/
+├── Notes/
+│   └── Views/
+│       ├── Index.cshtml      → SwapViews.Notes.Index
+│       └── _Form.cshtml      → SwapViews.Notes.Partials.Form
+└── Tasks/
+    └── Views/
+        └── _Card.cshtml      → SwapViews.Tasks.Partials.Card
+```
+
+### Benefits Over Manual Attributes
+
+| Manual (`[SwapViewSource]`) | Auto-Scan |
+|-----------------------------|-----------|
+| Requires attribute per folder | Zero configuration |
+| Must keep in sync | Always current |
+| Separate files for views/elements | Single generated file |
+
+---
+
 ## VALIDATION
 
 Server-side validation with client-side display.
@@ -1065,6 +1250,38 @@ public IActionResult LoadMore([FromSwapState] ListState state)
 <button hx-get="/Action" swap-include-state="my-state">Load</button>
 ```
 
+### swap-hidden
+
+Convenience tag helper for hidden form fields with auto-formatting.
+
+```html
+<!-- Basic usage -->
+<swap-hidden name="page" value="@Model.Page" />
+<swap-hidden name="search" value="@Model.Search" />
+
+<!-- DateTime auto-formats to yyyy-MM-dd -->
+<swap-hidden name="startDate" value="@Model.StartDate" />
+
+<!-- Custom date format -->
+<swap-hidden name="timestamp" value="@Model.Timestamp" date-format="yyyy-MM-ddTHH:mm:ss" />
+
+<!-- Booleans render as lowercase true/false -->
+<swap-hidden name="includeArchived" value="@Model.IncludeArchived" />
+
+<!-- Collections render as comma-separated values -->
+<swap-hidden name="selectedIds" value="@Model.SelectedIds" />
+```
+
+### swap-nav
+
+SPA-style navigation links (see `<swap-nav>` TAG HELPER section above).
+
+```html
+<swap-nav to="/products">Products</swap-nav>
+<swap-nav to="/orders" target="#sidebar">Orders</swap-nav>
+<swap-nav to="/modal" push-url="false">Open Modal</swap-nav>
+```
+
 ---
 
 ## DEBUGGING
@@ -1260,6 +1477,8 @@ Full documentation: https://github.com/jdtoon/swap/tree/main/lib/Swap.Htmx/docs
 | Guide | URL |
 |-------|-----|
 | Getting Started | /docs/GettingStarted.md |
+| `<swap-nav>` Tag Helper | /docs/SwapNavTagHelper.md |
+| Auto-Scan Generator | /docs/AutoScanGenerator.md |
 | Navigation | /docs/Navigation.md |
 | Events | /docs/Events.md |
 | Event Chains | /docs/EventChains.md |
@@ -1336,4 +1555,4 @@ if (!ModelState.IsValid)
 
 ## VERSION
 
-This document describes Swap.Htmx v1.0.1 for .NET 9.0.
+This document describes Swap.Htmx v1.0.2 for .NET 9.0.
