@@ -1,5 +1,11 @@
 namespace SwapSmallPartials.Modules.Analytics.Models;
 
+// ============================================================================
+// MODEL CLASSES - Simple C# POCOs
+// ============================================================================
+// No special base classes, no [Observable], no framework magic.
+// Just plain objects. Compare to React's useState/useReducer complexity.
+
 public class Product
 {
     public int Id { get; set; }
@@ -28,6 +34,31 @@ public class ActivityItem
     public decimal Amount { get; set; }
 }
 
+// ============================================================================
+// ANALYTICS STATE - The Entire Application State
+// ============================================================================
+//
+// STATE MANAGEMENT PATTERN:
+// This singleton class IS the state. No Redux, no Context API, no reducers.
+// All state lives on the server. Handlers read from it, controllers write to it.
+//
+// COMPARE TO REACT:
+// React needs:
+//   • State interface (TypeScript types)
+//   • Initial state object
+//   • Reducer function (100+ lines with switch/case)
+//   • Action creators
+//   • Context provider wrapping app
+//   • useContext hook in every component
+//   • useMemo to prevent re-renders
+//   • Client/server state synchronization (React Query, SWR, Apollo)
+//
+// Swap.Htmx needs:
+//   • This class. That's it.
+//
+// THREAD SAFETY: Singleton, but requests are stateless. 
+// Lock only needed for concurrent writes (multiple purchases simultaneously).
+// ============================================================================
 public class AnalyticsState
 {
     private readonly object _lock = new();
@@ -37,7 +68,13 @@ public class AnalyticsState
     public int OrdersToday { get; set; }
     public int ActiveUsersOnline { get; set; } = 247;
     public decimal ConversionRate { get; set; } = 3.2m;
+    
+    /// <summary>
+    /// Computed property—no need for React useMemo or manual caching.
+    /// Just a C# property getter. Calculated on-demand.
+    /// </summary>
     public decimal AvgOrderValue => OrdersToday > 0 ? RevenueToday / OrdersToday : 0;
+    
     public decimal CartAbandonmentRate { get; set; } = 68.5m;
     
     // Products (12 top products)

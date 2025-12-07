@@ -3,6 +3,44 @@
     ViewData["Title"] = "E-Commerce Analytics Dashboard";
 }
 
+@* 
+================================================================================
+ANALYTICS DASHBOARD - 50+ Live Updating Partials via HTMX
+================================================================================
+
+This view demonstrates Swap.Htmx at scale:
+• 6 KPI cards (Revenue, Orders, AOV, Conversion, New Customers, Cart Abandonment)
+• 12 Product cards (with stock levels and sales)
+• 6 Category cards (performance metrics)
+• 8 Region cards (geographic breakdown)
+• 24 Hour bars (hourly revenue timeline)
+• 1 Activity feed (last 10 purchases)
+• 3 Customer metric cards
+
+HTMX PATTERN:
+Each component has an ID (e.g., "partial-revenue-today") that matches what 
+handlers use in builder.AlsoUpdate("partial-revenue-today", ...).
+
+When you click "Purchase":
+1. HTMX sends POST to /Analytics/SimulatePurchase (hx-post attribute)
+2. Controller fires PurchaseCompletedEvent
+3. 15-20 handlers respond, each rendering one partial
+4. Server returns ONE HTTP response with embedded OOB swaps:
+   <div id="partial-revenue-today" hx-swap-oob="true">...</div>
+   <div id="partial-product-5" hx-swap-oob="true">...</div>
+   ... (15 more)
+5. HTMX finds each OOB swap and updates matching elements
+
+NO JAVASCRIPT WRITTEN. No useState, no useEffect, no Redux.
+Just server-rendered HTML + HTMX attributes.
+
+Compare to React: You'd need Context, reducers, 60 component re-renders,
+memoization, React DevTools debugging, bundle size overhead.
+
+Here: One event → 15 surgical DOM updates. Simple.
+================================================================================
+*@
+
 <style>
     .analytics-dashboard {
         max-width: 1600px;
