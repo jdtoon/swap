@@ -25,9 +25,6 @@ public static class MvcExtensions
     {
         services.AddSwapHtmx(options =>
         {
-            // Auto-suppress layout for HTMX requests - modules don't need their own _ViewStart.cshtml!
-            options.AutoSuppressLayout = true;
-            
             // Default navigation target for <swap-nav> tag helper
             options.DefaultNavigationTarget = "#main-content";
             
