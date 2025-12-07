@@ -3,6 +3,7 @@ using Swap.Htmx;
 using Swap.Htmx.Models;
 using SwapSmallPartials.Modules.Partials.Events;
 using SwapSmallPartials.Modules.Partials.Events.Handlers;
+using System.Reflection;
 
 namespace SwapSmallPartials.Modules.Partials.Controllers;
 
@@ -14,6 +15,32 @@ public class PartialsController : SwapController
     public PartialsController(PartialsState state)
     {
         _state = state;
+    }
+    
+    /// <summary>
+    /// Debug endpoint to check handler registration.
+    /// </summary>
+    [HttpGet("debug")]
+    public IActionResult Debug()
+    {
+        var entryAssembly = Assembly.GetEntryAssembly();
+        var types = entryAssembly?.GetTypes()
+            .Where(t => t.IsClass && !t.IsAbstract)
+            .Where(t => t.GetInterfaces().Any(i => 
+                i.IsGenericType && 
+                i.GetGenericTypeDefinition().Name.Contains("ISwapEventHandler")))
+            .Select(t => new {
+                Name = t.Name,
+                Interfaces = string.Join(", ", t.GetInterfaces()
+                    .Where(i => i.Name.Contains("SwapEventHandler"))
+                    .Select(i => i.Name + "<" + string.Join(",", i.GenericTypeArguments.Select(a => a.Name)) + ">"))
+            })
+            .ToList();
+        
+        return Json(new {
+            EntryAssembly = entryAssembly?.FullName,
+            HandlersFound = types
+        });
     }
     
     /// <summary>
