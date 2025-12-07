@@ -3,140 +3,212 @@
     ViewData["Title"] = "Small Partials Demo";
 }
 
-<div class="container-fluid py-4">
-    <div class="row mb-4">
-        <div class="col-12">
-            <h1 class="display-5">🧪 Small Partials Stress Test</h1>
-            <p class="lead text-muted">
-                25 tiny partials with interconnected event handlers. 
-                Click any button and watch multiple partials update via OOB swaps.
-            </p>
+<style>
+    .partials-dashboard {
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+
+    .dashboard-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: var(--spacing-lg);
+        gap: var(--spacing-md);
+    }
+
+    .dashboard-title {
+        font-size: 1.5rem;
+        font-weight: 600;
+        margin: 0;
+    }
+
+    .dashboard-subtitle {
+        color: var(--text-muted);
+        font-size: 0.875rem;
+        margin: 0;
+    }
+
+    .action-buttons {
+        display: flex;
+        gap: var(--spacing-xs);
+    }
+
+    .action-buttons .btn {
+        padding: var(--spacing-xs) var(--spacing-sm);
+        font-size: 0.8125rem;
+    }
+
+    .aggregates-row {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: var(--spacing-sm);
+        margin-bottom: var(--spacing-md);
+    }
+
+    .dashboard-sections {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: var(--spacing-md);
+    }
+
+    .section-card {
+        background: var(--bg-white);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        overflow: hidden;
+    }
+
+    .section-header {
+        background: var(--bg);
+        padding: var(--spacing-sm) var(--spacing-md);
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .section-title {
+        font-weight: 600;
+        font-size: 0.875rem;
+        margin: 0;
+    }
+
+    .section-hint {
+        color: var(--text-muted);
+        font-size: 0.75rem;
+    }
+
+    .section-content {
+        padding: var(--spacing-sm);
+    }
+
+    .grid-5 {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: var(--spacing-sm);
+    }
+
+    .grid-2 {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: var(--spacing-sm);
+    }
+
+    .section-card.full-width {
+        grid-column: 1 / -1;
+    }
+
+    @@media (max-width: 1024px) {
+        .dashboard-sections {
+            grid-template-columns: 1fr;
+        }
+        
+        .grid-5 {
+            grid-template-columns: repeat(3, 1fr);
+        }
+    }
+
+    @@media (max-width: 768px) {
+        .aggregates-row {
+            grid-template-columns: repeat(3, 1fr);
+        }
+        
+        .grid-5 {
+            grid-template-columns: repeat(2, 1fr);
+        }
+        
+        .dashboard-header {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+    }
+</style>
+
+<div class="partials-dashboard">
+    @* ========================================================================= *@
+    @* HEADER *@
+    @* ========================================================================= *@
+    <div class="dashboard-header">
+        <div>
+            <h1 class="dashboard-title">🧪 Small Partials Dashboard</h1>
+            <p class="dashboard-subtitle">25 partials • Real-time OOB updates • Event-driven architecture</p>
+        </div>
+        <div class="action-buttons">
+            <button class="btn btn-primary" hx-post="/partials/increment-all" hx-swap="none">
+                +All
+            </button>
+            <button class="btn btn-primary" hx-post="/partials/toggle-all" hx-swap="none">
+                Toggle
+            </button>
+            <button class="btn btn-primary" hx-post="/partials/progress-all" hx-swap="none">
+                Progress
+            </button>
+            <button class="btn btn-danger" hx-post="/partials/reset" hx-swap="none">
+                🔄 Reset
+            </button>
         </div>
     </div>
 
     @* ========================================================================= *@
-    @* BULK ACTION BUTTONS *@
+    @* AGGREGATES ROW (5 partials) *@
     @* ========================================================================= *@
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="card bg-dark text-white">
-                <div class="card-body">
-                    <h5 class="card-title">⚡ Bulk Actions</h5>
-                    <div class="btn-group" role="group">
-                        <button class="btn btn-primary" 
-                                hx-post="/partials/increment-all" 
-                                hx-swap="none">
-                            Increment All Counters (14 updates)
-                        </button>
-                        <button class="btn btn-info" 
-                                hx-post="/partials/toggle-all" 
-                                hx-swap="none">
-                            Toggle All Statuses (6 updates)
-                        </button>
-                        <button class="btn btn-success" 
-                                hx-post="/partials/progress-all" 
-                                hx-swap="none">
-                            Increase All Progress (5 updates)
-                        </button>
-                        <button class="btn btn-danger" 
-                                hx-post="/partials/reset" 
-                                hx-swap="none">
-                            🔄 Reset All (25 updates!)
-                        </button>
-                    </div>
+    <div class="aggregates-row">
+        <partial name="_Total" model="Model" />
+        <partial name="_Average" model="Model" />
+        <partial name="_Max" model="Model" />
+        <partial name="_Min" model="Model" />
+        <partial name="_ActiveStatuses" model="Model" />
+    </div>
+
+    @* ========================================================================= *@
+    @* MAIN SECTIONS *@
+    @* ========================================================================= *@
+    <div class="dashboard-sections">
+        @* COUNTERS (10 partials) *@
+        <div class="section-card">
+            <div class="section-header">
+                <h2 class="section-title">📊 Counters (10)</h2>
+                <span class="section-hint">Each click → 5 updates</span>
+            </div>
+            <div class="section-content">
+                <div class="grid-5">
+                    @for (int i = 1; i <= 10; i++)
+                    {
+                        <partial name="_Counter" model="new SwapSmallPartials.Modules.Partials.Events.Handlers.CounterModel { Number = i, Value = Model.GetCounter(i) }" />
+                    }
                 </div>
             </div>
         </div>
-    </div>
 
-    @* ========================================================================= *@
-    @* COUNTERS (10 partials) *@
-    @* ========================================================================= *@
-    <div class="row mb-4">
-        <div class="col-12">
-            <h4>📊 Counters (10 partials)</h4>
-            <p class="text-muted small">Each click updates: counter + total + average + max + min = 5 partials</p>
-        </div>
-        @for (int i = 1; i <= 10; i++)
-        {
-            <div class="col-md-2 col-sm-4 col-6 mb-3">
-                <partial name="_Counter" model="new SwapSmallPartials.Modules.Partials.Events.Handlers.CounterModel { Number = i, Value = Model.GetCounter(i) }" />
+        @* STATUSES (5 partials) *@
+        <div class="section-card">
+            <div class="section-header">
+                <h2 class="section-title">🔘 Status Toggles (5)</h2>
+                <span class="section-hint">Each toggle → 2 updates</span>
             </div>
-        }
-    </div>
-
-    @* ========================================================================= *@
-    @* AGGREGATE VALUES (5 partials) *@
-    @* ========================================================================= *@
-    <div class="row mb-4">
-        <div class="col-12">
-            <h4>📈 Aggregates (5 partials)</h4>
-            <p class="text-muted small">These update automatically when any counter changes</p>
-        </div>
-        <div class="col-md-2 col-sm-4 col-6 mb-3">
-            <partial name="_Total" model="Model" />
-        </div>
-        <div class="col-md-2 col-sm-4 col-6 mb-3">
-            <partial name="_Average" model="Model" />
-        </div>
-        <div class="col-md-2 col-sm-4 col-6 mb-3">
-            <partial name="_Max" model="Model" />
-        </div>
-        <div class="col-md-2 col-sm-4 col-6 mb-3">
-            <partial name="_Min" model="Model" />
-        </div>
-        <div class="col-md-2 col-sm-4 col-6 mb-3">
-            <partial name="_ActiveStatuses" model="Model" />
-        </div>
-    </div>
-
-    @* ========================================================================= *@
-    @* STATUSES (5 partials) *@
-    @* ========================================================================= *@
-    <div class="row mb-4">
-        <div class="col-12">
-            <h4>🔘 Status Toggles (5 partials)</h4>
-            <p class="text-muted small">Each toggle updates: status + active count = 2 partials</p>
-        </div>
-        @for (int i = 1; i <= 5; i++)
-        {
-            <div class="col-md-2 col-sm-4 col-6 mb-3">
-                <partial name="_Status" model="new SwapSmallPartials.Modules.Partials.Events.Handlers.StatusModel { Number = i, IsActive = Model.GetStatus(i) }" />
+            <div class="section-content">
+                <div class="grid-5">
+                    @for (int i = 1; i <= 5; i++)
+                    {
+                        <partial name="_Status" model="new SwapSmallPartials.Modules.Partials.Events.Handlers.StatusModel { Number = i, IsActive = Model.GetStatus(i) }" />
+                    }
+                </div>
             </div>
-        }
-    </div>
-
-    @* ========================================================================= *@
-    @* PROGRESS BARS (5 partials) *@
-    @* ========================================================================= *@
-    <div class="row mb-4">
-        <div class="col-12">
-            <h4>📉 Progress Bars (5 partials)</h4>
-            <p class="text-muted small">Each update affects only that progress bar</p>
         </div>
-        @for (int i = 1; i <= 5; i++)
-        {
-            <div class="col-md-4 col-sm-6 col-12 mb-3">
-                <partial name="_Progress" model="new SwapSmallPartials.Modules.Partials.Events.Handlers.ProgressModel { Number = i, Value = Model.GetProgress(i) }" />
-            </div>
-        }
-    </div>
 
-    @* ========================================================================= *@
-    @* STATS *@
-    @* ========================================================================= *@
-    <div class="row">
-        <div class="col-12">
-            <div class="card bg-light">
-                <div class="card-body">
-                    <h6 class="card-title">📋 Demo Stats</h6>
-                    <ul class="list-unstyled mb-0 small">
-                        <li>✅ <strong>25 partials</strong> on this page</li>
-                        <li>✅ <strong>Distributed handlers</strong> update partials via events</li>
-                        <li>✅ <strong>Event chains</strong> configured in PartialsEventConfig</li>
-                        <li>✅ <strong>Single click</strong> can update 5+ partials at once</li>
-                        <li>✅ <strong>Reset All</strong> updates all 25 partials in one response!</li>
-                    </ul>
+        @* PROGRESS BARS (5 partials) *@
+        <div class="section-card full-width">
+            <div class="section-header">
+                <h2 class="section-title">📊 Progress Bars (5)</h2>
+                <span class="section-hint">Individual updates</span>
+            </div>
+            <div class="section-content">
+                <div class="grid-5">
+                    @for (int i = 1; i <= 5; i++)
+                    {
+                        <partial name="_Progress" model="new SwapSmallPartials.Modules.Partials.Events.Handlers.ProgressModel { Number = i, Value = Model.GetProgress(i) }" />
+                    }
                 </div>
             </div>
         </div>

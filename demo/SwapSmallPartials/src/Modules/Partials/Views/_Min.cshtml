@@ -1,8 +1,6 @@
 @model SwapSmallPartials.Modules.Partials.PartialsState
 
-<div id="partial-min" class="card h-100 bg-warning text-dark">
-    <div class="card-body text-center p-2">
-        <div class="small opacity-75">Min</div>
-        <div class="display-6 fw-bold">@Model.Min</div>
-    </div>
+<div id="partial-min" class="card" style="background: var(--warning); color: white; text-align: center; padding: var(--spacing-sm);">
+    <div style="font-size: 0.75rem; opacity: 0.8; margin-bottom: var(--spacing-xs);">Min</div>
+    <div style="font-size: 1.75rem; font-weight: 700;">@Model.Min</div>
 </div>

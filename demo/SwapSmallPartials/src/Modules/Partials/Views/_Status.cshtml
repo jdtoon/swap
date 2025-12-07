@@ -1,22 +1,21 @@
 @model SwapSmallPartials.Modules.Partials.Events.Handlers.StatusModel
 
-<div id="partial-status-@Model.Number" class="card h-100 @(Model.IsActive ? "border-success" : "border-secondary")">
-    <div class="card-body text-center p-2">
-        <div class="small text-muted">Status @Model.Number</div>
-        <div class="my-2">
-            @if (Model.IsActive)
-            {
-                <span class="badge bg-success fs-6">ON</span>
-            }
-            else
-            {
-                <span class="badge bg-secondary fs-6">OFF</span>
-            }
-        </div>
-        <button class="btn btn-sm @(Model.IsActive ? "btn-outline-danger" : "btn-outline-success")" 
-                hx-post="/partials/status/@Model.Number/toggle" 
-                hx-swap="none">
-            Toggle
-        </button>
+<div id="partial-status-@Model.Number" class="card" style="text-align: center; padding: var(--spacing-sm); border-left: 3px solid @(Model.IsActive ? "var(--primary)" : "var(--border)");">
+    <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: var(--spacing-xs);">S @Model.Number</div>
+    <div style="margin-bottom: var(--spacing-xs);">
+        @if (Model.IsActive)
+        {
+            <span style="background: var(--primary); color: white; padding: var(--spacing-xs) var(--spacing-sm); border-radius: var(--radius-sm); font-size: 0.75rem; font-weight: 600;">ON</span>
+        }
+        else
+        {
+            <span style="background: var(--text-muted); color: white; padding: var(--spacing-xs) var(--spacing-sm); border-radius: var(--radius-sm); font-size: 0.75rem; font-weight: 600;">OFF</span>
+        }
     </div>
+    <button class="btn @(Model.IsActive ? "btn-danger" : "btn-primary")" 
+            style="width: 100%; padding: var(--spacing-xs) var(--spacing-sm); font-size: 0.75rem;"
+            hx-post="/partials/status/@Model.Number/toggle" 
+            hx-swap="none">
+        Toggle
+    </button>
 </div>
