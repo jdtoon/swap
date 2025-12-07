@@ -9,6 +9,7 @@ public class ModuleViewLocationExpander : IViewLocationExpander
     {
         ["Notes"] = new("Notes"),
         ["Partials"] = new("Partials"),
+        ["Analytics"] = new("Analytics"),
         // Add mappings as modules are created:
         // ["ControllerName"] = new("ModuleFolderName"),
     };

@@ -1,0 +1,43 @@
+@model AnalyticsState
+
+<div id="partial-inventory-alerts">
+    @if (!Model.LowStockProducts.Any() && !Model.OutOfStockProducts.Any())
+    {
+        <div style="text-align: center; color: var(--text-muted); padding: var(--spacing-lg);">
+            <div style="font-size: 2rem;">✅</div>
+            <div style="font-size: 0.875rem; margin-top: var(--spacing-sm);">All products in stock</div>
+        </div>
+    }
+    else
+    {
+        @if (Model.OutOfStockProducts.Any())
+        {
+            <div style="margin-bottom: var(--spacing-md);">
+                <div style="font-size: 0.75rem; font-weight: 600; color: var(--danger); margin-bottom: var(--spacing-xs);">
+                    ⛔ Out of Stock (@Model.OutOfStockProducts.Count)
+                </div>
+                @foreach (var product in Model.OutOfStockProducts.Take(5))
+                {
+                    <div style="padding: var(--spacing-xs); background: var(--bg); border-left: 3px solid var(--danger); margin-bottom: var(--spacing-xs); border-radius: var(--radius-sm); font-size: 0.75rem;">
+                        @product
+                    </div>
+                }
+            </div>
+        }
+        
+        @if (Model.LowStockProducts.Any())
+        {
+            <div>
+                <div style="font-size: 0.75rem; font-weight: 600; color: var(--warning); margin-bottom: var(--spacing-xs);">
+                    ⚠️ Low Stock (@Model.LowStockProducts.Count)
+                </div>
+                @foreach (var product in Model.LowStockProducts.Take(5))
+                {
+                    <div style="padding: var(--spacing-xs); background: var(--bg); border-left: 3px solid var(--warning); margin-bottom: var(--spacing-xs); border-radius: var(--radius-sm); font-size: 0.75rem;">
+                        @product
+                    </div>
+                }
+            </div>
+        }
+    }
+</div>

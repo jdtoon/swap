@@ -1,0 +1,27 @@
+@model Product
+
+@{
+    var stockColor = Model.Stock switch
+    {
+        0 => "var(--danger)",
+        < 10 => "var(--warning)",
+        < 50 => "var(--secondary)",
+        _ => "var(--primary)"
+    };
+}
+
+<div id="partial-product-@Model.Id" class="card" style="padding: var(--spacing-sm); border-left: 3px solid @stockColor;">
+    <div style="font-size: 0.75rem; font-weight: 600; margin-bottom: var(--spacing-xs); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+        @Model.Name
+    </div>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--spacing-xs); font-size: 0.7rem; color: var(--text-muted);">
+        <div>Stock: <strong style="color: @stockColor;">@Model.Stock</strong></div>
+        <div>Sales: <strong>@Model.SalesToday</strong></div>
+    </div>
+    <div style="font-size: 0.875rem; font-weight: 700; color: var(--primary); margin-top: var(--spacing-xs);">
+        $@Model.RevenueToday.ToString("N0")
+    </div>
+    <div style="font-size: 0.65rem; color: var(--text-light); margin-top: var(--spacing-xs);">
+        @Model.Category
+    </div>
+</div>

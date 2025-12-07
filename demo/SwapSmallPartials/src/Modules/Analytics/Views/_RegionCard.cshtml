@@ -1,0 +1,29 @@
+@model Region
+
+@{
+    var intensity = Model.Revenue switch
+    {
+        > 5000 => "var(--primary)",
+        > 2000 => "var(--secondary)",
+        > 0 => "var(--text-light)",
+        _ => "var(--border)"
+    };
+}
+
+<div id="partial-region-@Model.Name.ToLower()" class="card" style="padding: var(--spacing-sm); background: linear-gradient(135deg, white 0%, @intensity 100%); background-size: 200% 100%; background-position: 100% 0;">
+    <div style="font-size: 0.75rem; font-weight: 600; margin-bottom: var(--spacing-xs);">
+        @Model.Name
+    </div>
+    <div style="font-size: 1.25rem; font-weight: 700; color: var(--primary); margin-bottom: var(--spacing-xs);">
+        $@Model.Revenue.ToString("N0")
+    </div>
+    <div style="font-size: 0.7rem; color: var(--text-muted);">
+        @Model.OrderCount orders
+    </div>
+    @if (!string.IsNullOrEmpty(Model.TopProduct))
+    {
+        <div style="font-size: 0.65rem; color: var(--text-light); margin-top: var(--spacing-xs); font-style: italic; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+            Top: @Model.TopProduct
+        </div>
+    }
+</div>

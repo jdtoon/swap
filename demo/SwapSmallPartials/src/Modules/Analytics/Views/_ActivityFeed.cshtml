@@ -1,0 +1,29 @@
+@model AnalyticsState
+
+<div id="partial-activity-feed" style="display: flex; flex-direction: column; gap: var(--spacing-xs);">
+    @if (!Model.RecentActivity.Any())
+    {
+        <div style="text-align: center; color: var(--text-muted); padding: var(--spacing-lg);">
+            <div style="font-size: 2rem; opacity: 0.3;">🛒</div>
+            <div style="font-size: 0.875rem;">No activity yet</div>
+        </div>
+    }
+    else
+    {
+        @foreach (var activity in Model.RecentActivity.Reverse())
+        {
+            <div style="padding: var(--spacing-sm); background: var(--bg); border-radius: var(--radius-sm); border-left: 3px solid var(--primary);">
+                <div style="font-size: 0.75rem; font-weight: 600; margin-bottom: var(--spacing-xs);">
+                    @activity.CustomerName
+                </div>
+                <div style="font-size: 0.7rem; color: var(--text-muted);">
+                    @activity.ProductName
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: var(--spacing-xs);">
+                    <span style="font-weight: 700; color: var(--primary); font-size: 0.875rem;">$@activity.Amount.ToString("N0")</span>
+                    <span style="font-size: 0.65rem; color: var(--text-light);">@activity.Timestamp.ToString("HH:mm:ss")</span>
+                </div>
+            </div>
+        }
+    }
+</div>

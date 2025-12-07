@@ -2,6 +2,7 @@ using SwapSmallPartials.Infrastructure;
 using SwapSmallPartials.Data;
 using SwapSmallPartials.Modules.Notes;
 using SwapSmallPartials.Modules.Partials;
+using SwapSmallPartials.Modules.Analytics;
 using Swap.Htmx;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -27,6 +28,7 @@ builder.Services.AddCoreServices();
 
 builder.Services.AddNotesModule();
 builder.Services.AddPartialsModule();
+builder.Services.AddAnalyticsModule();
 
 // =============================================================================
 // MVC & WEB

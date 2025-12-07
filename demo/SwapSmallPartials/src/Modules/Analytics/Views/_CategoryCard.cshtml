@@ -1,0 +1,17 @@
+@model CategoryMetrics
+
+<div id="partial-category-@Model.Name.ToLower()" class="card" style="padding: var(--spacing-sm);">
+    <div style="font-size: 0.75rem; font-weight: 600; margin-bottom: var(--spacing-xs);">
+        @Model.Name
+    </div>
+    <div style="font-size: 1.25rem; font-weight: 700; color: var(--primary); margin-bottom: var(--spacing-xs);">
+        $@Model.Revenue.ToString("N0")
+    </div>
+    <div style="background: var(--border); height: 0.5rem; border-radius: var(--radius-sm); overflow: hidden; margin-bottom: var(--spacing-xs);">
+        <div style="background: var(--primary); height: 100%; width: @Model.PercentOfTotal%; transition: width 0.3s ease;"></div>
+    </div>
+    <div style="display: flex; justify-content: space-between; font-size: 0.7rem; color: var(--text-muted);">
+        <span>@Model.UnitsSold units</span>
+        <span>@Model.PercentOfTotal%</span>
+    </div>
+</div>

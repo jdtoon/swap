@@ -1,6 +1,7 @@
 using Swap.Htmx;
 using SwapSmallPartials.Modules.Notes.Events;
 using SwapSmallPartials.Modules.Partials.Events;
+using SwapSmallPartials.Modules.Analytics.Events;
 
 namespace SwapSmallPartials.Infrastructure;
 
@@ -30,8 +31,10 @@ public static class MvcExtensions
             
             options.PartialViewSearchPaths.Add("Notes");
             options.PartialViewSearchPaths.Add("Partials");
+            options.PartialViewSearchPaths.Add("Analytics");
             options.AddConfig<NotesEventConfig>();
             options.AddConfig<PartialsEventConfig>();
+            options.AddConfig<AnalyticsEventConfig>();
         });
 
         return services;
