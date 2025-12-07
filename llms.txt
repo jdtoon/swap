@@ -1,21 +1,191 @@
-# Swap.Htmx - Complete LLM Reference
+# Swap.Htmx - LLM Reference Guide
 
 > Repository: https://github.com/jdtoon/swap
 > Documentation: https://github.com/jdtoon/swap/tree/main/lib/Swap.Htmx/docs
 
-Swap.Htmx is a UI orchestration library for HTMX and ASP.NET Core. It coordinates what updates where when events fire through type-safe events, decoupled handlers, multi-target partial updates, and server-side state.
+## WHAT IS SWAP.HTMX?
+
+**Event-driven UI orchestration for ASP.NET Core + HTMX**
+
+Swap.Htmx solves the "how do I update 15 partials from one button click?" problem. When events fire, distributed handlers respond—each updating one piece of the UI. All updates are batched into a single HTTP response via out-of-band (OOB) swaps.
+
+**Key Benefits:**
+- **8.5x smaller bundles** than React (22KB vs 877KB)
+- **46% less code** for same features (650 vs 1,200 lines)
+- **Event-driven architecture** (controllers fire events, handlers update UI)
+- **Type-safe** (source generators eliminate magic strings)
+- **Server-side state** (no client/server synchronization complexity)
+
+**When to Use:**
+- ✅ Dashboards, admin panels, analytics platforms
+- ✅ CRUD applications, e-commerce sites
+- ✅ Internal tools, reporting systems
+- ✅ Any app where you'd consider React but want simpler DX
+
+**When NOT to Use:**
+- ❌ Offline-first PWAs
+- ❌ Highly interactive UIs (Figma-like editors, real-time collaboration)
+- ❌ Mobile apps (use React Native)
+
+**The Mental Model:**
+```
+User Action → Controller fires event → Handlers update partials → One HTTP response → HTMX swaps DOM
+```
+
+No useState, no useEffect, no Redux. Just events and handlers.
 
 ---
 
-## INSTALLATION
+## PHILOSOPHY & BEST PRACTICES
+
+### The Distributed Handler Pattern (RECOMMENDED)
+
+**Pattern:** Each handler updates ONE partial. Controllers don't know what updates.
+
+```csharp
+// ✅ GOOD: Controller fires event, doesn't know about UI
+[HttpPost]
+public IActionResult CompletePurchase(int productId)
+{
+    var purchase = _service.ProcessPurchase(productId);
+    
+    // Just fire the event with typed payload
+    return SwapEvent(new PurchaseCompletedEvent 
+    { 
+        ProductId = productId,
+        Amount = purchase.Amount,
+        CustomerName = purchase.CustomerName
+    }).Build();
+}
+
+// ✅ GOOD: Handlers are decoupled, each updates ONE thing
+[SwapHandler]
+public class RevenueHandler : ISwapEventHandler<PurchaseCompletedEvent>
+{
+    private readonly AnalyticsState _state;
+    
+    public Task HandleAsync(PurchaseCompletedEvent e, SwapResponseBuilder builder, CancellationToken ct)
+    {
+        builder.AlsoUpdate("revenue-card", "_RevenueCard", _state);
+        return Task.CompletedTask;
+    }
+}
+
+[SwapHandler]
+public class ProductStockHandler : ISwapEventHandler<PurchaseCompletedEvent>
+{
+    private readonly AnalyticsState _state;
+    
+    public Task HandleAsync(PurchaseCompletedEvent e, SwapResponseBuilder builder, CancellationToken ct)
+    {
+        var product = _state.Products.First(p => p.Id == e.ProductId);
+        builder.AlsoUpdate($"product-{e.ProductId}", "_ProductCard", product);
+        return Task.CompletedTask;
+    }
+}
+```
+
+**Why This Works:**
+- Adding new UI component = add handler (no controller changes)
+- Handlers are testable in isolation
+- Zero coupling between handlers
+- Scales to 50+ partials without complexity growth
+
+**Anti-Pattern:**
+```csharp
+// ❌ BAD: Controller knows about all UI targets
+[HttpPost]
+public IActionResult CompletePurchase(int productId)
+{
+    var purchase = _service.ProcessPurchase(productId);
+    
+    return SwapResponse()
+        .AlsoUpdate("revenue-card", "_RevenueCard", GetRevenue())
+        .AlsoUpdate($"product-{productId}", "_ProductCard", GetProduct(productId))
+        .AlsoUpdate("category-electronics", "_CategoryCard", GetCategory("electronics"))
+        .AlsoUpdate("region-west", "_RegionCard", GetRegion("West"))
+        // ... 10 more updates
+        .Build();
+}
+```
+
+This tightly couples controller to UI structure. Use events instead.
+
+### State Management: Server is Source of Truth
+
+**Pattern:** Singleton state class, direct mutations, no synchronization.
+
+```csharp
+// ✅ GOOD: Simple C# class with business logic
+public class AnalyticsState
+{
+    public decimal RevenueToday { get; set; }
+    public int OrdersCount { get; set; }
+    public List<Product> Products { get; } = new();
+    
+    // Computed properties (no React useMemo needed)
+    public decimal AvgOrderValue => OrdersCount > 0 ? RevenueToday / OrdersCount : 0;
+    
+    // Business logic methods
+    public void ProcessPurchase(int productId, decimal amount)
+    {
+        var product = Products.First(p => p.Id == productId);
+        product.Stock--;
+        product.Sales++;
+        
+        RevenueToday += amount;
+        OrdersCount++;
+    }
+}
+
+// Register as singleton
+builder.Services.AddSingleton<AnalyticsState>();
+```
+
+**Why This Works:**
+- State is ALWAYS current (server is source of truth)
+- No client/server sync bugs
+- Direct mutations (no immutability gymnastics)
+- Computed properties are just C# getters
+
+**Anti-Pattern:**
+```csharp
+// ❌ BAD: Trying to replicate React patterns in C#
+public class AnalyticsState
+{
+    private decimal _revenue;
+    public decimal Revenue 
+    { 
+        get => _revenue; 
+        set 
+        { 
+            _revenue = value;
+            OnPropertyChanged(nameof(Revenue));
+            OnPropertyChanged(nameof(AvgOrderValue));
+        } 
+    }
+    
+    // Don't do this - you're not building a SPA
+}
+```
+
+Server state doesn't need change tracking. Just mutate and render.
+
+---
+
+---
+
+## INSTALLATION & QUICK START
+
+### Installation
 
 ```bash
 dotnet add package Swap.Htmx
 ```
 
-### Quick Start with Template (Recommended)
+### Quick Start with Template (RECOMMENDED for New Projects)
 
-The **Modular Monolith template** is the best way to start a new project. It provides a well-structured foundation that scales from prototype to production.
+The **Modular Monolith template** provides production-ready architecture:
 
 ```bash
 dotnet new install Swap.Templates
@@ -25,15 +195,15 @@ libman restore
 dotnet run
 ```
 
-This gives you:
-- **Modular architecture** — Self-contained feature modules in `Modules/` folder
-- **SQLite + EF Core** — Database with audit fields
-- **SPA-style navigation** — HTMX-powered routing with URL updates
-- **Docker ready** — Multi-stage Dockerfile and docker-compose
-- **Sample Notes module** — Full CRUD demonstrating all patterns
-- **Integration tests** — xUnit with WebApplicationFactory
+**What you get:**
+- Self-contained modules in `Modules/` folder
+- SQLite + EF Core with migrations
+- SPA-style navigation (HTMX-powered, no JS framework)
+- Sample CRUD module showing all patterns
+- Docker ready
+- Integration tests
 
-For a minimal starting point: `dotnet new swap-mvc -n MyProject`
+**For minimal starting point:** `dotnet new swap-mvc -n MyProject`
 
 ### Program.cs Setup
 
@@ -46,7 +216,7 @@ builder.Services.AddSwapHtmx();  // Core services + handler auto-discovery
 var app = builder.Build();
 
 app.UseStaticFiles();
-app.UseSwapHtmx();  // Middleware
+app.UseSwapHtmx();  // Middleware for request detection
 app.MapControllers();
 
 app.Run();
@@ -56,48 +226,279 @@ app.Run();
 
 ```html
 <head>
+    <!-- Swap.Htmx CSS (toasts, validation styling) -->
     <link rel="stylesheet" href="~/_content/Swap.Htmx/css/swap.css" />
+    
+    <!-- HTMX core library -->
     <script src="https://unpkg.com/htmx.org@2.0.8"></script>
+    
+    <!-- Swap.Htmx client scripts (event handling, state sync) -->
     <script src="~/_content/Swap.Htmx/js/swap.client.js"></script>
 </head>
 ```
 
-### Project File (for Source Generators)
+### Enable Source Generators (for type-safe constants)
 
 ```xml
+<!-- .csproj -->
 <ItemGroup>
   <AdditionalFiles Include="Views\**\*.cshtml" />
+  <AdditionalFiles Include="Modules\**\Views\**\*.cshtml" /> <!-- If using modules -->
 </ItemGroup>
 ```
 
 ---
 
-## CORE CONCEPT: SwapResponseBuilder
+## THE CORE PATTERN: Events → Handlers → OOB Swaps
 
-All responses flow through `SwapResponseBuilder`. Access it via:
+**This is the "aha!" moment for Swap.Htmx.**
 
-```csharp
-// In SwapController
-return SwapResponse().WithView("_Partial", model).Build();
+### Example: Analytics Dashboard Purchase Flow
 
-// In standard Controller
-return this.SwapResponse().WithView("_Partial", model).Build();
-
-// In PageModel
-return this.SwapResponse().WithView("_Partial", this).Build();
-
-// In Minimal API
-return SwapResults.Response().WithView("_Partial", model);
+**1. User clicks "Purchase" button**
+```html
+<button hx-post="/Analytics/SimulatePurchase" 
+        hx-swap="none"
+        class="btn btn-primary">
+    Purchase Product
+</button>
 ```
 
-### Full API
+**2. Controller fires event**
+```csharp
+[HttpPost]
+public IActionResult SimulatePurchase()
+{
+    // Update state (source of truth)
+    var productId = _state.Products[Random.Shared.Next(_state.Products.Count)].Id;
+    _state.ProcessPurchase(productId, region: "West", customer: "John D.");
+    
+    // Fire event with typed payload
+    return SwapEvent(AnalyticsEvents.Purchase.Completed, new PurchaseCompletedEvent
+    {
+        ProductId = productId,
+        Region = "West",
+        CustomerName = "John D."
+    }).Build();
+}
+```
+
+**3. Handlers respond (auto-discovered via [SwapHandler])**
+```csharp
+// Handler 1: Update revenue KPI
+[SwapHandler]
+public class RevenueHandler : ISwapEventHandler<PurchaseCompletedEvent>
+{
+    private readonly AnalyticsState _state;
+    public RevenueHandler(AnalyticsState state) => _state = state;
+    
+    public Task HandleAsync(PurchaseCompletedEvent e, SwapResponseBuilder builder, CancellationToken ct)
+    {
+        builder.AlsoUpdate("revenue-today", "_RevenueToday", _state);
+        return Task.CompletedTask;
+    }
+}
+
+// Handler 2: Update orders count
+[SwapHandler]
+public class OrdersHandler : ISwapEventHandler<PurchaseCompletedEvent>
+{
+    private readonly AnalyticsState _state;
+    public OrdersHandler(AnalyticsState state) => _state = state;
+    
+    public Task HandleAsync(PurchaseCompletedEvent e, SwapResponseBuilder builder, CancellationToken ct)
+    {
+        builder.AlsoUpdate("orders-count", "_OrdersCount", _state);
+        return Task.CompletedTask;
+    }
+}
+
+// Handler 3: Update specific product card
+[SwapHandler]
+public class ProductCardHandler : ISwapEventHandler<PurchaseCompletedEvent>
+{
+    private readonly AnalyticsState _state;
+    public ProductCardHandler(AnalyticsState state) => _state = state;
+    
+    public Task HandleAsync(PurchaseCompletedEvent e, SwapResponseBuilder builder, CancellationToken ct)
+    {
+        var product = _state.Products.First(p => p.Id == e.ProductId);
+        builder.AlsoUpdate($"product-{e.ProductId}", "_ProductCard", product);
+        return Task.CompletedTask;
+    }
+}
+
+// ... 12 more handlers (each updating one partial)
+```
+
+**4. Server returns ONE HTTP response**
+```html
+<!-- Main response (can be toast or empty) -->
+<div class="toast success">Purchase completed!</div>
+
+<!-- OOB Swap 1 -->
+<div id="revenue-today" hx-swap-oob="true">
+    <div class="kpi-card">
+        <h3>Revenue Today</h3>
+        <p>$4,523.75</p>
+    </div>
+</div>
+
+<!-- OOB Swap 2 -->
+<div id="orders-count" hx-swap-oob="true">
+    <div class="kpi-card">
+        <h3>Orders</h3>
+        <p>127</p>
+    </div>
+</div>
+
+<!-- OOB Swap 3 -->
+<div id="product-5" hx-swap-oob="true">
+    <div class="product-card">
+        <h4>Wireless Mouse</h4>
+        <span class="stock text-danger">8 left</span>
+    </div>
+</div>
+
+<!-- ... 12 more OOB swaps -->
+```
+
+**5. HTMX swaps each element**
+
+HTMX finds every element with `hx-swap-oob="true"`, matches the ID, and swaps it into the DOM.
+
+**Result:** One click → 15 partials update → One HTTP request → Zero JavaScript written.
+
+**Compare to React:**
+- React: Dispatch action → Reducer updates state → 60 components re-render (only 15 changed) → useMemo/React.memo optimization needed
+- Swap.Htmx: Fire event → 15 handlers run → 15 surgical DOM updates → Done
+
+---
+
+## SWAPRESPONSEBUILDER: The Central API
+
+All responses flow through `SwapResponseBuilder`. It accumulates updates and renders them in one response.
+
+### Access Methods
+
+```csharp
+// In SwapController (inherits from Controller)
+public class ProductsController : SwapController
+{
+    public IActionResult Index()
+    {
+        return SwapResponse()  // No "this." needed
+            .WithView("_ProductList", products)
+            .Build();
+    }
+}
+
+// In standard Controller (composition)
+public class ProductsController : Controller
+{
+    public IActionResult Index()
+    {
+        return this.SwapResponse()  // Extension method
+            .WithView("_ProductList", products)
+            .Build();
+    }
+}
+
+// In Razor Pages
+public class IndexModel : PageModel
+{
+    public IActionResult OnPost()
+    {
+        return this.SwapResponse()
+            .WithView("_Partial", this)
+            .Build();
+    }
+}
+
+// In Minimal APIs
+app.MapGet("/products", () =>
+    SwapResults.Response()  // Static helper
+        .WithView("_ProductList", products)
+);
+```
+
+### Full API Reference
 
 ```csharp
 SwapResponseBuilder
-    // Main view
+    // Main target (what hx-target receives)
     .WithView(string viewName, object? model = null)
     
-    // Out-of-band swaps (update other elements)
+    // Out-of-band swaps (update elements outside main target)
+    .AlsoUpdate(string targetId, string viewName, object? model = null, SwapMode swapMode = SwapMode.OuterHTML)
+    .AlsoUpdateMany<T>(IEnumerable<T> items, Func<T, string> idSelector, string viewName, SwapMode swapMode = SwapMode.OuterHTML)
+    .AlsoUpdateIf(bool condition, string targetId, string viewName, object? model = null, SwapMode swapMode = SwapMode.OuterHTML)
+    .AlsoUpdateIfExists(string targetId, string viewName, object? model = null, SwapMode swapMode = SwapMode.OuterHTML)
+    
+    // Navigation (SPA-style via HX-Location header)
+    .WithNavigation(string path)
+    .WithNavigation(string path, string? target, SwapMode? swap)
+    .WithNavigation(NavigationOptions options)
+    
+    // Toasts (visual feedback)
+    .WithToast(string message, ToastType type = ToastType.Info)
+    .WithSuccessToast(string message)
+    .WithErrorToast(string message)
+    .WithWarningToast(string message)
+    .WithInfoToast(string message)
+    
+    // CRUD toasts (contextual messages)
+    .WithCreatedToast(string entityName, string? itemName = null)
+    .WithUpdatedToast(string entityName, string? itemName = null)
+    .WithDeletedToast(string entityName, string? itemName = null)
+    .WithSavedToast(string entityName, string? itemName = null)
+    .WithCrudToast(CrudOperation operation, string entityName, string? itemName = null)
+    
+    // Events (trigger client-side or fire server-side event chains)
+    .WithTrigger(EventKey eventKey, object? payload = null)
+    .WithTrigger(string eventName, object? payload = null)
+    
+    // State management (server-side state sync)
+    .WithState(SwapState state, string? viewName = null)
+    
+    // Validation (model state errors)
+    .WithValidationErrors(ModelStateDictionary modelState)
+    
+    // Redirects
+    .WithRedirect(string url)
+    
+    // Server-Sent Events (broadcast to connected clients)
+    .BroadcastSse(string eventName, object? payload = null)
+    
+    // Build final response
+    .Build()  // Returns IActionResult
+```
+
+### SwapMode Options
+
+Controls how OOB swaps are applied to target elements:
+
+```csharp
+public enum SwapMode
+{
+    OuterHTML,    // Replace entire element (default)
+    InnerHTML,    // Replace inner content only
+    BeforeBegin,  // Insert before element
+    AfterBegin,   // Insert as first child
+    BeforeEnd,    // Insert as last child (append)
+    AfterEnd,     // Insert after element
+    Delete,       // Remove the element
+    None          // No swap
+}
+```
+
+**Common uses:**
+- `OuterHTML`: Replace entire card/component
+- `InnerHTML`: Update content but keep wrapper (e.g., table tbody)
+- `BeforeEnd`: Append to list (infinite scroll)
+- `Delete`: Remove element (e.g., delete task row)
+
+---
     .AlsoUpdate(string targetId, string viewName, object? model = null, SwapMode swapMode = SwapMode.OuterHTML)
     .AlsoUpdateMany<T>(IEnumerable<T> items, Func<T, string> idSelector, string viewName, SwapMode swapMode = SwapMode.OuterHTML)
     .AlsoUpdateIf(bool condition, string targetId, string viewName, object? model = null, SwapMode swapMode = SwapMode.OuterHTML)
