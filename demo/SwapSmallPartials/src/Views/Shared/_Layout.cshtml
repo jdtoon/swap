@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - SwapSmallPartials</title>
+    <link rel="stylesheet" href="/css/bundle.css" />
+    <link rel="stylesheet" href="~/_content/Swap.Htmx/css/swap.css" asp-append-version="true" />
+</head>
+<body>
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <span class="brand">SwapSmallPartials</span>
+            <button class="btn-icon sidebar-toggle" onclick="toggleSidebar()">☰</button>
+        </div>
+        <nav class="nav-menu">
+            <swap-nav to="/" class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Home" ? "active" : "")">
+                🏠 Dashboard
+            </swap-nav>
+<!--#if (IncludeSampleModule) -->
+            <swap-nav to="/Notes" class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Notes" ? "active" : "")">
+                📝 Notes
+            </swap-nav>
+             <swap-nav to="/Partials" class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Partials" ? "active" : "")">
+                🧪 Partials
+            </swap-nav>
+             <swap-nav to="/Analytics" class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Analytics" ? "active" : "")">
+                📊 Analytics
+            </swap-nav>
+<!--#endif -->
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content" id="main-content">
+        @RenderBody()
+    </main>
+
+    <div id="toast-container"></div>
+
+    <script src="~/lib/htmx/dist/htmx.min.js" asp-append-version="true"></script>
+<!--#if (IncludeSse) -->
+    <script src="~/lib/htmx/ext/sse.js" asp-append-version="true"></script>
+<!--#endif -->
+    <script src="~/_content/Swap.Htmx/js/swap.client.js" asp-append-version="true"></script>
+    <script src="/js/bundle.js"></script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

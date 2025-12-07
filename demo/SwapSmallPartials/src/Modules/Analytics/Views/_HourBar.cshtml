@@ -1,0 +1,23 @@
+@model dynamic
+
+@{
+    int hour = Model.Hour;
+    decimal revenue = Model.Revenue;
+    var maxRevenue = 3000m; // For scaling
+    var heightPercent = revenue > 0 ? Math.Min((revenue / maxRevenue) * 100, 100) : 2;
+    var barColor = revenue > 2000 ? "var(--primary)" : revenue > 1000 ? "var(--secondary)" : "var(--text-light)";
+}
+
+<div id="partial-hour-@hour" style="height: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; position: relative;">
+    <div style="background: @barColor; width: 100%; height: @heightPercent%; border-radius: var(--radius-sm) var(--radius-sm) 0 0; transition: height 0.3s ease, background 0.3s ease; position: relative; min-height: 2px;">
+        @if (revenue > 500)
+        {
+            <div style="position: absolute; top: -18px; left: 50%; transform: translateX(-50%); font-size: 0.65rem; font-weight: 600; color: var(--text); white-space: nowrap;">
+                $@revenue.ToString("N0")
+            </div>
+        }
+    </div>
+    <div style="font-size: 0.65rem; color: var(--text-muted); margin-top: 2px; text-align: center;">
+        @hour.ToString("00")
+    </div>
+</div>

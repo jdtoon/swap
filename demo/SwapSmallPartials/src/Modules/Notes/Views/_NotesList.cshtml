@@ -1,0 +1,17 @@
+@model List<Note>
+
+@if (Model.Count == 0)
+{
+    <div class="empty-state">
+        <p>No notes yet. Create your first note!</p>
+    </div>
+}
+else
+{
+    <div class="notes-grid">
+        @foreach (var note in Model)
+        {
+            <partial name="_NoteCard" model="note" />
+        }
+    </div>
+}

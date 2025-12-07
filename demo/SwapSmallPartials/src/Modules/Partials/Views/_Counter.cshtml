@@ -1,0 +1,12 @@
+@model SwapSmallPartials.Modules.Partials.Events.Handlers.CounterModel
+
+<div id="partial-counter-@Model.Number" class="card" style="text-align: center; padding: var(--spacing-sm);">
+    <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: var(--spacing-xs);">C @Model.Number</div>
+    <div style="font-size: 1.5rem; font-weight: 700; color: var(--primary); margin-bottom: var(--spacing-xs);">@Model.Value</div>
+    <button class="btn btn-primary" 
+            style="width: 100%; padding: var(--spacing-xs) var(--spacing-sm); font-size: 0.75rem;"
+            hx-post="/partials/counter/@Model.Number/increment" 
+            hx-swap="none">
+        +1
+    </button>
+</div>

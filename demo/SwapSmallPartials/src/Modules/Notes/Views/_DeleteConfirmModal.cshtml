@@ -1,0 +1,24 @@
+@model Note
+
+<div class="modal-overlay" onclick="if(event.target===this) this.remove()">
+    <div class="modal modal-sm">
+        <div class="modal-header">
+            <h2>Delete Note</h2>
+            <button class="btn-icon" onclick="this.closest('.modal-overlay').remove()">✕</button>
+        </div>
+        <div class="modal-body">
+            <p>Are you sure you want to delete "<strong>@Model.Title</strong>"?</p>
+            <p class="text-muted">This action cannot be undone.</p>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-outline" onclick="this.closest('.modal-overlay').remove()">
+                Cancel
+            </button>
+            <button class="btn btn-danger"
+                    hx-post="@Url.Action("Delete", new { id = Model.Id })"
+                    hx-target="#modal-container">
+                Delete
+            </button>
+        </div>
+    </div>
+</div>

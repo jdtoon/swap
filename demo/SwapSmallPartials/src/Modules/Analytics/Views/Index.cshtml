@@ -1,0 +1,268 @@
+@model AnalyticsState
+@{
+    ViewData["Title"] = "E-Commerce Analytics Dashboard";
+}
+
+@* 
+================================================================================
+ANALYTICS DASHBOARD - 50+ Live Updating Partials via HTMX
+================================================================================
+
+This view demonstrates Swap.Htmx at scale:
+• 6 KPI cards (Revenue, Orders, AOV, Conversion, New Customers, Cart Abandonment)
+• 12 Product cards (with stock levels and sales)
+• 6 Category cards (performance metrics)
+• 8 Region cards (geographic breakdown)
+• 24 Hour bars (hourly revenue timeline)
+• 1 Activity feed (last 10 purchases)
+• 3 Customer metric cards
+
+HTMX PATTERN:
+Each component has an ID (e.g., "partial-revenue-today") that matches what 
+handlers use in builder.AlsoUpdate("partial-revenue-today", ...).
+
+When you click "Purchase":
+1. HTMX sends POST to /Analytics/SimulatePurchase (hx-post attribute)
+2. Controller fires PurchaseCompletedEvent
+3. 15-20 handlers respond, each rendering one partial
+4. Server returns ONE HTTP response with embedded OOB swaps:
+   <div id="partial-revenue-today" hx-swap-oob="true">...</div>
+   <div id="partial-product-5" hx-swap-oob="true">...</div>
+   ... (15 more)
+5. HTMX finds each OOB swap and updates matching elements
+
+NO JAVASCRIPT WRITTEN. No useState, no useEffect, no Redux.
+Just server-rendered HTML + HTMX attributes.
+
+Compare to React: You'd need Context, reducers, 60 component re-renders,
+memoization, React DevTools debugging, bundle size overhead.
+
+Here: One event → 15 surgical DOM updates. Simple.
+================================================================================
+*@
+
+<style>
+    .analytics-dashboard {
+        max-width: 1600px;
+        margin: 0 auto;
+    }
+    
+    .dashboard-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: var(--spacing-md);
+    }
+    
+    .dashboard-title {
+        font-size: 1.5rem;
+        font-weight: 600;
+        margin: 0;
+    }
+    
+    .control-panel {
+        display: flex;
+        gap: var(--spacing-xs);
+    }
+    
+    .kpi-row {
+        display: grid;
+        grid-template-columns: repeat(6, 1fr);
+        gap: var(--spacing-sm);
+        margin-bottom: var(--spacing-md);
+    }
+    
+    .main-grid {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: var(--spacing-md);
+        margin-bottom: var(--spacing-md);
+    }
+    
+    .products-section {
+        background: var(--bg-white);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        padding: var(--spacing-md);
+    }
+    
+    .section-title {
+        font-size: 0.875rem;
+        font-weight: 600;
+        margin: 0 0 var(--spacing-sm) 0;
+    }
+    
+    .products-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: var(--spacing-sm);
+    }
+    
+    .activity-section {
+        background: var(--bg-white);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        padding: var(--spacing-md);
+        max-height: 400px;
+        overflow-y: auto;
+    }
+    
+    .categories-row {
+        display: grid;
+        grid-template-columns: repeat(6, 1fr);
+        gap: var(--spacing-sm);
+        margin-bottom: var(--spacing-md);
+    }
+    
+    .regions-row {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: var(--spacing-sm);
+        margin-bottom: var(--spacing-md);
+    }
+    
+    .hourly-section {
+        background: var(--bg-white);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        padding: var(--spacing-md);
+        margin-bottom: var(--spacing-md);
+    }
+    
+    .hourly-grid {
+        display: grid;
+        grid-template-columns: repeat(24, 1fr);
+        gap: 2px;
+        height: 120px;
+        align-items: end;
+    }
+    
+    .bottom-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: var(--spacing-md);
+    }
+    
+    .customer-metrics {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: var(--spacing-sm);
+    }
+    
+    .inventory-section {
+        background: var(--bg-white);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        padding: var(--spacing-md);
+    }
+    
+    @@media (max-width: 1200px) {
+        .main-grid { grid-template-columns: 1fr; }
+        .products-grid { grid-template-columns: repeat(3, 1fr); }
+        .regions-row { grid-template-columns: repeat(2, 1fr); }
+        .bottom-grid { grid-template-columns: 1fr; }
+    }
+</style>
+
+<div class="analytics-dashboard">
+    @* HEADER *@
+    <div class="dashboard-header">
+        <div>
+            <h1 class="dashboard-title">📊 E-Commerce Analytics Dashboard</h1>
+            <p style="color: var(--text-muted); font-size: 0.875rem; margin: 0;">Real-time data • Event-driven updates • 50+ partials</p>
+        </div>
+        <div class="control-panel">
+            <button class="btn btn-primary" hx-post="/Analytics/SimulatePurchase" hx-swap="none">
+                🛒 Purchase
+            </button>
+            <button class="btn btn-outline" hx-post="/Analytics/SimulateCartAbandonment" hx-swap="none">
+                🚫 Abandon
+            </button>
+            <button class="btn btn-outline" hx-post="/Analytics/RestockAll" hx-swap="none">
+                📦 Restock
+            </button>
+            <button class="btn btn-outline" hx-post="/Analytics/AdvanceHour" hx-swap="none">
+                ⏰ +Hour
+            </button>
+        </div>
+    </div>
+    
+    @* KPI ROW (6 partials) *@
+    <div class="kpi-row">
+        <partial name="_RevenueToday" model="Model" />
+        <partial name="_OrdersCount" model="Model" />
+        <partial name="_ActiveUsers" model="Model" />
+        <partial name="_ConversionRate" model="Model" />
+        <partial name="_AvgOrderValue" model="Model" />
+        <partial name="_CartAbandonment" model="Model" />
+    </div>
+    
+    @* PRODUCTS & ACTIVITY GRID *@
+    <div class="main-grid">
+        <div class="products-section">
+            <h2 class="section-title">🏆 Top Products (12)</h2>
+            <div class="products-grid">
+                @foreach (var product in Model.Products)
+                {
+                    <partial name="_ProductCard" model="product" />
+                }
+            </div>
+        </div>
+        
+        <div class="activity-section">
+            <h2 class="section-title">⚡ Live Activity Feed</h2>
+            <partial name="_ActivityFeed" model="Model" />
+        </div>
+    </div>
+    
+    @* CATEGORY BREAKDOWN (6 partials) *@
+    <div class="products-section" style="margin-bottom: var(--spacing-md);">
+        <h2 class="section-title">📦 Category Breakdown</h2>
+        <div class="categories-row">
+            @foreach (var category in Model.Categories.Values)
+            {
+                <partial name="_CategoryCard" model="category" />
+            }
+        </div>
+    </div>
+    
+    @* GEOGRAPHIC SALES (8 partials) *@
+    <div class="products-section" style="margin-bottom: var(--spacing-md);">
+        <h2 class="section-title">🗺️ Geographic Sales</h2>
+        <div class="regions-row">
+            @foreach (var region in Model.Regions.Values)
+            {
+                <partial name="_RegionCard" model="region" />
+            }
+        </div>
+    </div>
+    
+    @* HOURLY SALES CHART (24 partials) *@
+    <div class="hourly-section">
+        <h2 class="section-title">📈 24-Hour Sales Chart</h2>
+        <div class="hourly-grid">
+            @for (int i = 0; i < 24; i++)
+            {
+                <partial name="_HourBar" model="new { Hour = i, Revenue = Model.HourlySales[i] }" />
+            }
+        </div>
+    </div>
+    
+    @* CUSTOMER METRICS & INVENTORY *@
+    <div class="bottom-grid">
+        <div class="products-section">
+            <h2 class="section-title">👥 Customer Metrics</h2>
+            <div class="customer-metrics">
+                <partial name="_NewCustomers" model="Model" />
+                <partial name="_ReturningCustomers" model="Model" />
+                <partial name="_VipCustomers" model="Model" />
+                <partial name="_CustomerSatisfaction" model="Model" />
+            </div>
+        </div>
+        
+        <div class="inventory-section">
+            <h2 class="section-title">⚠️ Inventory Alerts</h2>
+            <partial name="_InventoryAlerts" model="Model" />
+        </div>
+    </div>
+</div>

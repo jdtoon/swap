@@ -1,0 +1,216 @@
+@model SwapSmallPartials.Modules.Partials.PartialsState
+@{
+    ViewData["Title"] = "Small Partials Demo";
+}
+
+<style>
+    .partials-dashboard {
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+
+    .dashboard-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: var(--spacing-lg);
+        gap: var(--spacing-md);
+    }
+
+    .dashboard-title {
+        font-size: 1.5rem;
+        font-weight: 600;
+        margin: 0;
+    }
+
+    .dashboard-subtitle {
+        color: var(--text-muted);
+        font-size: 0.875rem;
+        margin: 0;
+    }
+
+    .action-buttons {
+        display: flex;
+        gap: var(--spacing-xs);
+    }
+
+    .action-buttons .btn {
+        padding: var(--spacing-xs) var(--spacing-sm);
+        font-size: 0.8125rem;
+    }
+
+    .aggregates-row {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: var(--spacing-sm);
+        margin-bottom: var(--spacing-md);
+    }
+
+    .dashboard-sections {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: var(--spacing-md);
+    }
+
+    .section-card {
+        background: var(--bg-white);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        overflow: hidden;
+    }
+
+    .section-header {
+        background: var(--bg);
+        padding: var(--spacing-sm) var(--spacing-md);
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .section-title {
+        font-weight: 600;
+        font-size: 0.875rem;
+        margin: 0;
+    }
+
+    .section-hint {
+        color: var(--text-muted);
+        font-size: 0.75rem;
+    }
+
+    .section-content {
+        padding: var(--spacing-sm);
+    }
+
+    .grid-5 {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: var(--spacing-sm);
+    }
+
+    .grid-2 {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: var(--spacing-sm);
+    }
+
+    .section-card.full-width {
+        grid-column: 1 / -1;
+    }
+
+    @@media (max-width: 1024px) {
+        .dashboard-sections {
+            grid-template-columns: 1fr;
+        }
+        
+        .grid-5 {
+            grid-template-columns: repeat(3, 1fr);
+        }
+    }
+
+    @@media (max-width: 768px) {
+        .aggregates-row {
+            grid-template-columns: repeat(3, 1fr);
+        }
+        
+        .grid-5 {
+            grid-template-columns: repeat(2, 1fr);
+        }
+        
+        .dashboard-header {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+    }
+</style>
+
+<div class="partials-dashboard">
+    @* ========================================================================= *@
+    @* HEADER *@
+    @* ========================================================================= *@
+    <div class="dashboard-header">
+        <div>
+            <h1 class="dashboard-title">🧪 Small Partials Dashboard</h1>
+            <p class="dashboard-subtitle">25 partials • Real-time OOB updates • Event-driven architecture</p>
+        </div>
+        <div class="action-buttons">
+            <button class="btn btn-primary" hx-post="/partials/increment-all" hx-swap="none">
+                +All
+            </button>
+            <button class="btn btn-primary" hx-post="/partials/toggle-all" hx-swap="none">
+                Toggle
+            </button>
+            <button class="btn btn-primary" hx-post="/partials/progress-all" hx-swap="none">
+                Progress
+            </button>
+            <button class="btn btn-danger" hx-post="/partials/reset" hx-swap="none">
+                🔄 Reset
+            </button>
+        </div>
+    </div>
+
+    @* ========================================================================= *@
+    @* AGGREGATES ROW (5 partials) *@
+    @* ========================================================================= *@
+    <div class="aggregates-row">
+        <partial name="_Total" model="Model" />
+        <partial name="_Average" model="Model" />
+        <partial name="_Max" model="Model" />
+        <partial name="_Min" model="Model" />
+        <partial name="_ActiveStatuses" model="Model" />
+    </div>
+
+    @* ========================================================================= *@
+    @* MAIN SECTIONS *@
+    @* ========================================================================= *@
+    <div class="dashboard-sections">
+        @* COUNTERS (10 partials) *@
+        <div class="section-card">
+            <div class="section-header">
+                <h2 class="section-title">📊 Counters (10)</h2>
+                <span class="section-hint">Each click → 5 updates</span>
+            </div>
+            <div class="section-content">
+                <div class="grid-5">
+                    @for (int i = 1; i <= 10; i++)
+                    {
+                        <partial name="_Counter" model="new SwapSmallPartials.Modules.Partials.Events.Handlers.CounterModel { Number = i, Value = Model.GetCounter(i) }" />
+                    }
+                </div>
+            </div>
+        </div>
+
+        @* STATUSES (5 partials) *@
+        <div class="section-card">
+            <div class="section-header">
+                <h2 class="section-title">🔘 Status Toggles (5)</h2>
+                <span class="section-hint">Each toggle → 2 updates</span>
+            </div>
+            <div class="section-content">
+                <div class="grid-5">
+                    @for (int i = 1; i <= 5; i++)
+                    {
+                        <partial name="_Status" model="new SwapSmallPartials.Modules.Partials.Events.Handlers.StatusModel { Number = i, IsActive = Model.GetStatus(i) }" />
+                    }
+                </div>
+            </div>
+        </div>
+
+        @* PROGRESS BARS (5 partials) *@
+        <div class="section-card full-width">
+            <div class="section-header">
+                <h2 class="section-title">📊 Progress Bars (5)</h2>
+                <span class="section-hint">Individual updates</span>
+            </div>
+            <div class="section-content">
+                <div class="grid-5">
+                    @for (int i = 1; i <= 5; i++)
+                    {
+                        <partial name="_Progress" model="new SwapSmallPartials.Modules.Partials.Events.Handlers.ProgressModel { Number = i, Value = Model.GetProgress(i) }" />
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

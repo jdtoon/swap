@@ -1,0 +1,31 @@
+@model Note
+
+<div class="card note-card @(Model.IsPinned ? "pinned" : "")" style="--note-color: var(--color-@Model.Color)">
+    <div class="note-header">
+        <h3 class="note-title">@Model.Title</h3>
+        <div class="note-actions">
+            <button class="btn-icon" title="@(Model.IsPinned ? "Unpin" : "Pin")"
+                    hx-post="@Url.Action("TogglePin", new { id = Model.Id })"
+                    hx-swap="none">
+                @(Model.IsPinned ? "📌" : "📍")
+            </button>
+            <button class="btn-icon" title="Edit"
+                    hx-get="@Url.Action("Edit", new { id = Model.Id })"
+                    hx-target="#modal-container">
+                ✏️
+            </button>
+            <button class="btn-icon" title="Delete"
+                    hx-get="@Url.Action("DeleteConfirm", new { id = Model.Id })"
+                    hx-target="#modal-container">
+                🗑️
+            </button>
+        </div>
+    </div>
+    @if (!string.IsNullOrEmpty(Model.Content))
+    {
+        <p class="note-content">@Model.Content</p>
+    }
+    <div class="note-footer">
+        <small>@Model.CreatedAt.ToString("MMM dd, yyyy")</small>
+    </div>
+</div>
