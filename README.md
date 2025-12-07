@@ -4,9 +4,211 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![.NET 9.0](https://img.shields.io/badge/.NET-9.0-purple.svg)](https://dotnet.microsoft.com/)
 
-**A UI orchestration library for HTMX and ASP.NET Core.**
+**Build complex, interactive dashboards without the complexity of React, Vue, or Angular.**
 
-Swap.Htmx coordinates what updates where when events fire. Type-safe events, decoupled handlers, multi-target partial updates, server-side state — all working together so you define the rules once and the UI updates itself.
+Stop fighting with JavaScript frameworks. Swap.Htmx gives you real-time UI updates, event-driven orchestration, and multi-component coordination—all server-rendered with ASP.NET Core and HTMX.
+
+<div align="center">
+
+### [🎯 See Live Demo](demo/SwapSmallPartials) • [📊 React Comparison](demo/SwapSmallPartials/docs/REACT-COMPARISON.md) • [📖 Full Docs](lib/Swap.Htmx/docs)
+
+</div>
+
+---
+
+## The Problem
+
+Modern web apps need real-time updates and complex interactions. Your current options:
+
+| Approach | Problems |
+|----------|----------|
+| **React/Vue/Angular SPAs** | 300KB+ bundles, complex state management, hydration errors, SEO nightmares, "why did this re-render 47 times?" |
+| **jQuery Spaghetti** | Unmaintainable selector soup, global state chaos, callback hell |
+| **Livewire/Phoenix LiveView** | WebSocket overhead, server memory per connection, full component re-renders |
+| **Blazor Server** | SignalR required, chatty protocol, .NET runtime in browser (WASM) |
+| **Plain HTMX** | Manual `hx-swap-oob`, string-based targeting, no orchestration at scale |
+
+## The Solution
+
+**Swap.Htmx: Event-driven HTMX orchestration for ASP.NET Core**
+
+✅ **One event → 15+ partials update** (single HTTP call)  
+✅ **14KB client footprint** (vs 300KB React)  
+✅ **Type-safe events** with source generators  
+✅ **Server-side rendering** (instant SEO, no hydration)  
+✅ **No build tools** (no npm, webpack, or node_modules)  
+✅ **Testable architecture** (handlers are just functions)
+
+### Real-World Example
+
+**Scenario:** E-commerce analytics dashboard with 50+ live updating components (KPIs, product cards, charts, activity feeds)
+
+**React Implementation:**
+```tsx
+// 1,200 lines of code across 12 files
+// State management: Context + Reducer (120 lines)
+const [state, dispatch] = useReducer(analyticsReducer, initialState);
+
+// Event handling: Hooks + API (30 lines per event)
+const { loading, error, data } = useAnalytics();
+
+// Component updates: Re-render optimization needed
+const memoizedProducts = useMemo(() => 
+  state.products.filter(p => p.category === selected), 
+  [state.products, selected]
+);
+
+// Result: 877KB bundle, 600ms time-to-interactive
+```
+
+**Swap.Htmx Implementation:**
+```csharp
+// 650 lines of code (46% less) across organized modules
+// State management: Simple C# class
+public class AnalyticsState
+{
+    public decimal RevenueToday { get; set; }
+    public List<Product> Products { get; } = new();
+    // ... that's it
+}
+
+// Event handling: Distributed handlers
+[SwapHandler]
+public class RevenueHandler : ISwapEventHandler<PurchaseCompletedEvent>
+{
+    public Task HandleAsync(PurchaseCompletedEvent e, SwapResponseBuilder builder, CancellationToken ct)
+    {
+        builder.AlsoUpdate("revenue-today", "_RevenueToday", _state);
+        return Task.CompletedTask;
+    }
+}
+
+// Component updates: Automatic via OOB swaps
+return SwapEvent(AnalyticsEvents.Purchase.Completed, evt).Build();
+// ↑ One call updates 15 partials
+
+// Result: 22KB bundle, 70ms time-to-interactive
+```
+
+**Numbers:**
+- **8.5x smaller** bundle (22KB vs 877KB)
+- **8.6x faster** load time (70ms vs 600ms)
+- **46% less code** (650 lines vs 1,200)
+- **One network call** vs complex state synchronization
+
+👉 **[See Full React vs Swap.Htmx Comparison](demo/SwapSmallPartials/docs/REACT-COMPARISON.md)**
+
+---
+
+## Quick Start
+
+### Installation
+
+```bash
+dotnet add package Swap.Htmx
+```
+
+### 1. Register Swap.Htmx
+
+```csharp
+// Program.cs
+builder.Services.AddSwapHtmx();
+
+var app = builder.Build();
+app.UseSwapHtmx();
+```
+
+### 2. Define an Event
+
+```csharp
+// Events/TaskEvents.cs
+[SwapEventSource]
+public partial class TaskEvents
+{
+    public const string Completed = "task.completed";
+}
+// Generates: TaskEvents.Task.Completed (type-safe EventKey)
+```
+
+### 3. Create Event Handlers
+
+```csharp
+// Events/Handlers/TaskHandlers.cs
+[SwapHandler]
+public class TaskRowHandler : ISwapEventHandler<TaskCompletedEvent>
+{
+    public Task HandleAsync(TaskCompletedEvent e, SwapResponseBuilder builder, CancellationToken ct)
+    {
+        // Remove the completed task row
+        builder.AlsoUpdate($"task-{e.TaskId}", "_Empty", null, SwapMode.Delete);
+        return Task.CompletedTask;
+    }
+}
+
+[SwapHandler]
+public class ProgressHandler : ISwapEventHandler<TaskCompletedEvent>
+{
+    private readonly TaskService _tasks;
+    public ProgressHandler(TaskService tasks) => _tasks = tasks;
+    
+    public async Task HandleAsync(TaskCompletedEvent e, SwapResponseBuilder builder, CancellationToken ct)
+    {
+        var progress = await _tasks.GetProgressAsync();
+        builder.AlsoUpdate("progress-bar", "_Progress", progress);
+        return Task.CompletedTask;
+    }
+}
+```
+
+### 4. Fire the Event
+
+```csharp
+// Controllers/TasksController.cs
+public class TasksController : SwapController
+{
+    private readonly TaskService _tasks;
+    
+    [HttpPost]
+    public async Task<IActionResult> Complete(int id)
+    {
+        await _tasks.CompleteAsync(id);
+        
+        // Fire event → All handlers respond automatically
+        return SwapEvent(TaskEvents.Task.Completed, new TaskCompletedEvent { TaskId = id })
+            .WithSuccessToast("Task completed!")
+            .Build();
+    }
+}
+```
+
+### 5. Wire Up HTMX
+
+```html
+<!-- Views/Tasks/Index.cshtml -->
+<div id="task-@task.Id" class="task-row">
+    <span>@task.Title</span>
+    <button hx-post="/Tasks/Complete/@task.Id" 
+            hx-swap="none">
+        Complete
+    </button>
+</div>
+
+<div id="progress-bar">
+    @await Html.PartialAsync("_Progress", Model.Progress)
+</div>
+```
+
+**What happens when you click "Complete":**
+1. HTMX sends POST to `/Tasks/Complete/5`
+2. Controller fires `TaskCompleted` event
+3. `TaskRowHandler` removes task row via OOB swap
+4. `ProgressHandler` updates progress bar via OOB swap
+5. Server returns one response with both updates
+6. HTMX applies both swaps to the page
+
+**One click. Two updates. Zero JavaScript.**
+
+👉 **[Full Tutorial](lib/Swap.Htmx/docs/GettingStarted.md)**
 
 ---
 
