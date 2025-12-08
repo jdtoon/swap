@@ -1,0 +1,58 @@
+@model SwapStateDemo.Models.ProductViewModel
+
+<!-- Debug: Show current state in the partial -->
+<div class="state-debug">
+    <strong>Partial received:</strong> Category=@Model.State.Category, Page=@Model.State.Page, PageSize=@Model.State.PageSize, Search=@(Model.State.Search ?? "(null)")
+</div>
+
+<table>
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Category</th>
+            <th>Price</th>
+        </tr>
+    </thead>
+    <tbody>
+        @if (Model.Products.Any())
+        {
+            @foreach (var p in Model.Products)
+            {
+                <tr>
+                    <td>@p.Id</td>
+                    <td>@p.Name</td>
+                    <td>@p.Category</td>
+                    <td>$@p.Price.ToString("F2")</td>
+                </tr>
+            }
+        }
+        else
+        {
+            <tr>
+                <td colspan="4" style="text-align: center; color: #999;">No products found</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<p><strong>@Model.Products.Count</strong> of <strong>@Model.TotalCount</strong> products (Page @Model.State.Page of @Model.TotalPages)</p>
+
+<!-- Pagination -->
+@if (Model.TotalPages > 1)
+{
+    <div class="filters">
+        <strong>Page:</strong>
+        @for (int i = 1; i <= Model.TotalPages; i++)
+        {
+            var pageNum = i;
+            <button class="@(Model.State.Page == pageNum ? "active" : "")"
+                    hx-get="/Home/Filter"
+                    hx-target="#product-grid"
+                    hx-include="#@Model.State.ContainerId"
+                    hx-vals='{"Page": @pageNum}'>
+                @pageNum
+            </button>
+        }
+    </div>
+}
