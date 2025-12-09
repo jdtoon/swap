@@ -1,3583 +1,588 @@
-# Swap.Htmx - LLM Reference Guide
+# Swap.Htmx - Server-Driven State Management for ASP.NET + HTMX
 
-> Repository: https://github.com/jdtoon/swap
-> Documentation: https://github.com/jdtoon/swap/tree/main/lib/Swap.Htmx/docs
+> This document describes SwapState, the state management pattern in Swap.Htmx.
+> Swap.Htmx is a .NET library that makes HTMX a first-class citizen in ASP.NET MVC.
 
-## WHAT IS SWAP.HTMX?
+## Core Principle: HTML Is The State
 
-**Event-driven UI orchestration for ASP.NET Core + HTMX**
+SwapState uses hidden HTML fields to persist state across HTMX requests. The server renders state, the browser sends it back, and the server renders updated state. No JavaScript state management required.
 
-Swap.Htmx solves the "how do I update 15 partials from one button click?" problem. When events fire, distributed handlers respond—each updating one piece of the UI. All updates are batched into a single HTTP response via out-of-band (OOB) swaps.
-
-**Key Benefits:**
-- **8.5x smaller bundles** than React (22KB vs 877KB)
-- **46% less code** for same features (650 vs 1,200 lines)
-- **Event-driven architecture** (controllers fire events, handlers update UI)
-- **Type-safe** (source generators eliminate magic strings)
-- **Server-side state** (no client/server synchronization complexity)
-
-**When to Use:**
-- ✅ Dashboards, admin panels, analytics platforms
-- ✅ CRUD applications, e-commerce sites
-- ✅ Internal tools, reporting systems
-- ✅ Any app where you'd consider React but want simpler DX
-
-**When NOT to Use:**
-- ❌ Offline-first PWAs
-- ❌ Highly interactive UIs (Figma-like editors, real-time collaboration)
-- ❌ Mobile apps (use React Native)
-
-**The Mental Model:**
 ```
-User Action → Controller fires event → Handlers update partials → One HTTP response → HTMX swaps DOM
+┌─────────────────────────────────────────────────────────────────┐
+│  1. Server renders HTML with hidden fields                       │
+│     <input type="hidden" name="Category" value="Electronics" /> │
+│                                                                  │
+│  2. User interacts (clicks button, types in input)              │
+│     hx-include="#state-container" sends hidden fields           │
+│                                                                  │
+│  3. Server receives state via [FromSwapState]                   │
+│     Controller action gets populated state object               │
+│                                                                  │
+│  4. Server returns new HTML with updated state                  │
+│     Hidden fields reflect new values                            │
+│                                                                  │
+│  5. Repeat                                                       │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
-No useState, no useEffect, no Redux. Just events and handlers.
+## Quick Start
 
----
+### Step 1: Define a State Class
 
-## PHILOSOPHY & BEST PRACTICES
-
-### The Distributed Handler Pattern (RECOMMENDED)
-
-**Pattern:** Each handler updates ONE partial. Controllers don't know what updates.
+Create a class that inherits from `SwapState`:
 
 ```csharp
-// ✅ GOOD: Controller fires event, doesn't know about UI
-[HttpPost]
-public IActionResult CompletePurchase(int productId)
+public class ProductFilterState : SwapState
 {
-    var purchase = _service.ProcessPurchase(productId);
-    
-    // Just fire the event with typed payload
-    return SwapEvent(new PurchaseCompletedEvent 
-    { 
-        ProductId = productId,
-        Amount = purchase.Amount,
-        CustomerName = purchase.CustomerName
-    }).Build();
-}
-
-// ✅ GOOD: Handlers are decoupled, each updates ONE thing
-[SwapHandler]
-public class RevenueHandler : ISwapEventHandler<PurchaseCompletedEvent>
-{
-    private readonly AnalyticsState _state;
-    
-    public Task HandleAsync(PurchaseCompletedEvent e, SwapResponseBuilder builder, CancellationToken ct)
-    {
-        builder.AlsoUpdate("revenue-card", "_RevenueCard", _state);
-        return Task.CompletedTask;
-    }
-}
-
-[SwapHandler]
-public class ProductStockHandler : ISwapEventHandler<PurchaseCompletedEvent>
-{
-    private readonly AnalyticsState _state;
-    
-    public Task HandleAsync(PurchaseCompletedEvent e, SwapResponseBuilder builder, CancellationToken ct)
-    {
-        var product = _state.Products.First(p => p.Id == e.ProductId);
-        builder.AlsoUpdate($"product-{e.ProductId}", "_ProductCard", product);
-        return Task.CompletedTask;
-    }
-}
-```
-
-**Why This Works:**
-- Adding new UI component = add handler (no controller changes)
-- Handlers are testable in isolation
-- Zero coupling between handlers
-- Scales to 50+ partials without complexity growth
-
-**Anti-Pattern:**
-```csharp
-// ❌ BAD: Controller knows about all UI targets
-[HttpPost]
-public IActionResult CompletePurchase(int productId)
-{
-    var purchase = _service.ProcessPurchase(productId);
-    
-    return SwapResponse()
-        .AlsoUpdate("revenue-card", "_RevenueCard", GetRevenue())
-        .AlsoUpdate($"product-{productId}", "_ProductCard", GetProduct(productId))
-        .AlsoUpdate("category-electronics", "_CategoryCard", GetCategory("electronics"))
-        .AlsoUpdate("region-west", "_RegionCard", GetRegion("West"))
-        // ... 10 more updates
-        .Build();
-}
-```
-
-This tightly couples controller to UI structure. Use events instead.
-
-### State Management: Server is Source of Truth
-
-**Pattern:** Singleton state class, direct mutations, no synchronization.
-
-```csharp
-// ✅ GOOD: Simple C# class with business logic
-public class AnalyticsState
-{
-    public decimal RevenueToday { get; set; }
-    public int OrdersCount { get; set; }
-    public List<Product> Products { get; } = new();
-    
-    // Computed properties (no React useMemo needed)
-    public decimal AvgOrderValue => OrdersCount > 0 ? RevenueToday / OrdersCount : 0;
-    
-    // Business logic methods
-    public void ProcessPurchase(int productId, decimal amount)
-    {
-        var product = Products.First(p => p.Id == productId);
-        product.Stock--;
-        product.Sales++;
-        
-        RevenueToday += amount;
-        OrdersCount++;
-    }
-}
-
-// Register as singleton
-builder.Services.AddSingleton<AnalyticsState>();
-```
-
-**Why This Works:**
-- State is ALWAYS current (server is source of truth)
-- No client/server sync bugs
-- Direct mutations (no immutability gymnastics)
-- Computed properties are just C# getters
-
-**Anti-Pattern:**
-```csharp
-// ❌ BAD: Trying to replicate React patterns in C#
-public class AnalyticsState
-{
-    private decimal _revenue;
-    public decimal Revenue 
-    { 
-        get => _revenue; 
-        set 
-        { 
-            _revenue = value;
-            OnPropertyChanged(nameof(Revenue));
-            OnPropertyChanged(nameof(AvgOrderValue));
-        } 
-    }
-    
-    // Don't do this - you're not building a SPA
-}
-```
-
-Server state doesn't need change tracking. Just mutate and render.
-
----
-
----
-
-## INSTALLATION & QUICK START
-
-### Installation
-
-```bash
-dotnet add package Swap.Htmx
-```
-
-### Quick Start with Template (RECOMMENDED for New Projects)
-
-The **Modular Monolith template** provides production-ready architecture:
-
-```bash
-dotnet new install Swap.Templates
-dotnet new swap-modular -n MyApp
-cd MyApp/src
-libman restore
-dotnet run
-```
-
-**What you get:**
-- Self-contained modules in `Modules/` folder
-- SQLite + EF Core with migrations
-- SPA-style navigation (HTMX-powered, no JS framework)
-- Sample CRUD module showing all patterns
-- Docker ready
-- Integration tests
-
-**For minimal starting point:** `dotnet new swap-mvc -n MyProject`
-
-### Program.cs Setup
-
-```csharp
-var builder = WebApplication.CreateBuilder(args);
-
-builder.Services.AddControllersWithViews();  // or AddRazorPages()
-builder.Services.AddSwapHtmx();  // Core services + handler auto-discovery
-
-var app = builder.Build();
-
-app.UseStaticFiles();
-app.UseSwapHtmx();  // Middleware for request detection
-app.MapControllers();
-
-app.Run();
-```
-
-### Layout Requirements
-
-```html
-<head>
-    <!-- Swap.Htmx CSS (toasts, validation styling) -->
-    <link rel="stylesheet" href="~/_content/Swap.Htmx/css/swap.css" />
-    
-    <!-- HTMX core library -->
-    <script src="https://unpkg.com/htmx.org@2.0.8"></script>
-    
-    <!-- Swap.Htmx client scripts (event handling, state sync) -->
-    <script src="~/_content/Swap.Htmx/js/swap.client.js"></script>
-</head>
-```
-
-### Enable Source Generators (for type-safe constants)
-
-```xml
-<!-- .csproj -->
-<ItemGroup>
-  <AdditionalFiles Include="Views\**\*.cshtml" />
-  <AdditionalFiles Include="Modules\**\Views\**\*.cshtml" /> <!-- If using modules -->
-</ItemGroup>
-```
-
----
-
-## GETTING STARTED CHECKLIST
-
-Use this as a step-by-step guide when creating a new Swap.Htmx project or feature.
-
-### ✅ Project Setup
-
-1. **Install package:**
-   ```bash
-   dotnet add package Swap.Htmx
-   ```
-
-2. **Add services to `Program.cs`:**
-   ```csharp
-   builder.Services.AddSwapHtmx();
-   ```
-
-3. **Add middleware to `Program.cs`:**
-   ```csharp
-   app.UseSwapHtmx();
-   ```
-
-4. **Add scripts to `_Layout.cshtml` or `_Host.cshtml`:**
-   ```html
-   <link rel="stylesheet" href="~/_content/Swap.Htmx/css/swap.css" />
-   <script src="https://unpkg.com/htmx.org@2.0.8"></script>
-   <script src="~/_content/Swap.Htmx/js/swap.client.js"></script>
-   ```
-
-5. **Enable auto-layout suppression (RECOMMENDED):**
-   ```csharp
-   // Program.cs
-   builder.Services.AddSwapHtmx(options =>
-   {
-       options.AutoSuppressLayout = true;
-       options.DefaultNavigationTarget = "#main-content";
-   });
-   ```
-   
-   ```razor
-   @* _ViewStart.cshtml *@
-   @{
-       Layout = Context.ShouldSuppressLayout() ? null : "_Layout";
-   }
-   ```
-
-### ✅ Creating Your First Feature
-
-1. **Create a view with HTMX attribute:**
-   ```html
-   <button hx-get="/Products/List" hx-target="#product-list">
-       Load Products
-   </button>
-   <div id="product-list"></div>
-   ```
-
-2. **Create controller action:**
-   ```csharp
-   public class ProductsController : Controller
-   {
-       public IActionResult List()
-       {
-           var products = _service.GetAll();
-           return this.SwapResponse()
-               .WithView("_ProductList", products)
-               .Build();
-       }
-   }
-   ```
-
-3. **Create partial view (`_ProductList.cshtml`):**
-   ```html
-   @model List<Product>
-   
-   @foreach (var product in Model)
-   {
-       <div>@product.Name - $@product.Price</div>
-   }
-   ```
-
-### ✅ Adding Multi-Component Updates
-
-1. **Define event class:**
-   ```csharp
-   public class ProductCreatedEvent
-   {
-       public int ProductId { get; set; }
-       public string Name { get; set; } = "";
-   }
-   ```
-
-2. **Create handlers with `[SwapHandler]`:**
-   ```csharp
-   [SwapHandler]
-   public class ProductListHandler : ISwapEventHandler<ProductCreatedEvent>
-   {
-       private readonly IProductService _service;
-       public ProductListHandler(IProductService service) => _service = service;
-       
-       public Task HandleAsync(ProductCreatedEvent e, SwapResponseBuilder builder, CancellationToken ct)
-       {
-           var products = _service.GetAll();
-           builder.AlsoUpdate("product-list", "_ProductList", products);
-           return Task.CompletedTask;
-       }
-   }
-   
-   [SwapHandler]
-   public class ProductCountHandler : ISwapEventHandler<ProductCreatedEvent>
-   {
-       private readonly IProductService _service;
-       public ProductCountHandler(IProductService service) => _service = service;
-       
-       public Task HandleAsync(ProductCreatedEvent e, SwapResponseBuilder builder, CancellationToken ct)
-       {
-           builder.AlsoUpdate("product-count", "_ProductCount", _service.Count());
-           return Task.CompletedTask;
-       }
-   }
-   ```
-
-3. **Fire event from controller:**
-   ```csharp
-   [HttpPost]
-   public IActionResult Create(ProductDto dto)
-   {
-       var product = _service.Create(dto);
-       return this.SwapEvent(new ProductCreatedEvent 
-       { 
-           ProductId = product.Id, 
-           Name = product.Name 
-       })
-       .WithCreatedToast("Product", product.Name)
-       .Build();
-   }
-   ```
-
-### ✅ Adding Forms with Validation
-
-1. **Create form view:**
-   ```html
-   <form hx-post="/Products/Create" hx-target="#form-container">
-       <div>
-           <label asp-for="Name"></label>
-           <input asp-for="Name" />
-           <span asp-validation-for="Name" class="text-danger"></span>
-       </div>
-       
-       <div>
-           <label asp-for="Price"></label>
-           <input asp-for="Price" type="number" step="0.01" />
-           <span asp-validation-for="Price" class="text-danger"></span>
-       </div>
-       
-       <button type="submit">Create</button>
-   </form>
-   ```
-
-2. **Handle validation in controller:**
-   ```csharp
-   [HttpPost]
-   public IActionResult Create(ProductDto dto)
-   {
-       if (!ModelState.IsValid)
-       {
-           return this.SwapValidationErrors(ModelState)
-               .WithView("_CreateForm", dto)
-               .Build();
-       }
-       
-       var product = _service.Create(dto);
-       return this.SwapResponse()
-           .WithNavigation("/products")
-           .WithCreatedToast("Product", product.Name)
-           .Build();
-   }
-   ```
-
-### ✅ Adding Server-Side State
-
-1. **Create state class:**
-   ```csharp
-   public class ProductFilterState : SwapState
-   {
-       public string Search { get; set; } = "";
-       public string Category { get; set; } = "all";
-       public int Page { get; set; } = 1;
-   }
-   ```
-
-2. **Add state to view:**
-   ```html
-   @model ProductViewModel
-   
-   <swap-state state="Model.State" />
-   
-   <input type="text" 
-          name="search"
-          value="@Model.State.Search"
-          hx-get="/Products/Search"
-          hx-target="#product-grid"
-          hx-include="#product-filter-state"
-          hx-trigger="keyup changed delay:300ms" />
-   
-   <div id="product-grid">
-       <!-- Results -->
-   </div>
-   ```
-
-3. **Bind state in controller:**
-   ```csharp
-   public IActionResult Search([FromSwapState] ProductFilterState state)
-   {
-       var products = _service.Search(state.Search, state.Category, state.Page);
-       return this.SwapResponse()
-           .WithView("_ProductGrid", products)
-           .WithState(state)  // Syncs state back
-           .Build();
-   }
-   ```
-
-### ✅ Adding Type-Safe Constants (Optional but Recommended)
-
-1. **Define event constants:**
-   ```csharp
-   [SwapEventSource]
-   public partial class ProductEvents
-   {
-       public const string Created = "product.created";
-       public const string Updated = "product.updated";
-       public const string Deleted = "product.deleted";
-   }
-   ```
-
-2. **Use generated properties:**
-   ```csharp
-   // Generated: ProductEvents.Product.Created, ProductEvents.Product.Updated, etc.
-   return this.SwapEvent(ProductEvents.Product.Created, new { ... }).Build();
-   ```
-
-### ✅ Common Troubleshooting
-
-**Issue:** Layout appears on HTMX requests (getting full page instead of partial)
-
-**Solution:** Enable `AutoSuppressLayout` or add `_ViewStart.cshtml` with layout suppression:
-```csharp
-builder.Services.AddSwapHtmx(options => options.AutoSuppressLayout = true);
-```
-
-**Issue:** Validation errors not appearing
-
-**Solution:** Ensure you're using `this.SwapValidationErrors(ModelState)`:
-```csharp
-if (!ModelState.IsValid)
-    return this.SwapValidationErrors(ModelState).WithView("_Form", dto).Build();
-```
-
-**Issue:** Toast messages not showing
-
-**Solution:** Ensure `swap.css` is loaded in layout:
-```html
-<link rel="stylesheet" href="~/_content/Swap.Htmx/css/swap.css" />
-```
-
-**Issue:** Handlers not firing
-
-**Solution:** Ensure class has `[SwapHandler]` attribute and implements `ISwapEventHandler<T>`:
-```csharp
-[SwapHandler]  // Don't forget this!
-public class MyHandler : ISwapEventHandler<MyEvent> { }
-```
-
-**Issue:** State not persisting between requests
-
-**Solution:** Include state container with `hx-include`:
-```html
-<button hx-get="/Action" hx-include="#my-state">Click</button>
-```
-
----
-
-## THE CORE PATTERN: Events → Handlers → OOB Swaps
-
-**This is the "aha!" moment for Swap.Htmx.**
-
-### Example: Analytics Dashboard Purchase Flow
-
-**1. User clicks "Purchase" button**
-```html
-<button hx-post="/Analytics/SimulatePurchase" 
-        hx-swap="none"
-        class="btn btn-primary">
-    Purchase Product
-</button>
-```
-
-**2. Controller fires event**
-```csharp
-[HttpPost]
-public IActionResult SimulatePurchase()
-{
-    // Update state (source of truth)
-    var productId = _state.Products[Random.Shared.Next(_state.Products.Count)].Id;
-    _state.ProcessPurchase(productId, region: "West", customer: "John D.");
-    
-    // Fire event with typed payload
-    return SwapEvent(AnalyticsEvents.Purchase.Completed, new PurchaseCompletedEvent
-    {
-        ProductId = productId,
-        Region = "West",
-        CustomerName = "John D."
-    }).Build();
-}
-```
-
-**3. Handlers respond (auto-discovered via [SwapHandler])**
-```csharp
-// Handler 1: Update revenue KPI
-[SwapHandler]
-public class RevenueHandler : ISwapEventHandler<PurchaseCompletedEvent>
-{
-    private readonly AnalyticsState _state;
-    public RevenueHandler(AnalyticsState state) => _state = state;
-    
-    public Task HandleAsync(PurchaseCompletedEvent e, SwapResponseBuilder builder, CancellationToken ct)
-    {
-        builder.AlsoUpdate("revenue-today", "_RevenueToday", _state);
-        return Task.CompletedTask;
-    }
-}
-
-// Handler 2: Update orders count
-[SwapHandler]
-public class OrdersHandler : ISwapEventHandler<PurchaseCompletedEvent>
-{
-    private readonly AnalyticsState _state;
-    public OrdersHandler(AnalyticsState state) => _state = state;
-    
-    public Task HandleAsync(PurchaseCompletedEvent e, SwapResponseBuilder builder, CancellationToken ct)
-    {
-        builder.AlsoUpdate("orders-count", "_OrdersCount", _state);
-        return Task.CompletedTask;
-    }
-}
-
-// Handler 3: Update specific product card
-[SwapHandler]
-public class ProductCardHandler : ISwapEventHandler<PurchaseCompletedEvent>
-{
-    private readonly AnalyticsState _state;
-    public ProductCardHandler(AnalyticsState state) => _state = state;
-    
-    public Task HandleAsync(PurchaseCompletedEvent e, SwapResponseBuilder builder, CancellationToken ct)
-    {
-        var product = _state.Products.First(p => p.Id == e.ProductId);
-        builder.AlsoUpdate($"product-{e.ProductId}", "_ProductCard", product);
-        return Task.CompletedTask;
-    }
-}
-
-// ... 12 more handlers (each updating one partial)
-```
-
-**4. Server returns ONE HTTP response**
-```html
-<!-- Main response (can be toast or empty) -->
-<div class="toast success">Purchase completed!</div>
-
-<!-- OOB Swap 1 -->
-<div id="revenue-today" hx-swap-oob="true">
-    <div class="kpi-card">
-        <h3>Revenue Today</h3>
-        <p>$4,523.75</p>
-    </div>
-</div>
-
-<!-- OOB Swap 2 -->
-<div id="orders-count" hx-swap-oob="true">
-    <div class="kpi-card">
-        <h3>Orders</h3>
-        <p>127</p>
-    </div>
-</div>
-
-<!-- OOB Swap 3 -->
-<div id="product-5" hx-swap-oob="true">
-    <div class="product-card">
-        <h4>Wireless Mouse</h4>
-        <span class="stock text-danger">8 left</span>
-    </div>
-</div>
-
-<!-- ... 12 more OOB swaps -->
-```
-
-**5. HTMX swaps each element**
-
-HTMX finds every element with `hx-swap-oob="true"`, matches the ID, and swaps it into the DOM.
-
-**Result:** One click → 15 partials update → One HTTP request → Zero JavaScript written.
-
-**Compare to React:**
-- React: Dispatch action → Reducer updates state → 60 components re-render (only 15 changed) → useMemo/React.memo optimization needed
-- Swap.Htmx: Fire event → 15 handlers run → 15 surgical DOM updates → Done
-
----
-
-## SWAPRESPONSEBUILDER: The Central API
-
-All responses flow through `SwapResponseBuilder`. It accumulates updates and renders them in one response.
-
-### Access Methods
-
-```csharp
-// In SwapController (inherits from Controller)
-public class ProductsController : SwapController
-{
-    public IActionResult Index()
-    {
-        return SwapResponse()  // No "this." needed
-            .WithView("_ProductList", products)
-            .Build();
-    }
-}
-
-// In standard Controller (composition)
-public class ProductsController : Controller
-{
-    public IActionResult Index()
-    {
-        return this.SwapResponse()  // Extension method
-            .WithView("_ProductList", products)
-            .Build();
-    }
-}
-
-// In Razor Pages
-public class IndexModel : PageModel
-{
-    public IActionResult OnPost()
-    {
-        return this.SwapResponse()
-            .WithView("_Partial", this)
-            .Build();
-    }
-}
-
-// In Minimal APIs
-app.MapGet("/products", () =>
-    SwapResults.Response()  // Static helper
-        .WithView("_ProductList", products)
-);
-```
-
-### Full API Reference
-
-```csharp
-SwapResponseBuilder
-    // Main target (what hx-target receives)
-    .WithView(string viewName, object? model = null)
-    
-    // Out-of-band swaps (update elements outside main target)
-    .AlsoUpdate(string targetId, string viewName, object? model = null, SwapMode swapMode = SwapMode.OuterHTML)
-    .AlsoUpdateMany<T>(IEnumerable<T> items, Func<T, string> idSelector, string viewName, SwapMode swapMode = SwapMode.OuterHTML)
-    .AlsoUpdateIf(bool condition, string targetId, string viewName, object? model = null, SwapMode swapMode = SwapMode.OuterHTML)
-    .AlsoUpdateIfExists(string targetId, string viewName, object? model = null, SwapMode swapMode = SwapMode.OuterHTML)
-    
-    // Navigation (SPA-style via HX-Location header)
-    .WithNavigation(string path)
-    .WithNavigation(string path, string? target, SwapMode? swap)
-    .WithNavigation(NavigationOptions options)
-    
-    // Toasts (visual feedback)
-    .WithToast(string message, ToastType type = ToastType.Info)
-    .WithSuccessToast(string message)
-    .WithErrorToast(string message)
-    .WithWarningToast(string message)
-    .WithInfoToast(string message)
-    
-    // CRUD toasts (contextual messages)
-    .WithCreatedToast(string entityName, string? itemName = null)
-    .WithUpdatedToast(string entityName, string? itemName = null)
-    .WithDeletedToast(string entityName, string? itemName = null)
-    .WithSavedToast(string entityName, string? itemName = null)
-    .WithCrudToast(CrudOperation operation, string entityName, string? itemName = null)
-    
-    // Events (trigger client-side or fire server-side event chains)
-    .WithTrigger(EventKey eventKey, object? payload = null)
-    .WithTrigger(string eventName, object? payload = null)
-    
-    // State management (server-side state sync)
-    .WithState(SwapState state, string? viewName = null)
-    
-    // Validation (model state errors)
-    .WithValidationErrors(ModelStateDictionary modelState)
-    
-    // Redirects
-    .WithRedirect(string url)
-    
-    // Server-Sent Events (broadcast to connected clients)
-    .BroadcastSse(string eventName, object? payload = null)
-    
-    // Build final response
-    .Build()  // Returns IActionResult
-```
-
-### SwapMode Options
-
-Controls how OOB swaps are applied to target elements:
-
-```csharp
-public enum SwapMode
-{
-    OuterHTML,    // Replace entire element (default)
-    InnerHTML,    // Replace inner content only
-    BeforeBegin,  // Insert before element
-    AfterBegin,   // Insert as first child
-    BeforeEnd,    // Insert as last child (append)
-    AfterEnd,     // Insert after element
-    Delete,       // Remove the element
-    None          // No swap
-}
-```
-
-**Common uses:**
-- `OuterHTML`: Replace entire card/component
-- `InnerHTML`: Update content but keep wrapper (e.g., table tbody)
-- `BeforeEnd`: Append to list (infinite scroll)
-- `Delete`: Remove element (e.g., delete task row)
-
----
-    .AlsoUpdate(string targetId, string viewName, object? model = null, SwapMode swapMode = SwapMode.OuterHTML)
-    .AlsoUpdateMany<T>(IEnumerable<T> items, Func<T, string> idSelector, string viewName, SwapMode swapMode = SwapMode.OuterHTML)
-    .AlsoUpdateIf(bool condition, string targetId, string viewName, object? model = null, SwapMode swapMode = SwapMode.OuterHTML)
-    .AlsoUpdateIfExists(string targetId, string viewName, object? model = null, SwapMode swapMode = SwapMode.OuterHTML)
-    
-    // Navigation (SPA-style via HX-Location)
-    .WithNavigation(string path)
-    .WithNavigation(string path, string? target, SwapMode? swap)
-    .WithNavigation(NavigationOptions options)
-    
-    // Toasts
-    .WithToast(string message, ToastType type = ToastType.Info)
-    .WithSuccessToast(string message)
-    .WithErrorToast(string message)
-    .WithWarningToast(string message)
-    .WithInfoToast(string message)
-    .WithCreatedToast(string entityName, string? itemName = null)
-    .WithUpdatedToast(string entityName, string? itemName = null)
-    .WithDeletedToast(string entityName, string? itemName = null)
-    .WithSavedToast(string entityName, string? itemName = null)
-    .WithCrudToast(CrudOperation operation, string entityName, string? itemName = null)
-    
-    // Triggers (client-side events)
-    .WithTrigger(EventKey eventKey, object? payload = null)
-    .WithTrigger(string eventName, object? payload = null)
-    
-    // State management
-    .WithState(SwapState state, string? viewName = null)
-    
-    // Validation
-    .WithValidationErrors(ModelStateDictionary modelState)
-    
-    // Navigation
-    .WithRedirect(string url)
-    
-    // SSE broadcast
-    .BroadcastSse(string eventName, object? payload = null)
-    
-    // Build
-    .Build()  // Returns IActionResult
-```
-
-### SwapMode Enum
-
-```csharp
-public enum SwapMode
-{
-    OuterHTML,    // Replace entire element (default)
-    InnerHTML,    // Replace inner content only
-    BeforeBegin,  // Insert before element
-    AfterBegin,   // Insert as first child
-    BeforeEnd,    // Insert as last child (append)
-    AfterEnd,     // Insert after element
-    Delete,       // Remove the element
-    None          // No swap
-}
-```
-
----
-
-## COMMON PATTERNS & RECIPES
-
-These are the most common scenarios you'll encounter. Use these as templates.
-
-### Pattern 1: Search/Filter with Live Results
-
-```html
-<!-- View -->
-<input type="text" 
-       name="search"
-       hx-get="/Products/Search"
-       hx-target="#results"
-       hx-trigger="keyup changed delay:300ms"
-       placeholder="Search products...">
-
-<div id="results">
-    <!-- Results load here -->
-</div>
-```
-
-```csharp
-// Controller
-public IActionResult Search(string search)
-{
-    var products = _service.Search(search);
-    return this.SwapResponse()
-        .WithView("_SearchResults", products)
-        .Build();
-}
-```
-
-### Pattern 2: Tabs with State Persistence
-
-```html
-<!-- View -->
-<swap-state state="Model.State" />
-
-<div class="tabs">
-    <button hx-get="/Dashboard/Tab?tab=overview"
-            hx-target="#tab-content"
-            hx-include="#dashboard-state"
-            class="@(Model.State.Tab == "overview" ? "active" : "")">
-        Overview
-    </button>
-    <button hx-get="/Dashboard/Tab?tab=analytics"
-            hx-target="#tab-content"
-            hx-include="#dashboard-state"
-            class="@(Model.State.Tab == "analytics" ? "active" : "")">
-        Analytics
-    </button>
-</div>
-
-<div id="tab-content">
-    <!-- Tab content loads here -->
-</div>
-```
-
-```csharp
-// Controller
-public IActionResult Tab([FromSwapState] DashboardState state, string tab)
-{
-    state.Tab = tab;
-    var data = _service.GetTabData(tab);
-    
-    return this.SwapResponse()
-        .WithView($"_Tab{tab}", data)
-        .WithState(state)  // Syncs tab selection
-        .Build();
-}
-```
-
-### Pattern 3: Infinite Scroll
-
-```html
-<!-- View -->
-<div id="products">
-    @foreach (var product in Model.Products)
-    {
-        @await Html.PartialAsync("_ProductCard", product)
-    }
-</div>
-
-@if (Model.HasMore)
-{
-    <div hx-get="/Products/LoadMore?page=@(Model.Page + 1)"
-         hx-trigger="revealed"
-         hx-swap="outerHTML"
-         hx-target="this"
-         class="load-more">
-        Loading more...
-    </div>
-}
-```
-
-```csharp
-// Controller
-public IActionResult LoadMore(int page)
-{
-    var products = _service.GetPage(page, pageSize: 20);
-    var hasMore = products.Count == 20;
-    
-    return this.SwapResponse()
-        .WithView("_ProductCards", products)
-        .AlsoUpdateIf(hasMore, "load-more-trigger", "_LoadMoreTrigger", new { Page = page })
-        .Build();
-}
-```
-
-### Pattern 4: Modal Dialog (CRUD)
-
-```html
-<!-- Button to open modal -->
-<button hx-get="/Products/Edit/5"
-        hx-target="#modal-container"
-        hx-swap="innerHTML">
-    Edit Product
-</button>
-
-<div id="modal-container">
-    <!-- Modal loads here -->
-</div>
-```
-
-```html
-<!-- _EditModal.cshtml -->
-<div class="modal-backdrop" onclick="this.remove()">
-    <div class="modal" onclick="event.stopPropagation()">
-        <form hx-post="/Products/Update/@Model.Id"
-              hx-target="#modal-container"
-              hx-swap="outerHTML">
-            
-            <input asp-for="Name" />
-            <input asp-for="Price" />
-            
-            <button type="submit">Save</button>
-            <button type="button" onclick="this.closest('.modal-backdrop').remove()">
-                Cancel
-            </button>
-        </form>
-    </div>
-</div>
-```
-
-```csharp
-// Controller
-[HttpPost]
-public IActionResult Update(int id, ProductDto dto)
-{
-    if (!ModelState.IsValid)
-        return this.SwapValidationErrors(ModelState)
-            .WithView("_EditModal", dto)
-            .Build();
-    
-    _service.Update(id, dto);
-    
-    return this.SwapResponse()
-        .WithView("_Empty", null)  // Close modal (replace with empty div)
-        .AlsoUpdate($"product-{id}", "_ProductCard", _service.GetById(id))
-        .WithUpdatedToast("Product", dto.Name)
-        .Build();
-}
-```
-
-### Pattern 5: Delete Confirmation
-
-```html
-<!-- Product card -->
-<div id="product-@Model.Id">
-    <h3>@Model.Name</h3>
-    <button hx-delete="/Products/Delete/@Model.Id"
-            hx-confirm="Delete this product?"
-            hx-target="#product-@Model.Id"
-            hx-swap="outerHTML swap:1s">
-        Delete
-    </button>
-</div>
-```
-
-```csharp
-// Controller
-[HttpDelete]
-public IActionResult Delete(int id)
-{
-    var product = _service.GetById(id);
-    _service.Delete(id);
-    
-    return this.SwapResponse()
-        .WithView("_Empty", null, SwapMode.Delete)  // Remove element
-        .AlsoUpdate("product-count", "_ProductCount", _service.Count())
-        .WithDeletedToast("Product", product.Name)
-        .Build();
-}
-```
-
-### Pattern 6: Dependent Dropdowns
-
-```html
-<!-- View -->
-<select name="countryId" 
-        hx-get="/Address/LoadStates"
-        hx-target="#state-dropdown"
-        hx-include="[name='countryId']">
-    <option value="">Select Country</option>
-    @foreach (var country in Model.Countries)
-    {
-        <option value="@country.Id">@country.Name</option>
-    }
-</select>
-
-<div id="state-dropdown">
-    <select name="stateId" disabled>
-        <option>Select country first</option>
-    </select>
-</div>
-```
-
-```csharp
-// Controller
-public IActionResult LoadStates(int countryId)
-{
-    var states = _service.GetStates(countryId);
-    return this.SwapResponse()
-        .WithView("_StateDropdown", states)
-        .Build();
-}
-```
-
-### Pattern 7: Bulk Actions with Event Broadcasting
-
-```html
-<!-- View -->
-<form id="bulk-form">
-    @foreach (var task in Model.Tasks)
-    {
-        <div id="task-@task.Id">
-            <input type="checkbox" name="taskIds" value="@task.Id" />
-            <span>@task.Title</span>
-        </div>
-    }
-    
-    <button hx-post="/Tasks/BulkComplete"
-            hx-include="#bulk-form"
-            hx-swap="none">
-        Complete Selected
-    </button>
-</form>
-```
-
-```csharp
-// Controller
-[HttpPost]
-public IActionResult BulkComplete(int[] taskIds)
-{
-    foreach (var id in taskIds)
-    {
-        _service.Complete(id);
-    }
-    
-    // Fire event - handlers will update relevant partials
-    return this.SwapEvent(new TasksBulkCompletedEvent { TaskIds = taskIds })
-        .WithSuccessToast($"Completed {taskIds.Length} tasks")
-        .Build();
-}
-
-// Handler updates each task card
-[SwapHandler]
-public class BulkTaskCardHandler : ISwapEventHandler<TasksBulkCompletedEvent>
-{
-    public Task HandleAsync(TasksBulkCompletedEvent e, SwapResponseBuilder builder, CancellationToken ct)
-    {
-        foreach (var taskId in e.TaskIds)
-        {
-            // Remove completed tasks from list
-            builder.AlsoUpdate($"task-{taskId}", "", null, SwapMode.Delete);
-        }
-        return Task.CompletedTask;
-    }
-}
-```
-
-### Pattern 8: Optimistic UI Updates
-
-```html
-<!-- Button disables immediately, re-enables on response -->
-<button hx-post="/Cart/AddItem/@Model.ProductId"
-        hx-disabled-elt="this"
-        hx-swap="none">
-    Add to Cart
-</button>
-
-<div id="cart-count">@Model.CartCount</div>
-```
-
-```csharp
-// Controller
-[HttpPost]
-public IActionResult AddItem(int productId)
-{
-    _cart.AddItem(productId);
-    
-    return this.SwapResponse()
-        .AlsoUpdate("cart-count", "_CartCount", _cart.ItemCount)
-        .WithSuccessToast("Added to cart")
-        .Build();
-}
-```
-
-### Pattern 9: Real-Time Dashboard (50+ Partials)
-
-**See Analytics Module Demo for complete working example.**
-
-```csharp
-// Controller fires ONE event
-[HttpPost]
-public IActionResult SimulatePurchase()
-{
-    var productId = _state.Products[Random.Shared.Next(_state.Products.Count)].Id;
-    _state.ProcessPurchase(productId, region: "West", customer: "John");
-    
-    return SwapEvent(AnalyticsEvents.Purchase.Completed, new PurchaseCompletedEvent
-    {
-        ProductId = productId,
-        Region = "West"
-    }).Build();
-}
-
-// 15 distributed handlers each update ONE partial
-[SwapHandler]
-public class RevenueHandler : ISwapEventHandler<PurchaseCompletedEvent>
-{
-    public Task HandleAsync(PurchaseCompletedEvent e, SwapResponseBuilder builder, CancellationToken ct)
-    {
-        builder.AlsoUpdate("revenue-today", "_RevenueToday", _state);
-        return Task.CompletedTask;
-    }
-}
-// ... 14 more handlers (orders, products, regions, activity feed, etc.)
-```
-
-**Result:** One button click updates 15 components in 155ms via single HTTP request.
-
-**Performance:** 50 partials = same 155ms response time. Linear scaling.
-
----
-
-## SOURCE GENERATORS
-
-Swap.Htmx provides three source generators to eliminate magic strings.
-
-### 1. Event Source Generator
-
-Generates type-safe event keys from string constants with dot notation.
-
-```csharp
-using Swap.Htmx.Attributes;
-
-[SwapEventSource]
-public partial class AppEvents
-{
-    public const string CartItemAdded = "cart.item.added";
-    public const string CartCleared = "cart.cleared";
-    public const string UserLoggedIn = "user.logged_in";
-}
-
-// Generated output:
-// AppEvents.Cart.Item.Added  → "cart.item.added"
-// AppEvents.Cart.Cleared     → "cart.cleared"
-// AppEvents.User.LoggedIn    → "user.logged_in"
-```
-
-Usage:
-```csharp
-.WithTrigger(AppEvents.Cart.Item.Added, new { productId })
-```
-
-### 2. View Path Generator
-
-Generates constants for .cshtml files in a folder.
-
-```csharp
-using Swap.Htmx.Attributes;
-
-[SwapViewSource("Views/Products")]
-public static partial class ProductViews { }
-
-// Given files:
-//   Views/Products/Index.cshtml
-//   Views/Products/Edit.cshtml
-//   Views/Products/_Grid.cshtml
-//   Views/Products/_Row.cshtml
-
-// Generated:
-// ProductViews.Index         → "Index"
-// ProductViews.Edit          → "Edit"
-// ProductViews.Partials.Grid → "_Grid"
-// ProductViews.Partials.Row  → "_Row"
-```
-
-### 3. Element ID Generator
-
-Generates constants for element IDs found in .cshtml files.
-
-```csharp
-using Swap.Htmx.Attributes;
-
-[SwapElementSource("Views/Products")]
-public static partial class ProductElements { }
-
-// Scans for id="..." attributes in .cshtml files
-// Given: <div id="product-grid">, <div id="pagination">
-
-// Generated:
-// ProductElements.ProductGrid → "product-grid"
-// ProductElements.Pagination  → "pagination"
-```
-
-### Combined Usage
-
-```csharp
-return this.SwapResponse()
-    .WithView(ProductViews.Partials.Grid, products)
-    .AlsoUpdate(ProductElements.Pagination, ProductViews.Partials.Pagination, paginationModel)
-    .WithTrigger(AppEvents.Products.Listed)
-    .Build();
-```
-
----
-
-## EVENT SYSTEM
-
-### Option 1: EventKey (Manual)
-
-```csharp
-using Swap.Htmx.Events;
-
-public static class CartEvents
-{
-    public static readonly EventKey ItemAdded = new("cart.itemAdded");
-    public static readonly EventKey Cleared = new("cart.cleared");
-}
-```
-
-### Option 2: SwapEventSource (Generated) — RECOMMENDED
-
-```csharp
-[SwapEventSource]
-public partial class CartEvents
-{
-    public const string ItemAdded = "cart.item.added";
-    public const string Cleared = "cart.cleared";
-}
-// Use: CartEvents.Cart.Item.Added
-```
-
-### Built-in SwapEvents Helper
-
-```csharp
-SwapEvents.Entity.Created("Product")   // "entity.product.created"
-SwapEvents.Entity.Updated("Product")   // "entity.product.updated"
-SwapEvents.Entity.Deleted("Product")   // "entity.product.deleted"
-SwapEvents.UI.Refresh                  // "ui.refresh"
-```
-
----
-
-## EVENT CHAINS
-
-Two approaches for automatic UI coordination when events fire.
-
-### Approach 1: Distributed Handlers (RECOMMENDED)
-
-Each handler updates one piece of the UI. Completely decoupled.
-
-```csharp
-// 1. Define event class
-public class TaskCompletedEvent
-{
-    public int TaskId { get; set; }
-    public string Title { get; set; } = "";
-}
-
-// 2. Create handlers (auto-discovered via [SwapHandler])
-[SwapHandler]
-public class TaskRowHandler : ISwapEventHandler<TaskCompletedEvent>
-{
-    public Task HandleAsync(TaskCompletedEvent e, SwapResponseBuilder builder, CancellationToken ct)
-    {
-        builder.AlsoUpdate($"task-{e.TaskId}", "", null, SwapMode.Delete);
-        return Task.CompletedTask;
-    }
-}
-
-[SwapHandler]
-public class StatsHandler : ISwapEventHandler<TaskCompletedEvent>
-{
-    private readonly IStatsService _stats;
-    
-    public StatsHandler(IStatsService stats) => _stats = stats;
-    
-    public async Task HandleAsync(TaskCompletedEvent e, SwapResponseBuilder builder, CancellationToken ct)
-    {
-        var stats = await _stats.GetAsync();
-        builder.AlsoUpdate("stats-panel", "_Stats", stats);
-    }
-}
-
-// 3. Trigger from controller
-[HttpPost]
-public IActionResult Complete(int id)
-{
-    _service.Complete(id);
-    return this.SwapEvent(new TaskCompletedEvent { TaskId = id }).Build();
-}
-```
-
-### Approach 2: Centralized Configuration (ISwapEventConfiguration)
-
-Define all reactions in one place.
-
-```csharp
-public class ProductEventConfig : ISwapEventConfiguration
-{
-    public void Configure(SwapEventBusOptions events)
-    {
-        events.When(ProductEvents.Created)
-            .RefreshPartial("product-list", "_ProductList", ctx =>
-            {
-                var svc = ctx.RequestServices.GetRequiredService<IProductService>();
-                return svc.GetAll();
-            })
-            .RefreshPartial("product-count", "_ProductCount", ctx =>
-            {
-                var svc = ctx.RequestServices.GetRequiredService<IProductService>();
-                return new { Count = svc.Count() };
-            })
-            .SuccessToast("Product created!");
-    }
-}
-
-// Register in Program.cs
-builder.Services.AddSwapHtmx(options =>
-{
-    options.AddConfig<ProductEventConfig>();
-});
-
-// Trigger from controller
-return SwapEvent(ProductEvents.Created);
-```
-
-### Event Chain Builder API
-
-```csharp
-events.When(eventKey)
-    .RefreshPartial(targetId, viewName, modelFactory)
-    .RefreshPartialAsync(targetId, viewName, asyncModelFactory)
-    .SuccessToast(message)
-    .ErrorToast(message)
-    .WarningToast(message)
-    .InfoToast(message)
-    .AlsoTrigger(anotherEventKey)
-    .Broadcast()  // SSE broadcast
-    .Broadcast("room:roomName")  // SSE to specific room
-```
-
----
-
-## SWAPSTATE (Server-Side State)
-
-Strongly-typed state management with automatic model binding.
-
-### 1. Define State Class
-
-```csharp
-using Swap.Htmx.State;
-
-public class InventoryState : SwapState
-{
-    public string Tab { get; set; } = "all";
+    public string Category { get; set; } = "all";
     public int Page { get; set; } = 1;
-    public int PageSize { get; set; } = 20;
+    public int PageSize { get; set; } = 10;
     public string? Search { get; set; }
     public string SortBy { get; set; } = "name";
     public bool SortDesc { get; set; } = false;
+    public bool InStockOnly { get; set; } = false;
 }
 ```
 
-### 2. Use in View
+The `SwapState` base class provides:
+- `ContainerId`: Auto-generated ID based on class name (e.g., `product-filter-state`)
+- Change tracking (optional)
+- URL sync capability (optional)
+
+### Step 2: Render State in Your View
+
+Use the `<swap-state>` tag helper to render hidden fields:
 
 ```html
-@model InventoryViewModel
+@model ProductViewModel
 
-<!-- Renders hidden inputs in a container div -->
+<!-- Renders hidden inputs for ALL state properties -->
 <swap-state state="Model.State" />
 
-<!-- Reference with hx-include -->
-<button hx-get="/Inventory/Grid"
-        hx-target="#grid"
-        hx-include="#inventory-state">
-    Load
-</button>
+<!-- Example output: -->
+<!-- <div id="product-filter-state" class="swap-state-container"> -->
+<!--     <input type="hidden" name="Category" value="all" /> -->
+<!--     <input type="hidden" name="Page" value="1" /> -->
+<!--     <input type="hidden" name="PageSize" value="10" /> -->
+<!--     <input type="hidden" name="Search" value="" /> -->
+<!--     ... -->
+<!-- </div> -->
 ```
 
-Renders as:
+### Step 3: Include State in HTMX Requests
+
+Use `hx-include` to send state with requests:
+
 ```html
-<div id="inventory-state" data-swap-state style="display: none;">
-    <input type="hidden" name="Tab" value="all" />
-    <input type="hidden" name="Page" value="1" />
-    ...
+<!-- Button that changes category -->
+<button hx-get="/Home/Filter?Category=Electronics&Page=1"
+        hx-target="#content"
+        hx-include="#product-filter-state">
+    Electronics
+</button>
+
+<!-- Search input that sends on keyup -->
+<input type="text" 
+       name="Search"
+       value="@Model.State.Search"
+       hx-get="/Home/Filter?Page=1"
+       hx-target="#content"
+       hx-include="#product-filter-state"
+       hx-trigger="keyup changed delay:300ms" />
+```
+
+### Step 4: Bind State in Controller
+
+Use `[FromSwapState]` to bind the state:
+
+```csharp
+public class HomeController : Controller
+{
+    public IActionResult Index()
+    {
+        var state = new ProductFilterState();
+        return View(new ProductViewModel { State = state, Products = GetProducts(state) });
+    }
+
+    [HttpGet]
+    public IActionResult Filter([FromSwapState] ProductFilterState state)
+    {
+        // state is fully populated from hidden fields
+        var products = GetProducts(state);
+        
+        // Return partial with updated state
+        return PartialView("_ProductList", new ProductViewModel 
+        { 
+            State = state, 
+            Products = products 
+        });
+    }
+}
+```
+
+## Complete Example: Product Filter
+
+### Model
+
+```csharp
+public class ProductFilterState : SwapState
+{
+    public string Category { get; set; } = "all";
+    public int Page { get; set; } = 1;
+    public string? Search { get; set; }
+    public bool InStockOnly { get; set; } = false;
+}
+
+public class ProductViewModel
+{
+    public ProductFilterState State { get; set; } = new();
+    public List<Product> Products { get; set; } = new();
+    public int TotalCount { get; set; }
+}
+```
+
+### Controller
+
+```csharp
+public class ProductController : Controller
+{
+    public IActionResult Index()
+    {
+        var state = new ProductFilterState();
+        var (products, total) = FilterProducts(state);
+        return View(new ProductViewModel { State = state, Products = products, TotalCount = total });
+    }
+
+    [HttpGet]
+    public IActionResult Filter([FromSwapState] ProductFilterState state)
+    {
+        var (products, total) = FilterProducts(state);
+        return PartialView("_ProductList", new ProductViewModel 
+        { 
+            State = state, 
+            Products = products, 
+            TotalCount = total 
+        });
+    }
+
+    private (List<Product>, int) FilterProducts(ProductFilterState state)
+    {
+        var query = _products.AsQueryable();
+        
+        if (state.Category != "all")
+            query = query.Where(p => p.Category == state.Category);
+        
+        if (!string.IsNullOrEmpty(state.Search))
+            query = query.Where(p => p.Name.Contains(state.Search, StringComparison.OrdinalIgnoreCase));
+        
+        if (state.InStockOnly)
+            query = query.Where(p => p.InStock);
+        
+        var total = query.Count();
+        var products = query.Skip((state.Page - 1) * 10).Take(10).ToList();
+        
+        return (products, total);
+    }
+}
+```
+
+### Main View (Index.cshtml)
+
+```html
+@model ProductViewModel
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Products</title>
+    <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+</head>
+<body>
+    <h1>Products</h1>
+    
+    <!-- Content area that gets swapped -->
+    <div id="content">
+        @await Html.PartialAsync("_ProductList", Model)
+    </div>
+</body>
+</html>
+```
+
+### Partial View (_ProductList.cshtml)
+
+```html
+@model ProductViewModel
+@{
+    var state = Model.State;
+}
+
+<!-- STATE CONTAINER - hidden fields persist state -->
+<swap-state state="Model.State" />
+
+<!-- Category Filter -->
+<div class="filters">
+    @foreach (var cat in new[] { "all", "Electronics", "Furniture", "Office" })
+    {
+        var isActive = state.Category == cat ? "active" : "";
+        <button class="@isActive"
+                hx-get="/Product/Filter?Category=@cat&Page=1"
+                hx-target="#content"
+                hx-include="#@state.ContainerId">
+            @cat
+        </button>
+    }
+</div>
+
+<!-- Search -->
+<input type="text" 
+       name="Search"
+       placeholder="Search..."
+       value="@state.Search"
+       hx-get="/Product/Filter?Page=1"
+       hx-target="#content"
+       hx-include="#@state.ContainerId"
+       hx-trigger="keyup changed delay:300ms" />
+
+<!-- In Stock Checkbox -->
+<label>
+    <input type="checkbox" 
+           @(state.InStockOnly ? "checked" : "")
+           hx-get="/Product/Filter?Page=1&InStockOnly=@(!state.InStockOnly ? "true" : "false")"
+           hx-target="#content"
+           hx-include="#@state.ContainerId" />
+    In Stock Only
+</label>
+
+<!-- Product List -->
+<table>
+    @foreach (var product in Model.Products)
+    {
+        <tr>
+            <td>@product.Name</td>
+            <td>@product.Category</td>
+            <td>@product.Price</td>
+        </tr>
+    }
+</table>
+
+<!-- Pagination -->
+<div class="pagination">
+    @for (int i = 1; i <= Math.Ceiling(Model.TotalCount / 10.0); i++)
+    {
+        var pageNum = i;
+        <button hx-get="/Product/Filter?Page=@pageNum"
+                hx-target="#content"
+                hx-include="#@state.ContainerId"
+                class="@(state.Page == pageNum ? "active" : "")">
+            @pageNum
+        </button>
+    }
 </div>
 ```
 
-### 3. Bind in Controller
+## Complete Example: Multi-Step Wizard
+
+SwapState excels at multi-step forms where data must persist across steps.
+
+### Model
 
 ```csharp
-public IActionResult Grid([FromSwapState] InventoryState state)
+public class WizardState : SwapState
 {
-    var items = _service.Query(state.Tab, state.Page, state.Search);
+    public int Step { get; set; } = 1;
     
-    return this.SwapResponse()
-        .WithView("_Grid", new GridViewModel { Items = items, State = state })
-        .WithState(state)  // Auto-syncs state via OOB swap
-        .Build();
+    // Step 1: Personal
+    public string FirstName { get; set; } = "";
+    public string LastName { get; set; } = "";
+    public string Email { get; set; } = "";
+    
+    // Step 2: Address
+    public string Street { get; set; } = "";
+    public string City { get; set; } = "";
+    public string PostalCode { get; set; } = "";
+    
+    // Step 3: Preferences
+    public string ContactMethod { get; set; } = "email";
+    public bool Newsletter { get; set; } = false;
+}
+
+public class WizardViewModel
+{
+    public WizardState State { get; set; } = new();
 }
 ```
+
+### Controller
+
+```csharp
+public class WizardController : Controller
+{
+    public IActionResult Index()
+    {
+        return View(new WizardViewModel());
+    }
+
+    [HttpPost]
+    public IActionResult Step([FromSwapState] WizardState state, int goToStep)
+    {
+        state.Step = goToStep;
+        return PartialView("_WizardContent", new WizardViewModel { State = state });
+    }
+    
+    [HttpPost]
+    public IActionResult Submit([FromSwapState] WizardState state)
+    {
+        // All wizard data is available in state
+        // Save to database, send email, etc.
+        return PartialView("_Success", state);
+    }
+}
+```
+
+### Wizard Partial (_WizardContent.cshtml)
+
+```html
+@model WizardViewModel
+@{
+    var s = Model.State;
+}
+
+<!-- STATE CONTAINER - persists ALL wizard data across steps -->
+<swap-state state="Model.State" />
+
+<!-- Progress Indicator -->
+<div class="progress">
+    @for (int i = 1; i <= 3; i++)
+    {
+        var status = s.Step == i ? "active" : (s.Step > i ? "completed" : "");
+        <span class="@status">Step @i</span>
+    }
+</div>
+
+<!-- Step Content -->
+<div class="step-content">
+    @switch (s.Step)
+    {
+        case 1:
+            <h3>Personal Information</h3>
+            <input type="text" name="FirstName" value="@s.FirstName" placeholder="First Name" />
+            <input type="text" name="LastName" value="@s.LastName" placeholder="Last Name" />
+            <input type="email" name="Email" value="@s.Email" placeholder="Email" />
+            break;
+            
+        case 2:
+            <h3>Address</h3>
+            <input type="text" name="Street" value="@s.Street" placeholder="Street" />
+            <input type="text" name="City" value="@s.City" placeholder="City" />
+            <input type="text" name="PostalCode" value="@s.PostalCode" placeholder="Postal Code" />
+            break;
+            
+        case 3:
+            <h3>Review</h3>
+            <p><strong>Name:</strong> @s.FirstName @s.LastName</p>
+            <p><strong>Email:</strong> @s.Email</p>
+            <p><strong>Address:</strong> @s.Street, @s.City @s.PostalCode</p>
+            break;
+    }
+</div>
+
+<!-- Navigation -->
+<div class="buttons">
+    @if (s.Step > 1)
+    {
+        <button hx-post="/Wizard/Step?goToStep=@(s.Step - 1)"
+                hx-target="#wizard-content"
+                hx-include="#@s.ContainerId, .step-content input, .step-content select">
+            ← Back
+        </button>
+    }
+    
+    @if (s.Step < 3)
+    {
+        <button hx-post="/Wizard/Step?goToStep=@(s.Step + 1)"
+                hx-target="#wizard-content"
+                hx-include="#@s.ContainerId, .step-content input, .step-content select">
+            Next →
+        </button>
+    }
+    else
+    {
+        <button hx-post="/Wizard/Submit"
+                hx-target="#wizard-content"
+                hx-include="#@s.ContainerId">
+            Submit
+        </button>
+    }
+</div>
+```
+
+## Key Patterns
+
+### Pattern 1: Inputs Override Hidden Fields
+
+When a visible input has the same `name` as a hidden field in SwapState, the visible input's value wins. This is automatic - the model binder uses the last value when duplicates exist.
+
+```html
+<!-- Hidden field from swap-state -->
+<input type="hidden" name="Search" value="old value" />
+
+<!-- Visible input (user types here) -->
+<input type="text" name="Search" value="new value" />
+
+<!-- Server receives: Search = "new value" -->
+```
+
+### Pattern 2: Checkbox Boolean Toggle
+
+Unchecked checkboxes send nothing. To toggle a boolean, pass the opposite value explicitly:
+
+```html
+<!-- CORRECT: Explicit toggle value in URL -->
+<input type="checkbox" 
+       @(state.InStockOnly ? "checked" : "")
+       hx-get="/Filter?InStockOnly=@(!state.InStockOnly ? "true" : "false")"
+       hx-include="#@state.ContainerId" />
+
+<!-- WRONG: Checkbox value won't uncheck properly -->
+<input type="checkbox" name="InStockOnly" value="true" ... />
+```
+
+### Pattern 3: Include Form Inputs for Wizards
+
+For multi-step forms, include both the state container AND visible form inputs:
+
+```html
+<button hx-post="/Wizard/NextStep"
+        hx-target="#wizard-content"
+        hx-include="#@s.ContainerId, .step-content input, .step-content select">
+    Next
+</button>
+```
+
+The state container has hidden fields for ALL steps (including previous steps).
+The visible inputs are for the CURRENT step only.
+Both get sent, and the model binder merges them (visible input values override hidden field values for current step fields).
+
+### Pattern 4: URL Parameters Override Everything
+
+Values in the URL override both hidden fields and form inputs:
+
+```html
+<!-- Category in URL overrides any hidden field value -->
+<button hx-get="/Filter?Category=Electronics&Page=1"
+        hx-include="#@state.ContainerId">
+    Electronics
+</button>
+```
+
+## SwapState API Reference
 
 ### SwapState Base Class
 
 ```csharp
 public abstract class SwapState
 {
-    // Auto-generated from class name (InventoryState → "inventory-state")
-    public virtual string ContainerId { get; }
+    // Auto-generated container ID (e.g., "product-filter-state")
+    public string ContainerId { get; }
     
     // Change tracking
-    public IReadOnlySet<string> ChangedProperties { get; }
+    public HashSet<string> ChangedProperties { get; }
     public bool HasChanges { get; }
     public void AcceptChanges();
-    public IDisposable SuspendChangeTracking();
     
-    // URL sync (for bookmarkable state)
+    // URL synchronization
     public virtual bool UrlSync => false;
-    public virtual string UrlPrefix => "";
-    
-    // Serialization
-    public Dictionary<string, string?> GetStateValues();
-    public void SetStateValues(Dictionary<string, string?> values);
+    public void FromQueryString(IQueryCollection query);
+    public string ToQueryString();
 }
 ```
 
-### Tag Helper Options
+### [FromSwapState] Attribute
 
-```html
-<!-- Basic -->
-<swap-state state="Model.State" />
-
-<!-- Custom ID -->
-<swap-state state="Model.State" id="my-state" />
-
-<!-- With prefix for nested state -->
-<swap-state state="Model.State" prefix="filter" />
-
-<!-- Without container div -->
-<swap-state state="Model.State" include-container="false" />
-```
-
----
-
-## NAVIGATION
-
-SPA-style navigation that preserves toasts and triggers.
-
-### The Problem
+Binds a SwapState-derived class from form/query data:
 
 ```csharp
-// ❌ Redirect loses toast - response headers are discarded
-return Redirect("/dashboard");
-Response.HxTrigger("showToast", "Saved!");  // Never received!
-```
-
-### The Solution
-
-```csharp
-// ✅ WithNavigation uses HX-Location header
-return this.SwapResponse()
-    .WithNavigation("/dashboard")
-    .WithSuccessToast("Saved!")
-    .Build();
-```
-
-### Basic Usage
-
-```csharp
-// Simple navigation
-.WithNavigation("/orders")
-
-// Navigate to specific target
-.WithNavigation("/inbox", target: "#main-content")
-
-// Navigate with swap mode
-.WithNavigation("/notifications", target: "#alerts", swap: SwapMode.BeforeEnd)
-```
-
-### Full Control
-
-```csharp
-.WithNavigation(new NavigationOptions
+public IActionResult Filter([FromSwapState] ProductFilterState state)
 {
-    Path = "/orders/123",
-    Target = "#order-detail",
-    Swap = SwapMode.OuterHTML,
-    Select = "#order-content",     // CSS selector to pick from response
-    Values = new { refresh = true }, // Additional values to send
-    Headers = new { ["X-Custom"] = "value" }
-})
-```
-
-### Common Patterns
-
-```csharp
-// Post-save redirect with toast
-[HttpPost]
-public IActionResult Create(OrderForm form)
-{
-    var order = _service.Create(form);
-    
-    return this.SwapResponse()
-        .WithNavigation($"/orders/{order.Id}")
-        .WithCreatedToast("Order", order.OrderNumber)
-        .Build();
-}
-
-// Wizard step navigation
-public IActionResult CompleteStep1(Step1Form form)
-{
-    _wizard.SaveStep1(form);
-    
-    return this.SwapResponse()
-        .WithNavigation("/wizard/step2", target: "#wizard-content")
-        .WithInfoToast("Step 1 complete!")
-        .Build();
-}
-
-// Conditional navigation
-[HttpPost]
-public IActionResult Checkout()
-{
-    if (_cart.IsEmpty)
-    {
-        return this.SwapResponse()
-            .WithNavigation("/products")
-            .WithWarningToast("Your cart is empty")
-            .Build();
-    }
-    
-    return this.SwapResponse()
-        .WithNavigation("/checkout/payment")
-        .Build();
+    // state is populated from hidden fields sent via hx-include
 }
 ```
 
----
+### <swap-state> Tag Helper
 
-## `<swap-nav>` TAG HELPER
-
-Simplified SPA-style navigation links without verbose HTMX attributes.
-
-### The Problem
-
-```html
-<!-- Verbose and repetitive -->
-<a href="/products" hx-get="/products" hx-target="#main-content" hx-push-url="true">Products</a>
-<a href="/orders" hx-get="/orders" hx-target="#main-content" hx-push-url="true">Orders</a>
-```
-
-### The Solution
-
-```html
-<!-- Clean and declarative -->
-<swap-nav to="/products">Products</swap-nav>
-<swap-nav to="/orders">Orders</swap-nav>
-```
-
-### Configure Default Target
-
-```csharp
-// Program.cs
-builder.Services.AddSwapHtmx(options =>
-{
-    options.DefaultNavigationTarget = "#main-content";
-});
-```
-
-### Attributes
-
-| Attribute | Description | Default |
-|-----------|-------------|---------|
-| `to` | Required. The URL to navigate to | — |
-| `target` | CSS selector for target element | `SwapHtmxOptions.DefaultNavigationTarget` |
-| `push-url` | Whether to update browser URL | `true` |
-
-### Examples
-
-```html
-<!-- Basic navigation -->
-<swap-nav to="/dashboard">Dashboard</swap-nav>
-
-<!-- Override target -->
-<swap-nav to="/sidebar" target="#sidebar-content">Refresh Sidebar</swap-nav>
-
-<!-- Disable URL update -->
-<swap-nav to="/modal/edit" push-url="false">Edit</swap-nav>
-
-<!-- With CSS classes -->
-<swap-nav to="/products" class="btn btn-primary">View Products</swap-nav>
-
-<!-- Pass through hx-* attributes -->
-<swap-nav to="/items" hx-swap="innerHTML" hx-indicator="#loading">Load Items</swap-nav>
-```
-
-### Renders As
-
-```html
-<swap-nav to="/products">Products</swap-nav>
-
-<!-- Becomes -->
-<a href="/products" hx-get="/products" hx-target="#main-content" hx-push-url="true">Products</a>
-```
-
----
-
-## AUTO-LAYOUT SUPPRESSION
-
-Automatically return partials for HTMX requests, full pages for browser requests.
-
-### The Problem
-
-Without auto-suppression, you need `_ViewStart.cshtml` in every folder or manual layout checks:
-
-```csharp
-// Every HTMX action needs this
-if (Request.IsHtmx())
-    return PartialView("_Content", model);
-return View(model);
-```
-
-### The Solution
-
-```csharp
-// Program.cs
-builder.Services.AddSwapHtmx(options =>
-{
-    options.AutoSuppressLayout = true;
-});
-```
-
-```razor
-@* _ViewStart.cshtml (root level only) *@
-@{
-    Layout = Context.ShouldSuppressLayout() ? null : "_Layout";
-}
-```
-
-### How It Works
-
-| Request Type | Layout |
-|--------------|--------|
-| Browser navigation | `_Layout` applied |
-| HTMX request (`HX-Request: true`) | Layout suppressed (partial only) |
-| `<swap-nav>` clicks | Layout suppressed (partial only) |
-
-### Benefits
-
-- **One `_ViewStart.cshtml`** — No per-folder files needed
-- **Same view, both contexts** — `return View(model)` works for HTMX and browser
-- **Bookmarkable URLs** — Direct URL access renders full page with layout
-
----
-
-## AUTO-SCAN SOURCE GENERATOR
-
-Zero-configuration generation of view and element constants.
-
-### Setup
-
-```xml
-<!-- .csproj -->
-<ItemGroup>
-  <AdditionalFiles Include="Views\**\*.cshtml" />
-  <AdditionalFiles Include="Modules\**\Views\**\*.cshtml" />
-</ItemGroup>
-```
-
-### Generated Classes
-
-The generator automatically creates `SwapViews` and `SwapElements` classes:
-
-```csharp
-// Auto-generated from Views/Home/Index.cshtml, Views/Home/_Card.cshtml, etc.
-
-// Use view paths
-SwapViews.Home.Index         // "Index"
-SwapViews.Home.Partials.Card // "_Card"
-SwapViews.Shared.Layout      // "_Layout"
-
-// Use element IDs (from id="..." in cshtml)
-SwapElements.Home.Index.MainContent  // "main-content"
-SwapElements.Home.Index.ProductGrid  // "product-grid"
-```
-
-### Folder Structure Mapping
-
-```
-Views/
-├── Home/
-│   ├── Index.cshtml          → SwapViews.Home.Index
-│   ├── _Card.cshtml          → SwapViews.Home.Partials.Card
-│   └── _List.cshtml          → SwapViews.Home.Partials.List
-├── Products/
-│   ├── Index.cshtml          → SwapViews.Products.Index
-│   └── _Row.cshtml           → SwapViews.Products.Partials.Row
-└── Shared/
-    └── _Layout.cshtml        → SwapViews.Shared.Layout
-```
-
-### Modular Monolith Support
-
-```
-Modules/
-├── Notes/
-│   └── Views/
-│       ├── Index.cshtml      → SwapViews.Notes.Index
-│       └── _Form.cshtml      → SwapViews.Notes.Partials.Form
-└── Tasks/
-    └── Views/
-        └── _Card.cshtml      → SwapViews.Tasks.Partials.Card
-```
-
-### Benefits Over Manual Attributes
-
-| Manual (`[SwapViewSource]`) | Auto-Scan |
-|-----------------------------|-----------|
-| Requires attribute per folder | Zero configuration |
-| Must keep in sync | Always current |
-| Separate files for views/elements | Single generated file |
-
----
-
-## VALIDATION
-
-Server-side validation with client-side display.
-
-### View Setup
-
-```html
-<form hx-post="/Products/Create" hx-target="#form-container">
-    <div class="form-group">
-        <label asp-for="Name"></label>
-        <input asp-for="Name" class="form-control" />
-        <swap-validation for="Name" />
-    </div>
-    
-    <div class="form-group">
-        <label asp-for="Price"></label>
-        <input asp-for="Price" type="number" class="form-control" />
-        <swap-validation for="Price" />
-    </div>
-    
-    <button type="submit">Create</button>
-</form>
-```
-
-### Controller
-
-```csharp
-[HttpPost]
-public IActionResult Create(CreateProductDto dto)
-{
-    if (!ModelState.IsValid)
-    {
-        return this.SwapValidationErrors(ModelState)
-            .WithView("_CreateForm", dto)
-            .Build();
-    }
-    
-    var product = _service.Create(dto);
-    return this.SwapRedirect("/Products", "Product created!");
-}
-```
-
-### Validation Methods
-
-```csharp
-// Event-based (triggers client-side update)
-this.SwapValidationErrors(ModelState)
-
-// OOB-based (server renders each error)
-this.SwapValidationErrorsOob(ModelState)
-
-// Add to existing builder
-.WithValidationErrors(ModelState)
-
-// Clear specific fields
-.ClearValidationErrors(new[] { "Name", "Email" })
-```
-
----
-
-## OUT-OF-BAND SWAPS
-
-Update multiple page elements in a single response.
-
-### Basic Pattern
-
-```csharp
-return this.SwapResponse()
-    .WithView("_ProductAdded", product)                          // Main target
-    .AlsoUpdate("cart-count", "_CartCount", cart.ItemCount)      // OOB 1
-    .AlsoUpdate("cart-total", "_CartTotal", cart.Total)          // OOB 2
-    .WithSuccessToast("Added to cart!")
-    .Build();
-```
-
-### HTML Output
-
-```html
-<!-- Main content (goes to hx-target) -->
-<div class="product-added">Product added!</div>
-
-<!-- OOB swap 1 -->
-<div id="cart-count" hx-swap-oob="true">5</div>
-
-<!-- OOB swap 2 -->
-<div id="cart-total" hx-swap-oob="true">$99.99</div>
-```
-
-### Conditional OOB
-
-```csharp
-// Only include if condition is true
-.AlsoUpdateIf(user.IsAdmin, "admin-panel", "_AdminPanel", adminData)
-
-// Only swap if element exists in DOM
-.AlsoUpdateIfExists("sidebar-stats", "_Stats", stats)
-```
-
-### Bulk Updates
-
-```csharp
-// Update multiple items
-.AlsoUpdateMany(
-    items: changedProducts,
-    idSelector: p => $"product-{p.Id}",
-    viewName: "_ProductRow"
-)
-```
-
----
-
-## REALTIME: SERVER-SENT EVENTS (SSE)
-
-Push updates to connected clients.
-
-### Setup
-
-```csharp
-// Program.cs
-builder.Services.AddSwapHtmx()
-    .AddSseEventBridge();
-
-app.UseSwapHtmx()
-   .UseSseEventBridge();
-```
-
-### Create SSE Endpoint
-
-```csharp
-public class DashboardController : SwapController
-{
-    [HttpGet("/dashboard/stream")]
-    public IActionResult DashboardStream()
-    {
-        return ServerSentEvents(async (conn, ct) =>
-        {
-            conn.WithEvents("stats-update", "activity-update");
-            await conn.KeepAlive(TimeSpan.FromSeconds(30), ct);
-        });
-    }
-}
-```
-
-### Client-Side
-
-```html
-<div hx-ext="sse" sse-connect="/dashboard/stream">
-    <div id="stats" sse-swap="stats-update">
-        <!-- Updated via SSE -->
-    </div>
-</div>
-```
-
-### Configure Event Reactions
-
-```csharp
-public class DashboardSseConfig : ISwapEventConfiguration
-{
-    public void Configure(SwapEventBusOptions events)
-    {
-        events.When(SseEvents.Broadcast("stats-update"))
-            .RefreshPartial("stats", "_Stats", ctx =>
-            {
-                var svc = ctx.RequestServices.GetRequiredService<IStatsService>();
-                return svc.GetStats();
-            });
-    }
-}
-```
-
-### Broadcast from Controller
-
-```csharp
-return this.SwapResponse()
-    .WithView("_Task", task)
-    .BroadcastSse("stats-update")  // All connected clients receive update
-    .Build();
-```
-
----
-
-## REALTIME: WEBSOCKETS
-
-Full-duplex communication.
-
-### Setup
-
-```csharp
-// Program.cs
-builder.Services.AddSwapHtmx()
-    .AddSseEventBridge();
-
-app.UseWebSockets();
-app.UseSwapHtmx()
-   .UseSseEventBridge();
-
-// Endpoint
-app.MapGet("/swap/ws", (IRealtimeConnectionRegistry registry) => 
-    SwapResults.WebSocket(registry, options =>
-    {
-        options.AutoSubscribeRooms = new[] { "global" };
-    }));
-```
-
-### Client-Side
-
-```html
-<div hx-ext="ws" ws-connect="/swap/ws">
-    <div id="notifications"></div>
-    
-    <form ws-send>
-        <input type="hidden" name="event" value="chat.message" />
-        <input type="text" name="payload" />
-        <button type="submit">Send</button>
-    </form>
-</div>
-```
-
-### Rooms
-
-```csharp
-// Join room
-connection.JoinRoom("room-1");
-
-// Broadcast to room
-events.When(RoomEvents.Update)
-    .Broadcast("room:room-1")
-    .RefreshPartial(...);
-```
-
----
-
-## CONTROLLER PATTERNS
-
-### SwapController (Inheritance)
-
-```csharp
-public class ProductsController : SwapController
-{
-    // SwapView auto-detects HTMX vs full page
-    public IActionResult Index()
-    {
-        return SwapView(products);  // Full page or partial based on HX-Request
-    }
-    
-    // SwapResponse for coordinated updates
-    public IActionResult Create(ProductDto dto)
-    {
-        var product = _service.Create(dto);
-        return SwapResponse()
-            .WithView("_ProductRow", product)
-            .AlsoUpdate("product-count", "_ProductCount", _service.Count())
-            .WithCreatedToast("Product", product.Name)
-            .Build();
-    }
-    
-    // SwapEvent for event chains
-    public IActionResult Delete(int id)
-    {
-        _service.Delete(id);
-        return SwapEvent(ProductEvents.Deleted, new { Id = id });
-    }
-}
-```
-
-### Standard Controller (Composition)
-
-```csharp
-using Swap.Htmx;
-
-public class ProductsController : Controller
-{
-    public IActionResult Index()
-    {
-        return this.SwapView(products);
-    }
-    
-    public IActionResult Create(ProductDto dto)
-    {
-        var product = _service.Create(dto);
-        return this.SwapResponse()
-            .WithView("_ProductRow", product)
-            .WithCreatedToast("Product", product.Name)
-            .Build();
-    }
-    
-    public IActionResult Delete(int id)
-    {
-        _service.Delete(id);
-        return this.SwapEvent(ProductEvents.Deleted).Build();
-    }
-}
-```
-
----
-
-## RAZOR PAGES
-
-```csharp
-using Swap.Htmx;
-
-public class IndexModel : PageModel
-{
-    public IActionResult OnPostUpdate()
-    {
-        return this.SwapResponse()
-            .WithView("_Partial", this)
-            .Build();
-    }
-    
-    public IActionResult OnPostDelete(int id)
-    {
-        _service.Delete(id);
-        return this.SwapEvent(new ItemDeletedEvent { Id = id }).Build();
-    }
-}
-```
-
----
-
-## MINIMAL APIs
-
-```csharp
-using Swap.Htmx;
-
-// Basic response
-app.MapGet("/products", () => 
-    SwapResults.Response()
-        .WithView("_ProductList", products));
-
-// With OOB and toast
-app.MapPost("/products", (ProductDto dto, IProductService service) =>
-{
-    var product = service.Create(dto);
-    return SwapResults.Response()
-        .WithView("_ProductRow", product)
-        .AlsoUpdate("product-count", "_ProductCount", service.Count())
-        .WithCreatedToast("Product");
-});
-
-// Trigger event
-app.MapDelete("/products/{id}", (int id) =>
-    SwapResults.Event(ProductEvents.Deleted, new { Id = id }));
-```
-
----
-
-## CRUD TOAST PRESETS
-
-```csharp
-.WithCreatedToast("Product")              // "Product created successfully"
-.WithCreatedToast("Product", "Widget")    // "Product 'Widget' created successfully"
-.WithUpdatedToast("Settings")             // "Settings updated"
-.WithDeletedToast("User", "john@example.com")  // "User 'john@example.com' deleted"
-.WithSavedToast("Document")               // "Document saved"
-.WithCrudToast(CrudOperation.Archived, "Record")  // "Record archived"
-.WithCrudToast(CrudOperation.Restored, "Record")  // "Record restored"
-.WithCrudToast(CrudOperation.Duplicated, "Template")  // "Template duplicated"
-```
-
----
-
-## COMMON PATTERNS
-
-### Tab Navigation with State
-
-```csharp
-public class TabState : SwapState
-{
-    public string Tab { get; set; } = "all";
-}
-
-public IActionResult ChangeTab([FromQuery] string tab, [FromSwapState] TabState state)
-{
-    state.Tab = tab;
-    return this.SwapResponse()
-        .WithView("_TabContent", GetContent(tab))
-        .WithState(state)
-        .WithTrigger(AppEvents.UI.StateChanged)
-        .Build();
-}
-```
-
-```html
-<swap-state state="Model.State" />
-
-<button hx-post="/Items/ChangeTab?tab=all"
-        hx-target="#content"
-        hx-include="#tab-state">All</button>
-
-<button hx-post="/Items/ChangeTab?tab=active"
-        hx-target="#content"
-        hx-include="#tab-state">Active</button>
-```
-
-### Search + Pagination
-
-```csharp
-public class SearchState : SwapState
-{
-    public string? Query { get; set; }
-    public int Page { get; set; } = 1;
-}
-
-public IActionResult Search([FromSwapState] SearchState state, string? query)
-{
-    state.Query = query;
-    state.Page = 1;  // Reset on new search
-    
-    var results = _service.Search(state.Query, state.Page);
-    return this.SwapResponse()
-        .WithView("_Results", results)
-        .AlsoUpdate("pagination", "_Pagination", results.TotalPages)
-        .WithState(state)
-        .Build();
-}
-```
-
-### Modal Form
-
-```csharp
-// Open modal
-public IActionResult EditModal(int id)
-{
-    var item = _service.Get(id);
-    return this.SwapResponse()
-        .AlsoUpdate("modal-container", "_EditModal", item)
-        .Build();
-}
-
-// Save and close
-public IActionResult Save(int id, EditDto dto)
-{
-    if (!ModelState.IsValid)
-        return this.SwapValidationErrors(ModelState).WithView("_EditForm", dto).Build();
-    
-    var item = _service.Update(id, dto);
-    return this.SwapResponse()
-        .AlsoUpdate($"item-{id}", "_ItemRow", item)
-        .AlsoUpdate("modal-container", "_Empty", null)  // Close modal
-        .WithUpdatedToast("Item", item.Name)
-        .Build();
-}
-```
-
-### Infinite Scroll
-
-```csharp
-public IActionResult LoadMore([FromSwapState] ListState state)
-{
-    state.Page++;
-    var items = _service.GetPage(state.Page);
-    
-    return this.SwapResponse()
-        .AlsoUpdate("item-list", "_Items", items, SwapMode.BeforeEnd)  // Append
-        .AlsoUpdateIf(items.HasMore, "load-more", "_LoadMore", state.Page + 1)
-        .AlsoUpdateIf(!items.HasMore, "load-more", "_Empty", null, SwapMode.Delete)
-        .WithState(state)
-        .Build();
-}
-```
-
----
-
-## TAG HELPERS REFERENCE
-
-### swap-state
-
-```html
-<swap-state state="Model.State" />
-<swap-state state="Model.State" id="custom-id" />
-<swap-state state="Model.State" prefix="filter" />
-<swap-state state="Model.State" include-container="false" />
-```
-
-### swap-validation
-
-```html
-<swap-validation for="PropertyName" />
-<swap-validation for="PropertyName" class="text-danger" />
-<swap-validation for="PropertyName" id-prefix="err-" />
-```
-
-### swap-include-state
-
-```html
-<!-- Auto-includes state container in HTMX requests -->
-<button hx-get="/Action" swap-include-state="my-state">Load</button>
-```
-
-### swap-hidden
-
-Convenience tag helper for hidden form fields with auto-formatting.
+Renders a state object as hidden fields:
 
 ```html
 <!-- Basic usage -->
-<swap-hidden name="page" value="@Model.Page" />
-<swap-hidden name="search" value="@Model.Search" />
+<swap-state state="Model.State" />
 
-<!-- DateTime auto-formats to yyyy-MM-dd -->
-<swap-hidden name="startDate" value="@Model.StartDate" />
-
-<!-- Custom date format -->
-<swap-hidden name="timestamp" value="@Model.Timestamp" date-format="yyyy-MM-ddTHH:mm:ss" />
-
-<!-- Booleans render as lowercase true/false -->
-<swap-hidden name="includeArchived" value="@Model.IncludeArchived" />
-
-<!-- Collections render as comma-separated values -->
-<swap-hidden name="selectedIds" value="@Model.SelectedIds" />
+<!-- With custom container (rare) -->
+<swap-state state="Model.State" include-container="false" />
 ```
 
-### swap-nav
-
-SPA-style navigation links (see `<swap-nav>` TAG HELPER section above).
-
+Output:
 ```html
-<swap-nav to="/products">Products</swap-nav>
-<swap-nav to="/orders" target="#sidebar">Orders</swap-nav>
-<swap-nav to="/modal" push-url="false">Open Modal</swap-nav>
+<div id="product-filter-state" class="swap-state-container">
+    <input type="hidden" name="Category" value="all" />
+    <input type="hidden" name="Page" value="1" />
+    <!-- ... all properties ... -->
+</div>
 ```
 
----
+## When NOT to Use SwapState
 
-## DEBUGGING
+1. **Sensitive data**: Don't put passwords, tokens, or secrets in SwapState. Hidden fields are visible in browser devtools.
 
-Enable debug logging:
-```json
-// appsettings.Development.json
-{
-  "Logging": {
-    "LogLevel": {
-      "Swap.Htmx": "Debug"
-    }
-  }
-}
-```
+2. **Large datasets**: SwapState adds hidden fields to HTML. Don't store hundreds of items.
 
-Dev dashboard (if enabled):
-```
-/_swap/dashboard
-```
+3. **Server-side only state**: If state never needs to be sent back from browser, use session or database instead.
 
----
+## Validation
 
-## COMPLEX FRONT-ENDS (50+ Partials)
-
-Swap.Htmx scales to pages with 50-100+ partials through distributed handlers.
-
-### The Problem
-
-A complex page might have dozens of components that need to stay in sync. When a task is completed:
-
-1. The task card moves to "Done" column
-2. Stats panel updates (completed count, progress %)
-3. Activity feed shows new entry
-4. Notification badge updates
-5. Progress bar animates
-6. Team workload section updates
-7. Overdue widget recalculates
-8. ... and potentially 10+ more partials
-
-### The Solution
-
-**Controller fires ONE event:**
+Use standard ASP.NET validation attributes on SwapState properties:
 
 ```csharp
-[HttpPost]
-public IActionResult CompleteTask(int id)
+public class ProductFilterState : SwapState
 {
-    var task = _tasks.GetById(id);
-    _tasks.UpdateStatus(id, TaskStatus.Done);
+    [Range(1, 1000)]
+    public int Page { get; set; } = 1;
     
-    // Controller doesn't know what updates
-    return SwapEvent(new TaskCompletedEvent(task.Id, task.ProjectId, task.Title))
-        .WithSuccessToast($"Completed: {task.Title}")
-        .Build();
-}
-```
-
-**Distributed handlers each update ONE partial:**
-
-```csharp
-// Handler 1: Stats panel
-[SwapHandler]
-public class StatsHandler : ISwapEventHandler<TaskCompletedEvent>
-{
-    public Task HandleAsync(TaskCompletedEvent e, SwapResponseBuilder builder, CancellationToken ct)
-    {
-        var stats = _tasks.GetStats(e.ProjectId);
-        builder.AlsoUpdate("stats-panel", "_StatsPanel", stats);
-        return Task.CompletedTask;
-    }
-}
-
-// Handler 2: Kanban columns
-[SwapHandler]
-public class KanbanHandler : ISwapEventHandler<TaskCompletedEvent>
-{
-    public Task HandleAsync(TaskCompletedEvent e, SwapResponseBuilder builder, CancellationToken ct)
-    {
-        var kanban = _tasks.GetKanban(e.ProjectId);
-        builder.AlsoUpdate("kanban-todo", "_KanbanColumn", kanban.TodoTasks);
-        builder.AlsoUpdate("kanban-done", "_KanbanColumn", kanban.DoneTasks);
-        return Task.CompletedTask;
-    }
-}
-
-// Handler 3: Activity feed
-[SwapHandler]
-public class ActivityHandler : ISwapEventHandler<TaskCompletedEvent>
-{
-    public Task HandleAsync(TaskCompletedEvent e, SwapResponseBuilder builder, CancellationToken ct)
-    {
-        var activities = _activities.GetRecent(10);
-        builder.AlsoUpdate("activity-feed", "_ActivityFeed", activities);
-        return Task.CompletedTask;
-    }
-}
-
-// Handler 4: Progress bar
-[SwapHandler]
-public class ProgressHandler : ISwapEventHandler<TaskCompletedEvent>
-{
-    public Task HandleAsync(TaskCompletedEvent e, SwapResponseBuilder builder, CancellationToken ct)
-    {
-        var stats = _tasks.GetStats(e.ProjectId);
-        builder.AlsoUpdate("progress-bar", "_ProgressBar", stats);
-        return Task.CompletedTask;
-    }
-}
-
-// ... 6+ more handlers for other partials
-```
-
-### How It Works
-
-```
-User clicks "Complete" → Controller fires TaskCompletedEvent
-        │
-        ▼
-Event Bus finds all handlers for TaskCompletedEvent
-        │
-        ├──→ StatsHandler         → AlsoUpdate("stats-panel")
-        ├──→ KanbanHandler        → AlsoUpdate("kanban-*")
-        ├──→ ActivityHandler      → AlsoUpdate("activity-feed")
-        ├──→ ProgressHandler      → AlsoUpdate("progress-bar")
-        ├──→ NotificationHandler  → AlsoUpdate("notification-badge")
-        └──→ TeamHandler          → AlsoUpdate("team-workload")
-        │
-        ▼
-Response Builder collects all OOB swaps into ONE response
-        │
-        ▼
-Browser (HTMX) swaps each element in place
-```
-
-### Why This Scales
-
-| Concern | Without Swap.Htmx | With Swap.Htmx |
-|---------|-------------------|----------------|
-| Adding new partial | Edit controller + wire up hx-trigger | Add handler class |
-| Controller complexity | Knows all 10+ targets | Just fires event |
-| Testing | Hard to test partials | Each handler is unit testable |
-| Performance | N/A | Only relevant handlers run |
-
-### Conditional Updates
-
-```csharp
-// Only update if element exists on page
-builder.AlsoUpdateIfExists($"task-detail-{e.TaskId}", "_TaskDetail", task);
-
-// Only update if condition is true
-if (_userContext.IsAdmin)
-{
-    builder.AlsoUpdate("admin-panel", "_AdminPanel", adminData);
-}
-```
-
-### Bulk Updates
-
-```csharp
-// Update many similar elements
-builder.AlsoUpdateMany(
-    items: affectedProducts,
-    idSelector: p => $"product-{p.Id}",
-    viewName: "_ProductRow"
-);
-```
-
-### Organizing Handlers
-
-```
-Handlers/
-├── Tasks/
-│   ├── TaskCardHandler.cs
-│   ├── KanbanHandler.cs
-│   └── TaskDetailHandler.cs
-├── Dashboard/
-│   ├── StatsHandler.cs
-│   ├── ProgressHandler.cs
-│   └── ActivityHandler.cs
-└── Notifications/
-    └── BadgeHandler.cs
-```
-
-**Demo:** See `/demo/SwapDashboard` for a working example with 20+ partials.
-
----
-
-## PERFORMANCE & SCALING
-
-### Real-World Metrics
-
-**Analytics Dashboard (50+ partials):**
-- Single purchase action updates 15-20 components
-- Response time: 155ms (including all handler execution and rendering)
-- Bundle size: 22KB (HTMX + swap.client.js)
-- Zero client-side state management overhead
-
-**Compare to React SPA:**
-- Bundle size: 877KB (React + dependencies)
-- Initial load: 2.1s
-- Runtime memory: 15-25MB (virtual DOM)
-- Swap.Htmx: No virtual DOM, no client state sync, no hydration
-
-### Why Distributed Handlers Scale
-
-```
-10 partials updated  = 155ms
-50 partials updated  = 155ms  (only relevant handlers run)
-100 partials updated = ~160ms
-```
-
-**Why it's linear:**
-- Event bus only invokes handlers registered for that specific event
-- Each handler is independent (no locks, no shared state beyond DI)
-- Razor rendering is highly optimized (compiled views)
-- OOB swaps are batched into single HTTP response
-
-### Optimization Tips
-
-**1. Use AlsoUpdateIf for conditional updates**
-```csharp
-// ❌ Wasteful - renders partial even when not needed
-if (someCondition)
-    builder.AlsoUpdate("target", "_View", model);
-
-// ✅ Efficient - checks condition first, skips rendering
-builder.AlsoUpdateIf(someCondition, "target", "_View", model);
-```
-
-**2. Use AlsoUpdateIfExists for optional elements**
-```csharp
-// ✅ Only updates if element exists on current page
-builder.AlsoUpdateIfExists($"product-detail-{id}", "_ProductDetail", product);
-```
-
-**3. Bulk updates for similar elements**
-```csharp
-// ❌ Slow - individual updates
-foreach (var product in affectedProducts)
-    builder.AlsoUpdate($"product-{product.Id}", "_ProductCard", product);
-
-// ✅ Fast - single collection pass
-builder.AlsoUpdateMany(affectedProducts, p => $"product-{p.Id}", "_ProductCard");
-```
-
-**4. Cache expensive queries in handlers**
-```csharp
-[SwapHandler]
-public class StatsHandler : ISwapEventHandler<PurchaseEvent>
-{
-    private readonly IMemoryCache _cache;
+    [StringLength(100)]
+    public string? Search { get; set; }
     
-    public async Task HandleAsync(PurchaseEvent e, SwapResponseBuilder builder, CancellationToken ct)
-    {
-        var stats = await _cache.GetOrCreateAsync("stats", async entry =>
-        {
-            entry.SlidingExpiration = TimeSpan.FromSeconds(5);
-            return await _db.GetStats();
-        });
-        
-        builder.AlsoUpdate("stats", "_Stats", stats);
-    }
+    [RegularExpression("^(all|Electronics|Furniture|Office)$")]
+    public string Category { get; set; } = "all";
 }
 ```
 
-**5. Async handlers for I/O-bound work**
-```csharp
-// ✅ Async for database/API calls
-public async Task HandleAsync(ProductEvent e, SwapResponseBuilder builder, CancellationToken ct)
-{
-    var product = await _db.Products.FindAsync(e.ProductId, ct);
-    builder.AlsoUpdate($"product-{e.ProductId}", "_ProductCard", product);
-}
-```
-
-### Network Performance
-
-**Traditional SPA approach (React/Vue):**
-```
-1. Click button
-2. POST request (50KB bundle already loaded)
-3. JSON response (2KB)
-4. React re-renders 60 components (only 15 changed)
-5. useMemo/React.memo needed to prevent cascade
-```
-
-**Swap.Htmx approach:**
-```
-1. Click button
-2. POST request (minimal payload)
-3. HTML response (5KB - only 15 partials)
-4. HTMX swaps 15 elements (surgical DOM updates)
-5. No optimization needed
-```
-
-### When NOT to Use Swap.Htmx
-
-**Don't use for:**
-- Offline-first apps (service workers, local DB)
-- Real-time collaborative editing (Google Docs style)
-- Complex client-side state machines (checkout wizards with 10+ steps)
-- Heavy client-side computation (image processing, 3D rendering)
-
-**Use React/SPA instead for:**
-- Apps that must work offline
-- Rich text editors, spreadsheets, CAD tools
-- Real-time multiplayer experiences
-- Mobile apps (React Native)
-
-**Use Swap.Htmx for:**
-- Admin dashboards
-- E-commerce sites
-- CRM/ERP systems
-- Content management
-- Analytics dashboards
-- Task management
-- Most CRUD apps (90% of web apps)
-
----
-
-## VALIDATION
-
-### Automatic Error Handling
-
-Swap.Htmx automatically renders validation errors next to form fields.
-
-```html
-<!-- Form -->
-<form hx-post="/Products/Create" hx-target="#form-container">
-    <div>
-        <label asp-for="Name"></label>
-        <input asp-for="Name" />
-        <span asp-validation-for="Name"></span>
-    </div>
-    
-    <div>
-        <label asp-for="Price"></label>
-        <input asp-for="Price" />
-        <span asp-validation-for="Price"></span>
-    </div>
-    
-    <button type="submit">Create</button>
-</form>
-```
+Validate in controller:
 
 ```csharp
-// Controller
-[HttpPost]
-public IActionResult Create(ProductDto dto)
+public IActionResult Filter([FromSwapState] ProductFilterState state)
 {
     if (!ModelState.IsValid)
     {
-        // Returns form with validation errors highlighted
-        return this.SwapValidationErrors(ModelState)
-            .WithView("_ProductForm", dto)
-            .Build();
+        // Reset to defaults or return error
+        state = new ProductFilterState();
     }
-    
-    var product = _service.Create(dto);
-    
-    return this.SwapResponse()
-        .WithView("_ProductCard", product)
-        .WithCreatedToast("Product", product.Name)
-        .Build();
+    // ...
 }
 ```
 
-### Custom Validation Messages
-
-```csharp
-if (!_service.IsUnique(dto.Sku))
-{
-    ModelState.AddModelError(nameof(dto.Sku), "SKU must be unique");
-    return this.SwapValidationErrors(ModelState)
-        .WithView("_ProductForm", dto)
-        .Build();
-}
-```
-
-### HTMX Validation Extension
-
-For client-side validation before submit:
-
-```html
-<form hx-post="/Products/Create" 
-      hx-ext="validation"
-      hx-target="#form-container">
-    
-    <input name="email" 
-           type="email" 
-           required 
-           pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$" />
-    
-    <button type="submit">Submit</button>
-</form>
-```
-
-### Full-Page vs Partial Validation
-
-```csharp
-// For modal forms (swap form only)
-if (!ModelState.IsValid)
-    return this.SwapValidationErrors(ModelState)
-        .WithView("_ModalForm", dto)
-        .Build();
-
-// For full-page forms (redirect on success)
-if (!ModelState.IsValid)
-    return View("Create", dto);  // Full page with layout
-
-_service.Create(dto);
-return this.SwapResponse()
-    .WithNavigation("/products")
-    .WithCreatedToast("Product")
-    .Build();
-```
-
----
-
-## ANTI-PATTERNS TO AVOID
-
-### ❌ Anti-Pattern 1: Controller Knows All UI Targets
-
-```csharp
-// ❌ BAD - Tightly coupled, controller knows entire UI structure
-[HttpPost]
-public IActionResult Purchase(int productId)
-{
-    _cart.AddItem(productId);
-    
-    return this.SwapResponse()
-        .AlsoUpdate("cart-count", "_CartCount", _cart.ItemCount)
-        .AlsoUpdate("cart-total", "_CartTotal", _cart.Total)
-        .AlsoUpdate("cart-items", "_CartItems", _cart.Items)
-        .AlsoUpdate($"product-{productId}", "_ProductCard", _service.GetById(productId))
-        .AlsoUpdate("header-cart", "_HeaderCart", _cart)
-        .AlsoUpdate("recommendations", "_Recommendations", _recommendations.GetForCart(_cart))
-        .WithSuccessToast("Added to cart")
-        .Build();
-}
-```
-
-**Problem:** Controller is bloated, hard to test, difficult to extend.
-
-```csharp
-// ✅ GOOD - Fire event, let handlers decide what updates
-[HttpPost]
-public IActionResult Purchase(int productId)
-{
-    _cart.AddItem(productId);
-    
-    return SwapEvent(new CartItemAddedEvent { ProductId = productId })
-        .WithSuccessToast("Added to cart")
-        .Build();
-}
-
-// Handlers are small, focused, independently testable
-[SwapHandler]
-public class CartCountHandler : ISwapEventHandler<CartItemAddedEvent>
-{
-    public Task HandleAsync(CartItemAddedEvent e, SwapResponseBuilder builder, CancellationToken ct)
-    {
-        builder.AlsoUpdate("cart-count", "_CartCount", _cart.ItemCount);
-        return Task.CompletedTask;
-    }
-}
-```
-
-### ❌ Anti-Pattern 2: Using hx-trigger for Multi-Component Updates
-
-```html
-<!-- ❌ BAD - Brittle, verbose, difficult to maintain -->
-<button hx-post="/Cart/AddItem"
-        hx-swap="none"
-        _="on htmx:afterRequest
-           call htmx.ajax('GET', '/Cart/Count', {target: '#cart-count'})
-           call htmx.ajax('GET', '/Cart/Total', {target: '#cart-total'})
-           call htmx.ajax('GET', '/Cart/Items', {target: '#cart-items'})">
-    Add to Cart
-</button>
-```
-
-**Problem:** Multiple HTTP requests (N+1), client-side logic, fragile.
-
-```html
-<!-- ✅ GOOD - One request, server coordinates via OOB swaps -->
-<button hx-post="/Cart/AddItem" hx-swap="none">
-    Add to Cart
-</button>
-```
-
-```csharp
-// Server handles coordination in one response
-return SwapEvent(new CartItemAddedEvent { ProductId = productId }).Build();
-```
-
-### ❌ Anti-Pattern 3: Client-Side State Management
-
-```javascript
-// ❌ BAD - Duplicating state on client
-let currentTab = 'overview';
-document.querySelectorAll('.tab-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-        currentTab = btn.dataset.tab;
-        htmx.ajax('GET', `/Dashboard/Tab?tab=${currentTab}`, '#content');
-    });
-});
-```
-
-**Problem:** State drift, synchronization bugs, complex client code.
-
-```csharp
-// ✅ GOOD - SwapState manages state on server
-public class DashboardState : SwapState
-{
-    public string Tab { get; set; } = "overview";
-}
-
-public IActionResult Tab([FromSwapState] DashboardState state, string tab)
-{
-    state.Tab = tab;  // Server is source of truth
-    return this.SwapResponse()
-        .WithView($"_Tab{tab}", data)
-        .WithState(state)  // Syncs back to client
-        .Build();
-}
-```
-
-### ❌ Anti-Pattern 4: Manual ID Management
-
-```csharp
-// ❌ BAD - Magic strings, typos, hard to refactor
-builder.AlsoUpdate("prodcut-list", "_ProductList", products);  // Typo!
-builder.AlsoUpdate("product-count", "_ProductCoutn", count);   // Typo!
-```
-
-```csharp
-// ✅ GOOD - Generated constants
-[SwapElementSource("Views/Products")]
-public static partial class ProductElements { }
-
-builder.AlsoUpdate(ProductElements.ProductList, ProductViews.Partials.ProductList, products);
-```
-
-### ❌ Anti-Pattern 5: Ignoring hx-swap-oob
-
-```html
-<!-- ❌ BAD - Manually triggering updates via JavaScript -->
-<button onclick="updateAllComponents()">Purchase</button>
-
-<script>
-function updateAllComponents() {
-    fetch('/Cart/Purchase', { method: 'POST' })
-        .then(() => {
-            htmx.ajax('GET', '/Cart/Count', '#cart-count');
-            htmx.ajax('GET', '/Cart/Total', '#cart-total');
-            // ... more manual requests
-        });
-}
-</script>
-```
-
-```html
-<!-- ✅ GOOD - Let HTMX handle OOB swaps automatically -->
-<button hx-post="/Cart/Purchase" hx-swap="none">Purchase</button>
-```
-
-## COMPLEX FRONT-ENDS (50+ Partials)
-
-Swap.Htmx scales to pages with 50-100+ partials through distributed handlers.
-
-### Real-World Example: Analytics Dashboard
-
-**Location:** `/demo/SwapSmallPartials/src/Modules/Analytics/`
-
-This is a complete working example showing:
-- **50+ partials:** 6 KPIs, 12 products, 6 categories, 8 regions, 24 hourly bars, activity feed
-- **One button click:** Updates 15-20 components via single HTTP request
-- **155ms response time:** Including all handler execution, rendering, and OOB swaps
-- **650 lines of code:** Compare to equivalent React SPA (1,200 lines)
-
-### The Architecture
-
-**1. Controller fires ONE event:**
-
-```csharp
-[HttpPost]
-public IActionResult SimulatePurchase()
-{
-    // Update state (single source of truth)
-    var productId = _state.Products[Random.Shared.Next(_state.Products.Count)].Id;
-    var region = _regions[Random.Shared.Next(_regions.Length)];
-    _state.ProcessPurchase(productId, region, customer: "John D.");
-    
-    // Fire event - controller doesn't know what updates
-    return SwapEvent(AnalyticsEvents.Purchase.Completed, new PurchaseCompletedEvent
-    {
-        ProductId = productId,
-        Region = region,
-        CustomerName = "John D."
-    }).Build();
-}
-```
-
-**2. Distributed handlers (15 handlers across 8 files):**
-
-```csharp
-// Handlers/KpiHandlers.cs - Updates all 6 KPI cards
-[SwapHandler]
-public class RevenueHandler : ISwapEventHandler<PurchaseCompletedEvent>
-{
-    private readonly AnalyticsState _state;
-    public RevenueHandler(AnalyticsState state) => _state = state;
-    
-    public Task HandleAsync(PurchaseCompletedEvent e, SwapResponseBuilder builder, CancellationToken ct)
-    {
-        builder.AlsoUpdate("revenue-today", "_RevenueToday", _state);
-        return Task.CompletedTask;
-    }
-}
-
-[SwapHandler]
-public class OrdersHandler : ISwapEventHandler<PurchaseCompletedEvent>
-{
-    private readonly AnalyticsState _state;
-    public OrdersHandler(AnalyticsState state) => _state = state;
-    
-    public Task HandleAsync(PurchaseCompletedEvent e, SwapResponseBuilder builder, CancellationToken ct)
-    {
-        builder.AlsoUpdate("orders-count", "_OrdersCount", _state);
-        return Task.CompletedTask;
-    }
-}
-
-// Handlers/ProductHandlers.cs - Updates 12 product cards
-[SwapHandler]
-public class ProductCardHandler : ISwapEventHandler<PurchaseCompletedEvent>
-{
-    private readonly AnalyticsState _state;
-    public ProductCardHandler(AnalyticsState state) => _state = state;
-    
-    public Task HandleAsync(PurchaseCompletedEvent e, SwapResponseBuilder builder, CancellationToken ct)
-    {
-        // Only update the specific product that was purchased
-        var product = _state.Products.First(p => p.Id == e.ProductId);
-        builder.AlsoUpdate($"product-{e.ProductId}", "_ProductCard", product);
-        return Task.CompletedTask;
-    }
-}
-
-// Handlers/RegionHandlers.cs - Updates 8 region cards
-[SwapHandler]
-public class RegionCardHandler : ISwapEventHandler<PurchaseCompletedEvent>
-{
-    private readonly AnalyticsState _state;
-    public RegionCardHandler(AnalyticsState state) => _state = state;
-    
-    public Task HandleAsync(PurchaseCompletedEvent e, SwapResponseBuilder builder, CancellationToken ct)
-    {
-        // Only update the specific region
-        var region = _state.Regions.First(r => r.Name == e.Region);
-        builder.AlsoUpdate($"region-{e.Region}", "_RegionCard", region);
-        return Task.CompletedTask;
-    }
-}
-
-// Handlers/ActivityHandlers.cs - Updates activity feed
-[SwapHandler]
-public class ActivityFeedHandler : ISwapEventHandler<PurchaseCompletedEvent>
-{
-    private readonly AnalyticsState _state;
-    public ActivityFeedHandler(AnalyticsState state) => _state = state;
-    
-    public Task HandleAsync(PurchaseCompletedEvent e, SwapResponseBuilder builder, CancellationToken ct)
-    {
-        builder.AlsoUpdate("activity-feed", "_ActivityFeed", _state);
-        return Task.CompletedTask;
-    }
-}
-
-// ... 11 more handlers (categories, hourly data, customer metrics, etc.)
-```
-
-**3. Server returns ONE HTTP response with 15 OOB swaps:**
-
-```html
-<!-- Main response (toast) -->
-<div class="toast success">Purchase completed!</div>
-
-<!-- OOB Swap 1: Revenue KPI -->
-<div id="revenue-today" hx-swap-oob="true">
-    <div class="kpi-card">
-        <h3>Revenue Today</h3>
-        <p class="kpi-value">$4,523.75</p>
-        <span class="kpi-change positive">+12.5%</span>
-    </div>
-</div>
-
-<!-- OOB Swap 2: Orders KPI -->
-<div id="orders-count" hx-swap-oob="true">
-    <div class="kpi-card">
-        <h3>Orders</h3>
-        <p class="kpi-value">127</p>
-        <span class="kpi-change positive">+8</span>
-    </div>
-</div>
-
-<!-- OOB Swap 3: Specific product card -->
-<div id="product-5" hx-swap-oob="true">
-    <div class="product-card">
-        <h4>Wireless Mouse</h4>
-        <p class="sales">Sales: $234.50</p>
-        <span class="stock text-danger">8 left</span>
-    </div>
-</div>
-
-<!-- ... 12 more OOB swaps (other KPIs, categories, regions, hourly bars, activity) -->
-```
-
-**4. HTMX swaps each element in 155ms:**
-
-```
-User clicks "Purchase" → HTTP POST → Server processes event → 15 handlers run in parallel
-→ Response built with 15 OOB swaps → Browser receives → HTMX swaps each element → Done
-```
-
-### Why This Scales
-
-| Challenge | Without Events | With Events |
-|-----------|----------------|-------------|
-| **Adding new partial** | Edit controller, add AlsoUpdate call | Create new handler class |
-| **Controller complexity** | Knows all 15+ UI targets | Just fires event |
-| **Testing** | Hard to test partial updates | Each handler is unit testable |
-| **Performance** | N/A | Only relevant handlers run |
-| **Maintainability** | Brittle, tightly coupled | Decoupled, SOLID principles |
-
-### The Problem with Traditional Approach
-
-A complex dashboard might have:
-- Task card moves to "Done" column
-- Stats panel updates (completed count, progress %)
-- Activity feed shows new entry
-- Notification badge updates
-- Progress bar animates
-- Team workload section updates
-- Overdue widget recalculates
-- ... and potentially 10+ more partials
-
-**Without event-driven architecture:**
-```csharp
-// ❌ Controller becomes a 100+ line mess
-[HttpPost]
-public IActionResult CompleteTask(int id)
-{
-    _tasks.UpdateStatus(id, TaskStatus.Done);
-    
-    return this.SwapResponse()
-        .AlsoUpdate("task-row-" + id, "_TaskRow", _tasks.GetById(id))
-        .AlsoUpdate("stats-panel", "_StatsPanel", _tasks.GetStats())
-        .AlsoUpdate("kanban-todo", "_KanbanColumn", _tasks.GetByStatus(TaskStatus.Todo))
-        .AlsoUpdate("kanban-done", "_KanbanColumn", _tasks.GetByStatus(TaskStatus.Done))
-        .AlsoUpdate("activity-feed", "_ActivityFeed", _activities.GetRecent(10))
-        .AlsoUpdate("progress-bar", "_ProgressBar", _tasks.GetProgress())
-        .AlsoUpdate("notification-badge", "_NotificationBadge", _notifications.Count())
-        .AlsoUpdate("team-workload", "_TeamWorkload", _teams.GetWorkload())
-        .AlsoUpdate("overdue-widget", "_OverdueWidget", _tasks.GetOverdue())
-        // ... 5+ more updates
-        .Build();
-}
-```
-
-**Problem:** Unmaintainable, untestable, violates Single Responsibility Principle.
-
-**With event-driven architecture:**
-```csharp
-// ✅ Controller is clean, focused
-[HttpPost]
-public IActionResult CompleteTask(int id)
-{
-    var task = _tasks.GetById(id);
-    _tasks.UpdateStatus(id, TaskStatus.Done);
-    
-    return SwapEvent(new TaskCompletedEvent(task.Id, task.ProjectId, task.Title))
-        .WithSuccessToast($"Completed: {task.Title}")
-        .Build();
-}
-
-// Each handler is small, focused, testable
-[SwapHandler]
-public class StatsHandler : ISwapEventHandler<TaskCompletedEvent>
-{
-    public Task HandleAsync(TaskCompletedEvent e, SwapResponseBuilder builder, CancellationToken ct)
-    {
-        var stats = _tasks.GetStats(e.ProjectId);
-        builder.AlsoUpdate("stats-panel", "_StatsPanel", stats);
-        return Task.CompletedTask;
-    }
-}
-```
-
-### Handler Organization
-
-```
-Modules/Analytics/Events/Handlers/
-├── KpiHandlers.cs           (6 handlers for KPI cards)
-├── ProductHandlers.cs       (12 handlers for product cards)
-├── CategoryHandlers.cs      (6 handlers for category cards)
-├── RegionHandlers.cs        (8 handlers for region cards)
-├── HourlyHandlers.cs        (24 handlers for hourly bars)
-├── ActivityHandlers.cs      (1 handler for activity feed)
-├── CustomerHandlers.cs      (1 handler for customer metrics)
-└── ChartHandlers.cs         (3 handlers for charts)
-```
-
-**Total:** 61 handlers across 8 files, all auto-discovered via `[SwapHandler]`.
-
-### Conditional & Bulk Updates
-
-```csharp
-// Only update if element exists on current page
-builder.AlsoUpdateIfExists($"task-detail-{e.TaskId}", "_TaskDetail", task);
-
-// Only update if condition is true
-builder.AlsoUpdateIf(_userContext.IsAdmin, "admin-panel", "_AdminPanel", adminData);
-
-// Bulk updates for similar elements
-builder.AlsoUpdateMany(
-    items: affectedProducts,
-    idSelector: p => $"product-{p.Id}",
-    viewName: "_ProductRow"
-);
-```
-
-### Performance Comparison
-
-| Framework | Bundle Size | Response Time | Code (LOC) | HTTP Requests |
-|-----------|-------------|---------------|------------|---------------|
-| **Swap.Htmx** | 22KB | 155ms | 650 | 1 |
-| **React SPA** | 877KB | ~300ms | 1,200 | 1 (but after 2.1s initial load) |
-| **Vue SPA** | 650KB | ~250ms | 1,100 | 1 |
-| **Traditional MPA** | 0KB | 200ms | 800 | 15 (one per partial) |
-
-**Why Swap.Htmx wins:**
-- No client-side framework overhead
-- Server-side rendering (no hydration)
-- Surgical DOM updates (no virtual DOM diffing)
-- One HTTP request with batched OOB swaps
-- No client-side state synchronization
-
-### Try It Yourself
-
-```bash
-cd demo/SwapSmallPartials
-dotnet run
-
-# Navigate to: http://localhost:5000/Analytics
-# Click "Simulate Purchase" button
-# Watch 15+ components update instantly
-# Open DevTools Network tab: See single 155ms request
-```
-
----
-
-## DECISION TREES
-
-### When to Use Distributed Handlers vs Centralized Config
-
-**Use Distributed Handlers ([SwapHandler]) when:**
-- ✅ Complex domain with many loosely-coupled concerns
-- ✅ Multiple teams/modules contributing handlers
-- ✅ Handlers have different dependencies (services, repositories)
-- ✅ You want handlers to be independently testable
-- ✅ Handlers might have async I/O (database queries, API calls)
-- ✅ You need to add/remove handlers without touching controller
-
-**Example:** E-commerce purchase → inventory, analytics, notifications, recommendations all need updates
-
-```csharp
-// Good fit for distributed handlers
-return SwapEvent(new PurchaseCompletedEvent { ... }).Build();
-
-[SwapHandler] // Inventory module
-public class StockHandler : ISwapEventHandler<PurchaseCompletedEvent> { }
-
-[SwapHandler] // Analytics module
-public class RevenueHandler : ISwapEventHandler<PurchaseCompletedEvent> { }
-
-[SwapHandler] // Notifications module
-public class EmailHandler : ISwapEventHandler<PurchaseCompletedEvent> { }
-```
-
-**Use Centralized Config (ISwapEventConfiguration) when:**
-- ✅ Simple, declarative UI updates (no complex logic)
-- ✅ All updates are straightforward partial refreshes
-- ✅ You want to see all event reactions in one place
-- ✅ No async I/O needed (just rendering different views)
-- ✅ Small team, simple domain
-
-**Example:** Filter button → refresh grid and count
-
-```csharp
-// Good fit for centralized config
-public class FilterEventConfig : ISwapEventConfiguration
-{
-    public void Configure(SwapEventBusOptions events)
-    {
-        events.When(FilterEvents.Applied)
-            .RefreshPartial("product-grid", "_ProductGrid", ctx => 
-                ctx.RequestServices.GetService<IProductService>().GetFiltered())
-            .RefreshPartial("product-count", "_ProductCount", ctx => 
-                new { Count = ctx.RequestServices.GetService<IProductService>().Count() })
-            .SuccessToast("Filter applied!");
-    }
-}
-```
-
-### When to Use SwapState vs Query Parameters
-
-**Use SwapState when:**
-- ✅ State has multiple properties (tab, page, sortBy, search, filters)
-- ✅ State changes frequently (every user interaction)
-- ✅ You want automatic change tracking
-- ✅ State needs validation or business logic
-- ✅ You need type-safety
-
-**Example:** Complex dashboard with tabs, pagination, sorting, filters
-
-```csharp
-public class DashboardState : SwapState
-{
-    public string Tab { get; set; } = "overview";
-    public int Page { get; set; } = 1;
-    public string Search { get; set; } = "";
-    public string SortBy { get; set; } = "name";
-    public bool SortDesc { get; set; } = false;
-    
-    // Validation
-    public override void OnValidate(ValidationContext context)
-    {
-        if (Page < 1) Page = 1;
-    }
-}
-```
-
-**Use Query Parameters when:**
-- ✅ Single value or simple state (just page number, just search term)
-- ✅ State needs to be bookmarkable/shareable
-- ✅ SEO matters (search engines need to index different states)
-- ✅ External links need to deep-link to specific state
-
-**Example:** Public product listing with pagination
-
-```csharp
-public IActionResult List(int page = 1, string? search = null)
-{
-    var products = _service.GetPage(page, search);
-    return this.SwapResponse()
-        .WithView("_ProductGrid", products)
-        .Build();
-}
-```
-
-### When to Use Events vs Direct AlsoUpdate
-
-**Use Events (SwapEvent) when:**
-- ✅ Multiple components need to update (3+)
-- ✅ Updates are cross-cutting concerns (analytics, logging, notifications)
-- ✅ You want to decouple controller from UI structure
-- ✅ Other modules/teams might want to react to the event
-- ✅ You might add more reactions in the future
-
-**Example:** User completes task → many parts of UI update
-
-```csharp
-// ✅ Event-driven - extensible, decoupled
-return SwapEvent(new TaskCompletedEvent { TaskId = id }).Build();
-```
-
-**Use Direct AlsoUpdate when:**
-- ✅ Single, obvious UI update (1-2 targets)
-- ✅ Tightly coupled to the action (not cross-cutting)
-- ✅ Won't change or expand
-- ✅ No other modules care about this
-
-**Example:** Toggle favorite → just update the button
-
-```csharp
-// ✅ Direct update - simple, obvious
-[HttpPost]
-public IActionResult ToggleFavorite(int id)
-{
-    var isFavorite = _service.ToggleFavorite(id);
-    return this.SwapResponse()
-        .WithView("_FavoriteButton", new { Id = id, IsFavorite = isFavorite })
-        .Build();
-}
-```
-
-### When to Use WithNavigation vs Redirect
-
-**Use WithNavigation when:**
-- ✅ HTMX request (SPA-style navigation)
-- ✅ You want to preserve toast messages
-- ✅ You want to preserve triggers
-- ✅ Target element should update (not full page refresh)
-- ✅ Want smooth transitions
-
-**Example:** Form submit → navigate to detail page with toast
-
-```csharp
-// ✅ WithNavigation - preserves toast, smooth transition
-return this.SwapResponse()
-    .WithNavigation($"/products/{product.Id}")
-    .WithCreatedToast("Product", product.Name)
-    .Build();
-```
-
-**Use Redirect when:**
-- ✅ Full page refresh needed (POST-Redirect-GET pattern)
-- ✅ Non-HTMX request (direct browser navigation)
-- ✅ External URL or different domain
-- ✅ Authentication flow (login → redirect to return URL)
-
-**Example:** Login success → redirect to return URL
-
-```csharp
-// ✅ Redirect - standard POST-Redirect-GET
-return RedirectToAction("Index", "Dashboard");
-```
-
-### Response Pattern Flowchart
-
-```
-User action triggers request
-    │
-    ├─→ Is this an HTMX request? (Request.IsHtmx())
-    │   │
-    │   ├─→ NO → Use standard MVC
-    │   │         return View(model);
-    │   │         return RedirectToAction(...);
-    │   │
-    │   └─→ YES → Does it update multiple components?
-    │             │
-    │             ├─→ NO (1-2 targets) → Use SwapResponse with AlsoUpdate
-    │             │                       return this.SwapResponse()
-    │             │                           .WithView("_Main", model)
-    │             │                           .AlsoUpdate("count", "_Count", count)
-    │             │                           .Build();
-    │             │
-    │             └─→ YES (3+ targets) → Use SwapEvent with distributed handlers
-    │                                     return SwapEvent(new MyEvent { ... }).Build();
-    │
-    └─→ Does it navigate to different page?
-        │
-        ├─→ YES → Use WithNavigation (for HTMX) or Redirect (for browser)
-        │
-        └─→ NO → Use SwapResponse with WithView
-```
-
----
-
-## DOCUMENTATION LINKS
-
-Full documentation: https://github.com/jdtoon/swap/tree/main/lib/Swap.Htmx/docs
-
-| Guide | URL |
-|-------|-----|
-| Getting Started | /docs/GettingStarted.md |
-| `<swap-nav>` Tag Helper | /docs/SwapNavTagHelper.md |
-| Auto-Scan Generator | /docs/AutoScanGenerator.md |
-| Navigation | /docs/Navigation.md |
-| Events | /docs/Events.md |
-| Event Chains | /docs/EventChains.md |
-| SwapState | /docs/SwapState.md |
-| Out-of-Band Swaps | /docs/OutOfBandSwaps.md |
-| Validation | /docs/Validation.md |
-| Server-Sent Events | /docs/ServerSentEvents.md |
-| WebSockets | /docs/WebSockets.md |
-| Source Generators | /docs/SourceGenerators.md |
-| Minimal APIs | /docs/MinimalApis.md |
-| Razor Pages | /docs/RazorPages.md |
-| CRUD Toasts | /docs/CrudToasts.md |
-| Recipes | /docs/Recipes.md |
-| Multi-Component Coordination | /docs/MultiComponentCoordination.md |
-| Complex Front-Ends | /docs/ComplexFrontEnds.md |
-| Anti-Patterns | /docs/AntiPatterns.md |
-| Debugging | /docs/DebuggingAndLogging.md |
-
----
-
-## QUICK REFERENCE CARD
-
-### Most Common Patterns (Copy-Paste Ready)
-
-**Simple partial update:**
-```csharp
-return this.SwapResponse()
-    .WithView("_ProductCard", product)
-    .Build();
-```
-
-**Update multiple partials (3+ targets):**
-```csharp
-return this.SwapEvent(new ProductUpdatedEvent { ProductId = id })
-    .WithSuccessToast("Updated!")
-    .Build();
-```
-
-**Form with validation:**
-```csharp
-if (!ModelState.IsValid)
-    return this.SwapValidationErrors(ModelState).WithView("_Form", dto).Build();
-
-return this.SwapResponse()
-    .WithNavigation("/products")
-    .WithCreatedToast("Product", dto.Name)
-    .Build();
-```
-
-**Delete with confirmation:**
-```html
-<button hx-delete="/Products/@Model.Id"
-        hx-confirm="Delete this item?"
-        hx-target="#product-@Model.Id"
-        hx-swap="outerHTML swap:1s">
-    Delete
-</button>
-```
-
-```csharp
-[HttpDelete]
-public IActionResult Delete(int id)
-{
-    _service.Delete(id);
-    return this.SwapResponse()
-        .WithView("_Empty", null)  // Removes element
-        .WithDeletedToast("Product")
-        .Build();
-}
-```
-
-**Search with debounce:**
-```html
-<input hx-get="/Products/Search"
-       hx-target="#results"
-       hx-trigger="keyup changed delay:300ms"
-       name="search" />
-```
-
-**Modal form:**
-```html
-<button hx-get="/Products/Edit/@Model.Id"
-        hx-target="#modal">
-    Edit
-</button>
-```
-
-**State-based tabs:**
-```csharp
-public IActionResult Tab([FromSwapState] DashboardState state, string tab)
-{
-    state.Tab = tab;
-    return this.SwapResponse()
-        .WithView($"_Tab{tab}", data)
-        .WithState(state)
-        .Build();
-}
-```
-
-### Response Builder Cheat Sheet
-
-| Method | Use When | Example |
-|--------|----------|---------|
-| `.WithView(view, model)` | Main target content | `.WithView("_List", products)` |
-| `.AlsoUpdate(id, view, model)` | Update one OOB element | `.AlsoUpdate("count", "_Count", 42)` |
-| `.AlsoUpdateMany(items, idFunc, view)` | Update multiple similar elements | `.AlsoUpdateMany(products, p => $"prod-{p.Id}", "_Card")` |
-| `.AlsoUpdateIf(condition, ...)` | Conditional update | `.AlsoUpdateIf(isAdmin, "panel", "_AdminPanel", data)` |
-| `.AlsoUpdateIfExists(id, ...)` | Update if element on page | `.AlsoUpdateIfExists($"detail-{id}", "_Detail", item)` |
-| `.WithNavigation(path)` | SPA-style navigation | `.WithNavigation("/products")` |
-| `.WithSuccessToast(msg)` | Success feedback | `.WithSuccessToast("Saved!")` |
-| `.WithCreatedToast(entity, name)` | CRUD create feedback | `.WithCreatedToast("Product", "Widget")` |
-| `.WithState(state)` | Sync server state to client | `.WithState(filterState)` |
-| `.WithTrigger(eventKey)` | Fire client-side event | `.WithTrigger(Events.Updated)` |
-| `.WithValidationErrors(modelState)` | Show validation errors | `.WithValidationErrors(ModelState)` |
-
-### HTMX Attributes Cheat Sheet
-
-| Attribute | Purpose | Example |
-|-----------|---------|---------|
-| `hx-get="/url"` | GET request | `hx-get="/products/list"` |
-| `hx-post="/url"` | POST request | `hx-post="/products/create"` |
-| `hx-delete="/url"` | DELETE request | `hx-delete="/products/5"` |
-| `hx-target="#id"` | Where to swap content | `hx-target="#product-list"` |
-| `hx-swap="innerHTML"` | How to swap (innerHTML, outerHTML, etc.) | `hx-swap="outerHTML"` |
-| `hx-trigger="event"` | What triggers request | `hx-trigger="click, keyup delay:500ms"` |
-| `hx-include="#id"` | Include form data from other element | `hx-include="#filter-form"` |
-| `hx-confirm="msg"` | Confirmation dialog | `hx-confirm="Are you sure?"` |
-| `hx-indicator="#id"` | Show loading spinner | `hx-indicator="#spinner"` |
-| `hx-disabled-elt="this"` | Disable during request | `hx-disabled-elt="this"` |
-| `hx-swap-oob="true"` | Out-of-band swap (server-side only) | Server renders this |
-
-### Swap.Htmx Tag Helpers
-
-| Tag Helper | Purpose | Example |
-|------------|---------|---------|
-| `<swap-state state="Model.State" />` | Render state as hidden inputs | Renders `<div id="filter-state">...</div>` |
-| `<swap-nav to="/path">Link</swap-nav>` | SPA-style navigation link | `<swap-nav to="/products">Products</swap-nav>` |
-
-### SwapMode Enum
-
-| Mode | Effect | Use For |
-|------|--------|---------|
-| `OuterHTML` | Replace entire element (default) | Replacing cards, rows |
-| `InnerHTML` | Replace content only | Updating table body |
-| `BeforeEnd` | Append as last child | Infinite scroll, adding list items |
-| `AfterBegin` | Prepend as first child | Newest-first lists |
-| `Delete` | Remove element | Deleting rows, hiding elements |
-
-### Event Handler Template
-
-```csharp
-[SwapHandler]
-public class MyHandler : ISwapEventHandler<MyEvent>
-{
-    private readonly IMyService _service;
-    
-    public MyHandler(IMyService service) => _service = service;
-    
-    public async Task HandleAsync(MyEvent e, SwapResponseBuilder builder, CancellationToken ct)
-    {
-        var data = await _service.GetDataAsync(e.SomeId, ct);
-        builder.AlsoUpdate("target-id", "_PartialView", data);
-    }
-}
-```
-
-### State Class Template
-
-```csharp
-public class MyState : SwapState
-{
-    public string Filter { get; set; } = "";
-    public int Page { get; set; } = 1;
-    public string SortBy { get; set; } = "name";
-    
-    // Optional: Add validation
-    public override void OnValidate(ValidationContext context)
-    {
-        if (Page < 1) Page = 1;
-    }
-}
-```
-
-### Troubleshooting Quick Fixes
-
-| Problem | Solution |
-|---------|----------|
-| Full page returned instead of partial | Enable `AutoSuppressLayout` or add `_ViewStart.cshtml` |
-| Toast not showing | Add `<link rel="stylesheet" href="~/_content/Swap.Htmx/css/swap.css" />` |
-| Validation errors not appearing | Use `this.SwapValidationErrors(ModelState)` |
-| Handlers not firing | Add `[SwapHandler]` attribute to class |
-| State not persisting | Add `hx-include="#state-id"` to HTMX element |
-| OOB swaps not working | Ensure element IDs match between response and page |
-
----
-
-## VERSION
-
-This document describes Swap.Htmx v1.0.2 for .NET 9.0.
-
-**Last Updated:** Based on Analytics module implementation (50+ partials, 155ms response time)
-
+## Summary
+
+| Concept | Description |
+|---------|-------------|
+| `SwapState` | Base class for state objects |
+| `<swap-state>` | Tag helper that renders hidden fields |
+| `[FromSwapState]` | Attribute that binds state from request |
+| `hx-include` | HTMX attribute that sends hidden fields with request |
+| `ContainerId` | Auto-generated ID for the hidden fields container |
+
+**The pattern:**
+1. Define state class inheriting from `SwapState`
+2. Render with `<swap-state state="Model.State" />`
+3. Use `hx-include="#container-id"` on interactive elements
+4. Bind with `[FromSwapState]` in controller
+5. Return partial view with updated state
+
+**HTML is the state. Server renders it. Browser sends it back. No JavaScript required.**

@@ -677,7 +677,7 @@ This repo ships with several demos that exercise different parts of `Swap.Htmx`:
 - `demo/SwapMinimal` – minimal API + Swap example
 - `demo/SwapShop` – e‑commerce style MVC app showing controllers, events, and chains
 - `demo/SwapNavDemo` – navigation patterns with `.WithNavigation()` ⭐ *NEW*
-- `demo/SwapStateDemo` – hidden field state patterns with `<swap-hidden>` ⭐ *NEW*
+- `demo/SwapStateDemo` – server-driven state management with `<swap-state>` ⭐ *NEW*
 - `demo/TaskFlow` – team task management with realtime features
 - `demo/SwapWebSockets`, `demo/SwapRedisDemo`, `demo/SwapPhase15`, etc. – focused samples for realtime and orchestration features
 
