@@ -359,19 +359,46 @@ SwapState supports these property types:
 
 ## Best Practices
 
-### 1. Use [FromQuery] for Action Parameters
+### 1. URL Parameters Override Hidden Fields (FIRST Value Wins)
 
-When a button passes a value via query string AND the hidden fields have the same property:
+When using `hx-get` with URL parameters AND `hx-include` with hidden fields, **the URL parameter wins** because it comes first in the request.
+
+```html
+<!-- URL params come FIRST, hidden fields from hx-include come AFTER -->
+<button hx-get="/Products/Filter?Category=electronics&Page=1"
+        hx-target="#results"
+        hx-include="#filter-state">
+    Electronics
+</button>
+```
+
+**Request URL becomes:** `/Products/Filter?Category=electronics&Page=1&Category=all&Page=3&...`
+
+The model binder uses the **FIRST value** for each property. This is the key pattern for SwapState:
 
 ```csharp
-// ❌ Wrong - tab binds from hidden field, not query string
-public IActionResult ChangeTab(string tab, [FromSwapState] State state)
+// ✅ Correct - use hx-get with URL params to override specific fields
+public IActionResult Filter([FromSwapState] FilterState state)
+{
+    // state.Category = "electronics" (from URL param - FIRST)
+    // state.Page = 1 (from URL param - FIRST)
+    // state.Search = "phone" (from hidden field - only source)
+    
+    var products = _service.Get(state);
+    return PartialView("_Products", new ViewModel { State = state, Products = products });
+}
+```
 
-// ✅ Correct - explicitly bind tab from query string  
+### 2. Use [FromQuery] for Explicit Parameters
+
+When you want to bind a parameter separately from the state:
+
+```csharp
+// Use [FromQuery] when the parameter shouldn't be part of SwapState
 public IActionResult ChangeTab([FromQuery] string tab, [FromSwapState] State state)
 ```
 
-### 2. Create New State for Major Changes
+### 3. Create New State for Major Changes
 
 When state changes significantly, create a new instance:
 
@@ -473,9 +500,20 @@ return this.SwapResponse()
 
 ### Wrong Value Bound
 
-**Problem:** Parameter gets value from hidden field instead of query string.
+**Problem:** Parameter gets old value from hidden field instead of new value.
 
-**Solution:** Use `[FromQuery]` explicitly:
+**Solution:** Use `hx-get` with URL parameters to override (FIRST value wins):
+
+```html
+<!-- URL param Category=electronics comes FIRST, wins over hidden field -->
+<button hx-get="/Products/Filter?Category=electronics&Page=1"
+        hx-target="#results"
+        hx-include="#filter-state">
+    Electronics
+</button>
+```
+
+Or use `[FromQuery]` for separate binding:
 
 ```csharp
 public IActionResult Action([FromQuery] string tab, [FromSwapState] State state)
