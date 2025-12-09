@@ -1,100 +1,147 @@
 @model SwapStateDemo.Models.ProductViewModel
+@{
+    var state = Model.State;
+    var nameSelected = state.SortBy == "name" ? "selected" : "";
+    var priceSelected = state.SortBy == "price" ? "selected" : "";
+}
 <!DOCTYPE html>
 <html>
 <head>
     <title>SwapState Test</title>
     <script src="https://unpkg.com/htmx.org@2.0.4"></script>
     <style>
-        body { font-family: sans-serif; padding: 2rem; max-width: 800px; margin: 0 auto; }
-        .state-debug { background: #fffbe6; border: 1px solid #ffe58f; padding: 1rem; margin: 1rem 0; font-family: monospace; font-size: 0.9rem; }
+        body { font-family: sans-serif; padding: 2rem; max-width: 900px; margin: 0 auto; }
+        .state-debug { background: #fffbe6; border: 1px solid #ffe58f; padding: 1rem; margin: 1rem 0; font-family: monospace; font-size: 0.85rem; white-space: pre-wrap; }
         table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
         th, td { padding: 0.5rem; border: 1px solid #ddd; text-align: left; }
         th { background: #f5f5f5; }
         button { padding: 0.5rem 1rem; margin: 0.25rem; cursor: pointer; }
         button.active { background: #1890ff; color: white; border: none; }
-        .filters { margin: 1rem 0; display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; }
+        .filters { margin: 0.75rem 0; display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; }
+        .filters strong { min-width: 80px; }
+        input[type="text"], input[type="number"], select { padding: 0.4rem; border: 1px solid #ddd; border-radius: 3px; }
+        input[type="number"] { width: 80px; }
+        label { display: flex; align-items: center; gap: 0.25rem; cursor: pointer; }
+        nav { margin: 1rem 0; }
+        nav a { margin-right: 1rem; }
     </style>
 </head>
 <body>
-    <h1>SwapState Test</h1>
-    <p>Testing if <code>[FromSwapState]</code> and <code>.WithState()</code> actually work.</p>
+    <nav>
+        <a href="/">Product Filter</a> | <a href="/Home/Wizard">5-Step Wizard</a>
+    </nav>
 
-    <!-- THE STATE CONTAINER - this is what we're testing -->
+    <h1>SwapState Test - Product Filter</h1>
+    <p>Testing <code>[FromSwapState]</code> binding and <code>.WithState()</code> OOB updates with many filters.</p>
+
+    <!-- THE STATE CONTAINER -->
     <swap-state state="Model.State" />
 
-    <!-- Debug: Show what the state container ID is -->
-    <div class="state-debug">
-        <strong>State Container ID:</strong> #@Model.State.ContainerId<br>
-        <strong>Current State:</strong> Category=@Model.State.Category, Page=@Model.State.Page, Search=@(Model.State.Search ?? "(null)")
-    </div>
+    <!-- Debug: Show all state values -->
+    <div class="state-debug"><strong>State Container:</strong> #@state.ContainerId
+<strong>Values:</strong> Category=@state.Category | Page=@state.Page | Search=@(state.Search ?? "null")
+         SortBy=@state.SortBy | SortDesc=@state.SortDesc | InStockOnly=@state.InStockOnly
+         MinPrice=@(state.MinPrice?.ToString() ?? "null") | MaxPrice=@(state.MaxPrice?.ToString() ?? "null")</div>
 
-    <!-- Filter Buttons - test if clicking updates state -->
+    <!-- ROW 1: Category -->
     <div class="filters">
         <strong>Category:</strong>
-        <button class="@(Model.State.Category == "all" ? "active" : "")"
-                hx-get="/Home/Filter"
-                hx-target="#product-grid"
-                hx-include="#@Model.State.ContainerId"
-                hx-vals='{"Category": "all", "Page": 1}'>
-            All
-        </button>
-        <button class="@(Model.State.Category == "Electronics" ? "active" : "")"
-                hx-get="/Home/Filter"
-                hx-target="#product-grid"
-                hx-include="#@Model.State.ContainerId"
-                hx-vals='{"Category": "Electronics", "Page": 1}'>
-            Electronics
-        </button>
-        <button class="@(Model.State.Category == "Furniture" ? "active" : "")"
-                hx-get="/Home/Filter"
-                hx-target="#product-grid"
-                hx-include="#@Model.State.ContainerId"
-                hx-vals='{"Category": "Furniture", "Page": 1}'>
-            Furniture
-        </button>
-        <button class="@(Model.State.Category == "Office" ? "active" : "")"
-                hx-get="/Home/Filter"
-                hx-target="#product-grid"
-                hx-include="#@Model.State.ContainerId"
-                hx-vals='{"Category": "Office", "Page": 1}'>
-            Office
-        </button>
+        @foreach (var cat in new[] { "all", "Electronics", "Furniture", "Office" })
+        {
+            var isActive = state.Category == cat ? "active" : "";
+            <button class="@isActive"
+                    hx-get="/Home/Filter"
+                    hx-target="#product-grid"
+                    hx-include="#@state.ContainerId"
+                    hx-vals='{"Category": "@cat", "Page": 1}'>
+                @cat
+            </button>
+        }
     </div>
 
-    <!-- Search input -->
+    <!-- ROW 2: Search + In Stock -->
     <div class="filters">
         <strong>Search:</strong>
         <input type="text" 
                placeholder="Type to search..." 
-               value="@Model.State.Search"
+               value="@state.Search"
                hx-get="/Home/Filter"
                hx-target="#product-grid"
-               hx-include="#@Model.State.ContainerId"
+               hx-include="#@state.ContainerId"
                hx-trigger="keyup changed delay:300ms"
                hx-vals='{"Page": 1}'
                name="Search" />
+        
+        @{
+            var inStockChecked = state.InStockOnly ? "checked" : "";
+            var newInStockVal = !state.InStockOnly ? "true" : "false";
+        }
+        <label>
+            <input type="checkbox" 
+                   @inStockChecked
+                   hx-get="/Home/Filter"
+                   hx-target="#product-grid"
+                   hx-include="#@state.ContainerId"
+                   hx-vals='{"InStockOnly": "@newInStockVal", "Page": 1}' />
+            In Stock Only
+        </label>
+    </div>
+
+    <!-- ROW 3: Price Range -->
+    <div class="filters">
+        <strong>Price:</strong>
+        <input type="number" 
+               placeholder="Min" 
+               value="@state.MinPrice"
+               hx-get="/Home/Filter"
+               hx-target="#product-grid"
+               hx-include="#@state.ContainerId"
+               hx-trigger="change"
+               hx-vals='{"Page": 1}'
+               name="MinPrice" />
+        <span>to</span>
+        <input type="number" 
+               placeholder="Max" 
+               value="@state.MaxPrice"
+               hx-get="/Home/Filter"
+               hx-target="#product-grid"
+               hx-include="#@state.ContainerId"
+               hx-trigger="change"
+               hx-vals='{"Page": 1}'
+               name="MaxPrice" />
+    </div>
+
+    <!-- ROW 4: Sort -->
+    @{
+        var sortDescChecked = state.SortDesc ? "checked" : "";
+        var newSortDescVal = !state.SortDesc ? "true" : "false";
+    }
+    <div class="filters">
+        <strong>Sort:</strong>
+        <select hx-get="/Home/Filter"
+                hx-target="#product-grid"
+                hx-include="#@state.ContainerId"
+                hx-trigger="change"
+                hx-vals='{"Page": 1}'
+                name="SortBy">
+            <option value="name" @nameSelected>Name</option>
+            <option value="price" @priceSelected>Price</option>
+        </select>
+        
+        <label>
+            <input type="checkbox" 
+                   @sortDescChecked
+                   hx-get="/Home/Filter"
+                   hx-target="#product-grid"
+                   hx-include="#@state.ContainerId"
+                   hx-vals='{"SortDesc": "@newSortDescVal", "Page": 1}' />
+            Descending
+        </label>
     </div>
 
     <!-- Product Grid -->
     <div id="product-grid">
         @await Html.PartialAsync("_ProductGrid", Model)
     </div>
-
-    <hr>
-    <h2>Test Instructions</h2>
-    <ol>
-        <li>Click a category button (e.g., "Electronics")</li>
-        <li>Check the server console - does it show <code>[FromSwapState] Category=Electronics</code>?</li>
-        <li>Does the "Current State" debug box update after the response?</li>
-        <li>Click another category - does the previous category state persist?</li>
-    </ol>
-    
-    <h2>What Should Happen</h2>
-    <ul>
-        <li><code>&lt;swap-state&gt;</code> renders hidden fields in a div with id="product-filter-state"</li>
-        <li><code>hx-include</code> sends those hidden fields with the request</li>
-        <li><code>[FromSwapState]</code> binds those values to the ProductFilterState object</li>
-        <li><code>.WithState(state)</code> sends an OOB swap to update the hidden fields</li>
-    </ul>
 </body>
 </html>

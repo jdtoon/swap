@@ -1,0 +1,184 @@
+@model SwapStateDemo.Models.WizardViewModel
+@{
+    var s = Model.State;
+    
+    // Pre-compute selected states
+    var contactEmail = s.ContactMethod == "email" ? "selected" : "";
+    var contactPhone = s.ContactMethod == "phone" ? "selected" : "";
+    var contactSms = s.ContactMethod == "sms" ? "selected" : "";
+    
+    var freqDaily = s.Frequency == "daily" ? "selected" : "";
+    var freqWeekly = s.Frequency == "weekly" ? "selected" : "";
+    var freqMonthly = s.Frequency == "monthly" ? "selected" : "";
+    
+    var payCard = s.PaymentMethod == "card" ? "selected" : "";
+    var payPaypal = s.PaymentMethod == "paypal" ? "selected" : "";
+    var payBank = s.PaymentMethod == "bank" ? "selected" : "";
+    
+    var cardNone = string.IsNullOrEmpty(s.CardType) ? "selected" : "";
+    var cardVisa = s.CardType == "visa" ? "selected" : "";
+    var cardMc = s.CardType == "mastercard" ? "selected" : "";
+    var cardAmex = s.CardType == "amex" ? "selected" : "";
+    
+    var newsletterChecked = s.Newsletter ? "checked" : "";
+}
+
+<div class="step-content">
+    @switch (s.Step)
+    {
+        case 1:
+            <h3>Step 1: Personal Information</h3>
+            <div class="form-row">
+                <label>First Name</label>
+                <input type="text" name="FirstName" value="@s.FirstName" 
+                       hx-include="#@s.ContainerId" />
+            </div>
+            <div class="form-row">
+                <label>Last Name</label>
+                <input type="text" name="LastName" value="@s.LastName"
+                       hx-include="#@s.ContainerId" />
+            </div>
+            <div class="form-row">
+                <label>Email</label>
+                <input type="email" name="Email" value="@s.Email"
+                       hx-include="#@s.ContainerId" />
+            </div>
+            break;
+            
+        case 2:
+            <h3>Step 2: Address</h3>
+            <div class="form-row">
+                <label>Street</label>
+                <input type="text" name="Street" value="@s.Street"
+                       hx-include="#@s.ContainerId" />
+            </div>
+            <div class="form-row">
+                <label>City</label>
+                <input type="text" name="City" value="@s.City"
+                       hx-include="#@s.ContainerId" />
+            </div>
+            <div class="form-row">
+                <label>Postal Code</label>
+                <input type="text" name="PostalCode" value="@s.PostalCode"
+                       hx-include="#@s.ContainerId" />
+            </div>
+            break;
+            
+        case 3:
+            <h3>Step 3: Preferences</h3>
+            <div class="form-row">
+                <label>Preferred Contact Method</label>
+                <select name="ContactMethod" hx-include="#@s.ContainerId">
+                    <option value="email" @contactEmail>Email</option>
+                    <option value="phone" @contactPhone>Phone</option>
+                    <option value="sms" @contactSms>SMS</option>
+                </select>
+            </div>
+            <div class="form-row">
+                <label>
+                    <input type="checkbox" name="Newsletter" value="true" @newsletterChecked
+                           hx-include="#@s.ContainerId" />
+                    Subscribe to Newsletter
+                </label>
+            </div>
+            <div class="form-row">
+                <label>Email Frequency</label>
+                <select name="Frequency" hx-include="#@s.ContainerId">
+                    <option value="daily" @freqDaily>Daily</option>
+                    <option value="weekly" @freqWeekly>Weekly</option>
+                    <option value="monthly" @freqMonthly>Monthly</option>
+                </select>
+            </div>
+            break;
+            
+        case 4:
+            <h3>Step 4: Payment</h3>
+            <div class="form-row">
+                <label>Payment Method</label>
+                <select name="PaymentMethod" hx-include="#@s.ContainerId">
+                    <option value="card" @payCard>Credit Card</option>
+                    <option value="paypal" @payPaypal>PayPal</option>
+                    <option value="bank" @payBank>Bank Transfer</option>
+                </select>
+            </div>
+            @if (s.PaymentMethod == "card")
+            {
+                <div class="form-row">
+                    <label>Card Type</label>
+                    <select name="CardType" hx-include="#@s.ContainerId">
+                        <option value="" @cardNone>Select...</option>
+                        <option value="visa" @cardVisa>Visa</option>
+                        <option value="mastercard" @cardMc>Mastercard</option>
+                        <option value="amex" @cardAmex>American Express</option>
+                    </select>
+                </div>
+            }
+            break;
+            
+        case 5:
+            <h3>Step 5: Review Your Information</h3>
+            <div class="review-section">
+                <h4>Personal Info</h4>
+                <p><strong>Name:</strong> @s.FirstName @s.LastName</p>
+                <p><strong>Email:</strong> @s.Email</p>
+            </div>
+            <div class="review-section">
+                <h4>Address</h4>
+                <p>@s.Street</p>
+                <p>@s.City, @s.PostalCode</p>
+            </div>
+            <div class="review-section">
+                <h4>Preferences</h4>
+                <p><strong>Contact:</strong> @s.ContactMethod</p>
+                <p><strong>Newsletter:</strong> @(s.Newsletter ? "Yes" : "No") (@s.Frequency)</p>
+            </div>
+            <div class="review-section">
+                <h4>Payment</h4>
+                <p><strong>Method:</strong> @s.PaymentMethod @(s.PaymentMethod == "card" ? $"({s.CardType})" : "")</p>
+            </div>
+            break;
+    }
+</div>
+
+<div class="buttons">
+    @if (s.Step > 1)
+    {
+        <button class="secondary"
+                hx-post="/Home/WizardStep?goToStep=@(s.Step - 1)"
+                hx-target="#wizard-content"
+                hx-include="#@s.ContainerId">
+            ← Back
+        </button>
+    }
+    
+    @if (s.Step < 5)
+    {
+        <button class="primary"
+                hx-post="/Home/WizardStep?goToStep=@(s.Step + 1)"
+                hx-target="#wizard-content"
+                hx-include="#@s.ContainerId">
+            Next →
+        </button>
+    }
+    else
+    {
+        <button class="primary" onclick="alert('Submitted! (not really)')">
+            Submit
+        </button>
+    }
+    
+    <!-- Jump to any step -->
+    @for (int i = 1; i <= 5; i++)
+    {
+        if (i != s.Step)
+        {
+            var step = i;
+            <button class="secondary" style="font-size: 0.8rem; padding: 0.25rem 0.5rem;"
+                    hx-post="/Home/WizardStep?goToStep=@step"
+                    hx-target="#wizard-content"
+                    hx-include="#@s.ContainerId">
+                @step
+            </button>
+        }
+    }
+</div>

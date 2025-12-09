@@ -1,9 +1,9 @@
 @model SwapStateDemo.Models.ProductViewModel
 
 <!-- Debug: Show current state in the partial -->
-<div class="state-debug">
-    <strong>Partial received:</strong> Category=@Model.State.Category, Page=@Model.State.Page, PageSize=@Model.State.PageSize, Search=@(Model.State.Search ?? "(null)")
-</div>
+<div class="state-debug"><strong>Partial Received:</strong> Category=@Model.State.Category | Page=@Model.State.Page | Search=@(Model.State.Search ?? "null")
+         SortBy=@Model.State.SortBy | SortDesc=@Model.State.SortDesc | InStockOnly=@Model.State.InStockOnly
+         MinPrice=@(Model.State.MinPrice?.ToString() ?? "null") | MaxPrice=@(Model.State.MaxPrice?.ToString() ?? "null")</div>
 
 <table>
     <thead>
@@ -12,6 +12,7 @@
             <th>Name</th>
             <th>Category</th>
             <th>Price</th>
+            <th>Stock</th>
         </tr>
     </thead>
     <tbody>
@@ -24,13 +25,14 @@
                     <td>@p.Name</td>
                     <td>@p.Category</td>
                     <td>$@p.Price.ToString("F2")</td>
+                    <td>@(p.InStock ? "✓" : "✗")</td>
                 </tr>
             }
         }
         else
         {
             <tr>
-                <td colspan="4" style="text-align: center; color: #999;">No products found</td>
+                <td colspan="5" style="text-align: center; color: #999;">No products found</td>
             </tr>
         }
     </tbody>
