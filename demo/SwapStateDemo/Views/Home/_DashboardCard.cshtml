@@ -1,0 +1,33 @@
+@model SwapStateDemo.Models.DashboardViewModel
+@{
+    var state = Model.State;
+    var card = Model.SelectedCard!;
+    var isExpanded = state.IsExpanded(card.Id);
+}
+
+<!-- Card content - this partial is swapped individually -->
+<div class="card-header"
+     hx-post="/Home/ToggleCard?cardId=@card.Id"
+     hx-target="#card-@card.Id"
+     hx-include="#@state.ContainerId">
+    <h3><span>@card.Icon</span> @card.Title</h3>
+    <span class="toggle-icon">@(isExpanded ? "▲" : "▼")</span>
+</div>
+
+<div class="card-summary">@card.Summary</div>
+
+@if (isExpanded)
+{
+    <div class="card-details">
+        @card.Details
+    </div>
+}
+
+<div class="card-actions">
+    <button hx-post="/Home/SelectCard?cardId=@card.Id"
+            hx-target="#detail-panel"
+            hx-include="#@state.ContainerId"
+            class="@(state.SelectedCardId == card.Id ? "primary" : "")">
+        View Details
+    </button>
+</div>

@@ -110,4 +110,72 @@ public class HomeController : SwapController
         // Return _WizardContent - swaps entire wizard area so progress steps & debug update
         return PartialView("_WizardContent", new WizardViewModel { State = state });
     }
+
+    // ==========================================
+    // DASHBOARD - OOB State Updates Demo
+    // ==========================================
+    
+    private static readonly List<DashboardCard> DashboardCards =
+    [
+        new() { Id = 1, Title = "Sales", Summary = "$12,450", Details = "Up 23% from last month. Top product: Laptop. Best region: West Coast.", Icon = "💰" },
+        new() { Id = 2, Title = "Users", Summary = "1,234", Details = "45 new signups today. Retention rate: 89%. Most active: Premium tier.", Icon = "👥" },
+        new() { Id = 3, Title = "Orders", Summary = "89", Details = "12 pending fulfillment. Average order value: $156. Express shipping: 34%.", Icon = "📦" },
+        new() { Id = 4, Title = "Support", Summary = "7 tickets", Details = "Average response time: 2.3 hours. Satisfaction: 94%. Top issue: Shipping.", Icon = "🎫" },
+    ];
+
+    public IActionResult Dashboard()
+    {
+        var state = new DashboardState();
+        return SwapView(new DashboardViewModel 
+        { 
+            State = state, 
+            Cards = DashboardCards 
+        });
+    }
+
+    [HttpPost]
+    public IActionResult ToggleCard([FromSwapState] DashboardState state, int cardId)
+    {
+        Console.WriteLine($"[Dashboard] Toggle card {cardId}, ExpandedCards was: '{state.ExpandedCards}', ClickCount: {state.ClickCount}");
+        
+        state.ToggleExpanded(cardId);
+        state.ClickCount++;
+        
+        Console.WriteLine($"[Dashboard] ExpandedCards now: '{state.ExpandedCards}', ClickCount: {state.ClickCount}");
+        
+        var card = DashboardCards.First(c => c.Id == cardId);
+        
+        // OOB UPDATE: Swap just the card, but ALSO update the state container
+        return this.SwapResponse()
+            .WithView("_DashboardCard", new DashboardViewModel 
+            { 
+                State = state, 
+                Cards = DashboardCards,
+                SelectedCard = card
+            })
+            .WithState(state)  // <-- OOB update to state container
+            .Build();
+    }
+
+    [HttpPost]
+    public IActionResult SelectCard([FromSwapState] DashboardState state, int cardId)
+    {
+        Console.WriteLine($"[Dashboard] Select card {cardId}, was: {state.SelectedCardId}");
+        
+        state.SelectedCardId = cardId;
+        state.ClickCount++;
+        
+        var card = DashboardCards.First(c => c.Id == cardId);
+        
+        // OOB UPDATE: Swap just the detail panel, but ALSO update the state container
+        return this.SwapResponse()
+            .WithView("_DashboardDetail", new DashboardViewModel 
+            { 
+                State = state, 
+                Cards = DashboardCards,
+                SelectedCard = card
+            })
+            .WithState(state)  // <-- OOB update to state container
+            .Build();
+    }
 }

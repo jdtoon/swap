@@ -1,0 +1,98 @@
+@model SwapStateDemo.Models.DashboardViewModel
+@{
+    var state = Model.State;
+}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>SwapState Test - OOB Updates</title>
+    <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+    <style>
+        body { font-family: sans-serif; padding: 2rem; max-width: 1000px; margin: 0 auto; }
+        .state-debug { background: #fffbe6; border: 1px solid #ffe58f; padding: 1rem; margin: 1rem 0; font-family: monospace; font-size: 0.85rem; white-space: pre-wrap; }
+        nav { margin: 1rem 0; }
+        nav a { margin-right: 1rem; }
+        
+        .dashboard { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin: 1rem 0; }
+        .card { border: 1px solid #ddd; border-radius: 8px; padding: 1rem; background: white; }
+        .card.expanded { background: #f0f7ff; border-color: #1890ff; }
+        .card-header { display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
+        .card-header h3 { margin: 0; display: flex; align-items: center; gap: 0.5rem; }
+        .card-summary { font-size: 1.5rem; font-weight: bold; color: #1890ff; }
+        .card-details { margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #eee; color: #666; }
+        .card-actions { margin-top: 1rem; }
+        .card-actions button { padding: 0.5rem 1rem; cursor: pointer; border: 1px solid #ddd; border-radius: 4px; background: white; }
+        .card-actions button:hover { background: #f5f5f5; }
+        .card-actions button.primary { background: #1890ff; color: white; border-color: #1890ff; }
+        
+        .detail-panel { background: #f9f9f9; border: 1px solid #ddd; border-radius: 8px; padding: 1.5rem; margin: 1rem 0; }
+        .detail-panel h2 { margin-top: 0; }
+        .detail-panel .icon { font-size: 3rem; }
+        
+        .toggle-icon { font-size: 1.2rem; transition: transform 0.2s; }
+        .expanded .toggle-icon { transform: rotate(180deg); }
+    </style>
+</head>
+<body>
+    <nav>
+        <a href="/">Product Filter</a> | 
+        <a href="/Home/Wizard">5-Step Wizard</a> | 
+        <a href="/Home/Dashboard">OOB Dashboard</a>
+    </nav>
+
+    <h1>SwapState Test - OOB Updates</h1>
+    <p>Demonstrates <code>.WithState(state)</code> for Out-of-Band state updates.</p>
+    <p><strong>Use case:</strong> Update individual cards without swapping entire page, while keeping state in sync.</p>
+
+    <!-- STATE CONTAINER - lives outside the cards, updated via OOB -->
+    <swap-state state="Model.State" />
+
+    <!-- Debug: Show current state -->
+    <div class="state-debug"><strong>State Container:</strong> #@state.ContainerId
+<strong>ExpandedCards:</strong> "@state.ExpandedCards"
+<strong>SelectedCardId:</strong> @(state.SelectedCardId?.ToString() ?? "null")
+<strong>ClickCount:</strong> @state.ClickCount (proves state persists across individual card updates)</div>
+
+    <!-- Dashboard Cards Grid -->
+    <div class="dashboard">
+        @foreach (var card in Model.Cards)
+        {
+            var isExpanded = state.IsExpanded(card.Id);
+            <div id="card-@card.Id" class="card @(isExpanded ? "expanded" : "")">
+                @await Html.PartialAsync("_DashboardCard", new DashboardViewModel { State = state, Cards = Model.Cards, SelectedCard = card })
+            </div>
+        }
+    </div>
+
+    <!-- Detail Panel - updated when "View Details" is clicked -->
+    <div id="detail-panel">
+        @if (state.SelectedCardId.HasValue)
+        {
+            var selectedCard = Model.Cards.FirstOrDefault(c => c.Id == state.SelectedCardId);
+            if (selectedCard != null)
+            {
+                @await Html.PartialAsync("_DashboardDetail", new DashboardViewModel { State = state, Cards = Model.Cards, SelectedCard = selectedCard })
+            }
+        }
+        else
+        {
+            <div class="detail-panel" style="text-align: center; color: #999;">
+                <p>Click "View Details" on a card to see more information here.</p>
+            </div>
+        }
+    </div>
+
+    <h2>How OOB State Works</h2>
+    <pre style="background: #f5f5f5; padding: 1rem; border-radius: 4px; overflow-x: auto;">
+// Controller returns SwapResponse with OOB state update:
+return this.SwapResponse()
+    .WithView("_DashboardCard", model)  // Main swap target
+    .WithState(state)                    // OOB update to #dashboard-state
+    .Build();
+
+// This sends two swaps in one response:
+// 1. The card partial → replaces #card-{id}
+// 2. The state container → replaces #dashboard-state (OOB)
+    </pre>
+</body>
+</html>

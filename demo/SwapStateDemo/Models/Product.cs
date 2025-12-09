@@ -63,3 +63,56 @@ public class WizardViewModel
     public required WizardState State { get; init; }
     public Dictionary<string, string>? Errors { get; init; }
 }
+
+// ==========================================
+// DASHBOARD STATE - OOB updates demo
+// ==========================================
+
+public class DashboardState : SwapState
+{
+    // Track which cards are expanded (comma-separated IDs)
+    public string ExpandedCards { get; set; } = "";
+    
+    // Track selected card for detail view
+    public int? SelectedCardId { get; set; }
+    
+    // Simple counter to prove state persists
+    public int ClickCount { get; set; } = 0;
+    
+    public bool IsExpanded(int cardId)
+    {
+        if (string.IsNullOrEmpty(ExpandedCards)) return false;
+        return ExpandedCards.Split(',').Contains(cardId.ToString());
+    }
+    
+    public void ToggleExpanded(int cardId)
+    {
+        var ids = string.IsNullOrEmpty(ExpandedCards) 
+            ? new List<string>() 
+            : ExpandedCards.Split(',').ToList();
+            
+        var cardIdStr = cardId.ToString();
+        if (ids.Contains(cardIdStr))
+            ids.Remove(cardIdStr);
+        else
+            ids.Add(cardIdStr);
+            
+        ExpandedCards = string.Join(",", ids);
+    }
+}
+
+public class DashboardCard
+{
+    public int Id { get; set; }
+    public string Title { get; set; } = "";
+    public string Summary { get; set; } = "";
+    public string Details { get; set; } = "";
+    public string Icon { get; set; } = "📊";
+}
+
+public class DashboardViewModel
+{
+    public required DashboardState State { get; init; }
+    public required List<DashboardCard> Cards { get; init; }
+    public DashboardCard? SelectedCard { get; init; }
+}

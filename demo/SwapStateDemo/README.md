@@ -4,7 +4,7 @@ Demonstrates server-driven state management using `<swap-state>` and `[FromSwapS
 
 ## What This Demo Shows
 
-Two patterns for managing state with HTMX + Swap.Htmx:
+Three patterns for managing state with HTMX + Swap.Htmx:
 
 ### 1. Product Filter (Pagination + Filters)
 
@@ -17,7 +17,7 @@ A filterable, sortable, paginated product list where ALL state persists across i
 - Sort direction (checkbox toggle)
 - Pagination
 
-**Key insight:** Each interaction sends state via `hx-include`, server returns new HTML with updated state. No JavaScript state management.
+**Pattern:** Swap entire content area. State container is inside swap target.
 
 ### 2. Multi-Step Wizard
 
@@ -28,39 +28,16 @@ A 5-step form wizard where data persists across all steps:
 - Step 4: Payment (method, card type)
 - Step 5: Review all data
 
-**Key insight:** Hidden fields store ALL wizard data. Each step's form inputs override hidden fields for current step. Previous step data preserved in hidden fields.
+**Pattern:** Swap entire content area. Hidden fields + visible inputs merged.
 
-## The Pattern
+### 3. OOB Dashboard (Out-of-Band Updates)
 
-```html
-<!-- 1. State container renders hidden fields -->
-<swap-state state="Model.State" />
+A dashboard with expandable cards and a detail panel:
+- Click card header to expand/collapse (toggles that card only)
+- Click "View Details" to show detail panel
+- State tracks which cards are expanded, which is selected, click count
 
-<!-- 2. Interactive elements include state container -->
-<button hx-get="/Filter?Category=Electronics"
-        hx-target="#content"
-        hx-include="#product-filter-state">
-    Electronics
-</button>
-
-<!-- 3. Form inputs with name attributes override hidden fields -->
-<input type="text" 
-       name="Search"
-       value="@state.Search"
-       hx-get="/Filter"
-       hx-target="#content"
-       hx-include="#product-filter-state"
-       hx-trigger="keyup changed delay:300ms" />
-```
-
-```csharp
-// 4. Controller binds state
-public IActionResult Filter([FromSwapState] ProductFilterState state)
-{
-    // state is fully populated
-    return PartialView("_ProductList", new ViewModel { State = state });
-}
-```
+**Pattern:** Swap individual cards, use `.WithState(state)` for OOB update to state container.
 
 ## Running
 
@@ -73,15 +50,55 @@ Open http://localhost:5002
 
 - Product Filter: http://localhost:5002/
 - Wizard: http://localhost:5002/Home/Wizard
+- OOB Dashboard: http://localhost:5002/Home/Dashboard
 
 ## Key Files
 
-- `Models/Product.cs` - State classes (`ProductFilterState`, `WizardState`)
-- `Controllers/HomeController.cs` - Filter and wizard actions
+- `Models/Product.cs` - State classes (`ProductFilterState`, `WizardState`, `DashboardState`)
+- `Controllers/HomeController.cs` - Filter, wizard, and dashboard actions
 - `Views/Home/Index.cshtml` - Product filter main view
 - `Views/Home/_FilterContent.cshtml` - Product filter partial (state + UI)
 - `Views/Home/Wizard.cshtml` - Wizard main view
 - `Views/Home/_WizardContent.cshtml` - Wizard partial (state + steps)
+- `Views/Home/Dashboard.cshtml` - OOB dashboard main view
+- `Views/Home/_DashboardCard.cshtml` - Individual card partial
+- `Views/Home/_DashboardDetail.cshtml` - Detail panel partial
+
+## Pattern 1: Swap Entire Content (Product Filter, Wizard)
+
+State container is INSIDE the swap target. Everything updates together.
+
+```html
+<swap-state state="Model.State" />
+<!-- All UI here -->
+
+<button hx-get="/Filter" hx-target="#content" hx-include="#@state.ContainerId">
+    Filter
+</button>
+```
+
+Controller returns `PartialView()` - no OOB needed.
+
+## Pattern 2: OOB State Updates (Dashboard)
+
+State container is OUTSIDE the swap target. Use `.WithState()` to update it separately.
+
+```html
+<!-- State container outside cards -->
+<swap-state state="Model.State" />
+
+<!-- Individual cards get swapped -->
+<div id="card-1">...</div>
+<div id="card-2">...</div>
+```
+
+```csharp
+// Controller uses SwapResponse with OOB state update
+return this.SwapResponse()
+    .WithView("_DashboardCard", model)  // Swaps #card-{id}
+    .WithState(state)                    // OOB swaps #dashboard-state
+    .Build();
+```
 
 ## Checkbox Boolean Pattern
 
