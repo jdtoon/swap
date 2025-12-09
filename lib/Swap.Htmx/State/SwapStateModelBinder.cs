@@ -54,15 +54,10 @@ public sealed class SwapStateModelBinder : IModelBinder
             
             if (result != ValueProviderResult.None && result.Values.Count > 0)
             {
-                // Use LAST value when duplicates exist (form input overrides hidden field)
-                var lastValue = result.Values.Count > 1 
-                    ? result.Values[result.Values.Count - 1] 
-                    : result.FirstValue;
-                    
-                if (lastValue != null)
-                {
-                    values[prop.Name] = lastValue;
-                }
+                // Use FIRST value when duplicates exist (URL params come first, then hx-include)
+                // This ensures explicit URL overrides take precedence, even if empty
+                var firstValue = result.FirstValue;
+                values[prop.Name] = firstValue;
             }
         }
 

@@ -34,7 +34,7 @@ public class HomeController : SwapController
         });
     }
 
-    [HttpPost]
+    [HttpGet]
     public IActionResult Filter([FromSwapState] ProductFilterState state)
     {
         Console.WriteLine($"[Filter] Category={state.Category}, Page={state.Page}, Search={state.Search}, SortBy={state.SortBy}, SortDesc={state.SortDesc}, InStockOnly={state.InStockOnly}, MinPrice={state.MinPrice}, MaxPrice={state.MaxPrice}");
