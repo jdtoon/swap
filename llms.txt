@@ -474,6 +474,48 @@ Values in the URL override both hidden fields and form inputs:
 </button>
 ```
 
+### Pattern 5: OOB State Updates (When to Use `.WithState()`)
+
+When the state container is OUTSIDE the swap target, use `.WithState()` for out-of-band updates:
+
+**Pattern A: Swap Entire Content (no OOB needed)**
+State container is INSIDE the swap target - state updates automatically:
+
+```html
+<!-- _FilterContent.cshtml -->
+<swap-state state="Model.State" />
+<div class="products">...</div>
+```
+
+```csharp
+// State is inside the partial - no OOB needed
+return PartialView("_FilterContent", viewModel);
+```
+
+**Pattern B: OOB Updates (use `.WithState()`)**
+State container is OUTSIDE the swap targets (e.g., swapping individual cards):
+
+```html
+<!-- Main page -->
+<swap-state state="Model.State" />  <!-- State lives here -->
+
+<div id="card-1">...</div>  <!-- Individual cards get swapped -->
+<div id="card-2">...</div>
+```
+
+```csharp
+// Swap just the card, update state via OOB
+return this.SwapResponse()
+    .WithView("_Card", card)      // Swaps #card-1
+    .WithState(state)             // OOB updates #product-filter-state
+    .Build();
+```
+
+Use OOB when you need to:
+- Swap individual elements while keeping state in sync
+- Update a counter or status outside the main swap target
+- Keep state in a parent container while swapping children
+
 ## SwapState API Reference
 
 ### SwapState Base Class
