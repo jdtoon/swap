@@ -41,6 +41,182 @@ app.MapControllers();
 
 ---
 
+## Source Generators (Eliminate Magic Strings)
+
+Swap.Htmx includes source generators that create type-safe constants at compile time. **This is critical for maintainable code.**
+
+### Setup (.csproj) — REQUIRED
+
+Add your views as additional files for generators to scan:
+
+```xml
+<PropertyGroup>
+  <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+  <CompilerGeneratedFilesOutputPath>obj\Generated</CompilerGeneratedFilesOutputPath>
+</PropertyGroup>
+
+<ItemGroup>
+  <AdditionalFiles Include="Views\**\*.cshtml" />
+  <!-- For modular apps with module-specific views: -->
+  <AdditionalFiles Include="Modules\**\Views\**\*.cshtml" />
+</ItemGroup>
+
+<!-- Exclude generated files from compilation (prevents duplicates) -->
+<ItemGroup>
+  <Compile Remove="obj\Generated\**\*.cs" />
+</ItemGroup>
+```
+
+### 1. Event Source Generator (`[SwapEventSource]`)
+
+Generates type-safe `EventKey` constants from string constants:
+
+```csharp
+// Input: Define events as string constants
+[SwapEventSource]
+public static partial class TaskEvents
+{
+    public const string TaskCompleted = "task.completed";
+    public const string TaskCreated = "task.created";
+    public const string UserLoggedIn = "user.loggedIn";
+}
+
+// Generated at build time:
+public static partial class TaskEvents
+{
+    public static partial class Task
+    {
+        public static readonly EventKey Completed = new EventKey("task.completed");
+        public static readonly EventKey Created = new EventKey("task.created");
+    }
+    public static partial class User
+    {
+        public static readonly EventKey LoggedIn = new EventKey("user.loggedIn");
+    }
+}
+
+// Usage — type-safe, refactorable, no typos
+return SwapEvent(TaskEvents.Task.Completed, payload).Build();
+```
+
+### 2. Auto-Generated View Constants (Zero Config)
+
+The `AutoScanGenerator` automatically creates `SwapViews` from your `.cshtml` files:
+
+```csharp
+// Auto-generated from Views/**/*.cshtml
+public static class SwapViews
+{
+    public static class Home
+    {
+        public const string Index = "Index";
+    }
+    public static class Products
+    {
+        public const string Index = "Index";
+        public const string Grid = "_Grid";
+        public const string Pagination = "_Pagination";
+        public const string ProductCard = "_ProductCard";
+    }
+    public static class Shared
+    {
+        public const string Error = "Error";
+        public const string Layout = "_Layout";
+    }
+}
+
+// Usage — no magic strings
+return SwapView(SwapViews.Products.Index, products);
+builder.AlsoUpdate("product-grid", SwapViews.Products.Grid, products);
+```
+
+### 3. Auto-Generated Element ID Constants (Zero Config)
+
+The generator scans `id="..."` attributes in your views:
+
+```html
+<!-- Views/Products/_Grid.cshtml -->
+<div id="product-grid">...</div>
+<div id="pagination">...</div>
+<span id="product-count">...</span>
+```
+
+```csharp
+// Auto-generated
+public static class SwapElements
+{
+    public const string ProductGrid = "product-grid";
+    public const string Pagination = "pagination";
+    public const string ProductCount = "product-count";
+}
+
+// Usage — no magic strings, IDE autocomplete
+builder.AlsoUpdate(SwapElements.ProductGrid, SwapViews.Products.Grid, products);
+builder.AlsoUpdate(SwapElements.ProductCount, SwapViews.Products.Count, count);
+```
+
+### 4. Handler Validation Analyzer
+
+Compile-time warnings for common mistakes:
+
+| Code | Severity | Description |
+|------|----------|-------------|
+| `SWAP001` | Warning | Event triggered but no handler configured |
+| `SWAP002` | Warning | Event key referenced but not defined |
+| `SWAP003` | Warning | Circular event chain detected |
+| `SWAP004` | Info | Duplicate handler for same event |
+
+### Complete Example with Generators
+
+```csharp
+// Events/TaskEvents.cs
+[SwapEventSource]
+public static partial class TaskEvents
+{
+    public const string TaskCompleted = "task.completed";
+}
+
+// Handlers/TaskHandlers.cs
+[SwapHandler]
+public class StatsHandler : ISwapEventHandler<TaskPayload>
+{
+    public Task HandleAsync(TaskPayload payload, SwapResponseBuilder builder, CancellationToken ct)
+    {
+        // Use generated constants — no magic strings
+        builder.AlsoUpdate(SwapElements.StatsPanel, SwapViews.Tasks.Stats, GetStats());
+        return Task.CompletedTask;
+    }
+}
+
+// Controllers/TasksController.cs
+[HttpPost]
+public IActionResult Complete(int id)
+{
+    var task = _service.Complete(id);
+    
+    // Type-safe event key
+    return SwapEvent(TaskEvents.Task.Completed, new TaskPayload(task))
+        .WithView(SwapViews.Tasks.Completed, task)
+        .Build();
+}
+```
+
+### Modular Template Setup
+
+The `swap-modular` template has generators pre-configured:
+
+```bash
+dotnet new install Swap.Templates
+dotnet new swap-modular -n MyApp
+```
+
+The template includes:
+- `.csproj` with `<AdditionalFiles>` for views and module views
+- Sample `[SwapEventSource]` usage in `Modules/Notes/Events/NotesEvents.cs`
+- Generated files output to `obj/Generated/`
+
+---
+
 ## Core Pattern 1: SwapView
 
 `SwapView()` auto-detects request type:
@@ -206,39 +382,44 @@ Unchecked checkboxes send nothing. Toggle explicitly:
 
 Decouple UI updates from controllers. Controller fires event, handlers add OOB updates.
 
-### Define Events
+### Define Events (with Source Generator)
 
 ```csharp
-public static class TaskEvents
+// Use [SwapEventSource] for type-safe keys
+[SwapEventSource]
+public static partial class TaskEvents
 {
-    public static readonly EventKey Created = new("task:created");
-    public static readonly EventKey Completed = new("task:completed");
-    public static readonly EventKey Deleted = new("task:deleted");
+    public const string TaskCreated = "task.created";
+    public const string TaskCompleted = "task.completed";
+    public const string TaskDeleted = "task.deleted";
 }
+// Generated: TaskEvents.Task.Created, TaskEvents.Task.Completed, TaskEvents.Task.Deleted
 ```
 
 ### Create Handlers
 
 ```csharp
-[SwapHandler(typeof(TaskEvents), nameof(TaskEvents.Completed))]
+[SwapHandler]
 public class StatsHandler : ISwapEventHandler<TaskPayload>
 {
     private readonly IStatsService _stats;
     public StatsHandler(IStatsService stats) => _stats = stats;
     
-    public void Handle(SwapEventContext<TaskPayload> context)
+    public Task HandleAsync(TaskPayload payload, SwapResponseBuilder builder, CancellationToken ct)
     {
         var stats = _stats.GetStats();
-        context.Response.AlsoUpdate("stats-panel", "_Stats", stats);
+        builder.AlsoUpdate("stats-panel", "_Stats", stats);
+        return Task.CompletedTask;
     }
 }
 
-[SwapHandler(typeof(TaskEvents), nameof(TaskEvents.Completed))]
+[SwapHandler]
 public class ActivityHandler : ISwapEventHandler<TaskPayload>
 {
-    public void Handle(SwapEventContext<TaskPayload> context)
+    public Task HandleAsync(TaskPayload payload, SwapResponseBuilder builder, CancellationToken ct)
     {
-        context.Response.AlsoUpdate("activity-feed", "_Activity", GetRecent());
+        builder.AlsoUpdate("activity-feed", "_Activity", GetRecent());
+        return Task.CompletedTask;
     }
 }
 ```
@@ -251,7 +432,8 @@ public IActionResult Complete(int id)
 {
     var task = _service.Complete(id);
     
-    return SwapEvent(TaskEvents.Completed, new TaskPayload(task.Id, task.Title))
+    // Use generated type-safe key: TaskEvents.Task.Completed
+    return SwapEvent(TaskEvents.Task.Completed, new TaskPayload(task.Id, task.Title))
         .WithView("_TaskCompleted", task)
         .WithSuccessToast("Task completed!")
         .Build();

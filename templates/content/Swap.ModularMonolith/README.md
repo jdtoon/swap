@@ -48,6 +48,41 @@ SwapModularMonolith/
 
 ## Key Concepts
 
+### Source Generators (Zero Magic Strings)
+
+This template is pre-configured with source generators that create type-safe constants at compile time.
+
+**Setup in `.csproj`:**
+```xml
+<ItemGroup>
+  <AdditionalFiles Include="Views\**\*.cshtml" />
+  <AdditionalFiles Include="Modules\**\Views\**\*.cshtml" />
+</ItemGroup>
+```
+
+**Type-safe Events:**
+```csharp
+// Modules/Notes/Events/NotesEvents.cs
+[SwapEventSource]
+public static partial class NotesEvents
+{
+    public const string NotesListChanged = "notes.listChanged";
+}
+// Generated: NotesEvents.Notes.ListChanged → EventKey("notes.listChanged")
+
+// Usage — type-safe, refactorable
+return SwapEvent(NotesEvents.Notes.ListChanged, payload).Build();
+```
+
+**Auto-generated View & Element Constants:**
+```csharp
+// Auto-generated from your .cshtml files
+builder.AlsoUpdate(SwapElements.NotesList, SwapViews.Notes.List, notes);
+// Instead of magic strings: builder.AlsoUpdate("notes-list", "_List", notes);
+```
+
+Generated files are output to `obj/Generated/` — check there to see what's available.
+
 ### Server-Driven UI
 All UI updates flow through server-rendered HTML partials. Use HTMX attributes for interactivity:
 - `hx-get`/`hx-post` for requests

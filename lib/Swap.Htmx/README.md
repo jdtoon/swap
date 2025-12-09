@@ -314,6 +314,79 @@ return SwapResponse()
 | Form validation | `<swap-validation>` + `SwapValidationErrors()` |
 | Real-time (SSE) | `ServerSentEvents()` |
 | Real-time (WebSocket) | WebSocket registry |
+| Source generators | `[SwapEventSource]`, auto `SwapViews`/`SwapElements` |
+
+---
+
+## Source Generators
+
+Eliminate magic strings with compile-time code generation:
+
+### 1. Type-Safe Event Keys
+
+```csharp
+// Define your events
+[SwapEventSource]
+public static partial class CartEvents
+{
+    public const string ItemAdded = "cart.itemAdded";
+    public const string CheckoutCompleted = "cart.checkoutCompleted";
+}
+
+// Generated at build time:
+// CartEvents.Cart.ItemAdded          → EventKey("cart.itemAdded")
+// CartEvents.Cart.CheckoutCompleted  → EventKey("cart.checkoutCompleted")
+
+// Use in controller
+return SwapEvent(CartEvents.Cart.ItemAdded, item).Build();
+```
+
+### 2. Auto-Generated View & Element Constants
+
+With zero configuration, the generators scan your `.cshtml` files:
+
+```csharp
+// Auto-generated from your views
+public static class SwapViews
+{
+    public static class Products
+    {
+        public const string Index = "Index";
+        public const string Grid = "_Grid";
+        public const string Pagination = "_Pagination";
+    }
+}
+
+public static class SwapElements
+{
+    public const string ProductGrid = "product-grid";
+    public const string CartCount = "cart-count";
+}
+
+// Use instead of magic strings
+builder.AlsoUpdate(SwapElements.CartCount, SwapViews.Cart.Count, count);
+```
+
+### 3. Setup (.csproj)
+
+Add your views as additional files for the generators to scan:
+
+```xml
+<ItemGroup>
+  <AdditionalFiles Include="Views\**\*.cshtml" />
+  <!-- For modular apps: -->
+  <AdditionalFiles Include="Modules\**\Views\**\*.cshtml" />
+</ItemGroup>
+```
+
+### 4. Compile-Time Validation
+
+The `HandlerValidationAnalyzer` warns you about:
+- `SWAP001`: Events without handlers
+- `SWAP002`: Undefined event keys
+- `SWAP003`: Circular event chains
+
+📖 [Full Source Generators Guide](../../framework/Swap.Htmx.Generators/README.md)
 
 ---
 
