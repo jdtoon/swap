@@ -1,230 +1,342 @@
-# Swap.Htmx - Server-Driven State Management for ASP.NET + HTMX
+# Swap.Htmx
 
-> This document describes SwapState, the state management pattern in Swap.Htmx.
-> Swap.Htmx is a .NET library that makes HTMX a first-class citizen in ASP.NET MVC.
+Server-driven web applications for ASP.NET Core + HTMX.
 
-## Core Principle: HTML Is The State
+## What It Is
 
-SwapState uses hidden HTML fields to persist state across HTMX requests. The server renders state, the browser sends it back, and the server renders updated state. No JavaScript state management required.
+Swap.Htmx is a .NET library that makes HTMX a first-class citizen in ASP.NET Core. It provides:
 
+1. **SwapController** — Auto-detects HTMX requests, returns partials or full pages
+2. **SwapResponse** — Fluent builder for multi-target updates, toasts, triggers
+3. **SwapState** — Server-side state management via hidden HTML fields
+4. **Event Handlers** — Decouple UI updates from controller logic
+5. **Real-time** — Built-in SSE and WebSocket support
+
+## Installation
+
+```bash
+dotnet add package Swap.Htmx
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│  1. Server renders HTML with hidden fields                       │
-│     <input type="hidden" name="Category" value="Electronics" /> │
-│                                                                  │
-│  2. User interacts (clicks button, types in input)              │
-│     hx-include="#state-container" sends hidden fields           │
-│                                                                  │
-│  3. Server receives state via [FromSwapState]                   │
-│     Controller action gets populated state object               │
-│                                                                  │
-│  4. Server returns new HTML with updated state                  │
-│     Hidden fields reflect new values                            │
-│                                                                  │
-│  5. Repeat                                                       │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-## Quick Start
-
-### Step 1: Define a State Class
-
-Create a class that inherits from `SwapState`:
 
 ```csharp
-public class ProductFilterState : SwapState
+// Program.cs
+builder.Services.AddControllersWithViews();
+builder.Services.AddSwapHtmx();
+
+var app = builder.Build();
+app.UseStaticFiles();
+app.UseRouting();
+app.UseSwapHtmx();
+app.MapControllers();
+```
+
+```html
+<!-- _Layout.cshtml -->
+<head>
+    <link rel="stylesheet" href="~/_content/Swap.Htmx/css/swap.css" />
+    <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+    <script src="~/_content/Swap.Htmx/js/swap.client.js"></script>
+</head>
+```
+
+---
+
+## Core Pattern 1: SwapView
+
+`SwapView()` auto-detects request type:
+
+```csharp
+public class ProductsController : SwapController
+{
+    public IActionResult Index()
+    {
+        return SwapView(model);
+        // Browser navigation → View with layout
+        // HTMX request → PartialView (no layout)
+    }
+}
+```
+
+Without inheritance:
+
+```csharp
+public class ProductsController : Controller
+{
+    public IActionResult Index()
+    {
+        return this.SwapView(model);  // Extension method
+    }
+}
+```
+
+---
+
+## Core Pattern 2: SwapResponse (Multi-Target Updates)
+
+Update multiple page elements in one response:
+
+```csharp
+[HttpPost]
+public IActionResult AddToCart(int productId)
+{
+    _cart.Add(productId);
+    
+    return SwapResponse()
+        .WithView("_ProductAdded", product)           // Main response → hx-target
+        .AlsoUpdate("cart-count", "_Count", count)    // OOB swap
+        .AlsoUpdate("cart-total", "_Total", total)    // OOB swap
+        .WithSuccessToast("Added to cart!")           // Toast notification
+        .WithTrigger("cartUpdated")                   // Client-side event
+        .Build();
+}
+```
+
+### AlsoUpdate Parameters
+
+```csharp
+.AlsoUpdate(
+    "element-id",      // Target element ID (no #)
+    "_PartialView",    // Partial view name
+    model,             // Model for the view
+    SwapMode.InnerHtml // Optional: swap strategy
+)
+```
+
+### Swap Modes
+
+| Mode | Effect |
+|------|--------|
+| `InnerHtml` | Replace inner content (default) |
+| `OuterHtml` | Replace entire element |
+| `BeforeEnd` | Append inside element |
+| `AfterEnd` | Insert after element |
+| `Delete` | Remove element |
+
+---
+
+## Core Pattern 3: SwapState
+
+Server-side state via hidden HTML fields. No JavaScript state management.
+
+### Define State
+
+```csharp
+public class FilterState : SwapState
 {
     public string Category { get; set; } = "all";
     public int Page { get; set; } = 1;
-    public int PageSize { get; set; } = 10;
     public string? Search { get; set; }
-    public string SortBy { get; set; } = "name";
-    public bool SortDesc { get; set; } = false;
     public bool InStockOnly { get; set; } = false;
 }
 ```
 
-The `SwapState` base class provides:
-- `ContainerId`: Auto-generated ID based on class name (e.g., `product-filter-state`)
-- Change tracking (optional)
-- URL sync capability (optional)
-
-### Step 2: Render State in Your View
-
-Use the `<swap-state>` tag helper to render hidden fields:
+### Render State
 
 ```html
 @model ProductViewModel
 
-<!-- Renders hidden inputs for ALL state properties -->
+<!-- Renders hidden inputs in a container -->
 <swap-state state="Model.State" />
 
-<!-- Example output: -->
-<!-- <div id="product-filter-state" class="swap-state-container"> -->
+<!-- Output: -->
+<!-- <div id="filter-state" class="swap-state-container"> -->
 <!--     <input type="hidden" name="Category" value="all" /> -->
 <!--     <input type="hidden" name="Page" value="1" /> -->
-<!--     <input type="hidden" name="PageSize" value="10" /> -->
-<!--     <input type="hidden" name="Search" value="" /> -->
 <!--     ... -->
 <!-- </div> -->
 ```
 
-### Step 3: Include State in HTMX Requests
-
-Use `hx-include` to send state with requests:
+### Include State in Requests
 
 ```html
-<!-- Button that changes category -->
-<button hx-get="/Home/Filter?Category=Electronics&Page=1"
-        hx-target="#content"
-        hx-include="#product-filter-state">
+<button hx-get="/Products/Filter?Category=Electronics&Page=1"
+        hx-target="#results"
+        hx-include="#filter-state">
     Electronics
 </button>
-
-<!-- Search input that sends on keyup -->
-<input type="text" 
-       name="Search"
-       value="@Model.State.Search"
-       hx-get="/Home/Filter?Page=1"
-       hx-target="#content"
-       hx-include="#product-filter-state"
-       hx-trigger="keyup changed delay:300ms" />
 ```
 
-### Step 4: Bind State in Controller
-
-Use `[FromSwapState]` to bind the state:
+### Bind State in Controller
 
 ```csharp
-public class HomeController : Controller
+[HttpGet]
+public IActionResult Filter([FromSwapState] FilterState state)
 {
-    public IActionResult Index()
-    {
-        var state = new ProductFilterState();
-        return View(new ProductViewModel { State = state, Products = GetProducts(state) });
-    }
+    // state.Category = "Electronics" (from URL param)
+    // state.Page = 1 (from URL param)
+    // state.Search = "phone" (from hidden field)
+    
+    var products = _service.Get(state.Category, state.Search, state.Page);
+    return PartialView("_ProductList", new ViewModel { State = state, Products = products });
+}
+```
 
-    [HttpGet]
-    public IActionResult Filter([FromSwapState] ProductFilterState state)
+### CRITICAL: URL Parameters Win (First Value)
+
+When using `hx-get` with URL params AND `hx-include`:
+
+```html
+<button hx-get="/Filter?Category=Electronics&Page=1"
+        hx-include="#filter-state">
+```
+
+Request becomes: `?Category=Electronics&Page=1&Category=all&Page=3&...`
+
+**The model binder uses the FIRST value.** URL params come first, so they override hidden fields.
+
+This is the key pattern:
+- **Override specific fields:** Put them in URL parameters
+- **Preserve other fields:** They come from hidden fields via hx-include
+- **Clear a field:** Pass empty value in URL (`Search=`)
+
+### Checkbox Pattern
+
+Unchecked checkboxes send nothing. Toggle explicitly:
+
+```html
+<input type="checkbox" 
+       @(state.InStockOnly ? "checked" : "")
+       hx-get="/Filter?InStockOnly=@(!state.InStockOnly)"
+       hx-include="#filter-state" />
+```
+
+---
+
+## Core Pattern 4: Event Handlers
+
+Decouple UI updates from controllers. Controller fires event, handlers add OOB updates.
+
+### Define Events
+
+```csharp
+public static class TaskEvents
+{
+    public static readonly EventKey Created = new("task:created");
+    public static readonly EventKey Completed = new("task:completed");
+    public static readonly EventKey Deleted = new("task:deleted");
+}
+```
+
+### Create Handlers
+
+```csharp
+[SwapHandler(typeof(TaskEvents), nameof(TaskEvents.Completed))]
+public class StatsHandler : ISwapEventHandler<TaskPayload>
+{
+    private readonly IStatsService _stats;
+    public StatsHandler(IStatsService stats) => _stats = stats;
+    
+    public void Handle(SwapEventContext<TaskPayload> context)
     {
-        // state is fully populated from hidden fields
-        var products = GetProducts(state);
-        
-        // Return partial with updated state
-        return PartialView("_ProductList", new ProductViewModel 
-        { 
-            State = state, 
-            Products = products 
-        });
+        var stats = _stats.GetStats();
+        context.Response.AlsoUpdate("stats-panel", "_Stats", stats);
+    }
+}
+
+[SwapHandler(typeof(TaskEvents), nameof(TaskEvents.Completed))]
+public class ActivityHandler : ISwapEventHandler<TaskPayload>
+{
+    public void Handle(SwapEventContext<TaskPayload> context)
+    {
+        context.Response.AlsoUpdate("activity-feed", "_Activity", GetRecent());
     }
 }
 ```
 
-## Complete Example: Product Filter
-
-### Model
+### Fire Event from Controller
 
 ```csharp
-public class ProductFilterState : SwapState
+[HttpPost]
+public IActionResult Complete(int id)
+{
+    var task = _service.Complete(id);
+    
+    return SwapEvent(TaskEvents.Completed, new TaskPayload(task.Id, task.Title))
+        .WithView("_TaskCompleted", task)
+        .WithSuccessToast("Task completed!")
+        .Build();
+}
+// One event → both handlers run → one response with all OOB updates
+```
+
+---
+
+## Core Pattern 5: Navigation
+
+SPA-style navigation without verbose HTMX:
+
+```html
+<!-- Instead of: -->
+<a href="/products" hx-get="/products" hx-target="#main" hx-push-url="true">Products</a>
+
+<!-- Use: -->
+<swap-nav to="/products">Products</swap-nav>
+```
+
+Configure default target:
+
+```csharp
+builder.Services.AddSwapHtmx(options =>
+{
+    options.DefaultNavigationTarget = "#main-content";
+});
+```
+
+---
+
+## Complete Example: Product Filter
+
+### State
+
+```csharp
+public class FilterState : SwapState
 {
     public string Category { get; set; } = "all";
     public int Page { get; set; } = 1;
     public string? Search { get; set; }
-    public bool InStockOnly { get; set; } = false;
-}
-
-public class ProductViewModel
-{
-    public ProductFilterState State { get; set; } = new();
-    public List<Product> Products { get; set; } = new();
-    public int TotalCount { get; set; }
+    public decimal? MinPrice { get; set; }
+    public decimal? MaxPrice { get; set; }
+    public string SortBy { get; set; } = "name";
+    public bool SortDesc { get; set; } = false;
 }
 ```
 
 ### Controller
 
 ```csharp
-public class ProductController : Controller
+public class ProductsController : SwapController
 {
     public IActionResult Index()
     {
-        var state = new ProductFilterState();
-        var (products, total) = FilterProducts(state);
-        return View(new ProductViewModel { State = state, Products = products, TotalCount = total });
+        var state = new FilterState();
+        var products = GetProducts(state);
+        return SwapView(new ProductViewModel { State = state, Products = products });
     }
 
     [HttpGet]
-    public IActionResult Filter([FromSwapState] ProductFilterState state)
+    public IActionResult Filter([FromSwapState] FilterState state)
     {
-        var (products, total) = FilterProducts(state);
-        return PartialView("_ProductList", new ProductViewModel 
-        { 
-            State = state, 
-            Products = products, 
-            TotalCount = total 
-        });
-    }
-
-    private (List<Product>, int) FilterProducts(ProductFilterState state)
-    {
-        var query = _products.AsQueryable();
-        
-        if (state.Category != "all")
-            query = query.Where(p => p.Category == state.Category);
-        
-        if (!string.IsNullOrEmpty(state.Search))
-            query = query.Where(p => p.Name.Contains(state.Search, StringComparison.OrdinalIgnoreCase));
-        
-        if (state.InStockOnly)
-            query = query.Where(p => p.InStock);
-        
-        var total = query.Count();
-        var products = query.Skip((state.Page - 1) * 10).Take(10).ToList();
-        
-        return (products, total);
+        var products = GetProducts(state);
+        return PartialView("_FilterContent", new ProductViewModel { State = state, Products = products });
     }
 }
 ```
 
-### Main View (Index.cshtml)
+### View (_FilterContent.cshtml)
 
 ```html
 @model ProductViewModel
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Products</title>
-    <script src="https://unpkg.com/htmx.org@2.0.4"></script>
-</head>
-<body>
-    <h1>Products</h1>
-    
-    <!-- Content area that gets swapped -->
-    <div id="content">
-        @await Html.PartialAsync("_ProductList", Model)
-    </div>
-</body>
-</html>
-```
+@{ var state = Model.State; }
 
-### Partial View (_ProductList.cshtml)
-
-```html
-@model ProductViewModel
-@{
-    var state = Model.State;
-}
-
-<!-- STATE CONTAINER - hidden fields persist state -->
+<!-- State container -->
 <swap-state state="Model.State" />
 
-<!-- Category Filter -->
-<div class="filters">
-    @foreach (var cat in new[] { "all", "Electronics", "Furniture", "Office" })
+<!-- Category buttons -->
+<div class="categories">
+    @foreach (var cat in new[] { "all", "Electronics", "Furniture" })
     {
-        var isActive = state.Category == cat ? "active" : "";
-        <button class="@isActive"
-                hx-get="/Product/Filter?Category=@cat&Page=1"
+        <button class="@(state.Category == cat ? "active" : "")"
+                hx-get="/Products/Filter?Category=@cat&Page=1"
                 hx-target="#content"
                 hx-include="#@state.ContainerId">
             @cat
@@ -235,179 +347,138 @@ public class ProductController : Controller
 <!-- Search -->
 <input type="text" 
        name="Search"
-       placeholder="Search..."
        value="@state.Search"
-       hx-get="/Product/Filter?Page=1"
+       placeholder="Search..."
+       hx-get="/Products/Filter?Page=1"
        hx-target="#content"
        hx-include="#@state.ContainerId"
        hx-trigger="keyup changed delay:300ms" />
 
-<!-- In Stock Checkbox -->
-<label>
-    <input type="checkbox" 
-           @(state.InStockOnly ? "checked" : "")
-           hx-get="/Product/Filter?Page=1&InStockOnly=@(!state.InStockOnly ? "true" : "false")"
-           hx-target="#content"
-           hx-include="#@state.ContainerId" />
-    In Stock Only
-</label>
+<!-- Sort -->
+<select hx-get="/Products/Filter?Page=1"
+        hx-target="#content"
+        hx-include="#@state.ContainerId">
+    <option value="name" selected="@(state.SortBy == "name")">Name</option>
+    <option value="price" selected="@(state.SortBy == "price")">Price</option>
+</select>
 
-<!-- Product List -->
-<table>
+<!-- Results -->
+<div class="products">
     @foreach (var product in Model.Products)
     {
-        <tr>
-            <td>@product.Name</td>
-            <td>@product.Category</td>
-            <td>@product.Price</td>
-        </tr>
+        <div class="product">@product.Name - @product.Price</div>
     }
-</table>
+</div>
 
 <!-- Pagination -->
 <div class="pagination">
-    @for (int i = 1; i <= Math.Ceiling(Model.TotalCount / 10.0); i++)
+    @for (int i = 1; i <= Model.TotalPages; i++)
     {
-        var pageNum = i;
-        <button hx-get="/Product/Filter?Page=@pageNum"
+        <button hx-get="/Products/Filter?Page=@i"
                 hx-target="#content"
                 hx-include="#@state.ContainerId"
-                class="@(state.Page == pageNum ? "active" : "")">
-            @pageNum
+                class="@(state.Page == i ? "active" : "")">
+            @i
         </button>
     }
 </div>
 ```
 
+---
+
 ## Complete Example: Multi-Step Wizard
 
-SwapState excels at multi-step forms where data must persist across steps.
-
-### Model
+### State
 
 ```csharp
 public class WizardState : SwapState
 {
     public int Step { get; set; } = 1;
     
-    // Step 1: Personal
+    // Step 1
     public string FirstName { get; set; } = "";
     public string LastName { get; set; } = "";
     public string Email { get; set; } = "";
     
-    // Step 2: Address
+    // Step 2
     public string Street { get; set; } = "";
     public string City { get; set; } = "";
-    public string PostalCode { get; set; } = "";
     
-    // Step 3: Preferences
-    public string ContactMethod { get; set; } = "email";
+    // Step 3
     public bool Newsletter { get; set; } = false;
-}
-
-public class WizardViewModel
-{
-    public WizardState State { get; set; } = new();
 }
 ```
 
 ### Controller
 
 ```csharp
-public class WizardController : Controller
+public class WizardController : SwapController
 {
-    public IActionResult Index()
-    {
-        return View(new WizardViewModel());
-    }
+    public IActionResult Index() => SwapView(new WizardViewModel());
 
     [HttpPost]
     public IActionResult Step([FromSwapState] WizardState state, int goToStep)
     {
         state.Step = goToStep;
-        return PartialView("_WizardContent", new WizardViewModel { State = state });
+        return PartialView("_WizardStep", new WizardViewModel { State = state });
     }
     
     [HttpPost]
     public IActionResult Submit([FromSwapState] WizardState state)
     {
-        // All wizard data is available in state
-        // Save to database, send email, etc.
-        return PartialView("_Success", state);
+        // All data available in state
+        SaveRegistration(state);
+        return PartialView("_Success");
     }
 }
 ```
 
-### Wizard Partial (_WizardContent.cshtml)
+### View
 
 ```html
 @model WizardViewModel
-@{
-    var s = Model.State;
-}
+@{ var s = Model.State; }
 
-<!-- STATE CONTAINER - persists ALL wizard data across steps -->
 <swap-state state="Model.State" />
 
-<!-- Progress Indicator -->
-<div class="progress">
-    @for (int i = 1; i <= 3; i++)
-    {
-        var status = s.Step == i ? "active" : (s.Step > i ? "completed" : "");
-        <span class="@status">Step @i</span>
-    }
-</div>
+@switch (s.Step)
+{
+    case 1:
+        <input name="FirstName" value="@s.FirstName" />
+        <input name="LastName" value="@s.LastName" />
+        <input name="Email" value="@s.Email" />
+        break;
+    case 2:
+        <input name="Street" value="@s.Street" />
+        <input name="City" value="@s.City" />
+        break;
+    case 3:
+        <p>Review: @s.FirstName @s.LastName, @s.Email</p>
+        <p>Address: @s.Street, @s.City</p>
+        break;
+}
 
-<!-- Step Content -->
-<div class="step-content">
-    @switch (s.Step)
-    {
-        case 1:
-            <h3>Personal Information</h3>
-            <input type="text" name="FirstName" value="@s.FirstName" placeholder="First Name" />
-            <input type="text" name="LastName" value="@s.LastName" placeholder="Last Name" />
-            <input type="email" name="Email" value="@s.Email" placeholder="Email" />
-            break;
-            
-        case 2:
-            <h3>Address</h3>
-            <input type="text" name="Street" value="@s.Street" placeholder="Street" />
-            <input type="text" name="City" value="@s.City" placeholder="City" />
-            <input type="text" name="PostalCode" value="@s.PostalCode" placeholder="Postal Code" />
-            break;
-            
-        case 3:
-            <h3>Review</h3>
-            <p><strong>Name:</strong> @s.FirstName @s.LastName</p>
-            <p><strong>Email:</strong> @s.Email</p>
-            <p><strong>Address:</strong> @s.Street, @s.City @s.PostalCode</p>
-            break;
-    }
-</div>
-
-<!-- Navigation -->
 <div class="buttons">
     @if (s.Step > 1)
     {
         <button hx-post="/Wizard/Step?goToStep=@(s.Step - 1)"
-                hx-target="#wizard-content"
-                hx-include="#@s.ContainerId, .step-content input, .step-content select">
-            ← Back
+                hx-target="#wizard"
+                hx-include="#@s.ContainerId, form input">
+            Back
         </button>
     }
-    
     @if (s.Step < 3)
     {
         <button hx-post="/Wizard/Step?goToStep=@(s.Step + 1)"
-                hx-target="#wizard-content"
-                hx-include="#@s.ContainerId, .step-content input, .step-content select">
-            Next →
+                hx-target="#wizard"
+                hx-include="#@s.ContainerId, form input">
+            Next
         </button>
     }
     else
     {
         <button hx-post="/Wizard/Submit"
-                hx-target="#wizard-content"
+                hx-target="#wizard"
                 hx-include="#@s.ContainerId">
             Submit
         </button>
@@ -415,224 +486,99 @@ public class WizardController : Controller
 </div>
 ```
 
-## Key Patterns
+---
 
-### Pattern 1: URL Parameters Override Hidden Fields
+## API Quick Reference
 
-When using `hx-get` with URL parameters and `hx-include`, the URL parameters come first in the request and override the hidden field values. The model binder uses the **first** value when duplicates exist.
+### SwapController Methods
 
-```html
-<!-- URL param "Category=Electronics" overrides hidden field "Category=all" -->
-<button hx-get="/Filter?Category=Electronics&Page=1"
-        hx-include="#product-filter-state">
-    Electronics
-</button>
+| Method | Purpose |
+|--------|---------|
+| `SwapView(model)` | Auto partial/full based on request |
+| `SwapView("_View", model)` | Explicit view name |
+| `SwapResponse()` | Start fluent builder |
+| `SwapEvent(key, payload)` | Fire event, handlers add OOB |
+| `ServerSentEvents(...)` | SSE endpoint |
 
-<!-- Request: ?Category=Electronics&Page=1&Category=all&Page=1&... -->
-<!-- Server receives: Category=Electronics (first value wins) -->
-```
+### SwapResponse Builder
 
-### Pattern 2: Named Inputs Send Their Values
+| Method | Purpose |
+|--------|---------|
+| `.WithView("_View", model)` | Main response content |
+| `.AlsoUpdate("id", "_View", model)` | OOB swap |
+| `.AlsoUpdate("id", "_View", model, SwapMode.X)` | OOB with swap mode |
+| `.WithSuccessToast("msg")` | Success toast |
+| `.WithErrorToast("msg")` | Error toast |
+| `.WithTrigger("event")` | Client-side event |
+| `.WithTrigger(EventKey)` | Type-safe event |
+| `.WithRedirect("/path")` | HX-Redirect |
+| `.WithState(state)` | OOB state container update |
+| `.Build()` | Build IActionResult |
 
-For inputs with a `name` attribute, the triggering element's value is automatically included in the request:
+### SwapState
 
-```html
-<!-- Search input sends its current value -->
-<input type="text" 
-       name="Search"
-       placeholder="Search..."
-       value="@state.Search"
-       hx-get="/Filter?Page=1"
-       hx-target="#content"
-       hx-include="#@state.ContainerId"
-       hx-trigger="keyup changed delay:300ms" />
+| Member | Purpose |
+|--------|---------|
+| `ContainerId` | Auto-generated element ID |
+| `[FromSwapState]` | Bind state from request |
+| `<swap-state state="x" />` | Render hidden fields |
 
-<!-- Request: ?Page=1&Search=typed-value&...hidden-fields... -->
-```
+---
 
-### Pattern 3: Checkbox Boolean Toggle
+## Rules
 
-Unchecked checkboxes send nothing. To toggle a boolean, pass the opposite value explicitly in the URL:
+1. **Use `SwapView()` not `View()`** for HTMX-compatible responses
+2. **URL params override hidden fields** — first value wins
+3. **Always `hx-include` the state container** when using SwapState
+4. **Debounce search inputs** — `hx-trigger="keyup changed delay:300ms"`
+5. **Checkboxes need explicit toggle** — pass opposite value in URL
+6. **Don't trust hidden fields** — validate server-side
+7. **Keep state flat** — no nested objects in SwapState
+8. **Use event handlers** for complex multi-component updates
 
-```html
-<!-- CORRECT: Explicit toggle value in URL -->
-<input type="checkbox" 
-       @(state.InStockOnly ? "checked" : "")
-       hx-get="/Filter?Page=1&InStockOnly=@(!state.InStockOnly ? "true" : "false")"
-       hx-target="#content"
-       hx-include="#@state.ContainerId" />
+---
 
-<!-- WRONG: Checkbox value won't uncheck properly -->
-<input type="checkbox" name="InStockOnly" value="true" ... />
-```
-
-### Pattern 4: Include Form Inputs for Wizards
-
-For multi-step forms, include both the state container AND visible form inputs:
-
-```html
-<button hx-post="/Wizard/NextStep"
-        hx-target="#wizard-content"
-        hx-include="#@s.ContainerId, .step-content input, .step-content select">
-    Next
-</button>
-```
-
-The state container has hidden fields for ALL steps (including previous steps).
-The visible inputs are for the CURRENT step only.
-Both get sent, and the model binder uses the first value for each field.
-
-### Pattern 5: OOB State Updates (When to Use `.WithState()`)
-
-When the state container is OUTSIDE the swap target, use `.WithState()` for out-of-band updates:
-
-**Pattern A: Swap Entire Content (no OOB needed)**
-State container is INSIDE the swap target - state updates automatically:
-
-```html
-<!-- _FilterContent.cshtml -->
-<swap-state state="Model.State" />
-<div class="products">...</div>
-```
+## Don't Do This
 
 ```csharp
-// State is inside the partial - no OOB needed
-return PartialView("_FilterContent", viewModel);
+// WRONG: Returns full layout for HTMX requests
+return View(model);
+
+// WRONG: Redirect breaks HTMX
+return Redirect("/products");
+
+// WRONG: hx-include missing
+<button hx-get="/filter">Filter</button>
+
+// WRONG: Complex objects in state
+public List<Product> Products { get; set; }  // Don't do this
 ```
 
-**Pattern B: OOB Updates (use `.WithState()`)**
-State container is OUTSIDE the swap targets (e.g., swapping individual cards):
+---
 
-```html
-<!-- Main page -->
-<swap-state state="Model.State" />  <!-- State lives here -->
-
-<div id="card-1">...</div>  <!-- Individual cards get swapped -->
-<div id="card-2">...</div>
-```
+## Do This
 
 ```csharp
-// Swap just the card, update state via OOB
-return this.SwapResponse()
-    .WithView("_Card", card)      // Swaps #card-1
-    .WithState(state)             // OOB updates #product-filter-state
+// RIGHT: Auto-detects HTMX
+return SwapView(model);
+
+// RIGHT: Multi-target update
+return SwapResponse()
+    .WithView("_Main", main)
+    .AlsoUpdate("count", "_Count", count)
+    .Build();
+
+// RIGHT: State with URL override
+<button hx-get="/filter?Category=Electronics&Page=1"
+        hx-include="#filter-state">
+
+// RIGHT: Debounced search
+<input hx-get="/search" 
+       hx-trigger="keyup changed delay:300ms"
+       hx-include="#state">
+
+// RIGHT: Event-driven updates
+return SwapEvent(Events.ItemAdded, payload)
+    .WithView("_Item", item)
     .Build();
 ```
-
-Use OOB when you need to:
-- Swap individual elements while keeping state in sync
-- Update a counter or status outside the main swap target
-- Keep state in a parent container while swapping children
-
-## SwapState API Reference
-
-### SwapState Base Class
-
-```csharp
-public abstract class SwapState
-{
-    // Auto-generated container ID (e.g., "product-filter-state")
-    public string ContainerId { get; }
-    
-    // Change tracking
-    public HashSet<string> ChangedProperties { get; }
-    public bool HasChanges { get; }
-    public void AcceptChanges();
-    
-    // URL synchronization
-    public virtual bool UrlSync => false;
-    public void FromQueryString(IQueryCollection query);
-    public string ToQueryString();
-}
-```
-
-### [FromSwapState] Attribute
-
-Binds a SwapState-derived class from form/query data:
-
-```csharp
-public IActionResult Filter([FromSwapState] ProductFilterState state)
-{
-    // state is populated from hidden fields sent via hx-include
-}
-```
-
-### <swap-state> Tag Helper
-
-Renders a state object as hidden fields:
-
-```html
-<!-- Basic usage -->
-<swap-state state="Model.State" />
-
-<!-- With custom container (rare) -->
-<swap-state state="Model.State" include-container="false" />
-```
-
-Output:
-```html
-<div id="product-filter-state" class="swap-state-container">
-    <input type="hidden" name="Category" value="all" />
-    <input type="hidden" name="Page" value="1" />
-    <!-- ... all properties ... -->
-</div>
-```
-
-## When NOT to Use SwapState
-
-1. **Sensitive data**: Don't put passwords, tokens, or secrets in SwapState. Hidden fields are visible in browser devtools.
-
-2. **Large datasets**: SwapState adds hidden fields to HTML. Don't store hundreds of items.
-
-3. **Server-side only state**: If state never needs to be sent back from browser, use session or database instead.
-
-## Validation
-
-Use standard ASP.NET validation attributes on SwapState properties:
-
-```csharp
-public class ProductFilterState : SwapState
-{
-    [Range(1, 1000)]
-    public int Page { get; set; } = 1;
-    
-    [StringLength(100)]
-    public string? Search { get; set; }
-    
-    [RegularExpression("^(all|Electronics|Furniture|Office)$")]
-    public string Category { get; set; } = "all";
-}
-```
-
-Validate in controller:
-
-```csharp
-public IActionResult Filter([FromSwapState] ProductFilterState state)
-{
-    if (!ModelState.IsValid)
-    {
-        // Reset to defaults or return error
-        state = new ProductFilterState();
-    }
-    // ...
-}
-```
-
-## Summary
-
-| Concept | Description |
-|---------|-------------|
-| `SwapState` | Base class for state objects |
-| `<swap-state>` | Tag helper that renders hidden fields |
-| `[FromSwapState]` | Attribute that binds state from request |
-| `hx-include` | HTMX attribute that sends hidden fields with request |
-| `ContainerId` | Auto-generated ID for the hidden fields container |
-
-**The pattern:**
-1. Define state class inheriting from `SwapState`
-2. Render with `<swap-state state="Model.State" />`
-3. Use `hx-include="#container-id"` on interactive elements
-4. Bind with `[FromSwapState]` in controller
-5. Return partial view with updated state
-
-**HTML is the state. Server renders it. Browser sends it back. No JavaScript required.**
