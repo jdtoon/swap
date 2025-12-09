@@ -26,6 +26,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 #### Tag Helpers
 - **Removed `<swap-hidden>`** - This tag helper added no value over plain `<input type="hidden">` and was confusing alongside `<swap-state>`. Use `<swap-state>` for state management instead.
 
+#### Source Generators
+- **Removed `StateClassGenerator`** - The `[SwapStateSource]` attribute and `swap-state-prop` view annotations have been removed. Define SwapState classes directly in C# where you get IntelliSense, validation attributes, and proper tooling support.
+
 ---
 
 ## [1.0.2] - 2025-XX-XX
