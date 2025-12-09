@@ -68,6 +68,56 @@ Open `http://localhost:5000` — you're server-driven.
 | **Event Handlers** | Decouple UI updates from controllers |
 | **`<swap-nav>`** | SPA navigation without verbose HTMX attributes |
 | **Real-time** | Built-in SSE and WebSocket support |
+| **Source Generators** | Type-safe events, views, and element IDs at compile time |
+
+---
+
+## Source Generators
+
+Swap.Htmx includes source generators that eliminate magic strings at compile time:
+
+### Event Keys
+
+```csharp
+// Define events as strings
+[SwapEventSource]
+public static partial class TaskEvents
+{
+    public const string TaskCompleted = "task.completed";
+    public const string TaskCreated = "task.created";
+}
+
+// Generated at build time:
+// TaskEvents.Task.Completed → EventKey("task.completed")
+// TaskEvents.Task.Created   → EventKey("task.created")
+
+// Use type-safe keys
+return SwapEvent(TaskEvents.Task.Completed, payload).Build();
+```
+
+### View Names & Element IDs (Zero-Config)
+
+The generators automatically scan your `.cshtml` files and create constants:
+
+```csharp
+// Auto-generated from Views/**/*.cshtml
+builder.AlsoUpdate(SwapElements.ProductGrid, SwapViews.Products.Grid, products);
+
+// Instead of magic strings:
+builder.AlsoUpdate("product-grid", "_Grid", products);
+```
+
+### Setup (required in .csproj)
+
+```xml
+<ItemGroup>
+  <AdditionalFiles Include="Views\**\*.cshtml" />
+</ItemGroup>
+```
+
+See the [modular template](templates/content/Swap.ModularMonolith) for a complete working example.
+
+📖 [Full Source Generators Guide](framework/Swap.Htmx.Generators/README.md)
 
 ---
 
