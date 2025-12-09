@@ -5,6 +5,25 @@ All notable changes to Swap.Htmx will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.3] - 2025-12-09
+
+### Changed
+
+#### SwapState Model Binder
+- **Fixed duplicate field handling** - When form inputs and hidden fields have the same name, the model binder now correctly uses the last value (visible input wins over hidden field)
+- This enables the proper pattern where `<swap-state>` hidden fields provide defaults, and visible form inputs override them
+
+#### Documentation
+- **New `llms.txt`** - Complete rewrite focused on SwapState pattern with clear examples
+- **SwapStateDemo README** - Rewritten with correct patterns
+
+### Removed
+
+#### Tag Helpers
+- **Removed `<swap-hidden>`** - This tag helper added no value over plain `<input type="hidden">` and was confusing alongside `<swap-state>`. Use `<swap-state>` for state management instead.
+
+---
+
 ## [1.0.2] - 2025-XX-XX
 
 ### Added
