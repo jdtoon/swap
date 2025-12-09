@@ -15,7 +15,7 @@
                    hx-post="/Patterns/ToggleRateCard?id=@card.Id"
                    hx-target="#rate-card-picker"
                    hx-swap="outerHTML"
-                   swap-include-state="rate-card-picker-state">
+                   hx-include="#rate-card-picker-state">
                 <input type="checkbox" @(isSelected ? "checked" : "") style="width: 1.25rem; height: 1.25rem;" onclick="event.stopPropagation();" />
                 <div style="flex: 1;">
                     <div style="font-weight: 600;">@card.Name</div>
@@ -39,14 +39,14 @@
                     hx-post="/Patterns/ClearRateCardSelection"
                     hx-target="#rate-card-picker"
                     hx-swap="outerHTML"
-                    swap-include-state="rate-card-picker-state"
+                    hx-include="#rate-card-picker-state"
                     @(Model.SelectedCount == 0 ? "disabled" : "")>
                 Clear
             </button>
             <button hx-post="/Patterns/ConfirmRateCardSelection"
                     hx-target="#rate-card-picker"
                     hx-swap="outerHTML"
-                    swap-include-state="rate-card-picker-state"
+                    hx-include="#rate-card-picker-state"
                     @(Model.SelectedCount == 0 ? "disabled" : "")>
                 Continue →
             </button>

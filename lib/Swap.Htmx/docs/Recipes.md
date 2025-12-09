@@ -105,7 +105,7 @@ public static partial class ItemEvents
     <div id="tabs"
          hx-get="/Items/Tabs"
          hx-trigger="@ItemEvents.StateChanged from:body"
-         swap-include-state="item-list-state">
+         hx-include="#item-list-state">
         @await Html.PartialAsync("_Tabs", Model.State)
     </div>
     
@@ -118,14 +118,14 @@ public static partial class ItemEvents
                hx-get="/Items/Search"
                hx-trigger="keyup changed delay:300ms"
                hx-target="#grid"
-               swap-include-state="item-list-state" />
+               hx-include="#item-list-state" />
     </div>
     
     <!-- Grid -->
     <div id="grid"
          hx-get="/Items/Grid"
          hx-trigger="@ItemEvents.StateChanged from:body"
-         swap-include-state="item-list-state">
+         hx-include="#item-list-state">
         @await Html.PartialAsync("_Grid", Model)
     </div>
     
@@ -133,7 +133,7 @@ public static partial class ItemEvents
     <div id="pagination"
          hx-get="/Items/Pagination"
          hx-trigger="@ItemEvents.StateChanged from:body"
-         swap-include-state="item-list-state">
+         hx-include="#item-list-state">
         @await Html.PartialAsync("_Pagination", Model)
     </div>
 </div>
@@ -222,7 +222,7 @@ public class ItemsController : Controller
     @foreach (var tab in new[] { ("all", "All"), ("active", "Active"), ("archived", "Archived") })
     {
         <button hx-post="/Items/SetTab?tab=@tab.Item1"
-                swap-include-state="item-list-state"
+                hx-include="#item-list-state"
                 class="tab @(Model.Tab == tab.Item1 ? "active" : "")">
             @tab.Item2
         </button>
@@ -287,7 +287,7 @@ public class RateCardPickerState : SwapState
             <label class="picker-item @(isSelected ? "selected" : "")"
                    hx-post="/RateCards/Toggle?id=@card.Id"
                    hx-target="#rate-card-picker"
-                   swap-include-state="rate-card-picker-state">
+                   hx-include="#rate-card-picker-state">
                 <input type="checkbox" @(isSelected ? "checked" : "") />
                 <span class="name">@card.Name</span>
                 <span class="price">@card.Price.ToString("C")</span>
@@ -298,17 +298,17 @@ public class RateCardPickerState : SwapState
     <div id="selection-summary"
          hx-get="/RateCards/Summary"
          hx-trigger="selection.changed from:body"
-         swap-include-state="rate-card-picker-state">
+         hx-include="#rate-card-picker-state">
         @await Html.PartialAsync("_SelectionSummary", Model)
     </div>
     
     <div class="actions">
         <button hx-post="/RateCards/ClearSelection"
-                swap-include-state="rate-card-picker-state">
+                hx-include="#rate-card-picker-state">
             Clear
         </button>
         <button hx-post="/RateCards/Continue"
-                swap-include-state="rate-card-picker-state"
+                hx-include="#rate-card-picker-state"
                 @(Model.State.GetSelectedIdList().Count == 0 ? "disabled" : "")>
             Continue →
         </button>
@@ -406,7 +406,7 @@ public class QuoteBuilderState : SwapState
             <select name="currency"
                     hx-post="/Quote/UpdateConfig"
                     hx-target="#preview"
-                    swap-include-state="quote-builder-state">
+                    hx-include="#quote-builder-state">
                 <option value="USD" selected="@(Model.State.Currency == "USD")">USD</option>
                 <option value="EUR" selected="@(Model.State.Currency == "EUR")">EUR</option>
                 <option value="GBP" selected="@(Model.State.Currency == "GBP")">GBP</option>
@@ -421,7 +421,7 @@ public class QuoteBuilderState : SwapState
                    hx-post="/Quote/UpdateConfig"
                    hx-target="#preview"
                    hx-trigger="change, keyup changed delay:500ms"
-                   swap-include-state="quote-builder-state" />
+                   hx-include="#quote-builder-state" />
         </div>
         
         <div class="field">
@@ -432,7 +432,7 @@ public class QuoteBuilderState : SwapState
                        @(Model.State.ShowImages ? "checked" : "")
                        hx-post="/Quote/UpdateConfig"
                        hx-target="#preview"
-                       swap-include-state="quote-builder-state" />
+                       hx-include="#quote-builder-state" />
                 Show images
             </label>
         </div>
@@ -444,7 +444,7 @@ public class QuoteBuilderState : SwapState
          class="preview-panel"
          hx-get="/Quote/Preview"
          hx-trigger="load"
-         swap-include-state="quote-builder-state">
+         hx-include="#quote-builder-state">
         <div class="loading">Loading preview...</div>
     </div>
 </div>
@@ -891,7 +891,7 @@ public IActionResult GoBack([FromSwapState] CheckoutWizardState state)
 1. **State lives in `<swap-state>`** — One source of truth, outside swapped regions
 2. **Small partials** — Each partial does one thing well
 3. **Events coordinate** — Components listen to events, not each other
-4. **`swap-include-state`** — Every HTMX request includes the state
+4. **`hx-include="#state-id"`** — HTMX requests include the state via standard hx-include
 5. **Server renders** — No client-side templates, server decides what to show
 
 ---

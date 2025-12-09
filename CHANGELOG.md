@@ -5,6 +5,20 @@ All notable changes to Swap.Htmx will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.4] - 2025-01-XX
+
+### Removed
+
+#### JavaScript
+- **Removed `swap-include-state`** - This JavaScript attribute auto-expanded to `hx-include`. Use standard `hx-include="#state-id"` instead. The standard HTMX attribute is clearer and doesn't require custom JS.
+
+### Changed
+
+#### Internal Refactoring
+- **Consolidated `RenderStateAsOob`** - Moved duplicate state rendering logic from `SwapResult`, `SwapPageResult`, and `SwapActionResult` into shared `SwapStateRenderer` helper.
+
+---
+
 ## [1.0.3] - 2025-12-09
 
 ### Changed

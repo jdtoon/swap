@@ -63,7 +63,7 @@
         <li><strong>State lives in <code>&lt;swap-state&gt;</code></strong> — One source of truth, outside swapped regions</li>
         <li><strong>Small partials</strong> — Each partial does one thing well</li>
         <li><strong>Events coordinate</strong> — Components listen to events, not each other</li>
-        <li><strong><code>swap-include-state</code></strong> — Every HTMX request includes the state</li>
+        <li><strong><code>hx-include="#state-id"</code></strong> — HTMX requests include state via standard hx-include</li>
         <li><strong>Server renders</strong> — No client-side templates, server decides what to show</li>
     </ol>
 </div>

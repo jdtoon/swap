@@ -435,26 +435,20 @@ See: `docs/CrudToasts.md` for all operations.
 
 ---
 
-## State Coordination with swap-include-state
+## State Coordination with hx-include
 
-Simplify `hx-include` by referencing state containers by ID:
+Use standard HTMX `hx-include` to send state with requests:
 
 ```html
-<!-- Instead of listing all hidden field IDs -->
+<!-- Include state container by ID -->
 <button hx-get="/Items/Search"
-        hx-include="#filter-tab, #filter-search, #filter-page">
-
-<!-- Use swap-include-state -->
-<button hx-get="/Items/Search"
-        swap-include-state="filter-state">
+        hx-include="#filter-state">
 ```
 
 Multiple state containers:
 ```html
-<div hx-get="/Report" swap-include-state="filter-state, sort-state">
+<div hx-get="/Report" hx-include="#filter-state, #sort-state">
 ```
-
-The JavaScript automatically expands this to the proper `hx-include` selector.
 
 ---
 

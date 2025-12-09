@@ -42,13 +42,13 @@
                 hx-post="/Patterns/WizardGoBack"
                 hx-target="#checkout-wizard"
                 hx-swap="outerHTML"
-                swap-include-state="checkout-wizard-state">
+                hx-include="#checkout-wizard-state">
             ← Back
         </button>
         <button hx-post="/Patterns/CompleteCheckout"
                 hx-target="#checkout-wizard"
                 hx-swap="outerHTML"
-                swap-include-state="checkout-wizard-state">
+                hx-include="#checkout-wizard-state">
             Place Order 🎉
         </button>
     </div>

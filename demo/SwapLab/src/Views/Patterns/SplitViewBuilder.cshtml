@@ -26,7 +26,7 @@
                             hx-post="/Patterns/UpdateQuoteConfig"
                             hx-target="#quote-preview"
                             hx-swap="outerHTML"
-                            swap-include-state="quote-builder-state">
+                            hx-include="#quote-builder-state">
                         <option value="USD" selected="@(Model.State.Currency == "USD")">USD ($)</option>
                         <option value="EUR" selected="@(Model.State.Currency == "EUR")">EUR (€)</option>
                         <option value="GBP" selected="@(Model.State.Currency == "GBP")">GBP (£)</option>
@@ -46,7 +46,7 @@
                            hx-target="#quote-preview"
                            hx-swap="outerHTML"
                            hx-trigger="change, keyup changed delay:300ms"
-                           swap-include-state="quote-builder-state" />
+                           hx-include="#quote-builder-state" />
                 </div>
                 
                 <div style="margin-bottom: 1rem;">
@@ -59,7 +59,7 @@
                                hx-post="/Patterns/UpdateQuoteConfig?toggleField=showImages"
                                hx-target="#quote-preview"
                                hx-swap="outerHTML"
-                               swap-include-state="quote-builder-state" />
+                               hx-include="#quote-builder-state" />
                         Show images
                     </label>
                 </div>
@@ -74,7 +74,7 @@
                                hx-post="/Patterns/UpdateQuoteConfig?toggleField=showDescriptions"
                                hx-target="#quote-preview"
                                hx-swap="outerHTML"
-                               swap-include-state="quote-builder-state" />
+                               hx-include="#quote-builder-state" />
                         Show descriptions
                     </label>
                 </div>
@@ -89,7 +89,7 @@
                                hx-post="/Patterns/UpdateQuoteConfig?toggleField=includeTax"
                                hx-target="#quote-preview"
                                hx-swap="outerHTML"
-                               swap-include-state="quote-builder-state" />
+                               hx-include="#quote-builder-state" />
                         Include tax (8%)
                     </label>
                 </div>
@@ -104,7 +104,7 @@
 <h2>How It Works</h2>
 <ol>
     <li>Configuration inputs post changes to server</li>
-    <li><code>swap-include-state</code> sends current config with each request</li>
+    <li><code>hx-include</code> sends current config with each request</li>
     <li>Server updates state and returns new preview</li>
     <li>Preview updates instantly without full page reload</li>
 </ol>
