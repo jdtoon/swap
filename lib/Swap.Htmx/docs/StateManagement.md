@@ -174,7 +174,7 @@ var message = TempData["SuccessMessage"] as string;
 <!-- Views/Shared/_StateContainer.cshtml -->
 @model PageState
 
-<div id="@Model.ContainerId" style="display: none;" data-swap-state>
+<div id="@Model.ContainerId" style="display: none;">
     @foreach (var field in Model.Fields)
     {
         <input type="hidden" 
@@ -432,7 +432,7 @@ Check that state is included in requests:
     <script>
     function updateStateDebug() {
         const state = {};
-        document.querySelectorAll('[data-swap-state] input').forEach(i => {
+        document.querySelectorAll('[id$="-state"] input').forEach(i => {
             state[i.name] = i.value;
         });
         document.getElementById('state-debug').textContent = 

@@ -18,7 +18,7 @@ namespace Swap.Htmx.TagHelpers;
 /// 
 /// Renders as:
 /// <code>
-/// &lt;div id="inventory-state" data-swap-state style="display: none;"&gt;
+/// &lt;div id="inventory-state" style="display: none;"&gt;
 ///     &lt;input type="hidden" name="Tab" value="all" /&gt;
 ///     &lt;input type="hidden" name="Page" value="1" /&gt;
 /// &lt;/div&gt;
@@ -87,7 +87,6 @@ public class SwapStateTagHelper : TagHelper
             output.TagName = "div";
             output.TagMode = TagMode.StartTagAndEndTag;
             output.Attributes.SetAttribute("id", id);
-            output.Attributes.SetAttribute("data-swap-state", null);
             output.Attributes.SetAttribute("style", "display: none;");
         }
         else

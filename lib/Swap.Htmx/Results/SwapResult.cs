@@ -299,7 +299,7 @@ public sealed class SwapResult : IResult
         var encoder = HtmlEncoder.Default;
         var sb = new StringBuilder();
         
-        sb.Append($"<div id=\"{encoder.Encode(state.ContainerId)}\" data-swap-state hx-swap-oob=\"true\" style=\"display: none;\">");
+        sb.Append($"<div id=\"{encoder.Encode(state.ContainerId)}\" hx-swap-oob=\"true\" style=\"display: none;\">");
         
         foreach (var kvp in state.GetStateValues())
         {

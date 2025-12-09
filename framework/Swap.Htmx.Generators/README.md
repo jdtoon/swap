@@ -162,7 +162,7 @@ public partial class InventoryState : SwapState { }
 
 **Input (Views/Inventory/_InventoryState.cshtml):**
 ```html
-<div data-swap-state>
+<div id="inventory-state" style="display: none;">
     <input type="hidden" swap-state-prop="Tab:string=all" />
     <input type="hidden" swap-state-prop="Page:int=1" />
     <input type="hidden" swap-state-prop="Search:string?" />

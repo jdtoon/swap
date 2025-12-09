@@ -40,7 +40,7 @@ public class InventoryState : SwapState
 
 The `<swap-state>` tag renders as:
 ```html
-<div id="inventory-state" data-swap-state style="display: none;">
+<div id="inventory-state" style="display: none;">
     <input type="hidden" name="Tab" value="all" />
     <input type="hidden" name="Page" value="1" />
     <input type="hidden" name="PageSize" value="10" />
@@ -93,7 +93,7 @@ When you call `.WithState(state)`, the state container is automatically updated 
 
 ```html
 <!-- This is appended to the response -->
-<div id="inventory-state" data-swap-state hx-swap-oob="true" style="display: none;">
+<div id="inventory-state" hx-swap-oob="true" style="display: none;">
     <input type="hidden" name="Tab" value="electronics" />
     <input type="hidden" name="Page" value="1" />
     ...
@@ -101,6 +101,44 @@ When you call `.WithState(state)`, the state container is automatically updated 
 ```
 
 This means state is always in sync without manual hidden field updates.
+
+### When to Use OOB State Updates
+
+**Pattern A: Swap Entire Content (no OOB needed)**
+
+When the state container is INSIDE the swap target, `.WithState()` is optional - just include the state in your partial:
+
+```html
+<!-- _FilterContent.cshtml -->
+<swap-state state="Model.State" />
+<div class="product-grid">...</div>
+```
+
+```csharp
+// State is inside the swap target - no OOB needed
+return PartialView("_FilterContent", viewModel);
+```
+
+**Pattern B: OOB State Updates (use `.WithState()`)**
+
+When the state container is OUTSIDE the swap target (e.g., swapping individual elements), use `.WithState()` to update it separately:
+
+```html
+<!-- State container outside cards -->
+<swap-state state="Model.State" />
+
+<!-- Individual cards get swapped -->
+<div id="card-1">...</div>
+<div id="card-2">...</div>
+```
+
+```csharp
+// Swap just the card, update state separately via OOB
+return this.SwapResponse()
+    .WithView("_Card", cardModel)
+    .WithState(state)  // OOB swaps the state container
+    .Build();
+```
 
 ### Change Tracking
 

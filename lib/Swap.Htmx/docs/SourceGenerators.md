@@ -304,7 +304,7 @@ Add `swap-state-prop` annotations to hidden inputs:
 
 ```html
 <!-- Views/Inventory/_InventoryState.cshtml -->
-<div data-swap-state>
+<div id="inventory-state" style="display: none;">
     <input type="hidden" swap-state-prop="Tab:string=all" />
     <input type="hidden" swap-state-prop="Page:int=1" />
     <input type="hidden" swap-state-prop="Search:string?" />

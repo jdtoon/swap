@@ -13,9 +13,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Fixed duplicate field handling** - When form inputs and hidden fields have the same name, the model binder now correctly uses the last value (visible input wins over hidden field)
 - This enables the proper pattern where `<swap-state>` hidden fields provide defaults, and visible form inputs override them
 
+#### Tag Helpers
+- **Removed `data-swap-state` attribute** - This attribute on state containers served no purpose. DevTools now uses the `[id$="-state"]` CSS selector convention instead.
+
 #### Documentation
 - **New `llms.txt`** - Complete rewrite focused on SwapState pattern with clear examples
 - **SwapStateDemo README** - Rewritten with correct patterns
+- **OOB Pattern documented** - Added clear guidance on when to use `.WithState()` for OOB updates vs. swapping entire content
 
 ### Removed
 

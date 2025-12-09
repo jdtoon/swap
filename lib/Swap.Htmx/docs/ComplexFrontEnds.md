@@ -286,7 +286,7 @@ public class DashboardState : SwapState
 <swap-state state="Model.State" />
 
 <!-- Any partial can include it in requests -->
-<div hx-get="/tasks/list" hx-include="[data-swap-state]">
+<div hx-get="/tasks/list" hx-include="#dashboard-state">
     ...
 </div>
 ```
