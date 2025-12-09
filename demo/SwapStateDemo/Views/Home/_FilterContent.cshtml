@@ -24,9 +24,10 @@
     {
         var isActive = state.Category == cat ? "active" : "";
         <button class="@isActive"
-                hx-get="/Home/Filter?Category=@cat&Page=1"
+                hx-post="/Home/Filter"
                 hx-target="#filter-content"
-                hx-include="#@state.ContainerId">
+                hx-include="#@state.ContainerId"
+                hx-vals='{"Category":"@cat","Page":"1"}'>
             @cat
         </button>
     }
@@ -38,18 +39,20 @@
     <input type="text" 
            placeholder="Type to search..." 
            value="@state.Search"
-           hx-get="/Home/Filter?Page=1"
+           hx-post="/Home/Filter"
            hx-target="#filter-content"
            hx-include="#@state.ContainerId"
+           hx-vals='{"Page":"1"}'
            hx-trigger="keyup changed delay:300ms"
            name="Search" />
     
     <label>
         <input type="checkbox" 
                @inStockChecked
-               hx-get="/Home/Filter?Page=1&InStockOnly=@(!state.InStockOnly ? "true" : "false")"
+               hx-post="/Home/Filter"
                hx-target="#filter-content"
-               hx-include="#@state.ContainerId" />
+               hx-include="#@state.ContainerId"
+               hx-vals='{"Page":"1","InStockOnly":"@(!state.InStockOnly ? "true" : "false")"}' />
         In Stock Only
     </label>
 </div>
@@ -60,18 +63,20 @@
     <input type="number" 
            placeholder="Min" 
            value="@state.MinPrice"
-           hx-get="/Home/Filter?Page=1"
+           hx-post="/Home/Filter"
            hx-target="#filter-content"
            hx-include="#@state.ContainerId"
+           hx-vals='{"Page":"1"}'
            hx-trigger="change"
            name="MinPrice" />
     <span>to</span>
     <input type="number" 
            placeholder="Max" 
            value="@state.MaxPrice"
-           hx-get="/Home/Filter?Page=1"
+           hx-post="/Home/Filter"
            hx-target="#filter-content"
            hx-include="#@state.ContainerId"
+           hx-vals='{"Page":"1"}'
            hx-trigger="change"
            name="MaxPrice" />
 </div>
@@ -79,9 +84,10 @@
 <!-- ROW 4: Sort -->
 <div class="filters">
     <strong>Sort:</strong>
-    <select hx-get="/Home/Filter?Page=1"
+    <select hx-post="/Home/Filter"
             hx-target="#filter-content"
             hx-include="#@state.ContainerId"
+            hx-vals='{"Page":"1"}'
             hx-trigger="change"
             name="SortBy">
         <option value="name" @nameSelected>Name</option>
@@ -91,9 +97,10 @@
     <label>
         <input type="checkbox"
                @sortDescChecked
-               hx-get="/Home/Filter?Page=1&SortDesc=@(!state.SortDesc ? "true" : "false")"
+               hx-post="/Home/Filter"
                hx-target="#filter-content"
-               hx-include="#@state.ContainerId" />
+               hx-include="#@state.ContainerId"
+               hx-vals='{"Page":"1","SortDesc":"@(!state.SortDesc ? "true" : "false")"}' />
         Descending
     </label>
 </div>
@@ -144,9 +151,10 @@
             var pageNum = i;
             var pageActive = state.Page == pageNum ? "active" : "";
             <button class="@pageActive"
-                    hx-get="/Home/Filter?Page=@pageNum"
+                    hx-post="/Home/Filter"
                     hx-target="#filter-content"
-                    hx-include="#@state.ContainerId">
+                    hx-include="#@state.ContainerId"
+                    hx-vals='{"Page":"@pageNum"}'>
                 @pageNum
             </button>
         }
