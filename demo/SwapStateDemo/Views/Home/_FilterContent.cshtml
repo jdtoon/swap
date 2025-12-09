@@ -46,10 +46,8 @@
     
     <label>
         <input type="checkbox" 
-               name="InStockOnly"
-               value="true"
                @inStockChecked
-               hx-get="/Home/Filter?Page=1"
+               hx-get="/Home/Filter?Page=1&InStockOnly=@(!state.InStockOnly ? "true" : "false")"
                hx-target="#filter-content"
                hx-include="#@state.ContainerId" />
         In Stock Only
@@ -92,10 +90,8 @@
     
     <label>
         <input type="checkbox"
-               name="SortDesc" 
-               value="true"
                @sortDescChecked
-               hx-get="/Home/Filter?Page=1"
+               hx-get="/Home/Filter?Page=1&SortDesc=@(!state.SortDesc ? "true" : "false")"
                hx-target="#filter-content"
                hx-include="#@state.ContainerId" />
         Descending
