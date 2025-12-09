@@ -5,6 +5,46 @@ All notable changes to Swap.Htmx will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.4] - 2025-01-XX
+
+### Removed
+
+#### JavaScript
+- **Removed `swap-include-state`** - This JavaScript attribute auto-expanded to `hx-include`. Use standard `hx-include="#state-id"` instead. The standard HTMX attribute is clearer and doesn't require custom JS.
+
+### Changed
+
+#### Internal Refactoring
+- **Consolidated `RenderStateAsOob`** - Moved duplicate state rendering logic from `SwapResult`, `SwapPageResult`, and `SwapActionResult` into shared `SwapStateRenderer` helper.
+
+---
+
+## [1.0.3] - 2025-12-09
+
+### Changed
+
+#### SwapState Model Binder
+- **Fixed duplicate field handling** - When form inputs and hidden fields have the same name, the model binder now correctly uses the last value (visible input wins over hidden field)
+- This enables the proper pattern where `<swap-state>` hidden fields provide defaults, and visible form inputs override them
+
+#### Tag Helpers
+- **Removed `data-swap-state` attribute** - This attribute on state containers served no purpose. DevTools now uses the `[id$="-state"]` CSS selector convention instead.
+
+#### Documentation
+- **New `llms.txt`** - Complete rewrite focused on SwapState pattern with clear examples
+- **SwapStateDemo README** - Rewritten with correct patterns
+- **OOB Pattern documented** - Added clear guidance on when to use `.WithState()` for OOB updates vs. swapping entire content
+
+### Removed
+
+#### Tag Helpers
+- **Removed `<swap-hidden>`** - This tag helper added no value over plain `<input type="hidden">` and was confusing alongside `<swap-state>`. Use `<swap-state>` for state management instead.
+
+#### Source Generators
+- **Removed `StateClassGenerator`** - The `[SwapStateSource]` attribute and `swap-state-prop` view annotations have been removed. Define SwapState classes directly in C# where you get IntelliSense, validation attributes, and proper tooling support.
+
+---
+
 ## [1.0.2] - 2025-XX-XX
 
 ### Added

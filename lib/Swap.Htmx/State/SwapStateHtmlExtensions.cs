@@ -43,7 +43,7 @@ public static class SwapStateHtmlExtensions
         var encoder = HtmlEncoder.Default;
 
         var sb = new StringBuilder();
-        sb.AppendLine($"<div id=\"{encoder.Encode(id)}\" data-swap-state style=\"display: none;\">");
+        sb.AppendLine($"<div id=\"{encoder.Encode(id)}\" style=\"display: none;\">");
 
         foreach (var kvp in values)
         {

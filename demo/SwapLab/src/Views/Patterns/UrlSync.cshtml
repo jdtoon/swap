@@ -22,7 +22,7 @@
                 <select class="form-select" name="category"
                         hx-get="@Url.Action("UrlSyncSearch", "Patterns")"
                         hx-target="#url-sync-results"
-                        hx-include="[data-swap-state]"
+                        hx-include="#url-sync-state"
                         hx-push-url="true">
                     <option value="all" selected="@(Model.State.Category == "all")">All Categories</option>
                     <option value="Electronics" selected="@(Model.State.Category == "Electronics")">Electronics</option>
@@ -35,7 +35,7 @@
                 <select class="form-select" name="priceRange"
                         hx-get="@Url.Action("UrlSyncSearch", "Patterns")"
                         hx-target="#url-sync-results"
-                        hx-include="[data-swap-state]"
+                        hx-include="#url-sync-state"
                         hx-push-url="true">
                     <option value="all" selected="@(Model.State.PriceRange == "all")">Any Price</option>
                     <option value="low" selected="@(Model.State.PriceRange == "low")">Under $50</option>
@@ -48,7 +48,7 @@
                 <select class="form-select" name="sortBy"
                         hx-get="@Url.Action("UrlSyncSearch", "Patterns")"
                         hx-target="#url-sync-results"
-                        hx-include="[data-swap-state]"
+                        hx-include="#url-sync-state"
                         hx-push-url="true">
                     <option value="name" selected="@(Model.State.SortBy == "name")">Name</option>
                     <option value="price" selected="@(Model.State.SortBy == "price")">Price</option>
@@ -124,7 +124,7 @@ public IActionResult UrlSyncSearch([FromSwapState] UrlSyncState state)
 <pre>&lt;select name="category"
         hx-get="/Patterns/UrlSyncSearch"
         hx-target="#results"
-        hx-include="[data-swap-state]"
+        hx-include="#url-sync-state"
         hx-push-url="true"&gt;  &lt;!-- This pushes to browser history --&gt;
     &lt;option value="all"&gt;All&lt;/option&gt;
     &lt;option value="Electronics"&gt;Electronics&lt;/option&gt;

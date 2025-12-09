@@ -1,8 +1,0 @@
-@model List<Comment>
-@using TaskFlow.Models
-@using TaskFlow.Views
-
-@foreach (var comment in Model)
-{
-    await Html.RenderPartialAsync(CommentViews.CommentCard, comment);
-}

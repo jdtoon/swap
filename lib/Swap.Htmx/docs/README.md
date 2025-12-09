@@ -155,7 +155,7 @@ The repository includes several demo applications showing different patterns:
 |------|-------------|
 | `SwapMinimal` | Minimal API + Swap.Htmx basics |
 | `SwapNavDemo` | Navigation with `.WithNavigation()` ⭐ NEW |
-| `SwapStateDemo` | Hidden field state with `<swap-hidden>` |
+| `SwapStateDemo` | Server-driven state management with `<swap-state>` |
 | `SwapShop` | E-commerce with cart, products, events |
 | `TaskFlow` | Task management with real-time updates |
 | `SwapWebSockets` | WebSocket integration example |

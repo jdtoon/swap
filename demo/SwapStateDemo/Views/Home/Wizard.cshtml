@@ -1,0 +1,44 @@
+@model SwapStateDemo.Models.WizardViewModel
+<!DOCTYPE html>
+<html>
+<head>
+    <title>SwapState Test - 5 Step Wizard</title>
+    <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+    <style>
+        body { font-family: sans-serif; padding: 2rem; max-width: 700px; margin: 0 auto; }
+        .state-debug { background: #fffbe6; border: 1px solid #ffe58f; padding: 1rem; margin: 1rem 0; font-family: monospace; font-size: 0.8rem; white-space: pre-wrap; }
+        .wizard-steps { display: flex; gap: 0.5rem; margin: 1rem 0; }
+        .wizard-steps span { padding: 0.5rem 1rem; background: #eee; border-radius: 4px; }
+        .wizard-steps span.active { background: #1890ff; color: white; }
+        .wizard-steps span.completed { background: #52c41a; color: white; }
+        .step-content { background: #f9f9f9; padding: 1.5rem; border-radius: 8px; margin: 1rem 0; }
+        .form-row { margin: 1rem 0; }
+        .form-row label { display: block; margin-bottom: 0.25rem; font-weight: bold; }
+        .form-row input, .form-row select { padding: 0.5rem; width: 100%; max-width: 300px; border: 1px solid #ddd; border-radius: 4px; }
+        .form-row input[type="checkbox"] { width: auto; }
+        .buttons { display: flex; gap: 1rem; margin-top: 1.5rem; }
+        button { padding: 0.75rem 1.5rem; cursor: pointer; border: none; border-radius: 4px; }
+        button.primary { background: #1890ff; color: white; }
+        button.secondary { background: #eee; }
+        nav { margin: 1rem 0; }
+        nav a { margin-right: 1rem; }
+        .review-section { margin: 1rem 0; padding: 1rem; background: white; border: 1px solid #ddd; border-radius: 4px; }
+        .review-section h4 { margin: 0 0 0.5rem; color: #1890ff; }
+    </style>
+</head>
+<body>
+    <nav>
+        <a href="/">Product Filter</a> | 
+        <a href="/Home/Wizard">5-Step Wizard</a> | 
+        <a href="/Home/Dashboard">OOB Dashboard</a>
+    </nav>
+
+    <h1>SwapState Test - 5 Step Wizard</h1>
+    <p>Testing state persistence across 5 different steps. Go back and forth - state should persist!</p>
+
+    <!-- Wizard Content - entire area swaps so progress steps & debug update -->
+    <div id="wizard-content">
+        @await Html.PartialAsync("_WizardContent", Model)
+    </div>
+</body>
+</html>

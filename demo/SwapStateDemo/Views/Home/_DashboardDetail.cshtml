@@ -1,0 +1,20 @@
+@model SwapStateDemo.Models.DashboardViewModel
+@{
+    var card = Model.SelectedCard!;
+}
+
+<div class="detail-panel">
+    <div style="display: flex; gap: 1.5rem; align-items: flex-start;">
+        <div class="icon">@card.Icon</div>
+        <div>
+            <h2 style="margin-top: 0;">@card.Title Details</h2>
+            <p><strong>Current Value:</strong> @card.Summary</p>
+            <p>@card.Details</p>
+            <p style="color: #999; font-size: 0.9rem;">
+                Card ID: @card.Id | 
+                Total Clicks: @Model.State.ClickCount |
+                Expanded Cards: @(string.IsNullOrEmpty(Model.State.ExpandedCards) ? "none" : Model.State.ExpandedCards)
+            </p>
+        </div>
+    </div>
+</div>

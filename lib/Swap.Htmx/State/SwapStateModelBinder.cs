@@ -52,9 +52,12 @@ public sealed class SwapStateModelBinder : IModelBinder
 
             var result = valueProvider.GetValue(fieldName);
             
-            if (result != ValueProviderResult.None && result.FirstValue != null)
+            if (result != ValueProviderResult.None && result.Values.Count > 0)
             {
-                values[prop.Name] = result.FirstValue;
+                // Use FIRST value when duplicates exist (URL params come first, then hx-include)
+                // This ensures explicit URL overrides take precedence, even if empty
+                var firstValue = result.FirstValue;
+                values[prop.Name] = firstValue;
             }
         }
 

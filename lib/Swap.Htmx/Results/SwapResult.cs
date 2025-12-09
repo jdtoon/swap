@@ -13,9 +13,7 @@ using Swap.Htmx.Events;
 using Swap.Htmx.Extensions;
 using Swap.Htmx.Models;
 using Swap.Htmx.State;
-using System.Globalization;
 using System.Text;
-using System.Text.Encodings.Web;
 
 namespace Swap.Htmx.Results;
 
@@ -143,7 +141,7 @@ public sealed class SwapResult : IResult
         // 4b. Render SwapState as OOB if configured
         if (_builder.State != null)
         {
-            var stateHtml = RenderStateAsOob(_builder.State);
+            var stateHtml = SwapStateRenderer.RenderAsOob(_builder.State);
             oobContent.Add(stateHtml);
         }
 
@@ -291,40 +289,4 @@ public sealed class SwapResult : IResult
         return $"<div id=\"{oob.TargetId}\" hx-swap-oob=\"{swapModeStr}\">{html}</div>";
     }
 
-    /// <summary>
-    /// Renders a SwapState as an OOB swap element (no view file required).
-    /// </summary>
-    private static string RenderStateAsOob(SwapState state)
-    {
-        var encoder = HtmlEncoder.Default;
-        var sb = new StringBuilder();
-        
-        sb.Append($"<div id=\"{encoder.Encode(state.ContainerId)}\" data-swap-state hx-swap-oob=\"true\" style=\"display: none;\">");
-        
-        foreach (var kvp in state.GetStateValues())
-        {
-            var fieldValue = FormatStateValue(kvp.Value);
-            sb.Append($"<input type=\"hidden\" name=\"{encoder.Encode(kvp.Key)}\" value=\"{encoder.Encode(fieldValue)}\" />");
-        }
-        
-        sb.Append("</div>");
-        
-        return sb.ToString();
-    }
-
-    private static string FormatStateValue(object? value)
-    {
-        return value switch
-        {
-            null => string.Empty,
-            bool b => b ? "true" : "false",
-            decimal d => d.ToString(CultureInfo.InvariantCulture),
-            double dbl => dbl.ToString(CultureInfo.InvariantCulture),
-            float f => f.ToString(CultureInfo.InvariantCulture),
-            DateTime dt => dt.ToString("O"),
-            DateTimeOffset dto => dto.ToString("O"),
-            Enum e => e.ToString(),
-            _ => value.ToString() ?? string.Empty
-        };
-    }
 }

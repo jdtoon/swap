@@ -12,7 +12,6 @@ This project provides build-time code generation and analysis to enhance the dev
 | `EventSourceGenerator` | `[SwapEventSource]` | Type-safe event keys from string constants |
 | `ViewPathGenerator` | `[SwapViewSource]` | View name constants from .cshtml files |
 | `ElementIdGenerator` | `[SwapElementSource]` | Element ID constants from id="..." in .cshtml files |
-| `StateClassGenerator` | `[SwapStateSource]` | SwapState properties from view annotations |
 | `HandlerValidationAnalyzer` | N/A | Warns on events without handlers |
 
 ---
@@ -140,59 +139,6 @@ public static partial class InventoryIds
 - Dynamic Razor IDs (`id="@Model.Id"`) are automatically skipped.
 - IDs are deduplicated across all files in the folder.
 - kebab-case and snake_case are converted to PascalCase.
-
----
-
-## State Class Generator
-
-Automatically generates SwapState properties from view annotations.
-
-**Setup (.csproj):**
-```xml
-<ItemGroup>
-  <AdditionalFiles Include="Views\**\*.cshtml" />
-</ItemGroup>
-```
-
-**Input (C#):**
-```csharp
-[SwapStateSource("Views/Inventory/_InventoryState.cshtml")]
-public partial class InventoryState : SwapState { }
-```
-
-**Input (Views/Inventory/_InventoryState.cshtml):**
-```html
-<div data-swap-state>
-    <input type="hidden" swap-state-prop="Tab:string=all" />
-    <input type="hidden" swap-state-prop="Page:int=1" />
-    <input type="hidden" swap-state-prop="Search:string?" />
-    <input type="hidden" swap-state-prop="ShowDeleted:bool=false" />
-</div>
-```
-
-**Generated Output:**
-```csharp
-public partial class InventoryState
-{
-    public string Tab { get; set; } = "all";
-    public int Page { get; set; } = 1;
-    public string? Search { get; set; }
-    public bool ShowDeleted { get; set; } = false;
-}
-```
-
-### Property Syntax
-```
-swap-state-prop="PropertyName:Type=DefaultValue"
-```
-
-| Type | Example | Generated |
-|------|---------|-----------|
-| `string` | `Name:string=John` | `public string Name { get; set; } = "John";` |
-| `string?` | `Search:string?` | `public string? Search { get; set; }` |
-| `int` | `Page:int=1` | `public int Page { get; set; } = 1;` |
-| `bool` | `Active:bool=true` | `public bool Active { get; set; } = true;` |
-| `decimal` | `Price:decimal=99.99` | `public decimal Price { get; set; } = 99.99;` |
 
 ---
 

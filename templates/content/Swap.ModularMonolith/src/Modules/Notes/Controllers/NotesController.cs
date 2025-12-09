@@ -48,7 +48,7 @@ public class NotesController : SwapController
 
         return SwapResponse()
             .WithSuccessToast("Note created!")
-            .WithTrigger(NotesEvents.Notes.Created)
+            .WithTrigger(NotesEvents.Notes.ListChanged)  // Triggers client refresh
             .WithView("_ModalClose")
             .Build();
     }
@@ -75,7 +75,7 @@ public class NotesController : SwapController
             await _service.UpdateAsync(id, note);
             return SwapResponse()
                 .WithSuccessToast("Note updated!")
-                .WithTrigger(NotesEvents.Notes.Updated)
+                .WithTrigger(NotesEvents.Notes.ListChanged)  // Triggers client refresh
                 .WithView("_ModalClose")
                 .Build();
         }
@@ -102,7 +102,7 @@ public class NotesController : SwapController
             await _service.DeleteAsync(id);
             return SwapResponse()
                 .WithSuccessToast("Note deleted!")
-                .WithTrigger(NotesEvents.Notes.Deleted)
+                .WithTrigger(NotesEvents.Notes.ListChanged)  // Triggers client refresh
                 .WithView("_ModalClose")
                 .Build();
         }
@@ -119,7 +119,7 @@ public class NotesController : SwapController
         {
             await _service.TogglePinAsync(id);
             return SwapResponse()
-                .WithTrigger(NotesEvents.Notes.Pinned)
+                .WithTrigger(NotesEvents.Notes.ListChanged)  // Triggers client refresh
                 .Build();
         }
         catch (InvalidOperationException)
