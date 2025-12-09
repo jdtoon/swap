@@ -417,36 +417,56 @@ public class WizardController : Controller
 
 ## Key Patterns
 
-### Pattern 1: Inputs Override Hidden Fields
+### Pattern 1: URL Parameters Override Hidden Fields
 
-When a visible input has the same `name` as a hidden field in SwapState, the visible input's value wins. This is automatic - the model binder uses the last value when duplicates exist.
+When using `hx-get` with URL parameters and `hx-include`, the URL parameters come first in the request and override the hidden field values. The model binder uses the **first** value when duplicates exist.
 
 ```html
-<!-- Hidden field from swap-state -->
-<input type="hidden" name="Search" value="old value" />
+<!-- URL param "Category=Electronics" overrides hidden field "Category=all" -->
+<button hx-get="/Filter?Category=Electronics&Page=1"
+        hx-include="#product-filter-state">
+    Electronics
+</button>
 
-<!-- Visible input (user types here) -->
-<input type="text" name="Search" value="new value" />
-
-<!-- Server receives: Search = "new value" -->
+<!-- Request: ?Category=Electronics&Page=1&Category=all&Page=1&... -->
+<!-- Server receives: Category=Electronics (first value wins) -->
 ```
 
-### Pattern 2: Checkbox Boolean Toggle
+### Pattern 2: Named Inputs Send Their Values
 
-Unchecked checkboxes send nothing. To toggle a boolean, pass the opposite value explicitly:
+For inputs with a `name` attribute, the triggering element's value is automatically included in the request:
+
+```html
+<!-- Search input sends its current value -->
+<input type="text" 
+       name="Search"
+       placeholder="Search..."
+       value="@state.Search"
+       hx-get="/Filter?Page=1"
+       hx-target="#content"
+       hx-include="#@state.ContainerId"
+       hx-trigger="keyup changed delay:300ms" />
+
+<!-- Request: ?Page=1&Search=typed-value&...hidden-fields... -->
+```
+
+### Pattern 3: Checkbox Boolean Toggle
+
+Unchecked checkboxes send nothing. To toggle a boolean, pass the opposite value explicitly in the URL:
 
 ```html
 <!-- CORRECT: Explicit toggle value in URL -->
 <input type="checkbox" 
        @(state.InStockOnly ? "checked" : "")
-       hx-get="/Filter?InStockOnly=@(!state.InStockOnly ? "true" : "false")"
+       hx-get="/Filter?Page=1&InStockOnly=@(!state.InStockOnly ? "true" : "false")"
+       hx-target="#content"
        hx-include="#@state.ContainerId" />
 
 <!-- WRONG: Checkbox value won't uncheck properly -->
 <input type="checkbox" name="InStockOnly" value="true" ... />
 ```
 
-### Pattern 3: Include Form Inputs for Wizards
+### Pattern 4: Include Form Inputs for Wizards
 
 For multi-step forms, include both the state container AND visible form inputs:
 
@@ -460,19 +480,7 @@ For multi-step forms, include both the state container AND visible form inputs:
 
 The state container has hidden fields for ALL steps (including previous steps).
 The visible inputs are for the CURRENT step only.
-Both get sent, and the model binder merges them (visible input values override hidden field values for current step fields).
-
-### Pattern 4: URL Parameters Override Everything
-
-Values in the URL override both hidden fields and form inputs:
-
-```html
-<!-- Category in URL overrides any hidden field value -->
-<button hx-get="/Filter?Category=Electronics&Page=1"
-        hx-include="#@state.ContainerId">
-    Electronics
-</button>
-```
+Both get sent, and the model binder uses the first value for each field.
 
 ### Pattern 5: OOB State Updates (When to Use `.WithState()`)
 
