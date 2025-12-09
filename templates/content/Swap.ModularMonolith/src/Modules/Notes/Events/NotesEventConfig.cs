@@ -3,21 +3,18 @@ using Swap.Htmx.Events;
 
 namespace SwapModularMonolith.Modules.Notes.Events;
 
+/// <summary>
+/// Event configuration for the Notes module.
+/// This is optional - you can also trigger events directly from controllers
+/// or use [SwapHandler] for server-driven OOB updates.
+/// </summary>
 public class NotesEventConfig : ISwapEventConfiguration
 {
     public void Configure(SwapEventBusOptions events)
     {
-        // When any note event occurs, trigger a list refresh
-        events.When(NotesEvents.Notes.Created)
-            .AlsoTrigger(NotesEvents.Notes.ListChanged);
-
-        events.When(NotesEvents.Notes.Updated)
-            .AlsoTrigger(NotesEvents.Notes.ListChanged);
-
-        events.When(NotesEvents.Notes.Deleted)
-            .AlsoTrigger(NotesEvents.Notes.ListChanged);
-
-        events.When(NotesEvents.Notes.Pinned)
-            .AlsoTrigger(NotesEvents.Notes.ListChanged);
+        // Example: Additional behavior when list changes
+        // This is optional - toasts are already added in the controller
+        // events.When(NotesEvents.Notes.ListChanged)
+        //     .WithInfoToast("List updated");
     }
 }
