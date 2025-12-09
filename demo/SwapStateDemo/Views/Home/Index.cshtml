@@ -1,8 +1,6 @@
 @model SwapStateDemo.Models.ProductViewModel
 @{
     var state = Model.State;
-    var nameSelected = state.SortBy == "name" ? "selected" : "";
-    var priceSelected = state.SortBy == "price" ? "selected" : "";
 }
 <!DOCTYPE html>
 <html>
@@ -32,116 +30,11 @@
     </nav>
 
     <h1>SwapState Test - Product Filter</h1>
-    <p>Testing <code>[FromSwapState]</code> binding and <code>.WithState()</code> OOB updates with many filters.</p>
+    <p>Testing <code>[FromSwapState]</code> binding and <code>.WithState()</code> OOB updates.</p>
 
-    <!-- THE STATE CONTAINER -->
-    <swap-state state="Model.State" />
-
-    <!-- Debug: Show all state values -->
-    <div class="state-debug"><strong>State Container:</strong> #@state.ContainerId
-<strong>Values:</strong> Category=@state.Category | Page=@state.Page | Search=@(state.Search ?? "null")
-         SortBy=@state.SortBy | SortDesc=@state.SortDesc | InStockOnly=@state.InStockOnly
-         MinPrice=@(state.MinPrice?.ToString() ?? "null") | MaxPrice=@(state.MaxPrice?.ToString() ?? "null")</div>
-
-    <!-- ROW 1: Category -->
-    <div class="filters">
-        <strong>Category:</strong>
-        @foreach (var cat in new[] { "all", "Electronics", "Furniture", "Office" })
-        {
-            var isActive = state.Category == cat ? "active" : "";
-            <button class="@isActive"
-                    hx-get="/Home/Filter"
-                    hx-target="#product-grid"
-                    hx-include="#@state.ContainerId"
-                    hx-vals='{"Category": "@cat", "Page": 1}'>
-                @cat
-            </button>
-        }
-    </div>
-
-    <!-- ROW 2: Search + In Stock -->
-    <div class="filters">
-        <strong>Search:</strong>
-        <input type="text" 
-               placeholder="Type to search..." 
-               value="@state.Search"
-               hx-get="/Home/Filter"
-               hx-target="#product-grid"
-               hx-include="#@state.ContainerId"
-               hx-trigger="keyup changed delay:300ms"
-               hx-vals='{"Page": 1}'
-               name="Search" />
-        
-        @{
-            var inStockChecked = state.InStockOnly ? "checked" : "";
-            var newInStockVal = !state.InStockOnly ? "true" : "false";
-        }
-        <label>
-            <input type="checkbox" 
-                   @inStockChecked
-                   hx-get="/Home/Filter"
-                   hx-target="#product-grid"
-                   hx-include="#@state.ContainerId"
-                   hx-vals='{"InStockOnly": "@newInStockVal", "Page": 1}' />
-            In Stock Only
-        </label>
-    </div>
-
-    <!-- ROW 3: Price Range -->
-    <div class="filters">
-        <strong>Price:</strong>
-        <input type="number" 
-               placeholder="Min" 
-               value="@state.MinPrice"
-               hx-get="/Home/Filter"
-               hx-target="#product-grid"
-               hx-include="#@state.ContainerId"
-               hx-trigger="change"
-               hx-vals='{"Page": 1}'
-               name="MinPrice" />
-        <span>to</span>
-        <input type="number" 
-               placeholder="Max" 
-               value="@state.MaxPrice"
-               hx-get="/Home/Filter"
-               hx-target="#product-grid"
-               hx-include="#@state.ContainerId"
-               hx-trigger="change"
-               hx-vals='{"Page": 1}'
-               name="MaxPrice" />
-    </div>
-
-    <!-- ROW 4: Sort -->
-    @{
-        var sortDescChecked = state.SortDesc ? "checked" : "";
-        var newSortDescVal = !state.SortDesc ? "true" : "false";
-    }
-    <div class="filters">
-        <strong>Sort:</strong>
-        <select hx-get="/Home/Filter"
-                hx-target="#product-grid"
-                hx-include="#@state.ContainerId"
-                hx-trigger="change"
-                hx-vals='{"Page": 1}'
-                name="SortBy">
-            <option value="name" @nameSelected>Name</option>
-            <option value="price" @priceSelected>Price</option>
-        </select>
-        
-        <label>
-            <input type="checkbox" 
-                   @sortDescChecked
-                   hx-get="/Home/Filter"
-                   hx-target="#product-grid"
-                   hx-include="#@state.ContainerId"
-                   hx-vals='{"SortDesc": "@newSortDescVal", "Page": 1}' />
-            Descending
-        </label>
-    </div>
-
-    <!-- Product Grid -->
-    <div id="product-grid">
-        @await Html.PartialAsync("_ProductGrid", Model)
+    <!-- Swap the ENTIRE content area so UI updates properly -->
+    <div id="filter-content">
+        @await Html.PartialAsync("_FilterContent", Model)
     </div>
 </body>
 </html>

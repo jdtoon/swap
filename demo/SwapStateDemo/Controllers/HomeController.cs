@@ -41,15 +41,13 @@ public class HomeController : SwapController
         
         var (products, totalCount) = FilterProducts(state);
         
-        return this.SwapResponse()
-            .WithView("_ProductGrid", new ProductViewModel
-            {
-                State = state,
-                Products = products,
-                TotalCount = totalCount
-            })
-            .WithState(state)
-            .Build();
+        // Return _FilterContent - swaps entire filter area so UI updates correctly
+        return PartialView("_FilterContent", new ProductViewModel
+        {
+            State = state,
+            Products = products,
+            TotalCount = totalCount
+        });
     }
 
     private (List<Product> Items, int TotalCount) FilterProducts(ProductFilterState state)
@@ -109,9 +107,7 @@ public class HomeController : SwapController
         
         state.Step = goToStep;
         
-        return this.SwapResponse()
-            .WithView("_WizardStep", new WizardViewModel { State = state })
-            .WithState(state)
-            .Build();
+        // Return _WizardContent - swaps entire wizard area so progress steps & debug update
+        return PartialView("_WizardContent", new WizardViewModel { State = state });
     }
 }

@@ -34,40 +34,9 @@
     <h1>SwapState Test - 5 Step Wizard</h1>
     <p>Testing state persistence across 5 different steps. Go back and forth - state should persist!</p>
 
-    <!-- THE STATE CONTAINER -->
-    <swap-state state="Model.State" />
-
-    <!-- Progress Steps -->
-    <div class="wizard-steps">
-        @for (int i = 1; i <= 5; i++)
-        {
-            var stepClass = Model.State.Step == i ? "active" : (Model.State.Step > i ? "completed" : "");
-            <span class="@stepClass">@i. @GetStepName(i)</span>
-        }
-    </div>
-
-    <!-- Debug -->
-    <div class="state-debug"><strong>State Container:</strong> #@Model.State.ContainerId | <strong>Current Step:</strong> @Model.State.Step
-<strong>Personal:</strong> @Model.State.FirstName @Model.State.LastName (@(string.IsNullOrEmpty(Model.State.Email) ? "no email" : Model.State.Email))
-<strong>Address:</strong> @(string.IsNullOrEmpty(Model.State.Street) ? "none" : $"{Model.State.Street}, {Model.State.City} {Model.State.PostalCode}")
-<strong>Prefs:</strong> Contact=@Model.State.ContactMethod | Newsletter=@Model.State.Newsletter | Freq=@Model.State.Frequency
-<strong>Payment:</strong> Method=@Model.State.PaymentMethod | Card=@(string.IsNullOrEmpty(Model.State.CardType) ? "none" : Model.State.CardType)</div>
-
-    <!-- Wizard Content -->
+    <!-- Wizard Content - entire area swaps so progress steps & debug update -->
     <div id="wizard-content">
-        @await Html.PartialAsync("_WizardStep", Model)
+        @await Html.PartialAsync("_WizardContent", Model)
     </div>
 </body>
 </html>
-
-@functions {
-    string GetStepName(int step) => step switch
-    {
-        1 => "Personal",
-        2 => "Address",
-        3 => "Preferences",
-        4 => "Payment",
-        5 => "Review",
-        _ => ""
-    };
-}

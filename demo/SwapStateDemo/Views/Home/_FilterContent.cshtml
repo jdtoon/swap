@@ -1,0 +1,158 @@
+@model SwapStateDemo.Models.ProductViewModel
+@{
+    var state = Model.State;
+    var nameSelected = state.SortBy == "name" ? "selected" : "";
+    var priceSelected = state.SortBy == "price" ? "selected" : "";
+    var inStockChecked = state.InStockOnly ? "checked" : "";
+    var sortDescChecked = state.SortDesc ? "checked" : "";
+}
+
+<!-- THE STATE CONTAINER - hidden fields that persist state -->
+<swap-state state="Model.State" />
+
+<!-- Debug: Show current state values -->
+<div class="state-debug"><strong>State Container:</strong> #@state.ContainerId
+<strong>Current Values:</strong>
+  Category=@state.Category | Page=@state.Page | Search="@(state.Search ?? "")"
+  SortBy=@state.SortBy | SortDesc=@state.SortDesc | InStockOnly=@state.InStockOnly
+  MinPrice=@(state.MinPrice?.ToString() ?? "null") | MaxPrice=@(state.MaxPrice?.ToString() ?? "null")</div>
+
+<!-- ROW 1: Category Buttons -->
+<div class="filters">
+    <strong>Category:</strong>
+    @foreach (var cat in new[] { "all", "Electronics", "Furniture", "Office" })
+    {
+        var isActive = state.Category == cat ? "active" : "";
+        <button class="@isActive"
+                hx-get="/Home/Filter?Category=@cat&Page=1"
+                hx-target="#filter-content"
+                hx-include="#@state.ContainerId">
+            @cat
+        </button>
+    }
+</div>
+
+<!-- ROW 2: Search + In Stock -->
+<div class="filters">
+    <strong>Search:</strong>
+    <input type="text" 
+           placeholder="Type to search..." 
+           value="@state.Search"
+           hx-get="/Home/Filter?Page=1"
+           hx-target="#filter-content"
+           hx-include="#@state.ContainerId"
+           hx-trigger="keyup changed delay:300ms"
+           name="Search" />
+    
+    <label>
+        <input type="checkbox" 
+               name="InStockOnly"
+               value="true"
+               @inStockChecked
+               hx-get="/Home/Filter?Page=1"
+               hx-target="#filter-content"
+               hx-include="#@state.ContainerId" />
+        In Stock Only
+    </label>
+</div>
+
+<!-- ROW 3: Price Range -->
+<div class="filters">
+    <strong>Price:</strong>
+    <input type="number" 
+           placeholder="Min" 
+           value="@state.MinPrice"
+           hx-get="/Home/Filter?Page=1"
+           hx-target="#filter-content"
+           hx-include="#@state.ContainerId"
+           hx-trigger="change"
+           name="MinPrice" />
+    <span>to</span>
+    <input type="number" 
+           placeholder="Max" 
+           value="@state.MaxPrice"
+           hx-get="/Home/Filter?Page=1"
+           hx-target="#filter-content"
+           hx-include="#@state.ContainerId"
+           hx-trigger="change"
+           name="MaxPrice" />
+</div>
+
+<!-- ROW 4: Sort -->
+<div class="filters">
+    <strong>Sort:</strong>
+    <select hx-get="/Home/Filter?Page=1"
+            hx-target="#filter-content"
+            hx-include="#@state.ContainerId"
+            hx-trigger="change"
+            name="SortBy">
+        <option value="name" @nameSelected>Name</option>
+        <option value="price" @priceSelected>Price</option>
+    </select>
+    
+    <label>
+        <input type="checkbox"
+               name="SortDesc" 
+               value="true"
+               @sortDescChecked
+               hx-get="/Home/Filter?Page=1"
+               hx-target="#filter-content"
+               hx-include="#@state.ContainerId" />
+        Descending
+    </label>
+</div>
+
+<!-- Results Table -->
+<table>
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Category</th>
+            <th>Price</th>
+            <th>Stock</th>
+        </tr>
+    </thead>
+    <tbody>
+        @if (Model.Products.Any())
+        {
+            @foreach (var p in Model.Products)
+            {
+                <tr>
+                    <td>@p.Id</td>
+                    <td>@p.Name</td>
+                    <td>@p.Category</td>
+                    <td>$@p.Price.ToString("F2")</td>
+                    <td>@(p.InStock ? "✓ In Stock" : "✗ Out")</td>
+                </tr>
+            }
+        }
+        else
+        {
+            <tr>
+                <td colspan="5" style="text-align: center; color: #999;">No products found</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<p><strong>@Model.Products.Count</strong> of <strong>@Model.TotalCount</strong> products (Page @state.Page of @Math.Max(1, Model.TotalPages))</p>
+
+<!-- Pagination -->
+@if (Model.TotalPages > 1)
+{
+    <div class="filters">
+        <strong>Page:</strong>
+        @for (int i = 1; i <= Model.TotalPages; i++)
+        {
+            var pageNum = i;
+            var pageActive = state.Page == pageNum ? "active" : "";
+            <button class="@pageActive"
+                    hx-get="/Home/Filter?Page=@pageNum"
+                    hx-target="#filter-content"
+                    hx-include="#@state.ContainerId">
+                @pageNum
+            </button>
+        }
+    </div>
+}
