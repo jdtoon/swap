@@ -2,7 +2,7 @@
 @{
     var s = Model.State;
     
-    // Pre-compute selected states
+    // Pre-compute selected states for dropdowns
     var contactEmail = s.ContactMethod == "email" ? "selected" : "";
     var contactPhone = s.ContactMethod == "phone" ? "selected" : "";
     var contactSms = s.ContactMethod == "sms" ? "selected" : "";
@@ -33,7 +33,7 @@
     };
 }
 
-<!-- THE STATE CONTAINER - hidden fields that persist ALL wizard data -->
+<!-- THE STATE CONTAINER - hidden fields persist ALL wizard data across steps -->
 <swap-state state="Model.State" />
 
 <!-- Progress Steps -->
@@ -52,7 +52,7 @@
 <strong>Prefs:</strong> Contact=@s.ContactMethod | Newsletter=@s.Newsletter | Freq=@s.Frequency
 <strong>Payment:</strong> Method=@s.PaymentMethod | Card=@(string.IsNullOrEmpty(s.CardType) ? "none" : s.CardType)</div>
 
-<!-- Step Content -->
+<!-- Step Content - inputs have name attributes, just like product filter -->
 <div class="step-content">
     @switch (s.Step)
     {
@@ -60,18 +60,15 @@
             <h3>Step 1: Personal Information</h3>
             <div class="form-row">
                 <label>First Name</label>
-                <input type="text" data-state="FirstName" value="@s.FirstName" 
-                       oninput="document.querySelector('#@s.ContainerId input[name=FirstName]').value = this.value" />
+                <input type="text" name="FirstName" value="@s.FirstName" />
             </div>
             <div class="form-row">
                 <label>Last Name</label>
-                <input type="text" data-state="LastName" value="@s.LastName"
-                       oninput="document.querySelector('#@s.ContainerId input[name=LastName]').value = this.value" />
+                <input type="text" name="LastName" value="@s.LastName" />
             </div>
             <div class="form-row">
                 <label>Email</label>
-                <input type="email" data-state="Email" value="@s.Email"
-                       oninput="document.querySelector('#@s.ContainerId input[name=Email]').value = this.value" />
+                <input type="email" name="Email" value="@s.Email" />
             </div>
             break;
             
@@ -79,18 +76,15 @@
             <h3>Step 2: Address</h3>
             <div class="form-row">
                 <label>Street</label>
-                <input type="text" data-state="Street" value="@s.Street"
-                       oninput="document.querySelector('#@s.ContainerId input[name=Street]').value = this.value" />
+                <input type="text" name="Street" value="@s.Street" />
             </div>
             <div class="form-row">
                 <label>City</label>
-                <input type="text" data-state="City" value="@s.City"
-                       oninput="document.querySelector('#@s.ContainerId input[name=City]').value = this.value" />
+                <input type="text" name="City" value="@s.City" />
             </div>
             <div class="form-row">
                 <label>Postal Code</label>
-                <input type="text" data-state="PostalCode" value="@s.PostalCode"
-                       oninput="document.querySelector('#@s.ContainerId input[name=PostalCode]').value = this.value" />
+                <input type="text" name="PostalCode" value="@s.PostalCode" />
             </div>
             break;
             
@@ -98,8 +92,7 @@
             <h3>Step 3: Preferences</h3>
             <div class="form-row">
                 <label>Preferred Contact Method</label>
-                <select data-state="ContactMethod"
-                        onchange="document.querySelector('#@s.ContainerId input[name=ContactMethod]').value = this.value">
+                <select name="ContactMethod">
                     <option value="email" @contactEmail>Email</option>
                     <option value="phone" @contactPhone>Phone</option>
                     <option value="sms" @contactSms>SMS</option>
@@ -107,15 +100,13 @@
             </div>
             <div class="form-row">
                 <label>
-                    <input type="checkbox" data-state="Newsletter" value="true" @newsletterChecked
-                           onchange="document.querySelector('#@s.ContainerId input[name=Newsletter]').value = this.checked" />
+                    <input type="checkbox" name="Newsletter" value="true" @newsletterChecked />
                     Subscribe to Newsletter
                 </label>
             </div>
             <div class="form-row">
                 <label>Email Frequency</label>
-                <select data-state="Frequency"
-                        onchange="document.querySelector('#@s.ContainerId input[name=Frequency]').value = this.value">
+                <select name="Frequency">
                     <option value="daily" @freqDaily>Daily</option>
                     <option value="weekly" @freqWeekly>Weekly</option>
                     <option value="monthly" @freqMonthly>Monthly</option>
@@ -127,8 +118,7 @@
             <h3>Step 4: Payment</h3>
             <div class="form-row">
                 <label>Payment Method</label>
-                <select data-state="PaymentMethod"
-                        onchange="document.querySelector('#@s.ContainerId input[name=PaymentMethod]').value = this.value">
+                <select name="PaymentMethod">
                     <option value="card" @payCard>Credit Card</option>
                     <option value="paypal" @payPaypal>PayPal</option>
                     <option value="bank" @payBank>Bank Transfer</option>
@@ -136,8 +126,7 @@
             </div>
             <div class="form-row">
                 <label>Card Type</label>
-                <select data-state="CardType"
-                        onchange="document.querySelector('#@s.ContainerId input[name=CardType]').value = this.value">
+                <select name="CardType">
                     <option value="" @cardNone>Select...</option>
                     <option value="visa" @cardVisa>Visa</option>
                     <option value="mastercard" @cardMc>Mastercard</option>
@@ -171,14 +160,14 @@
     }
 </div>
 
-<!-- Navigation Buttons - only include state container since form inputs sync to hidden fields via JS -->
+<!-- Navigation Buttons - include state container and current step's form inputs -->
 <div class="buttons">
     @if (s.Step > 1)
     {
         <button class="secondary"
                 hx-post="/Home/WizardStep?goToStep=@(s.Step - 1)"
                 hx-target="#wizard-content"
-                hx-include="#@s.ContainerId">
+                hx-include="#@s.ContainerId, .step-content input, .step-content select">
             ← Back
         </button>
     }
@@ -188,7 +177,7 @@
         <button class="primary"
                 hx-post="/Home/WizardStep?goToStep=@(s.Step + 1)"
                 hx-target="#wizard-content"
-                hx-include="#@s.ContainerId">
+                hx-include="#@s.ContainerId, .step-content input, .step-content select">
             Next →
         </button>
     }
@@ -208,7 +197,7 @@
             <button class="secondary" style="font-size: 0.8rem; padding: 0.25rem 0.5rem;"
                     hx-post="/Home/WizardStep?goToStep=@step"
                     hx-target="#wizard-content"
-                    hx-include="#@s.ContainerId">
+                    hx-include="#@s.ContainerId, .step-content input, .step-content select">
                 @step
             </button>
         }

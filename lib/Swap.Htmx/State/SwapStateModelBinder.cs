@@ -52,9 +52,17 @@ public sealed class SwapStateModelBinder : IModelBinder
 
             var result = valueProvider.GetValue(fieldName);
             
-            if (result != ValueProviderResult.None && result.FirstValue != null)
+            if (result != ValueProviderResult.None && result.Values.Count > 0)
             {
-                values[prop.Name] = result.FirstValue;
+                // Use LAST value when duplicates exist (form input overrides hidden field)
+                var lastValue = result.Values.Count > 1 
+                    ? result.Values[result.Values.Count - 1] 
+                    : result.FirstValue;
+                    
+                if (lastValue != null)
+                {
+                    values[prop.Name] = lastValue;
+                }
             }
         }
 
