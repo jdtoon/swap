@@ -135,33 +135,79 @@ public IActionResult Add([FromForm] string title)
 
 ---
 
+## Source Generators (Eliminate Magic Strings)
+
+Swap.Htmx includes source generators that create type-safe constants at compile time.
+
+### Setup (.csproj)
+
+First, add your views as additional files:
+
+```xml
+<ItemGroup>
+  <AdditionalFiles Include="Views\**\*.cshtml" />
+</ItemGroup>
+```
+
+### Type-Safe Events
+
+```csharp
+// Define events as string constants
+[SwapEventSource]
+public static partial class TodoEvents
+{
+    public const string TodoAdded = "todo.added";
+    public const string TodoCompleted = "todo.completed";
+}
+
+// Generated at build time → TodoEvents.Todo.Added, TodoEvents.Todo.Completed
+```
+
+### Auto-Generated Constants
+
+With the `.csproj` setup, `SwapViews` and `SwapElements` are auto-generated:
+
+```csharp
+// Instead of magic strings:
+builder.AlsoUpdate("todo-count", "_Count", count);
+
+// Use generated constants:
+builder.AlsoUpdate(SwapElements.TodoCount, SwapViews.Todos.Count, count);
+```
+
+📖 [Full Source Generators Guide](../../../framework/Swap.Htmx.Generators/README.md)
+
+---
+
 ## Event Handlers (Decoupled Updates)
 
 For larger apps, decouple UI updates from controllers:
 
 ```csharp
-// Define event
-public static class TodoEvents
+// Define event with source generator
+[SwapEventSource]
+public static partial class TodoEvents
 {
-    public static readonly EventKey Added = new("todo:added");
+    public const string TodoAdded = "todo.added";
 }
 
 // Handler updates the count (runs automatically)
-[SwapHandler(typeof(TodoEvents), nameof(TodoEvents.Added))]
+[SwapHandler]
 public class CountHandler : ISwapEventHandler<TodoPayload>
 {
-    public void Handle(SwapEventContext<TodoPayload> ctx)
+    public Task HandleAsync(TodoPayload payload, SwapResponseBuilder builder, CancellationToken ct)
     {
-        ctx.Response.AlsoUpdate("todo-count", "_Count", GetCount());
+        builder.AlsoUpdate("todo-count", "_Count", GetCount());
+        return Task.CompletedTask;
     }
 }
 
-// Controller just fires the event
+// Controller just fires the event (use generated type-safe key)
 [HttpPost]
 public IActionResult Add(string title)
 {
     _todos.Add(title);
-    return SwapEvent(TodoEvents.Added, new TodoPayload(title))
+    return SwapEvent(TodoEvents.Todo.Added, new TodoPayload(title))
         .WithView("_TodoList", _todos)
         .Build();
 }
