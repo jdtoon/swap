@@ -58,17 +58,17 @@ Open `http://localhost:5000` — you're server-driven.
 
 ---
 
-## What You Get
+## Core Features
 
-| Feature | What It Does |
-|---------|--------------|
-| **SwapView** | Auto-detects HTMX requests, returns partials or full pages |
-| **SwapResponse** | Fluent builder for multi-target updates, toasts, triggers |
-| **SwapState** | Server-side state in hidden fields, strongly-typed binding |
-| **Event Handlers** | Decouple UI updates from controllers |
-| **`<swap-nav>`** | SPA navigation without verbose HTMX attributes |
-| **Real-time** | Built-in SSE and WebSocket support |
-| **Source Generators** | Type-safe events, views, and element IDs at compile time |
+| # | Feature | What It Does |
+|---|---------|--------------|
+| 1 | **SwapController** | Base controller with HTMX-aware helper methods |
+| 2 | **SwapView** | Auto-detects HTMX requests, returns partials or full pages |
+| 3 | **SwapResponse** | Fluent builder for multi-target updates, toasts, triggers |
+| 4 | **SwapState** | Server-side state in hidden fields, strongly-typed binding |
+| 5 | **Event Handlers** | Decouple UI updates from controllers |
+| 6 | **SwapNavigation** | SPA-style `<swap-nav>` tag helper |
+| 7 | **Source Generators** | Type-safe events, views, and element IDs at compile time |
 
 ---
 
@@ -180,7 +180,7 @@ public IActionResult Complete(int id)
 
 ## Requirements
 
-- .NET 9.0+
+- .NET 8.0, 9.0, or 10.0
 - ASP.NET Core
 
 ## License

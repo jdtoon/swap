@@ -27,7 +27,7 @@ public class AnalyticsController : SwapController
     
     public IActionResult Index()
     {
-        return View(_state);
+        return SwapView(_state);
     }
     
     /// <summary>

@@ -155,7 +155,7 @@ public class HandlerValidationAnalyzer : DiagnosticAnalyzer
         var eventName = GetEventNameFromArgument(args[0].Expression, context.SemanticModel);
         if (!string.IsNullOrEmpty(eventName))
         {
-            collector.AddTriggeredEvent(eventName, invocation.GetLocation());
+            collector.AddTriggeredEvent(eventName!, invocation.GetLocation());
         }
     }
 
@@ -179,7 +179,7 @@ public class HandlerValidationAnalyzer : DiagnosticAnalyzer
         var eventName = GetEventNameFromArgument(args[0].Expression, context.SemanticModel);
         if (!string.IsNullOrEmpty(eventName))
         {
-            collector.AddHandledEvent(eventName, invocation.GetLocation());
+            collector.AddHandledEvent(eventName!, invocation.GetLocation());
         }
     }
 

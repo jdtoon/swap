@@ -1,111 +1,34 @@
-# Swap.Htmx
+# Swap.Htmx — LLM Implementation Guide
 
-Server-driven web applications for ASP.NET Core + HTMX.
+> **THIS IS A CHECKLIST.** When implementing any UI feature with Swap.Htmx, work through these core patterns in order. If a feature isn't working, verify each applicable pattern is correctly implemented. Not every feature needs all patterns — use what applies.
 
----
+## ✅ Implementation Checklist
 
-## ⚡ QUICK VERIFICATION CHECKLIST
+Before debugging, verify these are in place:
 
-**Use this checklist when reviewing or generating Swap.Htmx code:**
-
-### Controllers & Views
-- [ ] Controllers inherit `SwapController` OR use `this.SwapView()` extension
-- [ ] Use `SwapView()` for full/partial auto-detection (not `View()` or `PartialView()`)
-- [ ] Partial-only actions can use `PartialView()`, but prefer `SwapView()` for consistency
-- [ ] Never use `return Redirect()` in HTMX actions — use `.WithNavigation()` or `HX-Redirect`
-
-### Source Generators (CRITICAL — No Magic Strings)
-- [ ] `.csproj` includes `<AdditionalFiles Include="Views\**\*.cshtml" />`
-- [ ] `.csproj` includes module views: `<AdditionalFiles Include="Modules\**\Views\**\*.cshtml" />`
-- [ ] Events use `[SwapEventSource]` attribute on partial class
-- [ ] Event keys accessed via generated static class (e.g., `TaskEvents.Task.Completed`)
-- [ ] View names use `SwapViews.*` constants where available
-- [ ] Element IDs use `SwapElements.*` constants where available
-- [ ] If generators not working: ensure `Swap.Htmx` package is referenced (includes generators)
-
-### Event-Driven Updates (Multi-Component)
-When an action updates multiple UI components, use ONE of these patterns:
-- [ ] **Event Handlers** (recommended): `[SwapHandler]` classes + `SwapEvent()` in controller
-- [ ] **Event Configuration**: `ISwapEventConfiguration` for declarative event→update mappings
-- [ ] **Fluent Builder**: `SwapResponse().AlsoUpdate()` for simple, explicit multi-updates
-
-❌ **Anti-pattern**: Controller manually calling `.AlsoUpdate()` for 5+ unrelated components
-
-### SwapState (Server-Side UI State)
-- [ ] Use `SwapState` base class for filter/pagination/wizard state
-- [ ] Render with `<swap-state state="Model.State" />` in views
-- [ ] Bind with `[FromSwapState]` in controller actions
-- [ ] Always `hx-include="#state-container-id"` to preserve state across requests
-- [ ] URL parameters override hidden fields (use for explicit changes like `?Page=1`)
-
-### Partial Design
-- [ ] Partials are small, single-responsibility (one component per partial)
-- [ ] Partial names start with `_` (e.g., `_ProductCard.cshtml`)
-- [ ] Each partial has a unique target ID in the DOM
-- [ ] Partials don't include `<html>`, `<head>`, `<body>` tags
-
-### Source Generator Attributes Reference
-
-If missing, add this file to define the attributes:
-
-```csharp
-// Attributes/SwapGeneratorAttributes.cs
-using System;
-
-namespace Swap.Htmx.Attributes;
-
-/// <summary>Generates type-safe EventKey constants from string constants.</summary>
-[AttributeUsage(AttributeTargets.Class)]
-public class SwapEventSourceAttribute : Attribute { }
-
-/// <summary>Generates view name constants from .cshtml files in the specified path.</summary>
-[AttributeUsage(AttributeTargets.Class)]
-public class SwapViewSourceAttribute : Attribute
-{
-    public string Path { get; }
-    public bool IncludeSubdirectories { get; set; }
-    public SwapViewSourceAttribute(string path) => Path = path;
-}
-
-/// <summary>Generates element ID constants from id="..." attributes in .cshtml files.</summary>
-[AttributeUsage(AttributeTargets.Class)]
-public class SwapElementSourceAttribute : Attribute
-{
-    public string Path { get; }
-    public bool IncludeSubdirectories { get; set; }
-    public string? Prefix { get; set; }
-    public SwapElementSourceAttribute(string path) => Path = path;
-}
-```
-
-### Minimal .csproj Setup
-
-```xml
-<PropertyGroup>
-  <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
-</PropertyGroup>
-
-<ItemGroup>
-  <AdditionalFiles Include="Views\**\*.cshtml" />
-  <AdditionalFiles Include="Modules\**\Views\**\*.cshtml" />
-</ItemGroup>
-
-<ItemGroup>
-  <PackageReference Include="Swap.Htmx" Version="*" />
-</ItemGroup>
-```
+| # | Pattern | When to Use | Verify |
+|---|---------|-------------|--------|
+| 1 | **SwapController** | Every controller | Inherits `SwapController` or uses extension methods |
+| 2 | **SwapView** | Every action returning HTML | Returns `SwapView()` not `View()` |
+| 3 | **SwapResponse** | Multi-element updates | Uses `.AlsoUpdate()` for OOB swaps, ends with `.Build()` |
+| 4 | **SwapState** | Preserving UI state | `<swap-state>` rendered, `hx-include` present, `[FromSwapState]` binding |
+| 5 | **Event Handlers** | Decoupled UI updates | `[SwapHandler]` classes exist, `SwapEvent()` fired from controller |
+| 6 | **SwapNavigation** | SPA-style links | `<swap-nav>` tag helper used |
+| 7 | **Source Generators** | Type-safe code | `.csproj` has `<AdditionalFiles>`, use `SwapViews.*`, `SwapElements.*` |
 
 ---
 
 ## What It Is
 
-Swap.Htmx is a .NET library that makes HTMX a first-class citizen in ASP.NET Core. It provides:
+Swap.Htmx is a .NET library that makes HTMX a first-class citizen in ASP.NET Core. The core features:
 
-1. **SwapController** — Auto-detects HTMX requests, returns partials or full pages
-2. **SwapResponse** — Fluent builder for multi-target updates, toasts, triggers
-3. **SwapState** — Server-side state management via hidden HTML fields
-4. **Event Handlers** — Decouple UI updates from controller logic
-5. **Real-time** — Built-in SSE and WebSocket support
+1. **SwapController** — Base controller class with HTMX-aware methods
+2. **SwapView** — Auto-detects HTMX requests, returns partials or full pages
+3. **SwapResponse** — Fluent builder for multi-target updates, toasts, triggers
+4. **SwapState** — Server-side state management via hidden HTML fields
+5. **Event Handlers** — Decouple UI updates from controller logic
+6. **SwapNavigation** — SPA-style navigation with `<swap-nav>` tag helper
+7. **Source Generators** — Type-safe events, views, and element IDs at compile time
 
 ## Installation
 
@@ -312,23 +235,22 @@ The template includes:
 
 ---
 
-## Core Pattern 1: SwapView
+## Pattern 1: SwapController
 
-`SwapView()` auto-detects request type:
+Base controller class that provides all Swap methods. **Every controller should inherit from this.**
 
 ```csharp
 public class ProductsController : SwapController
 {
-    public IActionResult Index()
-    {
-        return SwapView(model);
-        // Browser navigation → View with layout
-        // HTMX request → PartialView (no layout)
-    }
+    // Now you have access to:
+    // - SwapView()
+    // - SwapResponse()
+    // - SwapEvent()
+    // - ServerSentEvents()
 }
 ```
 
-Without inheritance:
+Without inheritance (extension methods):
 
 ```csharp
 public class ProductsController : Controller
@@ -342,7 +264,25 @@ public class ProductsController : Controller
 
 ---
 
-## Core Pattern 2: SwapResponse (Multi-Target Updates)
+## Pattern 2: SwapView
+
+`SwapView()` auto-detects request type. **Use this instead of `View()`.**
+
+```csharp
+public class ProductsController : SwapController
+{
+    public IActionResult Index()
+    {
+        return SwapView(model);
+        // Browser navigation → View with layout
+        // HTMX request → PartialView (no layout)
+    }
+}
+```
+
+---
+
+## Pattern 3: SwapResponse (Multi-Target Updates)
 
 Update multiple page elements in one response:
 
@@ -385,9 +325,9 @@ public IActionResult AddToCart(int productId)
 
 ---
 
-## Core Pattern 3: SwapState
+## Pattern 4: SwapState
 
-Server-side state via hidden HTML fields. No JavaScript state management.
+Server-side state via hidden HTML fields. No JavaScript state management. **Use when you need to preserve UI state across requests.**
 
 ### Define State
 
@@ -473,7 +413,7 @@ Unchecked checkboxes send nothing. Toggle explicitly:
 
 ---
 
-## Core Pattern 4: Event Handlers
+## Pattern 5: Event Handlers
 
 Decouple UI updates from controllers. Controller fires event, handlers add OOB updates.
 
@@ -538,9 +478,9 @@ public IActionResult Complete(int id)
 
 ---
 
-## Core Pattern 5: Navigation
+## Pattern 6: SwapNavigation
 
-SPA-style navigation without verbose HTMX:
+SPA-style navigation without verbose HTMX. **Use `<swap-nav>` for internal links.**
 
 ```html
 <!-- Instead of: -->
