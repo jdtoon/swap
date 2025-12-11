@@ -4,7 +4,7 @@
     <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <Version>1.0.5</Version>
+    <Version>1.0.6</Version>
     <Authors>jdtoon</Authors>
     <Company>Swap</Company>
     <Description>HTMX helper library for ASP.NET Core MVC applications. Provides SwapController base class, middleware, event helpers, SSE support, and extension methods for seamless HTMX integration.</Description>
@@ -37,6 +37,11 @@
     <None Include="..\..\framework\Swap.Htmx.Generators\bin\$(Configuration)\netstandard2.0\Swap.Htmx.Generators.dll" Pack="true" PackagePath="analyzers/dotnet/cs" />
 
     <None Include="..\..\framework\Swap.Htmx.Generators\bin\$(Configuration)\netstandard2.0\Swap.Htmx.Generators.pdb" Pack="true" PackagePath="analyzers/dotnet/cs" />
+  </ItemGroup>
+
+  <!-- Include .targets file for auto-scanning Views folders -->
+  <ItemGroup>
+    <None Include="build\Swap.Htmx.targets" Pack="true" PackagePath="build\" />
   </ItemGroup>
 
   <ItemGroup>

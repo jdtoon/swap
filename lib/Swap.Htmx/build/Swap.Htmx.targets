@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Swap.Htmx.targets
+  
+  Auto-includes common view folders as AdditionalFiles for source generators.
+  This eliminates the need for manual configuration in most projects.
+  
+  Developers can add custom paths in their csproj if needed:
+  <ItemGroup>
+    <AdditionalFiles Include="CustomViews/**/*.cshtml" />
+  </ItemGroup>
+-->
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  
+  <!-- Standard MVC Views folder -->
+  <ItemGroup Condition="Exists('$(MSBuildProjectDirectory)/Views')">
+    <AdditionalFiles Include="$(MSBuildProjectDirectory)/Views/**/*.cshtml" />
+  </ItemGroup>
+  
+  <!-- Modular Monolith pattern - Modules/*/Views/ -->
+  <ItemGroup Condition="Exists('$(MSBuildProjectDirectory)/Modules')">
+    <AdditionalFiles Include="$(MSBuildProjectDirectory)/Modules/**/Views/**/*.cshtml" />
+  </ItemGroup>
+  
+  <!-- Razor Pages -->
+  <ItemGroup Condition="Exists('$(MSBuildProjectDirectory)/Pages')">
+    <AdditionalFiles Include="$(MSBuildProjectDirectory)/Pages/**/*.cshtml" />
+  </ItemGroup>
+  
+  <!-- View Components -->
+  <ItemGroup Condition="Exists('$(MSBuildProjectDirectory)/Components')">
+    <AdditionalFiles Include="$(MSBuildProjectDirectory)/Components/**/*.cshtml" />
+  </ItemGroup>
+  
+  <!-- Areas -->
+  <ItemGroup Condition="Exists('$(MSBuildProjectDirectory)/Areas')">
+    <AdditionalFiles Include="$(MSBuildProjectDirectory)/Areas/**/Views/**/*.cshtml" />
+  </ItemGroup>
+
+</Project>

@@ -13,6 +13,13 @@ namespace Swap.Htmx.Generators;
 /// Source generator that automatically creates SwapViews and SwapElements classes
 /// by scanning all .cshtml files in the project at compile time.
 /// No attributes required - just add the package and use the generated classes.
+/// 
+/// SwapViews are grouped by controller folder for intuitive usage:
+///   SwapViews.TenantsManagement.Index
+///   SwapViews.TenantsManagement._TenantList
+///   SwapViews.Shared._Layout
+/// 
+/// SwapElements contains all static element IDs found in views.
 /// </summary>
 [Generator]
 public class AutoScanGenerator : IIncrementalGenerator
@@ -57,7 +64,10 @@ public class AutoScanGenerator : IIncrementalGenerator
         System.Collections.Immutable.ImmutableArray<AdditionalText> files,
         string rootNamespace)
     {
-        var viewsByFolder = new Dictionary<string, Dictionary<string, ViewInfo>>(StringComparer.OrdinalIgnoreCase);
+        // Group views by controller folder
+        // Key: controller folder name (e.g., "TenantsManagement", "Shared", "Home")
+        // Value: Dictionary of view filename -> ViewInfo
+        var viewsByController = new Dictionary<string, Dictionary<string, ViewInfo>>(StringComparer.OrdinalIgnoreCase);
 
         foreach (var file in files)
         {
@@ -67,21 +77,20 @@ public class AutoScanGenerator : IIncrementalGenerator
             if (viewInfo == null)
                 continue;
 
-            if (!viewsByFolder.TryGetValue(viewInfo.Folder, out var viewsDict))
+            if (!viewsByController.TryGetValue(viewInfo.ControllerFolder, out var viewsDict))
             {
                 viewsDict = new Dictionary<string, ViewInfo>(StringComparer.OrdinalIgnoreCase);
-                viewsByFolder[viewInfo.Folder] = viewsDict;
+                viewsByController[viewInfo.ControllerFolder] = viewsDict;
             }
             
-            // Use relativePath as key to avoid duplicates
-            var key = viewInfo.RelativePath;
-            if (!viewsDict.ContainsKey(key))
+            // Use filename as key - duplicates within same folder are errors anyway
+            if (!viewsDict.ContainsKey(viewInfo.FileName))
             {
-                viewsDict[key] = viewInfo;
+                viewsDict[viewInfo.FileName] = viewInfo;
             }
         }
 
-        if (viewsByFolder.Count == 0)
+        if (viewsByController.Count == 0)
             return;
 
         var sb = new StringBuilder();
@@ -91,43 +100,30 @@ public class AutoScanGenerator : IIncrementalGenerator
         sb.AppendLine($"namespace {rootNamespace}");
         sb.AppendLine("{");
         sb.AppendLine("    /// <summary>");
-        sb.AppendLine("    /// Auto-generated view path constants from .cshtml files.");
+        sb.AppendLine("    /// Auto-generated view constants grouped by controller folder.");
+        sb.AppendLine("    /// Usage: SwapViews.TenantsManagement._TenantList");
         sb.AppendLine("    /// </summary>");
         sb.AppendLine("    public static class SwapViews");
         sb.AppendLine("    {");
 
-        foreach (var kvp in viewsByFolder.OrderBy(k => k.Key))
+        foreach (var kvp in viewsByController.OrderBy(k => k.Key))
         {
-            var folder = kvp.Key;
+            var controllerFolder = kvp.Key;
             var views = kvp.Value.Values.OrderBy(v => v.FileName).ToList();
-            var className = ToValidClassName(folder);
+            var className = ToValidClassName(controllerFolder);
 
+            sb.AppendLine($"        /// <summary>Views for {controllerFolder}</summary>");
             sb.AppendLine($"        public static class {className}");
             sb.AppendLine("        {");
 
-            // Track used constant names to avoid duplicates within a class
-            var usedNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            
             foreach (var view in views)
             {
+                // Keep the filename as-is (including underscore for partials)
+                // This prevents clashes between _TenantList and TenantList
                 var constantName = ToValidIdentifier(view.FileName);
                 
-                // If duplicate name in same class, append number
-                var finalName = constantName;
-                var counter = 2;
-                while (usedNames.Contains(finalName))
-                {
-                    finalName = constantName + counter++;
-                }
-                usedNames.Add(finalName);
-                
-                // For partials (starting with _), use just the filename for AlsoUpdate compatibility
-                // For full views, use the complete path for SwapView() usage
-                var viewValue = view.FileName.StartsWith("_") 
-                    ? view.FileName 
-                    : view.RelativePath;
-                
-                sb.AppendLine($"            public const string {finalName} = \"{viewValue}\";");
+                // All views use short names - Razor resolves them relative to controller
+                sb.AppendLine($"            public const string {constantName} = \"{view.FileName}\";");
             }
 
             sb.AppendLine("        }");
@@ -204,14 +200,26 @@ public class AutoScanGenerator : IIncrementalGenerator
                 var id = match.Groups[1].Value.Trim();
 
                 // Skip empty IDs or IDs that look like Razor expressions
-                if (!string.IsNullOrEmpty(id) &&
-                    !id.Contains("@") &&
-                    !id.Contains("{") &&
-                    !id.Contains("}") &&
-                    !id.StartsWith("__"))  // Skip framework-generated IDs
-                {
-                    yield return id;
-                }
+                if (string.IsNullOrEmpty(id))
+                    continue;
+                    
+                // Skip Razor expressions
+                if (id.Contains("@") || id.Contains("{") || id.Contains("}"))
+                    continue;
+                    
+                // Skip framework-generated IDs
+                if (id.StartsWith("__"))
+                    continue;
+                    
+                // Skip numeric-only IDs (noise like "3", "4", "123")
+                if (id.All(char.IsDigit))
+                    continue;
+                    
+                // Skip single character IDs (noise)
+                if (id.Length == 1)
+                    continue;
+
+                yield return id;
             }
         }
     }
@@ -223,90 +231,119 @@ public class AutoScanGenerator : IIncrementalGenerator
 
     private static ViewInfo? ParseViewPath(string fullPath)
     {
-        // Handle patterns:
-        // - Views/Home/Index.cshtml -> folder="Home", path="~/Views/Home/Index.cshtml"
-        // - Views/Shared/_Layout.cshtml -> folder="Shared", path="~/Views/Shared/_Layout.cshtml"
-        // - Modules/Notes/Views/Index.cshtml -> folder="Notes", path="~/Modules/Notes/Views/Index.cshtml"
-        // - Modules/Notes/Views/_NoteCard.cshtml -> folder="Notes", path="~/Modules/Notes/Views/_NoteCard.cshtml"
-        // - Pages/Index.cshtml -> folder="Pages", path="~/Pages/Index.cshtml"
+        // Parse view paths to extract controller folder and filename
+        // 
+        // Standard MVC:
+        //   Views/Home/Index.cshtml -> ControllerFolder="Home", FileName="Index"
+        //   Views/Shared/_Layout.cshtml -> ControllerFolder="Shared", FileName="_Layout"
+        //
+        // Modular Monolith:
+        //   Modules/SuperAdmin/Views/TenantsManagement/Index.cshtml -> ControllerFolder="TenantsManagement"
+        //   Modules/SuperAdmin/Views/Shared/_Layout.cshtml -> ControllerFolder="Shared"
+        //
+        // Areas:
+        //   Areas/Admin/Views/Home/Index.cshtml -> ControllerFolder="Admin_Home" (nested)
+        //
+        // Razor Pages:
+        //   Pages/Account/Login.cshtml -> ControllerFolder="Account", FileName="Login"
+        //   Pages/Index.cshtml -> ControllerFolder="Pages", FileName="Index"
+        //
+        // Components:
+        //   Components/WeatherWidget/Default.cshtml -> ControllerFolder="WeatherWidget"
 
         var parts = fullPath.Split('/');
-        var fileName = Path.GetFileNameWithoutExtension(parts[parts.Length - 1]);
+        var fileNameWithExt = parts[parts.Length - 1];
+        var fileName = Path.GetFileNameWithoutExtension(fileNameWithExt);
 
-        string folder = "Shared";
-        string relativePath = "";
+        // Skip special Razor files
+        if (fileName == "_ViewStart" || fileName == "_ViewImports")
+            return null;
 
-        // Find the Views or Pages folder
+        string controllerFolder = "Root";
+
+        // Find key folder markers
         int viewsIndex = -1;
-        int modulesIndex = -1;
+        int pagesIndex = -1;
+        int areasIndex = -1;
+        int componentsIndex = -1;
         
         for (int i = 0; i < parts.Length; i++)
         {
-            if (parts[i].Equals("Modules", StringComparison.OrdinalIgnoreCase))
-            {
-                modulesIndex = i;
-            }
-            if (parts[i].Equals("Views", StringComparison.OrdinalIgnoreCase))
-            {
+            var part = parts[i];
+            if (part.Equals("Views", StringComparison.OrdinalIgnoreCase))
                 viewsIndex = i;
-            }
-            if (parts[i].Equals("Pages", StringComparison.OrdinalIgnoreCase))
-            {
-                viewsIndex = i;
-                folder = "Pages";
-            }
+            else if (part.Equals("Pages", StringComparison.OrdinalIgnoreCase))
+                pagesIndex = i;
+            else if (part.Equals("Areas", StringComparison.OrdinalIgnoreCase))
+                areasIndex = i;
+            else if (part.Equals("Components", StringComparison.OrdinalIgnoreCase))
+                componentsIndex = i;
         }
 
+        // Determine controller folder based on structure
         if (viewsIndex >= 0)
         {
-            // If we have a Modules folder before Views, use the module name as folder
-            if (modulesIndex >= 0 && modulesIndex < viewsIndex && modulesIndex + 1 < viewsIndex)
+            // Standard Views folder structure
+            // Views/{ControllerFolder}/{View}.cshtml
+            // or Views/{ControllerFolder}/SubFolder/{View}.cshtml (still use ControllerFolder)
+            
+            if (viewsIndex + 1 < parts.Length - 1)
             {
-                folder = parts[modulesIndex + 1]; // e.g., "Notes" from "Modules/Notes/Views"
+                // Has a subfolder after Views - that's our controller folder
+                controllerFolder = parts[viewsIndex + 1];
                 
-                // Build relative path from Modules folder
-                var pathParts = new List<string>();
-                for (int j = modulesIndex; j < parts.Length; j++)
+                // Check for Areas pattern: Areas/{Area}/Views/{Controller}/
+                if (areasIndex >= 0 && areasIndex < viewsIndex && areasIndex + 1 < viewsIndex)
                 {
-                    pathParts.Add(parts[j]);
+                    var areaName = parts[areasIndex + 1];
+                    controllerFolder = $"{areaName}_{controllerFolder}";
                 }
-                relativePath = "~/" + string.Join("/", pathParts);
             }
             else
             {
-                // Standard Views folder - use subfolder as the group
-                if (viewsIndex + 1 < parts.Length - 1)
-                {
-                    folder = parts[viewsIndex + 1]; // e.g., "Home" from "Views/Home/Index.cshtml"
-                }
-                
-                // Build relative path from Views/Pages folder
-                var pathParts = new List<string>();
-                for (int j = viewsIndex; j < parts.Length; j++)
-                {
-                    pathParts.Add(parts[j]);
-                }
-                relativePath = "~/" + string.Join("/", pathParts);
+                // File directly in Views folder (unlikely but handle it)
+                controllerFolder = "Root";
+            }
+        }
+        else if (pagesIndex >= 0)
+        {
+            // Razor Pages structure
+            // Pages/{Folder}/{Page}.cshtml -> Folder
+            // Pages/{Page}.cshtml -> Pages
+            
+            if (pagesIndex + 1 < parts.Length - 1)
+            {
+                controllerFolder = parts[pagesIndex + 1];
+            }
+            else
+            {
+                controllerFolder = "Pages";
+            }
+        }
+        else if (componentsIndex >= 0)
+        {
+            // View Components
+            // Components/{ComponentName}/{View}.cshtml
+            
+            if (componentsIndex + 1 < parts.Length - 1)
+            {
+                controllerFolder = parts[componentsIndex + 1];
+            }
+            else
+            {
+                controllerFolder = "Components";
             }
         }
         else
         {
-            // No Views/Pages folder found, use parent folder
+            // Fallback: use parent folder
             if (parts.Length >= 2)
             {
-                folder = parts[parts.Length - 2];
+                controllerFolder = parts[parts.Length - 2];
             }
-            // Take last 3 parts for relative path
-            var lastParts = new List<string>();
-            int startIdx = Math.Max(0, parts.Length - 3);
-            for (int j = startIdx; j < parts.Length; j++)
-            {
-                lastParts.Add(parts[j]);
-            }
-            relativePath = "~/" + string.Join("/", lastParts);
         }
 
-        return new ViewInfo(folder, fileName, relativePath);
+        return new ViewInfo(controllerFolder, fileName);
     }
 
     private static string ToValidClassName(string name)
@@ -314,17 +351,20 @@ public class AutoScanGenerator : IIncrementalGenerator
         if (string.IsNullOrEmpty(name)) return "Root";
 
         var sb = new StringBuilder();
+        var capitalizeNext = true;
 
         foreach (var c in name)
         {
+            if (c == '-' || c == '_' || c == '.')
+            {
+                capitalizeNext = true;
+                continue;
+            }
+
             if (char.IsLetterOrDigit(c))
             {
-                sb.Append(sb.Length == 0 ? char.ToUpper(c) : c);
-            }
-            else if (c == '_' || c == '-')
-            {
-                // Skip but capitalize next
-                continue;
+                sb.Append(capitalizeNext ? char.ToUpper(c) : c);
+                capitalizeNext = false;
             }
         }
 
@@ -343,13 +383,24 @@ public class AutoScanGenerator : IIncrementalGenerator
     {
         if (string.IsNullOrEmpty(name)) return "_";
 
+        // Handle underscore prefix for partials - keep it!
+        var startsWithUnderscore = name.StartsWith("_");
+        
         var sb = new StringBuilder();
-        var capitalizeNext = true;
+        var capitalizeNext = !startsWithUnderscore; // Don't capitalize first char if starts with _
 
         foreach (var c in name)
         {
-            if (c == '-' || c == '_' || c == '.')
+            if (c == '-' || c == '.')
             {
+                capitalizeNext = true;
+                continue;
+            }
+
+            if (c == '_')
+            {
+                // Keep underscores as-is (important for partial naming)
+                sb.Append('_');
                 capitalizeNext = true;
                 continue;
             }
@@ -371,15 +422,13 @@ public class AutoScanGenerator : IIncrementalGenerator
 
     private class ViewInfo
     {
-        public string Folder { get; }
+        public string ControllerFolder { get; }
         public string FileName { get; }
-        public string RelativePath { get; }
 
-        public ViewInfo(string folder, string fileName, string relativePath)
+        public ViewInfo(string controllerFolder, string fileName)
         {
-            Folder = folder;
+            ControllerFolder = controllerFolder;
             FileName = fileName;
-            RelativePath = relativePath;
         }
     }
 }
