@@ -100,7 +100,7 @@ A production-ready foundation with best practices built in:
 **Features**
 - **`<swap-nav>` Tag Helper** — Clean navigation links without verbose HTMX attributes
 - **Auto-Layout Suppression** — HTMX requests get partials, browser requests get full pages
-- **Auto-Generated Constants** — Type-safe `SwapViews` and `SwapElements` from your .cshtml files
+- **Zero-Config Source Generators** — Type-safe `SwapViews` and `SwapElements` auto-generated (no `.csproj` setup needed)
 - **SPA-style Navigation** — HTMX-powered routing with URL updates
 - **SQLite Database** — Ready for development, easily swap for production DB
 - **WebOptimizer** — CSS/JS bundling and minification

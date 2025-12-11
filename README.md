@@ -97,23 +97,17 @@ return SwapEvent(TaskEvents.Task.Completed, payload).Build();
 
 ### View Names & Element IDs (Zero-Config)
 
-The generators automatically scan your `.cshtml` files and create constants:
+The generators automatically scan your `.cshtml` files and create constants — **no configuration needed**:
 
 ```csharp
-// Auto-generated from Views/**/*.cshtml
-builder.AlsoUpdate(SwapElements.ProductGrid, SwapViews.Products.Grid, products);
+// Auto-generated from Views/**/*.cshtml (grouped by controller folder)
+builder.AlsoUpdate(SwapElements.ProductGrid, SwapViews.Products._Grid, products);
 
 // Instead of magic strings:
 builder.AlsoUpdate("product-grid", "_Grid", products);
 ```
 
-### Setup (required in .csproj)
-
-```xml
-<ItemGroup>
-  <AdditionalFiles Include="Views\**\*.cshtml" />
-</ItemGroup>
-```
+As of v1.0.6, `Swap.Htmx.targets` auto-includes your view folders. Just reference the package and build.
 
 See the [modular template](templates/content/Swap.ModularMonolith) for a complete working example.
 

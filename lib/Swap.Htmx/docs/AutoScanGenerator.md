@@ -1,178 +1,44 @@
 # Auto-Generated View & Element Constants
 
-Swap.Htmx can automatically generate type-safe constants for your views and HTMX elements at compile time — **without requiring any attributes**. This eliminates magic strings and prevents runtime errors from typos.
+Swap.Htmx automatically generates type-safe constants for your views and HTMX elements at compile time — **no configuration required**. This eliminates magic strings and prevents runtime errors from typos.
 
-## Quick Start
+## Zero Configuration
 
-### 1. Add Generator Reference
+As of v1.0.6, Swap.Htmx **automatically scans** your view folders. No `<AdditionalFiles>` needed!
 
-In your `.csproj`:
+The package includes a `.targets` file that auto-includes:
+- `Views/**/*.cshtml` — Standard MVC
+- `Modules/**/Views/**/*.cshtml` — Modular monoliths
+- `Pages/**/*.cshtml` — Razor Pages
+- `Components/**/*.cshtml` — View Components
+- `Areas/**/Views/**/*.cshtml` — MVC Areas
 
-```xml
-<ItemGroup>
-    <PackageReference Include="Swap.Htmx.Generators" Version="1.0.0" 
-                      PrivateAssets="all" 
-                      OutputItemType="Analyzer" 
-                      ReferenceOutputAssembly="false" />
-</ItemGroup>
+Just reference the package and build:
 
-<!-- Enable scanning of .cshtml files -->
-<ItemGroup>
-    <AdditionalFiles Include="Views\**\*.cshtml" />
-    <AdditionalFiles Include="Modules\**\Views\**\*.cshtml" />
-</ItemGroup>
+```bash
+dotnet add package Swap.Htmx
+dotnet build
 ```
-
-### 2. Build — That's It!
-
-The generator automatically scans all `.cshtml` files and generates:
-
-- **SwapViews** — Constants for every view file
-- **SwapElements** — Constants for every `id` attribute in your views
 
 ## Generated Output
 
-Given this folder structure:
+### SwapViews — Grouped by Controller
+
+Views are grouped by their **controller folder**, making them intuitive to use:
 
 ```
 Views/
     Home/
-        Index.cshtml      (contains <div id="user-panel">)
-        Dashboard.cshtml  (contains <div id="stats-grid">)
+        Index.cshtml
+        Dashboard.cshtml
     Products/
-        Index.cshtml      (contains <div id="product-list">)
-        Details.cshtml    (contains <div id="product-details" id="reviews">)
+        Index.cshtml
+        Details.cshtml
+        _ProductList.cshtml
+        _ProductRow.cshtml
     Shared/
-        _Layout.cshtml    (contains <main id="main-content">)
-```
-
-The generator creates:
-
-```csharp
-// Auto-generated SwapViews.cs
-public static class SwapViews
-{
-    public static class Home
-    {
-        public const string Index = "~/Views/Home/Index.cshtml";
-        public const string Dashboard = "~/Views/Home/Dashboard.cshtml";
-    }
-    
-    public static class Products
-    {
-        public const string Index = "~/Views/Products/Index.cshtml";
-        public const string Details = "~/Views/Products/Details.cshtml";
-    }
-    
-    public static class Shared
-    {
-        public const string _Layout = "~/Views/Shared/_Layout.cshtml";
-    }
-}
-
-// Auto-generated SwapElements.cs
-public static class SwapElements
-{
-    public static class Home
-    {
-        public static class Index
-        {
-            public const string UserPanel = "#user-panel";
-        }
-        public static class Dashboard
-        {
-            public const string StatsGrid = "#stats-grid";
-        }
-    }
-    
-    public static class Products
-    {
-        public static class Index
-        {
-            public const string ProductList = "#product-list";
-        }
-        public static class Details
-        {
-            public const string ProductDetails = "#product-details";
-            public const string Reviews = "#reviews";
-        }
-    }
-    
-    public static class Shared
-    {
-        public static class _Layout
-        {
-            public const string MainContent = "#main-content";
-        }
-    }
-}
-```
-
-## Usage
-
-### Type-Safe View References
-
-```csharp
-// ❌ Before: Magic strings
-return View("~/Views/Products/Details.cshtml", product);
-
-// ✅ After: Compile-time safety
-return View(SwapViews.Products.Details, product);
-```
-
-### Type-Safe Element Targets
-
-```csharp
-// ❌ Before: Magic strings, easy to typo
-return SwapResponse()
-    .WithTarget("#product-list")
-    .WithView("_ProductList", products)
-    .Build();
-
-// ✅ After: Compile-time safety
-return SwapResponse()
-    .WithTarget(SwapElements.Products.Index.ProductList)
-    .WithView(SwapViews.Products._ProductList, products)
-    .Build();
-```
-
-### With SwapResponse
-
-```csharp
-public IActionResult UpdateDashboard()
-{
-    var stats = _service.GetStats();
-    var notifications = _service.GetNotifications();
-    
-    return SwapResponse()
-        // Primary response
-        .WithTarget(SwapElements.Home.Dashboard.StatsGrid)
-        .WithView(SwapViews.Home._Stats, stats)
-        
-        // Out-of-band update
-        .WithOutOfBand(oob => oob
-            .WithTarget(SwapElements.Shared._Layout.NotificationBadge)
-            .WithContent(notifications.Count.ToString())
-        )
-        .Build();
-}
-```
-
-## Module Support
-
-For modular monolith structures, the generator recognizes `Modules/*/Views/` patterns:
-
-```
-Modules/
-    Inventory/
-        Views/
-            Products/
-                Index.cshtml
-                Details.cshtml
-    Orders/
-        Views/
-            Index.cshtml
-            Details.cshtml
+        _Layout.cshtml
+        _Sidebar.cshtml
 ```
 
 Generates:
@@ -180,19 +46,218 @@ Generates:
 ```csharp
 public static class SwapViews
 {
-    public static class Inventory
+    /// <summary>Views for Home</summary>
+    public static class Home
     {
-        public static class Products
-        {
-            public const string Index = "~/Modules/Inventory/Views/Products/Index.cshtml";
-            public const string Details = "~/Modules/Inventory/Views/Products/Details.cshtml";
-        }
+        public const string Index = "Index";
+        public const string Dashboard = "Dashboard";
     }
     
-    public static class Orders
+    /// <summary>Views for Products</summary>
+    public static class Products
     {
-        public const string Index = "~/Modules/Orders/Views/Index.cshtml";
-        public const string Details = "~/Modules/Orders/Views/Details.cshtml";
+        public const string Index = "Index";
+        public const string Details = "Details";
+        public const string _ProductList = "_ProductList";
+        public const string _ProductRow = "_ProductRow";
+    }
+    
+    /// <summary>Views for Shared</summary>
+    public static class Shared
+    {
+        public const string _Layout = "_Layout";
+        public const string _Sidebar = "_Sidebar";
+    }
+}
+```
+
+### SwapElements — Flat List of IDs
+
+All element IDs are extracted into a single class:
+
+```html
+<!-- Views/Products/Index.cshtml -->
+<div id="product-list">...</div>
+<div id="product-count">...</div>
+
+<!-- Views/Shared/_Layout.cshtml -->
+<main id="main-content">...</main>
+```
+
+Generates:
+
+```csharp
+public static class SwapElements
+{
+    /// <summary>From Index</summary>
+    public const string ProductList = "product-list";
+    
+    /// <summary>From Index</summary>
+    public const string ProductCount = "product-count";
+    
+    /// <summary>From _Layout</summary>
+    public const string MainContent = "main-content";
+}
+```
+
+## Usage
+
+### In Controllers
+
+```csharp
+public class ProductsController : SwapController
+{
+    public IActionResult List()
+    {
+        var products = GetProducts();
+        
+        return SwapResponse()
+            .WithView(SwapViews.Products._ProductList, products)
+            .Build();
+    }
+
+    [HttpPost]
+    public IActionResult Add(Product product)
+    {
+        SaveProduct(product);
+        var count = GetProductCount();
+        
+        return SwapResponse()
+            .WithView(SwapViews.Products._ProductRow, product)
+            .AlsoUpdate(SwapElements.ProductCount, SwapViews.Products._ProductCount, count)
+            .WithSuccessToast("Product added!")
+            .Build();
+    }
+}
+```
+
+### Benefits
+
+```csharp
+// ❌ Before: Magic strings - typos cause silent failures
+return SwapResponse()
+    .WithView("_ProductLst", products)  // Typo!
+    .AlsoUpdate("prodct-count", "_ProductCount", count)  // Typo!
+    .Build();
+
+// ✅ After: Compile-time safety
+return SwapResponse()
+    .WithView(SwapViews.Products._ProductList, products)
+    .AlsoUpdate(SwapElements.ProductCount, SwapViews.Products._ProductCount, count)
+    .Build();
+```
+
+## Modular Monolith Support
+
+For modular structures like `Modules/SuperAdmin/Views/TenantsManagement/`, the generator uses the **controller folder** (not the module name):
+
+```
+Modules/
+    SuperAdmin/
+        Views/
+            TenantsManagement/
+                Index.cshtml
+                Details.cshtml
+                _TenantList.cshtml
+            SuperAdminDashboard/
+                Index.cshtml
+            Shared/
+                _Layout.cshtml
+```
+
+Generates:
+
+```csharp
+namespace MyApp.Modules.SuperAdmin
+{
+    public static class SwapViews
+    {
+        public static class TenantsManagement
+        {
+            public const string Index = "Index";
+            public const string Details = "Details";
+            public const string _TenantList = "_TenantList";
+        }
+        
+        public static class SuperAdminDashboard
+        {
+            public const string Index = "Index";
+        }
+        
+        public static class Shared
+        {
+            public const string _Layout = "_Layout";
+        }
+    }
+}
+```
+
+**Each module generates its own classes** in its own namespace. When referencing from another project:
+
+```csharp
+using MyApp.Modules.SuperAdmin;
+
+// Now SwapViews refers to that module's views
+SwapViews.TenantsManagement._TenantList
+```
+
+## Areas Support
+
+Areas create combined class names:
+
+```
+Areas/
+    Admin/
+        Views/
+            Dashboard/
+                Index.cshtml
+            Users/
+                Index.cshtml
+```
+
+Generates:
+
+```csharp
+public static class SwapViews
+{
+    public static class Admin_Dashboard
+    {
+        public const string Index = "Index";
+    }
+    
+    public static class Admin_Users
+    {
+        public const string Index = "Index";
+    }
+}
+```
+
+## Razor Pages Support
+
+Pages are grouped by folder:
+
+```
+Pages/
+    Account/
+        Login.cshtml
+        Register.cshtml
+    Index.cshtml
+```
+
+Generates:
+
+```csharp
+public static class SwapViews
+{
+    public static class Account
+    {
+        public const string Login = "Login";
+        public const string Register = "Register";
+    }
+    
+    public static class Pages
+    {
+        public const string Index = "Index";
     }
 }
 ```
@@ -201,163 +266,116 @@ public static class SwapViews
 
 ### Views
 
-| File Path | Generated Constant |
-|-----------|-------------------|
-| `Views/Home/Index.cshtml` | `SwapViews.Home.Index` |
-| `Views/Products/_List.cshtml` | `SwapViews.Products._List` |
-| `Views/Shared/_Layout.cshtml` | `SwapViews.Shared._Layout` |
-| `Modules/Sales/Views/Orders/Index.cshtml` | `SwapViews.Sales.Orders.Index` |
+| File | Constant Name | Value |
+|------|---------------|-------|
+| `Index.cshtml` | `Index` | `"Index"` |
+| `_ProductList.cshtml` | `_ProductList` | `"_ProductList"` |
+| `_Layout.cshtml` | `_Layout` | `"_Layout"` |
+| `user-profile.cshtml` | `UserProfile` | `"user-profile"` |
+
+- **Underscores preserved** — `_TenantList` stays as `_TenantList` (prevents clash with `TenantList`)
+- **Kebab-case converted** — `user-profile` becomes `UserProfile` constant
 
 ### Elements
 
-| HTML ID | Generated Constant |
-|---------|-------------------|
-| `id="user-panel"` | `SwapElements.{Folder}.{View}.UserPanel` |
-| `id="product-list"` | `SwapElements.{Folder}.{View}.ProductList` |
-| `id="main-content"` | `SwapElements.{Folder}.{View}.MainContent` |
-| `id="stats_grid"` | `SwapElements.{Folder}.{View}.StatsGrid` |
+| HTML ID | Constant Name | Value |
+|---------|---------------|-------|
+| `id="product-list"` | `ProductList` | `"product-list"` |
+| `id="main-content"` | `MainContent` | `"main-content"` |
+| `id="user_panel"` | `UserPanel` | `"user_panel"` |
 
-- Kebab-case (`user-panel`) → PascalCase (`UserPanel`)
-- Snake_case (`user_panel`) → PascalCase (`UserPanel`)
+**Filtered out automatically:**
+- Numeric IDs (`id="3"`)
+- Single character IDs (`id="x"`)
+- Framework IDs (`id="__RequestVerificationToken"`)
+- Dynamic Razor expressions (`id="@Model.Id"`)
 
-## Configuration
+## Custom View Paths
 
-### Including Files
-
-The generator processes files added via `<AdditionalFiles>`:
-
-```xml
-<ItemGroup>
-    <!-- Standard MVC Views -->
-    <AdditionalFiles Include="Views\**\*.cshtml" />
-    
-    <!-- Razor Pages -->
-    <AdditionalFiles Include="Pages\**\*.cshtml" />
-    
-    <!-- Modular structure -->
-    <AdditionalFiles Include="Modules\**\Views\**\*.cshtml" />
-    
-    <!-- Areas -->
-    <AdditionalFiles Include="Areas\**\Views\**\*.cshtml" />
-</ItemGroup>
-```
-
-### Excluding Files
-
-Use standard MSBuild patterns:
+Need to include additional folders? Add them in your `.csproj`:
 
 ```xml
 <ItemGroup>
-    <AdditionalFiles Include="Views\**\*.cshtml" 
-                     Exclude="Views\Generated\**\*.cshtml" />
+    <AdditionalFiles Include="CustomViews/**/*.cshtml" />
 </ItemGroup>
 ```
-
-## Comparison with Attribute-Based Approach
-
-### Auto-Scan (Recommended)
-
-```xml
-<!-- .csproj -->
-<AdditionalFiles Include="Views\**\*.cshtml" />
-```
-
-- ✅ Zero attributes needed
-- ✅ Scans all views automatically
-- ✅ Extracts all IDs automatically
-- ✅ Always in sync with actual files
-
-### Attribute-Based (Legacy)
-
-```csharp
-[SwapViewSource("~/Views/Home")]
-[SwapElementSource("~/Views/Home")]
-public static partial class HomeViews { }
-```
-
-- ⚠️ Requires attributes per folder
-- ⚠️ Must add partial classes manually
-- ⚠️ Can become out of sync
-
-**Both approaches work** — use whichever fits your project.
 
 ## Troubleshooting
 
 ### Constants Not Generating
 
-1. **Check AdditionalFiles** — Verify your `.csproj` includes the files:
-   ```xml
-   <AdditionalFiles Include="Views\**\*.cshtml" />
-   ```
-
-2. **Rebuild the project** — Source generators run during build:
-   ```
+1. **Rebuild the project** — Source generators run during build
+   ```bash
    dotnet build --no-incremental
    ```
 
-3. **Check for errors** — Generator errors appear in build output
+2. **Check the analyzer** — Look under Dependencies → Analyzers → Swap.Htmx.Generators
+
+3. **Verify folder structure** — Files must be in recognized folders (Views, Pages, Components, Areas, Modules)
 
 ### IntelliSense Not Working
 
-1. **Restart VS Code/Visual Studio** — IDEs cache generator output
-2. **Check Dependencies** folder — Look for `Swap.Htmx.Generators` under Analyzers
+Restart your IDE after building. IDEs cache generator output.
 
-### Duplicate Definitions
+### Viewing Generated Code
 
-If you see duplicate definition errors:
-- The generator now automatically deduplicates based on relative path
-- Make sure you're on the latest version of `Swap.Htmx.Generators`
+Enable generated file output in your `.csproj`:
 
-### Module Paths Incorrect
-
-Ensure your `AdditionalFiles` pattern matches your structure:
 ```xml
-<!-- For Modules/X/Views/... structure -->
-<AdditionalFiles Include="Modules\**\Views\**\*.cshtml" />
+<PropertyGroup>
+    <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+    <CompilerGeneratedFilesOutputPath>obj\Generated</CompilerGeneratedFilesOutputPath>
+</PropertyGroup>
+
+<ItemGroup>
+    <Compile Remove="obj\Generated\**\*.cs" />
+</ItemGroup>
 ```
 
-## Generated File Locations
-
-The generator creates:
-- `SwapViews.g.cs` — In the project's generated code folder
-- `SwapElements.g.cs` — In the project's generated code folder
-
-View them in your IDE under Dependencies → Analyzers → Swap.Htmx.Generators.
+Generated files appear in `obj/Generated/Swap.Htmx.Generators/`.
 
 ## Best Practices
 
-### 1. Use Meaningful IDs
+### 1. Use Meaningful Element IDs
 
 ```html
-<!-- Good: Descriptive IDs -->
+<!-- ✅ Good: Descriptive IDs -->
+<div id="tenant-summary">...</div>
 <div id="product-search-results">...</div>
-<div id="user-notifications-list">...</div>
 
-<!-- Avoid: Generic IDs -->
+<!-- ❌ Avoid: Generic IDs -->
 <div id="content">...</div>
 <div id="list">...</div>
 ```
 
-### 2. Consistent Naming
+### 2. Use Kebab-Case for IDs
 
-Use kebab-case for IDs (HTML convention):
+HTML convention for IDs:
+
 ```html
 <div id="shopping-cart-summary">...</div>
 ```
 
-### 3. One ID Per Purpose
+### 3. Keep ID Definitions in Literals
 
-Don't reuse IDs across views for different purposes:
+The generator extracts IDs from literal strings, not Razor expressions:
+
 ```html
-<!-- View A: search-results for products -->
-<div id="product-search-results">...</div>
+<!-- ✅ Generator extracts this -->
+<div id="product-grid">...</div>
 
-<!-- View B: search-results for orders -->  
-<div id="order-search-results">...</div>
+<!-- ❌ Generator cannot extract this -->
+<div id="@SwapElements.ProductGrid">...</div>
+```
+
+Use constants only when **referencing** IDs:
+
+```html
+<button hx-target="#@SwapElements.ProductGrid">Refresh</button>
 ```
 
 ## See Also
 
-- [SwapResponse Builder](SwapResponseBuilder.md) — Building HTMX responses
-- [Out-of-Band Swaps](OutOfBandSwaps.md) — Multi-element updates
-- [`<swap-nav>` Tag Helper](SwapNavTagHelper.md) — Simplified navigation
+- [Source Generators](SourceGenerators.md) — Full generator documentation
+- [SwapResponse Builder](OutOfBandSwaps.md) — Building HTMX responses
+- [Events](Events.md) — Type-safe event handling
