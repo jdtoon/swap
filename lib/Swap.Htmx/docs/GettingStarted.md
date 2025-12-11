@@ -137,17 +137,11 @@ public IActionResult Add([FromForm] string title)
 
 ## Source Generators (Eliminate Magic Strings)
 
-Swap.Htmx includes source generators that create type-safe constants at compile time.
+Swap.Htmx includes source generators that create type-safe constants at compile time — **with zero configuration**.
 
-### Setup (.csproj)
+### Zero Config (v1.0.6+)
 
-First, add your views as additional files:
-
-```xml
-<ItemGroup>
-  <AdditionalFiles Include="Views\**\*.cshtml" />
-</ItemGroup>
-```
+No `.csproj` changes needed! The `Swap.Htmx.targets` file automatically includes your views.
 
 ### Type-Safe Events
 
@@ -165,17 +159,17 @@ public static partial class TodoEvents
 
 ### Auto-Generated Constants
 
-With the `.csproj` setup, `SwapViews` and `SwapElements` are auto-generated:
+`SwapViews` and `SwapElements` are auto-generated from your `.cshtml` files:
 
 ```csharp
 // Instead of magic strings:
 builder.AlsoUpdate("todo-count", "_Count", count);
 
-// Use generated constants:
-builder.AlsoUpdate(SwapElements.TodoCount, SwapViews.Todos.Count, count);
+// Use generated constants (controller-grouped):
+builder.AlsoUpdate(SwapElements.TodoCount, SwapViews.Todos._Count, count);
 ```
 
-📖 [Full Source Generators Guide](../../../framework/Swap.Htmx.Generators/README.md)
+📖 [Full Source Generators Guide](SourceGenerators.md)
 
 ---
 

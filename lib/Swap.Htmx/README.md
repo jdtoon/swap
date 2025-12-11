@@ -341,9 +341,9 @@ public static partial class CartEvents
 return SwapEvent(CartEvents.Cart.ItemAdded, item).Build();
 ```
 
-### 2. Auto-Generated View & Element Constants
+### 2. Auto-Generated View & Element Constants (Zero Config)
 
-With zero configuration, the generators scan your `.cshtml` files:
+With zero configuration, the generators scan your `.cshtml` files and group by controller folder:
 
 ```csharp
 // Auto-generated from your views
@@ -352,8 +352,9 @@ public static class SwapViews
     public static class Products
     {
         public const string Index = "Index";
-        public const string Grid = "_Grid";
-        public const string Pagination = "_Pagination";
+        public const string Details = "Details";
+        public const string _Grid = "_Grid";           // Partials keep underscore
+        public const string _Pagination = "_Pagination";
     }
 }
 
@@ -364,18 +365,30 @@ public static class SwapElements
 }
 
 // Use instead of magic strings
-builder.AlsoUpdate(SwapElements.CartCount, SwapViews.Cart.Count, count);
+builder.AlsoUpdate(SwapElements.CartCount, SwapViews.Cart._Count, count);
 ```
 
-### 3. Setup (.csproj)
+### 3. Setup (Zero Config!)
 
-Add your views as additional files for the generators to scan:
+**No configuration required!** The `Swap.Htmx.targets` auto-includes common folders:
+
+- `Views/**/*.cshtml`
+- `Modules/**/Views/**/*.cshtml`
+- `Pages/**/*.cshtml`
+- `Components/**/*.cshtml`
+- `Areas/**/Views/**/*.cshtml`
+
+Just reference Swap.Htmx and build — views are scanned automatically.
+
+**Optional:** To inspect generated code:
 
 ```xml
+<PropertyGroup>
+  <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+  <CompilerGeneratedFilesOutputPath>obj\Generated</CompilerGeneratedFilesOutputPath>
+</PropertyGroup>
 <ItemGroup>
-  <AdditionalFiles Include="Views\**\*.cshtml" />
-  <!-- For modular apps: -->
-  <AdditionalFiles Include="Modules\**\Views\**\*.cshtml" />
+  <Compile Remove="obj\Generated\**\*.cs" />
 </ItemGroup>
 ```
 

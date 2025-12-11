@@ -9,12 +9,6 @@
     <CompilerGeneratedFilesOutputPath>obj\Generated</CompilerGeneratedFilesOutputPath>
   </PropertyGroup>
 
-  <!-- Required for Swap.Htmx source generators to scan views -->
-  <ItemGroup>
-    <AdditionalFiles Include="Views\**\*.cshtml" />
-<!--#if (IncludeSampleModule) -->
-    <AdditionalFiles Include="Modules\**\Views\**\*.cshtml" />
-<!--#endif -->
   </ItemGroup>
 
   <!-- Exclude generated files from compilation (prevents duplicates) -->

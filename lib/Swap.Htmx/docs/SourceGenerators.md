@@ -1,46 +1,158 @@
 # Source Generators
 
-`Swap.Htmx` includes Source Generators to make development type-safe and refactor-friendly.
+Swap.Htmx includes Source Generators to make development type-safe and refactor-friendly.
 
 ## Why?
-HTMX relies heavily on events, view names, and element IDs. Using raw strings like `"user.created"`, `"_ProductGrid"`, or `"pagination"` is error-prone:
-- Typos are not caught at compile time.
-- Refactoring is difficult (Find & Replace).
-- No IntelliSense discovery of available events, views, or IDs.
+
+HTMX relies heavily on events, view names, and element IDs. Using raw strings like `"user.created"`, `"_ProductGrid"`, or `"product-list"` is error-prone:
+- Typos are not caught at compile time
+- Refactoring is difficult (Find & Replace)
+- No IntelliSense discovery of available events, views, or IDs
 
 ## Available Generators
 
-| Generator | Attribute | Purpose |
-|-----------|-----------|---------|
+| Generator | Trigger | Purpose |
+|-----------|---------|---------|
+| **AutoScanGenerator** | Automatic | Type-safe view and element constants (recommended) |
 | **EventSourceGenerator** | `[SwapEventSource]` | Type-safe event keys from string constants |
-| **ViewPathGenerator** | `[SwapViewSource]` | View name constants from .cshtml files |
-| **ElementIdGenerator** | `[SwapElementSource]` | Element ID constants from id="..." in .cshtml files |
+| **ViewPathGenerator** | `[SwapViewSource]` | View constants for specific folders (legacy) |
+| **ElementIdGenerator** | `[SwapElementSource]` | Element ID constants for specific folders (legacy) |
+
+---
+
+## Auto-Scan Generator (Recommended)
+
+**Zero configuration** — views and elements are scanned automatically.
+
+### How It Works
+
+Swap.Htmx includes a `.targets` file that auto-includes common view folders:
+- `Views/**/*.cshtml`
+- `Modules/**/Views/**/*.cshtml`
+- `Pages/**/*.cshtml`
+- `Components/**/*.cshtml`
+- `Areas/**/Views/**/*.cshtml`
+
+Just reference the package and build:
+
+```bash
+dotnet add package Swap.Htmx
+dotnet build
+```
+
+### Generated Output
+
+**SwapViews** — Grouped by controller folder:
+
+```csharp
+public static class SwapViews
+{
+    public static class Home
+    {
+        public const string Index = "Index";
+        public const string Dashboard = "Dashboard";
+    }
+    
+    public static class Products
+    {
+        public const string Index = "Index";
+        public const string _ProductList = "_ProductList";
+        public const string _ProductRow = "_ProductRow";
+    }
+    
+    public static class Shared
+    {
+        public const string _Layout = "_Layout";
+    }
+}
+```
+
+**SwapElements** — All element IDs:
+
+```csharp
+public static class SwapElements
+{
+    public const string ProductList = "product-list";
+    public const string ProductCount = "product-count";
+    public const string MainContent = "main-content";
+}
+```
+
+### Usage
+
+```csharp
+public class ProductsController : SwapController
+{
+    [HttpPost]
+    public IActionResult Add(Product product)
+    {
+        SaveProduct(product);
+        
+        return SwapResponse()
+            .WithView(SwapViews.Products._ProductRow, product)
+            .AlsoUpdate(SwapElements.ProductCount, SwapViews.Products._ProductCount, GetCount())
+            .WithSuccessToast("Product added!")
+            .Build();
+    }
+}
+```
+
+See [AutoScanGenerator.md](AutoScanGenerator.md) for full documentation.
 
 ---
 
 ## Event Source Generator
 
+Creates type-safe event keys from string constants with dot-notation.
+
 ### 1. Define Events
-Create a partial class and add the `[SwapEventSource]` attribute. Define your events as dot-notated strings.
+
+Create a partial class with the `[SwapEventSource]` attribute:
 
 ```csharp
 using Swap.Htmx.Attributes;
 
 [SwapEventSource]
-public partial class DomainEvents
+public static partial class DomainEvents
 {
     public const string UserSignedUp = "user.signed_up";
-    public const string TodoItemCompleted = "todo.item.completed";
+    public const string UserUpdated = "user.updated";
+    public const string OrderCreated = "order.created";
+    public const string OrderShipped = "order.shipped";
 }
 ```
 
-### 2. Use Generated Types
-The generator parses the dot-notation and creates a nested class hierarchy.
+### 2. Generated Output
+
+The generator parses dot-notation and creates nested classes:
+
+```csharp
+// Auto-generated
+public static partial class DomainEvents
+{
+    public static partial class User
+    {
+        public static readonly EventKey SignedUp = new EventKey("user.signed_up");
+        public static readonly EventKey Updated = new EventKey("user.updated");
+    }
+    
+    public static partial class Order
+    {
+        public static readonly EventKey Created = new EventKey("order.created");
+        public static readonly EventKey Shipped = new EventKey("order.shipped");
+    }
+}
+```
+
+### 3. Usage
 
 **In Controllers:**
+
 ```csharp
 // Before
-return this.Htmx(h => h.WithTrigger("user.signed_up"));
+return this.SwapResponse()
+    .WithTrigger("user.signed_up")
+    .Build();
 
 // After
 return this.SwapResponse()
@@ -48,243 +160,84 @@ return this.SwapResponse()
     .Build();
 ```
 
-**In Razor Views:**
-```razor
-<!-- Before -->
-<div hx-trigger="user.signed_up from:body">
-
-<!-- After -->
-<div hx-trigger="@DomainEvents.User.SignedUp from:body">
-```
-
----
-
-## View Path Generator
-
-Automatically generates string constants for all `.cshtml` files in a folder.
-
-### 1. Configure Your Project
-
-Add `.cshtml` files as AdditionalFiles in your `.csproj`:
-
-```xml
-<ItemGroup>
-  <AdditionalFiles Include="Views\**\*.cshtml" />
-</ItemGroup>
-```
-
-### 2. Define View Sources
-
-Create a partial class with the `[SwapViewSource]` attribute:
+**In Event Handlers:**
 
 ```csharp
-using Swap.Htmx.Attributes;
-
-[SwapViewSource("Views/Inventory")]
-public static partial class InventoryViews { }
-```
-
-### 3. Generated Output
-
-The generator scans the folder and creates constants:
-
-```csharp
-// Auto-generated
-public static partial class InventoryViews
+[SwapHandler]
+public class UserEventHandler : ISwapEventHandler<UserPayload>
 {
-    public const string Index = "Index";
-    public const string Create = "Create";
-    public const string Edit = "Edit";
-
-    public static class Partials
+    public string EventName => DomainEvents.User.SignedUp.Name;
+    
+    public Task HandleAsync(UserPayload payload, SwapResponseBuilder builder, CancellationToken ct)
     {
-        public const string Grid = "_Grid";
-        public const string Pagination = "_Pagination";
-        public const string EditModal = "_EditModal";
+        builder
+            .WithView(SwapViews.Users._UserRow, payload.User)
+            .AlsoUpdate(SwapElements.UserCount, SwapViews.Users._UserCount, payload.Count);
+        
+        return Task.CompletedTask;
     }
 }
 ```
 
-Views starting with `_` are considered partials and placed in the nested `Partials` class.
+**In Razor Views:**
 
-### 4. Use in Controllers
-
-```csharp
-// Before - magic strings
-return this.SwapResponse()
-    .WithView("_ProductGrid", viewModel)
-    .Build();
-
-// After - compile-time checked constants
-return this.SwapResponse()
-    .WithView(InventoryViews.Partials.Grid, viewModel)
-    .Build();
+```html
+<div hx-trigger="@DomainEvents.User.SignedUp from:body">
+    <!-- Re-fetches when user signs up -->
+</div>
 ```
-
-### Configuration Options
-
-```csharp
-// Include views from subdirectories
-[SwapViewSource("Views/Admin", IncludeSubdirectories = true)]
-public static partial class AdminViews { }
-```
-
-### Naming Conventions
-
-| File Name | Generated Constant |
-|-----------|-------------------|
-| `Index.cshtml` | `Index` |
-| `_Grid.cshtml` | `Partials.Grid` |
-| `_EditModal.cshtml` | `Partials.EditModal` |
-| `user-profile.cshtml` | `UserProfile` (kebab-case → PascalCase) |
 
 ---
 
-## Element ID Generator
+## Legacy Attribute-Based Generators
 
-Automatically generates string constants for element IDs found in `.cshtml` files.
+For explicit control over which folders to scan, use attribute-based generators.
 
-### 1. Configure Your Project
-
-Ensure `.cshtml` files are included as AdditionalFiles (same as View Path Generator):
-
-```xml
-<ItemGroup>
-  <AdditionalFiles Include="Views\**\*.cshtml" />
-</ItemGroup>
-```
-
-### 2. Define Element Sources
-
-Create a partial class with the `[SwapElementSource]` attribute:
+### View Path Generator
 
 ```csharp
 using Swap.Htmx.Attributes;
 
-[SwapElementSource("Views/Inventory")]
-public static partial class InventoryIds { }
-```
-
-### 3. Generated Output
-
-The generator scans `.cshtml` files for `id="..."` attributes:
-
-```html
-<!-- Views/Inventory/Index.cshtml -->
-<div id="product-grid">...</div>
-<div id="pagination">...</div>
-<div id="product-count">...</div>
-<input id="search-input" />
-```
-
-Generates:
-
-```csharp
-// Auto-generated
-public static partial class InventoryIds
-{
-    public const string Pagination = "pagination";
-    public const string ProductCount = "product-count";
-    public const string ProductGrid = "product-grid";
-    public const string SearchInput = "search-input";
-}
-```
-
-### 4. Use in Controllers
-
-```csharp
-// Before - magic strings (typos not caught!)
-return this.SwapResponse()
-    .WithView("_Grid", viewModel)
-    .AlsoUpdate("product-grid", "_Grid", viewModel)
-    .AlsoUpdate("pagniation", "_Pagination", viewModel)  // Typo!
-    .Build();
-
-// After - compile-time checked constants
-return this.SwapResponse()
-    .WithView(InventoryViews.Partials.Grid, viewModel)
-    .AlsoUpdate(InventoryIds.ProductGrid, InventoryViews.Partials.Grid, viewModel)
-    .AlsoUpdate(InventoryIds.Pagination, InventoryViews.Partials.Pagination, viewModel)
-    .Build();
-```
-
-### Configuration Options
-
-```csharp
-// Include IDs from subdirectories
-[SwapElementSource("Views/Admin", IncludeSubdirectories = true)]
-public static partial class AdminIds { }
-
-// Filter by prefix (only include IDs starting with "product-")
-[SwapElementSource("Views/Products", Prefix = "product-")]
-public static partial class ProductIds { }
-```
-
-### What Gets Extracted
-
-| HTML | Generated Constant | Notes |
-|------|-------------------|-------|
-| `id="product-grid"` | `ProductGrid` | kebab-case → PascalCase |
-| `id="nav_menu"` | `NavMenu` | snake_case → PascalCase |
-| `id='single-quotes'` | `SingleQuotes` | Both quote styles supported |
-| `id="@Model.Id"` | *(skipped)* | Dynamic Razor expressions skipped |
-| `id="item-@i"` | *(skipped)* | Interpolated IDs skipped |
-
-### Best Practice: Combine with View Path Generator
-
-For maximum type safety, use both generators together:
-
-```csharp
-// Define both in your project
 [SwapViewSource("Views/Products")]
 public static partial class ProductViews { }
+
+[SwapViewSource("Views/Admin", IncludeSubdirectories = true)]
+public static partial class AdminViews { }
+```
+
+Requires `<AdditionalFiles>` in your `.csproj`:
+
+```xml
+<ItemGroup>
+    <AdditionalFiles Include="Views\**\*.cshtml" />
+</ItemGroup>
+```
+
+### Element ID Generator
+
+```csharp
+using Swap.Htmx.Attributes;
 
 [SwapElementSource("Views/Products")]
 public static partial class ProductIds { }
 
-// Use in controller - fully type-safe!
-return this.SwapResponse()
-    .WithView(ProductViews.Partials.Grid, viewModel)
-    .AlsoUpdate(ProductIds.Pagination, ProductViews.Partials.Pagination, viewModel)
-    .AlsoUpdate(ProductIds.ProductCount, ProductViews.Partials.ProductCount, stats)
-    .Build();
+[SwapElementSource("Views/Products", Prefix = "product-")]
+public static partial class ProductPrefixedIds { }
 ```
 
-### Using Generated Constants in Views
+### When to Use Legacy Generators
 
-You can also use the generated constants in your Razor views for `hx-target` and other reference attributes.
+- You want explicit control over which folders generate constants
+- You need folder-specific prefixes or filtering
+- You're migrating from an older version
 
-**Important:** Keep literal string IDs in the `id="..."` attribute so the generator can extract them.
-Use constants only when *referencing* IDs (like `hx-target`).
-
-```html
-@using MyApp.Views  <!-- Contains PatternIds -->
-
-<!-- ✅ Correct: id uses literal string, hx-target uses constant -->
-<div id="product-grid">
-    ...
-</div>
-<button hx-get="/products" 
-        hx-target="#@ProductIds.ProductGrid">
-    Refresh
-</button>
-
-<!-- ❌ Incorrect: Generator can't extract IDs from Razor expressions -->
-<div id="@ProductIds.ProductGrid">  <!-- Won't be found by generator -->
-    ...
-</div>
-```
-
-This pattern gives you:
-- **Type-safe references** - Compile-time checking for hx-target attributes
-- **Single source of truth** - ID values defined once in HTML, constants auto-generated
-- **Refactoring support** - Rename an ID in HTML, rebuild, and compiler shows all references
+**For new projects, use auto-scan** — it's simpler and always in sync.
 
 ---
 
 ## Handler Validation Analyzer
 
-A Roslyn diagnostic analyzer that validates event handler configurations at compile-time.
+A Roslyn diagnostic analyzer that validates event configurations at compile-time.
 
 ### Diagnostics
 
@@ -295,36 +248,34 @@ A Roslyn diagnostic analyzer that validates event handler configurations at comp
 | `SWAP003` | Warning | Event chain for '{0}' may create a circular dependency |
 | `SWAP004` | Info | Event '{0}' has multiple handlers in the same configuration |
 
-### Example: SWAP001 - No Handler
+### Example: SWAP001
 
 ```csharp
-// ⚠️ SWAP001: Event 'product.updated' is triggered but no ISwapEventConfiguration handles it
+// ⚠️ SWAP001: Event 'product.updated' is triggered but no handler exists
 return SwapResponse()
     .WithTrigger("product.updated")
     .Build();
 ```
 
-**Fix:** Add a handler in an ISwapEventConfiguration:
+**Fix:** Add a handler:
 
 ```csharp
-public class ProductEventConfig : ISwapEventConfiguration
+[SwapHandler]
+public class ProductHandler : ISwapEventHandler<ProductPayload>
 {
-    public void Configure(SwapEventBusOptions events)
-    {
-        events.When("product.updated")
-            .RefreshPartial("#product-grid", "_Grid");
-    }
+    public string EventName => "product.updated";
+    // ...
 }
 ```
 
 ### Suppressing Warnings
 
-For events handled only on the client-side:
+For client-side only events:
 
 ```csharp
 #pragma warning disable SWAP001
 return SwapResponse()
-    .WithTrigger("client.only.event")  // Handled by JavaScript
+    .WithTrigger("client.side.only")
     .Build();
 #pragma warning restore SWAP001
 ```
@@ -338,6 +289,49 @@ dotnet_diagnostic.SWAP001.severity = none
 
 ---
 
-## Installation
+## Viewing Generated Code
 
-The generators are included automatically when you reference `Swap.Htmx`.
+Enable generated file output in your `.csproj`:
+
+```xml
+<PropertyGroup>
+    <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+    <CompilerGeneratedFilesOutputPath>obj\Generated</CompilerGeneratedFilesOutputPath>
+</PropertyGroup>
+
+<ItemGroup>
+    <Compile Remove="obj\Generated\**\*.cs" />
+</ItemGroup>
+```
+
+Generated files appear in `obj/Generated/Swap.Htmx.Generators/`.
+
+---
+
+## Troubleshooting
+
+### Constants Not Generating
+
+1. **Rebuild** — `dotnet build --no-incremental`
+2. **Check Dependencies → Analyzers** — Verify `Swap.Htmx.Generators` appears
+3. **Check folder structure** — Files must be in Views, Pages, Components, or Areas
+
+### IntelliSense Not Working
+
+Restart your IDE after building. Generated code is cached.
+
+### Duplicate Definitions
+
+If you see duplicate errors, you may have both:
+- `Swap.Htmx` (includes generators)
+- `Swap.Htmx.Generators` (standalone)
+
+Remove the standalone package — generators are included in `Swap.Htmx`.
+
+---
+
+## See Also
+
+- [AutoScanGenerator.md](AutoScanGenerator.md) — Detailed auto-scan documentation
+- [Events](Events.md) — Event handling patterns
+- [OutOfBandSwaps](OutOfBandSwaps.md) — OOB swap patterns

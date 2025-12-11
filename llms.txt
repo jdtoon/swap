@@ -14,7 +14,7 @@ Before debugging, verify these are in place:
 | 4 | **SwapState** | Preserving UI state | `<swap-state>` rendered, `hx-include` present, `[FromSwapState]` binding |
 | 5 | **Event Handlers** | Decoupled UI updates | `[SwapHandler]` classes exist, `SwapEvent()` fired from controller |
 | 6 | **SwapNavigation** | SPA-style links | `<swap-nav>` tag helper used |
-| 7 | **Source Generators** | Type-safe code | `.csproj` has `<AdditionalFiles>`, use `SwapViews.*`, `SwapElements.*` |
+| 7 | **Source Generators** | Type-safe code | Use `SwapViews.Controller._Partial`, `SwapElements.*` (zero config) |
 
 ---
 
@@ -63,21 +63,30 @@ app.MapControllers();
 
 Swap.Htmx includes source generators that create type-safe constants at compile time. **This is critical for maintainable code.**
 
-### Setup (.csproj) — REQUIRED
+### Setup — Zero Config (v1.0.6+)
 
-Add your views as additional files for generators to scan:
+**No configuration required!** The `Swap.Htmx.targets` file auto-includes common view folders:
+
+```xml
+<!-- Automatically included via Swap.Htmx.targets -->
+Views/**/*.cshtml
+Modules/**/Views/**/*.cshtml  
+Pages/**/*.cshtml
+Components/**/*.cshtml
+Areas/**/Views/**/*.cshtml
+```
+
+Simply reference Swap.Htmx and build — views are scanned automatically.
+
+### Optional: See Generated Output
+
+To inspect generated code (for debugging only):
 
 ```xml
 <PropertyGroup>
   <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
   <CompilerGeneratedFilesOutputPath>obj\Generated</CompilerGeneratedFilesOutputPath>
 </PropertyGroup>
-
-<ItemGroup>
-  <AdditionalFiles Include="Views\**\*.cshtml" />
-  <!-- For modular apps with module-specific views: -->
-  <AdditionalFiles Include="Modules\**\Views\**\*.cshtml" />
-</ItemGroup>
 
 <!-- Exclude generated files from compilation (prevents duplicates) -->
 <ItemGroup>
@@ -119,10 +128,11 @@ return SwapEvent(TaskEvents.Task.Completed, payload).Build();
 
 ### 2. Auto-Generated View Constants (Zero Config)
 
-The `AutoScanGenerator` automatically creates `SwapViews` from your `.cshtml` files:
+The `AutoScanGenerator` creates `SwapViews` grouped by controller folder:
 
 ```csharp
 // Auto-generated from Views/**/*.cshtml
+// Grouped by controller folder, short names for all views
 public static class SwapViews
 {
     public static class Home
@@ -132,25 +142,47 @@ public static class SwapViews
     public static class Products
     {
         public const string Index = "Index";
-        public const string Grid = "_Grid";
-        public const string Pagination = "_Pagination";
-        public const string ProductCard = "_ProductCard";
+        public const string Details = "Details";
+        public const string _Grid = "_Grid";           // Partials keep underscore
+        public const string _Pagination = "_Pagination";
+        public const string _ProductCard = "_ProductCard";
     }
     public static class Shared
     {
         public const string Error = "Error";
-        public const string Layout = "_Layout";
+        public const string _Layout = "_Layout";
     }
 }
 
-// Usage — no magic strings
+// Usage — controller-relative, no magic strings
 return SwapView(SwapViews.Products.Index, products);
-builder.AlsoUpdate("product-grid", SwapViews.Products.Grid, products);
+builder.AlsoUpdate("product-grid", SwapViews.Products._Grid, products);
 ```
 
-### 3. Auto-Generated Element ID Constants (Zero Config)
+### 3. Modular Monolith Support
 
-The generator scans `id="..."` attributes in your views:
+For modular apps, views are still grouped by controller folder within each module:
+
+```
+Modules/
+  Billing/
+    Views/
+      Invoices/        → SwapViews.Invoices
+        Index.cshtml
+        _InvoiceList.cshtml
+      Payments/        → SwapViews.Payments
+        Index.cshtml
+```
+
+```csharp
+// Each module project references Swap.Htmx
+// Each module gets its own SwapViews class
+builder.AlsoUpdate("invoice-list", SwapViews.Invoices._InvoiceList, model);
+```
+
+### 4. Auto-Generated Element ID Constants (Zero Config)
+
+The generator scans `id="..."` attributes and filters out noise (numeric IDs, single chars, framework IDs):
 
 ```html
 <!-- Views/Products/_Grid.cshtml -->
@@ -160,7 +192,7 @@ The generator scans `id="..."` attributes in your views:
 ```
 
 ```csharp
-// Auto-generated
+// Auto-generated (filtered for meaningful IDs)
 public static class SwapElements
 {
     public const string ProductGrid = "product-grid";
@@ -169,11 +201,11 @@ public static class SwapElements
 }
 
 // Usage — no magic strings, IDE autocomplete
-builder.AlsoUpdate(SwapElements.ProductGrid, SwapViews.Products.Grid, products);
-builder.AlsoUpdate(SwapElements.ProductCount, SwapViews.Products.Count, count);
+builder.AlsoUpdate(SwapElements.ProductGrid, SwapViews.Products._Grid, products);
+builder.AlsoUpdate(SwapElements.ProductCount, SwapViews.Products._Count, count);
 ```
 
-### 4. Handler Validation Analyzer
+### 5. Handler Validation Analyzer
 
 Compile-time warnings for common mistakes:
 
@@ -200,8 +232,8 @@ public class StatsHandler : ISwapEventHandler<TaskPayload>
 {
     public Task HandleAsync(TaskPayload payload, SwapResponseBuilder builder, CancellationToken ct)
     {
-        // Use generated constants — no magic strings
-        builder.AlsoUpdate(SwapElements.StatsPanel, SwapViews.Tasks.Stats, GetStats());
+        // Use generated constants — controller-relative view names
+        builder.AlsoUpdate(SwapElements.StatsPanel, SwapViews.Tasks._Stats, GetStats());
         return Task.CompletedTask;
     }
 }
@@ -214,7 +246,7 @@ public IActionResult Complete(int id)
     
     // Type-safe event key
     return SwapEvent(TaskEvents.Task.Completed, new TaskPayload(task))
-        .WithView(SwapViews.Tasks.Completed, task)
+        .WithView(SwapViews.Tasks._Completed, task)
         .Build();
 }
 ```
@@ -229,9 +261,9 @@ dotnet new swap-modular -n MyApp
 ```
 
 The template includes:
-- `.csproj` with `<AdditionalFiles>` for views and module views
+- Auto-scan enabled via `Swap.Htmx.targets` (zero config)
 - Sample `[SwapEventSource]` usage in `Modules/Notes/Events/NotesEvents.cs`
-- Generated files output to `obj/Generated/`
+- SwapViews grouped by controller folder within each module
 
 ---
 
