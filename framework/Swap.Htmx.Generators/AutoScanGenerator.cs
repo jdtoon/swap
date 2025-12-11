@@ -121,7 +121,13 @@ public class AutoScanGenerator : IIncrementalGenerator
                 }
                 usedNames.Add(finalName);
                 
-                sb.AppendLine($"            public const string {finalName} = \"{view.RelativePath}\";");
+                // For partials (starting with _), use just the filename for AlsoUpdate compatibility
+                // For full views, use the complete path for SwapView() usage
+                var viewValue = view.FileName.StartsWith("_") 
+                    ? view.FileName 
+                    : view.RelativePath;
+                
+                sb.AppendLine($"            public const string {finalName} = \"{viewValue}\";");
             }
 
             sb.AppendLine("        }");
