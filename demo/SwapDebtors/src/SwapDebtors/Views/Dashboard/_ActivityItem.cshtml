@@ -1,0 +1,11 @@
+@using SwapDebtors.Handlers
+@model ActivityItem
+@{
+    var item = Model ?? new ActivityItem();
+}
+
+<div class="activity-item">
+    <span>@item.Icon</span>
+    <span>@item.Message</span>
+    <small style="margin-left: auto;">@item.Timestamp.ToString("HH:mm")</small>
+</div>

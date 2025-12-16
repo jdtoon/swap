@@ -1,0 +1,134 @@
+
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="htmx-config" content='{"selfRequestsOnly":true}' />
+    <title>@ViewData["Title"] - SwapDebtors</title>
+    
+    <!-- PicoCSS - classless CSS framework -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@@picocss/pico@2/css/pico.classless.min.css">
+    
+    <!-- Swap.Htmx styles -->
+    <link rel="stylesheet" href="~/_content/Swap.Htmx/css/swap.css" asp-append-version="true" />
+    
+    <!-- Custom styles -->
+    <style>
+        :root {
+            --pico-font-size: 16px;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        .stat-card {
+            background: var(--pico-card-background-color);
+            border: 1px solid var(--pico-muted-border-color);
+            border-radius: var(--pico-border-radius);
+            padding: 1rem;
+            text-align: center;
+        }
+        .stat-card h3 {
+            margin: 0;
+            font-size: 2rem;
+            color: var(--pico-primary);
+        }
+        .stat-card small {
+            color: var(--pico-muted-color);
+        }
+        .activity-feed {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .activity-item {
+            padding: 0.5rem;
+            border-bottom: 1px solid var(--pico-muted-border-color);
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+        .activity-item:last-child {
+            border-bottom: none;
+        }
+        .debt-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid var(--pico-muted-border-color);
+        }
+        .currency-badge {
+            display: inline-block;
+            padding: 0.2rem 0.5rem;
+            border-radius: var(--pico-border-radius);
+            background: var(--pico-secondary-background);
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+        .paid {
+            text-decoration: line-through;
+            opacity: 0.6;
+        }
+        .modal-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background: var(--pico-background-color);
+            padding: 2rem;
+            border-radius: var(--pico-border-radius);
+            max-width: 500px;
+            width: 90%;
+        }
+    </style>
+    
+    <!-- HTMX -->
+    <script src="https://unpkg.com/htmx.org@2.0.8"></script>
+    <script src="https://unpkg.com/htmx-ext-sse@2.2.2/sse.js"></script>
+    
+    <!-- Swap.Htmx client -->
+    <script src="~/_content/Swap.Htmx/js/swap.client.js" asp-append-version="true"></script>
+</head>
+<body>
+    <header>
+        <nav>
+            <ul>
+                <li><strong>💰 SwapDebtors</strong></li>
+            </ul>
+            <ul>
+                <li><swap-nav to="/Dashboard">Dashboard</swap-nav></li>
+                <li><swap-nav to="/Debtors">Debtors</swap-nav></li>
+                <li><swap-nav to="/Debts">Debts</swap-nav></li>
+            </ul>
+        </nav>
+    </header>
+    
+    <main id="main-content">
+        @RenderBody()
+    </main>
+
+    <footer>
+        <small>
+            SwapDebtors - Comprehensive Swap.Htmx Demo · 
+            HTMX 2.0.8 · 
+            <a href="https://github.com/jdtoon/swap" target="_blank">GitHub</a>
+        </small>
+    </footer>
+
+    <!-- Modal container for HTMX-loaded modals -->
+    <div id="modal"></div>
+    
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

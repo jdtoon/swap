@@ -1,0 +1,7 @@
+@{
+    // For HTMX requests (non-boosted), don't use layout - just return the content
+    var isHtmxRequest = Context.Request.Headers.ContainsKey("HX-Request");
+    var isBoosted = Context.Request.Headers.ContainsKey("HX-Boosted");
+    
+    Layout = (isHtmxRequest && !isBoosted) ? null : "_Layout";
+}

@@ -1,0 +1,30 @@
+@model Dictionary<string, decimal>
+@{
+    var rates = Model ?? new Dictionary<string, decimal>();
+    var displayCurrencies = new[] { "EUR", "GBP", "JPY", "CAD", "AUD" };
+}
+
+<p><small>Base: USD = 1.00</small></p>
+
+@if (!rates.Any())
+{
+    <p><em>Loading rates...</em></p>
+}
+else
+{
+    <table>
+        <tbody>
+            @foreach (var currency in displayCurrencies)
+            {
+                if (rates.TryGetValue(currency, out var rate))
+                {
+                    <tr>
+                        <td>@currency</td>
+                        <td style="text-align: right;">@rate.ToString("N4")</td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+    <small>Last updated: @DateTime.UtcNow.ToString("HH:mm UTC")</small>
+}

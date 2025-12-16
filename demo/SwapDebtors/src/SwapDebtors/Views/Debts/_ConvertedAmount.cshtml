@@ -1,0 +1,8 @@
+@model dynamic
+@{
+    var amount = Model?.Amount ?? 0m;
+    var currency = Model?.Currency ?? "USD";
+}
+
+<span class="currency-badge">@currency</span>
+<strong>@((decimal)amount).ToString("N2")</strong>

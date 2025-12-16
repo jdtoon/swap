@@ -1,0 +1,19 @@
+
+
+<tr id="quick-add-row">
+    <td colspan="5">
+        <form hx-post="/Debtors/QuickAdd" 
+              hx-target="#quick-add-row"
+              hx-swap="outerHTML"
+              style="display: flex; gap: 0.5rem; align-items: center;">
+            <input type="text" name="name" placeholder="Name" required style="margin: 0;" />
+            <input type="email" name="email" placeholder="Email (optional)" style="margin: 0;" />
+            <button type="submit" style="white-space: nowrap;">Add</button>
+            <button type="button" class="secondary" 
+                    hx-get="/Debtors/List"
+                    hx-target="#debtors-list">
+                Cancel
+            </button>
+        </form>
+    </td>
+</tr>

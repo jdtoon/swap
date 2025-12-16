@@ -1,0 +1,62 @@
+@using SwapDebtors.Models
+@model List<Debtor>
+@{
+    var debtors = Model ?? new List<Debtor>();
+}
+
+@if (!debtors.Any())
+{
+    <p><em>No debtors yet. Add your first debtor!</em></p>
+}
+else
+{
+    <table>
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Active Debts</th>
+                <th>Total Owed</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var debtor in debtors)
+            {
+                <tr id="debtor-row-@debtor.Id">
+                    <td>
+                        <strong>@debtor.Name</strong>
+                        @if (!string.IsNullOrEmpty(debtor.Email))
+                        {
+                            <br /><small>@debtor.Email</small>
+                        }
+                    </td>
+                    <td>@debtor.ActiveDebtsCount</td>
+                    <td>@debtor.TotalOwed.ToString("C")</td>
+                    <td>
+                        <button hx-get="/Debts/QuickAdd/@debtor.Id"
+                                hx-target="#modal"
+                                hx-swap="innerHTML"
+                                style="padding: 0.2rem 0.5rem; font-size: 0.7rem;"
+                                title="Add debt">
+                            +💰
+                        </button>
+                        <button hx-get="/Debtors/Edit/@debtor.Id"
+                                hx-target="#modal"
+                                hx-swap="innerHTML"
+                                style="padding: 0.2rem 0.5rem; font-size: 0.7rem;"
+                                title="Edit">
+                            ✏️
+                        </button>
+                        <button hx-get="/Debtors/DeleteConfirm/@debtor.Id"
+                                hx-target="#modal"
+                                hx-swap="innerHTML"
+                                style="padding: 0.2rem 0.5rem; font-size: 0.7rem;"
+                                title="Delete">
+                            🗑️
+                        </button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}

@@ -1,0 +1,84 @@
+@using SwapDebtors.Models
+@model List<Debtor>
+@{
+    var debtors = Model ?? new List<Debtor>();
+}
+
+@if (!debtors.Any())
+{
+    <article>
+        <p>No debtors found. Add your first debtor to get started!</p>
+    </article>
+}
+else
+{
+    <table>
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Contact</th>
+                <th>Active Debts</th>
+                <th>Total Owed</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var debtor in debtors)
+            {
+                <tr id="debtor-row-@debtor.Id">
+                    <td>
+                        <strong>
+                            <a hx-get="/Debtors/Details/@debtor.Id"
+                               hx-target="#main-content"
+                               hx-push-url="true">
+                                @debtor.Name
+                            </a>
+                        </strong>
+                        @if (!string.IsNullOrEmpty(debtor.Notes))
+                        {
+                            <br /><small>@debtor.Notes</small>
+                        }
+                    </td>
+                    <td>
+                        @if (!string.IsNullOrEmpty(debtor.Email))
+                        {
+                            <small>📧 @debtor.Email</small><br />
+                        }
+                        @if (!string.IsNullOrEmpty(debtor.Phone))
+                        {
+                            <small>📱 @debtor.Phone</small>
+                        }
+                    </td>
+                    <td>@debtor.ActiveDebtsCount</td>
+                    <td><strong>@debtor.TotalOwed.ToString("C")</strong></td>
+                    <td>
+                        <button hx-get="/Debts/QuickAdd/@debtor.Id"
+                                hx-target="#modal"
+                                hx-swap="innerHTML"
+                                class="outline"
+                                style="padding: 0.3rem 0.6rem;"
+                                title="Add debt">
+                            +💰
+                        </button>
+                        <button hx-get="/Debtors/Edit/@debtor.Id"
+                                hx-target="#modal"
+                                hx-swap="innerHTML"
+                                class="outline"
+                                style="padding: 0.3rem 0.6rem;"
+                                title="Edit">
+                            ✏️
+                        </button>
+                        <button hx-get="/Debtors/DeleteConfirm/@debtor.Id"
+                                hx-target="#modal"
+                                hx-swap="innerHTML"
+                                class="outline secondary"
+                                style="padding: 0.3rem 0.6rem;"
+                                title="Delete">
+                            🗑️
+                        </button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}

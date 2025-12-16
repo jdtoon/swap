@@ -1,0 +1,57 @@
+@using SwapDebtors.Models
+@model Debt
+@{
+    var currencies = ViewData["Currencies"] as string[] ?? new[] { "USD", "EUR", "GBP" };
+}
+
+<div class="modal-backdrop" onclick="this.remove()">
+    <article class="modal-content" onclick="event.stopPropagation()">
+        <header>
+            <strong>💰 Quick Add Debt</strong>
+        </header>
+        
+        <form hx-post="/Debts/QuickAdd" 
+              hx-target="#modal"
+              hx-swap="innerHTML">
+            
+            <input type="hidden" name="DebtorId" value="@Model?.DebtorId" />
+            
+            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1rem;">
+                <label>
+                    Amount *
+                    <input type="number" 
+                           name="Amount" 
+                           step="0.01" 
+                           min="0.01"
+                           required 
+                           autofocus />
+                </label>
+                
+                <label>
+                    Currency
+                    <select name="Currency">
+                        @foreach (var currency in currencies)
+                        {
+                            <option value="@currency">@currency</option>
+                        }
+                    </select>
+                </label>
+            </div>
+            
+            <label>
+                Description *
+                <input type="text" 
+                       name="Description" 
+                       placeholder="What is this debt for?"
+                       required />
+            </label>
+            
+            <footer style="display: flex; justify-content: flex-end; gap: 0.5rem;">
+                <button type="button" class="secondary" onclick="this.closest('.modal-backdrop').remove()">
+                    Cancel
+                </button>
+                <button type="submit">Add Debt</button>
+            </footer>
+        </form>
+    </article>
+</div>

@@ -1,0 +1,24 @@
+@using SwapDebtors.Events
+@model StatsModel
+@{
+    var stats = Model ?? new StatsModel();
+}
+
+<div class="stats-grid">
+    <div class="stat-card">
+        <h3>@stats.TotalDebtors</h3>
+        <small>Total Debtors</small>
+    </div>
+    <div class="stat-card">
+        <h3>@stats.ActiveDebts</h3>
+        <small>Active Debts</small>
+    </div>
+    <div class="stat-card">
+        <h3>@stats.TotalAmount.ToString("C")</h3>
+        <small>Total Owed</small>
+    </div>
+    <div class="stat-card">
+        <h3>@stats.TotalDebts</h3>
+        <small>All-time Debts</small>
+    </div>
+</div>

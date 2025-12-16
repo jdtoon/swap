@@ -1,0 +1,96 @@
+@using SwapDebtors.Events
+@using SwapDebtors.Models
+@{
+    ViewData["Title"] = "Dashboard";
+    var stats = ViewData["Stats"] as StatsModel;
+    var recentDebts = ViewData["RecentDebts"] as List<Debt>;
+    var debtors = ViewData["Debtors"] as List<Debtor>;
+    var rates = ViewData["Rates"] as Dictionary<string, decimal>;
+}
+
+<h1>Dashboard</h1>
+
+<!-- Stats Section -->
+<div id="stats">
+    <partial name="Dashboard/_Stats" model="stats" />
+</div>
+
+<div style="display: grid; grid-template-columns: 2fr 1fr; gap: 2rem;">
+    <!-- Main Content -->
+    <div>
+        <!-- Recent Debts -->
+        <article>
+            <header>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <strong>📋 Recent Debts</strong>
+                    <button hx-get="/Debts/Create" 
+                            hx-target="#modal"
+                            hx-swap="innerHTML">
+                        + Add Debt
+                    </button>
+                </div>
+            </header>
+            <div id="recent-debts">
+                <partial name="Dashboard/_RecentDebts" model="recentDebts" />
+            </div>
+        </article>
+
+        <!-- Debtors List -->
+        <article>
+            <header>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <strong>👥 Debtors</strong>
+                    <button hx-get="/Debtors/Create" 
+                            hx-target="#modal"
+                            hx-swap="innerHTML">
+                        + Add Debtor
+                    </button>
+                </div>
+            </header>
+            <input type="search" 
+                   placeholder="Search debtors..."
+                   hx-get="/Debtors/List"
+                   hx-trigger="keyup changed delay:300ms"
+                   hx-target="#debtor-list"
+                   name="search" />
+            <div id="debtor-list">
+                <partial name="Dashboard/_DebtorList" model="debtors" />
+            </div>
+        </article>
+    </div>
+
+    <!-- Sidebar -->
+    <div>
+        <!-- Currency Rates -->
+        <article>
+            <header>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <strong>💱 Exchange Rates</strong>
+                    <button hx-post="/Dashboard/RefreshRates"
+                            hx-target="#rates"
+                            hx-indicator=".htmx-indicator"
+                            style="padding: 0.3rem 0.6rem; font-size: 0.8rem;">
+                        🔄 Refresh
+                    </button>
+                </div>
+            </header>
+            <div id="rates">
+                <partial name="Dashboard/_Rates" model="rates" />
+            </div>
+        </article>
+
+        <!-- Activity Feed with SSE -->
+        <article hx-ext="sse" sse-connect="/api/activity-stream">
+            <header><strong>📊 Activity Feed</strong></header>
+            <div id="activity-feed" 
+                 class="activity-feed"
+                 sse-swap="activity.logged"
+                 hx-swap="afterbegin">
+                <div class="activity-item">
+                    <span>📌</span>
+                    <span>Waiting for activity...</span>
+                </div>
+            </div>
+        </article>
+    </div>
+</div>

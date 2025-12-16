@@ -1,0 +1,121 @@
+@using SwapDebtors.Models
+@model List<Debt>
+@{
+    ViewData["Title"] = "Debts";
+    var debts = Model ?? new List<Debt>();
+    var debtorId = ViewData["DebtorId"] as int?;
+}
+
+<h1>All Debts</h1>
+
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+    <div style="display: flex; gap: 1rem; align-items: center;">
+        <select hx-get="/Debts" 
+                hx-target="#main-content"
+                hx-push-url="true"
+                name="debtorId"
+                style="width: 200px;">
+            <option value="">All Debtors</option>
+            @* Populated by controller *@
+        </select>
+        
+        <label style="display: flex; align-items: center; gap: 0.5rem; margin: 0;">
+            <input type="checkbox" role="switch" 
+                   hx-get="/Debts"
+                   hx-target="#main-content"
+                   hx-include="[name='debtorId']"
+                   name="showPaid" />
+            Show Paid
+        </label>
+    </div>
+    
+    <button hx-get="/Debts/Create" 
+            hx-target="#modal"
+            hx-swap="innerHTML">
+        + Add Debt
+    </button>
+</div>
+
+<table>
+    <thead>
+        <tr>
+            <th>Debtor</th>
+            <th>Description</th>
+            <th>Amount</th>
+            <th>Currency</th>
+            <th>Date</th>
+            <th>Due</th>
+            <th>Status</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @if (!debts.Any())
+        {
+            <tr>
+                <td colspan="8"><em>No debts found.</em></td>
+            </tr>
+        }
+        else
+        {
+            @foreach (var debt in debts)
+            {
+                <tr id="debt-row-@debt.Id" class="@(debt.IsPaid ? "paid" : "")">
+                    <td>
+                        <a hx-get="/Debtors/Details/@debt.DebtorId"
+                           hx-target="#main-content"
+                           hx-push-url="true">
+                            @debt.Debtor?.Name
+                        </a>
+                    </td>
+                    <td>@debt.Description</td>
+                    <td><strong>@debt.Amount.ToString("N2")</strong></td>
+                    <td><span class="currency-badge">@debt.Currency</span></td>
+                    <td><small>@debt.CreatedAt.ToString("MMM d")</small></td>
+                    <td>
+                        @if (debt.DueDate.HasValue)
+                        {
+                            <small>@debt.DueDate.Value.ToString("MMM d")</small>
+                        }
+                        else
+                        {
+                            <small>-</small>
+                        }
+                    </td>
+                    <td>
+                        @if (debt.IsPaid)
+                        {
+                            <span style="color: green;">✓ Paid</span>
+                        }
+                        else if (debt.DueDate.HasValue && debt.DueDate < DateTime.UtcNow)
+                        {
+                            <span style="color: red;">⚠ Overdue</span>
+                        }
+                        else
+                        {
+                            <span>Pending</span>
+                        }
+                    </td>
+                    <td>
+                        @if (!debt.IsPaid)
+                        {
+                            <button hx-post="/Debts/MarkPaid/@debt.Id"
+                                    hx-swap="none"
+                                    class="outline"
+                                    style="padding: 0.3rem 0.6rem;">
+                                ✓
+                            </button>
+                        }
+                        <button hx-post="/Debts/Delete/@debt.Id"
+                                hx-swap="none"
+                                hx-confirm="Delete this debt?"
+                                class="outline secondary"
+                                style="padding: 0.3rem 0.6rem;">
+                            🗑️
+                        </button>
+                    </td>
+                </tr>
+            }
+        }
+    </tbody>
+</table>
