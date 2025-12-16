@@ -52,7 +52,7 @@ app.MapControllers();
 <!-- _Layout.cshtml -->
 <head>
     <link rel="stylesheet" href="~/_content/Swap.Htmx/css/swap.css" />
-    <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+    <script src="https://unpkg.com/htmx.org@2.0.8"></script>
     <script src="~/_content/Swap.Htmx/js/swap.client.js"></script>
 </head>
 ```
@@ -204,6 +204,27 @@ public static class SwapElements
 builder.AlsoUpdate(SwapElements.ProductGrid, SwapViews.Products._Grid, products);
 builder.AlsoUpdate(SwapElements.ProductCount, SwapViews.Products._Count, count);
 ```
+
+### Dynamic Element IDs
+
+For elements with dynamic IDs (e.g., per-item cards), combine constants with interpolation:
+
+```csharp
+// Pattern: Static prefix + dynamic suffix
+public static class ProductElements
+{
+    public const string CardPrefix = "product-card-";  // Used as prefix
+    public static string Card(int id) => $"product-card-{id}";
+}
+
+// In handler — update specific product card
+builder.AlsoUpdate(ProductElements.Card(productId), ProductViews._Card, product);
+
+// In view
+<div id="product-card-@Model.Id">...</div>
+```
+
+This maintains type safety for the prefix while allowing dynamic IDs.
 
 ### 5. Handler Validation Analyzer
 
