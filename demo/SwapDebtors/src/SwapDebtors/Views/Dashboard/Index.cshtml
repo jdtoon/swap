@@ -12,7 +12,7 @@
 
 <!-- Stats Section -->
 <div id="stats">
-    <partial name="Dashboard/_Stats" model="stats" />
+    <partial name="_Stats" model="stats" />
 </div>
 
 <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 2rem;">
@@ -31,7 +31,7 @@
                 </div>
             </header>
             <div id="recent-debts">
-                <partial name="Dashboard/_RecentDebts" model="recentDebts" />
+                <partial name="_RecentDebts" model="recentDebts" />
             </div>
         </article>
 
@@ -54,7 +54,7 @@
                    hx-target="#debtor-list"
                    name="search" />
             <div id="debtor-list">
-                <partial name="Dashboard/_DebtorList" model="debtors" />
+                <partial name="_DebtorList" model="debtors" />
             </div>
         </article>
     </div>
@@ -75,7 +75,7 @@
                 </div>
             </header>
             <div id="rates">
-                <partial name="Dashboard/_Rates" model="rates" />
+                <partial name="_Rates" model="rates" />
             </div>
         </article>
 

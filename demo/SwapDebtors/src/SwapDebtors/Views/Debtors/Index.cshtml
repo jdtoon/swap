@@ -1,47 +1,17 @@
 @using SwapDebtors.Models
-@model List<Debtor>
+@model DebtorListViewModel
 @{
     ViewData["Title"] = "Debtors";
-    var debtors = Model ?? new List<Debtor>();
-    var search = ViewData["Search"] as string;
-    var page = (int)(ViewData["Page"] ?? 1);
-    var totalPages = (int)(ViewData["TotalPages"] ?? 1);
+    var state = Model.State;
 }
 
-<h1>Debtors</h1>
+<h1>👥 Debtors</h1>
+<p>Manage your debtors with SwapState-powered filtering and pagination.</p>
 
-<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-    <input type="search" 
-           placeholder="Search by name or email..."
-           value="@search"
-           hx-get="/Debtors/List"
-           hx-trigger="keyup changed delay:300ms"
-           hx-target="#debtors-list"
-           name="search"
-           style="width: 300px;" />
-    
-    <button hx-get="/Debtors/Create" 
-            hx-target="#modal"
-            hx-swap="innerHTML">
-        + Add Debtor
-    </button>
+<!-- Filter content area - swaps entirely to preserve state -->
+<div id="filter-content">
+    @await Html.PartialAsync("_FilterContent", Model)
 </div>
 
-<div id="debtors-list">
-    <partial name="Debtors/_List" model="debtors" />
-</div>
-
-@if (totalPages > 1)
-{
-    <nav style="display: flex; justify-content: center; gap: 0.5rem;">
-        @for (var i = 1; i <= totalPages; i++)
-        {
-            <button hx-get="/Debtors?page=@i&search=@search"
-                    hx-target="#main-content"
-                    hx-push-url="true"
-                    class="@(i == page ? "contrast" : "outline")">
-                @i
-            </button>
-        }
-    </nav>
-}
+<!-- Modal container -->
+<div id="modal"></div>

@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Swap.Htmx;
 using Swap.Htmx.Extensions;
+using Swap.Htmx.State;
 using SwapDebtors.Data;
 using SwapDebtors.Events;
 using SwapDebtors.Handlers;
@@ -10,8 +11,8 @@ using SwapDebtors.Models;
 namespace SwapDebtors.Controllers;
 
 /// <summary>
-/// Debtors controller - CRUD operations for debtors.
-/// Demonstrates SwapEvent pattern with event chains.
+/// Debtors controller - CRUD operations with SwapState for filtering/pagination.
+/// Demonstrates [FromSwapState] binding pattern.
 /// </summary>
 public class DebtorsController : SwapController
 {
@@ -23,35 +24,73 @@ public class DebtorsController : SwapController
     }
 
     /// <summary>
-    /// List all debtors - full page
+    /// List all debtors - full page with SwapState
     /// </summary>
-    public async Task<IActionResult> Index(string? search = null, int page = 1, int pageSize = 10)
+    public async Task<IActionResult> Index()
     {
-        var query = _db.Debtors.Include(d => d.Debts).AsQueryable();
+        var state = new DebtorFilterState();
+        var (debtors, totalCount) = await FilterDebtorsAsync(state);
 
-        if (!string.IsNullOrEmpty(search))
+        return SwapView(new DebtorListViewModel
         {
-            query = query.Where(d => d.Name.Contains(search) || 
-                                     (d.Email != null && d.Email.Contains(search)));
-        }
-
-        var total = await query.CountAsync();
-        var debtors = await query
-            .OrderByDescending(d => d.CreatedAt)
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
-            .ToListAsync();
-
-        ViewData["Search"] = search;
-        ViewData["Page"] = page;
-        ViewData["PageSize"] = pageSize;
-        ViewData["TotalPages"] = (int)Math.Ceiling(total / (double)pageSize);
-
-        return SwapView(debtors);
+            State = state,
+            Debtors = debtors,
+            TotalCount = totalCount
+        });
     }
 
     /// <summary>
-    /// Debtor list partial for search/filter updates
+    /// Filter debtors - called via HTMX with SwapState
+    /// </summary>
+    [HttpGet]
+    public async Task<IActionResult> Filter([FromSwapState] DebtorFilterState state)
+    {
+        Console.WriteLine($"[Debtors/Filter] Search={state.Search}, Page={state.Page}, SortBy={state.SortBy}, SortDesc={state.SortDesc}");
+
+        var (debtors, totalCount) = await FilterDebtorsAsync(state);
+
+        return PartialView("_FilterContent", new DebtorListViewModel
+        {
+            State = state,
+            Debtors = debtors,
+            TotalCount = totalCount
+        });
+    }
+
+    private async Task<(List<Debtor> Items, int TotalCount)> FilterDebtorsAsync(DebtorFilterState state)
+    {
+        var query = _db.Debtors.Include(d => d.Debts).AsQueryable();
+
+        // Search filter
+        if (!string.IsNullOrEmpty(state.Search))
+        {
+            query = query.Where(d => d.Name.Contains(state.Search) ||
+                                     (d.Email != null && d.Email.Contains(state.Search)));
+        }
+
+        // Sorting
+        query = (state.SortBy, state.SortDesc) switch
+        {
+            ("name", false) => query.OrderBy(d => d.Name),
+            ("name", true) => query.OrderByDescending(d => d.Name),
+            ("total", false) => query.OrderBy(d => d.Debts.Where(debt => !debt.IsPaid).Sum(debt => debt.Amount)),
+            ("total", true) => query.OrderByDescending(d => d.Debts.Where(debt => !debt.IsPaid).Sum(debt => debt.Amount)),
+            ("date", false) => query.OrderBy(d => d.CreatedAt),
+            ("date", true) => query.OrderByDescending(d => d.CreatedAt),
+            _ => query.OrderByDescending(d => d.CreatedAt)
+        };
+
+        var totalCount = await query.CountAsync();
+        var items = await query
+            .Skip((state.Page - 1) * state.PageSize)
+            .Take(state.PageSize)
+            .ToListAsync();
+
+        return (items, totalCount);
+    }
+
+    /// <summary>
+    /// Debtor list partial for Dashboard use
     /// </summary>
     public async Task<IActionResult> List(string? search = null)
     {
@@ -64,7 +103,7 @@ public class DebtorsController : SwapController
         }
 
         var debtors = await query.OrderByDescending(d => d.CreatedAt).ToListAsync();
-        return SwapView("Debtors/_List", debtors);
+        return SwapView(SwapViews.Debtors._List, debtors);
     }
 
     /// <summary>
@@ -82,7 +121,7 @@ public class DebtorsController : SwapController
     /// </summary>
     public IActionResult Create()
     {
-        return SwapView("Debtors/_CreateForm", new Debtor());
+        return SwapView(SwapViews.Debtors._CreateForm, new Debtor());
     }
 
     /// <summary>
@@ -94,7 +133,7 @@ public class DebtorsController : SwapController
         if (!ModelState.IsValid)
         {
             return SwapResponse()
-                .WithView("Debtors/_CreateForm", debtor)
+                .WithView(SwapViews.Debtors._CreateForm, debtor)
                 .WithErrorToast("Please fix the errors")
                 .Build();
         }
@@ -118,7 +157,7 @@ public class DebtorsController : SwapController
     {
         var debtor = await _db.Debtors.FindAsync(id);
         if (debtor == null) return NotFound();
-        return SwapView("Debtors/_EditForm", debtor);
+        return SwapView(SwapViews.Debtors._EditForm, debtor);
     }
 
     /// <summary>
@@ -133,7 +172,7 @@ public class DebtorsController : SwapController
         if (!ModelState.IsValid)
         {
             return SwapResponse()
-                .WithView("Debtors/_EditForm", updated)
+                .WithView(SwapViews.Debtors._EditForm, updated)
                 .WithErrorToast("Please fix the errors")
                 .Build();
         }
@@ -160,7 +199,7 @@ public class DebtorsController : SwapController
     {
         var debtor = await _db.Debtors.FindAsync(id);
         if (debtor == null) return NotFound();
-        return SwapView("Debtors/_DeleteConfirm", debtor);
+        return SwapView(SwapViews.Debtors._DeleteConfirm, debtor);
     }
 
     /// <summary>
@@ -188,7 +227,7 @@ public class DebtorsController : SwapController
     /// </summary>
     public IActionResult QuickAdd()
     {
-        return SwapView("Debtors/_QuickAddForm");
+        return SwapView(SwapViews.Debtors._QuickAddForm);
     }
 
     /// <summary>

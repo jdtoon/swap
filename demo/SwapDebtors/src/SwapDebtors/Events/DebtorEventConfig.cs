@@ -9,18 +9,19 @@ namespace SwapDebtors.Events;
 /// <summary>
 /// Event configuration for debtor-related events.
 /// Defines what happens when debtor actions occur - which partials to update.
+/// Uses generated SwapViews and SwapElements constants.
 /// </summary>
 public class DebtorEventConfig : ISwapEventConfiguration
 {
     public void Configure(SwapEventBusOptions config)
     {
         config.When(DebtorEvents.Debtor.Created)
-            .RefreshPartial("debtor-list", "Dashboard/_DebtorList", ctx =>
+            .RefreshPartial(SwapElements.DebtorList, SwapViews.Dashboard._DebtorList, ctx =>
             {
                 var db = ctx.RequestServices.GetRequiredService<DebtorsDbContext>();
                 return db.Debtors.Include(d => d.Debts).OrderByDescending(d => d.CreatedAt).ToList();
             })
-            .RefreshPartial("stats", "Dashboard/_Stats", ctx =>
+            .RefreshPartial(SwapElements.Stats, SwapViews.Dashboard._Stats, ctx =>
             {
                 var db = ctx.RequestServices.GetRequiredService<DebtorsDbContext>();
                 return new StatsModel
@@ -34,7 +35,7 @@ public class DebtorEventConfig : ISwapEventConfiguration
             .Toast("Debtor created", ToastType.Success);
 
         config.When(DebtorEvents.Debtor.Updated)
-            .RefreshPartial("debtor-list", "Dashboard/_DebtorList", ctx =>
+            .RefreshPartial(SwapElements.DebtorList, SwapViews.Dashboard._DebtorList, ctx =>
             {
                 var db = ctx.RequestServices.GetRequiredService<DebtorsDbContext>();
                 return db.Debtors.Include(d => d.Debts).OrderByDescending(d => d.CreatedAt).ToList();
@@ -42,12 +43,12 @@ public class DebtorEventConfig : ISwapEventConfiguration
             .Toast("Debtor updated", ToastType.Info);
 
         config.When(DebtorEvents.Debtor.Deleted)
-            .RefreshPartial("debtor-list", "Dashboard/_DebtorList", ctx =>
+            .RefreshPartial(SwapElements.DebtorList, SwapViews.Dashboard._DebtorList, ctx =>
             {
                 var db = ctx.RequestServices.GetRequiredService<DebtorsDbContext>();
                 return db.Debtors.Include(d => d.Debts).OrderByDescending(d => d.CreatedAt).ToList();
             })
-            .RefreshPartial("stats", "Dashboard/_Stats", ctx =>
+            .RefreshPartial(SwapElements.Stats, SwapViews.Dashboard._Stats, ctx =>
             {
                 var db = ctx.RequestServices.GetRequiredService<DebtorsDbContext>();
                 return new StatsModel

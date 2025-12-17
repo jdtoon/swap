@@ -9,18 +9,19 @@ namespace SwapDebtors.Events;
 /// <summary>
 /// Event configuration for debt-related events.
 /// Defines what happens when debt actions occur - which partials to update.
+/// Uses generated SwapViews and SwapElements constants.
 /// </summary>
 public class DebtEventConfig : ISwapEventConfiguration
 {
     public void Configure(SwapEventBusOptions config)
     {
         config.When(DebtEvents.Debt.Created)
-            .RefreshPartial("recent-debts", "Dashboard/_RecentDebts", ctx =>
+            .RefreshPartial(SwapElements.RecentDebts, SwapViews.Dashboard._RecentDebts, ctx =>
             {
                 var db = ctx.RequestServices.GetRequiredService<DebtorsDbContext>();
                 return db.Debts.Include(d => d.Debtor).OrderByDescending(d => d.CreatedAt).Take(10).ToList();
             })
-            .RefreshPartial("stats", "Dashboard/_Stats", ctx =>
+            .RefreshPartial(SwapElements.Stats, SwapViews.Dashboard._Stats, ctx =>
             {
                 var db = ctx.RequestServices.GetRequiredService<DebtorsDbContext>();
                 return new StatsModel
@@ -34,12 +35,12 @@ public class DebtEventConfig : ISwapEventConfiguration
             .Toast("Debt recorded", ToastType.Success);
 
         config.When(DebtEvents.Debt.Paid)
-            .RefreshPartial("recent-debts", "Dashboard/_RecentDebts", ctx =>
+            .RefreshPartial(SwapElements.RecentDebts, SwapViews.Dashboard._RecentDebts, ctx =>
             {
                 var db = ctx.RequestServices.GetRequiredService<DebtorsDbContext>();
                 return db.Debts.Include(d => d.Debtor).OrderByDescending(d => d.CreatedAt).Take(10).ToList();
             })
-            .RefreshPartial("stats", "Dashboard/_Stats", ctx =>
+            .RefreshPartial(SwapElements.Stats, SwapViews.Dashboard._Stats, ctx =>
             {
                 var db = ctx.RequestServices.GetRequiredService<DebtorsDbContext>();
                 return new StatsModel
@@ -53,12 +54,12 @@ public class DebtEventConfig : ISwapEventConfiguration
             .Toast("Debt marked as paid!", ToastType.Success);
 
         config.When(DebtEvents.Debt.Deleted)
-            .RefreshPartial("recent-debts", "Dashboard/_RecentDebts", ctx =>
+            .RefreshPartial(SwapElements.RecentDebts, SwapViews.Dashboard._RecentDebts, ctx =>
             {
                 var db = ctx.RequestServices.GetRequiredService<DebtorsDbContext>();
                 return db.Debts.Include(d => d.Debtor).OrderByDescending(d => d.CreatedAt).Take(10).ToList();
             })
-            .RefreshPartial("stats", "Dashboard/_Stats", ctx =>
+            .RefreshPartial(SwapElements.Stats, SwapViews.Dashboard._Stats, ctx =>
             {
                 var db = ctx.RequestServices.GetRequiredService<DebtorsDbContext>();
                 return new StatsModel

@@ -69,7 +69,7 @@ public class DashboardController : SwapController
             TotalAmount = await _db.Debts.Where(d => !d.IsPaid).SumAsync(d => d.Amount),
             ActiveDebts = await _db.Debts.CountAsync(d => !d.IsPaid)
         };
-        return SwapView("Dashboard/_Stats", stats);
+        return SwapView(SwapViews.Dashboard._Stats, stats);
     }
 
     /// <summary>
@@ -78,7 +78,7 @@ public class DashboardController : SwapController
     public async Task<IActionResult> Rates(string baseCurrency = "USD")
     {
         var rates = await _currency.GetRatesAsync(baseCurrency);
-        return SwapView("Dashboard/_Rates", rates);
+        return SwapView(SwapViews.Dashboard._Rates, rates);
     }
 
     /// <summary>
@@ -91,7 +91,7 @@ public class DashboardController : SwapController
         var rates = await _currency.GetRatesAsync();
 
         return SwapResponse()
-            .WithView("Dashboard/_Rates", rates)
+            .WithView(SwapViews.Dashboard._Rates, rates)
             .WithSuccessToast("Currency rates updated")
             .Build();
     }

@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Swap.Htmx;
 using Swap.Htmx.Extensions;
+using Swap.Htmx.State;
 using SwapDebtors.Data;
 using SwapDebtors.Events;
 using SwapDebtors.Handlers;
@@ -11,7 +12,7 @@ using SwapDebtors.Services;
 namespace SwapDebtors.Controllers;
 
 /// <summary>
-/// Debts controller - CRUD operations for debts.
+/// Debts controller - CRUD with SwapState for filtering/pagination.
 /// Demonstrates multi-currency support and various UX patterns.
 /// </summary>
 public class DebtsController : SwapController
@@ -26,20 +27,87 @@ public class DebtsController : SwapController
     }
 
     /// <summary>
-    /// List debts for a debtor
+    /// List all debts with SwapState filtering/pagination
     /// </summary>
-    public async Task<IActionResult> Index(int? debtorId = null)
+    public async Task<IActionResult> Index()
+    {
+        var state = new DebtFilterState();
+        var (debts, totalCount) = await FilterDebtsAsync(state);
+
+        ViewData["Currencies"] = _currency.GetSupportedCurrencies();
+
+        return SwapView(new DebtListViewModel
+        {
+            State = state,
+            Debts = debts,
+            TotalCount = totalCount
+        });
+    }
+
+    /// <summary>
+    /// Filter debts - called via HTMX with SwapState
+    /// </summary>
+    [HttpGet]
+    public async Task<IActionResult> Filter([FromSwapState] DebtFilterState state)
+    {
+        Console.WriteLine($"[Debts/Filter] Currency={state.Currency}, Status={state.Status}, Page={state.Page}, SortBy={state.SortBy}");
+
+        var (debts, totalCount) = await FilterDebtsAsync(state);
+
+        ViewData["Currencies"] = _currency.GetSupportedCurrencies();
+
+        return PartialView("_FilterContent", new DebtListViewModel
+        {
+            State = state,
+            Debts = debts,
+            TotalCount = totalCount
+        });
+    }
+
+    private async Task<(List<Debt> Items, int TotalCount)> FilterDebtsAsync(DebtFilterState state)
     {
         var query = _db.Debts.Include(d => d.Debtor).AsQueryable();
 
-        if (debtorId.HasValue)
+        // Search filter
+        if (!string.IsNullOrEmpty(state.Search))
         {
-            query = query.Where(d => d.DebtorId == debtorId.Value);
+            query = query.Where(d => d.Description.Contains(state.Search) ||
+                                     d.Debtor.Name.Contains(state.Search));
         }
 
-        var debts = await query.OrderByDescending(d => d.CreatedAt).ToListAsync();
-        ViewData["DebtorId"] = debtorId;
-        return SwapView(debts);
+        // Currency filter
+        if (state.Currency != "all")
+        {
+            query = query.Where(d => d.Currency == state.Currency);
+        }
+
+        // Status filter
+        query = state.Status switch
+        {
+            "paid" => query.Where(d => d.IsPaid),
+            "unpaid" => query.Where(d => !d.IsPaid),
+            _ => query
+        };
+
+        // Sorting
+        query = (state.SortBy, state.SortDesc) switch
+        {
+            ("date", false) => query.OrderBy(d => d.CreatedAt),
+            ("date", true) => query.OrderByDescending(d => d.CreatedAt),
+            ("amount", false) => query.OrderBy(d => d.Amount),
+            ("amount", true) => query.OrderByDescending(d => d.Amount),
+            ("debtor", false) => query.OrderBy(d => d.Debtor.Name),
+            ("debtor", true) => query.OrderByDescending(d => d.Debtor.Name),
+            _ => query.OrderByDescending(d => d.CreatedAt)
+        };
+
+        var totalCount = await query.CountAsync();
+        var items = await query
+            .Skip((state.Page - 1) * state.PageSize)
+            .Take(state.PageSize)
+            .ToListAsync();
+
+        return (items, totalCount);
     }
 
     /// <summary>
@@ -53,7 +121,7 @@ public class DebtsController : SwapController
             .Take(take)
             .ToListAsync();
 
-        return SwapView("Dashboard/_RecentDebts", debts);
+        return SwapView(SwapViews.Dashboard._RecentDebts, debts);
     }
 
     /// <summary>
@@ -68,7 +136,7 @@ public class DebtsController : SwapController
         ViewData["Currencies"] = currencies;
         ViewData["SelectedDebtorId"] = debtorId;
 
-        return SwapView("Debts/_CreateForm", new Debt { DebtorId = debtorId ?? 0 });
+        return SwapView(SwapViews.Debts._CreateForm, new Debt { DebtorId = debtorId ?? 0 });
     }
 
     /// <summary>
@@ -112,7 +180,8 @@ public class DebtsController : SwapController
         if (debtor == null) return NotFound();
 
         ViewData["Currencies"] = _currency.GetSupportedCurrencies();
-        return SwapView("Debts/_QuickAddForm", new Debt { DebtorId = debtorId });
+        ViewData["DebtorName"] = debtor.Name;
+        return SwapView(SwapViews.Debts._QuickAddForm, new Debt { DebtorId = debtorId });
     }
 
     /// <summary>
@@ -138,6 +207,7 @@ public class DebtsController : SwapController
         return (await SwapEventAsync(
             DebtEvents.Debt.Created,
             new DebtCreatedEvent { Id = debt.Id, Amount = debt.Amount, Currency = debt.Currency, DebtorName = debtor.Name }))
+            .WithClientAction("closeModal")
             .Build();
     }
 
@@ -188,6 +258,6 @@ public class DebtsController : SwapController
         if (debt == null) return NotFound();
 
         var converted = await _currency.ConvertAsync(debt.Amount, debt.Currency, toCurrency);
-        return SwapView("Debts/_ConvertedAmount", new { Amount = converted, Currency = toCurrency });
+        return SwapView(SwapViews.Debts._ConvertedAmount, new { Amount = converted, Currency = toCurrency });
     }
 }
