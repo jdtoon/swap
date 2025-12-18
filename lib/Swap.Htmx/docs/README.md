@@ -23,6 +23,7 @@ Welcome to the Swap.Htmx documentation. These guides will help you build reactiv
 | Show success toasts for CRUD | [CRUD Toasts](CrudToasts.md) |
 | Understand state patterns | [State Management](StateManagement.md) |
 | Avoid common mistakes | [Anti-Patterns](AntiPatterns.md) |
+| Pick a client assets strategy | [Client Assets](ClientAssets.md) |
 | Use events and triggers | [Events Guide](Events.md) |
 | Avoid breaking trigger payloads | [Typed Payloads](TypedPayloads.md) |
 | Understand event naming and realtime routing | [Event Naming & Realtime Routing](EventNamingAndRouting.md) |

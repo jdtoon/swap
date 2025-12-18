@@ -8,6 +8,7 @@ Build your first Swap.Htmx app in 5 minutes.
 - Basic ASP.NET Core MVC knowledge
 
 If you use the templates below, you’ll also want `libman` available (the templates use it to restore HTMX and optional extensions).
+If you’re not using templates, you can choose either **CDN** or **LibMan** for client assets. See [Client Assets](ClientAssets.md).
 
 ## Setup
 
@@ -80,10 +81,22 @@ app.Run();
 
 Add before `</head>`:
 
+**Option A (CDN quick start):**
+
 ```html
 <link rel="stylesheet" href="~/_content/Swap.Htmx/css/swap.css" />
 <script src="https://unpkg.com/htmx.org@2.0.8"></script>
 <script src="~/_content/Swap.Htmx/js/swap.client.js"></script>
+```
+
+**Option B (LibMan / local assets):**
+
+Follow [Client Assets](ClientAssets.md) to add `libman.json` + run `libman restore`, then reference:
+
+```html
+<link rel="stylesheet" href="~/_content/Swap.Htmx/css/swap.css" />
+<script src="~/lib/htmx/dist/htmx.min.js" asp-append-version="true"></script>
+<script src="~/_content/Swap.Htmx/js/swap.client.js" asp-append-version="true"></script>
 ```
 
 ---

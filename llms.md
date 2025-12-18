@@ -67,7 +67,7 @@ Absolute minimum for HTMX + Swap client:
 If using SSE + htmx extension:
 
 ```html
-<script src="https://unpkg.com/htmx-ext-sse@2.2.2/sse.js"></script>
+<script src="https://unpkg.com/htmx-ext-sse@2.2.4/sse.js"></script>
 ```
 
 
