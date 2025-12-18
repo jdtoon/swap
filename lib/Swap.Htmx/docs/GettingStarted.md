@@ -38,7 +38,7 @@ Add before `</head>`:
 
 ```html
 <link rel="stylesheet" href="~/_content/Swap.Htmx/css/swap.css" />
-<script src="https://unpkg.com/htmx.org@2.0.4"></script>
+<script src="https://unpkg.com/htmx.org@2.0.8"></script>
 <script src="~/_content/Swap.Htmx/js/swap.client.js"></script>
 ```
 

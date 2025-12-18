@@ -57,7 +57,7 @@ libman restore
 dotnet run
 ```
 
-Open `http://localhost:5000` — you're server-driven.
+Open the URL shown in the console (typically `https://localhost:5001`).
 
 Prefer a minimal starting point?
 
