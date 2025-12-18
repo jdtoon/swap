@@ -10,7 +10,7 @@ Swap.Htmx uses high-performance structured logging (`[LoggerMessage]`) integrate
 
 Add the following to your `appsettings.json` or `appsettings.Development.json`:
 
-`json
+```json
 {
   "Logging": {
     "LogLevel": {
@@ -19,7 +19,7 @@ Add the following to your `appsettings.json` or `appsettings.Development.json`:
     }
   }
 }
-``n
+```
 ### Log Categories
 
 All logs use the category `Swap.Htmx.*` (e.g., `Swap.Htmx.Services.SwapEventService`).
@@ -36,21 +36,22 @@ The library uses `System.Diagnostics.ActivitySource` with the name **`Swap.Htmx`
 
 ### Configuration
 
-`csharp
+```csharp
 builder.Services.AddOpenTelemetry()
     .WithTracing(tracing =>
     {
         tracing.AddSource("Swap.Htmx");
         // ... other sources
     });
-``n
+```
 ### Available Spans (Activities)
 
 | Activity Name | Description | Tags |
 |--------------|-------------|------|
-| `Swap.Htmx.EventChain` | Tracks the execution of an event chain. | `event.key`, `event.chain_length` |
-| `Swap.Htmx.SseBroadcast` | Tracks the processing of an SSE broadcast. | `sse.event_key`, `sse.type`, `sse.target`, `sse.name` |
-| `Swap.Htmx.SseRender` | Tracks the rendering of partials for SSE. | `sse.event_name` |
+| `Swap.Htmx.ProcessEventChain` | Tracks the execution of an event chain. | `event.name`, `chain.found`, `chain.partials_count` |
+| `Swap.Htmx.RealtimeBroadcast` | Tracks routing + dispatch of a realtime event (SSE + WebSockets). | `realtime.event.key`, `realtime.route.type`, `realtime.route.target`, `realtime.event.name` (also legacy `realtime.*` tags) |
+| `Swap.Htmx.RealtimeRender` | Tracks rendering partials for a realtime event. | `realtime.event.name` (also legacy `realtime.event_name`) |
+| `Swap.Htmx.SseDispatch` | Tracks local SSE dispatch after a backplane message is received. | `sse.event.name`, `sse.recipient.type`, `sse.recipients.count` |
 | `Swap.Htmx.ResultExecute` | Tracks the execution of `SwapResult` (Minimal API). | |
 | `Swap.Htmx.ActionResultExecute` | Tracks the execution of `SwapActionResult` (MVC). | |
 | `Swap.Htmx.PageResultExecute` | Tracks the execution of `SwapPageResult` (Razor Pages). | |
@@ -61,14 +62,14 @@ The library uses `System.Diagnostics.Metrics.Meter` with the name **`Swap.Htmx`*
 
 ### Configuration
 
-`csharp
+```csharp
 builder.Services.AddOpenTelemetry()
     .WithMetrics(metrics =>
     {
         metrics.AddMeter("Swap.Htmx");
         // ... other meters
     });
-``n
+```
 ### Available Metrics
 
 | Metric Name | Type | Description |

@@ -103,6 +103,9 @@ When realtime forwarding runs, what gets forwarded, and what happens on failures
 ### [Server-Sent Events](ServerSentEvents.md)
 Push updates from server to browser using SSE, with room-based broadcasting and connection management.
 
+### [SSE Authentication](SseAuthentication.md)
+How to secure SSE endpoints, authorize rooms, and safely target users.
+
 ### [SSE Backpressure](SseBackpressure.md)
 Configure max event size, per-connection queue limits, and drop strategy.
 

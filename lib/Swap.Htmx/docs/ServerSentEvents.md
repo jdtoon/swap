@@ -222,3 +222,5 @@ See [Redis Backplane](RedisBackplane.md) for details.
 - [WebSockets](WebSockets.md) — Bi-directional real-time
 - [Redis Backplane](RedisBackplane.md) — Multi-server support
 - [Event Chains](EventChains.md) — Event-driven updates
+- [SSE Authentication](SseAuthentication.md) — Secure endpoints and rooms
+- [SSE Backpressure](SseBackpressure.md) — Limits and drop strategy

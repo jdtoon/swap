@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Swap.Htmx.Realtime;
+using System.Collections.Generic;
 using System.Security.Claims;
 using Xunit;
 

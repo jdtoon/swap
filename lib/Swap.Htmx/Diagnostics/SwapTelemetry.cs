@@ -32,9 +32,9 @@ public static class SwapTelemetry
         "swap.sse.broadcasts", 
         description: "Total number of SSE broadcasts sent");
 
-    internal static readonly Counter<long> SseConnections = Meter.CreateCounter<long>(
-        "swap.sse.connections", 
-        description: "Total number of active SSE connections");
+    internal static readonly UpDownCounter<long> SseConnections = Meter.CreateUpDownCounter<long>(
+        "swap.sse.connections",
+        description: "Current number of active SSE connections");
         
     internal static readonly Histogram<double> EventProcessingDuration = Meter.CreateHistogram<double>(
         "swap.events.processing_duration",

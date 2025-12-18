@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using Microsoft.Extensions.Logging;
 using Swap.Htmx.Diagnostics;
 
@@ -91,29 +92,41 @@ internal sealed class SseConnectionRegistry : ISseConnectionRegistry, IRealtimeC
 
     private async Task HandleBackplaneMessageAsync(SseMessage message, CancellationToken ct)
     {
+        using var activity = SwapTelemetry.ActivitySource.StartActivity("Swap.Htmx.SseDispatch");
+        activity?.SetTag("sse.event.name", message.EventName);
+        activity?.SetTag("sse.recipient.type", message.RecipientType.ToString());
+
         switch (message.RecipientType)
         {
             case SseRecipientType.Broadcast:
+                SwapTelemetry.SseBroadcasts.Add(1, new KeyValuePair<string, object?>("sse.recipient.type", "broadcast"));
                 await SendToAllLocalAsync(message.EventName, message.Html);
                 break;
             case SseRecipientType.Room:
                 if (message.RecipientValues != null)
                 {
+                    activity?.SetTag("sse.recipients.count", message.RecipientValues.Length);
+                    SwapTelemetry.SseBroadcasts.Add(1, new KeyValuePair<string, object?>("sse.recipient.type", "room"));
                     await SendToRoomsLocalAsync(message.EventName, message.Html, message.RecipientValues);
                 }
                 break;
             case SseRecipientType.EventSubscription:
+                SwapTelemetry.SseBroadcasts.Add(1, new KeyValuePair<string, object?>("sse.recipient.type", "subscribers"));
                 await SendToSubscribersLocalAsync(message.EventName, message.Html);
                 break;
             case SseRecipientType.Role:
                 if (message.RecipientValues != null)
                 {
+                    activity?.SetTag("sse.recipients.count", message.RecipientValues.Length);
+                    SwapTelemetry.SseBroadcasts.Add(1, new KeyValuePair<string, object?>("sse.recipient.type", "role"));
                     await SendToRolesLocalAsync(message.EventName, message.Html, message.RecipientValues);
                 }
                 break;
             case SseRecipientType.User:
                 if (message.RecipientValue != null)
                 {
+                    activity?.SetTag("sse.recipient.value", message.RecipientValue);
+                    SwapTelemetry.SseBroadcasts.Add(1, new KeyValuePair<string, object?>("sse.recipient.type", "user"));
                     await SendToUserLocalAsync(message.EventName, message.Html, message.RecipientValue);
                 }
                 break;

@@ -318,7 +318,7 @@ public class SseEventBridgeTests
 
         Assert.NotNull(captured);
 
-        var authed = new TestRealtimeConnection(CreateAuthenticatedPrincipal("u1"));
+        var authed = new TestRealtimeConnection(TestPrincipals.CreateAuthenticatedPrincipal("u1"));
         var anon = new TestRealtimeConnection(new ClaimsPrincipal(new ClaimsIdentity()));
         Assert.True(captured!(authed));
         Assert.False(captured!(anon));
@@ -362,8 +362,8 @@ public class SseEventBridgeTests
 
         Assert.NotNull(captured);
 
-        var monitoring = new TestRealtimeConnection(CreateAuthenticatedPrincipal("u1"), rooms: new[] { "monitoring" });
-        var other = new TestRealtimeConnection(CreateAuthenticatedPrincipal("u2"), rooms: new[] { "other" });
+        var monitoring = new TestRealtimeConnection(TestPrincipals.CreateAuthenticatedPrincipal("u1"), rooms: new[] { "monitoring" });
+        var other = new TestRealtimeConnection(TestPrincipals.CreateAuthenticatedPrincipal("u2"), rooms: new[] { "other" });
         Assert.True(captured!(monitoring));
         Assert.False(captured!(other));
     }
@@ -405,13 +405,16 @@ internal sealed class TestRealtimeConnection : IRealtimeConnection
     public ValueTask DisposeAsync() => ValueTask.CompletedTask;
 }
 
-internal static ClaimsPrincipal CreateAuthenticatedPrincipal(string name)
+internal static class TestPrincipals
 {
-    var identity = new ClaimsIdentity(
-        new[] { new Claim(ClaimTypes.Name, name) },
-        authenticationType: "TestAuth",
-        nameType: ClaimTypes.Name,
-        roleType: ClaimTypes.Role);
-    return new ClaimsPrincipal(identity);
+    public static ClaimsPrincipal CreateAuthenticatedPrincipal(string name)
+    {
+        var identity = new ClaimsIdentity(
+            new[] { new Claim(ClaimTypes.Name, name) },
+            authenticationType: "TestAuth",
+            nameType: ClaimTypes.Name,
+            roleType: ClaimTypes.Role);
+        return new ClaimsPrincipal(identity);
+    }
 }
 
