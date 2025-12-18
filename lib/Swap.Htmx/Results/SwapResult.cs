@@ -262,14 +262,14 @@ public sealed class SwapResult : IResult
                 var logger = context.HttpContext.RequestServices.GetService<ILogger<SwapResult>>();
                 logger?.LogError(
                     "[Swap.Htmx] Could not find view {ViewName} for OOB swap targeting #{TargetId}. Searched: {SearchedLocations}. " +
-                    "If this is a cross-controller OOB swap, configure SwapHtmxOptions.PartialViewSearchPaths.",
+                    "Fix: move the partial under Views/Shared, provide an app-relative path, or configure SwapHtmxOptions.PartialViewSearchPaths.",
                     oob.ViewName,
                     oob.TargetId,
                     searchedPaths);
 
                 throw new InvalidOperationException(
                     $"Could not find view '{oob.ViewName}' for OOB swap (target '#{oob.TargetId}'). Searched: {searchedPaths}. " +
-                    $"Configure SwapHtmxOptions.PartialViewSearchPaths if your partial lives outside Views/Shared.");
+                    "Fix: move the partial under Views/Shared, provide an app-relative path, or configure SwapHtmxOptions.PartialViewSearchPaths.");
             }
         }
 

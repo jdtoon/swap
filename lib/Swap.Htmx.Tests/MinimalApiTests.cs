@@ -80,6 +80,84 @@ public class MinimalApiTests
     }
 
     [Fact]
+    public async Task SwapResult_When_MainView_NotFound_Throws_With_Actionable_Guidance()
+    {
+        // Arrange
+        var builder = new SwapResponseBuilder().WithView("MissingView", new { Name = "Test" });
+        var result = new SwapResult(builder);
+
+        var servicesMock = new Mock<IServiceProvider>();
+        var viewEngineMock = new Mock<ICompositeViewEngine>();
+        var tempDataProviderMock = new Mock<ITempDataProvider>();
+        var modelMetadataProvider = new EmptyModelMetadataProvider();
+
+        var httpContext = new DefaultHttpContext();
+        httpContext.RequestServices = servicesMock.Object;
+        httpContext.Response.Body = new MemoryStream();
+
+        servicesMock.Setup(s => s.GetService(typeof(ILogger<SwapResult>))).Returns(Mock.Of<ILogger<SwapResult>>());
+        servicesMock.Setup(s => s.GetService(typeof(ICompositeViewEngine))).Returns(viewEngineMock.Object);
+        servicesMock.Setup(s => s.GetService(typeof(ITempDataProvider))).Returns(tempDataProviderMock.Object);
+        servicesMock.Setup(s => s.GetService(typeof(IModelMetadataProvider))).Returns(modelMetadataProvider);
+
+        viewEngineMock
+            .Setup(v => v.FindView(It.IsAny<ActionContext>(), "MissingView", false))
+            .Returns(ViewEngineResult.NotFound("MissingView", new[] { "~/Views/Shared/MissingView.cshtml" }));
+
+        viewEngineMock
+            .Setup(v => v.GetView(null, "MissingView", false))
+            .Returns(ViewEngineResult.NotFound("MissingView", new[] { "MissingView" }));
+
+        // Act
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => result.ExecuteAsync(httpContext));
+
+        // Assert
+        Assert.Contains("Could not find view 'MissingView'", ex.Message);
+        Assert.Contains("Fix:", ex.Message);
+        Assert.Contains("WithView", ex.Message);
+        Assert.Contains("~/Views", ex.Message);
+    }
+
+    [Fact]
+    public async Task SwapResult_When_OobView_NotFound_Throws_With_Actionable_Guidance()
+    {
+        // Arrange
+        var builder = new SwapResponseBuilder().AlsoUpdate("target-id", "MissingOobView", null, SwapMode.OuterHTML);
+        var result = new SwapResult(builder);
+
+        var servicesMock = new Mock<IServiceProvider>();
+        var viewEngineMock = new Mock<ICompositeViewEngine>();
+        var tempDataProviderMock = new Mock<ITempDataProvider>();
+        var modelMetadataProvider = new EmptyModelMetadataProvider();
+
+        var httpContext = new DefaultHttpContext();
+        httpContext.RequestServices = servicesMock.Object;
+        httpContext.Response.Body = new MemoryStream();
+
+        servicesMock.Setup(s => s.GetService(typeof(ILogger<SwapResult>))).Returns(Mock.Of<ILogger<SwapResult>>());
+        servicesMock.Setup(s => s.GetService(typeof(ICompositeViewEngine))).Returns(viewEngineMock.Object);
+        servicesMock.Setup(s => s.GetService(typeof(ITempDataProvider))).Returns(tempDataProviderMock.Object);
+        servicesMock.Setup(s => s.GetService(typeof(IModelMetadataProvider))).Returns(modelMetadataProvider);
+
+        viewEngineMock
+            .Setup(v => v.FindView(It.IsAny<ActionContext>(), "MissingOobView", false))
+            .Returns(ViewEngineResult.NotFound("MissingOobView", new[] { "~/Views/Shared/MissingOobView.cshtml" }));
+
+        viewEngineMock
+            .Setup(v => v.GetView(null, It.IsAny<string>(), false))
+            .Returns(ViewEngineResult.NotFound("MissingOobView", new[] { "~/Views/Shared/MissingOobView.cshtml" }));
+
+        // Act
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => result.ExecuteAsync(httpContext));
+
+        // Assert
+        Assert.Contains("Could not find view 'MissingOobView'", ex.Message);
+        Assert.Contains("OOB swap", ex.Message);
+        Assert.Contains("Fix:", ex.Message);
+        Assert.Contains("PartialViewSearchPaths", ex.Message);
+    }
+
+    [Fact]
     public async Task SwapResult_Executes_And_Writes_OobSwaps()
     {
         // Arrange
