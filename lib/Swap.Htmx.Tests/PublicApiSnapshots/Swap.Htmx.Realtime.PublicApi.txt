@@ -1,0 +1,328 @@
+[assembly: System.Reflection.AssemblyMetadata("RepositoryUrl", "https://github.com/jdtoon/swap")]
+[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("DynamicProxyGenAssembly2")]
+[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("Swap.Htmx.Tests")]
+[assembly: System.Runtime.CompilerServices.InternalsVisibleTo(@"DynamicProxyGenAssembly2, PublicKey=0024000004800000940000000602000000240000525341310004000001000100c547cac37abd99c8db225ef2f6c8a3602f3b3606cc9891605d02baa56104f4cfc0734aa39b93bf7852f7d9266654753cc297e7d2edfe0bac1cdcf9f717241550e0a7b191195b7667bb4f64bcb8e2121380fd1d9d46ad2d92d2d15605093924cceaf74c4861eff62abf69b9291ed0a340e113be11e6a7d3113e92484cf7045cc7")]
+[assembly: System.Runtime.Versioning.TargetFramework(".NETCoreApp,Version=v10.0", FrameworkDisplayName=".NET 10.0")]
+namespace Swap.Htmx.Realtime
+{
+    public class DefaultRealtimeInputHandler : Swap.Htmx.Realtime.IRealtimeInputHandler
+    {
+        public DefaultRealtimeInputHandler(System.IServiceProvider serviceProvider, Microsoft.Extensions.Logging.ILogger<Swap.Htmx.Realtime.DefaultRealtimeInputHandler> logger) { }
+        public System.Threading.Tasks.Task HandleMessageAsync(Swap.Htmx.Realtime.IRealtimeConnection connection, string message) { }
+    }
+    public sealed class EnhancedServerSentEventsResult : Microsoft.AspNetCore.Mvc.IActionResult
+    {
+        public EnhancedServerSentEventsResult(System.Func<Swap.Htmx.Realtime.SseConnectionBuilder, System.Threading.CancellationToken, System.Threading.Tasks.Task> handler) { }
+        public System.Threading.Tasks.Task ExecuteResultAsync(Microsoft.AspNetCore.Mvc.ActionContext context) { }
+    }
+    public interface IRealtimeConnection : System.IAsyncDisposable
+    {
+        System.DateTime ConnectedAt { get; }
+        string Id { get; }
+        bool IsActive { get; }
+        System.Collections.Generic.IReadOnlyCollection<string> Rooms { get; }
+        System.Collections.Generic.IReadOnlyCollection<string> SubscribedEvents { get; }
+        System.Security.Claims.ClaimsPrincipal? User { get; }
+        bool IsInRoom(string room);
+        bool IsSubscribedToEvent(string eventName);
+        void JoinRoom(string room);
+        void LeaveRoom(string room);
+        System.Threading.Tasks.Task SendEventAsync(string eventName, string data);
+        void SubscribeToEvent(string eventName);
+        void UnsubscribeFromEvent(string eventName);
+    }
+    public interface IRealtimeConnectionRegistry
+    {
+        System.Threading.Tasks.Task BroadcastAsync(string eventName, string data, System.Threading.CancellationToken cancellationToken = default);
+        System.Threading.Tasks.Task BroadcastToFilteredAsync(string eventName, string data, System.Func<Swap.Htmx.Realtime.IRealtimeConnection, bool> filter, System.Threading.CancellationToken cancellationToken = default);
+        System.Threading.Tasks.Task BroadcastToRolesAsync(string eventName, string data, System.Collections.Generic.IEnumerable<string> roles, System.Threading.CancellationToken cancellationToken = default);
+        System.Threading.Tasks.Task BroadcastToRoomsAsync(string eventName, string data, System.Collections.Generic.IEnumerable<string> rooms, System.Threading.CancellationToken cancellationToken = default);
+        System.Threading.Tasks.Task BroadcastToSubscribersAsync(string eventName, string data, System.Threading.CancellationToken cancellationToken = default);
+        System.Threading.Tasks.Task BroadcastToUserAsync(string eventName, string data, string userId, System.Threading.CancellationToken cancellationToken = default);
+        System.Collections.Generic.IReadOnlyCollection<string> GetActiveConnectionIds();
+        Swap.Htmx.Realtime.RealtimeConnectionStats GetStats();
+        void RegisterConnection(Swap.Htmx.Realtime.IRealtimeConnection connection);
+        void UnregisterConnection(string connectionId);
+    }
+    public interface IRealtimeEventBridge
+    {
+        System.Threading.Tasks.Task HandleRealtimeEventAsync(string eventName, object? payload, System.Threading.CancellationToken cancellationToken = default);
+    }
+    public interface IRealtimeInputHandler
+    {
+        System.Threading.Tasks.Task HandleMessageAsync(Swap.Htmx.Realtime.IRealtimeConnection connection, string message);
+    }
+    public interface ISseBackplane
+    {
+        System.Threading.Tasks.Task PublishAsync(Swap.Htmx.Realtime.SseMessage message, System.Threading.CancellationToken cancellationToken = default);
+        System.Threading.Tasks.Task SubscribeAsync(System.Func<Swap.Htmx.Realtime.SseMessage, System.Threading.CancellationToken, System.Threading.Tasks.Task> handler, System.Threading.CancellationToken cancellationToken = default);
+    }
+    public interface ISseConnectionRegistry
+    {
+        System.Threading.Tasks.Task BroadcastAsync(string eventName, string html, System.Threading.CancellationToken cancellationToken = default);
+        System.Threading.Tasks.Task BroadcastToFilteredAsync(string eventName, string html, System.Func<Swap.Htmx.Realtime.SseConnection, bool> filter, System.Threading.CancellationToken cancellationToken = default);
+        System.Threading.Tasks.Task BroadcastToRolesAsync(string eventName, string html, System.Collections.Generic.IEnumerable<string> roles, System.Threading.CancellationToken cancellationToken = default);
+        System.Threading.Tasks.Task BroadcastToRoomsAsync(string eventName, string html, System.Collections.Generic.IEnumerable<string> rooms, System.Threading.CancellationToken cancellationToken = default);
+        System.Threading.Tasks.Task BroadcastToSubscribersAsync(string eventName, string html, System.Threading.CancellationToken cancellationToken = default);
+        System.Threading.Tasks.Task BroadcastToUserAsync(string eventName, string html, string userId, System.Threading.CancellationToken cancellationToken = default);
+        System.Collections.Generic.IReadOnlyCollection<string> GetActiveConnectionIds();
+        Swap.Htmx.Realtime.SseConnectionStats GetStats();
+        void RegisterConnection(Swap.Htmx.Realtime.SseConnection connection);
+        void UnregisterConnection(string connectionId);
+    }
+    public interface ISseEventBridge
+    {
+        System.Threading.Tasks.Task HandleSseEventAsync(string eventName, object? payload, System.Threading.CancellationToken cancellationToken = default);
+    }
+    public interface ISseFallbackService
+    {
+        Swap.Htmx.Realtime.SseFallbackOptions Options { get; }
+        int GetPollInterval(Microsoft.AspNetCore.Http.HttpContext context);
+        bool ShouldUsePolling(Microsoft.AspNetCore.Http.HttpContext context);
+    }
+    public interface ISseViewRenderer
+    {
+        System.Threading.Tasks.Task<string> RenderPartialAsync<TModel>(string viewName, TModel model);
+    }
+    public class RealtimeConnectionStats : System.IEquatable<Swap.Htmx.Realtime.RealtimeConnectionStats>
+    {
+        public RealtimeConnectionStats(int TotalConnections, int ActiveConnections, System.Collections.Generic.IReadOnlyDictionary<string, int> ConnectionsByRoom, System.Collections.Generic.IReadOnlyDictionary<string, int> SubscriptionsByEvent) { }
+        public int ActiveConnections { get; init; }
+        public System.Collections.Generic.IReadOnlyDictionary<string, int> ConnectionsByRoom { get; init; }
+        public System.Collections.Generic.IReadOnlyDictionary<string, int> SubscriptionsByEvent { get; init; }
+        public int TotalConnections { get; init; }
+    }
+    public sealed class RealtimeEventMiddleware
+    {
+        public RealtimeEventMiddleware(Microsoft.AspNetCore.Http.RequestDelegate next, Microsoft.Extensions.Logging.ILogger<Swap.Htmx.Realtime.RealtimeEventMiddleware> logger) { }
+        public System.Threading.Tasks.Task InvokeAsync(Microsoft.AspNetCore.Http.HttpContext context) { }
+    }
+    public sealed class ServerSentEventStream : System.IAsyncDisposable
+    {
+        public System.Threading.Tasks.ValueTask DisposeAsync() { }
+        public System.Threading.Tasks.Task SendEventAsync(string eventName, string html, string? id = null) { }
+        public System.Threading.Tasks.Task SendKeepAliveAsync() { }
+        public System.Threading.Tasks.Task SendRetryDirectiveAsync(int milliseconds) { }
+    }
+    public sealed class ServerSentEventsResult : Microsoft.AspNetCore.Mvc.IActionResult
+    {
+        public ServerSentEventsResult(System.Func<Swap.Htmx.Realtime.ServerSentEventStream, System.Threading.CancellationToken, System.Threading.Tasks.Task> handler, Microsoft.Extensions.Logging.ILogger<Swap.Htmx.Realtime.ServerSentEventsResult>? logger = null) { }
+        public System.Threading.Tasks.Task ExecuteResultAsync(Microsoft.AspNetCore.Mvc.ActionContext context) { }
+    }
+    public sealed class SseChainBuilder
+    {
+        public Swap.Htmx.Realtime.SseChainBuilder BroadcastSse(string eventName) { }
+        public Swap.Htmx.Events.SwapEventBusOptions Build() { }
+        public Swap.Htmx.Realtime.SseChainBuilder RefreshAll() { }
+        public Swap.Htmx.Realtime.SseChainBuilder ShowToast() { }
+        public Swap.Htmx.Realtime.SseChainBuilder ToRole(string role, string eventName) { }
+        public Swap.Htmx.Realtime.SseChainBuilder ToRoles(string eventName, params string[] roles) { }
+        public Swap.Htmx.Realtime.SseChainBuilder ToRoom(string room, string eventName) { }
+        public Swap.Htmx.Realtime.SseChainBuilder ToRooms(string eventName, params string[] rooms) { }
+        public Swap.Htmx.Realtime.SseChainBuilder ToSubscribers(string eventName) { }
+        public Swap.Htmx.Realtime.SseChainBuilder ToUser(string userId, string eventName) { }
+        public Swap.Htmx.Realtime.SseChainBuilder UpdateAll() { }
+        public static Swap.Htmx.Events.SwapEventBusOptions op_Implicit(Swap.Htmx.Realtime.SseChainBuilder builder) { }
+    }
+    public sealed class SseConnection : Swap.Htmx.Realtime.IRealtimeConnection, System.IAsyncDisposable
+    {
+        public SseConnection(string id, Swap.Htmx.Realtime.ServerSentEventStream stream, Microsoft.AspNetCore.Http.HttpContext httpContext) { }
+        public System.DateTime ConnectedAt { get; }
+        public string Id { get; }
+        public bool IsActive { get; }
+        public System.Collections.Generic.IReadOnlyCollection<string> Rooms { get; }
+        public System.Collections.Generic.IReadOnlyCollection<string> SubscribedEvents { get; }
+        public System.Security.Claims.ClaimsPrincipal? User { get; }
+        public System.Threading.Tasks.ValueTask DisposeAsync() { }
+        public bool IsInRoom(string room) { }
+        public bool IsSubscribedToEvent(string eventName) { }
+        public void JoinRoom(string room) { }
+        public void LeaveRoom(string room) { }
+        public System.Threading.Tasks.Task SendEventAsync(string eventName, string html) { }
+        public void SubscribeToEvent(string eventName) { }
+        public void UnsubscribeFromEvent(string eventName) { }
+    }
+    public sealed class SseConnectionBuilder
+    {
+        public Swap.Htmx.Realtime.SseConnection Connection { get; }
+        public System.Threading.Tasks.Task KeepAlive(System.TimeSpan? interval = default, System.Threading.CancellationToken cancellationToken = default) { }
+        public Swap.Htmx.Realtime.SseConnectionBuilder WithAuthentication() { }
+        public Swap.Htmx.Realtime.SseConnectionBuilder WithAuthentication(params string[] requiredRoles) { }
+        public Swap.Htmx.Realtime.SseConnectionBuilder WithAuthorizedEvents() { }
+        public Swap.Htmx.Realtime.SseConnectionBuilder WithClaims([System.Runtime.CompilerServices.TupleElementNames(new string[] {
+                "type",
+                "value"})] params System.ValueTuple<string, string>[] requiredClaims) { }
+        public Swap.Htmx.Realtime.SseConnectionBuilder WithDebugMode() { }
+        public Swap.Htmx.Realtime.SseConnectionBuilder WithEventPattern(string pattern) { }
+        public Swap.Htmx.Realtime.SseConnectionBuilder WithEventPrefix(string prefix) { }
+        public Swap.Htmx.Realtime.SseConnectionBuilder WithEvents(params string[] events) { }
+        public System.Threading.Tasks.Task<Swap.Htmx.Realtime.SseConnectionBuilder> WithInitialState(string eventName, System.Func<System.Threading.Tasks.Task<string>> htmlFactory) { }
+        public System.Threading.Tasks.Task<Swap.Htmx.Realtime.SseConnectionBuilder> WithInitialState(string eventName, string html) { }
+        public Swap.Htmx.Realtime.SseConnectionBuilder WithMetadata(System.Collections.Generic.IDictionary<string, string> metadata) { }
+        public Swap.Htmx.Realtime.SseConnectionBuilder WithMetadata(string key, string value) { }
+        public Swap.Htmx.Realtime.SseConnectionBuilder WithMonitoring(bool includeMetrics = true) { }
+        public Swap.Htmx.Realtime.SseConnectionBuilder WithRoleRooms() { }
+        public Swap.Htmx.Realtime.SseConnectionBuilder WithRooms(params string[] rooms) { }
+        public Swap.Htmx.Realtime.SseConnectionBuilder WithTimeout(System.TimeSpan timeout, bool sendReconnectHint = true) { }
+        public Swap.Htmx.Realtime.SseConnectionBuilder WithUserRoom() { }
+    }
+    public class SseConnectionStats : System.IEquatable<Swap.Htmx.Realtime.SseConnectionStats>
+    {
+        public SseConnectionStats(int TotalConnections, int ActiveConnections, System.Collections.Generic.IReadOnlyDictionary<string, int> ConnectionsByRoom, System.Collections.Generic.IReadOnlyDictionary<string, int> SubscriptionsByEvent) { }
+        public int ActiveConnections { get; init; }
+        public System.Collections.Generic.IReadOnlyDictionary<string, int> ConnectionsByRoom { get; init; }
+        public System.Collections.Generic.IReadOnlyDictionary<string, int> SubscriptionsByEvent { get; init; }
+        public int TotalConnections { get; init; }
+    }
+    public static class SseEventChainExtensions
+    {
+        public static Swap.Htmx.Events.SwapEventBusOptions ChainToSse(this Swap.Htmx.Events.SwapEventBusOptions options, Swap.Htmx.Events.EventKey trigger, Swap.Htmx.Events.EventKey sseEvent) { }
+        public static Swap.Htmx.Events.SwapEventBusOptions ChainToSse(this Swap.Htmx.Events.SwapEventBusOptions options, Swap.Htmx.Events.EventKey trigger, params Swap.Htmx.Events.EventKey[] sseEvents) { }
+        public static Swap.Htmx.Realtime.SseChainBuilder OnEvent(this Swap.Htmx.Events.SwapEventBusOptions options, Swap.Htmx.Events.EventKey trigger) { }
+    }
+    [System.Obsolete("Use RealtimeEventMiddleware instead.")]
+    public sealed class SseEventMiddleware
+    {
+        public SseEventMiddleware(Microsoft.AspNetCore.Http.RequestDelegate next, Microsoft.Extensions.Logging.ILogger<Swap.Htmx.Realtime.SseEventMiddleware> logger) { }
+        public System.Threading.Tasks.Task InvokeAsync(Microsoft.AspNetCore.Http.HttpContext context) { }
+    }
+    public static class SseEvents
+    {
+        public static Swap.Htmx.Events.EventKey Broadcast(string eventName) { }
+        public static Swap.Htmx.Events.EventKey Filter(string eventName, string filterKey) { }
+        public static Swap.Htmx.Events.EventKey Roles(string eventName, params string[] roles) { }
+        public static Swap.Htmx.Events.EventKey Room(string room, string eventName) { }
+        public static Swap.Htmx.Realtime.SseRoomBuilder Rooms(params string[] rooms) { }
+        public static Swap.Htmx.Events.EventKey Subscribers(string eventName) { }
+        public static Swap.Htmx.Events.EventKey User(string eventName, string userId) { }
+        public static class Common
+        {
+            public static Swap.Htmx.Events.EventKey Activity { get; }
+            public static Swap.Htmx.Events.EventKey AdminAlert { get; }
+            public static Swap.Htmx.Events.EventKey Metrics { get; }
+            public static Swap.Htmx.Events.EventKey ModeratorNotification { get; }
+            public static Swap.Htmx.Events.EventKey Notification { get; }
+            public static Swap.Htmx.Events.EventKey Refresh { get; }
+            public static Swap.Htmx.Events.EventKey Toast { get; }
+            public static Swap.Htmx.Events.EventKey Update { get; }
+            public static Swap.Htmx.Events.EventKey UserNotification(string userId) { }
+            public static Swap.Htmx.Events.EventKey UserUpdate(string userId) { }
+        }
+    }
+    public static class SseFallbackExtensions
+    {
+        public static System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult> CachedPollingFallback(this Swap.Htmx.SwapController controller, string cacheKey, System.Func<System.Threading.Tasks.Task<string>> getContentFunc, System.TimeSpan? cacheDuration = default) { }
+        public static System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult> JsonPollingFallback<T>(this Swap.Htmx.SwapController controller, System.Func<string?, System.Threading.Tasks.Task<T?>> getDataFunc, string? lastEventId = null) { }
+        public static System.Threading.Tasks.Task<Microsoft.AspNetCore.Mvc.IActionResult> PollingFallback(this Swap.Htmx.SwapController controller, System.Func<string?, System.Threading.Tasks.Task<string>> getContentFunc, string? lastEventId = null) { }
+    }
+    public class SseFallbackOptions
+    {
+        public SseFallbackOptions() { }
+        public System.Collections.Generic.Dictionary<string, string> CustomHeaders { get; set; }
+        public bool DebugMode { get; set; }
+        public int DefaultPollInterval { get; set; }
+        public bool EnableFallback { get; set; }
+        public int FallbackAfterErrors { get; set; }
+        public int MaxSseRetries { get; set; }
+    }
+    public class SseMessage : System.IEquatable<Swap.Htmx.Realtime.SseMessage>
+    {
+        public SseMessage(string EventName, string Html, Swap.Htmx.Realtime.SseRecipientType RecipientType, string? RecipientValue = null, string[]? RecipientValues = null) { }
+        public string EventName { get; init; }
+        public string Html { get; init; }
+        public Swap.Htmx.Realtime.SseRecipientType RecipientType { get; init; }
+        public string? RecipientValue { get; init; }
+        public string[]? RecipientValues { get; init; }
+    }
+    public enum SseRecipientType
+    {
+        Broadcast = 0,
+        Room = 1,
+        User = 2,
+        Role = 3,
+        EventSubscription = 4,
+    }
+    public sealed class SseRoomBuilder
+    {
+        public Swap.Htmx.Events.EventKey Send(string eventName) { }
+    }
+    public class SseViewRenderer : Swap.Htmx.Realtime.ISseViewRenderer
+    {
+        public SseViewRenderer(Microsoft.AspNetCore.Mvc.Razor.IRazorViewEngine viewEngine, Microsoft.AspNetCore.Mvc.ViewFeatures.ITempDataProvider tempDataProvider, System.IServiceProvider serviceProvider, Microsoft.AspNetCore.Http.IHttpContextAccessor httpContextAccessor) { }
+        public System.Threading.Tasks.Task<string> RenderPartialAsync<TModel>(string viewName, TModel model) { }
+    }
+    public sealed class WebSocketConnection : Swap.Htmx.Realtime.IRealtimeConnection, System.IAsyncDisposable
+    {
+        public WebSocketConnection(string id, System.Net.WebSockets.WebSocket webSocket, Microsoft.AspNetCore.Http.HttpContext httpContext) { }
+        public System.DateTime ConnectedAt { get; }
+        public string Id { get; }
+        public bool IsActive { get; }
+        public System.Collections.Generic.IReadOnlyCollection<string> Rooms { get; }
+        public System.Collections.Generic.IReadOnlyCollection<string> SubscribedEvents { get; }
+        public System.Security.Claims.ClaimsPrincipal? User { get; }
+        public System.Threading.Tasks.ValueTask DisposeAsync() { }
+        public bool IsInRoom(string room) { }
+        public bool IsSubscribedToEvent(string eventName) { }
+        public void JoinRoom(string room) { }
+        public void LeaveRoom(string room) { }
+        public System.Threading.Tasks.Task SendEventAsync(string eventName, string data) { }
+        public void SubscribeToEvent(string eventName) { }
+        public void UnsubscribeFromEvent(string eventName) { }
+    }
+}
+namespace Swap.Htmx.Results
+{
+    public class SwapSseOptions
+    {
+        public SwapSseOptions() { }
+        public System.Collections.Generic.IEnumerable<string> AutoSubscribeEvents { get; set; }
+        public System.Collections.Generic.IEnumerable<string> AutoSubscribeRooms { get; set; }
+        public System.Func<Swap.Htmx.Realtime.SseConnection, string, System.Threading.Tasks.Task<bool>>? CanJoinRoom { get; set; }
+        public System.TimeSpan HeartbeatInterval { get; set; }
+        public System.Func<Swap.Htmx.Realtime.SseConnection, System.Threading.Tasks.Task>? OnConnected { get; set; }
+        public System.Func<string, System.Threading.Tasks.Task>? OnDisconnected { get; set; }
+    }
+    public class SwapSseResult : Microsoft.AspNetCore.Http.IResult
+    {
+        public SwapSseResult(Swap.Htmx.Realtime.ISseConnectionRegistry registry, System.Action<Swap.Htmx.Results.SwapSseOptions>? configure = null) { }
+        public System.Threading.Tasks.Task ExecuteAsync(Microsoft.AspNetCore.Http.HttpContext context) { }
+    }
+    public class SwapWebSocketOptions
+    {
+        public SwapWebSocketOptions() { }
+        public System.Collections.Generic.IEnumerable<string> AutoSubscribeEvents { get; set; }
+        public System.Collections.Generic.IEnumerable<string> AutoSubscribeRooms { get; set; }
+        public System.Func<Swap.Htmx.Realtime.WebSocketConnection, string, System.Threading.Tasks.Task<bool>>? CanJoinRoom { get; set; }
+        public System.Func<Swap.Htmx.Realtime.WebSocketConnection, System.Threading.Tasks.Task>? OnConnected { get; set; }
+        public System.Func<string, System.Threading.Tasks.Task>? OnDisconnected { get; set; }
+    }
+    public class SwapWebSocketResult : Microsoft.AspNetCore.Http.IResult
+    {
+        public SwapWebSocketResult(Swap.Htmx.Realtime.IRealtimeConnectionRegistry registry, System.Action<Swap.Htmx.Results.SwapWebSocketOptions>? configure = null) { }
+        public System.Threading.Tasks.Task ExecuteAsync(Microsoft.AspNetCore.Http.HttpContext context) { }
+    }
+}
+namespace Swap.Htmx
+{
+    public static class SwapHtmxBackplaneExtensions
+    {
+        public static Microsoft.Extensions.DependencyInjection.IServiceCollection AddInMemorySseBackplane(this Microsoft.Extensions.DependencyInjection.IServiceCollection services) { }
+    }
+    public abstract class SwapRealtimeController : Swap.Htmx.SwapController
+    {
+        protected SwapRealtimeController() { }
+        protected Microsoft.AspNetCore.Mvc.IActionResult ServerSentEvents(System.Func<Swap.Htmx.Realtime.ServerSentEventStream, System.Threading.CancellationToken, System.Threading.Tasks.Task> handler) { }
+        protected Microsoft.AspNetCore.Mvc.IActionResult ServerSentEvents(System.Func<Swap.Htmx.Realtime.SseConnectionBuilder, System.Threading.CancellationToken, System.Threading.Tasks.Task> handler) { }
+    }
+    public static class SwapRealtimeResults
+    {
+        public static Microsoft.AspNetCore.Http.IResult Sse(Swap.Htmx.Realtime.ISseConnectionRegistry registry, System.Action<Swap.Htmx.Results.SwapSseOptions>? configure = null) { }
+        public static Microsoft.AspNetCore.Http.IResult WebSocket(Swap.Htmx.Realtime.IRealtimeConnectionRegistry registry, System.Action<Swap.Htmx.Results.SwapWebSocketOptions>? configure = null) { }
+    }
+    public static class SwapRealtimeServiceExtensions
+    {
+        public static Microsoft.Extensions.DependencyInjection.IServiceCollection AddSseEventBridge(this Microsoft.Extensions.DependencyInjection.IServiceCollection services) { }
+        public static Microsoft.Extensions.DependencyInjection.IServiceCollection AddSseFallback(this Microsoft.Extensions.DependencyInjection.IServiceCollection services, System.Action<Swap.Htmx.Realtime.SseFallbackOptions>? configure = null) { }
+        public static Microsoft.AspNetCore.Builder.IApplicationBuilder UseSseEventBridge(this Microsoft.AspNetCore.Builder.IApplicationBuilder app) { }
+    }
+}
