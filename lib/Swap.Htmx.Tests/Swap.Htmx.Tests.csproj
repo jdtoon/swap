@@ -5,6 +5,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
+    <!-- Tests intentionally trigger arbitrary events; suppress SWAP001 noise. -->
+    <NoWarn>$(NoWarn);SWAP001</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
