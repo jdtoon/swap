@@ -1,8 +1,7 @@
-using System.Text;
-using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
-using Moq;
 using Swap.Htmx.Events;
 using Swap.Htmx.Realtime;
 using Xunit;
@@ -11,147 +10,172 @@ namespace Swap.Htmx.Tests.Realtime;
 
 public class RealtimeEventMiddlewareTests
 {
-    private static DefaultHttpContext CreateContext(ServiceProvider services)
+    private sealed class RecordingBridge : IRealtimeEventBridge
     {
-        var context = new DefaultHttpContext
+        public int Calls { get; private set; }
+        public string? LastEventName { get; private set; }
+        public object? LastPayload { get; private set; }
+        public bool ThrowOnCall { get; init; }
+
+        public Task HandleRealtimeEventAsync(string eventName, object? payload, CancellationToken cancellationToken = default)
         {
-            RequestServices = services,
-        };
-        context.Response.Body = new MemoryStream();
-        return context;
+            Calls++;
+            LastEventName = eventName;
+            LastPayload = payload;
+
+            if (ThrowOnCall)
+            {
+                throw new InvalidOperationException("boom");
+            }
+
+            return Task.CompletedTask;
+        }
     }
 
-    private static ServiceProvider BuildServices(Action<IServiceCollection>? configure = null)
+    private sealed class ThrowingRegistry : IRealtimeConnectionRegistry
     {
-        var services = new ServiceCollection();
+        public int BroadcastCalls { get; private set; }
 
-        services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
-        services.AddSingleton(new SwapEventBusOptions());
-        services.AddSingleton<ISwapEventBus>(sp =>
-            new SwapEventBus(
-                sp.GetRequiredService<IHttpContextAccessor>(),
-                sp.GetRequiredService<SwapEventBusOptions>(),
-                NullLogger<SwapEventBus>.Instance));
+        public void RegisterConnection(IRealtimeConnection connection) { }
 
-        configure?.Invoke(services);
+        public void UnregisterConnection(string connectionId) { }
 
-        return services.BuildServiceProvider();
+        public Task BroadcastAsync(string eventName, string html, CancellationToken ct = default)
+        {
+            BroadcastCalls++;
+            throw new InvalidOperationException("broadcast failed");
+        }
+
+        public Task BroadcastToRoomsAsync(string eventName, string html, IEnumerable<string> rooms, CancellationToken ct = default) => Task.CompletedTask;
+        public Task BroadcastToSubscribersAsync(string eventName, string html, CancellationToken ct = default) => Task.CompletedTask;
+        public Task BroadcastToFilteredAsync(string eventName, string data, Func<IRealtimeConnection, bool> filter, CancellationToken cancellationToken = default) => Task.CompletedTask;
+        public Task BroadcastToRolesAsync(string eventName, string html, IEnumerable<string> roles, CancellationToken ct = default) => Task.CompletedTask;
+        public Task BroadcastToUserAsync(string eventName, string html, string userId, CancellationToken ct = default) => Task.CompletedTask;
+
+        public IReadOnlyCollection<string> GetActiveConnectionIds() => Array.Empty<string>();
+
+        public RealtimeConnectionStats GetStats() => new(
+            TotalConnections: 0,
+            ActiveConnections: 0,
+            ConnectionsByRoom: new Dictionary<string, int>(),
+            SubscriptionsByEvent: new Dictionary<string, int>());
     }
 
-    private static async Task<string> ReadBodyAsync(HttpResponse response)
+    private sealed class StartedApp : IAsyncDisposable
     {
-        response.Body.Position = 0;
-        using var reader = new StreamReader(response.Body, Encoding.UTF8, detectEncodingFromByteOrderMarks: true, leaveOpen: true);
-        return await reader.ReadToEndAsync();
+        private readonly WebApplication _app;
+        public HttpClient Client { get; }
+
+        public StartedApp(WebApplication app)
+        {
+            _app = app;
+            Client = app.GetTestClient();
+        }
+
+        public async ValueTask DisposeAsync()
+        {
+            Client.Dispose();
+            await _app.DisposeAsync();
+        }
+    }
+
+    private static async Task<StartedApp> StartAppAsync(
+        Action<IServiceCollection> configureServices,
+        Action<WebApplication> configureApp)
+    {
+        var builder = WebApplication.CreateBuilder();
+        builder.WebHost.UseTestServer();
+
+        builder.Services.AddHttpContextAccessor();
+        builder.Services.AddSingleton(new SwapEventBusOptions());
+        builder.Services.AddScoped<ISwapEventBus>(sp => new SwapEventBus(
+            sp.GetRequiredService<Microsoft.AspNetCore.Http.IHttpContextAccessor>(),
+            sp.GetRequiredService<SwapEventBusOptions>(),
+            NullLogger<SwapEventBus>.Instance));
+
+        configureServices(builder.Services);
+
+        var app = builder.Build();
+        app.UseSseEventBridge();
+        configureApp(app);
+
+        await app.StartAsync();
+        return new StartedApp(app);
     }
 
     [Fact]
     public async Task InvokeAsync_BridgeMissing_DoesNotThrowAndResponseCompletes()
     {
-        // Arrange
-        var services = BuildServices();
-        var context = CreateContext(services);
-        (services.GetRequiredService<IHttpContextAccessor>() as HttpContextAccessor)!.HttpContext = context;
+        await using var app = await StartAppAsync(
+            configureServices: _ => { },
+            configureApp: app =>
+            {
+                app.MapGet("/test", (ISwapEventBus bus) =>
+                {
+                    bus.Emit(new EventKey("sse:broadcast:test-event"));
+                    return Microsoft.AspNetCore.Http.TypedResults.Text("ok");
+                });
+            });
 
-        var middleware = new RealtimeEventMiddleware(async ctx =>
-        {
-            // Emit a realtime-prefixed event (would normally be produced by SwapResponseBuilder triggers)
-            var bus = ctx.RequestServices.GetRequiredService<ISwapEventBus>();
-            bus.Emit(new EventKey("sse:broadcast:test-event"));
-
-            await ctx.Response.WriteAsync("ok");
-        }, NullLogger<RealtimeEventMiddleware>.Instance);
-
-        // Act
-        await middleware.InvokeAsync(context);
-
-        // Assert
-        Assert.Equal("ok", await ReadBodyAsync(context.Response));
-        Assert.Equal(StatusCodes.Status200OK, context.Response.StatusCode);
+        var body = await app.Client.GetStringAsync("/test");
+        Assert.Equal("ok", body);
     }
 
     [Fact]
     public async Task InvokeAsync_BridgeThrows_DoesNotThrowAndResponseCompletes()
     {
-        // Arrange
-        var bridge = new Mock<IRealtimeEventBridge>();
-        bridge
-            .Setup(b => b.HandleRealtimeEventAsync(It.IsAny<string>(), It.IsAny<object?>(), It.IsAny<CancellationToken>()))
-            .ThrowsAsync(new InvalidOperationException("boom"));
+        var bridge = new RecordingBridge { ThrowOnCall = true };
 
-        var services = BuildServices(sc =>
-        {
-            sc.AddSingleton<IRealtimeEventBridge>(bridge.Object);
-        });
+        await using var app = await StartAppAsync(
+            configureServices: services => services.AddSingleton<IRealtimeEventBridge>(bridge),
+            configureApp: app =>
+            {
+                app.MapGet("/test", (ISwapEventBus bus) =>
+                {
+                    bus.Emit(new EventKey("sse:broadcast:test-event"), new { id = 123 });
+                    return Microsoft.AspNetCore.Http.TypedResults.Text("ok");
+                });
+            });
 
-        var context = CreateContext(services);
-        (services.GetRequiredService<IHttpContextAccessor>() as HttpContextAccessor)!.HttpContext = context;
-
-        var middleware = new RealtimeEventMiddleware(async ctx =>
-        {
-            var bus = ctx.RequestServices.GetRequiredService<ISwapEventBus>();
-            bus.Emit(new EventKey("sse:broadcast:test-event"), new { id = 123 });
-            await ctx.Response.WriteAsync("ok");
-        }, NullLogger<RealtimeEventMiddleware>.Instance);
-
-        // Act
-        await middleware.InvokeAsync(context);
-
-        // Assert
-        Assert.Equal("ok", await ReadBodyAsync(context.Response));
-        bridge.Verify(b => b.HandleRealtimeEventAsync(
-            "sse:broadcast:test-event",
-            It.IsAny<object?>(),
-            It.IsAny<CancellationToken>()), Times.Once);
+        var body = await app.Client.GetStringAsync("/test");
+        Assert.Equal("ok", body);
+        Assert.Equal(1, bridge.Calls);
+        Assert.Equal("sse:broadcast:test-event", bridge.LastEventName);
     }
 
     [Fact]
     public async Task InvokeAsync_BroadcastFailure_DoesNotBreakHttpResponse()
     {
-        // Arrange: a real bridge that fails during broadcast
-        var registry = new Mock<IRealtimeConnectionRegistry>();
-        registry
-            .Setup(r => r.BroadcastAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ThrowsAsync(new InvalidOperationException("broadcast failed"));
+        var registry = new ThrowingRegistry();
 
-        var viewRenderer = new Mock<ISseViewRenderer>();
-        viewRenderer
-            .Setup(v => v.RenderPartialAsync(It.IsAny<string>(), It.IsAny<object>()))
-            .ReturnsAsync("<div />");
+        await using var app = await StartAppAsync(
+            configureServices: services =>
+            {
+                services.AddSingleton<IRealtimeConnectionRegistry>(registry);
+                services.AddSingleton<ISseViewRenderer>(new StubSseViewRenderer());
+                services.AddScoped<IRealtimeEventBridge>(sp => new RealtimeEventBridge(
+                    sp.GetRequiredService<IRealtimeConnectionRegistry>(),
+                    sp,
+                    sp.GetRequiredService<SwapEventBusOptions>(),
+                    NullLogger<RealtimeEventBridge>.Instance,
+                    sp.GetRequiredService<ISseViewRenderer>()));
+            },
+            configureApp: app =>
+            {
+                app.MapGet("/test", (ISwapEventBus bus) =>
+                {
+                    bus.Emit(new EventKey("sse:broadcast:test-event"));
+                    return Microsoft.AspNetCore.Http.TypedResults.Text("ok");
+                });
+            });
 
-        var options = new SwapEventBusOptions();
+        var body = await app.Client.GetStringAsync("/test");
+        Assert.Equal("ok", body);
+        Assert.Equal(1, registry.BroadcastCalls);
+    }
 
-        var services = BuildServices(sc =>
-        {
-            sc.AddSingleton(options);
-            sc.AddSingleton<IRealtimeConnectionRegistry>(registry.Object);
-            sc.AddSingleton<ISseViewRenderer>(viewRenderer.Object);
-            sc.AddSingleton<IRealtimeEventBridge>(sp => new RealtimeEventBridge(
-                sp.GetRequiredService<IRealtimeConnectionRegistry>(),
-                sp,
-                sp.GetRequiredService<SwapEventBusOptions>(),
-                NullLogger<RealtimeEventBridge>.Instance,
-                sp.GetRequiredService<ISseViewRenderer>()));
-        });
-
-        var context = CreateContext(services);
-        (services.GetRequiredService<IHttpContextAccessor>() as HttpContextAccessor)!.HttpContext = context;
-
-        var middleware = new RealtimeEventMiddleware(async ctx =>
-        {
-            var bus = ctx.RequestServices.GetRequiredService<ISwapEventBus>();
-            bus.Emit(new EventKey("sse:broadcast:test-event"));
-            await ctx.Response.WriteAsync("ok");
-        }, NullLogger<RealtimeEventMiddleware>.Instance);
-
-        // Act
-        await middleware.InvokeAsync(context);
-
-        // Assert
-        Assert.Equal("ok", await ReadBodyAsync(context.Response));
-        registry.Verify(r => r.BroadcastAsync(
-            "test-event",
-            It.IsAny<string>(),
-            It.IsAny<CancellationToken>()), Times.Once);
+    private sealed class StubSseViewRenderer : ISseViewRenderer
+    {
+        public Task<string> RenderPartialAsync<TModel>(string viewName, TModel model) => Task.FromResult("<div />");
     }
 }
