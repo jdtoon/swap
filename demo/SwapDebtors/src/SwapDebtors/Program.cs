@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Swap.Htmx;
+using Swap.Htmx.Realtime;
 using SwapDebtors.Data;
 using SwapDebtors.Events;
 using SwapDebtors.Services;
@@ -43,7 +44,11 @@ builder.Services.AddSwapHtmx(options =>
     // Register event configurations
     options.AddConfig<DebtorEventConfig>();
     options.AddConfig<DebtEventConfig>();
+    options.AddConfig<ActivityEventConfig>();
 });
+
+// Enable enhanced SSE (connection registry + automatic event-driven broadcasting)
+builder.Services.AddSseEventBridge();
 
 var app = builder.Build();
 
@@ -69,6 +74,9 @@ app.UseSession();
 // Swap.Htmx middleware
 app.UseSwapHtmx();
 
+// Broadcast any resolved sse:/realtime: events after responses
+app.UseSseEventBridge();
+
 app.UseAuthorization();
 
 app.MapControllerRoute(
@@ -76,20 +84,13 @@ app.MapControllerRoute(
     pattern: "{controller=Dashboard}/{action=Index}/{id?}");
 
 // SSE endpoint for activity stream
-app.MapGet("/api/activity-stream", async (HttpContext context, CancellationToken ct) =>
-{
-    context.Response.Headers.Append("Content-Type", "text/event-stream");
-    context.Response.Headers.Append("Cache-Control", "no-cache");
-    context.Response.Headers.Append("Connection", "keep-alive");
-    
-    // Keep connection open and send heartbeats
-    while (!ct.IsCancellationRequested)
+app.MapGet("/api/activity-stream", (ISseConnectionRegistry registry) =>
+    SwapResults.Sse(registry, opts =>
     {
-        await context.Response.WriteAsync($": heartbeat\n\n", ct);
-        await context.Response.Body.FlushAsync(ct);
-        await Task.Delay(30000, ct); // 30 second heartbeat
-    }
-});
+        // Dashboard listens for this event name via htmx-ext-sse
+        opts.AutoSubscribeEvents = new[] { DashboardEvents.ActivityLogged };
+        opts.HeartbeatInterval = TimeSpan.FromSeconds(15);
+    }));
 
 app.Run();
 

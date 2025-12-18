@@ -5,7 +5,6 @@ using Swap.Htmx.Extensions;
 using Swap.Htmx.State;
 using SwapDebtors.Data;
 using SwapDebtors.Events;
-using SwapDebtors.Handlers;
 using SwapDebtors.Models;
 using SwapDebtors.Services;
 
@@ -66,6 +65,9 @@ public class DebtsController : SwapController
 
     private async Task<(List<Debt> Items, int TotalCount)> FilterDebtsAsync(DebtFilterState state)
     {
+        state.PageSize = Math.Clamp(state.PageSize, 1, 100);
+        state.Page = Math.Max(1, state.Page);
+
         var query = _db.Debts.Include(d => d.Debtor).AsQueryable();
 
         // Search filter
@@ -102,6 +104,12 @@ public class DebtsController : SwapController
         };
 
         var totalCount = await query.CountAsync();
+        var totalPages = (int)Math.Ceiling(totalCount / (double)state.PageSize);
+        if (totalPages > 0)
+        {
+            state.Page = Math.Min(state.Page, totalPages);
+        }
+
         var items = await query
             .Skip((state.Page - 1) * state.PageSize)
             .Take(state.PageSize)
@@ -236,16 +244,18 @@ public class DebtsController : SwapController
     [HttpPost]
     public async Task<IActionResult> Delete(int id)
     {
-        var debt = await _db.Debts.FindAsync(id);
+        var debt = await _db.Debts.Include(d => d.Debtor).FirstOrDefaultAsync(d => d.Id == id);
         if (debt == null) return NotFound();
 
         var amount = debt.Amount;
+        var currency = debt.Currency;
+        var debtorName = debt.Debtor?.Name;
         _db.Debts.Remove(debt);
         await _db.SaveChangesAsync();
 
         return (await SwapEventAsync(
             DebtEvents.Debt.Deleted,
-            new DebtDeletedEvent { Id = id, Amount = amount }))
+            new DebtDeletedEvent { Id = id, Amount = amount, Currency = currency, DebtorName = debtorName }))
             .Build();
     }
 

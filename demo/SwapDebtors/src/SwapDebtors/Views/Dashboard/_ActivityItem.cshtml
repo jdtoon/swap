@@ -1,7 +1,7 @@
-@using SwapDebtors.Handlers
+@using SwapDebtors.Models
 @model ActivityItem
 @{
-    var item = Model ?? new ActivityItem();
+    var item = Model ?? new ActivityItem(string.Empty, "📌", DateTime.UtcNow);
 }
 
 <div class="activity-item">

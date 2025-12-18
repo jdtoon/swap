@@ -1,6 +1,7 @@
 using Swap.Htmx;
 using Swap.Htmx.Events;
 using Swap.Htmx.Extensions;
+using Swap.Htmx.Realtime;
 using SwapDebtors.Data;
 using Microsoft.EntityFrameworkCore;
 
@@ -15,6 +16,11 @@ public class DebtEventConfig : ISwapEventConfiguration
 {
     public void Configure(SwapEventBusOptions config)
     {
+        // Realtime: forward domain events into the dashboard activity SSE stream.
+        config.OnEvent(DebtEvents.Debt.Created).ToSubscribers(DashboardEvents.ActivityLogged);
+        config.OnEvent(DebtEvents.Debt.Paid).ToSubscribers(DashboardEvents.ActivityLogged);
+        config.OnEvent(DebtEvents.Debt.Deleted).ToSubscribers(DashboardEvents.ActivityLogged);
+
         config.When(DebtEvents.Debt.Created)
             .RefreshPartial(SwapElements.RecentDebts, SwapViews.Dashboard._RecentDebts, ctx =>
             {

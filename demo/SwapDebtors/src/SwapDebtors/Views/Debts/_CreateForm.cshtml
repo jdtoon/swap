@@ -22,8 +22,7 @@
                     <option value="">Select a debtor...</option>
                     @foreach (var debtor in debtors)
                     {
-                        <option value="@debtor.Id" 
-                                selected="@(debtor.Id == selectedDebtorId)">
+                        <option value="@debtor.Id" selected="@(debtor.Id == selectedDebtorId ? "selected" : null)">
                             @debtor.Name
                         </option>
                     }
@@ -47,8 +46,7 @@
                     <select name="Currency">
                         @foreach (var currency in currencies)
                         {
-                            <option value="@currency" 
-                                    selected="@(currency == (Model?.Currency ?? "USD"))">
+                            <option value="@currency" selected="@(currency == (Model?.Currency ?? "USD") ? "selected" : null)">
                                 @currency
                             </option>
                         }

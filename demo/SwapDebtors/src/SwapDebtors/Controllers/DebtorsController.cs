@@ -5,7 +5,6 @@ using Swap.Htmx.Extensions;
 using Swap.Htmx.State;
 using SwapDebtors.Data;
 using SwapDebtors.Events;
-using SwapDebtors.Handlers;
 using SwapDebtors.Models;
 
 namespace SwapDebtors.Controllers;
@@ -59,6 +58,9 @@ public class DebtorsController : SwapController
 
     private async Task<(List<Debtor> Items, int TotalCount)> FilterDebtorsAsync(DebtorFilterState state)
     {
+        state.PageSize = Math.Clamp(state.PageSize, 1, 100);
+        state.Page = Math.Max(1, state.Page);
+
         var query = _db.Debtors.Include(d => d.Debts).AsQueryable();
 
         // Search filter
@@ -81,6 +83,12 @@ public class DebtorsController : SwapController
         };
 
         var totalCount = await query.CountAsync();
+        var totalPages = (int)Math.Ceiling(totalCount / (double)state.PageSize);
+        if (totalPages > 0)
+        {
+            state.Page = Math.Min(state.Page, totalPages);
+        }
+
         var items = await query
             .Skip((state.Page - 1) * state.PageSize)
             .Take(state.PageSize)
