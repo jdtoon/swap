@@ -56,6 +56,10 @@ libman restore
 dotnet run
 ```
 
+Notes:
+- `libman restore` is required to download client libraries (htmx and, if enabled, the htmx SSE extension).
+- If you enable `--IncludeSse`, the template also wires up the server-side SSE event bridge.
+
 ## Template Options
 
 ### swap-modular

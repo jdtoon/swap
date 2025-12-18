@@ -46,15 +46,27 @@ public class StatsHandler : ISwapEventHandler<TaskEvent>
 # Install the template
 dotnet new install Swap.Templates
 
-# Create a new project
-dotnet new swap-mvc -n MyApp
-cd MyApp
+# Create a new project (recommended)
+dotnet new swap-modular -n MyApp
+cd MyApp/src
+
+# Restore client libraries (htmx, optional SSE extension)
+libman restore
 
 # Run it
 dotnet run
 ```
 
 Open `http://localhost:5000` — you're server-driven.
+
+Prefer a minimal starting point?
+
+```bash
+dotnet new swap-mvc -n MyApp
+cd MyApp
+libman restore
+dotnet run
+```
 
 ---
 

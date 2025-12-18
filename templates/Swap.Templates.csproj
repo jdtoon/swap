@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <PackageType>Template</PackageType>
-    <PackageVersion>1.0.0</PackageVersion>
+    <PackageVersion>1.0.1</PackageVersion>
     <PackageId>Swap.Templates</PackageId>
     <Title>Swap.Htmx Templates</Title>
     <Authors>jdtoon</Authors>
