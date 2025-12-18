@@ -184,7 +184,9 @@ builder.Services.AddSwapHtmx(events =>
     events.When(CartEvents.ItemAdded)
           .RefreshPartial(CartElements.Dropdown, ctx => RenderCart(ctx))
           .RefreshPartial(CartElements.Badge, ctx => RenderBadge(ctx))
-          .BroadcastSse(SseEvents.Room(SseRooms.Shopping, CartSseEvents.Update));
+
+     // Realtime: chain the domain event to an SSE broadcast key
+     events.ChainToSse(CartEvents.ItemAdded, SseEvents.Room(SseRooms.Shopping, CartSseEvents.Update));
 });
 ```
 

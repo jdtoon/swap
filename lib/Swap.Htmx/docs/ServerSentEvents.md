@@ -51,9 +51,31 @@ public IActionResult CreateTask(TaskInput input)
     
     return SwapResponse()
         .WithView("_Task", task)
-        .BroadcastSse(DashboardEvents.StatsUpdate)  // All clients update!
+        .WithTrigger(DashboardEvents.StatsUpdate)  // Event chain handles both HTTP + realtime
         .Build();
 }
+```
+
+Enable realtime broadcasting for that event in your event configuration:
+
+```csharp
+// Program.cs
+builder.Services
+    .AddSwapHtmx(events =>
+    {
+        events.When(DashboardEvents.StatsUpdate)
+              .RefreshPartial("stats", "_Stats", ctx =>
+              {
+                  var stats = ctx.RequestServices.GetRequiredService<IStatsService>();
+                  return stats.GetCurrent();
+              })
+              .Broadcast(); // sends to all connected SSE clients
+    })
+    .AddSseEventBridge();
+
+// Pipeline
+app.UseSwapHtmx();
+app.UseSseEventBridge();
 ```
 
 ---
@@ -96,7 +118,7 @@ Browser A          Server           Browser B
     │                 │                 │
     │ POST /tasks     │                 │
     ├────────────────>│                 │
-    │                 │ BroadcastSse()  │
+    │                 │ WithTrigger()   │
     │                 │                 │
     │ SSE: stats HTML │                 │
     │<────────────────┤                 │
@@ -120,11 +142,27 @@ return ServerSentEvents(async (conn, ct) =>
     await conn.KeepAlive(TimeSpan.FromSeconds(30), ct);
 });
 
-// Broadcast to room only
-return SwapResponse()
-    .WithView("_Task", task)
-    .BroadcastSse(ProjectEvents.TaskUpdated, room: $"project-{projectId}")
-    .Build();
+// Option A (simple): use event name == trigger name and broadcast to one room
+// Configure:
+// events.When(ProjectEvents.TaskUpdated).Broadcast(target: $"room:project-{projectId}");
+// Note: room name must be known at configuration time.
+
+// Option B (dynamic): broadcast directly via the registry
+public sealed class TaskController : Controller
+{
+    private readonly ISseConnectionRegistry _sse;
+
+    public TaskController(ISseConnectionRegistry sse) => _sse = sse;
+
+    [HttpPost]
+    public async Task<IActionResult> UpdateTask(TaskInput input)
+    {
+        var task = _service.Update(input);
+        var html = await this.RenderPartialToStringAsync("_Task", task);
+        await _sse.BroadcastToRoomsAsync(ProjectEvents.TaskUpdated.Name, html, new[] { $"project-{input.ProjectId}" });
+        return Ok();
+    }
+}
 ```
 
 ---
@@ -134,10 +172,8 @@ return SwapResponse()
 Send to a specific user across all their connections:
 
 ```csharp
-return SwapResponse()
-    .WithView("_Notification", notification)
-    .BroadcastSseToUser(userId, NotificationEvents.New)
-    .Build();
+// User targeting is best done via the registry (userId can be dynamic)
+await _sse.BroadcastToUserAsync(NotificationEvents.New.Name, html, userId);
 ```
 
 ---

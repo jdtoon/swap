@@ -53,9 +53,9 @@ Once configured, the backplane works transparently. You use the standard `ISseEv
 ```csharp
 public class HomeController : Controller
 {
-    private readonly ISseEventBridge _sse;
+  private readonly ISseConnectionRegistry _sse;
 
-    public HomeController(ISseEventBridge sse)
+  public HomeController(ISseConnectionRegistry sse)
     {
         _sse = sse;
     }
@@ -64,7 +64,7 @@ public class HomeController : Controller
     public async Task<IActionResult> Broadcast()
     {
         // This event will be received by clients connected to ANY server instance
-        await _sse.BroadcastAsync("sse:broadcast:my-event", "<div>Content</div>");
+      await _sse.BroadcastAsync("my-event", "<div>Content</div>");
         return Ok();
     }
 }
