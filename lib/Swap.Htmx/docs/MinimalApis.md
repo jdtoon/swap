@@ -13,6 +13,10 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllersWithViews();
 builder.Services.AddSwapHtmx();
 
+// Optional: realtime (SSE/WebSockets)
+// Requires package Swap.Htmx.Realtime
+// builder.Services.AddSseEventBridge();
+
 var app = builder.Build();
 
 // ... middleware setup ...
@@ -21,6 +25,8 @@ var app = builder.Build();
 ## Basic Usage
 
 Use the `SwapResults` static class to create responses. This is the Minimal API equivalent of the `this.SwapResponse()` extension method used in Controllers.
+
+> Note: realtime endpoints use `SwapRealtimeResults` (in `Swap.Htmx.Realtime`).
 
 ### Returning a View
 

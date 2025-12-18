@@ -17,6 +17,13 @@ Build interactive web apps with server-rendered HTML. No JavaScript frameworks, 
 dotnet add package Swap.Htmx
 ```
 
+Optional (realtime + Redis):
+
+```bash
+dotnet add package Swap.Htmx.Realtime
+dotnet add package Swap.Htmx.Realtime.Redis
+```
+
 ### 2. Setup (Program.cs)
 
 ```csharp

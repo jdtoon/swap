@@ -7,6 +7,7 @@ Use this as the “golden path” when generating Swap.Htmx code. Prefer correct
 ============================================================
 
 1. Controllers: inherit `SwapController`.
+    - Realtime SSE endpoints: inherit `SwapRealtimeController` (from `Swap.Htmx.Realtime`).
 2. Views: return `SwapView()` (not `View()`).
 3. Multi-target updates: return `SwapResponse()` + `.AlsoUpdate(...)` + `.Build()`.
 4. No magic strings:
@@ -37,7 +38,7 @@ builder.Services.AddSwapHtmx(events =>
         // events.When(MyEvents.SomethingHappened)
         //       .Broadcast(); // SSE/WebSocket clients
 })
-.AddSseEventBridge(); // optional (only if you want realtime)
+.AddSseEventBridge(); // optional (only if you want realtime; requires Swap.Htmx.Realtime)
 ```
 
 Pipeline:
@@ -46,7 +47,7 @@ Pipeline:
 app.UseStaticFiles();
 app.UseRouting();
 app.UseSwapHtmx();
-app.UseSseEventBridge(); // optional, requires AddSseEventBridge()
+app.UseSseEventBridge(); // optional, requires AddSseEventBridge() + Swap.Htmx.Realtime
 app.MapControllers();
 ```
 
@@ -177,6 +178,8 @@ public IActionResult Stream()
                 await conn.KeepAlive(cancellationToken: ct);
         });
 }
+
+> `SwapRealtimeController` lives in the `Swap.Htmx.Realtime` package.
 ```
 
 Step C — Connect from the view

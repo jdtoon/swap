@@ -17,6 +17,12 @@ cd MyApp
 dotnet add package Swap.Htmx
 ```
 
+Optional (realtime):
+
+```bash
+dotnet add package Swap.Htmx.Realtime
+```
+
 ### 2. Configure (Program.cs)
 
 ```csharp
@@ -24,10 +30,16 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllersWithViews();
 builder.Services.AddSwapHtmx();  // Add this
 
+// Optional: realtime (SSE/WebSockets)
+// builder.Services.AddSseEventBridge();
+
 var app = builder.Build();
 app.UseStaticFiles();
 app.UseRouting();
 app.UseSwapHtmx();              // Add this
+
+// Optional: realtime (requires Swap.Htmx.Realtime)
+// app.UseSseEventBridge();
 app.MapControllers();
 app.Run();
 ```
