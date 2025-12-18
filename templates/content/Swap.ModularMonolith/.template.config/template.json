@@ -11,6 +11,10 @@
   },
   "sourceName": "SwapModularMonolith",
   "preferNameDirectory": true,
+  "primaryOutputs": [
+    { "path": "src/SwapModularMonolith.csproj" },
+    { "path": "SwapModularMonolith.sln" }
+  ],
   "symbols": {
     "UseLocalRef": {
       "type": "parameter",
@@ -39,10 +43,79 @@
     {
       "modifiers": [
         {
+          "condition": "IncludeSse",
+          "exclude": [
+            "src/libman.json"
+          ],
+          "rename": {
+            "src/libman.Sse.json": "src/libman.json"
+          }
+        },
+        {
+          "condition": "!IncludeSse",
+          "exclude": [
+            "src/libman.Sse.json"
+          ]
+        },
+        {
           "condition": "SkipSampleModule",
           "exclude": [
-            "src/Modules/Notes/**/*"
+            "src/Modules/Notes/**/*",
+            "tests/NotesControllerTests.cs",
+            "src/Views/_ViewImports.cshtml"
+          ],
+          "rename": {
+            "src/Views/_ViewImports.NoNotes.cshtml": "src/Views/_ViewImports.cshtml"
+          }
+        },
+        {
+          "condition": "!SkipSampleModule && !IncludeSse",
+          "exclude": [
+            "src/Views/Shared/_Layout.NoNotes.cshtml",
+            "src/Views/Shared/_Layout.Sse.cshtml",
+            "src/Views/Shared/_Layout.Sse.NoNotes.cshtml",
+            "src/Views/Home/Index.NoNotes.cshtml",
+            "src/Views/_ViewImports.NoNotes.cshtml"
           ]
+        },
+        {
+          "condition": "!SkipSampleModule && IncludeSse",
+          "exclude": [
+            "src/Views/Shared/_Layout.cshtml",
+            "src/Views/Shared/_Layout.NoNotes.cshtml",
+            "src/Views/Shared/_Layout.Sse.NoNotes.cshtml",
+            "src/Views/Home/Index.NoNotes.cshtml",
+            "src/Views/_ViewImports.NoNotes.cshtml"
+          ],
+          "rename": {
+            "src/Views/Shared/_Layout.Sse.cshtml": "src/Views/Shared/_Layout.cshtml"
+          }
+        },
+        {
+          "condition": "SkipSampleModule && !IncludeSse",
+          "exclude": [
+            "src/Views/Shared/_Layout.cshtml",
+            "src/Views/Shared/_Layout.Sse.cshtml",
+            "src/Views/Shared/_Layout.Sse.NoNotes.cshtml",
+            "src/Views/Home/Index.cshtml"
+          ],
+          "rename": {
+            "src/Views/Shared/_Layout.NoNotes.cshtml": "src/Views/Shared/_Layout.cshtml",
+            "src/Views/Home/Index.NoNotes.cshtml": "src/Views/Home/Index.cshtml"
+          }
+        },
+        {
+          "condition": "SkipSampleModule && IncludeSse",
+          "exclude": [
+            "src/Views/Shared/_Layout.cshtml",
+            "src/Views/Shared/_Layout.NoNotes.cshtml",
+            "src/Views/Shared/_Layout.Sse.cshtml",
+            "src/Views/Home/Index.cshtml"
+          ],
+          "rename": {
+            "src/Views/Shared/_Layout.Sse.NoNotes.cshtml": "src/Views/Shared/_Layout.cshtml",
+            "src/Views/Home/Index.NoNotes.cshtml": "src/Views/Home/Index.cshtml"
+          }
         }
       ]
     }
@@ -52,12 +125,6 @@
       "description": "Restore NuGet packages",
       "manualInstructions": [{ "text": "Run 'dotnet restore'" }],
       "actionId": "210D431B-A78B-4D2F-B762-4ED3E3EA9025",
-      "continueOnError": true
-    },
-    {
-      "description": "Restore LibMan packages",
-      "manualInstructions": [{ "text": "Run 'libman restore' in the src folder" }],
-      "actionId": "3A7C4B45-1F5D-4A10-9F28-8D3E4E4F7B85",
       "continueOnError": true
     }
   ]

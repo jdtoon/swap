@@ -11,6 +11,9 @@
   },
   "sourceName": "SwapMvc",
   "preferNameDirectory": true,
+  "primaryOutputs": [
+    { "path": "SwapMvc.csproj" }
+  ],
   "symbols": {
     "UseLocalRef": {
       "type": "parameter",
@@ -24,5 +27,37 @@
       "description": "Include HTMX SSE extension",
       "defaultValue": "false"
     }
-  }
+  },
+  "sources": [
+    {
+      "modifiers": [
+        {
+          "condition": "IncludeSse",
+          "exclude": [
+            "libman.json",
+            "Views/Shared/_Layout.cshtml"
+          ],
+          "rename": {
+            "libman.Sse.json": "libman.json",
+            "Views/Shared/_Layout.Sse.cshtml": "Views/Shared/_Layout.cshtml"
+          }
+        },
+        {
+          "condition": "!IncludeSse",
+          "exclude": [
+            "libman.Sse.json",
+            "Views/Shared/_Layout.Sse.cshtml"
+          ]
+        }
+      ]
+    }
+  ],
+  "postActions": [
+    {
+      "description": "Restore NuGet packages",
+      "manualInstructions": [{ "text": "Run 'dotnet restore'" }],
+      "actionId": "210D431B-A78B-4D2F-B762-4ED3E3EA9025",
+      "continueOnError": true
+    }
+  ]
 }
