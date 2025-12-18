@@ -9,6 +9,7 @@ Welcome to the Swap.Htmx documentation. These guides will help you build reactiv
 | I want to... | Read this |
 |--------------|-----------|
 | Get started with Swap.Htmx | [Getting Started](GettingStarted.md) |
+| Understand what APIs are stable | [Public API & Compatibility](PublicApiAndCompatibility.md) |
 | Clean navigation without boilerplate | [`<swap-nav>` Tag Helper](SwapNavTagHelper.md) ⭐ NEW |
 | Navigate programmatically with toasts | [Navigation](Navigation.md) |
 | Auto-generate view/element constants | [Auto-Scan Generator](AutoScanGenerator.md) ⭐ NEW |
