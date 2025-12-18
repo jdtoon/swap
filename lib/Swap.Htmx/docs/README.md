@@ -13,6 +13,7 @@ Welcome to the Swap.Htmx documentation. These guides will help you build reactiv
 | Secure my app (CSRF/SSE/Auth) | [Security Checklist](SecurityChecklist.md) |
 | Clean navigation without boilerplate | [`<swap-nav>` Tag Helper](SwapNavTagHelper.md) ⭐ NEW |
 | Navigate programmatically with toasts | [Navigation](Navigation.md) |
+| Understand `SwapController` sharp edges | [SwapController Sharp Edges](SwapControllerSharpEdges.md) |
 | Auto-generate view/element constants | [Auto-Scan Generator](AutoScanGenerator.md) ⭐ NEW |
 | Migrate an existing MVC app | [Migration Guide](MigrationGuide.md) |
 | Build complex multi-component UIs | [Multi-Component Coordination](MultiComponentCoordination.md) |
@@ -23,6 +24,7 @@ Welcome to the Swap.Htmx documentation. These guides will help you build reactiv
 | Understand state patterns | [State Management](StateManagement.md) |
 | Avoid common mistakes | [Anti-Patterns](AntiPatterns.md) |
 | Use events and triggers | [Events Guide](Events.md) |
+| Avoid breaking trigger payloads | [Typed Payloads](TypedPayloads.md) |
 | Understand event naming and realtime routing | [Event Naming & Realtime Routing](EventNamingAndRouting.md) |
 | Set up real-time updates | [Realtime Overview](Realtime.md) |
 | Understand realtime lifecycle & guarantees | [Realtime Bridge Behavior](RealtimeBridgeBehavior.md) |

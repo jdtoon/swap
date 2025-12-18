@@ -61,7 +61,7 @@ public class CartController : SwapController
         var product = _productService.GetById(productId);
         if (product == null || product.Stock < quantity)
         {
-            return SwapEvent(CartEvents.AddFailed, new { ProductId = productId, Reason = "Product not available" }).Build();
+            return SwapEvent(CartEvents.AddFailed, new CartEventPayloads.AddFailed(productId, "Product not available")).Build();
         }
 
         var sessionId = SessionId;
@@ -84,7 +84,7 @@ public class CartController : SwapController
         var product = _productService.GetById(productId);
         if (product == null || quantity > product.Stock)
         {
-            return SwapEvent(CartEvents.UpdateFailed, new { ProductId = productId, RequestedQuantity = quantity }).Build();
+            return SwapEvent(CartEvents.UpdateFailed, new CartEventPayloads.UpdateFailed(productId, quantity)).Build();
         }
 
         _cartService.UpdateQuantity(SessionId, productId, quantity);
