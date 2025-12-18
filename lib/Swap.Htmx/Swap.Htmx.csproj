@@ -4,14 +4,14 @@
     <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <Version>1.0.6</Version>
+    <Version>1.1.0</Version>
     <Authors>jdtoon</Authors>
     <Company>Swap</Company>
-    <Description>HTMX helper library for ASP.NET Core MVC applications. Provides SwapController base class, middleware, event helpers, SSE support, and extension methods for seamless HTMX integration.</Description>
+    <Description>HTMX helper library for ASP.NET Core MVC applications. Provides SwapController base class, middleware, event helpers, and extension methods for seamless HTMX integration. (Realtime features moved to Swap.Htmx.Realtime.)</Description>
     <PackageProjectUrl>https://github.com/jdtoon/swap</PackageProjectUrl>
     <RepositoryUrl>https://github.com/jdtoon/swap</RepositoryUrl>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <PackageTags>htmx;aspnetcore;mvc;swap;controller;middleware;sse;events</PackageTags>
+    <PackageTags>htmx;aspnetcore;mvc;swap;controller;middleware;events</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <AddRazorSupportForMvc>true</AddRazorSupportForMvc>
     <GenerateEmbeddedFilesManifest>true</GenerateEmbeddedFilesManifest>
@@ -44,8 +44,14 @@
     <None Include="build\Swap.Htmx.targets" Pack="true" PackagePath="build\" />
   </ItemGroup>
 
+  <!-- Exclude moved sources (now live in Swap.Htmx.Realtime / Swap.Htmx.Realtime.Redis packages). -->
   <ItemGroup>
-    <PackageReference Include="StackExchange.Redis" Version="2.10.1" />
+    <Compile Remove="Realtime\**\*.cs" />
+    <Compile Remove="Results\SwapSseResult.cs" />
+    <Compile Remove="Results\SwapWebSocketResult.cs" />
+    <Compile Remove="Extensions\SwapHtmxBackplaneExtensions.cs" />
+    <Compile Remove="Extensions\SwapRedisExtensions.cs" />
+    <Compile Remove="Dev\Controllers\SseFallbackExampleController.cs" />
   </ItemGroup>
 
 

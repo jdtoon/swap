@@ -10,7 +10,6 @@ using Microsoft.Extensions.Logging;
 using Swap.Htmx.Events;
 using Swap.Htmx.Models;
 using Swap.Htmx.Results;
-using Swap.Htmx.Realtime;
 using Swap.Htmx.Services;
 
 namespace Swap.Htmx;
@@ -252,67 +251,6 @@ public abstract class SwapController : Controller
         {
             throw new InvalidOperationException($"Action method '{actionName}' did not return IActionResult");
         }
-    }
-
-    /// <summary>
-    /// Creates a Server-Sent Events (SSE) connection for streaming real-time HTML updates to the client.
-    /// Use with HTMX's hx-sse attribute to receive live updates.
-    /// </summary>
-    /// <param name="handler">The async function that streams events using the ServerSentEventStream.</param>
-    /// <returns>An IActionResult that establishes and maintains an SSE connection.</returns>
-    /// <example>
-    /// <code>
-    /// public IActionResult LiveFeed()
-    /// {
-    ///     return ServerSentEvents(async (stream, ct) =>
-    ///     {
-    ///         // Send initial state
-    ///         await stream.SendEventAsync("initial", "&lt;div&gt;Connected&lt;/div&gt;");
-    ///         
-    ///         // Stream updates periodically
-    ///         while (!ct.IsCancellationRequested)
-    ///         {
-    ///             await Task.Delay(1000, ct);
-    ///             var html = $"&lt;div&gt;Update at {DateTime.Now}&lt;/div&gt;";
-    ///             await stream.SendEventAsync("update", html);
-    ///         }
-    ///     });
-    /// }
-    /// </code>
-    /// </example>
-    protected IActionResult ServerSentEvents(Func<ServerSentEventStream, CancellationToken, Task> handler)
-    {
-        var logger = HttpContext.RequestServices.GetService<ILogger<ServerSentEventsResult>>();
-        return new ServerSentEventsResult(handler, logger);
-    }
-
-    /// <summary>
-    /// Creates an enhanced SSE connection with connection management, rooms, and event filtering.
-    /// This version integrates with the SSE event bridge for automatic event-driven broadcasting.
-    /// </summary>
-    /// <param name="handler">The async function that configures and maintains the SSE connection.</param>
-    /// <returns>An enhanced SSE result with connection registry integration.</returns>
-    /// <example>
-    /// <code>
-    /// public IActionResult EnhancedLiveFeed()
-    /// {
-    ///     return ServerSentEvents(async (connection, ct) =>
-    ///     {
-    ///         await connection
-    ///             .WithAuthentication()
-    ///             .WithRooms("dashboard", $"user-{UserId}")
-    ///             .WithEvents("task-updated", "notification")
-    ///             .WithInitialState("initial", await RenderPartialToStringAsync("_Dashboard", model))
-    ///             .KeepAlive(cancellationToken: ct);
-    ///     });
-    /// }
-    /// </code>
-    /// </example>
-    protected IActionResult ServerSentEvents(Func<SseConnectionBuilder, CancellationToken, Task> handler)
-    {
-        // Store controller reference for partial view rendering
-        HttpContext.Items["SwapController"] = this;
-        return new EnhancedServerSentEventsResult(handler);
     }
 
     /// <summary>

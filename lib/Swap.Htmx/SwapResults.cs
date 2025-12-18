@@ -1,7 +1,6 @@
 using Swap.Htmx.Models;
 using Swap.Htmx.Events;
 using Swap.Htmx.Results;
-using Swap.Htmx.Realtime;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.Http;
 
@@ -32,27 +31,6 @@ public static class SwapResults
         return new SwapEventResult(eventKey, payload);
     }
 
-    /// <summary>
-    /// Creates a Server-Sent Events (SSE) connection result.
-    /// </summary>
-    /// <param name="registry">The SSE connection registry.</param>
-    /// <param name="configure">Optional configuration for the SSE connection.</param>
-    /// <returns>An IResult that establishes an SSE connection.</returns>
-    public static IResult Sse(ISseConnectionRegistry registry, Action<SwapSseOptions>? configure = null)
-    {
-        return new SwapSseResult(registry, configure);
-    }
-
-    /// <summary>
-    /// Creates a WebSocket connection result.
-    /// </summary>
-    /// <param name="registry">The realtime connection registry.</param>
-    /// <param name="configure">Optional configuration for the WebSocket connection.</param>
-    /// <returns>An IResult that establishes a WebSocket connection.</returns>
-    public static IResult WebSocket(IRealtimeConnectionRegistry registry, Action<SwapWebSocketOptions>? configure = null)
-    {
-        return new SwapWebSocketResult(registry, configure);
-    }
 }
 
 /// <summary>

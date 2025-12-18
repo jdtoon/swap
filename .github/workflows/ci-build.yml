@@ -39,6 +39,8 @@ jobs:
     - name: Pack library packages to local feed
       run: |
         dotnet pack lib/Swap.Htmx/Swap.Htmx.csproj --configuration Release --output ./.nuget/local
+        dotnet pack lib/Swap.Htmx.Realtime/Swap.Htmx.Realtime.csproj --configuration Release --output ./.nuget/local
+        dotnet pack lib/Swap.Htmx.Realtime.Redis/Swap.Htmx.Realtime.Redis.csproj --configuration Release --output ./.nuget/local
         dotnet pack lib/Swap.Testing/Swap.Testing.csproj --configuration Release --output ./.nuget/local
         dotnet pack templates/Swap.Templates.csproj --configuration Release --output ./.nuget/local
       env:
@@ -56,4 +58,110 @@ jobs:
     - name: Pack packages (artifacts)
       run: |
         dotnet pack lib/Swap.Htmx/Swap.Htmx.csproj --configuration Release --no-restore --output ./nupkg
+        dotnet pack lib/Swap.Htmx.Realtime/Swap.Htmx.Realtime.csproj --configuration Release --no-restore --output ./nupkg
+        dotnet pack lib/Swap.Htmx.Realtime.Redis/Swap.Htmx.Realtime.Redis.csproj --configuration Release --no-restore --output ./nupkg
         dotnet pack lib/Swap.Testing/Swap.Testing.csproj --configuration Release --no-restore --output ./nupkg
+        dotnet pack templates/Swap.Templates.csproj --configuration Release --no-restore --output ./nupkg
+
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: nuget-packages
+        path: ./nupkg/*.nupkg
+
+  templates-smoke:
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '9.0.x'
+
+    - name: Configure NuGet sources for template restore
+      run: |
+        cat > nuget.config << 'EOF'
+        <?xml version="1.0" encoding="utf-8"?>
+        <configuration>
+          <packageSources>
+            <clear />
+            <add key="nuget.org" value="https://api.nuget.org/v3/index.json" protocolVersion="3" />
+            <add key="local" value=".nuget/local" />
+          </packageSources>
+        </configuration>
+        EOF
+
+    - name: Prepare local feed directory
+      run: |
+        mkdir -p .nuget/local
+
+    - name: Pack template + library packages to local feed
+      run: |
+        dotnet pack lib/Swap.Htmx/Swap.Htmx.csproj --configuration Release --output ./.nuget/local
+        dotnet pack lib/Swap.Htmx.Realtime/Swap.Htmx.Realtime.csproj --configuration Release --output ./.nuget/local
+        dotnet pack lib/Swap.Htmx.Realtime.Redis/Swap.Htmx.Realtime.Redis.csproj --configuration Release --output ./.nuget/local
+        dotnet pack templates/Swap.Templates.csproj --configuration Release --output ./.nuget/local
+      env:
+        DOTNET_NUGET_SIGNATURE_VERIFICATION: false
+
+    - name: Install LibMan CLI
+      run: |
+        dotnet tool install -g Microsoft.Web.LibraryManager.Cli
+        echo "$HOME/.dotnet/tools" >> $GITHUB_PATH
+
+    - name: Install templates from local nupkg
+      run: |
+        TEMPLATE_NUPKG=$(ls .nuget/local/Swap.Templates*.nupkg | head -n 1)
+        echo "Installing template pack: $TEMPLATE_NUPKG"
+        dotnet new install "$TEMPLATE_NUPKG"
+
+    - name: Generate and build template matrix
+      run: |
+        set -euo pipefail
+        rm -rf template-ci
+        mkdir template-ci
+        pushd template-ci
+
+        echo "== swap-mvc =="
+        dotnet new swap-mvc -n MvcNoSse
+        pushd MvcNoSse
+        libman restore
+        dotnet build -c Release
+        popd
+
+        dotnet new swap-mvc -n MvcSse --IncludeSse true
+        pushd MvcSse
+        libman restore
+        dotnet build -c Release
+        popd
+
+        echo "== swap-modular =="
+        dotnet new swap-modular -n ModularNoSse
+        pushd ModularNoSse/src
+        libman restore
+        dotnet build -c Release
+        popd
+
+        dotnet new swap-modular -n ModularSse --IncludeSse true
+        pushd ModularSse/src
+        libman restore
+        dotnet build -c Release
+        popd
+
+        dotnet new swap-modular -n ModularNoSseNoSample --SkipSampleModule true
+        pushd ModularNoSseNoSample/src
+        libman restore
+        dotnet build -c Release
+        popd
+
+        dotnet new swap-modular -n ModularSseNoSample --IncludeSse true --SkipSampleModule true
+        pushd ModularSseNoSample/src
+        libman restore
+        dotnet build -c Release
+        popd
+
+        popd
+

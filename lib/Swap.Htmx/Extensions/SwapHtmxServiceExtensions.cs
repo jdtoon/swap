@@ -8,7 +8,6 @@ using Swap.Htmx.Events;
 using Swap.Htmx.Filters;
 using Swap.Htmx.Middleware;
 using Swap.Htmx.Dev;
-using Swap.Htmx.Realtime;
 using Swap.Htmx.Models;
 using Swap.Htmx.Services;
 using Swap.Htmx.State;
@@ -140,64 +139,6 @@ public static class SwapHtmxServiceExtensions
         return services;
     }
 
-    /// <summary>
-    /// Adds enhanced SSE services with connection management and event-driven broadcasting.
-    /// Call this to enable advanced SSE features like rooms, authentication, and automatic event bridging.
-    /// </summary>
-    /// <param name="services">The service collection.</param>
-    /// <returns>The service collection for chaining.</returns>
-    /// <example>
-    /// <code>
-    /// builder.Services.AddSwapHtmx()
-    ///                 .AddSseEventBridge();
-    /// </code>
-    /// </example>
-    public static IServiceCollection AddSseEventBridge(this IServiceCollection services)
-    {
-        services.TryAddSingleton<ISseBackplane, InMemorySseBackplane>();
-        
-        // Register Registry (implements both ISseConnectionRegistry and IRealtimeConnectionRegistry)
-        services.AddSingleton<SseConnectionRegistry>();
-        services.AddSingleton<ISseConnectionRegistry>(sp => sp.GetRequiredService<SseConnectionRegistry>());
-        services.AddSingleton<IRealtimeConnectionRegistry>(sp => sp.GetRequiredService<SseConnectionRegistry>());
-
-        // Register Bridge (implements both ISseEventBridge and IRealtimeEventBridge)
-        services.AddScoped<RealtimeEventBridge>();
-        services.AddScoped<ISseEventBridge>(sp => sp.GetRequiredService<RealtimeEventBridge>());
-        services.AddScoped<IRealtimeEventBridge>(sp => sp.GetRequiredService<RealtimeEventBridge>());
-
-        services.AddScoped<IRealtimeInputHandler, DefaultRealtimeInputHandler>();
-
-        services.AddScoped<ISseViewRenderer, SseViewRenderer>();
-        services.AddHttpContextAccessor(); // Required for view rendering
-        return services;
-    }
-
-    /// <summary>
-    /// Adds SSE fallback services for polling support when SSE connections fail.
-    /// This enables graceful degradation to HTTP polling for unreliable networks.
-    /// </summary>
-    /// <param name="services">The service collection.</param>
-    /// <param name="configure">Optional configuration for fallback behavior.</param>
-    /// <returns>The service collection for chaining.</returns>
-    /// <example>
-    /// <code>
-    /// builder.Services.AddSseEventBridge()
-    ///                 .AddSseFallback(options => {
-    ///                     options.DefaultPollInterval = 3000;
-    ///                     options.MaxSseRetries = 5;
-    ///                 });
-    /// </code>
-    /// </example>
-    public static IServiceCollection AddSseFallback(this IServiceCollection services, Action<SseFallbackOptions>? configure = null)
-    {
-        var options = new SseFallbackOptions();
-        configure?.Invoke(options);
-        services.AddSingleton(options);
-        services.AddSingleton<ISseFallbackService, SseFallbackService>();
-
-        return services;
-    }
 
     /// <summary>
     /// Adds Swap.Htmx services and configures event chains.
@@ -273,20 +214,4 @@ public static class SwapHtmxServiceExtensions
         return app.UseMiddleware<SwapEventResponseMiddleware>();
     }
 
-    /// <summary>
-    /// Registers the SSE event middleware for automatic event-driven broadcasting.
-    /// This should be called after UseSwapHtmx() to enable SSE event processing.
-    /// </summary>
-    /// <param name="app">The application builder.</param>
-    /// <returns>The application builder for chaining.</returns>
-    /// <example>
-    /// <code>
-    /// app.UseSwapHtmx()
-    ///    .UseSseEventBridge();
-    /// </code>
-    /// </example>
-    public static IApplicationBuilder UseSseEventBridge(this IApplicationBuilder app)
-    {
-        return app.UseMiddleware<RealtimeEventMiddleware>();
-    }
 }

@@ -45,15 +45,18 @@
         {
           "condition": "IncludeSse",
           "exclude": [
+            "src/SwapModularMonolith.csproj",
             "src/libman.json"
           ],
           "rename": {
+            "src/SwapModularMonolith.Sse.csproj": "src/SwapModularMonolith.csproj",
             "src/libman.Sse.json": "src/libman.json"
           }
         },
         {
           "condition": "!IncludeSse",
           "exclude": [
+            "src/SwapModularMonolith.Sse.csproj",
             "src/libman.Sse.json"
           ]
         },
