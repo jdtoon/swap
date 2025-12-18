@@ -1,11 +1,15 @@
 <Project>
   <PropertyGroup>
     <RepoRoot>$(MSBuildThisFileDirectory)</RepoRoot>
-    <!-- Detect if project is under template-test folder to skip local generator reference -->
-    <IsTemplateTestProject>false</IsTemplateTestProject>
-    <IsTemplateTestProject Condition="$(MSBuildProjectDirectory.Contains('template-test'))">true</IsTemplateTestProject>
+    <!--
+      Generated template projects consume Swap.Htmx via NuGet (which already carries the analyzers).
+      Avoid injecting an additional local analyzer reference, otherwise source generators run twice
+      and cause duplicate generated types (e.g., SwapViews/SwapElements/AppEvents).
+    -->
+    <IsTemplateGeneratedProject>false</IsTemplateGeneratedProject>
+    <IsTemplateGeneratedProject Condition="$(MSBuildProjectDirectory.Contains('template-test')) OR $(MSBuildProjectDirectory.Contains('template-ci'))">true</IsTemplateGeneratedProject>
   </PropertyGroup>
-  <ItemGroup Condition="'$(MSBuildProjectName)' != 'Swap.Htmx.Generators' AND '$(IsTemplateTestProject)' != 'true'">
+  <ItemGroup Condition="'$(MSBuildProjectName)' != 'Swap.Htmx.Generators' AND '$(IsTemplateGeneratedProject)' != 'true'">
     <ProjectReference Include="$(RepoRoot)framework\Swap.Htmx.Generators\Swap.Htmx.Generators.csproj"
                       OutputItemType="Analyzer"
                       ReferenceOutputAssembly="false" />

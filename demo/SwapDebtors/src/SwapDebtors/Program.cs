@@ -85,7 +85,7 @@ app.MapControllerRoute(
 
 // SSE endpoint for activity stream
 app.MapGet("/api/activity-stream", (ISseConnectionRegistry registry) =>
-    SwapResults.Sse(registry, opts =>
+    SwapRealtimeResults.Sse(registry, opts =>
     {
         // Dashboard listens for this event name via htmx-ext-sse
         opts.AutoSubscribeEvents = new[] { DashboardEvents.ActivityLogged };

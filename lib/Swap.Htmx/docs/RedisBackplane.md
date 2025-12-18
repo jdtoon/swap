@@ -11,7 +11,12 @@ The Redis Backplane enables horizontal scaling for Server-Sent Events (SSE) in S
 
 ## Installation
 
-The Redis backplane is included in the `Swap.Htmx` library but requires the `StackExchange.Redis` package (which is a transitive dependency).
+The Redis backplane lives in the `Swap.Htmx.Realtime.Redis` package.
+
+```bash
+dotnet add package Swap.Htmx.Realtime
+dotnet add package Swap.Htmx.Realtime.Redis
+```
 
 ## Configuration
 

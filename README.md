@@ -57,6 +57,12 @@ libman restore
 dotnet run
 ```
 
+## Packages
+
+- `Swap.Htmx` — core MVC + Swap responses/events/source generators
+- `Swap.Htmx.Realtime` — SSE/WebSockets (adds `AddSseEventBridge`, `UseSseEventBridge`, `SwapRealtimeResults`, `SwapRealtimeController`)
+- `Swap.Htmx.Realtime.Redis` — Redis backplane for scaling SSE across instances
+
 Open the URL shown in the console (typically `https://localhost:5001`).
 
 Prefer a minimal starting point?

@@ -2,6 +2,11 @@
 
 Swap.Htmx provides built-in support for realtime communication using WebSockets (and Server-Sent Events). This allows you to push updates to clients instantly, enabling features like chat, live notifications, and collaborative editing.
 
+## Packages
+
+- Core: `Swap.Htmx`
+- Realtime: `Swap.Htmx.Realtime` (required for WebSockets + SSE APIs)
+
 ## Overview
 
 The realtime system in Swap.Htmx is built around the concept of **Event Bridging**. You trigger standard Swap events on the server, and the `RealtimeEventBridge` automatically broadcasts them to connected clients.
@@ -46,7 +51,7 @@ Create an endpoint that upgrades the connection to a WebSocket.
 ```csharp
 app.MapGet("/swap/ws", (IRealtimeConnectionRegistry registry) => 
 {
-    return SwapResults.WebSocket(registry, options => {
+    return SwapRealtimeResults.WebSocket(registry, options => {
         // Optional: Auto-join rooms or subscribe to events
         options.AutoSubscribeRooms = new[] { "global" };
         

@@ -11,7 +11,7 @@ Real-time server-to-client updates over HTTP.
 ### 1. Create SSE Endpoint
 
 ```csharp
-public class DashboardController : SwapController
+public class DashboardController : SwapRealtimeController
 {
     [HttpGet("/dashboard/stream")]
     public IActionResult Stream()
@@ -77,6 +77,8 @@ builder.Services
 app.UseSwapHtmx();
 app.UseSseEventBridge();
 ```
+
+> `SwapRealtimeController`, `AddSseEventBridge`, and `UseSseEventBridge` come from the `Swap.Htmx.Realtime` package.
 
 ---
 

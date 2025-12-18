@@ -2,6 +2,11 @@
 
 Swap.Htmx provides built-in support for Server-Sent Events (SSE) to push updates to the client.
 
+## Packages
+
+- Core: `Swap.Htmx`
+- Realtime (SSE/WebSockets): `Swap.Htmx.Realtime`
+
 ## Single Server (In-Memory)
 
 For simple applications running on a single server instance, you can use the in-memory backplane. This is the default behavior if no other backplane is configured, but you can also register it explicitly.

@@ -16,6 +16,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\..\lib\Swap.Htmx\Swap.Htmx.csproj" />
+    <ProjectReference Include="..\..\..\..\lib\Swap.Htmx.Realtime\Swap.Htmx.Realtime.csproj" />
   </ItemGroup>
 
   <ItemGroup>
