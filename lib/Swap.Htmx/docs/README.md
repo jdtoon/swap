@@ -189,4 +189,4 @@ The repository includes several demo applications showing different patterns:
 - Check the [Anti-Patterns Guide](AntiPatterns.md) for common mistakes
 - Look at the demo applications for working examples
 - Review the [main README](../README.md) for quick reference
-- See the [ROADMAP](../../../ROADMAP.md) for upcoming features
+- See the [CHANGELOG](../../../CHANGELOG.md) for upcoming changes
