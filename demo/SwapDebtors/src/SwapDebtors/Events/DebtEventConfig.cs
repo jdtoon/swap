@@ -17,9 +17,9 @@ public class DebtEventConfig : ISwapEventConfiguration
     public void Configure(SwapEventBusOptions config)
     {
         // Realtime: forward domain events into the dashboard activity SSE stream.
-        config.OnEvent(DebtEvents.Debt.Created).ToSubscribers(DashboardEvents.ActivityLogged);
-        config.OnEvent(DebtEvents.Debt.Paid).ToSubscribers(DashboardEvents.ActivityLogged);
-        config.OnEvent(DebtEvents.Debt.Deleted).ToSubscribers(DashboardEvents.ActivityLogged);
+        config.ChainToSse(DebtEvents.Debt.Created, SseEvents.Subscribers(DashboardEvents.ActivityLogged));
+        config.ChainToSse(DebtEvents.Debt.Paid, SseEvents.Subscribers(DashboardEvents.ActivityLogged));
+        config.ChainToSse(DebtEvents.Debt.Deleted, SseEvents.Subscribers(DashboardEvents.ActivityLogged));
 
         config.When(DebtEvents.Debt.Created)
             .RefreshPartial(SwapElements.RecentDebts, SwapViews.Dashboard._RecentDebts, ctx =>

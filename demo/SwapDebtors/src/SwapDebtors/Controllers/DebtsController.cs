@@ -182,7 +182,7 @@ public class DebtsController : SwapController
     /// <summary>
     /// Quick add debt inline
     /// </summary>
-    public async Task<IActionResult> QuickAdd(int debtorId)
+    public async Task<IActionResult> QuickAdd([FromRoute(Name = "id")] int debtorId)
     {
         var debtor = await _db.Debtors.FindAsync(debtorId);
         if (debtor == null) return NotFound();
