@@ -213,14 +213,11 @@ return SwapResponse()
 
 ```csharp
 // Configure once in Program.cs
-builder.Services.AddSwapHtmx(options =>
+builder.Services.AddSwapHtmx(events =>
 {
-    options.ConfigureEvents(events =>
-    {
-        events.On(CartEvents.ItemAdded)
-            .AlsoUpdate("cart-count", "_CartCount")
-            .AlsoUpdate("cart-total", "_CartTotal");
-    });
+    events.When(CartEvents.ItemAdded)
+        .RefreshPartial("cart-count", "_CartCount")
+        .RefreshPartial("cart-total", "_CartTotal");
 });
 
 // Controller just fires event
@@ -233,7 +230,7 @@ return SwapEvent(CartEvents.ItemAdded, item).WithView("_Added", item).Build();
 // Define events
 public static class TaskEvents
 {
-    public static readonly EventKey Completed = new("task:completed");
+    public static readonly EventKey Completed = new("task.completed");
 }
 
 // Handler updates stats (DI supported!)
@@ -272,6 +269,8 @@ public IActionResult Complete(int id)
 ```
 
 📖 [Full Events Guide](docs/Events.md)
+
+If you’re using SSE/WebSockets, see: 📖 [Event Naming & Realtime Routing](docs/EventNamingAndRouting.md)
 
 ---
 
