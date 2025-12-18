@@ -25,6 +25,7 @@ Welcome to the Swap.Htmx documentation. These guides will help you build reactiv
 | Use events and triggers | [Events Guide](Events.md) |
 | Understand event naming and realtime routing | [Event Naming & Realtime Routing](EventNamingAndRouting.md) |
 | Set up real-time updates | [Realtime Overview](Realtime.md) |
+| Understand realtime lifecycle & guarantees | [Realtime Bridge Behavior](RealtimeBridgeBehavior.md) |
 
 ---
 
@@ -91,6 +92,9 @@ Update multiple elements from a single response using OOB swaps and the `AlsoUpd
 
 ### [Realtime Overview](Realtime.md)
 Introduction to real-time HTML streaming with Swap.Htmx.
+
+### [Realtime Bridge Behavior](RealtimeBridgeBehavior.md)
+When realtime forwarding runs, what gets forwarded, and what happens on failures.
 
 ### [Server-Sent Events](ServerSentEvents.md)
 Push updates from server to browser using SSE, with room-based broadcasting and connection management.
