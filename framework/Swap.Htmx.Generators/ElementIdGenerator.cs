@@ -30,7 +30,8 @@ public class ElementIdGenerator : IIncrementalGenerator
             .CreateSyntaxProvider(
                 predicate: static (s, _) => IsSyntaxTargetForGeneration(s),
                 transform: static (ctx, _) => GetSemanticTargetForGeneration(ctx))
-            .Where(static t => t is not null);
+            .Where(static t => t is not null)
+            .Select(static (t, _) => t!);
 
         // Step 2: Collect all additional files (.cshtml)
         var cshtmlFiles = context.AdditionalTextsProvider
@@ -48,7 +49,7 @@ public class ElementIdGenerator : IIncrementalGenerator
         return node is ClassDeclarationSyntax c && c.AttributeLists.Count > 0;
     }
 
-    private static ClassInfo GetSemanticTargetForGeneration(GeneratorSyntaxContext context)
+    private static ClassInfo? GetSemanticTargetForGeneration(GeneratorSyntaxContext context)
     {
         var classDeclaration = (ClassDeclarationSyntax)context.Node;
 
@@ -67,7 +68,7 @@ public class ElementIdGenerator : IIncrementalGenerator
                         
                         // Check for optional named arguments
                         var includeSubdirs = false;
-                        string prefix = null;
+                        string? prefix = null;
                         
                         foreach (var arg in attribute.ArgumentList?.Arguments ?? Enumerable.Empty<AttributeArgumentSyntax>())
                         {
@@ -116,8 +117,13 @@ public class ElementIdGenerator : IIncrementalGenerator
         
         foreach (var file in matchingFiles)
         {
-            var content = file.GetText()?.ToString();
-            if (string.IsNullOrEmpty(content)) continue;
+            var text = file.GetText();
+            if (text is null)
+                continue;
+
+            var content = text.ToString();
+            if (string.IsNullOrEmpty(content))
+                continue;
 
             var ids = ExtractIds(content);
             foreach (var id in ids)
@@ -299,11 +305,11 @@ public class ElementIdGenerator : IIncrementalGenerator
         public ClassDeclarationSyntax ClassDeclaration { get; }
         public string ViewsPath { get; }
         public bool IncludeSubdirectories { get; }
-        public string Prefix { get; }
+        public string? Prefix { get; }
         public string Namespace { get; }
 
         public ClassInfo(ClassDeclarationSyntax classDeclaration, string viewsPath, 
-                        bool includeSubdirectories, string prefix, string ns)
+                        bool includeSubdirectories, string? prefix, string ns)
         {
             ClassDeclaration = classDeclaration;
             ViewsPath = viewsPath;

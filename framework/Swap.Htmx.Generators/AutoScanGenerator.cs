@@ -145,7 +145,11 @@ public class AutoScanGenerator : IIncrementalGenerator
 
         foreach (var file in files)
         {
-            var content = file.GetText()?.ToString();
+            var text = file.GetText();
+            if (text is null)
+                continue;
+
+            var content = text.ToString();
             if (string.IsNullOrEmpty(content))
                 continue;
 
