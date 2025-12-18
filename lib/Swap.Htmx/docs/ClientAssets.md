@@ -87,5 +87,6 @@ Notes:
 ## See also
 
 - [Getting Started](GettingStarted.md)
+- [Recommended Versions](RecommendedVersions.md)
 - [Server-Sent Events](ServerSentEvents.md)
 - [WebSockets](WebSockets.md)
