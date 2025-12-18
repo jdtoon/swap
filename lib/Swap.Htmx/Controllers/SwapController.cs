@@ -205,51 +205,186 @@ public abstract class SwapController : Controller
     /// }
     /// </code>
     /// </example>
+    [Obsolete("SwapRedirectToAction is a server-side forward helper (not a real redirect). It bypasses MVC model binding/filters and is easy to misuse. Prefer returning the target view directly, or use SwapRedirect()/WithNavigation() for client navigation.")]
     protected async Task<IActionResult> SwapRedirectToAction(string actionName, object? routeValues = null)
     {
-        // Get the target action descriptor
-        var actionDescriptor = ControllerContext.ActionDescriptor;
-        var controllerName = actionDescriptor.ControllerName;
+        if (string.IsNullOrWhiteSpace(actionName))
+            throw new ArgumentException("Action name is required.", nameof(actionName));
 
-        // Invoke the target action using reflection
-        var method = GetType().GetMethod(actionName);
-        if (method == null)
+        var controllerName = (ControllerContext?.ActionDescriptor?.ControllerName) ?? GetType().Name;
+
+        var candidates = GetType()
+            .GetMethods(System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public)
+            .Where(m => string.Equals(m.Name, actionName, StringComparison.Ordinal))
+            .ToArray();
+
+        if (candidates.Length == 0)
         {
-            throw new InvalidOperationException($"Action method '{actionName}' not found on controller '{controllerName}'");
+            throw new InvalidOperationException($"Action method '{actionName}' not found on controller '{controllerName}'.");
         }
 
-        // Build parameters from route values
-        var parameters = method.GetParameters();
-        var args = new object?[parameters.Length];
+        var routeDict = routeValues != null ? new RouteValueDictionary(routeValues) : new RouteValueDictionary();
+        var viable = candidates
+            .Select(m =>
+            {
+                var built = TryBuildArgs(m, routeDict);
+                return (Method: m, Success: built.Success, Args: built.Args);
+            })
+            .Where(x => x.Success)
+            .ToArray();
 
-        if (routeValues != null)
+        if (viable.Length == 0)
         {
-            var routeDict = new RouteValueDictionary(routeValues);
+            var available = string.Join(", ", candidates.Select(m => $"{m.Name}({string.Join(", ", m.GetParameters().Select(p => p.ParameterType.Name + " " + p.Name))})"));
+            throw new InvalidOperationException(
+                $"No overload of '{actionName}' on '{controllerName}' matched the provided route values. " +
+                $"Avoid overloads for actions used with SwapRedirectToAction. Available: {available}");
+        }
+
+        if (viable.Length > 1)
+        {
+            throw new InvalidOperationException(
+                $"Ambiguous action '{actionName}' on '{controllerName}'. Multiple overloads match the provided route values. " +
+                "Avoid overloaded action method names when using SwapRedirectToAction.");
+        }
+
+        var method = viable[0].Method;
+        var args = viable[0].Args;
+        var result = method.Invoke(this, args);
+
+        if (result is IActionResult actionResult)
+            return actionResult;
+
+        if (result is Task<IActionResult> taskIActionResult)
+            return await taskIActionResult;
+
+        if (result is Task task)
+        {
+            await task;
+            var resultProperty = task.GetType().GetProperty("Result");
+            if (resultProperty?.GetValue(task) is IActionResult awaitedResult)
+                return awaitedResult;
+        }
+
+        throw new InvalidOperationException($"Action method '{actionName}' did not return IActionResult.");
+
+        (bool Success, object?[] Args) TryBuildArgs(System.Reflection.MethodInfo methodInfo, RouteValueDictionary values)
+        {
+            var parameters = methodInfo.GetParameters();
+            var built = new object?[parameters.Length];
+
             for (int i = 0; i < parameters.Length; i++)
             {
                 var param = parameters[i];
-                if (routeDict.TryGetValue(param.Name!, out var value))
+                var paramType = param.ParameterType;
+
+                if (paramType == typeof(CancellationToken))
                 {
-                    args[i] = Convert.ChangeType(value, param.ParameterType);
+                    built[i] = HttpContext?.RequestAborted ?? CancellationToken.None;
+                    continue;
+                }
+
+                if (param.Name != null && values.TryGetValue(param.Name, out var raw))
+                {
+                    if (!TryConvert(raw, paramType, out var converted))
+                        return (false, Array.Empty<object?>());
+
+                    built[i] = converted;
+                    continue;
+                }
+
+                if (param.HasDefaultValue)
+                {
+                    built[i] = param.DefaultValue;
+                    continue;
+                }
+
+                if (!paramType.IsValueType || Nullable.GetUnderlyingType(paramType) != null)
+                {
+                    built[i] = null;
+                    continue;
+                }
+
+                // Required non-nullable value type with no provided value.
+                return (false, Array.Empty<object?>());
+            }
+
+            return (true, built);
+        }
+
+        static bool TryConvert(object? raw, Type targetType, out object? converted)
+        {
+            converted = null;
+            if (raw is null)
+            {
+                if (!targetType.IsValueType || Nullable.GetUnderlyingType(targetType) != null)
+                    return true;
+                return false;
+            }
+
+            var nonNullableTarget = Nullable.GetUnderlyingType(targetType) ?? targetType;
+
+            if (nonNullableTarget.IsInstanceOfType(raw))
+            {
+                converted = raw;
+                return true;
+            }
+
+            if (nonNullableTarget == typeof(string))
+            {
+                converted = Convert.ToString(raw);
+                return true;
+            }
+
+            if (nonNullableTarget.IsEnum)
+            {
+                if (raw is string s)
+                {
+                    if (Enum.TryParse(nonNullableTarget, s, ignoreCase: true, out var enumVal))
+                    {
+                        converted = enumVal;
+                        return true;
+                    }
+                    return false;
+                }
+
+                try
+                {
+                    converted = Enum.ToObject(nonNullableTarget, raw);
+                    return true;
+                }
+                catch
+                {
+                    return false;
                 }
             }
-        }
 
-        // Invoke the action method
-        var result = method.Invoke(this, args);
+            if (nonNullableTarget == typeof(Guid))
+            {
+                if (raw is Guid g)
+                {
+                    converted = g;
+                    return true;
+                }
 
-        // Handle async results
-        if (result is Task<IActionResult> taskResult)
-        {
-            return await taskResult;
-        }
-        else if (result is IActionResult actionResult)
-        {
-            return actionResult;
-        }
-        else
-        {
-            throw new InvalidOperationException($"Action method '{actionName}' did not return IActionResult");
+                if (raw is string gs && Guid.TryParse(gs, out var parsed))
+                {
+                    converted = parsed;
+                    return true;
+                }
+
+                return false;
+            }
+
+            try
+            {
+                converted = Convert.ChangeType(raw, nonNullableTarget);
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
         }
     }
 
