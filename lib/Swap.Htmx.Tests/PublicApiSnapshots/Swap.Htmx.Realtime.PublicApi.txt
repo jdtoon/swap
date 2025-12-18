@@ -109,6 +109,13 @@ namespace Swap.Htmx.Realtime
         public ServerSentEventsResult(System.Func<Swap.Htmx.Realtime.ServerSentEventStream, System.Threading.CancellationToken, System.Threading.Tasks.Task> handler, Microsoft.Extensions.Logging.ILogger<Swap.Htmx.Realtime.ServerSentEventsResult>? logger = null) { }
         public System.Threading.Tasks.Task ExecuteResultAsync(Microsoft.AspNetCore.Mvc.ActionContext context) { }
     }
+    public sealed class SseBroadcastOptions
+    {
+        public SseBroadcastOptions() { }
+        public Swap.Htmx.Realtime.SseDropStrategy DropStrategy { get; set; }
+        public int MaxEventBytes { get; set; }
+        public int MaxQueuedEventsPerConnection { get; set; }
+    }
     public sealed class SseChainBuilder
     {
         public Swap.Htmx.Realtime.SseChainBuilder BroadcastSse(string eventName) { }
@@ -173,6 +180,12 @@ namespace Swap.Htmx.Realtime
         public System.Collections.Generic.IReadOnlyDictionary<string, int> ConnectionsByRoom { get; init; }
         public System.Collections.Generic.IReadOnlyDictionary<string, int> SubscriptionsByEvent { get; init; }
         public int TotalConnections { get; init; }
+    }
+    public enum SseDropStrategy
+    {
+        DropNewest = 0,
+        DropOldest = 1,
+        Disconnect = 2,
     }
     public static class SseEventChainExtensions
     {
@@ -321,7 +334,7 @@ namespace Swap.Htmx
     }
     public static class SwapRealtimeServiceExtensions
     {
-        public static Microsoft.Extensions.DependencyInjection.IServiceCollection AddSseEventBridge(this Microsoft.Extensions.DependencyInjection.IServiceCollection services) { }
+        public static Microsoft.Extensions.DependencyInjection.IServiceCollection AddSseEventBridge(this Microsoft.Extensions.DependencyInjection.IServiceCollection services, System.Action<Swap.Htmx.Realtime.SseBroadcastOptions>? configure = null) { }
         public static Microsoft.Extensions.DependencyInjection.IServiceCollection AddSseFallback(this Microsoft.Extensions.DependencyInjection.IServiceCollection services, System.Action<Swap.Htmx.Realtime.SseFallbackOptions>? configure = null) { }
         public static Microsoft.AspNetCore.Builder.IApplicationBuilder UseSseEventBridge(this Microsoft.AspNetCore.Builder.IApplicationBuilder app) { }
     }

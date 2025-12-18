@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Options;
 using Swap.Htmx.Realtime;
 
 namespace Swap.Htmx;
@@ -14,8 +15,14 @@ public static class SwapRealtimeServiceExtensions
     /// Adds enhanced SSE services with connection management and event-driven broadcasting.
     /// Call this to enable advanced SSE features like rooms, authentication, and automatic event bridging.
     /// </summary>
-    public static IServiceCollection AddSseEventBridge(this IServiceCollection services)
+    public static IServiceCollection AddSseEventBridge(this IServiceCollection services, Action<SseBroadcastOptions>? configure = null)
     {
+        services.AddOptions<SseBroadcastOptions>();
+        if (configure != null)
+        {
+            services.Configure(configure);
+        }
+
         services.TryAddSingleton<ISseBackplane, InMemorySseBackplane>();
 
         // Register Registry (implements both ISseConnectionRegistry and IRealtimeConnectionRegistry)
