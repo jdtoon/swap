@@ -19,6 +19,8 @@ Key features:
 
 > **Note:** This guide focuses on WebSockets. For Server-Sent Events (SSE) specific details, see the [Server-Sent Events Guide](ServerSentEvents.md).
 
+For how event names map from `HX-Trigger` to realtime (and what the `sse:` prefix actually means), see [Event Naming & Realtime Routing](EventNamingAndRouting.md).
+
 ## Setup
 
 ### 1. Register Services

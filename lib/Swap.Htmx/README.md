@@ -416,6 +416,7 @@ The `HandlerValidationAnalyzer` warns you about:
 |-------|-------------|
 | [Getting Started](docs/GettingStarted.md) | Full setup walkthrough |
 | [Public API & Compatibility](docs/PublicApiAndCompatibility.md) | What is stable vs experimental |
+| [Security Checklist](docs/SecurityChecklist.md) | CSRF, realtime auth, room scoping, headers |
 | [SwapState](docs/SwapState.md) | Server-driven state management |
 | [Events](docs/Events.md) | Event system deep dive |
 | [Navigation](docs/Navigation.md) | SPA-style navigation |

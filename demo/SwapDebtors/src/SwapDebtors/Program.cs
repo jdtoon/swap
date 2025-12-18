@@ -74,7 +74,7 @@ app.UseSession();
 // Swap.Htmx middleware
 app.UseSwapHtmx();
 
-// Broadcast any resolved sse:/realtime: events after responses
+// Broadcast any resolved "sse:" / "realtime:" prefixed events after responses
 app.UseSseEventBridge();
 
 app.UseAuthorization();

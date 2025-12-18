@@ -8,6 +8,20 @@ Real-time server-to-client updates over HTTP.
 
 ## Quick Start
 
+> See [Event Naming & Realtime Routing](EventNamingAndRouting.md) if you’re unsure what should be dot-separated (domain/UI events) vs what’s an internal `sse:` routing key.
+
+For the examples below, assume these event keys:
+
+```csharp
+using Swap.Htmx.Events;
+
+public static class DashboardEvents
+{
+    public static readonly EventKey StatsUpdate = new("stats-update");
+    public static readonly EventKey ActivityUpdate = new("activity-update");
+}
+```
+
 ### 1. Create SSE Endpoint
 
 ```csharp
@@ -88,17 +102,16 @@ Configure what renders when SSE events broadcast:
 
 ```csharp
 // Program.cs
-builder.Services.AddSwapHtmx(options =>
+builder.Services.AddSwapHtmx(events =>
 {
-    options.ConfigureEvents(events =>
-    {
-        events.When(SseEvents.Broadcast(DashboardEvents.StatsUpdate))
-            .RefreshPartial("stats", "_Stats", ctx =>
-            {
-                var stats = ctx.RequestServices.GetRequiredService<IStatsService>();
-                return stats.GetCurrent();
-            });
-    });
+    // Note: the *client-facing* SSE event name is the final segment (e.g. "stats-update").
+    // The "sse:" prefix is an internal routing key used by the realtime bridge.
+    events.When(SseEvents.Broadcast(DashboardEvents.StatsUpdate.Name))
+        .RefreshPartial("stats", "_Stats", ctx =>
+        {
+            var stats = ctx.RequestServices.GetRequiredService<IStatsService>();
+            return stats.GetCurrent();
+        });
 });
 ```
 

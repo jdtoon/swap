@@ -4,10 +4,42 @@ Build your first Swap.Htmx app in 5 minutes.
 
 ## Prerequisites
 
-- .NET 9.0+
+- .NET 8.0+
 - Basic ASP.NET Core MVC knowledge
 
+If you use the templates below, you’ll also want `libman` available (the templates use it to restore HTMX and optional extensions).
+
 ## Setup
+
+### Recommended: Start from a Template (Runnables)
+
+**Recommended (batteries-included):**
+
+```bash
+dotnet new install Swap.Templates
+
+dotnet new swap-modular -n MyApp
+cd MyApp/src
+
+libman restore
+dotnet run
+```
+
+**Minimal:**
+
+```bash
+dotnet new install Swap.Templates
+
+dotnet new swap-mvc -n MyApp
+cd MyApp
+
+libman restore
+dotnet run
+```
+
+---
+
+### Manual: Add Swap.Htmx to an Existing MVC App
 
 ### 1. Create Project
 

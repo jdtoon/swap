@@ -5,6 +5,7 @@ Swap.Htmx uses `EventKey` for type-safe event handling, eliminating magic string
 **See also:**
 - [Source Generators](SourceGenerators.md) (**Preferred**) - Automatically generate type-safe event keys from your constants.
 - [Event Chains Guide](EventChains.md) - Learn how to configure automatic UI updates when events are triggered.
+- [Event Naming & Realtime Routing](EventNamingAndRouting.md) - How dot-names relate to realtime broadcasting.
 - [WebSockets & Realtime](WebSockets.md) - Learn how to broadcast events to connected clients.
 
 ## How HX-Trigger Headers Work

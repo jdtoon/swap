@@ -10,6 +10,7 @@ Welcome to the Swap.Htmx documentation. These guides will help you build reactiv
 |--------------|-----------|
 | Get started with Swap.Htmx | [Getting Started](GettingStarted.md) |
 | Understand what APIs are stable | [Public API & Compatibility](PublicApiAndCompatibility.md) |
+| Secure my app (CSRF/SSE/Auth) | [Security Checklist](SecurityChecklist.md) |
 | Clean navigation without boilerplate | [`<swap-nav>` Tag Helper](SwapNavTagHelper.md) ⭐ NEW |
 | Navigate programmatically with toasts | [Navigation](Navigation.md) |
 | Auto-generate view/element constants | [Auto-Scan Generator](AutoScanGenerator.md) ⭐ NEW |
@@ -22,6 +23,7 @@ Welcome to the Swap.Htmx documentation. These guides will help you build reactiv
 | Understand state patterns | [State Management](StateManagement.md) |
 | Avoid common mistakes | [Anti-Patterns](AntiPatterns.md) |
 | Use events and triggers | [Events Guide](Events.md) |
+| Understand event naming and realtime routing | [Event Naming & Realtime Routing](EventNamingAndRouting.md) |
 | Set up real-time updates | [Realtime Overview](Realtime.md) |
 
 ---
@@ -73,6 +75,9 @@ Standard success messages for create, update, delete operations with `.WithCreat
 
 ### [Events Guide](Events.md)
 Type-safe event keys, triggering events, and the `HX-Trigger` header mechanics.
+
+### [Event Naming & Realtime Routing](EventNamingAndRouting.md)
+How event names map from `HX-Trigger` to realtime broadcasts (and what the `sse:` prefix actually means).
 
 ### [Event Chains](EventChains.md)
 Centralize "when X happens, update Y" logic with `ISwapEventConfiguration` and distributed handlers.

@@ -165,6 +165,7 @@ public IActionResult Complete(int id)
 
 - **[Getting Started](lib/Swap.Htmx/docs/GettingStarted.md)** — Full setup guide
 - **[Public API & Compatibility](lib/Swap.Htmx/docs/PublicApiAndCompatibility.md)** — What we consider stable vs experimental
+- **[Security Checklist](lib/Swap.Htmx/docs/SecurityChecklist.md)** — CSRF, SSE auth/rooms, headers
 - **[Patterns Cheatsheet](lib/Swap.Htmx/docs/Patterns.md)** — Copy-paste recipes
 - **[SwapState](lib/Swap.Htmx/docs/SwapState.md)** — Server-side state management
 - **[Events](lib/Swap.Htmx/docs/EventChains.md)** — Event-driven UI updates

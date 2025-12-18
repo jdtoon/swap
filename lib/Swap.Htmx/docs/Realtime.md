@@ -2,6 +2,8 @@
 
 Swap.Htmx provides built-in support for Server-Sent Events (SSE) to push updates to the client.
 
+If you’re mixing `HX-Trigger` events and realtime broadcasts, read [Event Naming & Realtime Routing](EventNamingAndRouting.md) first.
+
 ## Packages
 
 - Core: `Swap.Htmx`
@@ -43,6 +45,7 @@ public class NotificationController : Controller
     public async Task<IActionResult> SendAlert()
     {
         // Broadcasts to all connected clients on this server
+        // "alert" is the client-facing SSE event name (matched by `sse-swap="alert"`)
         await _sse.BroadcastAsync("alert", "<div>System Alert!</div>");
         return Ok();
     }
