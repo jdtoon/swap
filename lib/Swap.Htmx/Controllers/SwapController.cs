@@ -149,7 +149,8 @@ public abstract class SwapController : Controller
             return service.Response(this);
         }
         
-        // Fallback if service not registered (shouldn't happen if AddSwapHtmx called)
+        // Lean fallback: create builder without duplicating service logic
+        // This path is primarily for tests; production apps should use AddSwapHtmx()
         var builder = new SwapResponseBuilder();
         builder.Controller = this;
         return builder;
@@ -393,35 +394,17 @@ public abstract class SwapController : Controller
     /// </summary>
     public async Task<string> RenderPartialToStringAsync<TModel>(string viewName, TModel model)
     {
-        if (string.IsNullOrEmpty(viewName))
-            viewName = ControllerContext.ActionDescriptor.ActionName;
-
-        using var writer = new StringWriter();
-        var viewEngine = HttpContext.RequestServices.GetService(typeof(ICompositeViewEngine)) as ICompositeViewEngine;
-        var viewResult = viewEngine!.FindView(ControllerContext, viewName, false);
-
-        if (!viewResult.Success)
+        var viewRenderer = HttpContext.RequestServices.GetService<IViewRenderService>();
+        if (viewRenderer == null)
         {
-            throw new InvalidOperationException($"Could not find view '{viewName}'");
+            throw new InvalidOperationException(
+                "Swap.Htmx is not configured for this application. " +
+                "Fix: call builder.Services.AddSwapHtmx(...) in Program.cs (and app.UseSwapHtmx() in the middleware pipeline)."
+            );
         }
+        
+        return await viewRenderer.RenderPartialToStringAsync(viewName, model, this);
 
-        var metadataProvider = HttpContext.RequestServices.GetService(typeof(IModelMetadataProvider)) as IModelMetadataProvider;
-        var viewData = new ViewDataDictionary(metadataProvider!, new ModelStateDictionary())
-        {
-            Model = model
-        };
-
-        var viewContext = new ViewContext(
-            ControllerContext,
-            viewResult.View,
-            viewData,
-            TempData,
-            writer,
-            new HtmlHelperOptions()
-        );
-
-        await viewResult.View.RenderAsync(viewContext);
-        return writer.ToString();
     }
 
     /// <summary>
@@ -476,48 +459,15 @@ public abstract class SwapController : Controller
     protected SwapResponseBuilder SwapEvent(EventKey eventKey, object? payload = null)
     {
         var service = HttpContext?.RequestServices?.GetService<ISwapEventService>();
-        if (service != null)
+        if (service == null)
         {
-            return service.Event(eventKey, this, payload);
+            throw new InvalidOperationException(
+                "Swap.Htmx is not configured for this application. " +
+                "Fix: call builder.Services.AddSwapHtmx(...) in Program.cs (and app.UseSwapHtmx() in the middleware pipeline)."
+            );
         }
 
-        // Fallback logic (duplicated from service for safety)
-        var logger = HttpContext?.RequestServices?.GetService<ILogger<SwapController>>();
-        
-        Dev.SwapDevLogger.LogSwapEvent(logger, eventKey.Name, $"Payload: {payload?.GetType().Name ?? "null"}");
-        
-        var executor = HttpContext?.RequestServices?.GetService(typeof(Events.IEventChainExecutor)) 
-            as Events.IEventChainExecutor;
-
-        Dev.SwapDevLogger.LogExecutor(logger, $"Executor found: {executor != null}");
-
-        if (executor != null && HttpContext != null)
-        {
-            var result = executor.Execute(eventKey, HttpContext, this, payload);
-            Dev.SwapDevLogger.LogExecutor(logger, $"Executor returned: {result != null}");
-            
-            if (result != null)
-            {
-                // If payload provided, add it as a trigger
-                if (payload != null)
-                {
-                    result.WithTrigger(eventKey, payload);
-                }
-                return result;
-            }
-        }
-
-        // No chain configured or no executor - return empty builder
-        var builder = new SwapResponseBuilder();
-        builder.Controller = this;
-        
-        // Still include the trigger event with payload if provided
-        if (payload != null)
-        {
-            builder.WithTrigger(eventKey, payload);
-        }
-        
-        return builder;
+        return service.Event(eventKey, this, payload);
     }
 
     /// <summary>
@@ -533,45 +483,15 @@ public abstract class SwapController : Controller
     protected async Task<SwapResponseBuilder> SwapEventAsync(EventKey eventKey, object? payload = null)
     {
         var service = HttpContext?.RequestServices?.GetService<ISwapEventService>();
-        if (service != null)
+        if (service == null)
         {
-            return await service.EventAsync(eventKey, this, payload);
+            throw new InvalidOperationException(
+                "Swap.Htmx is not configured for this application. " +
+                "Fix: call builder.Services.AddSwapHtmx(...) in Program.cs (and app.UseSwapHtmx() in the middleware pipeline)."
+            );
         }
 
-        // Fallback logic
-        var logger = HttpContext?.RequestServices?.GetService<ILogger<SwapController>>();
-        
-        Dev.SwapDevLogger.LogSwapEvent(logger, eventKey.Name, $"Payload: {payload?.GetType().Name ?? "null"} (Async)");
-        
-        var executor = HttpContext?.RequestServices?.GetService(typeof(Events.IEventChainExecutor)) 
-            as Events.IEventChainExecutor;
-
-        if (executor != null && HttpContext != null)
-        {
-            var result = await executor.ExecuteAsync(eventKey, HttpContext, this, payload);
-            
-            if (result != null)
-            {
-                // If payload provided, add it as a trigger
-                if (payload != null)
-                {
-                    result.WithTrigger(eventKey, payload);
-                }
-                return result;
-            }
-        }
-
-        // No chain configured or no executor - return empty builder
-        var builder = new SwapResponseBuilder();
-        builder.Controller = this;
-        
-        // Still include the trigger event with payload if provided
-        if (payload != null)
-        {
-            builder.WithTrigger(eventKey, payload);
-        }
-        
-        return builder;
+        return await service.EventAsync(eventKey, this, payload);
     }
 }
 

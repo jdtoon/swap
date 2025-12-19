@@ -105,6 +105,9 @@ public static class SwapHtmxServiceExtensions
         services.AddScoped<IEventChainExecutor>(sp => new EventChainExecutor(options.EventBus));
         services.AddScoped<ISwapEventService, SwapEventService>();
         
+        // Register view rendering service
+        services.AddScoped<IViewRenderService, ViewRenderService>();
+        
         // Register distributed handlers
         var registry = new SwapEventHandlerRegistry();
         registry.ScanAndRegisterHandlers(services, options.AssembliesToScan.ToArray());
