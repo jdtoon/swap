@@ -1,4 +1,4 @@
-## Release 1.0.7
+## Release 1.1.1
 
 ### New Rules
 Rule ID | Category | Severity | Notes

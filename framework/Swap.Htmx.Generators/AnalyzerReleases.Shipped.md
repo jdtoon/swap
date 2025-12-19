@@ -7,3 +7,17 @@ SWAP001 | Swap.Htmx | Warning | Event is triggered but no handler is registered
 SWAP002 | Swap.Htmx | Warning | Event key referenced but not defined
 SWAP003 | Swap.Htmx | Warning | Potential circular event chain
 SWAP004 | Swap.Htmx | Info    | Duplicate handlers for same event
+
+## Release 1.1.0
+
+### New Rules
+Rule ID | Category | Severity | Notes
+--------|----------|----------|------
+
+### Removed Rules
+Rule ID | Category | Severity | Notes
+--------|----------|----------|------
+
+### Changed Rules
+Rule ID | Category | Severity | Notes
+--------|----------|----------|------
