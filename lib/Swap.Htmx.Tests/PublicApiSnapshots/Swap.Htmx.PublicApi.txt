@@ -607,6 +607,10 @@ namespace Swap.Htmx.Services
     {
         string GetSessionId();
     }
+    public interface IViewRenderService
+    {
+        System.Threading.Tasks.Task<string> RenderPartialToStringAsync<TModel>(string viewName, TModel model, Microsoft.AspNetCore.Mvc.Controller? controller = null);
+    }
     public class SessionSwapUserContext : Swap.Htmx.Services.ISwapUserContext
     {
         public SessionSwapUserContext(Microsoft.AspNetCore.Http.IHttpContextAccessor httpContextAccessor) { }

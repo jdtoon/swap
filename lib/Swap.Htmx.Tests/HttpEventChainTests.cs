@@ -264,6 +264,7 @@ public class HttpEventChainTests
     {
         // Arrange
         var services = new ServiceCollection();
+        services.AddLogging();
         services.AddHttpContextAccessor();
         services.AddSingleton<ISwapEventBus, SwapEventBus>();
         services.AddSingleton<SwapEventBusOptions>(new SwapEventBusOptions());
@@ -301,6 +302,7 @@ public class HttpEventChainTests
     {
         // Arrange
         var services = new ServiceCollection();
+        services.AddLogging();
         services.AddHttpContextAccessor();
         
         var options = new SwapEventBusOptions();
@@ -342,6 +344,7 @@ public class HttpEventChainTests
     {
         // Arrange
         var services = new ServiceCollection();
+        services.AddLogging();
         services.AddHttpContextAccessor();
         services.AddSingleton<ISwapEventBus, SwapEventBus>();
         services.AddSingleton<SwapEventBusOptions>(new SwapEventBusOptions());
