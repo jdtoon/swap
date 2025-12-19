@@ -1,0 +1,11 @@
+@using SwapDebtors.Models
+@model ActivityItem
+@{
+    var item = Model ?? new ActivityItem(string.Empty, "📌", DateTime.UtcNow);
+}
+
+<div class="activity-item">
+    <span>@item.Icon</span>
+    <span>@item.Message</span>
+    <small style="margin-left: auto;">@item.Timestamp.ToString("HH:mm")</small>
+</div>

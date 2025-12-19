@@ -11,7 +11,12 @@ The Redis Backplane enables horizontal scaling for Server-Sent Events (SSE) in S
 
 ## Installation
 
-The Redis backplane is included in the `Swap.Htmx` library but requires the `StackExchange.Redis` package (which is a transitive dependency).
+The Redis backplane lives in the `Swap.Htmx.Realtime.Redis` package.
+
+```bash
+dotnet add package Swap.Htmx.Realtime
+dotnet add package Swap.Htmx.Realtime.Redis
+```
 
 ## Configuration
 
@@ -53,9 +58,9 @@ Once configured, the backplane works transparently. You use the standard `ISseEv
 ```csharp
 public class HomeController : Controller
 {
-    private readonly ISseEventBridge _sse;
+  private readonly ISseConnectionRegistry _sse;
 
-    public HomeController(ISseEventBridge sse)
+  public HomeController(ISseConnectionRegistry sse)
     {
         _sse = sse;
     }
@@ -64,7 +69,7 @@ public class HomeController : Controller
     public async Task<IActionResult> Broadcast()
     {
         // This event will be received by clients connected to ANY server instance
-        await _sse.BroadcastAsync("sse:broadcast:my-event", "<div>Content</div>");
+      await _sse.BroadcastAsync("my-event", "<div>Content</div>");
         return Ok();
     }
 }

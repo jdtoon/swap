@@ -10,7 +10,6 @@ using Microsoft.Extensions.Logging;
 using Swap.Htmx.Events;
 using Swap.Htmx.Models;
 using Swap.Htmx.Results;
-using Swap.Htmx.Realtime;
 using Swap.Htmx.Services;
 
 namespace Swap.Htmx;
@@ -150,7 +149,8 @@ public abstract class SwapController : Controller
             return service.Response(this);
         }
         
-        // Fallback if service not registered (shouldn't happen if AddSwapHtmx called)
+        // Lean fallback: create builder without duplicating service logic
+        // This path is primarily for tests; production apps should use AddSwapHtmx()
         var builder = new SwapResponseBuilder();
         builder.Controller = this;
         return builder;
@@ -206,113 +206,187 @@ public abstract class SwapController : Controller
     /// }
     /// </code>
     /// </example>
+    [Obsolete("SwapRedirectToAction is a server-side forward helper (not a real redirect). It bypasses MVC model binding/filters and is easy to misuse. Prefer returning the target view directly, or use SwapRedirect()/WithNavigation() for client navigation.")]
     protected async Task<IActionResult> SwapRedirectToAction(string actionName, object? routeValues = null)
     {
-        // Get the target action descriptor
-        var actionDescriptor = ControllerContext.ActionDescriptor;
-        var controllerName = actionDescriptor.ControllerName;
+        if (string.IsNullOrWhiteSpace(actionName))
+            throw new ArgumentException("Action name is required.", nameof(actionName));
 
-        // Invoke the target action using reflection
-        var method = GetType().GetMethod(actionName);
-        if (method == null)
+        var controllerName = (ControllerContext?.ActionDescriptor?.ControllerName) ?? GetType().Name;
+
+        var candidates = GetType()
+            .GetMethods(System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public)
+            .Where(m => string.Equals(m.Name, actionName, StringComparison.Ordinal))
+            .ToArray();
+
+        if (candidates.Length == 0)
         {
-            throw new InvalidOperationException($"Action method '{actionName}' not found on controller '{controllerName}'");
+            throw new InvalidOperationException($"Action method '{actionName}' not found on controller '{controllerName}'.");
         }
 
-        // Build parameters from route values
-        var parameters = method.GetParameters();
-        var args = new object?[parameters.Length];
+        var routeDict = routeValues != null ? new RouteValueDictionary(routeValues) : new RouteValueDictionary();
+        var viable = candidates
+            .Select(m =>
+            {
+                var built = TryBuildArgs(m, routeDict);
+                return (Method: m, Success: built.Success, Args: built.Args);
+            })
+            .Where(x => x.Success)
+            .ToArray();
 
-        if (routeValues != null)
+        if (viable.Length == 0)
         {
-            var routeDict = new RouteValueDictionary(routeValues);
+            var available = string.Join(", ", candidates.Select(m => $"{m.Name}({string.Join(", ", m.GetParameters().Select(p => p.ParameterType.Name + " " + p.Name))})"));
+            throw new InvalidOperationException(
+                $"No overload of '{actionName}' on '{controllerName}' matched the provided route values. " +
+                $"Avoid overloads for actions used with SwapRedirectToAction. Available: {available}");
+        }
+
+        if (viable.Length > 1)
+        {
+            throw new InvalidOperationException(
+                $"Ambiguous action '{actionName}' on '{controllerName}'. Multiple overloads match the provided route values. " +
+                "Avoid overloaded action method names when using SwapRedirectToAction.");
+        }
+
+        var method = viable[0].Method;
+        var args = viable[0].Args;
+        var result = method.Invoke(this, args);
+
+        if (result is IActionResult actionResult)
+            return actionResult;
+
+        if (result is Task<IActionResult> taskIActionResult)
+            return await taskIActionResult;
+
+        if (result is Task task)
+        {
+            await task;
+            var resultProperty = task.GetType().GetProperty("Result");
+            if (resultProperty?.GetValue(task) is IActionResult awaitedResult)
+                return awaitedResult;
+        }
+
+        throw new InvalidOperationException($"Action method '{actionName}' did not return IActionResult.");
+
+        (bool Success, object?[] Args) TryBuildArgs(System.Reflection.MethodInfo methodInfo, RouteValueDictionary values)
+        {
+            var parameters = methodInfo.GetParameters();
+            var built = new object?[parameters.Length];
+
             for (int i = 0; i < parameters.Length; i++)
             {
                 var param = parameters[i];
-                if (routeDict.TryGetValue(param.Name!, out var value))
+                var paramType = param.ParameterType;
+
+                if (paramType == typeof(CancellationToken))
                 {
-                    args[i] = Convert.ChangeType(value, param.ParameterType);
+                    built[i] = HttpContext?.RequestAborted ?? CancellationToken.None;
+                    continue;
+                }
+
+                if (param.Name != null && values.TryGetValue(param.Name, out var raw))
+                {
+                    if (!TryConvert(raw, paramType, out var converted))
+                        return (false, Array.Empty<object?>());
+
+                    built[i] = converted;
+                    continue;
+                }
+
+                if (param.HasDefaultValue)
+                {
+                    built[i] = param.DefaultValue;
+                    continue;
+                }
+
+                if (!paramType.IsValueType || Nullable.GetUnderlyingType(paramType) != null)
+                {
+                    built[i] = null;
+                    continue;
+                }
+
+                // Required non-nullable value type with no provided value.
+                return (false, Array.Empty<object?>());
+            }
+
+            return (true, built);
+        }
+
+        static bool TryConvert(object? raw, Type targetType, out object? converted)
+        {
+            converted = null;
+            if (raw is null)
+            {
+                if (!targetType.IsValueType || Nullable.GetUnderlyingType(targetType) != null)
+                    return true;
+                return false;
+            }
+
+            var nonNullableTarget = Nullable.GetUnderlyingType(targetType) ?? targetType;
+
+            if (nonNullableTarget.IsInstanceOfType(raw))
+            {
+                converted = raw;
+                return true;
+            }
+
+            if (nonNullableTarget == typeof(string))
+            {
+                converted = Convert.ToString(raw);
+                return true;
+            }
+
+            if (nonNullableTarget.IsEnum)
+            {
+                if (raw is string s)
+                {
+                    if (Enum.TryParse(nonNullableTarget, s, ignoreCase: true, out var enumVal))
+                    {
+                        converted = enumVal;
+                        return true;
+                    }
+                    return false;
+                }
+
+                try
+                {
+                    converted = Enum.ToObject(nonNullableTarget, raw);
+                    return true;
+                }
+                catch
+                {
+                    return false;
                 }
             }
-        }
 
-        // Invoke the action method
-        var result = method.Invoke(this, args);
+            if (nonNullableTarget == typeof(Guid))
+            {
+                if (raw is Guid g)
+                {
+                    converted = g;
+                    return true;
+                }
 
-        // Handle async results
-        if (result is Task<IActionResult> taskResult)
-        {
-            return await taskResult;
-        }
-        else if (result is IActionResult actionResult)
-        {
-            return actionResult;
-        }
-        else
-        {
-            throw new InvalidOperationException($"Action method '{actionName}' did not return IActionResult");
-        }
-    }
+                if (raw is string gs && Guid.TryParse(gs, out var parsed))
+                {
+                    converted = parsed;
+                    return true;
+                }
 
-    /// <summary>
-    /// Creates a Server-Sent Events (SSE) connection for streaming real-time HTML updates to the client.
-    /// Use with HTMX's hx-sse attribute to receive live updates.
-    /// </summary>
-    /// <param name="handler">The async function that streams events using the ServerSentEventStream.</param>
-    /// <returns>An IActionResult that establishes and maintains an SSE connection.</returns>
-    /// <example>
-    /// <code>
-    /// public IActionResult LiveFeed()
-    /// {
-    ///     return ServerSentEvents(async (stream, ct) =>
-    ///     {
-    ///         // Send initial state
-    ///         await stream.SendEventAsync("initial", "&lt;div&gt;Connected&lt;/div&gt;");
-    ///         
-    ///         // Stream updates periodically
-    ///         while (!ct.IsCancellationRequested)
-    ///         {
-    ///             await Task.Delay(1000, ct);
-    ///             var html = $"&lt;div&gt;Update at {DateTime.Now}&lt;/div&gt;";
-    ///             await stream.SendEventAsync("update", html);
-    ///         }
-    ///     });
-    /// }
-    /// </code>
-    /// </example>
-    protected IActionResult ServerSentEvents(Func<ServerSentEventStream, CancellationToken, Task> handler)
-    {
-        var logger = HttpContext.RequestServices.GetService<ILogger<ServerSentEventsResult>>();
-        return new ServerSentEventsResult(handler, logger);
-    }
+                return false;
+            }
 
-    /// <summary>
-    /// Creates an enhanced SSE connection with connection management, rooms, and event filtering.
-    /// This version integrates with the SSE event bridge for automatic event-driven broadcasting.
-    /// </summary>
-    /// <param name="handler">The async function that configures and maintains the SSE connection.</param>
-    /// <returns>An enhanced SSE result with connection registry integration.</returns>
-    /// <example>
-    /// <code>
-    /// public IActionResult EnhancedLiveFeed()
-    /// {
-    ///     return ServerSentEvents(async (connection, ct) =>
-    ///     {
-    ///         await connection
-    ///             .WithAuthentication()
-    ///             .WithRooms("dashboard", $"user-{UserId}")
-    ///             .WithEvents("task-updated", "notification")
-    ///             .WithInitialState("initial", await RenderPartialToStringAsync("_Dashboard", model))
-    ///             .KeepAlive(cancellationToken: ct);
-    ///     });
-    /// }
-    /// </code>
-    /// </example>
-    protected IActionResult ServerSentEvents(Func<SseConnectionBuilder, CancellationToken, Task> handler)
-    {
-        // Store controller reference for partial view rendering
-        HttpContext.Items["SwapController"] = this;
-        return new EnhancedServerSentEventsResult(handler);
+            try
+            {
+                converted = Convert.ChangeType(raw, nonNullableTarget);
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
     }
 
     /// <summary>
@@ -320,35 +394,17 @@ public abstract class SwapController : Controller
     /// </summary>
     public async Task<string> RenderPartialToStringAsync<TModel>(string viewName, TModel model)
     {
-        if (string.IsNullOrEmpty(viewName))
-            viewName = ControllerContext.ActionDescriptor.ActionName;
-
-        using var writer = new StringWriter();
-        var viewEngine = HttpContext.RequestServices.GetService(typeof(ICompositeViewEngine)) as ICompositeViewEngine;
-        var viewResult = viewEngine!.FindView(ControllerContext, viewName, false);
-
-        if (!viewResult.Success)
+        var viewRenderer = HttpContext.RequestServices.GetService<IViewRenderService>();
+        if (viewRenderer == null)
         {
-            throw new InvalidOperationException($"Could not find view '{viewName}'");
+            throw new InvalidOperationException(
+                "Swap.Htmx is not configured for this application. " +
+                "Fix: call builder.Services.AddSwapHtmx(...) in Program.cs (and app.UseSwapHtmx() in the middleware pipeline)."
+            );
         }
+        
+        return await viewRenderer.RenderPartialToStringAsync(viewName, model, this);
 
-        var metadataProvider = HttpContext.RequestServices.GetService(typeof(IModelMetadataProvider)) as IModelMetadataProvider;
-        var viewData = new ViewDataDictionary(metadataProvider!, new ModelStateDictionary())
-        {
-            Model = model
-        };
-
-        var viewContext = new ViewContext(
-            ControllerContext,
-            viewResult.View,
-            viewData,
-            TempData,
-            writer,
-            new HtmlHelperOptions()
-        );
-
-        await viewResult.View.RenderAsync(viewContext);
-        return writer.ToString();
     }
 
     /// <summary>
@@ -403,48 +459,15 @@ public abstract class SwapController : Controller
     protected SwapResponseBuilder SwapEvent(EventKey eventKey, object? payload = null)
     {
         var service = HttpContext?.RequestServices?.GetService<ISwapEventService>();
-        if (service != null)
+        if (service == null)
         {
-            return service.Event(eventKey, this, payload);
+            throw new InvalidOperationException(
+                "Swap.Htmx is not configured for this application. " +
+                "Fix: call builder.Services.AddSwapHtmx(...) in Program.cs (and app.UseSwapHtmx() in the middleware pipeline)."
+            );
         }
 
-        // Fallback logic (duplicated from service for safety)
-        var logger = HttpContext?.RequestServices?.GetService<ILogger<SwapController>>();
-        
-        Dev.SwapDevLogger.LogSwapEvent(logger, eventKey.Name, $"Payload: {payload?.GetType().Name ?? "null"}");
-        
-        var executor = HttpContext?.RequestServices?.GetService(typeof(Events.IEventChainExecutor)) 
-            as Events.IEventChainExecutor;
-
-        Dev.SwapDevLogger.LogExecutor(logger, $"Executor found: {executor != null}");
-
-        if (executor != null && HttpContext != null)
-        {
-            var result = executor.Execute(eventKey, HttpContext, this, payload);
-            Dev.SwapDevLogger.LogExecutor(logger, $"Executor returned: {result != null}");
-            
-            if (result != null)
-            {
-                // If payload provided, add it as a trigger
-                if (payload != null)
-                {
-                    result.WithTrigger(eventKey, payload);
-                }
-                return result;
-            }
-        }
-
-        // No chain configured or no executor - return empty builder
-        var builder = new SwapResponseBuilder();
-        builder.Controller = this;
-        
-        // Still include the trigger event with payload if provided
-        if (payload != null)
-        {
-            builder.WithTrigger(eventKey, payload);
-        }
-        
-        return builder;
+        return service.Event(eventKey, this, payload);
     }
 
     /// <summary>
@@ -460,45 +483,15 @@ public abstract class SwapController : Controller
     protected async Task<SwapResponseBuilder> SwapEventAsync(EventKey eventKey, object? payload = null)
     {
         var service = HttpContext?.RequestServices?.GetService<ISwapEventService>();
-        if (service != null)
+        if (service == null)
         {
-            return await service.EventAsync(eventKey, this, payload);
+            throw new InvalidOperationException(
+                "Swap.Htmx is not configured for this application. " +
+                "Fix: call builder.Services.AddSwapHtmx(...) in Program.cs (and app.UseSwapHtmx() in the middleware pipeline)."
+            );
         }
 
-        // Fallback logic
-        var logger = HttpContext?.RequestServices?.GetService<ILogger<SwapController>>();
-        
-        Dev.SwapDevLogger.LogSwapEvent(logger, eventKey.Name, $"Payload: {payload?.GetType().Name ?? "null"} (Async)");
-        
-        var executor = HttpContext?.RequestServices?.GetService(typeof(Events.IEventChainExecutor)) 
-            as Events.IEventChainExecutor;
-
-        if (executor != null && HttpContext != null)
-        {
-            var result = await executor.ExecuteAsync(eventKey, HttpContext, this, payload);
-            
-            if (result != null)
-            {
-                // If payload provided, add it as a trigger
-                if (payload != null)
-                {
-                    result.WithTrigger(eventKey, payload);
-                }
-                return result;
-            }
-        }
-
-        // No chain configured or no executor - return empty builder
-        var builder = new SwapResponseBuilder();
-        builder.Controller = this;
-        
-        // Still include the trigger event with payload if provided
-        if (payload != null)
-        {
-            builder.WithTrigger(eventKey, payload);
-        }
-        
-        return builder;
+        return await service.EventAsync(eventKey, this, payload);
     }
 }
 

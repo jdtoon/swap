@@ -17,6 +17,13 @@ Build interactive web apps with server-rendered HTML. No JavaScript frameworks, 
 dotnet add package Swap.Htmx
 ```
 
+Optional (realtime + Redis):
+
+```bash
+dotnet add package Swap.Htmx.Realtime
+dotnet add package Swap.Htmx.Realtime.Redis
+```
+
 ### 2. Setup (Program.cs)
 
 ```csharp
@@ -37,7 +44,7 @@ app.Run();
 ```html
 <head>
     <link rel="stylesheet" href="~/_content/Swap.Htmx/css/swap.css" />
-    <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+    <script src="https://unpkg.com/htmx.org@2.0.8"></script>
     <script src="~/_content/Swap.Htmx/js/swap.client.js"></script>
 </head>
 <body>
@@ -206,14 +213,11 @@ return SwapResponse()
 
 ```csharp
 // Configure once in Program.cs
-builder.Services.AddSwapHtmx(options =>
+builder.Services.AddSwapHtmx(events =>
 {
-    options.ConfigureEvents(events =>
-    {
-        events.On(CartEvents.ItemAdded)
-            .AlsoUpdate("cart-count", "_CartCount")
-            .AlsoUpdate("cart-total", "_CartTotal");
-    });
+    events.When(CartEvents.ItemAdded)
+        .RefreshPartial("cart-count", "_CartCount")
+        .RefreshPartial("cart-total", "_CartTotal");
 });
 
 // Controller just fires event
@@ -226,7 +230,7 @@ return SwapEvent(CartEvents.ItemAdded, item).WithView("_Added", item).Build();
 // Define events
 public static class TaskEvents
 {
-    public static readonly EventKey Completed = new("task:completed");
+    public static readonly EventKey Completed = new("task.completed");
 }
 
 // Handler updates stats (DI supported!)
@@ -265,6 +269,8 @@ public IActionResult Complete(int id)
 ```
 
 📖 [Full Events Guide](docs/Events.md)
+
+If you’re using SSE/WebSockets, see: 📖 [Event Naming & Realtime Routing](docs/EventNamingAndRouting.md)
 
 ---
 
@@ -408,6 +414,8 @@ The `HandlerValidationAnalyzer` warns you about:
 | Guide | Description |
 |-------|-------------|
 | [Getting Started](docs/GettingStarted.md) | Full setup walkthrough |
+| [Public API & Compatibility](docs/PublicApiAndCompatibility.md) | What is stable vs experimental |
+| [Security Checklist](docs/SecurityChecklist.md) | CSRF, realtime auth, room scoping, headers |
 | [SwapState](docs/SwapState.md) | Server-driven state management |
 | [Events](docs/Events.md) | Event system deep dive |
 | [Navigation](docs/Navigation.md) | SPA-style navigation |

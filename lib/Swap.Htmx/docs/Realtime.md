@@ -2,6 +2,13 @@
 
 Swap.Htmx provides built-in support for Server-Sent Events (SSE) to push updates to the client.
 
+If you’re mixing `HX-Trigger` events and realtime broadcasts, read [Event Naming & Realtime Routing](EventNamingAndRouting.md) first.
+
+## Packages
+
+- Core: `Swap.Htmx`
+- Realtime (SSE/WebSockets): `Swap.Htmx.Realtime`
+
 ## Single Server (In-Memory)
 
 For simple applications running on a single server instance, you can use the in-memory backplane. This is the default behavior if no other backplane is configured, but you can also register it explicitly.
@@ -19,14 +26,17 @@ builder.Services.AddInMemorySseBackplane();
 
 ### Usage
 
-Use the `ISseEventBridge` or `ISseConnectionRegistry` to broadcast events.
+There are two common ways to push updates:
+
+1) Preferred: emit normal Swap events (via `HX-Trigger`) and use event chains to broadcast to realtime clients.
+2) Escape hatch: broadcast HTML directly via `ISseConnectionRegistry`.
 
 ```csharp
 public class NotificationController : Controller
 {
-    private readonly ISseEventBridge _sse;
+    private readonly ISseConnectionRegistry _sse;
 
-    public NotificationController(ISseEventBridge sse)
+    public NotificationController(ISseConnectionRegistry sse)
     {
         _sse = sse;
     }
@@ -35,7 +45,8 @@ public class NotificationController : Controller
     public async Task<IActionResult> SendAlert()
     {
         // Broadcasts to all connected clients on this server
-        await _sse.BroadcastAsync("sse:alert", "<div>System Alert!</div>");
+        // "alert" is the client-facing SSE event name (matched by `sse-swap="alert"`)
+        await _sse.BroadcastAsync("alert", "<div>System Alert!</div>");
         return Ok();
     }
 }

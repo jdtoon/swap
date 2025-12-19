@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Collections.Concurrent;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -21,6 +22,8 @@ namespace Swap.Htmx.Generators;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public class HandlerValidationAnalyzer : DiagnosticAnalyzer
 {
+    private static readonly string[] CompilationEndTags = new[] { WellKnownDiagnosticTags.CompilationEnd };
+
     // SWAP001: Event triggered with no handler
     public static readonly DiagnosticDescriptor NoHandlerForEvent = new(
         id: "SWAP001",
@@ -29,7 +32,9 @@ public class HandlerValidationAnalyzer : DiagnosticAnalyzer
         category: "Swap.Htmx",
         defaultSeverity: DiagnosticSeverity.Warning,
         isEnabledByDefault: true,
-        description: "Events triggered via WithTrigger() should have a corresponding handler in an ISwapEventConfiguration.");
+        description: "Events triggered via WithTrigger() should have a corresponding handler in an ISwapEventConfiguration.",
+        helpLinkUri: null,
+        customTags: CompilationEndTags);
 
     // SWAP002: Event chain references non-existent event
     public static readonly DiagnosticDescriptor EventNotDefined = new(
@@ -39,7 +44,9 @@ public class HandlerValidationAnalyzer : DiagnosticAnalyzer
         category: "Swap.Htmx",
         defaultSeverity: DiagnosticSeverity.Warning,
         isEnabledByDefault: true,
-        description: "Events used in When() should be defined as const strings with [SwapEventSource].");
+        description: "Events used in When() should be defined as const strings with [SwapEventSource].",
+        helpLinkUri: null,
+        customTags: CompilationEndTags);
 
     // SWAP003: Potential circular event chain
     public static readonly DiagnosticDescriptor CircularEventChain = new(
@@ -59,7 +66,9 @@ public class HandlerValidationAnalyzer : DiagnosticAnalyzer
         category: "Swap.Htmx",
         defaultSeverity: DiagnosticSeverity.Info,
         isEnabledByDefault: true,
-        description: "Having multiple handlers for the same event in one configuration may be intentional but could indicate a mistake.");
+        description: "Having multiple handlers for the same event in one configuration may be intentional but could indicate a mistake.",
+        helpLinkUri: null,
+        customTags: CompilationEndTags);
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics =>
         ImmutableArray.Create(
@@ -234,6 +243,9 @@ public class HandlerValidationAnalyzer : DiagnosticAnalyzer
         {
             if (!collector.HandledEvents.ContainsKey(triggered.Key))
             {
+                if (triggered.Value is null)
+                    continue;
+
                 foreach (var location in triggered.Value)
                 {
                     var diagnostic = Diagnostic.Create(
@@ -255,6 +267,9 @@ public class HandlerValidationAnalyzer : DiagnosticAnalyzer
                 // (skip generic names that might come from external sources)
                 if (handled.Key.Contains("."))
                 {
+                    if (handled.Value is null)
+                        continue;
+
                     foreach (var location in handled.Value)
                     {
                         var diagnostic = Diagnostic.Create(
@@ -268,10 +283,10 @@ public class HandlerValidationAnalyzer : DiagnosticAnalyzer
         }
 
         // SWAP004: Duplicate handlers in same configuration
-        foreach (var handled in collector.HandledEvents.Where(h => h.Value.Count > 1))
+        foreach (var handled in collector.HandledEvents.Where(h => h.Value is not null && h.Value.Count > 1))
         {
             // Report on subsequent occurrences
-            foreach (var location in handled.Value.Skip(1))
+            foreach (var location in handled.Value!.Skip(1))
             {
                 var diagnostic = Diagnostic.Create(
                     DuplicateEventHandler,
@@ -291,38 +306,47 @@ public class HandlerValidationAnalyzer : DiagnosticAnalyzer
     /// </summary>
     private class EventCollector
     {
-        public Dictionary<string, List<Location>> DefinedEvents { get; } = new();
-        public Dictionary<string, List<Location>> TriggeredEvents { get; } = new();
-        public Dictionary<string, List<Location>> HandledEvents { get; } = new();
+        public ConcurrentDictionary<string, ConcurrentBag<Location>> DefinedEvents { get; } = new();
+        public ConcurrentDictionary<string, ConcurrentBag<Location>> TriggeredEvents { get; } = new();
+        public ConcurrentDictionary<string, ConcurrentBag<Location>> HandledEvents { get; } = new();
 
-        public void AddDefinedEvent(string eventName, Location location)
+        public void AddDefinedEvent(string? eventName, Location location)
         {
-            if (!DefinedEvents.TryGetValue(eventName, out var list))
-            {
-                list = new List<Location>();
-                DefinedEvents[eventName] = list;
-            }
-            list.Add(location);
+            if (eventName is null)
+                return;
+
+            var key = eventName.Trim();
+            if (key.Length == 0)
+                return;
+
+            var bag = DefinedEvents.GetOrAdd(key, static _ => new ConcurrentBag<Location>());
+            bag?.Add(location);
         }
 
-        public void AddTriggeredEvent(string eventName, Location location)
+        public void AddTriggeredEvent(string? eventName, Location location)
         {
-            if (!TriggeredEvents.TryGetValue(eventName, out var list))
-            {
-                list = new List<Location>();
-                TriggeredEvents[eventName] = list;
-            }
-            list.Add(location);
+            if (eventName is null)
+                return;
+
+            var key = eventName.Trim();
+            if (key.Length == 0)
+                return;
+
+            var bag = TriggeredEvents.GetOrAdd(key, static _ => new ConcurrentBag<Location>());
+            bag?.Add(location);
         }
 
-        public void AddHandledEvent(string eventName, Location location)
+        public void AddHandledEvent(string? eventName, Location location)
         {
-            if (!HandledEvents.TryGetValue(eventName, out var list))
-            {
-                list = new List<Location>();
-                HandledEvents[eventName] = list;
-            }
-            list.Add(location);
+            if (eventName is null)
+                return;
+
+            var key = eventName.Trim();
+            if (key.Length == 0)
+                return;
+
+            var bag = HandledEvents.GetOrAdd(key, static _ => new ConcurrentBag<Location>());
+            bag?.Add(location);
         }
     }
 }

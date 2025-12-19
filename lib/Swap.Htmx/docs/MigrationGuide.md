@@ -47,6 +47,8 @@ app.Run();
 
 In `Views/Shared/_Layout.cshtml`, add HTMX and Swap assets:
 
+You can use either CDN assets or LibMan-managed local assets. See [Client Assets](ClientAssets.md).
+
 ```html
 <head>
     <!-- Existing content... -->

@@ -18,11 +18,9 @@
             <swap-nav to="/" class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Home" ? "active" : "")">
                 🏠 Dashboard
             </swap-nav>
-<!--#if (IncludeSampleModule) -->
             <swap-nav to="/Notes" class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Notes" ? "active" : "")">
                 📝 Notes
             </swap-nav>
-<!--#endif -->
         </nav>
     </aside>
 
@@ -34,9 +32,6 @@
     <div id="toast-container"></div>
 
     <script src="~/lib/htmx/dist/htmx.min.js" asp-append-version="true"></script>
-<!--#if (IncludeSse) -->
-    <script src="~/lib/htmx/ext/sse.js" asp-append-version="true"></script>
-<!--#endif -->
     <script src="~/_content/Swap.Htmx/js/swap.client.js" asp-append-version="true"></script>
     <script src="/js/bundle.js"></script>
 

@@ -5,6 +5,7 @@ using Swap.Htmx.Events;
 using Swap.Htmx.Realtime;
 using Xunit;
 using Microsoft.AspNetCore.Http;
+using System.Security.Claims;
 
 namespace Swap.Htmx.Tests.ServerSentEvents;
 
@@ -278,10 +279,142 @@ public class SseEventBridgeTests
             It.IsAny<CancellationToken>()),
             Times.Once);
     }
+
+    [Fact]
+    public async Task HandleSseEventAsync_FilterAuthenticated_BroadcastsWithPredicate()
+    {
+        var mockRegistry = new Mock<IRealtimeConnectionRegistry>();
+        var mockViewRenderer = new Mock<ISseViewRenderer>();
+        mockViewRenderer.Setup(r => r.RenderPartialAsync(It.IsAny<string>(), It.IsAny<object>()))
+            .ReturnsAsync("<div>Filtered</div>");
+
+        Func<IRealtimeConnection, bool>? captured = null;
+        mockRegistry
+            .Setup(r => r.BroadcastToFilteredAsync(
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<Func<IRealtimeConnection, bool>>(),
+                It.IsAny<CancellationToken>()))
+            .Callback<string, string, Func<IRealtimeConnection, bool>, CancellationToken>((_, _, filter, _) => captured = filter)
+            .Returns(Task.CompletedTask);
+
+        var services = new ServiceCollection();
+        services.AddSingleton<IHttpContextAccessor>(new HttpContextAccessor { HttpContext = new DefaultHttpContext() });
+        var serviceProvider = services.BuildServiceProvider();
+
+        var options = new SwapEventBusOptions();
+        options.When(SseEvents.Filter("auth-event", "authenticated"))
+            .RefreshPartial("x", "~/Views/X.cshtml", _ => new { });
+
+        var logger = new Mock<ILogger<RealtimeEventBridge>>().Object;
+        var bridge = new RealtimeEventBridge(
+            mockRegistry.Object,
+            serviceProvider,
+            options,
+            logger,
+            mockViewRenderer.Object);
+
+        await bridge.HandleSseEventAsync("sse:filter:authenticated:auth-event", null);
+
+        Assert.NotNull(captured);
+
+        var authed = new TestRealtimeConnection(TestPrincipals.CreateAuthenticatedPrincipal("u1"));
+        var anon = new TestRealtimeConnection(new ClaimsPrincipal(new ClaimsIdentity()));
+        Assert.True(captured!(authed));
+        Assert.False(captured!(anon));
+    }
+
+    [Fact]
+    public async Task HandleSseEventAsync_FilterMonitoring_BroadcastsWithPredicate()
+    {
+        var mockRegistry = new Mock<IRealtimeConnectionRegistry>();
+        var mockViewRenderer = new Mock<ISseViewRenderer>();
+        mockViewRenderer.Setup(r => r.RenderPartialAsync(It.IsAny<string>(), It.IsAny<object>()))
+            .ReturnsAsync("<div>Filtered</div>");
+
+        Func<IRealtimeConnection, bool>? captured = null;
+        mockRegistry
+            .Setup(r => r.BroadcastToFilteredAsync(
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<Func<IRealtimeConnection, bool>>(),
+                It.IsAny<CancellationToken>()))
+            .Callback<string, string, Func<IRealtimeConnection, bool>, CancellationToken>((_, _, filter, _) => captured = filter)
+            .Returns(Task.CompletedTask);
+
+        var services = new ServiceCollection();
+        services.AddSingleton<IHttpContextAccessor>(new HttpContextAccessor { HttpContext = new DefaultHttpContext() });
+        var serviceProvider = services.BuildServiceProvider();
+
+        var options = new SwapEventBusOptions();
+        options.When(SseEvents.Filter("mon-event", "monitoring"))
+            .RefreshPartial("x", "~/Views/X.cshtml", _ => new { });
+
+        var logger = new Mock<ILogger<RealtimeEventBridge>>().Object;
+        var bridge = new RealtimeEventBridge(
+            mockRegistry.Object,
+            serviceProvider,
+            options,
+            logger,
+            mockViewRenderer.Object);
+
+        await bridge.HandleSseEventAsync("sse:filter:monitoring:mon-event", null);
+
+        Assert.NotNull(captured);
+
+        var monitoring = new TestRealtimeConnection(TestPrincipals.CreateAuthenticatedPrincipal("u1"), rooms: new[] { "monitoring" });
+        var other = new TestRealtimeConnection(TestPrincipals.CreateAuthenticatedPrincipal("u2"), rooms: new[] { "other" });
+        Assert.True(captured!(monitoring));
+        Assert.False(captured!(other));
+    }
 }
 
 public class TaskPayload
 {
     public string TaskId { get; set; } = string.Empty;
+}
+
+internal sealed class TestRealtimeConnection : IRealtimeConnection
+{
+    private readonly HashSet<string> _rooms;
+    private readonly HashSet<string> _events;
+
+    public TestRealtimeConnection(ClaimsPrincipal? user, IEnumerable<string>? rooms = null, IEnumerable<string>? events = null)
+    {
+        User = user;
+        ConnectedAt = DateTime.UtcNow;
+        _rooms = rooms != null ? new HashSet<string>(rooms) : new HashSet<string>();
+        _events = events != null ? new HashSet<string>(events) : new HashSet<string>();
+        Id = Guid.NewGuid().ToString("N");
+    }
+
+    public DateTime ConnectedAt { get; }
+    public string Id { get; }
+    public bool IsActive => true;
+    public IReadOnlyCollection<string> Rooms => _rooms;
+    public IReadOnlyCollection<string> SubscribedEvents => _events;
+    public ClaimsPrincipal? User { get; }
+
+    public bool IsInRoom(string room) => _rooms.Contains(room);
+    public bool IsSubscribedToEvent(string eventName) => _events.Contains(eventName);
+    public void JoinRoom(string room) => _rooms.Add(room);
+    public void LeaveRoom(string room) => _rooms.Remove(room);
+    public Task SendEventAsync(string eventName, string data) => Task.CompletedTask;
+    public void SubscribeToEvent(string eventName) => _events.Add(eventName);
+    public void UnsubscribeFromEvent(string eventName) => _events.Remove(eventName);
+    public ValueTask DisposeAsync() => ValueTask.CompletedTask;
+}
+
+internal static class TestPrincipals
+{
+    public static ClaimsPrincipal CreateAuthenticatedPrincipal(string name)
+    {
+        var identity = new ClaimsIdentity(
+            new[] { new Claim(ClaimTypes.Name, name) },
+            authenticationType: "TestAuth",
+            nameType: ClaimTypes.Name,
+            roleType: ClaimTypes.Role);
+        return new ClaimsPrincipal(identity);
+    }
 }
 

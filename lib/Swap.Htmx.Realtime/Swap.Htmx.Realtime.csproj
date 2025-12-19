@@ -1,0 +1,38 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+
+    <!-- Package Metadata -->
+    <PackageId>Swap.Htmx.Realtime</PackageId>
+    <Version>1.1.0</Version>
+    <Authors>jdtoon</Authors>
+    <Company>Swap</Company>
+    <Description>Realtime primitives for Swap.Htmx: Server-Sent Events (SSE), WebSockets, connection registry, event bridge, and middleware. (Redis backplane lives in Swap.Htmx.Realtime.Redis.)</Description>
+    <PackageProjectUrl>https://github.com/jdtoon/swap</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/jdtoon/swap</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageTags>swap;htmx;aspnetcore;sse;websocket;realtime;events</PackageTags>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Swap.Htmx\Swap.Htmx.csproj" />
+  </ItemGroup>
+
+  <!-- Compile the existing realtime sources from the core folder (excluding Redis). -->
+  <ItemGroup>
+    <Compile Include="..\Swap.Htmx\Realtime\**\*.cs" Exclude="..\Swap.Htmx\Realtime\Redis\**\*.cs" />
+    <Compile Include="..\Swap.Htmx\Results\SwapSseResult.cs" />
+    <Compile Include="..\Swap.Htmx\Results\SwapWebSocketResult.cs" />
+    <Compile Include="..\Swap.Htmx\Extensions\SwapHtmxBackplaneExtensions.cs" />
+    <Compile Include="..\Swap.Htmx\Dev\Controllers\SseFallbackExampleController.cs" />
+  </ItemGroup>
+
+</Project>

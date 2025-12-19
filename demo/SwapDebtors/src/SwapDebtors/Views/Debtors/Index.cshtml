@@ -1,0 +1,14 @@
+@using SwapDebtors.Models
+@model DebtorListViewModel
+@{
+    ViewData["Title"] = "Debtors";
+    var state = Model.State;
+}
+
+<h1>👥 Debtors</h1>
+<p>Manage your debtors with SwapState-powered filtering and pagination.</p>
+
+<!-- Filter content area - swaps entirely to preserve state -->
+<div id="filter-content">
+    @await Html.PartialAsync("_FilterContent", Model)
+</div>

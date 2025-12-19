@@ -187,6 +187,54 @@ public class SwapEventChainResolutionTests
     }
 
     [Fact]
+    public void ResolveChains_DuplicateTriggerEvent_UpdatesChainedPayloadFromLastEmission()
+    {
+        // Arrange: event.a chains to ui.refresh, and event.a is emitted twice with different payloads
+        var context = CreateContext();
+        var accessor = new HttpContextAccessor { HttpContext = context };
+        var options = new SwapEventBusOptions()
+            .Chain(TestEvents.EventA, TestEvents.UiRefresh);
+        var bus = new SwapEventBus(accessor, options, NullLogger<SwapEventBus>.Instance);
+
+        var payload1 = new object();
+        var payload2 = new object();
+
+        // Act
+        bus.Emit(TestEvents.EventA, payload1);
+        bus.Emit(TestEvents.EventA, payload2);
+        var resolved = bus.ResolveChains(context);
+
+        // Assert: both the trigger and the chained event reflect the most recent payload
+        Assert.Equal(2, resolved.Count);
+        Assert.Same(payload2, resolved["event.a"]);
+        Assert.Same(payload2, resolved["ui.refresh"]);
+    }
+
+    [Fact]
+    public void ResolveChains_ExplicitChainedEventPayload_IsNotOverwrittenByLaterTriggerChain()
+    {
+        // Arrange: ui.refresh is emitted explicitly, then event.a is emitted (which chains to ui.refresh)
+        var context = CreateContext();
+        var accessor = new HttpContextAccessor { HttpContext = context };
+        var options = new SwapEventBusOptions()
+            .Chain(TestEvents.EventA, TestEvents.UiRefresh);
+        var bus = new SwapEventBus(accessor, options, NullLogger<SwapEventBus>.Instance);
+
+        var explicitPayload = new object();
+        var triggerPayload = new object();
+
+        // Act
+        bus.Emit(TestEvents.UiRefresh, explicitPayload);
+        bus.Emit(TestEvents.EventA, triggerPayload);
+        var resolved = bus.ResolveChains(context);
+
+        // Assert: explicit emission wins
+        Assert.Equal(2, resolved.Count);
+        Assert.Same(triggerPayload, resolved["event.a"]);
+        Assert.Same(explicitPayload, resolved["ui.refresh"]);
+    }
+
+    [Fact]
     public void ResolveChains_NoPendingEvents_ReturnsEmpty()
     {
         // Arrange

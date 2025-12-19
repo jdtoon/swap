@@ -42,7 +42,7 @@ app.MapGet("/swap/sse", (ISseConnectionRegistry registry, HttpContext context) =
 {
     var room = context.Request.Query["room"].ToString();
     
-    return SwapResults.Sse(registry, options => {
+    return SwapRealtimeResults.Sse(registry, options => {
         options.HeartbeatInterval = TimeSpan.FromSeconds(10);
         
         // Security: Validate room access

@@ -9,8 +9,11 @@ Welcome to the Swap.Htmx documentation. These guides will help you build reactiv
 | I want to... | Read this |
 |--------------|-----------|
 | Get started with Swap.Htmx | [Getting Started](GettingStarted.md) |
+| Understand what APIs are stable | [Public API & Compatibility](PublicApiAndCompatibility.md) |
+| Secure my app (CSRF/SSE/Auth) | [Security Checklist](SecurityChecklist.md) |
 | Clean navigation without boilerplate | [`<swap-nav>` Tag Helper](SwapNavTagHelper.md) ⭐ NEW |
 | Navigate programmatically with toasts | [Navigation](Navigation.md) |
+| Understand `SwapController` sharp edges | [SwapController Sharp Edges](SwapControllerSharpEdges.md) |
 | Auto-generate view/element constants | [Auto-Scan Generator](AutoScanGenerator.md) ⭐ NEW |
 | Migrate an existing MVC app | [Migration Guide](MigrationGuide.md) |
 | Build complex multi-component UIs | [Multi-Component Coordination](MultiComponentCoordination.md) |
@@ -20,8 +23,13 @@ Welcome to the Swap.Htmx documentation. These guides will help you build reactiv
 | Show success toasts for CRUD | [CRUD Toasts](CrudToasts.md) |
 | Understand state patterns | [State Management](StateManagement.md) |
 | Avoid common mistakes | [Anti-Patterns](AntiPatterns.md) |
+| Pick a client assets strategy | [Client Assets](ClientAssets.md) |
+| See the pinned HTMX versions | [Recommended Versions](RecommendedVersions.md) |
 | Use events and triggers | [Events Guide](Events.md) |
+| Avoid breaking trigger payloads | [Typed Payloads](TypedPayloads.md) |
+| Understand event naming and realtime routing | [Event Naming & Realtime Routing](EventNamingAndRouting.md) |
 | Set up real-time updates | [Realtime Overview](Realtime.md) |
+| Understand realtime lifecycle & guarantees | [Realtime Bridge Behavior](RealtimeBridgeBehavior.md) |
 
 ---
 
@@ -73,6 +81,9 @@ Standard success messages for create, update, delete operations with `.WithCreat
 ### [Events Guide](Events.md)
 Type-safe event keys, triggering events, and the `HX-Trigger` header mechanics.
 
+### [Event Naming & Realtime Routing](EventNamingAndRouting.md)
+How event names map from `HX-Trigger` to realtime broadcasts (and what the `sse:` prefix actually means).
+
 ### [Event Chains](EventChains.md)
 Centralize "when X happens, update Y" logic with `ISwapEventConfiguration` and distributed handlers.
 
@@ -86,8 +97,17 @@ Update multiple elements from a single response using OOB swaps and the `AlsoUpd
 ### [Realtime Overview](Realtime.md)
 Introduction to real-time HTML streaming with Swap.Htmx.
 
+### [Realtime Bridge Behavior](RealtimeBridgeBehavior.md)
+When realtime forwarding runs, what gets forwarded, and what happens on failures.
+
 ### [Server-Sent Events](ServerSentEvents.md)
 Push updates from server to browser using SSE, with room-based broadcasting and connection management.
+
+### [SSE Authentication](SseAuthentication.md)
+How to secure SSE endpoints, authorize rooms, and safely target users.
+
+### [SSE Backpressure](SseBackpressure.md)
+Configure max event size, per-connection queue limits, and drop strategy.
 
 ### [WebSockets](WebSockets.md)
 Two-way real-time communication for interactive features.
@@ -169,4 +189,4 @@ The repository includes several demo applications showing different patterns:
 - Check the [Anti-Patterns Guide](AntiPatterns.md) for common mistakes
 - Look at the demo applications for working examples
 - Review the [main README](../README.md) for quick reference
-- See the [ROADMAP](../../../ROADMAP.md) for upcoming features
+- See the [CHANGELOG](../../../CHANGELOG.md) for upcoming changes

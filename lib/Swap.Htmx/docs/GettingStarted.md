@@ -4,10 +4,43 @@ Build your first Swap.Htmx app in 5 minutes.
 
 ## Prerequisites
 
-- .NET 9.0+
+- .NET 8.0+
 - Basic ASP.NET Core MVC knowledge
 
+If you use the templates below, you’ll also want `libman` available (the templates use it to restore HTMX and optional extensions).
+If you’re not using templates, you can choose either **CDN** or **LibMan** for client assets. See [Client Assets](ClientAssets.md).
+
 ## Setup
+
+### Recommended: Start from a Template (Runnables)
+
+**Recommended (batteries-included):**
+
+```bash
+dotnet new install Swap.Templates
+
+dotnet new swap-modular -n MyApp
+cd MyApp/src
+
+libman restore
+dotnet run
+```
+
+**Minimal:**
+
+```bash
+dotnet new install Swap.Templates
+
+dotnet new swap-mvc -n MyApp
+cd MyApp
+
+libman restore
+dotnet run
+```
+
+---
+
+### Manual: Add Swap.Htmx to an Existing MVC App
 
 ### 1. Create Project
 
@@ -17,6 +50,12 @@ cd MyApp
 dotnet add package Swap.Htmx
 ```
 
+Optional (realtime):
+
+```bash
+dotnet add package Swap.Htmx.Realtime
+```
+
 ### 2. Configure (Program.cs)
 
 ```csharp
@@ -24,10 +63,16 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllersWithViews();
 builder.Services.AddSwapHtmx();  // Add this
 
+// Optional: realtime (SSE/WebSockets)
+// builder.Services.AddSseEventBridge();
+
 var app = builder.Build();
 app.UseStaticFiles();
 app.UseRouting();
 app.UseSwapHtmx();              // Add this
+
+// Optional: realtime (requires Swap.Htmx.Realtime)
+// app.UseSseEventBridge();
 app.MapControllers();
 app.Run();
 ```
@@ -36,10 +81,22 @@ app.Run();
 
 Add before `</head>`:
 
+**Option A (CDN quick start):**
+
 ```html
 <link rel="stylesheet" href="~/_content/Swap.Htmx/css/swap.css" />
-<script src="https://unpkg.com/htmx.org@2.0.4"></script>
+<script src="https://unpkg.com/htmx.org@2.0.8"></script>
 <script src="~/_content/Swap.Htmx/js/swap.client.js"></script>
+```
+
+**Option B (LibMan / local assets):**
+
+Follow [Client Assets](ClientAssets.md) to add `libman.json` + run `libman restore`, then reference:
+
+```html
+<link rel="stylesheet" href="~/_content/Swap.Htmx/css/swap.css" />
+<script src="~/lib/htmx/dist/htmx.min.js" asp-append-version="true"></script>
+<script src="~/_content/Swap.Htmx/js/swap.client.js" asp-append-version="true"></script>
 ```
 
 ---

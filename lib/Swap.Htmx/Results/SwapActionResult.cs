@@ -36,6 +36,9 @@ public sealed class SwapActionResult : ActionResult
         using var activity = SwapTelemetry.ActivitySource.StartActivity("Swap.Htmx.ActionResultExecute");
         var response = context.HttpContext.Response;
         var logger = context.HttpContext.RequestServices.GetService<ILogger<SwapActionResult>>();
+
+        // Development diagnostics (warn-once) for common first-run issues.
+        context.HttpContext.RequestServices.GetService<ISwapDiagnostics>()?.ValidateResponse(_builder);
         
         // 1. Apply redirect if configured
         if (!string.IsNullOrEmpty(_builder.RedirectUrl))
@@ -133,18 +136,31 @@ public sealed class SwapActionResult : ActionResult
 
             if (string.IsNullOrEmpty(viewName))
             {
-                throw new InvalidOperationException("View name could not be determined. Please specify a view name explicitly.");
+                throw new InvalidOperationException(
+                    "View name could not be determined from route data. " +
+                    "Fix: call WithView(\"YourViewName\", model) (or WithView(\"~/Views/Shared/YourViewName.cshtml\", model)).");
             }
 
+            var searchedLocations = new List<string>();
             var viewResult = viewEngine.FindView(context, viewName, isMainPage: false);
+            searchedLocations.AddRange(viewResult.SearchedLocations);
             if (!viewResult.Success)
             {
                 viewResult = viewEngine.GetView(null, viewName, isMainPage: false);
+                searchedLocations.AddRange(viewResult.SearchedLocations);
             }
 
             if (!viewResult.Success)
             {
-                throw new InvalidOperationException($"Could not find view '{viewName}'.");
+                var searched = string.Join(", ", searchedLocations.Distinct());
+                logger?.LogError(
+                    "[Swap.Htmx] Could not find view {ViewName}. Searched: {SearchedLocations}. " +
+                    "Fix: ensure the view exists under Views/Shared or provide an app-relative path (~/Views/.../View.cshtml) via WithView().",
+                    viewName,
+                    searched);
+                throw new InvalidOperationException(
+                    $"Could not find view '{viewName}'. Searched: {searched}. " +
+                    "Fix: ensure the view exists under Views/Shared or provide an app-relative path (~/Views/.../View.cshtml) via WithView().");
             }
 
             if (_builder.Model != null)
@@ -258,7 +274,17 @@ public sealed class SwapActionResult : ActionResult
             if (!viewResult.Success)
             {
                 var searchedPaths = string.Join(", ", searchLocations);
-                throw new InvalidOperationException($"Could not find view '{oob.ViewName}' for OOB swap. Searched: {searchedPaths}");
+                var logger = context.HttpContext.RequestServices.GetService<ILogger<SwapActionResult>>();
+                logger?.LogError(
+                    "[Swap.Htmx] Could not find view {ViewName} for OOB swap targeting #{TargetId}. Searched: {SearchedLocations}. " +
+                    "Fix: move the partial under Views/Shared, provide an app-relative path, or configure SwapHtmxOptions.PartialViewSearchPaths.",
+                    oob.ViewName,
+                    oob.TargetId,
+                    searchedPaths);
+
+                throw new InvalidOperationException(
+                    $"Could not find view '{oob.ViewName}' for OOB swap (target '#{oob.TargetId}'). Searched: {searchedPaths}. " +
+                    "Fix: move the partial under Views/Shared, provide an app-relative path, or configure SwapHtmxOptions.PartialViewSearchPaths.");
             }
         }
 
@@ -305,6 +331,17 @@ public sealed class SwapActionResult : ActionResult
         }
 
         // Otherwise wrap in a div (fallback for views without the id)
+        var swapOptions = context.HttpContext.RequestServices.GetService<SwapHtmxOptions>();
+        if (swapOptions?.Diagnostics.WarnOnMissingOobTargets == true)
+        {
+            var logger = context.HttpContext.RequestServices.GetService<ILogger<SwapActionResult>>();
+            logger?.LogWarning(
+                "[Swap.Htmx] OOB swap for target #{TargetId} rendered view {ViewName} without a matching id attribute. " +
+            "Swap will be wrapped in a <div> with that id and hx-swap-oob=... . " +
+                "If you intended to swap an existing element, ensure the rendered partial contains the target id or includes hx-swap-oob.",
+                oob.TargetId,
+                oob.ViewName);
+        }
         return $"<div id=\"{oob.TargetId}\" hx-swap-oob=\"{swapModeStr}\">{html}</div>";
     }
 

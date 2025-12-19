@@ -14,9 +14,9 @@
     <link rel="stylesheet" href="~/_content/Swap.Htmx/css/swap.css" asp-append-version="true" />
     
     <!-- HTMX -->
-    <script src="~/lib/htmx/dist/htmx.min.js"></script>
+    <script src="~/lib/htmx/dist/htmx.min.js" asp-append-version="true"></script>
     <!-- Swap.Htmx -->
-    <script src="~/_content/Swap.Htmx/js/swap.client.js"></script>
+    <script src="~/_content/Swap.Htmx/js/swap.client.js" asp-append-version="true"></script>
 </head>
 <body>
     <header>
@@ -26,31 +26,19 @@
             </ul>
             <ul>
                 <li>
-                    <a href="@Url.Action("Index", "Products")" 
-                       hx-get="@Url.Action("Index", "Products")" 
-                       hx-target="main" 
-                       hx-swap="innerHTML" 
-                       hx-push-url="true">Products</a>
+                    <swap-nav to="/Products">Products</swap-nav>
                 </li>
                 <li>
-                    <a href="@Url.Action("Index", "Cart")" 
-                       hx-get="@Url.Action("Index", "Cart")" 
-                       hx-target="main" 
-                       hx-swap="innerHTML" 
-                       hx-push-url="true">Cart <span id="@CartElements.Badge">@await Html.PartialAsync("~/Views/Cart/_CartBadge.cshtml", CartService.GetItemCount(Context.Session.Id))</span></a>
+                    <swap-nav to="/Cart">Cart <span id="@CartElements.Badge">@await Html.PartialAsync("~/Views/Cart/_CartBadge.cshtml", CartService.GetItemCount(Context.Session.Id))</span></swap-nav>
                 </li>
                 <li>
-                    <a href="@Url.Action("Index", "Orders")" 
-                       hx-get="@Url.Action("Index", "Orders")" 
-                       hx-target="main" 
-                       hx-swap="innerHTML" 
-                       hx-push-url="true">Orders</a>
+                    <swap-nav to="/Orders">Orders</swap-nav>
                 </li>
             </ul>
         </nav>
     </header>
     
-    <main class="container">
+    <main id="main-content" class="container">
         @RenderBody()
     </main>
 

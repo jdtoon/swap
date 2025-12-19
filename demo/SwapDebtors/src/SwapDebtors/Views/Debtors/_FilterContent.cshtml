@@ -1,0 +1,172 @@
+@using SwapDebtors.Models
+@model DebtorListViewModel
+@{
+    var state = Model.State;
+    var sortNameSelected = state.SortBy == "name" ? "selected" : "";
+    var sortTotalSelected = state.SortBy == "total" ? "selected" : "";
+    var sortDateSelected = state.SortBy == "date" ? "selected" : "";
+    var sortDescChecked = state.SortDesc ? "checked" : "";
+}
+
+<!-- THE STATE CONTAINER - hidden fields that persist state -->
+<swap-state state="Model.State" />
+
+<!-- Debug: Show current state values -->
+<div style="background: #fffbe6; border: 1px solid #ffe58f; padding: 0.75rem; margin-bottom: 1rem; font-family: monospace; font-size: 0.85rem;">
+    <strong>SwapState Container:</strong> #@state.ContainerId<br/>
+    Search="@(state.Search ?? "")" | SortBy=@state.SortBy | SortDesc=@state.SortDesc | Page=@state.Page/@Model.TotalPages | Total=@Model.TotalCount
+</div>
+
+<!-- Filter Controls -->
+<article>
+    <div style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: center;">
+        <!-- Search -->
+        <div style="flex: 1; min-width: 200px;">
+            <input type="search" 
+                   name="Search"
+                   placeholder="Search by name or email..."
+                   value="@state.Search"
+                   hx-get="/Debtors/Filter?Page=1"
+                   hx-target="#filter-content"
+                   hx-include="#@state.ContainerId"
+                   hx-trigger="keyup changed delay:300ms"
+                   style="margin: 0;" />
+        </div>
+
+        <!-- Sort -->
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <label style="margin: 0; white-space: nowrap;">Sort by:</label>
+            <select name="SortBy"
+                    hx-get="/Debtors/Filter?Page=1"
+                    hx-target="#filter-content"
+                    hx-include="#@state.ContainerId"
+                    hx-trigger="change"
+                    style="margin: 0; width: auto;">
+                <!option value="date" @sortDateSelected>Date Added</!option>
+                <!option value="name" @sortNameSelected>Name</!option>
+                <!option value="total" @sortTotalSelected>Amount Owed</!option>
+            </select>
+            <label style="margin: 0; display: flex; align-items: center; gap: 0.25rem;">
+                <input type="checkbox"
+                       @sortDescChecked
+                       hx-get="/Debtors/Filter?Page=1&SortDesc=@(!state.SortDesc ? "true" : "false")"
+                       hx-target="#filter-content"
+                       hx-include="#@state.ContainerId"
+                       style="margin: 0;" />
+                Desc
+            </label>
+        </div>
+
+        <!-- Add Button -->
+        <button hx-get="/Debtors/Create" 
+                hx-target="#modal"
+                hx-swap="innerHTML"
+                style="margin: 0;">
+            + Add Debtor
+        </button>
+    </div>
+</article>
+
+<!-- Results Table -->
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Phone</th>
+            <th style="text-align: right;">Active Debts</th>
+            <th style="text-align: right;">Total Owed</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @if (Model.Debtors.Any())
+        {
+            @foreach (var debtor in Model.Debtors)
+            {
+                <tr>
+                    <td>
+                        <a href="/Debtors/Details/@debtor.Id"
+                           hx-get="/Debtors/Details/@debtor.Id"
+                           hx-target="#main-content"
+                           hx-push-url="true">
+                            <strong>@debtor.Name</strong>
+                        </a>
+                    </td>
+                    <td>@(debtor.Email ?? "-")</td>
+                    <td>@(debtor.Phone ?? "-")</td>
+                    <td style="text-align: right;">@debtor.ActiveDebtsCount</td>
+                    <td style="text-align: right;">
+                        <strong>@debtor.TotalOwed.ToString("C")</strong>
+                    </td>
+                    <td>
+                        <div style="display: flex; gap: 0.25rem;">
+                            <button hx-get="/Debts/QuickAdd/@debtor.Id"
+                                    hx-target="#modal"
+                                    hx-swap="innerHTML"
+                                    class="outline"
+                                    style="padding: 0.3rem 0.6rem;"
+                                    title="Add debt">
+                                +💰
+                            </button>
+                            <button hx-get="/Debtors/Edit/@debtor.Id"
+                                    hx-target="#modal"
+                                    hx-swap="innerHTML"
+                                    class="outline"
+                                    style="padding: 0.3rem 0.6rem;"
+                                    title="Edit">
+                                ✏️
+                            </button>
+                            <button hx-get="/Debtors/DeleteConfirm/@debtor.Id"
+                                    hx-target="#modal"
+                                    hx-swap="innerHTML"
+                                    class="outline secondary"
+                                    style="padding: 0.3rem 0.6rem;"
+                                    title="Delete">
+                                🗑️
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            }
+        }
+        else
+        {
+            <tr>
+                <td colspan="6" style="text-align: center; color: var(--pico-muted-color);">
+                    No debtors found
+                    @if (!string.IsNullOrEmpty(state.Search))
+                    {
+                        <text> matching "@state.Search"</text>
+                    }
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<!-- Pagination -->
+<div style="display: flex; justify-content: space-between; align-items: center;">
+    <p style="margin: 0;">
+        <strong>@Model.Debtors.Count</strong> of <strong>@Model.TotalCount</strong> debtors 
+        (Page @state.Page of @Math.Max(1, Model.TotalPages))
+    </p>
+    
+    @if (Model.TotalPages > 1)
+    {
+        <div style="display: flex; gap: 0.25rem;">
+            @for (int i = 1; i <= Model.TotalPages; i++)
+            {
+                var pageNum = i;
+                var pageActive = state.Page == pageNum ? "contrast" : "outline";
+                <button class="@pageActive"
+                        style="padding: 0.4rem 0.8rem;"
+                        hx-get="/Debtors/Filter?Page=@pageNum"
+                        hx-target="#filter-content"
+                        hx-include="#@state.ContainerId">
+                    @pageNum
+                </button>
+            }
+        </div>
+    }
+</div>

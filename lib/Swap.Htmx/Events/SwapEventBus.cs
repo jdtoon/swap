@@ -197,6 +197,9 @@ public class SwapEventBus : ISwapEventBus
         // Resolve chains: emit event + immediate chained events
         var resolved = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
 
+        // Track explicitly-emitted events so chain propagation can't overwrite them.
+        var explicitEmits = new HashSet<string>(pending.Select(p => p.Name), StringComparer.OrdinalIgnoreCase);
+
         foreach (var p in pending)
         {
             resolved[p.Name] = p.Payload; // last write wins for duplicate events
@@ -205,10 +208,8 @@ public class SwapEventBus : ISwapEventBus
             {
                 foreach (var c in chained)
                 {
-                    if (!resolved.ContainsKey(c))
-                    {
-                        resolved[c] = p.Payload; // Propagate payload to chained events
-                    }
+                    if (explicitEmits.Contains(c)) continue;
+                    resolved[c] = p.Payload; // Propagate payload; last trigger wins unless explicitly emitted
                 }
             }
         }

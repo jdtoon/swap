@@ -171,6 +171,19 @@ public sealed class SwapResponseBuilder : IResult
         return this;
     }
 
+    private static string NormalizeOobTargetId(string targetId)
+    {
+        // OOB swaps target element IDs. Many callers naturally pass CSS selectors like "#sidebar".
+        // Normalizing here prevents invalid HTML like id="#sidebar" and avoids silent swap failures.
+        var normalized = targetId.Trim();
+        if (normalized.StartsWith('#'))
+        {
+            normalized = normalized.TrimStart('#');
+        }
+
+        return normalized;
+    }
+
     /// <summary>
     /// Adds an out-of-band swap to update another part of the page.
     /// </summary>
@@ -185,7 +198,7 @@ public sealed class SwapResponseBuilder : IResult
         object? model = null, 
         SwapMode swapMode = SwapMode.OuterHTML)
     {
-        _oobSwaps.Add(new OobSwap(targetId, viewName, model, swapMode));
+        _oobSwaps.Add(new OobSwap(NormalizeOobTargetId(targetId), viewName, model, swapMode));
         return this;
     }
 
@@ -240,7 +253,7 @@ public sealed class SwapResponseBuilder : IResult
         object? model = null,
         SwapMode swapMode = SwapMode.OuterHTML)
     {
-        _oobSwaps.Add(new OobSwap(targetId, viewName, model, swapMode, ConditionalExists: true));
+        _oobSwaps.Add(new OobSwap(NormalizeOobTargetId(targetId), viewName, model, swapMode, ConditionalExists: true));
         return this;
     }
 
@@ -273,7 +286,7 @@ public sealed class SwapResponseBuilder : IResult
     {
         if (condition)
         {
-            _oobSwaps.Add(new OobSwap(targetId, viewName, model, swapMode));
+            _oobSwaps.Add(new OobSwap(NormalizeOobTargetId(targetId), viewName, model, swapMode));
         }
         return this;
     }

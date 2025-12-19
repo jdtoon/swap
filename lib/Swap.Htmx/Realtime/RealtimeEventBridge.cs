@@ -47,7 +47,9 @@ internal sealed class RealtimeEventBridge : IRealtimeEventBridge, ISseEventBridg
     public async Task HandleRealtimeEventAsync(string eventName, object? payload, CancellationToken cancellationToken = default)
     {
         using var activity = SwapTelemetry.ActivitySource.StartActivity("Swap.Htmx.RealtimeBroadcast");
+        // Tags: keep legacy keys, but also emit stable dot-separated keys.
         activity?.SetTag("realtime.event_key", eventName);
+        activity?.SetTag("realtime.event.key", eventName);
         
         // SwapTelemetry.SseBroadcasts.Add(1); // Reuse SSE telemetry for now or add new
 
@@ -58,6 +60,10 @@ internal sealed class RealtimeEventBridge : IRealtimeEventBridge, ISseEventBridg
             activity?.SetTag("realtime.type", eventType);
             activity?.SetTag("realtime.target", target);
             activity?.SetTag("realtime.name", realtimeEventName);
+
+            activity?.SetTag("realtime.route.type", eventType);
+            activity?.SetTag("realtime.route.target", target);
+            activity?.SetTag("realtime.event.name", realtimeEventName);
 
             _logger.LogInformation("Realtime Broadcast: {EventName} Type: {EventType} Target: {Target}", realtimeEventName, eventType, target ?? "all");
 
@@ -168,6 +174,7 @@ internal sealed class RealtimeEventBridge : IRealtimeEventBridge, ISseEventBridg
     {
         using var activity = SwapTelemetry.ActivitySource.StartActivity("Swap.Htmx.RealtimeRender");
         activity?.SetTag("realtime.event_name", eventName);
+        activity?.SetTag("realtime.event.name", eventName);
 
         try
         {

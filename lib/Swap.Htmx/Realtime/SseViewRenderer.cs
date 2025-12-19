@@ -117,8 +117,11 @@ public class SseViewRenderer : ISseViewRenderer
 
         if (!viewResult.Success)
         {
+            var searched = string.Join(", ", viewResult.SearchedLocations ?? Array.Empty<string>());
             throw new InvalidOperationException(
-                $"Could not find view '{viewName}'. Searched locations: {string.Join(", ", viewResult.SearchedLocations ?? Array.Empty<string>())}");
+                $"Could not find view '{viewName}'. Searched locations: {searched}. " +
+                "Fix: ensure the view exists under Views/Shared (or the appropriate controller folder), " +
+                "or pass an app-relative path like '~/Views/Shared/MyPartial.cshtml'.");
         }
 
         // Create ViewData with the model

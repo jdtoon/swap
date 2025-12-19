@@ -56,7 +56,7 @@ public class CheckoutController : SwapController
 
         if (!cart.Items.Any())
         {
-            return SwapEvent(OrderEvents.Failed, new { Reason = "Cart is empty" }).Build();
+            return SwapEvent(OrderEvents.Failed, new OrderEventPayloads.Failed("Cart is empty")).Build();
         }
 
         try
@@ -68,7 +68,7 @@ public class CheckoutController : SwapController
         }
         catch (InvalidOperationException ex)
         {
-            return SwapEvent(OrderEvents.Failed, new { Reason = ex.Message }).Build();
+            return SwapEvent(OrderEvents.Failed, new OrderEventPayloads.Failed(ex.Message)).Build();
         }
     }
 

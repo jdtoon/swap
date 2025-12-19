@@ -1,0 +1,40 @@
+@using SwapDebtors.Models
+@model List<Debt>
+@{
+    var debts = Model ?? new List<Debt>();
+}
+
+@if (!debts.Any())
+{
+    <p><em>No debts recorded yet.</em></p>
+}
+else
+{
+    @foreach (var debt in debts)
+    {
+        <div class="debt-row @(debt.IsPaid ? "paid" : "")">
+            <div>
+                <strong>@debt.Debtor?.Name</strong>
+                <br />
+                <small>@debt.Description</small>
+            </div>
+            <div style="text-align: right;">
+                <span class="currency-badge">@debt.Currency</span>
+                <strong>@debt.Amount.ToString("N2")</strong>
+                <br />
+                @if (!debt.IsPaid)
+                {
+                    <button hx-post="/Debts/MarkPaid/@debt.Id"
+                            hx-swap="none"
+                            style="padding: 0.2rem 0.5rem; font-size: 0.7rem;">
+                        ✓ Paid
+                    </button>
+                }
+                else
+                {
+                    <small style="color: green;">Paid @debt.PaidAt?.ToString("MMM d")</small>
+                }
+            </div>
+        </div>
+    }
+}

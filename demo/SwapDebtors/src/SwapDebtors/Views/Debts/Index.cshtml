@@ -1,0 +1,15 @@
+@using SwapDebtors.Models
+@model DebtListViewModel
+@{
+    ViewData["Title"] = "Debts";
+    var state = Model.State;
+    var currencies = ViewData["Currencies"] as string[] ?? Array.Empty<string>();
+}
+
+<h1>💰 All Debts</h1>
+<p>View and manage all debts with SwapState-powered filtering and pagination.</p>
+
+<!-- Filter content area - swaps entirely to preserve state -->
+<div id="filter-content">
+    @await Html.PartialAsync("_FilterContent", Model)
+</div>

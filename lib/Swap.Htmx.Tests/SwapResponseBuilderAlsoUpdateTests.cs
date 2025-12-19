@@ -17,7 +17,7 @@ public class SwapResponseBuilderAlsoUpdateTests
         var oobSwaps = builder.OobSwaps;
         
         Assert.Single(oobSwaps);
-        Assert.Equal("#sidebar", oobSwaps[0].TargetId);
+        Assert.Equal("sidebar", oobSwaps[0].TargetId);
         Assert.Equal("_Sidebar", oobSwaps[0].ViewName);
         Assert.True(oobSwaps[0].ConditionalExists);
     }
@@ -45,7 +45,7 @@ public class SwapResponseBuilderAlsoUpdateTests
         var oobSwaps = builder.OobSwaps;
         
         Assert.Single(oobSwaps);
-        Assert.Equal("#stats", oobSwaps[0].TargetId);
+        Assert.Equal("stats", oobSwaps[0].TargetId);
     }
 
     [Fact]
@@ -78,15 +78,15 @@ public class SwapResponseBuilderAlsoUpdateTests
         Assert.Equal(3, oobSwaps.Count);
         
         // Regular swap
-        Assert.Equal("#header", oobSwaps[0].TargetId);
+        Assert.Equal("header", oobSwaps[0].TargetId);
         Assert.False(oobSwaps[0].ConditionalExists);
         
         // IfExists swap
-        Assert.Equal("#sidebar", oobSwaps[1].TargetId);
+        Assert.Equal("sidebar", oobSwaps[1].TargetId);
         Assert.True(oobSwaps[1].ConditionalExists);
         
         // Conditional (true) swap
-        Assert.Equal("#admin-panel", oobSwaps[2].TargetId);
+        Assert.Equal("admin-panel", oobSwaps[2].TargetId);
         Assert.False(oobSwaps[2].ConditionalExists);
     }
 

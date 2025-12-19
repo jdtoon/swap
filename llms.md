@@ -1,82 +1,218 @@
-# Swap.Htmx — LLM Implementation Guide
+Swap.Htmx — LLM Playbook (concise)
 
-> **THIS IS A CHECKLIST.** When implementing any UI feature with Swap.Htmx, work through these core patterns in order. If a feature isn't working, verify each applicable pattern is correctly implemented. Not every feature needs all patterns — use what applies.
+Use this as the “golden path” when generating Swap.Htmx code. Prefer correctness + consistency over cleverness.
 
-## ✅ Implementation Checklist
+============================================================
+0) Non‑negotiables
+============================================================
 
-Before debugging, verify these are in place:
+1. Controllers: inherit `SwapController`.
+    - Realtime SSE endpoints: inherit `SwapRealtimeController` (from `Swap.Htmx.Realtime`).
+2. Views: return `SwapView()` (not `View()`).
+3. Multi-target updates: return `SwapResponse()` + `.AlsoUpdate(...)` + `.Build()`.
+4. No magic strings:
+     - Views: use generated `SwapViews.*` whenever possible.
+     - Element IDs: use generated `SwapElements.*` wherever possible.
+     - Events: use `EventKey` constants (not string literals).
+5. State/paging/filtering: use `<swap-state>` + `[FromSwapState]`.
+6. Decoupling: use event chains and/or `[SwapHandler]` handlers.
 
-| # | Pattern | When to Use | Verify |
-|---|---------|-------------|--------|
-| 1 | **SwapController** | Every controller | Inherits `SwapController` or uses extension methods |
-| 2 | **SwapView** | Every action returning HTML | Returns `SwapView()` not `View()` |
-| 3 | **SwapResponse** | Multi-element updates | Uses `.AlsoUpdate()` for OOB swaps, ends with `.Build()` |
-| 4 | **SwapState** | Preserving UI state | `<swap-state>` rendered, `hx-include` present, `[FromSwapState]` binding |
-| 5 | **Event Handlers** | Decoupled UI updates | `[SwapHandler]` classes exist, `SwapEvent()` fired from controller |
-| 6 | **SwapNavigation** | SPA-style links | `<swap-nav>` tag helper used |
-| 7 | **Source Generators** | Type-safe code | Use `SwapViews.Controller._Partial`, `SwapElements.*` (zero config) |
 
----
+============================================================
+1) Minimal Setup (Program.cs)
+============================================================
 
-## What It Is
-
-Swap.Htmx is a .NET library that makes HTMX a first-class citizen in ASP.NET Core. The core features:
-
-1. **SwapController** — Base controller class with HTMX-aware methods
-2. **SwapView** — Auto-detects HTMX requests, returns partials or full pages
-3. **SwapResponse** — Fluent builder for multi-target updates, toasts, triggers
-4. **SwapState** — Server-side state management via hidden HTML fields
-5. **Event Handlers** — Decouple UI updates from controller logic
-6. **SwapNavigation** — SPA-style navigation with `<swap-nav>` tag helper
-7. **Source Generators** — Type-safe events, views, and element IDs at compile time
-
-## Installation
-
-```bash
-dotnet add package Swap.Htmx
-```
+Services:
 
 ```csharp
-// Program.cs
 builder.Services.AddControllersWithViews();
-builder.Services.AddSwapHtmx();
 
-var app = builder.Build();
+builder.Services.AddSwapHtmx(events =>
+{
+        // 1) UI refresh chains (OOB swaps)
+        // events.When(MyEvents.SomethingHappened)
+        //       .RefreshPartial(SwapElements.SomeRegion, SwapViews.Foo._Bar, ctx => model)
+        //       .SuccessToast("Done!");
+
+        // 2) Optional: realtime broadcasting for that event
+        // events.When(MyEvents.SomethingHappened)
+        //       .Broadcast(); // SSE/WebSocket clients
+})
+.AddSseEventBridge(); // optional (only if you want realtime; requires Swap.Htmx.Realtime)
+```
+
+Pipeline:
+
+```csharp
 app.UseStaticFiles();
 app.UseRouting();
 app.UseSwapHtmx();
+app.UseSseEventBridge(); // optional, requires AddSseEventBridge() + Swap.Htmx.Realtime
 app.MapControllers();
 ```
 
+
+============================================================
+2) Layout Requirements (_Layout.cshtml)
+============================================================
+
+Absolute minimum for HTMX + Swap client:
+
 ```html
-<!-- _Layout.cshtml -->
-<head>
-    <link rel="stylesheet" href="~/_content/Swap.Htmx/css/swap.css" />
-    <script src="https://unpkg.com/htmx.org@2.0.4"></script>
-    <script src="~/_content/Swap.Htmx/js/swap.client.js"></script>
-</head>
+<link rel="stylesheet" href="~/_content/Swap.Htmx/css/swap.css" />
+<script src="https://unpkg.com/htmx.org@2.0.8"></script>
+<script src="~/_content/Swap.Htmx/js/swap.client.js"></script>
 ```
 
----
+If using SSE + htmx extension:
 
-## Source Generators (Eliminate Magic Strings)
-
-Swap.Htmx includes source generators that create type-safe constants at compile time. **This is critical for maintainable code.**
-
-### Setup — Zero Config (v1.0.6+)
-
-**No configuration required!** The `Swap.Htmx.targets` file auto-includes common view folders:
-
-```xml
-<!-- Automatically included via Swap.Htmx.targets -->
-Views/**/*.cshtml
-Modules/**/Views/**/*.cshtml  
-Pages/**/*.cshtml
-Components/**/*.cshtml
-Areas/**/Views/**/*.cshtml
+```html
+<script src="https://unpkg.com/htmx-ext-sse@2.2.4/sse.js"></script>
 ```
 
-Simply reference Swap.Htmx and build — views are scanned automatically.
+
+============================================================
+3) New Feature Recipe (CRUD screen)
+============================================================
+
+Do these in order.
+
+Step A — Define keys (no strings)
+
+```csharp
+public static class DebtorEvents
+{
+        public static readonly EventKey Created = new("debtor.created");
+        public static readonly EventKey Updated = new("debtor.updated");
+        public static readonly EventKey Deleted = new("debtor.deleted");
+}
+```
+
+Step B — Make stable element IDs
+
+- Prefer generated `SwapElements.*`.
+- If you must hand-write, do it once in a `*Elements` class.
+
+Step C — Controller actions
+
+```csharp
+public sealed class DebtorsController : SwapController
+{
+        [HttpGet("/debtors")]
+        public IActionResult Index([FromSwapState] DebtorsQuery query)
+                => SwapView(model: /* view model */);
+
+        [HttpPost("/debtors")]
+        public async Task<IActionResult> Create(CreateDebtorInput input)
+        {
+                // persist...
+
+                return SwapResponse()
+                        .WithTrigger(DebtorEvents.Created, payload: new { /* optional */ })
+                        .WithCreatedToast("Debtor")
+                        .Build();
+        }
+}
+```
+
+Step D — SwapState (filter + pagination)
+
+- Ensure the page renders `<swap-state>`.
+- Ensure the listing request includes state: use `hx-include="swap-state"`.
+- Bind state via `[FromSwapState]`.
+
+Step E — Event chains (UI refresh)
+
+```csharp
+builder.Services.AddSwapHtmx(events =>
+{
+        events.When(DebtorEvents.Created)
+                    .RefreshPartial(SwapElements.Debtors_List, SwapViews.Debtors._List, ctx => /* model */)
+                    .RefreshPartial(SwapElements.Dashboard_Stats, SwapViews.Dashboard._Stats, ctx => /* model */)
+                    .SuccessToast("Debtor created!");
+});
+```
+
+
+============================================================
+4) Event Handlers (server-side side-effects)
+============================================================
+
+Use a handler when you need cross-cutting behavior without bloating controllers.
+
+```csharp
+[SwapHandler(Priority = 100)]
+public sealed class DebtorCreatedAuditHandler : ISwapEventHandler<DebtorCreatedEvent>
+{
+        public Task HandleAsync(DebtorCreatedEvent evt, SwapEventContext ctx, CancellationToken ct)
+        {
+                // log, enqueue work, etc.
+                return Task.CompletedTask;
+        }
+}
+```
+
+
+============================================================
+5) Realtime (SSE) Recipe
+============================================================
+
+Use realtime when other tabs/sessions should update automatically.
+
+Step A — Enable services + middleware
+
+- `AddSseEventBridge()` in DI
+- `UseSseEventBridge()` in pipeline
+
+Step B — Create an SSE endpoint (MVC or minimal API)
+
+MVC:
+
+```csharp
+[HttpGet("/dashboard/stream")]
+public IActionResult Stream()
+{
+        return ServerSentEvents(async (conn, ct) =>
+        {
+                conn.WithEvents(DashboardEvents.ActivityLogged.Name);
+                await conn.KeepAlive(cancellationToken: ct);
+        });
+}
+
+> `SwapRealtimeController` lives in the `Swap.Htmx.Realtime` package.
+```
+
+Step C — Connect from the view
+
+```html
+<div hx-ext="sse" sse-connect="/dashboard/stream">
+    <div id="activity" sse-swap="activity.logged" hx-swap="afterbegin"></div>
+</div>
+```
+
+Step D — Broadcast via event chains (recommended)
+
+- Chain a domain/UI event to an internal SSE event key (`SseEvents.*`).
+- Provide a chain config for the SSE event key that renders HTML.
+
+
+============================================================
+6) Debug Checklist (fast)
+============================================================
+
+- “Wrong HTML returned?”
+    - Ensure action returns `SwapView()`.
+- “Nothing updated?”
+    - Confirm element IDs match (prefer `SwapElements.*`).
+    - Confirm partial path matches (prefer `SwapViews.*`).
+- “State not sticking?”
+    - Ensure `<swap-state>` exists and requests `hx-include="swap-state"`.
+- “Events not firing?”
+    - Ensure `.WithTrigger(EventKey)` is present.
+    - Ensure event chains are configured for that key.
+- “Realtime not updating?”
+    - Ensure `AddSseEventBridge()` + `UseSseEventBridge()` are present.
+    - Ensure the page connects to the SSE endpoint and `sse-swap` matches the event name.
 
 ### Optional: See Generated Output
 
@@ -204,6 +340,27 @@ public static class SwapElements
 builder.AlsoUpdate(SwapElements.ProductGrid, SwapViews.Products._Grid, products);
 builder.AlsoUpdate(SwapElements.ProductCount, SwapViews.Products._Count, count);
 ```
+
+### Dynamic Element IDs
+
+For elements with dynamic IDs (e.g., per-item cards), combine constants with interpolation:
+
+```csharp
+// Pattern: Static prefix + dynamic suffix
+public static class ProductElements
+{
+    public const string CardPrefix = "product-card-";  // Used as prefix
+    public static string Card(int id) => $"product-card-{id}";
+}
+
+// In handler — update specific product card
+builder.AlsoUpdate(ProductElements.Card(productId), ProductViews._Card, product);
+
+// In view
+<div id="product-card-@Model.Id">...</div>
+```
+
+This maintains type safety for the prefix while allowing dynamic IDs.
 
 ### 5. Handler Validation Analyzer
 

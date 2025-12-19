@@ -1,6 +1,9 @@
 using Microsoft.AspNetCore.Http;
 using System.Collections.Concurrent;
 using System.Security.Claims;
+using System.Text;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace Swap.Htmx.Realtime;
 
@@ -14,6 +17,15 @@ public sealed class SseConnection : IRealtimeConnection
     private readonly HttpContext _httpContext;
     private readonly ConcurrentDictionary<string, bool> _subscribedEvents;
     private readonly ConcurrentDictionary<string, bool> _joinedRooms;
+
+    private readonly object _queueLock = new();
+    private readonly Queue<OutgoingMessage> _outgoingQueue = new();
+    // Used as a "non-empty" signal (not a count). Capacity 1 avoids signal drift when dropping.
+    private readonly SemaphoreSlim _queueSignal = new(0, 1);
+    private Task? _writerTask;
+    private SseBroadcastOptions _broadcastOptions = new();
+    private ILogger<SseConnection>? _logger;
+
     private bool _disposed;
 
     public string Id { get; }
@@ -37,22 +49,184 @@ public sealed class SseConnection : IRealtimeConnection
         ConnectedAt = DateTime.UtcNow;
     }
 
+    internal void ConfigureBroadcastOptions(SseBroadcastOptions? options, ILogger<SseConnection>? logger)
+    {
+        if (options != null)
+        {
+            _broadcastOptions = options;
+        }
+
+        _logger = logger;
+        EnsureWriterStarted();
+    }
+
+    private void EnsureWriterStarted()
+    {
+        if (_writerTask != null) return;
+
+        // If the user constructed SseConnection manually, RequestServices may be null.
+        var services = _httpContext.RequestServices;
+        if (services != null)
+        {
+            if (_logger == null)
+            {
+                _logger = services.GetService(typeof(ILogger<SseConnection>)) as ILogger<SseConnection>;
+            }
+
+            var opts = services.GetService(typeof(IOptions<SseBroadcastOptions>)) as IOptions<SseBroadcastOptions>;
+            if (opts?.Value != null)
+            {
+                _broadcastOptions = opts.Value;
+            }
+        }
+
+        _writerTask = Task.Run(WriterLoopAsync);
+    }
+
+    private async Task WriterLoopAsync()
+    {
+        try
+        {
+            while (!_cts.Token.IsCancellationRequested)
+            {
+                await _queueSignal.WaitAsync(_cts.Token);
+
+                while (!_cts.Token.IsCancellationRequested)
+                {
+                    OutgoingMessage? message = null;
+                    lock (_queueLock)
+                    {
+                        if (_outgoingQueue.Count == 0)
+                        {
+                            break;
+                        }
+
+                        message = _outgoingQueue.Dequeue();
+                    }
+
+                    try
+                    {
+                        await _stream.SendEventAsync(message.EventName, message.Html);
+                        message.Completion.TrySetResult();
+                    }
+                    catch (Exception ex)
+                    {
+                        message.Completion.TrySetException(ex);
+                        throw;
+                    }
+                }
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // Normal shutdown.
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogDebug(ex, "SSE writer loop ended for connection {ConnectionId}", Id);
+            _cts.Cancel();
+
+            // Fail any pending sends.
+            lock (_queueLock)
+            {
+                while (_outgoingQueue.Count > 0)
+                {
+                    _outgoingQueue.Dequeue().Completion.TrySetCanceled();
+                }
+            }
+        }
+    }
+
     /// <summary>
     /// Sends an SSE event to this specific connection.
     /// </summary>
     public async Task SendEventAsync(string eventName, string html)
     {
         if (_disposed || _cts.Token.IsCancellationRequested) return;
+        EnsureWriterStarted();
 
-        try
+        if (string.IsNullOrWhiteSpace(eventName)) return;
+        if (html == null) return;
+
+        var maxBytes = _broadcastOptions.MaxEventBytes;
+        if (maxBytes > 0)
         {
-            await _stream.SendEventAsync(eventName, html);
+            var size = Encoding.UTF8.GetByteCount(html);
+            if (size > maxBytes)
+            {
+                _logger?.LogWarning(
+                    "Dropping SSE event {EventName} for connection {ConnectionId}: payload size {SizeBytes} exceeds MaxEventBytes {MaxEventBytes}.",
+                    eventName,
+                    Id,
+                    size,
+                    maxBytes);
+                return;
+            }
         }
-        catch (Exception)
+
+        var maxQueued = _broadcastOptions.MaxQueuedEventsPerConnection;
+        if (maxQueued <= 0)
         {
-            // Connection lost, mark for cleanup
-            _cts.Cancel();
+            // Treat 0 as "no buffering": write inline.
+            try
+            {
+                await _stream.SendEventAsync(eventName, html);
+            }
+            catch (Exception)
+            {
+                _cts.Cancel();
+            }
+            return;
         }
+
+        var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var shouldSignal = false;
+
+        lock (_queueLock)
+        {
+            var wasEmpty = _outgoingQueue.Count == 0;
+
+            if (_outgoingQueue.Count >= maxQueued)
+            {
+                switch (_broadcastOptions.DropStrategy)
+                {
+                    case SseDropStrategy.DropNewest:
+                        tcs.TrySetResult();
+                        return;
+
+                    case SseDropStrategy.DropOldest:
+                        if (_outgoingQueue.Count > 0)
+                        {
+                            _outgoingQueue.Dequeue().Completion.TrySetResult();
+                        }
+                        // Still non-empty after replacement, so don't signal.
+                        wasEmpty = false;
+                        break;
+
+                    case SseDropStrategy.Disconnect:
+                        _cts.Cancel();
+                        tcs.TrySetCanceled();
+                        return;
+                }
+            }
+
+            _outgoingQueue.Enqueue(new OutgoingMessage(eventName, html, tcs));
+            shouldSignal = wasEmpty;
+        }
+
+        if (shouldSignal)
+        {
+            try
+            {
+                _queueSignal.Release();
+            }
+            catch
+            {
+                // Ignore: signal already set.
+            }
+        }
+
+        await tcs.Task;
     }
 
     /// <summary>
@@ -128,7 +302,39 @@ public sealed class SseConnection : IRealtimeConnection
         _disposed = true;
 
         _cts.Cancel();
+        try
+        {
+            _queueSignal.Release();
+        }
+        catch
+        {
+            // ignore
+        }
+
+        lock (_queueLock)
+        {
+            while (_outgoingQueue.Count > 0)
+            {
+                _outgoingQueue.Dequeue().Completion.TrySetCanceled();
+            }
+        }
+
+        if (_writerTask != null)
+        {
+            try
+            {
+                await _writerTask;
+            }
+            catch
+            {
+                // ignore
+            }
+        }
+
         await _stream.DisposeAsync();
+        _queueSignal.Dispose();
         _cts.Dispose();
     }
+
+    private sealed record OutgoingMessage(string EventName, string Html, TaskCompletionSource Completion);
 }

@@ -60,7 +60,7 @@ public sealed class SseEventMiddleware
                     catch (Exception ex)
                     {
                         // Log error but don't break the response
-                        _logger?.LogError(ex, "[SSE Middleware] Error handling SSE event: {EventName}", sseEvent.Key);
+                        _logger.LogError(ex, "[SSE Middleware] Error handling SSE event: {EventName}", sseEvent.Key);
                     }
                 }
             }

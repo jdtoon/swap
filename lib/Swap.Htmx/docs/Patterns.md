@@ -562,6 +562,6 @@ Managing form/filter state?
 
 Real-time updates?
 ├── Occasional polling → hx-trigger="every 30s"
-├── Server-pushed updates → SSE (ServerSentEvents())
+├── Server-pushed updates → SSE (SwapRealtimeController.ServerSentEvents())
 └── Bidirectional → WebSockets
 ```

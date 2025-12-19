@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!--#if (UseLocalRef) -->
+    <ProjectReference Include="..\..\..\lib\Swap.Htmx\Swap.Htmx.csproj" />
+    <ProjectReference Include="..\..\..\lib\Swap.Htmx.Realtime\Swap.Htmx.Realtime.csproj" />
+    <!-- When using local ref, we need to explicitly reference the generators since they don't flow through ProjectReference -->
+    <ProjectReference Include="..\..\..\framework\Swap.Htmx.Generators\Swap.Htmx.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+    <!--#else -->
+    <PackageReference Include="Swap.Htmx" Version="*" />
+    <PackageReference Include="Swap.Htmx.Realtime" Version="*" />
+    <!--#endif -->
+  </ItemGroup>
+
+</Project>

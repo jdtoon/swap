@@ -1,0 +1,24 @@
+@using SwapDebtors.Models
+@model Debtor
+
+<div class="modal-backdrop" onclick="this.remove()">
+    <article class="modal-content" onclick="event.stopPropagation()">
+        <header>
+            <strong>⚠️ Delete Debtor</strong>
+        </header>
+        
+        <p>Are you sure you want to delete <strong>@Model?.Name</strong>?</p>
+        <p><small>This will also delete all @(Model?.Debts?.Count ?? 0) associated debts.</small></p>
+        
+        <footer style="display: flex; justify-content: flex-end; gap: 0.5rem;">
+            <button type="button" class="secondary" onclick="this.closest('.modal-backdrop').remove()">
+                Cancel
+            </button>
+            <button hx-post="/Debtors/Delete/@Model?.Id"
+                    hx-swap="none"
+                    class="contrast">
+                Delete
+            </button>
+        </footer>
+    </article>
+</div>

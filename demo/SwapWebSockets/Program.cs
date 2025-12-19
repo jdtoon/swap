@@ -35,7 +35,7 @@ app.MapStaticAssets();
 // Map WebSocket endpoint
 app.MapGet("/swap/ws", (IRealtimeConnectionRegistry registry) => 
 {
-    return SwapResults.WebSocket(registry, options => {
+    return SwapRealtimeResults.WebSocket(registry, options => {
         options.AutoSubscribeRooms = new[] { "global" };
         options.OnConnected = async (conn) => {
             Console.WriteLine($"Client connected: {conn.Id}");

@@ -1,0 +1,134 @@
+@using SwapDebtors.Models
+@model Debtor
+@{
+    ViewData["Title"] = Model?.Name ?? "Debtor Details";
+}
+
+<nav aria-label="breadcrumb">
+    <ul>
+        <li><swap-nav to="/Debtors">Debtors</swap-nav></li>
+        <li>@Model?.Name</li>
+    </ul>
+</nav>
+
+<article>
+    <header>
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <h2 style="margin: 0;">@Model?.Name</h2>
+                @if (!string.IsNullOrEmpty(Model?.Email))
+                {
+                    <small>📧 @Model.Email</small>
+                }
+                @if (!string.IsNullOrEmpty(Model?.Phone))
+                {
+                    <small> · 📱 @Model.Phone</small>
+                }
+            </div>
+            <div>
+                <button hx-get="/Debtors/Edit/@Model?.Id"
+                        hx-target="#modal"
+                        hx-swap="innerHTML"
+                        class="outline">
+                    ✏️ Edit
+                </button>
+            </div>
+        </div>
+    </header>
+
+    @if (!string.IsNullOrEmpty(Model?.Notes))
+    {
+        <p>@Model.Notes</p>
+    }
+
+    <div class="stats-grid">
+        <div class="stat-card">
+            <h3>@(Model?.ActiveDebtsCount ?? 0)</h3>
+            <small>Active Debts</small>
+        </div>
+        <div class="stat-card">
+            <h3>@(Model?.TotalOwed.ToString("C") ?? "$0.00")</h3>
+            <small>Total Owed</small>
+        </div>
+        <div class="stat-card">
+            <h3>@(Model?.Debts?.Count ?? 0)</h3>
+            <small>All-time Debts</small>
+        </div>
+    </div>
+</article>
+
+<article>
+    <header>
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <strong>Debts</strong>
+            <button hx-get="/Debts/QuickAdd/@Model?.Id"
+                    hx-target="#modal"
+                    hx-swap="innerHTML">
+                + Add Debt
+            </button>
+        </div>
+    </header>
+
+    @if (Model?.Debts == null || !Model.Debts.Any())
+    {
+        <p><em>No debts recorded for this debtor.</em></p>
+    }
+    else
+    {
+        <table>
+            <thead>
+                <tr>
+                    <th>Description</th>
+                    <th>Amount</th>
+                    <th>Currency</th>
+                    <th>Date</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var debt in Model.Debts.OrderByDescending(d => d.CreatedAt))
+                {
+                    <tr class="@(debt.IsPaid ? "paid" : "")">
+                        <td>@debt.Description</td>
+                        <td><strong>@debt.Amount.ToString("N2")</strong></td>
+                        <td><span class="currency-badge">@debt.Currency</span></td>
+                        <td><small>@debt.CreatedAt.ToString("MMM d, yyyy")</small></td>
+                        <td>
+                            @if (debt.IsPaid)
+                            {
+                                <span style="color: green;">✓ Paid</span>
+                            }
+                            else if (debt.DueDate.HasValue && debt.DueDate < DateTime.UtcNow)
+                            {
+                                <span style="color: red;">⚠ Overdue</span>
+                            }
+                            else
+                            {
+                                <span>Pending</span>
+                            }
+                        </td>
+                        <td>
+                            @if (!debt.IsPaid)
+                            {
+                                <button hx-post="/Debts/MarkPaid/@debt.Id"
+                                        hx-swap="none"
+                                        class="outline"
+                                        style="padding: 0.3rem 0.6rem;">
+                                    ✓ Mark Paid
+                                </button>
+                            }
+                            <button hx-post="/Debts/Delete/@debt.Id"
+                                    hx-swap="none"
+                                    hx-confirm="Delete this debt?"
+                                    class="outline secondary"
+                                    style="padding: 0.3rem 0.6rem;">
+                                🗑️
+                            </button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</article>

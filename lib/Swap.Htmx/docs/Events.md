@@ -5,6 +5,8 @@ Swap.Htmx uses `EventKey` for type-safe event handling, eliminating magic string
 **See also:**
 - [Source Generators](SourceGenerators.md) (**Preferred**) - Automatically generate type-safe event keys from your constants.
 - [Event Chains Guide](EventChains.md) - Learn how to configure automatic UI updates when events are triggered.
+- [Typed Payloads](TypedPayloads.md) - Prefer stable DTO payloads over anonymous objects.
+- [Event Naming & Realtime Routing](EventNamingAndRouting.md) - How dot-names relate to realtime broadcasting.
 - [WebSockets & Realtime](WebSockets.md) - Learn how to broadcast events to connected clients.
 
 ## How HX-Trigger Headers Work
@@ -34,6 +36,8 @@ return SwapResults.Response()
 ```
 
 This ensures toasts, custom events, and event chain payloads all work together seamlessly.
+
+If an event payload is consumed by multiple places (client JS, multiple pages, realtime), prefer a small DTO payload type over anonymous objects. See [Typed Payloads](TypedPayloads.md).
 
 ## Type-Safe Event Keys
 
@@ -184,7 +188,9 @@ builder.Services.AddSwapHtmx(events =>
     events.When(CartEvents.ItemAdded)
           .RefreshPartial(CartElements.Dropdown, ctx => RenderCart(ctx))
           .RefreshPartial(CartElements.Badge, ctx => RenderBadge(ctx))
-          .BroadcastSse(SseEvents.Room(SseRooms.Shopping, CartSseEvents.Update));
+
+     // Realtime: chain the domain event to an SSE broadcast key
+     events.ChainToSse(CartEvents.ItemAdded, SseEvents.Room(SseRooms.Shopping, CartSseEvents.Update));
 });
 ```
 

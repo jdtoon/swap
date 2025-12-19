@@ -1,0 +1,81 @@
+using Swap.Htmx;
+using Swap.Htmx.Events;
+using Swap.Htmx.Extensions;
+using Swap.Htmx.Realtime;
+using SwapDebtors.Data;
+using Microsoft.EntityFrameworkCore;
+
+namespace SwapDebtors.Events;
+
+/// <summary>
+/// Event configuration for debt-related events.
+/// Defines what happens when debt actions occur - which partials to update.
+/// Uses generated SwapViews and SwapElements constants.
+/// </summary>
+public class DebtEventConfig : ISwapEventConfiguration
+{
+    public void Configure(SwapEventBusOptions config)
+    {
+        // Realtime: forward domain events into the dashboard activity SSE stream.
+        config.ChainToSse(DebtEvents.Debt.Created, SseEvents.Subscribers(DashboardEvents.ActivityLogged));
+        config.ChainToSse(DebtEvents.Debt.Paid, SseEvents.Subscribers(DashboardEvents.ActivityLogged));
+        config.ChainToSse(DebtEvents.Debt.Deleted, SseEvents.Subscribers(DashboardEvents.ActivityLogged));
+
+        config.When(DebtEvents.Debt.Created)
+            .RefreshPartial(SwapElements.RecentDebts, SwapViews.Dashboard._RecentDebts, ctx =>
+            {
+                var db = ctx.RequestServices.GetRequiredService<DebtorsDbContext>();
+                return db.Debts.Include(d => d.Debtor).OrderByDescending(d => d.CreatedAt).Take(10).ToList();
+            })
+            .RefreshPartial(SwapElements.Stats, SwapViews.Dashboard._Stats, ctx =>
+            {
+                var db = ctx.RequestServices.GetRequiredService<DebtorsDbContext>();
+                return new StatsModel
+                {
+                    TotalDebtors = db.Debtors.Count(),
+                    TotalDebts = db.Debts.Count(),
+                    TotalAmount = db.Debts.Where(d => !d.IsPaid).Sum(d => d.Amount),
+                    ActiveDebts = db.Debts.Count(d => !d.IsPaid)
+                };
+            })
+            .Toast("Debt recorded", ToastType.Success);
+
+        config.When(DebtEvents.Debt.Paid)
+            .RefreshPartial(SwapElements.RecentDebts, SwapViews.Dashboard._RecentDebts, ctx =>
+            {
+                var db = ctx.RequestServices.GetRequiredService<DebtorsDbContext>();
+                return db.Debts.Include(d => d.Debtor).OrderByDescending(d => d.CreatedAt).Take(10).ToList();
+            })
+            .RefreshPartial(SwapElements.Stats, SwapViews.Dashboard._Stats, ctx =>
+            {
+                var db = ctx.RequestServices.GetRequiredService<DebtorsDbContext>();
+                return new StatsModel
+                {
+                    TotalDebtors = db.Debtors.Count(),
+                    TotalDebts = db.Debts.Count(),
+                    TotalAmount = db.Debts.Where(d => !d.IsPaid).Sum(d => d.Amount),
+                    ActiveDebts = db.Debts.Count(d => !d.IsPaid)
+                };
+            })
+            .Toast("Debt marked as paid!", ToastType.Success);
+
+        config.When(DebtEvents.Debt.Deleted)
+            .RefreshPartial(SwapElements.RecentDebts, SwapViews.Dashboard._RecentDebts, ctx =>
+            {
+                var db = ctx.RequestServices.GetRequiredService<DebtorsDbContext>();
+                return db.Debts.Include(d => d.Debtor).OrderByDescending(d => d.CreatedAt).Take(10).ToList();
+            })
+            .RefreshPartial(SwapElements.Stats, SwapViews.Dashboard._Stats, ctx =>
+            {
+                var db = ctx.RequestServices.GetRequiredService<DebtorsDbContext>();
+                return new StatsModel
+                {
+                    TotalDebtors = db.Debtors.Count(),
+                    TotalDebts = db.Debts.Count(),
+                    TotalAmount = db.Debts.Where(d => !d.IsPaid).Sum(d => d.Amount),
+                    ActiveDebts = db.Debts.Count(d => !d.IsPaid)
+                };
+            })
+            .Toast("Debt deleted", ToastType.Warning);
+    }
+}

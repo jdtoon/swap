@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace Swap.Htmx.Realtime;
 
@@ -34,6 +36,13 @@ public sealed class EnhancedServerSentEventsResult : Microsoft.AspNetCore.Mvc.IA
         var stream = new ServerSentEventStream(response, cancellationToken);
         var connectionId = Guid.NewGuid().ToString("N");
         var connection = new SseConnection(connectionId, stream, context.HttpContext);
+
+        // Apply backpressure settings (queue size, event size, drop strategy)
+        var broadcastOptions = context.HttpContext.RequestServices
+            .GetService<IOptions<SseBroadcastOptions>>()
+            ?.Value;
+        var connectionLogger = context.HttpContext.RequestServices.GetService<ILogger<SseConnection>>();
+        connection.ConfigureBroadcastOptions(broadcastOptions, connectionLogger);
 
         // Register with connection registry if available
         var registry = context.HttpContext.RequestServices.GetService<ISseConnectionRegistry>();

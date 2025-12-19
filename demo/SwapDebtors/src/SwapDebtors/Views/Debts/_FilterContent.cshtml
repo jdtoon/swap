@@ -1,0 +1,236 @@
+@using SwapDebtors.Models
+@model DebtListViewModel
+@{
+    var state = Model.State;
+    var currencies = ViewData["Currencies"] as string[] ?? new[] { "USD", "EUR", "GBP" };
+    
+    // Pre-compute all selected states
+    var sortDateSelected = state.SortBy == "date" ? "selected" : "";
+    var sortAmountSelected = state.SortBy == "amount" ? "selected" : "";
+    var sortDebtorSelected = state.SortBy == "debtor" ? "selected" : "";
+    var sortDescChecked = state.SortDesc ? "checked" : "";
+    
+    var currencyAllSelected = state.Currency == "all" ? "selected" : "";
+    var statusAllSelected = state.Status == "all" ? "selected" : "";
+    var statusUnpaidSelected = state.Status == "unpaid" ? "selected" : "";
+    var statusPaidSelected = state.Status == "paid" ? "selected" : "";
+}
+
+<!-- THE STATE CONTAINER - hidden fields that persist state -->
+<swap-state state="Model.State" />
+
+<!-- Debug: Show current state values -->
+<div style="background: #fffbe6; border: 1px solid #ffe58f; padding: 0.75rem; margin-bottom: 1rem; font-family: monospace; font-size: 0.85rem;">
+    <strong>SwapState Container:</strong> #@state.ContainerId<br/>
+    Search="@(state.Search ?? "")" | Currency=@state.Currency | Status=@state.Status | SortBy=@state.SortBy | Page=@state.Page/@Model.TotalPages | Total=@Model.TotalCount
+</div>
+
+<!-- Filter Controls -->
+<article>
+    <div style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: center;">
+        <!-- Search -->
+        <div style="flex: 1; min-width: 200px;">
+            <input type="search" 
+                   name="Search"
+                   placeholder="Search by description or debtor..."
+                   value="@state.Search"
+                   hx-get="/Debts/Filter?Page=1"
+                   hx-target="#filter-content"
+                   hx-include="#@state.ContainerId"
+                   hx-trigger="keyup changed delay:300ms"
+                   style="margin: 0;" />
+        </div>
+
+        <!-- Currency Filter -->
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <label style="margin: 0; white-space: nowrap;">Currency:</label>
+            <select name="Currency"
+                    hx-get="/Debts/Filter?Page=1"
+                    hx-target="#filter-content"
+                    hx-include="#@state.ContainerId"
+                    hx-trigger="change"
+                    style="margin: 0; width: auto;">
+                <!option value="all" @currencyAllSelected>All</!option>
+                @foreach (var curr in currencies)
+                {
+                    var currSelected = state.Currency == curr ? "selected" : "";
+                    <!option value="@curr" @currSelected>@curr</!option>
+                }
+            </select>
+        </div>
+
+        <!-- Status Filter -->
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <label style="margin: 0; white-space: nowrap;">Status:</label>
+            <select name="Status"
+                    hx-get="/Debts/Filter?Page=1"
+                    hx-target="#filter-content"
+                    hx-include="#@state.ContainerId"
+                    hx-trigger="change"
+                    style="margin: 0; width: auto;">
+                <!option value="all" @statusAllSelected>All</!option>
+                <!option value="unpaid" @statusUnpaidSelected>Unpaid</!option>
+                <!option value="paid" @statusPaidSelected>Paid</!option>
+            </select>
+        </div>
+
+        <!-- Sort -->
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <label style="margin: 0; white-space: nowrap;">Sort:</label>
+            <select name="SortBy"
+                    hx-get="/Debts/Filter?Page=1"
+                    hx-target="#filter-content"
+                    hx-include="#@state.ContainerId"
+                    hx-trigger="change"
+                    style="margin: 0; width: auto;">
+                <!option value="date" @sortDateSelected>Date</!option>
+                <!option value="amount" @sortAmountSelected>Amount</!option>
+                <!option value="debtor" @sortDebtorSelected>Debtor</!option>
+            </select>
+            <label style="margin: 0; display: flex; align-items: center; gap: 0.25rem;">
+                <input type="checkbox"
+                       @sortDescChecked
+                       hx-get="/Debts/Filter?Page=1&SortDesc=@(!state.SortDesc ? "true" : "false")"
+                       hx-target="#filter-content"
+                       hx-include="#@state.ContainerId"
+                       style="margin: 0;" />
+                Desc
+            </label>
+        </div>
+
+        <!-- Add Button -->
+        <button hx-get="/Debts/Create" 
+                hx-target="#modal"
+                hx-swap="innerHTML"
+                style="margin: 0;">
+            + Add Debt
+        </button>
+    </div>
+</article>
+
+<!-- Results Table -->
+<table>
+    <thead>
+        <tr>
+            <th>Debtor</th>
+            <th>Description</th>
+            <th style="text-align: right;">Amount</th>
+            <th>Currency</th>
+            <th>Date</th>
+            <th>Due</th>
+            <th>Status</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @if (Model.Debts.Any())
+        {
+            @foreach (var debt in Model.Debts)
+            {
+                var rowClass = debt.IsPaid ? "paid" : "";
+                <tr class="@rowClass">
+                    <td>
+                        <a href="/Debtors/Details/@debt.DebtorId"
+                           hx-get="/Debtors/Details/@debt.DebtorId"
+                           hx-target="#main-content"
+                           hx-push-url="true">
+                            @debt.Debtor?.Name
+                        </a>
+                    </td>
+                    <td>@debt.Description</td>
+                    <td style="text-align: right;">
+                        <strong>@debt.Amount.ToString("N2")</strong>
+                    </td>
+                    <td>
+                        <span class="currency-badge">@debt.Currency</span>
+                    </td>
+                    <td>@debt.CreatedAt.ToString("MMM dd")</td>
+                    <td>
+                        @if (debt.DueDate.HasValue)
+                        {
+                            var overdue = debt.DueDate.Value < DateTime.UtcNow && !debt.IsPaid;
+                            var overdueStyle = overdue ? "color: var(--pico-del-color);" : "";
+                            <span style="@overdueStyle">
+                                @debt.DueDate.Value.ToString("MMM dd")
+                            </span>
+                        }
+                        else
+                        {
+                            <span style="color: var(--pico-muted-color);">-</span>
+                        }
+                    </td>
+                    <td>
+                        @if (debt.IsPaid)
+                        {
+                            <span style="color: var(--pico-ins-color);">✓ Paid</span>
+                        }
+                        else
+                        {
+                            <span style="color: var(--pico-del-color);">Unpaid</span>
+                        }
+                    </td>
+                    <td>
+                        <div style="display: flex; gap: 0.25rem;">
+                            @if (!debt.IsPaid)
+                            {
+                                <button hx-post="/Debts/MarkPaid/@debt.Id"
+                                        hx-swap="none"
+                                        class="outline"
+                                        style="padding: 0.3rem 0.6rem;"
+                                        title="Mark as paid">
+                                    ✓
+                                </button>
+                            }
+                            <button hx-post="/Debts/Delete/@debt.Id"
+                                    hx-swap="none"
+                                    hx-confirm="Delete this debt?"
+                                    class="outline secondary"
+                                    style="padding: 0.3rem 0.6rem;"
+                                    title="Delete">
+                                🗑️
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            }
+        }
+        else
+        {
+            <tr>
+                <td colspan="8" style="text-align: center; color: var(--pico-muted-color);">
+                    No debts found
+                    @if (!string.IsNullOrEmpty(state.Search) || state.Currency != "all" || state.Status != "all")
+                    {
+                        <text> matching your filters</text>
+                    }
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<!-- Pagination -->
+<div style="display: flex; justify-content: space-between; align-items: center;">
+    <p style="margin: 0;">
+        <strong>@Model.Debts.Count</strong> of <strong>@Model.TotalCount</strong> debts 
+        (Page @state.Page of @Math.Max(1, Model.TotalPages))
+    </p>
+    
+    @if (Model.TotalPages > 1)
+    {
+        <div style="display: flex; gap: 0.25rem;">
+            @for (int i = 1; i <= Model.TotalPages; i++)
+            {
+                var pageNum = i;
+                var pageActive = state.Page == pageNum ? "contrast" : "outline";
+                <button class="@pageActive"
+                        style="padding: 0.4rem 0.8rem;"
+                        hx-get="/Debts/Filter?Page=@pageNum"
+                        hx-target="#filter-content"
+                        hx-include="#@state.ContainerId">
+                    @pageNum
+                </button>
+            }
+        </div>
+    }
+</div>

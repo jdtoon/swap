@@ -50,6 +50,12 @@ builder.Services.Configure<GzipCompressionProviderOptions>(options =>
 // Add Swap.Htmx with decentralized event configuration
 builder.Services.AddSwapHtmx(options =>
 {
+    // Auto-suppress layout for HTMX requests - no _ViewStart.cshtml needed!
+    options.AutoSuppressLayout = true;
+    
+    // Default navigation target for <swap-nav> tag helper
+    options.DefaultNavigationTarget = "#main-content";
+    
     // Configure view search paths for cross-controller OOB swaps
     options.PartialViewSearchPaths.Add("Cart");
     options.PartialViewSearchPaths.Add("Products");

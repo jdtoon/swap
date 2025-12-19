@@ -9,8 +9,6 @@
     <CompilerGeneratedFilesOutputPath>obj\Generated</CompilerGeneratedFilesOutputPath>
   </PropertyGroup>
 
-  </ItemGroup>
-
   <!-- Exclude generated files from compilation (prevents duplicates) -->
   <ItemGroup>
     <Compile Remove="obj\Generated\**\*.cs" />

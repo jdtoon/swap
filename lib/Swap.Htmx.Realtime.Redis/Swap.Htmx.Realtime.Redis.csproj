@@ -1,0 +1,39 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+
+    <!-- Package Metadata -->
+    <PackageId>Swap.Htmx.Realtime.Redis</PackageId>
+    <Version>1.1.0</Version>
+    <Authors>jdtoon</Authors>
+    <Company>Swap</Company>
+    <Description>Redis backplane for Swap.Htmx.Realtime (SSE fan-out across multiple app instances) using StackExchange.Redis.</Description>
+    <PackageProjectUrl>https://github.com/jdtoon/swap</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/jdtoon/swap</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageTags>swap;htmx;aspnetcore;sse;realtime;redis;backplane</PackageTags>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Swap.Htmx.Realtime\Swap.Htmx.Realtime.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="StackExchange.Redis" Version="2.10.1" />
+  </ItemGroup>
+
+  <!-- Compile the existing Redis sources from the core folder. -->
+  <ItemGroup>
+    <Compile Include="..\Swap.Htmx\Realtime\Redis\**\*.cs" />
+    <Compile Include="..\Swap.Htmx\Extensions\SwapRedisExtensions.cs" />
+  </ItemGroup>
+
+</Project>

@@ -166,6 +166,17 @@ app.MapPost("/products", (Product product, IProductService service) =>
    - A `SwapResponseBuilder` is created with all configured actions
    - The response is rendered and returned
 
+### Event Bus Chains (HX-Trigger)
+
+Separately from the centralized chain executor above, Swap also maintains a per-request **event bus** that is used to build the `HX-Trigger` response header.
+
+- **One-hop only**: `SwapEventBusOptions.Chain(a, b)` expands *only one level* (emitting `a` includes `b`). Chains are not resolved transitively (so `a -> b` and `b -> c` does **not** imply `c` when `a` is emitted).
+- **Payload propagation**: a chained event inherits the triggering event's payload.
+- **Duplicates**:
+    - Emitting the same event multiple times is **last-write-wins** for that event’s payload.
+    - For chained events, the **most recent triggering payload** wins *unless* the chained event was explicitly emitted.
+- **Explicit beats chained**: if an event was emitted directly during the request, chain propagation will not overwrite its payload.
+
 ## Async Event Chains (v1.1)
 
 You can now use asynchronous model factories to perform database queries or other I/O operations without blocking threads. This is critical for high-performance applications to avoid thread pool starvation.

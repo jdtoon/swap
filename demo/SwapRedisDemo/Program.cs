@@ -33,7 +33,7 @@ app.UseAuthorization();
 
 // app.MapStaticAssets();
 
-app.MapGet("/swap/sse", (ISseConnectionRegistry registry) => SwapResults.Sse(registry));
+app.MapGet("/swap/sse", (ISseConnectionRegistry registry) => SwapRealtimeResults.Sse(registry));
 
 app.MapControllerRoute(
     name: "default",

@@ -8,10 +8,24 @@ Real-time server-to-client updates over HTTP.
 
 ## Quick Start
 
+> See [Event Naming & Realtime Routing](EventNamingAndRouting.md) if you’re unsure what should be dot-separated (domain/UI events) vs what’s an internal `sse:` routing key.
+
+For the examples below, assume these event keys:
+
+```csharp
+using Swap.Htmx.Events;
+
+public static class DashboardEvents
+{
+    public static readonly EventKey StatsUpdate = new("stats-update");
+    public static readonly EventKey ActivityUpdate = new("activity-update");
+}
+```
+
 ### 1. Create SSE Endpoint
 
 ```csharp
-public class DashboardController : SwapController
+public class DashboardController : SwapRealtimeController
 {
     [HttpGet("/dashboard/stream")]
     public IActionResult Stream()
@@ -51,10 +65,34 @@ public IActionResult CreateTask(TaskInput input)
     
     return SwapResponse()
         .WithView("_Task", task)
-        .BroadcastSse(DashboardEvents.StatsUpdate)  // All clients update!
+        .WithTrigger(DashboardEvents.StatsUpdate)  // Event chain handles both HTTP + realtime
         .Build();
 }
 ```
+
+Enable realtime broadcasting for that event in your event configuration:
+
+```csharp
+// Program.cs
+builder.Services
+    .AddSwapHtmx(events =>
+    {
+        events.When(DashboardEvents.StatsUpdate)
+              .RefreshPartial("stats", "_Stats", ctx =>
+              {
+                  var stats = ctx.RequestServices.GetRequiredService<IStatsService>();
+                  return stats.GetCurrent();
+              })
+              .Broadcast(); // sends to all connected SSE clients
+    })
+    .AddSseEventBridge();
+
+// Pipeline
+app.UseSwapHtmx();
+app.UseSseEventBridge();
+```
+
+> `SwapRealtimeController`, `AddSseEventBridge`, and `UseSseEventBridge` come from the `Swap.Htmx.Realtime` package.
 
 ---
 
@@ -64,17 +102,16 @@ Configure what renders when SSE events broadcast:
 
 ```csharp
 // Program.cs
-builder.Services.AddSwapHtmx(options =>
+builder.Services.AddSwapHtmx(events =>
 {
-    options.ConfigureEvents(events =>
-    {
-        events.When(SseEvents.Broadcast(DashboardEvents.StatsUpdate))
-            .RefreshPartial("stats", "_Stats", ctx =>
-            {
-                var stats = ctx.RequestServices.GetRequiredService<IStatsService>();
-                return stats.GetCurrent();
-            });
-    });
+    // Note: the *client-facing* SSE event name is the final segment (e.g. "stats-update").
+    // The "sse:" prefix is an internal routing key used by the realtime bridge.
+    events.When(SseEvents.Broadcast(DashboardEvents.StatsUpdate.Name))
+        .RefreshPartial("stats", "_Stats", ctx =>
+        {
+            var stats = ctx.RequestServices.GetRequiredService<IStatsService>();
+            return stats.GetCurrent();
+        });
 });
 ```
 
@@ -96,7 +133,7 @@ Browser A          Server           Browser B
     │                 │                 │
     │ POST /tasks     │                 │
     ├────────────────>│                 │
-    │                 │ BroadcastSse()  │
+    │                 │ WithTrigger()   │
     │                 │                 │
     │ SSE: stats HTML │                 │
     │<────────────────┤                 │
@@ -120,11 +157,27 @@ return ServerSentEvents(async (conn, ct) =>
     await conn.KeepAlive(TimeSpan.FromSeconds(30), ct);
 });
 
-// Broadcast to room only
-return SwapResponse()
-    .WithView("_Task", task)
-    .BroadcastSse(ProjectEvents.TaskUpdated, room: $"project-{projectId}")
-    .Build();
+// Option A (simple): use event name == trigger name and broadcast to one room
+// Configure:
+// events.When(ProjectEvents.TaskUpdated).Broadcast(target: $"room:project-{projectId}");
+// Note: room name must be known at configuration time.
+
+// Option B (dynamic): broadcast directly via the registry
+public sealed class TaskController : Controller
+{
+    private readonly ISseConnectionRegistry _sse;
+
+    public TaskController(ISseConnectionRegistry sse) => _sse = sse;
+
+    [HttpPost]
+    public async Task<IActionResult> UpdateTask(TaskInput input)
+    {
+        var task = _service.Update(input);
+        var html = await this.RenderPartialToStringAsync("_Task", task);
+        await _sse.BroadcastToRoomsAsync(ProjectEvents.TaskUpdated.Name, html, new[] { $"project-{input.ProjectId}" });
+        return Ok();
+    }
+}
 ```
 
 ---
@@ -134,10 +187,8 @@ return SwapResponse()
 Send to a specific user across all their connections:
 
 ```csharp
-return SwapResponse()
-    .WithView("_Notification", notification)
-    .BroadcastSseToUser(userId, NotificationEvents.New)
-    .Build();
+// User targeting is best done via the registry (userId can be dynamic)
+await _sse.BroadcastToUserAsync(NotificationEvents.New.Name, html, userId);
 ```
 
 ---
@@ -171,3 +222,5 @@ See [Redis Backplane](RedisBackplane.md) for details.
 - [WebSockets](WebSockets.md) — Bi-directional real-time
 - [Redis Backplane](RedisBackplane.md) — Multi-server support
 - [Event Chains](EventChains.md) — Event-driven updates
+- [SSE Authentication](SseAuthentication.md) — Secure endpoints and rooms
+- [SSE Backpressure](SseBackpressure.md) — Limits and drop strategy

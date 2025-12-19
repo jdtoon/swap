@@ -46,15 +46,33 @@ public class StatsHandler : ISwapEventHandler<TaskEvent>
 # Install the template
 dotnet new install Swap.Templates
 
-# Create a new project
-dotnet new swap-mvc -n MyApp
-cd MyApp
+# Create a new project (recommended)
+dotnet new swap-modular -n MyApp
+cd MyApp/src
+
+# Restore client libraries (htmx, optional SSE extension)
+libman restore
 
 # Run it
 dotnet run
 ```
 
-Open `http://localhost:5000` — you're server-driven.
+## Packages
+
+- `Swap.Htmx` — core MVC + Swap responses/events/source generators
+- `Swap.Htmx.Realtime` — SSE/WebSockets (adds `AddSseEventBridge`, `UseSseEventBridge`, `SwapRealtimeResults`, `SwapRealtimeController`)
+- `Swap.Htmx.Realtime.Redis` — Redis backplane for scaling SSE across instances
+
+Open the URL shown in the console (typically `https://localhost:5001`).
+
+Prefer a minimal starting point?
+
+```bash
+dotnet new swap-mvc -n MyApp
+cd MyApp
+libman restore
+dotnet run
+```
 
 ---
 
@@ -146,6 +164,8 @@ public IActionResult Complete(int id)
 ## Documentation
 
 - **[Getting Started](lib/Swap.Htmx/docs/GettingStarted.md)** — Full setup guide
+- **[Public API & Compatibility](lib/Swap.Htmx/docs/PublicApiAndCompatibility.md)** — What we consider stable vs experimental
+- **[Security Checklist](lib/Swap.Htmx/docs/SecurityChecklist.md)** — CSRF, SSE auth/rooms, headers
 - **[Patterns Cheatsheet](lib/Swap.Htmx/docs/Patterns.md)** — Copy-paste recipes
 - **[SwapState](lib/Swap.Htmx/docs/SwapState.md)** — Server-side state management
 - **[Events](lib/Swap.Htmx/docs/EventChains.md)** — Event-driven UI updates

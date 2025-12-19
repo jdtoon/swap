@@ -1,6 +1,6 @@
 # SwapRedisDemo
 
-This project demonstrates how to use the **Redis Backplane** feature of `Swap.Htmx` to scale Server-Sent Events (SSE) across multiple application instances.
+This project demonstrates how to use the **Redis Backplane** (`Swap.Htmx.Realtime.Redis`) to scale Server-Sent Events (SSE) across multiple application instances.
 
 ## Overview
 

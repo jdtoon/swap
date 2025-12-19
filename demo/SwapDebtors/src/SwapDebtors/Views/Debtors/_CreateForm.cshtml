@@ -1,0 +1,42 @@
+@using SwapDebtors.Models
+@model Debtor
+
+<div class="modal-backdrop" onclick="this.remove()">
+    <article class="modal-content" onclick="event.stopPropagation()">
+        <header>
+            <strong>Add New Debtor</strong>
+        </header>
+        
+        <form hx-post="/Debtors/Create" 
+              hx-target="#modal"
+              hx-swap="innerHTML">
+            
+            <label>
+                Name *
+                <input type="text" name="Name" value="@Model?.Name" required autofocus />
+            </label>
+            
+            <label>
+                Email
+                <input type="email" name="Email" value="@Model?.Email" />
+            </label>
+            
+            <label>
+                Phone
+                <input type="tel" name="Phone" value="@Model?.Phone" />
+            </label>
+            
+            <label>
+                Notes
+                <textarea name="Notes" rows="2">@Model?.Notes</textarea>
+            </label>
+            
+            <footer style="display: flex; justify-content: flex-end; gap: 0.5rem;">
+                <button type="button" class="secondary" onclick="this.closest('.modal-backdrop').remove()">
+                    Cancel
+                </button>
+                <button type="submit">Add Debtor</button>
+            </footer>
+        </form>
+    </article>
+</div>
