@@ -33,9 +33,6 @@
     };
 }
 
-<!-- THE STATE CONTAINER - hidden fields persist ALL wizard data across steps -->
-<swap-state state="Model.State" />
-
 <!-- Progress Steps -->
 <div class="wizard-steps">
     @for (int i = 1; i <= 5; i++)
@@ -203,3 +200,7 @@
         }
     }
 </div>
+
+<!-- THE STATE CONTAINER - hidden fields persist ALL wizard data across steps -->
+<!-- Placed at bottom so User Inputs (above) take precedence over Hidden Inputs during form submission binding -->
+<swap-state state="Model.State" />

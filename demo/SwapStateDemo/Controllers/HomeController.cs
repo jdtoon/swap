@@ -107,6 +107,8 @@ public class HomeController : SwapController
         
         state.Step = goToStep;
         
+        ModelState.Clear(); // Ensure View renders updated State, not original Request values
+
         // Return _WizardContent - swaps entire wizard area so progress steps & debug update
         return PartialView("_WizardContent", new WizardViewModel { State = state });
     }
