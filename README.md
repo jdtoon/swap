@@ -147,6 +147,14 @@ public class PaymentState : SwapState
 }
 ```
 
+### SwapStories (Component Playground)
+Develop and test partials in isolation.
+
+```csharp
+[SwapStory("Product Card", "Components")]
+public IActionResult Card() => PartialView("_ProductCard", new Product(...));
+```
+
 ### Realtime (SSE)
 Update clients in real-time without complex WebSocket setup.
 
@@ -159,6 +167,8 @@ await _publisher.Publish("task.completed", id);
 
 ## Documentation & Demos
 - **[Documentation](lib/Swap.Htmx/docs)**
+  - [Getting Started](lib/Swap.Htmx/docs/GettingStarted.md)
+  - [SwapStories (Playground)](lib/Swap.Htmx/docs/SwapStories.md)
 - **[SwapShop](demo/SwapShop)** - Full E-commerce reference app
 - **[SwapDashboard](demo/SwapDashboard)** - Complex multi-component state
 - **[SwapDebtors](demo/SwapDebtors)** - Minimal API CRUD example
