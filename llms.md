@@ -424,6 +424,27 @@ The template includes:
 
 ---
 
+## Pattern 8: Component Stories (Playground)
+
+Develop components in isolation using SwapStories.
+
+```csharp
+[SwapStory("User Card", "Profile")]
+public IActionResult UserCard() 
+    => PartialView("_UserCard", new User { Name = "Alice" });
+```
+
+Enable in `Program.cs` (Development only):
+```csharp
+app.UseSwapStories(); // /_swap/stories
+```
+
+---
+
+## Pattern 9: View Component Replacement
+
+---
+
 ## Pattern 1: SwapController
 
 Base controller class that provides all Swap methods. **Every controller should inherit from this.**

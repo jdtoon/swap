@@ -74,8 +74,19 @@ app.UseSwapHtmx();              // Add this
 // Optional: realtime (requires Swap.Htmx.Realtime)
 // app.UseSseEventBridge();
 app.MapControllers();
+
+// Optional: Enable SwapStories (Component Playground)
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwapStories(); // Serves dashboard at /_swap/stories
+}
+
 app.Run();
 ```
+
+See [SwapStories Documentation](SwapStories.md) for more details.
+
+---
 
 ### 3. Layout (_Layout.cshtml)
 
