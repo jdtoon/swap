@@ -9,14 +9,33 @@ public record Product(int Id, string Name, string Category, decimal Price, bool 
 /// </summary>
 public class ProductFilterState : SwapState
 {
+    public override bool Protected => true;
+    public override bool UrlSync => true;
+
+    [SwapUnprotected]
     public string Category { get; set; } = "all";
+    
+    [SwapUnprotected]
     public int Page { get; set; } = 1;
-    public int PageSize { get; set; } = 2;
+    
+    public int PageSize { get; set; } = 2; // Protected! User cannot change via URL/Form
+    
+    [SwapUnprotected]
     public string? Search { get; set; }
+    
+    [SwapUnprotected]
     public string SortBy { get; set; } = "name";
+    
+    [SwapUnprotected]
     public bool SortDesc { get; set; } = false;
+    
+    [SwapUnprotected]
     public bool InStockOnly { get; set; } = false;
+    
+    [SwapUnprotected]
     public decimal? MinPrice { get; set; }
+    
+    [SwapUnprotected]
     public decimal? MaxPrice { get; set; }
 }
 
@@ -34,26 +53,29 @@ public class ProductViewModel
 
 public class WizardState : SwapState
 {
+    public override bool Protected => true;
+
+    [SwapUnprotected]
     public int Step { get; set; } = 1;
     
     // Step 1: Personal Info
-    public string FirstName { get; set; } = "";
-    public string LastName { get; set; } = "";
-    public string Email { get; set; } = "";
+    [SwapUnprotected] public string FirstName { get; set; } = "";
+    [SwapUnprotected] public string LastName { get; set; } = "";
+    [SwapUnprotected] public string Email { get; set; } = "";
     
     // Step 2: Address
-    public string Street { get; set; } = "";
-    public string City { get; set; } = "";
-    public string PostalCode { get; set; } = "";
+    [SwapUnprotected] public string Street { get; set; } = "";
+    [SwapUnprotected] public string City { get; set; } = "";
+    [SwapUnprotected] public string PostalCode { get; set; } = "";
     
     // Step 3: Preferences
-    public string ContactMethod { get; set; } = "email";
-    public bool Newsletter { get; set; } = false;
-    public string Frequency { get; set; } = "weekly";
+    [SwapUnprotected] public string ContactMethod { get; set; } = "email";
+    [SwapUnprotected] public bool Newsletter { get; set; } = false;
+    [SwapUnprotected] public string Frequency { get; set; } = "weekly";
     
     // Step 4: Payment
-    public string PaymentMethod { get; set; } = "card";
-    public string CardType { get; set; } = "";
+    [SwapUnprotected] public string PaymentMethod { get; set; } = "card";
+    [SwapUnprotected] public string CardType { get; set; } = "";
     
     // Step 5: Review (no new fields, just displays all)
 }
@@ -70,6 +92,9 @@ public class WizardViewModel
 
 public class DashboardState : SwapState
 {
+    // Fully protected state - client cannot tamper with any of these
+    public override bool Protected => true;
+
     // Track which cards are expanded (comma-separated IDs)
     public string ExpandedCards { get; set; } = "";
     
