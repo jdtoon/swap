@@ -445,6 +445,25 @@ app.UseSwapStories(); // /_swap/stories
 
 ---
 
+## Pattern 10: Error Boundaries (Graceful Crashes)
+
+Prevent full HTML error pages from breaking your layout by catching exceptions and returning a toast.
+
+**Config:**
+```csharp
+builder.Services.AddSwapHtmx(o => o.ErrorHandling.Enabled = true);
+```
+
+**Custom View (`_SwapErrorToast.cshtml`):**
+```html
+@model SwapErrorModel
+<div id="toast-container" hx-swap-oob="beforeend">
+    <div class="alert-error">@Model.Message</div>
+</div>
+```
+
+---
+
 ## Pattern 1: SwapController
 
 Base controller class that provides all Swap methods. **Every controller should inherit from this.**

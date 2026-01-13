@@ -168,11 +168,10 @@ await _publisher.Publish("task.completed", id);
 ## Documentation & Demos
 - **[Documentation](lib/Swap.Htmx/docs)**
   - [Getting Started](lib/Swap.Htmx/docs/GettingStarted.md)
-  - [SwapStories (Playground)](lib/Swap.Htmx/docs/SwapStories.md)
+- **[SwapStateDemo](demo/SwapStateDemo)** - Secure state & form handling
 - **[SwapShop](demo/SwapShop)** - Full E-commerce reference app
 - **[SwapDashboard](demo/SwapDashboard)** - Complex multi-component state
 - **[SwapDebtors](demo/SwapDebtors)** - Minimal API CRUD example
-- **[SwapStateDemo](demo/SwapStateDemo)** - Secure state & form handling
 - **[SwapLab](demo/SwapLab)** - Gallery of 15+ UI patterns
 
 ## License

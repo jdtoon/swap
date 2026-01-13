@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `[SwapStory]` attribute to mark stories.
   - `app.UseSwapStories()` middleware to serve detailed dashboard at `/_swap/stories`.
   - Auto-discovery of stories, viewport testing, and category grouping.
+- **SwapErrorBoundaries** - Graceful error handling for HTMX requests. Intercepts exceptions and returns a customizable OOB error toast instead of crashing the UI with a full HTML page.
 - **Secure SwapState** - Opt-in tamper-proof state using `IDataProtection` encryption for hidden fields and URL parameters.
 - **`[SwapProtected]` / `[SwapUnprotected]`** - Attributes for fine-grained per-property protection control.
 - **`@Html.SwapStateQueryString()`** - Helper to generate secure, encrypted query strings for `hx-get` links.
