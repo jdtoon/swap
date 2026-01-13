@@ -46,6 +46,7 @@ public static class SwapHtmxServiceExtensions
     {
         // Core services required by Swap.Htmx
         services.AddHttpContextAccessor();
+        services.AddDataProtection();
 
         // Create and configure options
         var options = new SwapHtmxOptions();

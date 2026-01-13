@@ -2,8 +2,8 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.AspNetCore.Razor.TagHelpers;
 using Swap.Htmx.State;
-using System.Globalization;
 using System.Text.Encodings.Web;
+using Microsoft.AspNetCore.DataProtection;
 
 namespace Swap.Htmx.TagHelpers;
 
@@ -28,6 +28,7 @@ namespace Swap.Htmx.TagHelpers;
 public class SwapStateTagHelper : TagHelper
 {
     private readonly HtmlEncoder _htmlEncoder;
+    private readonly IDataProtectionProvider? _protectionProvider;
 
     /// <summary>
     /// The SwapState instance to render.
@@ -65,9 +66,10 @@ public class SwapStateTagHelper : TagHelper
     /// <summary>
     /// Initializes a new instance of <see cref="SwapStateTagHelper"/>.
     /// </summary>
-    public SwapStateTagHelper(HtmlEncoder htmlEncoder)
+    public SwapStateTagHelper(HtmlEncoder htmlEncoder, IDataProtectionProvider? protectionProvider = null)
     {
         _htmlEncoder = htmlEncoder;
+        _protectionProvider = protectionProvider;
     }
 
     /// <inheritdoc />
@@ -102,25 +104,9 @@ public class SwapStateTagHelper : TagHelper
                 ? kvp.Key 
                 : $"{Prefix}.{kvp.Key}";
 
-            var fieldValue = FormatValue(kvp.Value);
+            var fieldValue = SwapStateRenderer.GetFormattedValue(State, kvp.Key, kvp.Value, _protectionProvider);
             
             output.Content.AppendHtml($"<input type=\"hidden\" name=\"{_htmlEncoder.Encode(fieldName)}\" value=\"{_htmlEncoder.Encode(fieldValue)}\" />\n");
         }
-    }
-
-    private static string FormatValue(object? value)
-    {
-        return value switch
-        {
-            null => string.Empty,
-            bool b => b ? "true" : "false",
-            decimal d => d.ToString(CultureInfo.InvariantCulture),
-            double dbl => dbl.ToString(CultureInfo.InvariantCulture),
-            float f => f.ToString(CultureInfo.InvariantCulture),
-            DateTime dt => dt.ToString("O"),
-            DateTimeOffset dto => dto.ToString("O"),
-            Enum e => e.ToString(),
-            _ => value.ToString() ?? string.Empty
-        };
     }
 }
