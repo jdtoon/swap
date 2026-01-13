@@ -72,6 +72,11 @@ public class SwapHtmxOptions
     internal List<Type> ConfigurationTypes { get; } = new();
 
     /// <summary>
+    /// Configuration for global error handling in HTMX requests.
+    /// </summary>
+    public SwapErrorOptions ErrorHandling { get; set; } = new();
+
+    /// <summary>
     /// Registers a feature-specific event configuration.
     /// </summary>
     /// <typeparam name="T">The configuration type implementing ISwapEventConfiguration.</typeparam>
@@ -79,6 +84,31 @@ public class SwapHtmxOptions
     {
         ConfigurationTypes.Add(typeof(T));
     }
+}
+
+/// <summary>
+/// Options for handling exceptions in HTMX requests.
+/// </summary>
+public class SwapErrorOptions
+{
+    /// <summary>
+    /// Automatically catch unhandled exceptions in HTMX requests and return a formatted error response.
+    /// Default: false.
+    /// </summary>
+    public bool Enabled { get; set; } = false;
+
+    /// <summary>
+    /// The partial view to render when an error occurs.
+    /// Default: "_SwapErrorToast" (assumes you have a toast container).
+    /// </summary>
+    public string ErrorViewName { get; set; } = "_SwapErrorToast";
+
+    /// <summary>
+    /// If true, includes the exception message in the error view model.
+    /// If false, uses a generic "An error occurred" message.
+    /// Default: false (true in Development).
+    /// </summary>
+    public bool ShowExceptionDetails { get; set; } = false;
 }
 
 /// <summary>

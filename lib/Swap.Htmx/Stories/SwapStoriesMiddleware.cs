@@ -173,6 +173,9 @@ internal class SwapStoriesMiddleware
                 ? $"width: {width}; height: {height};" 
                 : "width: 100%; height: 100%; border-radius: 0; box-shadow: none;";
 
+            // We need to inject HTMX and a toast container into the iframe for the story to work fully
+            var storyUrl = $"{selectedStory.RouteUrl}?_story=true"; 
+
             html.Append($@"
         <div class=""toolbar"">
             <div class=""story-info"">{HtmlEncode(selectedStory.Title)} <span style=""font-weight:400; color:var(--text-muted); font-size:0.9em"">— {HtmlEncode(selectedStory.Description ?? "")}</span></div>
@@ -188,7 +191,19 @@ internal class SwapStoriesMiddleware
         </div>
         <div class=""canvas-wrapper"">
             <div class=""iframe-container"" style=""{containerStyle}"">
-                <iframe id=""storyFrame"" src=""{selectedStory.RouteUrl}""></iframe>
+                <!-- 
+                    The story endpoint returns a Partial View. 
+                    To make it work in an iframe (which expects a full document), 
+                    we usually rely on the browser to wrap it in <html><body>.
+                    But for things like OOB Swaps to work (like our Error Toast), 
+                    HTMX needs to be present IN THE IFRAME.
+                    
+                    If the user's partial doesn't include HTMX, nothing happens.
+                    
+                    SOLUTION: We should wrap the story in a Layout if it's a raw partial.
+                    For now, we will update the story controller to return a full view or rely on the user to include HTMX.
+                 -->
+                <iframe id=""storyFrame"" src=""{storyUrl}""></iframe>
             </div>
         </div>
 ");

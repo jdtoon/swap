@@ -215,6 +215,7 @@ public static class SwapHtmxServiceExtensions
     /// </summary>
     public static IApplicationBuilder UseSwapHtmx(this IApplicationBuilder app)
     {
+        app.UseMiddleware<SwapErrorMiddleware>(); // Error handler first (so it catches exceptions from endpoints)
         return app.UseMiddleware<SwapEventResponseMiddleware>();
     }
 

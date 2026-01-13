@@ -1,0 +1,19 @@
+@model Swap.Htmx.Middleware.SwapErrorModel
+
+<div id="swap-error-toast" class="error-toast" hx-swap-oob="true">
+    <div style="background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; padding: 1rem; border-radius: 0.25rem; margin-bottom: 1rem; box-shadow: 0 4px 6px rgba(0,0,0,0.1); display: flex; align-items: flex-start; gap: 1rem;">
+        <div style="font-size: 1.5rem;">⚠️</div>
+        <div style="flex: 1;">
+            <strong>Error!</strong>
+            <p style="margin: 0.25rem 0 0;">@Model.Message</p>
+            @if (Model.Exception != null)
+            {
+                <details style="margin-top: 0.5rem; font-size: 0.875rem;">
+                    <summary style="cursor: pointer; color: #495057;">Technical Details</summary>
+                    <pre style="margin-top: 0.5rem; background: rgba(255,255,255,0.5); padding: 0.5rem; overflow-x: auto;">@Model.Exception.StackTrace</pre>
+                </details>
+            }
+        </div>
+        <button onclick="document.getElementById('swap-error-toast').remove()" style="background: none; border: none; font-size: 1.25rem; cursor: pointer; color: #721c24;">&times;</button>
+    </div>
+</div>
