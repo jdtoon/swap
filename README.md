@@ -7,195 +7,163 @@
 
 ---
 
-Build interactive web applications with server-rendered HTML. No JavaScript frameworks. No complex state management. No build tools.
+Build interactive web applications with server-rendered HTML. Keep JavaScript focused on interactions, not state management. No build tools.
 
 **One event. Multiple UI updates. Zero client-side state.**
 
+### The Code
+
 ```csharp
-// Controller fires an event
-return SwapEvent(TaskEvents.Completed, task)
-    .WithSuccessToast("Done!")
-    .Build();
+// 1. Controller: Return a SwapView
+public IActionResult Index() => SwapView(new TaskModel());
 
-// Handlers update the UI (decoupled, testable, DI-supported)
-[SwapHandler]
-public class TaskListHandler : ISwapEventHandler<TaskEvent>
+// 2. Action: Perform logic, return updates
+[HttpPost]
+public IActionResult Complete(int id)
 {
-    public void Handle(SwapEventContext<TaskEvent> ctx)
-    {
-        ctx.Response.AlsoUpdate("task-list", "_TaskList", GetTasks());
-    }
+    _tasks.Complete(id);
+    
+    // Updates the "task-list" element with the "_TaskList" partial
+    return this.SwapResponse()
+        .WithView("_TaskList", _tasks.GetAll()) 
+        .WithSuccessToast("Task completed!")
+        .Build();
 }
+```
 
-[SwapHandler]
-public class StatsHandler : ISwapEventHandler<TaskEvent>
-{
-    public void Handle(SwapEventContext<TaskEvent> ctx)
-    {
-        ctx.Response.AlsoUpdate("stats", "_Stats", GetStats());
+```html
+<!-- 3. View (_TaskList.cshtml): Standard Razor, no JS logic -->
+<div id="task-list">
+    @foreach (var task in Model) {
+        <div class="task @(task.IsComplete ? "done" : "")">
+             @task.Title
+        </div>
     }
-}
-// One HTTP request → both handlers run → one response updates everything
+</div>
 ```
 
 ---
 
 ## Quick Start
 
+### 1. New Project (Recommended)
+
 ```bash
-# Install the template
 dotnet new install Swap.Templates
-
-# Create a new project (recommended)
-dotnet new swap-modular -n MyApp
-cd MyApp/src
-
-# Restore client libraries (htmx, optional SSE extension)
-libman restore
-
-# Run it
+dotnet new swap-minimal -n MyApp
+cd MyApp
 dotnet run
 ```
 
-## Packages
-
-- `Swap.Htmx` — core MVC + Swap responses/events/source generators
-- `Swap.Htmx.Realtime` — SSE/WebSockets (adds `AddSseEventBridge`, `UseSseEventBridge`, `SwapRealtimeResults`, `SwapRealtimeController`)
-- `Swap.Htmx.Realtime.Redis` — Redis backplane for scaling SSE across instances
-
-Open the URL shown in the console (typically `https://localhost:5001`).
-
-Prefer a minimal starting point?
+### 2. Existing Project
 
 ```bash
-dotnet new swap-mvc -n MyApp
-cd MyApp
-libman restore
-dotnet run
+dotnet add package Swap.Htmx
+```
+
+```csharp
+// Program.cs
+builder.Services.AddControllersWithViews();
+builder.Services.AddSwapHtmx(); // <-- Add this
+
+var app = builder.Build();
+app.UseStaticFiles();
+app.UseRouting();
+app.UseSwapHtmx(); // <-- Add this
+app.MapControllers();
+app.Run();
 ```
 
 ---
 
-## Core Features
+## Core Concepts
 
-| # | Feature | What It Does |
-|---|---------|--------------|
-| 1 | **SwapController** | Base controller with HTMX-aware helper methods |
-| 2 | **SwapView** | Auto-detects HTMX requests, returns partials or full pages |
-| 3 | **SwapResponse** | Fluent builder for multi-target updates, toasts, triggers |
-| 4 | **SwapState** | Server-side state in hidden fields, strongly-typed binding, tamper-proof option |
-| 5 | **Event Handlers** | Decouple UI updates from controllers |
-| 6 | **SwapNavigation** | SPA-style `<swap-nav>` tag helper |
-| 7 | **Source Generators** | Type-safe events, views, and element IDs at compile time |
+### 1. Smart Views (`SwapView`)
 
----
-
-## Source Generators
-
-Swap.Htmx includes source generators that eliminate magic strings at compile time:
-
-### Event Keys
+Don't worry about "full page vs partial". `SwapView` handles it.
 
 ```csharp
-// Define events as strings
-[SwapEventSource]
-public static partial class TaskEvents
-{
-    public const string TaskCompleted = "task.completed";
-    public const string TaskCreated = "task.created";
-}
-
-// Generated at build time:
-// TaskEvents.Task.Completed → EventKey("task.completed")
-// TaskEvents.Task.Created   → EventKey("task.created")
-
-// Use type-safe keys
-return SwapEvent(TaskEvents.Task.Completed, payload).Build();
+// Browser request -> Returns View("Index", model) (Full Page)
+// HTMX request    -> Returns PartialView("Index", model) (Content Only)
+return SwapView(model);
 ```
 
-### View Names & Element IDs (Zero-Config)
+### 2. Smart State (`SwapState`)
 
-The generators automatically scan your `.cshtml` files and create constants — **no configuration needed**:
+Forget hidden inputs. Use a strong-typed state class.
 
 ```csharp
-// Auto-generated from Views/**/*.cshtml (grouped by controller folder)
-builder.AlsoUpdate(SwapElements.ProductGrid, SwapViews.Products._Grid, products);
-
-// Instead of magic strings:
-builder.AlsoUpdate("product-grid", "_Grid", products);
-```
-
-As of v1.0.6, `Swap.Htmx.targets` auto-includes your view folders. Just reference the package and build.
-
-See the [modular template](templates/content/Swap.ModularMonolith) for a complete working example.
-
-📖 [Full Source Generators Guide](framework/Swap.Htmx.Generators/README.md)
-
----
-
-## The Pattern
-
-```html
-<!-- Click a button -->
-<button hx-post="/tasks/complete/5" hx-swap="none">Done</button>
-```
-
-```csharp
-// Server processes it
-[HttpPost]
-public IActionResult Complete(int id)
-{
-    _tasks.Complete(id);
-    return SwapEvent(TaskEvents.Completed, new { id }).Build();
+public class FilterState : SwapState 
+{ 
+    public string Search { get; set; }
+    public int Page { get; set; } = 1; 
 }
 ```
 
 ```html
-<!-- Multiple parts of the page update automatically -->
-<div id="task-list"><!-- refreshed --></div>
-<div id="stats"><!-- refreshed --></div>
-<div id="activity"><!-- refreshed --></div>
+<!-- Renders all hidden fields automatically -->
+<swap-state state="Model.State" />
+
+<!-- Binds automatically in controller -->
+<input type="text" name="Search" hx-get="..." hx-include="#filter-state" />
 ```
 
-**No JavaScript. No state synchronization. No re-render debugging.**
+### 3. Smart Events (`SwapEvent`)
+
+Decouple your UI updates. One action can trigger multiple independent components to refresh.
+
+```csharp
+// Controller just says "Something happened"
+return SwapEvent("task.completed", id).Build();
+
+// Handler updates the stats panel
+[SwapHandler]
+public class StatsHandler : ISwapEventHandler
+{
+    public Task HandleAsync(...) => builder.AlsoUpdate("stats", "_Stats", model);
+}
+```
 
 ---
 
-## Documentation
+## Advanced Features
 
-- **[Getting Started](lib/Swap.Htmx/docs/GettingStarted.md)** — Full setup guide
-- **[Public API & Compatibility](lib/Swap.Htmx/docs/PublicApiAndCompatibility.md)** — What we consider stable vs experimental
-- **[Security Checklist](lib/Swap.Htmx/docs/SecurityChecklist.md)** — CSRF, SSE auth/rooms, headers
-- **[Patterns Cheatsheet](lib/Swap.Htmx/docs/Patterns.md)** — Copy-paste recipes
-- **[SwapState](lib/Swap.Htmx/docs/SwapState.md)** — Server-side state management
-- **[Events](lib/Swap.Htmx/docs/EventChains.md)** — Event-driven UI updates
-- **[All Docs](lib/Swap.Htmx/docs)** — Complete reference
+### Source Generators (No Magic Strings)
+Swap automatically generates constants for your Views and Element IDs.
 
-## Demos
+```csharp
+// Instead of "stats-panel" and "_Stats"
+builder.AlsoUpdate(SwapElements.StatsPanel, SwapViews.Home._Stats, model);
+```
 
-| Demo | Shows |
-|------|-------|
-| [SwapLab](demo/SwapLab) | Feature showcase |
-| [SwapShop](demo/SwapShop) | E-commerce patterns |
-| [SwapDashboard](demo/SwapDashboard) | Complex multi-component UI |
-| [SwapChat](demo/SwapChat) | Real-time with SSE |
+### Tamper-Proof State
+Encrypt sensitive state values in the browser automatically.
+
+```csharp
+public class PaymentState : SwapState
+{
+    public override bool Protected => true; // Encrypts all properties
+    public decimal Amount { get; set; }
+}
+```
+
+### Realtime (SSE)
+Update clients in real-time without complex WebSocket setup.
+
+```csharp
+// Broadcast an update to all connected clients
+await _publisher.Publish("task.completed", id);
+```
 
 ---
 
-## Why Server-Driven?
-
-- **Simpler architecture** — State lives on the server, HTML is the API
-- **Faster initial load** — No JavaScript bundle to download and parse
-- **SEO by default** — Server-rendered HTML, always
-- **One language** — C# end-to-end, no context switching
-- **Debuggable** — Step through your UI logic in the debugger
-
----
-
-## Requirements
-
-- .NET 8.0, 9.0, or 10.0
-- ASP.NET Core
+## Documentation & Demos
+- **[Documentation](lib/Swap.Htmx/docs)**
+- **[SwapShop](demo/SwapShop)** - Full E-commerce reference app
+- **[SwapDashboard](demo/SwapDashboard)** - Complex multi-component state
+- **[SwapDebtors](demo/SwapDebtors)** - Minimal API CRUD example
+- **[SwapStateDemo](demo/SwapStateDemo)** - Secure state & form handling
+- **[SwapLab](demo/SwapLab)** - Gallery of 15+ UI patterns
 
 ## License
 
