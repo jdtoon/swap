@@ -9,7 +9,7 @@
       In this library we intentionally emit triggers that may be handled by the consuming app.
     -->
     <NoWarn>$(NoWarn);SWAP001</NoWarn>
-    <Version>1.1.0</Version>
+    <Version>1.1.1</Version>
     <Authors>jdtoon</Authors>
     <Company>Swap</Company>
     <Description>HTMX helper library for ASP.NET Core MVC applications. Provides SwapController base class, middleware, event helpers, and extension methods for seamless HTMX integration. (Realtime features moved to Swap.Htmx.Realtime.)</Description>

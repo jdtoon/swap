@@ -523,9 +523,22 @@ Server-side state via hidden HTML fields. No JavaScript state management. **Use 
 ```csharp
 public class FilterState : SwapState
 {
+    // OPTIONAL: Encrypt state in hidden fields and URLs
+    public override bool Protected => true;
+    
+    // OPTIONAL: Sync state to URL query string
+    public override bool UrlSync => true;
+
+    // Use [SwapUnprotected] for fields user can edit (e.g. inputs)
+    [SwapUnprotected]
     public string Category { get; set; } = "all";
+    
+    [SwapUnprotected]
     public int Page { get; set; } = 1;
+
+    [SwapUnprotected]
     public string? Search { get; set; }
+    
     public bool InStockOnly { get; set; } = false;
 }
 ```
@@ -598,6 +611,15 @@ Unchecked checkboxes send nothing. Toggle explicitly:
        @(state.InStockOnly ? "checked" : "")
        hx-get="/Filter?InStockOnly=@(!state.InStockOnly)"
        hx-include="#filter-state" />
+```
+
+### Generating Links for Secure State
+If your state is `Protected` (encrypted), you cannot manually build query strings. Use the helper:
+
+```html
+<a href="/Products/Filter?@Html.SwapStateQueryString(Model.State)">
+    Link
+</a>
 ```
 
 ---

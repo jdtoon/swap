@@ -83,7 +83,7 @@ dotnet run
 | 1 | **SwapController** | Base controller with HTMX-aware helper methods |
 | 2 | **SwapView** | Auto-detects HTMX requests, returns partials or full pages |
 | 3 | **SwapResponse** | Fluent builder for multi-target updates, toasts, triggers |
-| 4 | **SwapState** | Server-side state in hidden fields, strongly-typed binding |
+| 4 | **SwapState** | Server-side state in hidden fields, strongly-typed binding, tamper-proof option |
 | 5 | **Event Handlers** | Decouple UI updates from controllers |
 | 6 | **SwapNavigation** | SPA-style `<swap-nav>` tag helper |
 | 7 | **Source Generators** | Type-safe events, views, and element IDs at compile time |
