@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using System.Reflection;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.AspNetCore.DataProtection;
 
 namespace Swap.Htmx.State;
 
@@ -35,6 +37,7 @@ public sealed class SwapStateModelBinder : IModelBinder
         // Collect values from form and query
         var values = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
         var valueProvider = bindingContext.ValueProvider;
+        var protectionProvider = bindingContext.HttpContext.RequestServices.GetService<IDataProtectionProvider>();
 
         // Get all bindable properties
         var properties = modelType
@@ -57,6 +60,25 @@ public sealed class SwapStateModelBinder : IModelBinder
                 // Use FIRST value when duplicates exist (URL params come first, then hx-include)
                 // This ensures explicit URL overrides take precedence, even if empty
                 var firstValue = result.FirstValue;
+
+                if (protectionProvider != null && !string.IsNullOrEmpty(firstValue) && SwapStateRenderer.IsPropertyProtected(state, prop.Name))
+                {
+                    try
+                    {
+                        var protector = protectionProvider.CreateProtector("SwapState", state.ContainerId, prop.Name);
+                        firstValue = protector.Unprotect(firstValue);
+                    }
+                    catch
+                    {
+                        // INVALID STATE - Tampering detected
+                        // We fail binding for this property or even the whole model
+                        // For now, let's treat it as null/invalid and NOT bind it
+                        // Optional: Add model error
+                        // bindingContext.ModelState.TryAddModelError(fieldName, "Invalid state signature.");
+                        continue;
+                    }
+                }
+
                 values[prop.Name] = firstValue;
             }
         }
@@ -68,9 +90,10 @@ public sealed class SwapStateModelBinder : IModelBinder
         }
 
         // Also read from query string if UrlSync is enabled
+        // Note: FromQueryString now handles its own decryption via provider
         if (state.UrlSync)
         {
-            state.FromQueryString(bindingContext.HttpContext.Request.Query);
+            state.FromQueryString(bindingContext.HttpContext.Request.Query, protectionProvider);
         }
 
         // Clear change tracking since this is initial load

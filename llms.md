@@ -424,6 +424,46 @@ The template includes:
 
 ---
 
+## Pattern 8: Component Stories (Playground)
+
+Develop components in isolation using SwapStories.
+
+```csharp
+[SwapStory("User Card", "Profile")]
+public IActionResult UserCard() 
+    => PartialView("_UserCard", new User { Name = "Alice" });
+```
+
+Enable in `Program.cs` (Development only):
+```csharp
+app.UseSwapStories(); // /_swap/stories
+```
+
+---
+
+## Pattern 9: View Component Replacement
+
+---
+
+## Pattern 10: Error Boundaries (Graceful Crashes)
+
+Prevent full HTML error pages from breaking your layout by catching exceptions and returning a toast.
+
+**Config:**
+```csharp
+builder.Services.AddSwapHtmx(o => o.ErrorHandling.Enabled = true);
+```
+
+**Custom View (`_SwapErrorToast.cshtml`):**
+```html
+@model SwapErrorModel
+<div id="toast-container" hx-swap-oob="beforeend">
+    <div class="alert-error">@Model.Message</div>
+</div>
+```
+
+---
+
 ## Pattern 1: SwapController
 
 Base controller class that provides all Swap methods. **Every controller should inherit from this.**
@@ -523,9 +563,22 @@ Server-side state via hidden HTML fields. No JavaScript state management. **Use 
 ```csharp
 public class FilterState : SwapState
 {
+    // OPTIONAL: Encrypt state in hidden fields and URLs
+    public override bool Protected => true;
+    
+    // OPTIONAL: Sync state to URL query string
+    public override bool UrlSync => true;
+
+    // Use [SwapUnprotected] for fields user can edit (e.g. inputs)
+    [SwapUnprotected]
     public string Category { get; set; } = "all";
+    
+    [SwapUnprotected]
     public int Page { get; set; } = 1;
+
+    [SwapUnprotected]
     public string? Search { get; set; }
+    
     public bool InStockOnly { get; set; } = false;
 }
 ```
@@ -599,6 +652,71 @@ Unchecked checkboxes send nothing. Toggle explicitly:
        hx-get="/Filter?InStockOnly=@(!state.InStockOnly)"
        hx-include="#filter-state" />
 ```
+
+### Generating Links for Secure State
+If your state is `Protected` (encrypted), you cannot manually build query strings. Use the helper:
+
+```html
+<a href="/Products/Filter?@Html.SwapStateQueryString(Model.State)">
+    Link
+</a>
+```
+
+### Generating Links for Secure State
+If your state is `Protected` (encrypted), you cannot manually build query strings. Use the helper:
+
+```html
+<a href="/Products/Filter?@Html.SwapStateQueryString(Model.State)">
+    Link
+</a>
+```
+
+---
+
+## Secure State (Tamper-Proof)
+
+You can protect your state from client-side tampering by enabling Data Protection. This encrypts state values in both hidden fields and URL parameters.
+
+### 1. Enable Protection
+
+Override `Protected` in your state class:
+
+```csharp
+public class PaymentState : SwapState
+{
+    // Enable encryption/signing
+    public override bool Protected => true;
+    
+    // Optional: Sync encrypted values to URL
+    public override bool UrlSync => true;
+
+    // These properties are now encrypted
+    public decimal Amount { get; set; }
+    public string TransactionId { get; set; }
+    
+    // Mark properties as "Unprotected" if the user should be able to edit them (e.g. inputs)
+    [SwapUnprotected]
+    public string Note { get; set; }
+}
+```
+
+### 2. Generate Links
+
+When state is protected, you cannot construct query strings manually (e.g. `?Amount=...`). Use the helper:
+
+```html
+<!-- Generates ?Amount=<encryptedhash>&TransactionId=<encryptedhash>... -->
+<a href="/Checkout?@Html.SwapStateQueryString(Model.State)">
+    Refresh Quote
+</a>
+```
+
+### 3. How It Works
+
+- **Output**: The `<swap-state>` tag renders encrypted values for protected properties.
+- **Input**: The model binder (`[FromSwapState]`) automatically decrypts values.
+- **Tampering**: If a client modifies an encrypted value, the decryption fails, and the property is ignored (safely defaults).
+- **Mixed Mode**: You can mix protected (read-only state) and unprotected (form inputs) properties using `[SwapUnprotected]`.
 
 ---
 

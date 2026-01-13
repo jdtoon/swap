@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.Extensions.Primitives;
 using Swap.Htmx.State;
 using Xunit;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Swap.Htmx.Tests;
 
@@ -28,6 +29,9 @@ public class SwapStateModelBinderTests
         Dictionary<string, StringValues>? queryValues = null)
     {
         var httpContext = new DefaultHttpContext();
+        var services = new ServiceCollection();
+        services.AddDataProtection();
+        httpContext.RequestServices = services.BuildServiceProvider();
         
         // Set up form values
         if (formValues != null)

@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Html;
 using Microsoft.AspNetCore.Mvc.Rendering;
-using System.Globalization;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.AspNetCore.DataProtection;
 using System.Text;
 using System.Text.Encodings.Web;
 
@@ -41,6 +42,7 @@ public static class SwapStateHtmlExtensions
         var id = containerId ?? state.ContainerId;
         var values = state.GetStateValues();
         var encoder = HtmlEncoder.Default;
+        var provider = htmlHelper.ViewContext.HttpContext.RequestServices.GetService<IDataProtectionProvider>();
 
         var sb = new StringBuilder();
         sb.AppendLine($"<div id=\"{encoder.Encode(id)}\" style=\"display: none;\">");
@@ -51,7 +53,7 @@ public static class SwapStateHtmlExtensions
                 ? kvp.Key 
                 : $"{prefix}.{kvp.Key}";
 
-            var fieldValue = FormatValue(kvp.Value);
+            var fieldValue = SwapStateRenderer.GetFormattedValue(state, kvp.Key, kvp.Value, provider);
             
             sb.AppendLine($"    <input type=\"hidden\" name=\"{encoder.Encode(fieldName)}\" value=\"{encoder.Encode(fieldValue)}\" />");
         }
@@ -77,6 +79,7 @@ public static class SwapStateHtmlExtensions
 
         var values = state.GetStateValues();
         var encoder = HtmlEncoder.Default;
+        var provider = htmlHelper.ViewContext.HttpContext.RequestServices.GetService<IDataProtectionProvider>();
 
         var sb = new StringBuilder();
 
@@ -86,7 +89,7 @@ public static class SwapStateHtmlExtensions
                 ? kvp.Key 
                 : $"{prefix}.{kvp.Key}";
 
-            var fieldValue = FormatValue(kvp.Value);
+            var fieldValue = SwapStateRenderer.GetFormattedValue(state, kvp.Key, kvp.Value, provider);
             
             sb.AppendLine($"<input type=\"hidden\" name=\"{encoder.Encode(fieldName)}\" value=\"{encoder.Encode(fieldValue)}\" />");
         }
@@ -94,19 +97,19 @@ public static class SwapStateHtmlExtensions
         return new HtmlString(sb.ToString());
     }
 
-    private static string FormatValue(object? value)
+    /// <summary>
+    /// Generates a query string from the current state values for URL synchronization.
+    /// Handles encryption if the state is protected.
+    /// </summary>
+    /// <param name="htmlHelper">The HTML helper.</param>
+    /// <param name="state">The SwapState instance.</param>
+    /// <returns>A query string like "?Page=2&amp;Tab=active" or empty.</returns>
+    public static string SwapStateQueryString(
+        this IHtmlHelper htmlHelper,
+        SwapState state)
     {
-        return value switch
-        {
-            null => string.Empty,
-            bool b => b ? "true" : "false",
-            decimal d => d.ToString(CultureInfo.InvariantCulture),
-            double dbl => dbl.ToString(CultureInfo.InvariantCulture),
-            float f => f.ToString(CultureInfo.InvariantCulture),
-            DateTime dt => dt.ToString("O"),
-            DateTimeOffset dto => dto.ToString("O"),
-            Enum e => e.ToString(),
-            _ => value.ToString() ?? string.Empty
-        };
+        ArgumentNullException.ThrowIfNull(state);
+        var provider = htmlHelper.ViewContext.HttpContext.RequestServices.GetService<IDataProtectionProvider>();
+        return state.ToQueryString(provider);
     }
 }

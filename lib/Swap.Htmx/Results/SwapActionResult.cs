@@ -13,6 +13,7 @@ using Swap.Htmx.Models;
 using Swap.Htmx.State;
 using System.Text;
 using System.Text.Json;
+using Microsoft.AspNetCore.DataProtection;
 
 namespace Swap.Htmx.Results;
 
@@ -123,7 +124,8 @@ public sealed class SwapActionResult : ActionResult
         // 4b. Render SwapState as OOB if configured
         if (_builder.State != null)
         {
-            var stateHtml = SwapStateRenderer.RenderAsOob(_builder.State);
+            var protectionProvider = context.HttpContext.RequestServices.GetService<IDataProtectionProvider>();
+            var stateHtml = SwapStateRenderer.RenderAsOob(_builder.State, protectionProvider);
             oobContent.Add(stateHtml);
         }
 

@@ -7,7 +7,7 @@
 
     <!-- Package Metadata -->
     <PackageId>Swap.Htmx.Realtime.Redis</PackageId>
-    <Version>1.1.0</Version>
+    <Version>1.1.1</Version>
     <Authors>jdtoon</Authors>
     <Company>Swap</Company>
     <Description>Redis backplane for Swap.Htmx.Realtime (SSE fan-out across multiple app instances) using StackExchange.Redis.</Description>

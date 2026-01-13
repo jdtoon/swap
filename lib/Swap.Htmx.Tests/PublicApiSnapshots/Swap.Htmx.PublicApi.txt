@@ -382,6 +382,10 @@ namespace Swap.Htmx
         public static Microsoft.AspNetCore.Http.IResult Event(Swap.Htmx.Events.EventKey eventKey, object? payload = null) { }
         public static Swap.Htmx.Models.SwapResponseBuilder Response() { }
     }
+    public static class SwapStoriesExtensions
+    {
+        public static Microsoft.AspNetCore.Builder.IApplicationBuilder UseSwapStories(this Microsoft.AspNetCore.Builder.IApplicationBuilder app) { }
+    }
     public static class SwapToastExtensions
     {
         public static void ShowErrorToast(this Microsoft.AspNetCore.Http.HttpResponse response, string message) { }
@@ -439,6 +443,18 @@ namespace Swap.Htmx.Middleware
     public static class HxVaryHeaderMiddlewareExtensions
     {
         public static Microsoft.AspNetCore.Builder.IApplicationBuilder UseSwapHtmxVary(this Microsoft.AspNetCore.Builder.IApplicationBuilder app) { }
+    }
+    public class SwapErrorMiddleware
+    {
+        public SwapErrorMiddleware(Microsoft.AspNetCore.Http.RequestDelegate next, SwapHtmxOptions options, Microsoft.Extensions.Logging.ILogger<Swap.Htmx.Middleware.SwapErrorMiddleware> logger, Microsoft.AspNetCore.Hosting.IWebHostEnvironment env) { }
+        public System.Threading.Tasks.Task InvokeAsync(Microsoft.AspNetCore.Http.HttpContext context) { }
+    }
+    public class SwapErrorModel
+    {
+        public SwapErrorModel() { }
+        public System.Exception? Exception { get; set; }
+        public string Message { get; set; }
+        public string RequestId { get; set; }
     }
     public class SwapEventResponseMiddleware
     {
@@ -625,31 +641,38 @@ namespace Swap.Htmx.State
         public FromSwapStateAttribute() { }
         public string? Prefix { get; set; }
     }
+    [System.AttributeUsage(System.AttributeTargets.Property, AllowMultiple=false, Inherited=true)]
+    public class SwapProtectedAttribute : System.Attribute
+    {
+        public SwapProtectedAttribute() { }
+    }
     public abstract class SwapState : System.ComponentModel.INotifyPropertyChanged
     {
         protected SwapState() { }
         public System.Collections.Generic.IReadOnlySet<string> ChangedProperties { get; }
         public virtual string ContainerId { get; }
         public bool HasChanges { get; }
+        public virtual bool Protected { get; }
         protected virtual System.Collections.Generic.IEnumerable<string> UrlExcludedProperties { get; }
         public virtual string UrlPrefix { get; }
         public virtual bool UrlSync { get; }
         public event System.ComponentModel.PropertyChangedEventHandler? PropertyChanged;
         public void AcceptChanges() { }
-        public string AppendToUrl(string baseUrl) { }
-        public void FromQueryString(Microsoft.AspNetCore.Http.IQueryCollection query) { }
+        public string AppendToUrl(string baseUrl, Microsoft.AspNetCore.DataProtection.IDataProtectionProvider? protectionProvider = null) { }
+        public void FromQueryString(Microsoft.AspNetCore.Http.IQueryCollection query, Microsoft.AspNetCore.DataProtection.IDataProtectionProvider? protectionProvider = null) { }
         protected virtual System.Collections.Generic.IEnumerable<System.Reflection.PropertyInfo> GetStateProperties() { }
         public System.Collections.Generic.IDictionary<string, object?> GetStateValues() { }
         protected void OnPropertyChanged([System.Runtime.CompilerServices.CallerMemberName] string? propertyName = null) { }
         protected void SetProperty<T>(ref T field, T value, [System.Runtime.CompilerServices.CallerMemberName] string? propertyName = null) { }
         public void SetStateValues(System.Collections.Generic.IDictionary<string, object?> values) { }
         public System.IDisposable SuspendChangeTracking() { }
-        public string ToQueryString() { }
+        public string ToQueryString(Microsoft.AspNetCore.DataProtection.IDataProtectionProvider? protectionProvider = null) { }
     }
     public static class SwapStateHtmlExtensions
     {
         public static Microsoft.AspNetCore.Html.IHtmlContent SwapStateContainer(this Microsoft.AspNetCore.Mvc.Rendering.IHtmlHelper htmlHelper, Swap.Htmx.State.SwapState state, string? containerId = null, string? prefix = null) { }
         public static Microsoft.AspNetCore.Html.IHtmlContent SwapStateFields(this Microsoft.AspNetCore.Mvc.Rendering.IHtmlHelper htmlHelper, Swap.Htmx.State.SwapState state, string? prefix = null) { }
+        public static string SwapStateQueryString(this Microsoft.AspNetCore.Mvc.Rendering.IHtmlHelper htmlHelper, Swap.Htmx.State.SwapState state) { }
     }
     public sealed class SwapStateModelBinder : Microsoft.AspNetCore.Mvc.ModelBinding.IModelBinder
     {
@@ -660,6 +683,24 @@ namespace Swap.Htmx.State
     {
         public SwapStateModelBinderProvider() { }
         public Microsoft.AspNetCore.Mvc.ModelBinding.IModelBinder? GetBinder(Microsoft.AspNetCore.Mvc.ModelBinding.ModelBinderProviderContext context) { }
+    }
+    [System.AttributeUsage(System.AttributeTargets.Property, AllowMultiple=false, Inherited=true)]
+    public class SwapUnprotectedAttribute : System.Attribute
+    {
+        public SwapUnprotectedAttribute() { }
+    }
+}
+namespace Swap.Htmx.Stories
+{
+    [System.AttributeUsage(System.AttributeTargets.Method, AllowMultiple=false, Inherited=false)]
+    public class SwapStoryAttribute : System.Attribute
+    {
+        public SwapStoryAttribute(string title, string category = "Components") { }
+        public string Category { get; }
+        public string? Description { get; set; }
+        public int Height { get; set; }
+        public string Title { get; }
+        public int Width { get; set; }
     }
 }
 namespace Swap.Htmx.TagHelpers
@@ -696,7 +737,7 @@ namespace Swap.Htmx.TagHelpers
     [Microsoft.AspNetCore.Razor.TagHelpers.HtmlTargetElement("swap-state", TagStructure=Microsoft.AspNetCore.Razor.TagHelpers.TagStructure.WithoutEndTag)]
     public class SwapStateTagHelper : Microsoft.AspNetCore.Razor.TagHelpers.TagHelper
     {
-        public SwapStateTagHelper(System.Text.Encodings.Web.HtmlEncoder htmlEncoder) { }
+        public SwapStateTagHelper(System.Text.Encodings.Web.HtmlEncoder htmlEncoder, Microsoft.AspNetCore.DataProtection.IDataProtectionProvider? protectionProvider = null) { }
         [Microsoft.AspNetCore.Razor.TagHelpers.HtmlAttributeName("id")]
         public string? ContainerId { get; set; }
         [Microsoft.AspNetCore.Razor.TagHelpers.HtmlAttributeName("include-container")]
@@ -736,6 +777,13 @@ public class SwapDiagnosticsOptions
     public bool WarnOnMissingOobTargets { get; set; }
     public bool WarnOnUnhandledEvents { get; set; }
 }
+public class SwapErrorOptions
+{
+    public SwapErrorOptions() { }
+    public bool Enabled { get; set; }
+    public string ErrorViewName { get; set; }
+    public bool ShowExceptionDetails { get; set; }
+}
 public class SwapHtmxOptions
 {
     public SwapHtmxOptions() { }
@@ -743,6 +791,7 @@ public class SwapHtmxOptions
     public bool AutoSuppressLayout { get; set; }
     public string DefaultNavigationTarget { get; set; }
     public SwapDiagnosticsOptions Diagnostics { get; set; }
+    public SwapErrorOptions ErrorHandling { get; set; }
     public Swap.Htmx.Events.SwapEventBusOptions EventBus { get; set; }
     public System.Collections.Generic.List<string> PartialViewSearchPaths { get; set; }
     public void AddConfig<T>()

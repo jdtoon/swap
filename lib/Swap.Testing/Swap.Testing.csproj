@@ -8,7 +8,7 @@
     
     <!-- Package Metadata -->
     <PackageId>Swap.Testing</PackageId>
-    <Version>1.1.0</Version>
+    <Version>1.1.1</Version>
     <Description>Testing helpers for HTMX-powered ASP.NET Core applications. Fluent API for testing partial views, HTMX attributes, HX headers, and HTML responses.</Description>
     <PackageTags>swap;testing;htmx;aspnetcore;integration-tests;e2e</PackageTags>
     <PackageProjectUrl>https://github.com/jdtoon/swap</PackageProjectUrl>

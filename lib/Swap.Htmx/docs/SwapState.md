@@ -535,3 +535,52 @@ public IActionResult Action([FromQuery] string tab, [FromSwapState] State state)
 ### Decimal/Float Formatting Issues
 
 SwapState uses `InvariantCulture` for numeric serialization (always `.` as decimal separator). If you have culture-specific display, the state values will still work correctly.
+
+---
+
+## Secure State (Tamper-Proof)
+
+By default, SwapState values are clear-text in hidden fields. This is fine for UI state (tab used, filters applied) but **unsafe** for business logic state (pricing, user IDs).
+
+Enable **Tamper-Proof Mode** to encrypt state values using ASP.NET Core Data Protection.
+
+### Encoding Protection
+
+```csharp
+public class PaymentState : SwapState
+{
+    // 1. Enable Protection
+    public override bool Protected => true;
+    
+    // 2. (Optional) Sync encrypted state to URL
+    public override bool UrlSync => true;
+
+    // This property will be ENCRYPTED in the browser
+    public decimal Price { get; set; }
+    
+    // This property will be ENCRYPTED
+    public string OrderId { get; set; }
+    
+    // 3. Opt-out for user-editable fields (inputs)
+    [SwapUnprotected]
+    public string Comment { get; set; }
+}
+```
+
+### Generating Links
+
+When state is protected, you cannot concatenate strings manually. Use the helper:
+
+```html
+<!-- Correct: Uses encryption for protected properties -->
+<a href="/Checkout?@Html.SwapStateQueryString(Model.State)">
+    Refresh
+</a>
+```
+
+### How It Works
+
+1.  **Rendering**: The `<swap-state>` tag helper detects `Protected=true` and encrypts value using `IDataProtectionProvider`.
+2.  **Binding**: `[FromSwapState]` detects protected properties and automatically decrypts them.
+3.  **Validation**: If a value is tampered with (signature invalid), it is ignored (property remains at default), effectively rejecting the tampering.
+4.  **Scope**: Protection is scoped to the **State Container** and **Property Name**. You cannot copy an encrypted value from `OrderId` to `Price`.

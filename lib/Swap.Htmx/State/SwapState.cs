@@ -3,6 +3,7 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Web;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.DataProtection;
 
 namespace Swap.Htmx.State;
 
@@ -122,8 +123,9 @@ public abstract class SwapState : INotifyPropertyChanged
     /// Generates a query string from the current state values for URL synchronization.
     /// Only includes non-default values to keep URLs clean.
     /// </summary>
+    /// <param name="protectionProvider">Optional protection provider for encrypting values.</param>
     /// <returns>A query string like "?Page=2&amp;Tab=active" or empty if at defaults.</returns>
-    public string ToQueryString()
+    public string ToQueryString(IDataProtectionProvider? protectionProvider = null)
     {
         if (!UrlSync)
             return string.Empty;
@@ -146,8 +148,15 @@ public abstract class SwapState : INotifyPropertyChanged
             {
                 var paramName = string.IsNullOrEmpty(UrlPrefix) ? prop.Name : $"{UrlPrefix}{prop.Name}";
                 var valueStr = FormatUrlValue(currentValue);
+
                 if (valueStr != null)
                 {
+                    if (protectionProvider != null && SwapStateRenderer.IsPropertyProtected(this, prop.Name))
+                    {
+                        var protector = protectionProvider.CreateProtector("SwapState", ContainerId, prop.Name);
+                        valueStr = protector.Protect(valueStr);
+                    }
+
                     parts.Add($"{Uri.EscapeDataString(paramName)}={Uri.EscapeDataString(valueStr)}");
                 }
             }
@@ -160,7 +169,8 @@ public abstract class SwapState : INotifyPropertyChanged
     /// Populates state properties from an HTTP query string.
     /// </summary>
     /// <param name="query">The query string collection from the request.</param>
-    public void FromQueryString(IQueryCollection query)
+    /// <param name="protectionProvider">Optional protection provider for decrypting values.</param>
+    public void FromQueryString(IQueryCollection query, IDataProtectionProvider? protectionProvider = null)
     {
         if (!UrlSync || query == null)
             return;
@@ -188,7 +198,26 @@ public abstract class SwapState : INotifyPropertyChanged
 
                 if (properties.TryGetValue(propName, out var prop) && prop.CanWrite)
                 {
-                    var stringValue = query[key].ToString();
+                    var rawValues = query[key];
+                    // Use the first value (URL priority or input priority)
+                    var stringValue = rawValues.Count > 0 ? rawValues[0] : null;
+
+                    if (stringValue == null) continue;
+                    
+                    if (protectionProvider != null && SwapStateRenderer.IsPropertyProtected(this, prop.Name))
+                    {
+                        try
+                        {
+                            var protector = protectionProvider.CreateProtector("SwapState", ContainerId, prop.Name);
+                            stringValue = protector.Unprotect(stringValue);
+                        }
+                        catch
+                        {
+                            // Tampered or invalid - skip
+                            continue;
+                        }
+                    }
+
                     try
                     {
                         var convertedValue = ConvertValue(stringValue, prop.PropertyType);
@@ -207,13 +236,14 @@ public abstract class SwapState : INotifyPropertyChanged
     /// Appends current state to a base URL as query parameters.
     /// </summary>
     /// <param name="baseUrl">The base URL to append state to.</param>
+    /// <param name="protectionProvider">Optional protection provider.</param>
     /// <returns>The URL with state parameters appended.</returns>
-    public string AppendToUrl(string baseUrl)
+    public string AppendToUrl(string baseUrl, IDataProtectionProvider? protectionProvider = null)
     {
         if (!UrlSync)
             return baseUrl;
 
-        var queryString = ToQueryString();
+        var queryString = ToQueryString(protectionProvider);
         if (string.IsNullOrEmpty(queryString))
             return baseUrl;
 
@@ -435,6 +465,13 @@ public abstract class SwapState : INotifyPropertyChanged
 
         return str;
     }
+
+    /// <summary>
+    /// Gets whether this state should be encrypted/signed to prevent tampering.
+    /// When enabled, values in hidden fields are protected using IDataProtection.
+    /// Default is false. Override to true to enable protection.
+    /// </summary>
+    public virtual bool Protected => false;
 
     private sealed class ChangeTrackingSuspension : IDisposable
     {
