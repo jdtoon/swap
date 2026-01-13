@@ -5,6 +5,17 @@ All notable changes to Swap.Htmx will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.1] - 2026-01-13
+
+### Added
+- **Secure SwapState** - Opt-in tamper-proof state using `IDataProtection` encryption for hidden fields and URL parameters.
+- **`[SwapProtected]` / `[SwapUnprotected]`** - Attributes for fine-grained per-property protection control.
+- **`@Html.SwapStateQueryString()`** - Helper to generate secure, encrypted query strings for `hx-get` links.
+
+### Changed
+- **Fixed Filter Clearing Bug** - Fixed an issue where clearing a filter input would restore the previous value from the hidden field (URL parameters now correctly take precedence over hidden fields).
+
+
 ## [1.1.0] - 2025-12-19
 
 ### Added

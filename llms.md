@@ -622,6 +622,62 @@ If your state is `Protected` (encrypted), you cannot manually build query string
 </a>
 ```
 
+### Generating Links for Secure State
+If your state is `Protected` (encrypted), you cannot manually build query strings. Use the helper:
+
+```html
+<a href="/Products/Filter?@Html.SwapStateQueryString(Model.State)">
+    Link
+</a>
+```
+
+---
+
+## Secure State (Tamper-Proof)
+
+You can protect your state from client-side tampering by enabling Data Protection. This encrypts state values in both hidden fields and URL parameters.
+
+### 1. Enable Protection
+
+Override `Protected` in your state class:
+
+```csharp
+public class PaymentState : SwapState
+{
+    // Enable encryption/signing
+    public override bool Protected => true;
+    
+    // Optional: Sync encrypted values to URL
+    public override bool UrlSync => true;
+
+    // These properties are now encrypted
+    public decimal Amount { get; set; }
+    public string TransactionId { get; set; }
+    
+    // Mark properties as "Unprotected" if the user should be able to edit them (e.g. inputs)
+    [SwapUnprotected]
+    public string Note { get; set; }
+}
+```
+
+### 2. Generate Links
+
+When state is protected, you cannot construct query strings manually (e.g. `?Amount=...`). Use the helper:
+
+```html
+<!-- Generates ?Amount=<encryptedhash>&TransactionId=<encryptedhash>... -->
+<a href="/Checkout?@Html.SwapStateQueryString(Model.State)">
+    Refresh Quote
+</a>
+```
+
+### 3. How It Works
+
+- **Output**: The `<swap-state>` tag renders encrypted values for protected properties.
+- **Input**: The model binder (`[FromSwapState]`) automatically decrypts values.
+- **Tampering**: If a client modifies an encrypted value, the decryption fails, and the property is ignored (safely defaults).
+- **Mixed Mode**: You can mix protected (read-only state) and unprotected (form inputs) properties using `[SwapUnprotected]`.
+
 ---
 
 ## Pattern 5: Event Handlers
