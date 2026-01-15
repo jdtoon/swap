@@ -1,26 +1,27 @@
 @model Note
 
-<div class="modal-backdrop" onclick="if(event.target===this) this.remove()">
-    <div class="card bg-base-100 w-full max-w-sm shadow-xl">
-        <div class="card-body">
-            <div class="flex items-center justify-between">
-                <h2 class="card-title text-error">Delete Note</h2>
-                <button type="button" class="btn btn-ghost btn-sm btn-square" onclick="this.closest('.modal-backdrop').remove()">✕</button>
-            </div>
-            
-            <p class="py-4">Are you sure you want to delete "<strong>@Model.Title</strong>"?</p>
-            <p class="text-sm text-base-content/60">This action cannot be undone.</p>
-            
-            <div class="card-actions justify-end mt-6">
-                <button type="button" class="btn btn-ghost" onclick="this.closest('.modal-backdrop').remove()">
-                    Cancel
-                </button>
-                <button class="btn btn-error"
-                        hx-post="@Url.Action("Delete", new { id = Model.Id })"
-                        hx-target="#modal-container">
-                    Delete
-                </button>
-            </div>
+<dialog class="modal modal-open">
+    <div class="modal-box">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-bold text-error">Delete Note</h3>
+            <button type="button" class="btn btn-sm btn-circle btn-ghost" onclick="this.closest('.modal').classList.remove('modal-open')">✕</button>
+        </div>
+        
+        <p class="py-4">Are you sure you want to delete "<strong>@Model.Title</strong>"?</p>
+        <p class="text-sm opacity-60">This action cannot be undone.</p>
+        
+        <div class="modal-action">
+            <button type="button" class="btn" onclick="this.closest('.modal').classList.remove('modal-open')">
+                Cancel
+            </button>
+            <button class="btn btn-error"
+                    hx-post="@Url.Action("Delete", new { id = Model.Id })"
+                    hx-target="#modal-container">
+                Delete
+            </button>
         </div>
     </div>
-</div>
+    <form method="dialog" class="modal-backdrop">
+        <button onclick="this.closest('.modal').classList.remove('modal-open')">close</button>
+    </form>
+</dialog>
