@@ -1,25 +1,37 @@
 @model Note
 
-<div class="modal-overlay" onclick="if(event.target===this) this.remove()">
-    <div class="modal">
-        <div class="modal-header">
-            <h2>Edit Note</h2>
-            <button class="btn-icon" onclick="this.closest('.modal-overlay').remove()">✕</button>
-        </div>
+<div class="modal-backdrop" onclick="if(event.target===this) this.remove()">
+    <div class="card bg-base-100 w-full max-w-md shadow-xl">
         <form hx-post="@Url.Action("Edit", new { id = Model.Id })" hx-target="#modal-container">
-            <div class="modal-body">
-                <div class="form-group">
-                    <label for="Title">Title</label>
-                    <input type="text" id="Title" name="Title" class="form-control" 
+            <div class="card-body">
+                <div class="flex items-center justify-between">
+                    <h2 class="card-title">Edit Note</h2>
+                    <button type="button" class="btn btn-ghost btn-sm btn-square" onclick="this.closest('.modal-backdrop').remove()">✕</button>
+                </div>
+                
+                <div class="form-control mt-4">
+                    <label class="label" for="Title">
+                        <span class="label-text">Title</span>
+                    </label>
+                    <input type="text" id="Title" name="Title" 
+                           class="input input-bordered w-full" 
                            value="@Model.Title" required autofocus />
                 </div>
-                <div class="form-group">
-                    <label for="Content">Content</label>
-                    <textarea id="Content" name="Content" class="form-control" rows="4">@Model.Content</textarea>
+                
+                <div class="form-control">
+                    <label class="label" for="Content">
+                        <span class="label-text">Content</span>
+                    </label>
+                    <textarea id="Content" name="Content" 
+                              class="textarea textarea-bordered w-full" 
+                              rows="4">@Model.Content</textarea>
                 </div>
-                <div class="form-group">
-                    <label for="Color">Color</label>
-                    <select id="Color" name="Color" class="form-control">
+                
+                <div class="form-control">
+                    <label class="label" for="Color">
+                        <span class="label-text">Color</span>
+                    </label>
+                    <select id="Color" name="Color" class="select select-bordered w-full">
                         <option value="gray" selected="@(Model.Color == "gray")">Gray</option>
                         <option value="blue" selected="@(Model.Color == "blue")">Blue</option>
                         <option value="green" selected="@(Model.Color == "green")">Green</option>
@@ -28,12 +40,13 @@
                         <option value="purple" selected="@(Model.Color == "purple")">Purple</option>
                     </select>
                 </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-outline" onclick="this.closest('.modal-overlay').remove()">
-                    Cancel
-                </button>
-                <button type="submit" class="btn btn-primary">Save Changes</button>
+                
+                <div class="card-actions justify-end mt-6">
+                    <button type="button" class="btn btn-ghost" onclick="this.closest('.modal-backdrop').remove()">
+                        Cancel
+                    </button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
             </div>
         </form>
     </div>

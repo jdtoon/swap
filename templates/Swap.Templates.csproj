@@ -2,13 +2,13 @@
 
   <PropertyGroup>
     <PackageType>Template</PackageType>
-    <PackageVersion>1.1.0</PackageVersion>
+    <PackageVersion>1.1.1</PackageVersion>
     <PackageId>Swap.Templates</PackageId>
     <Title>Swap.Htmx Templates</Title>
     <Authors>jdtoon</Authors>
     <Company>Swap</Company>
-    <Description>Project templates for Swap.Htmx - The Reactive UI Orchestration library for ASP.NET Core. Includes MVC starter and modular monolith templates with pre-configured HTMX, LibMan, EF Core, and Source Generators.</Description>
-    <PackageTags>dotnet-new;templates;htmx;aspnetcore;mvc;swap;modular-monolith</PackageTags>
+    <Description>Project templates for Swap.Htmx - The Reactive UI Orchestration library for ASP.NET Core. Includes MVC starter and modular monolith templates with pre-configured HTMX, DaisyUI 5, Tailwind CSS v4, LibMan, EF Core, and Source Generators.</Description>
+    <PackageTags>dotnet-new;templates;htmx;aspnetcore;mvc;swap;modular-monolith;daisyui;tailwindcss</PackageTags>
     <TargetFramework>netstandard2.0</TargetFramework>
     <IncludeContentInPack>true</IncludeContentInPack>
     <IncludeBuildOutput>false</IncludeBuildOutput>

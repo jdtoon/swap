@@ -1,15 +1,15 @@
-// Sidebar toggle for mobile
-function toggleSidebar() {
-    const sidebar = document.getElementById('sidebar');
-    sidebar.classList.toggle('open');
-}
-
 // Close modal on Escape key
 document.addEventListener('keydown', function (e) {
     if (e.key === 'Escape') {
-        const modal = document.querySelector('.modal-overlay');
+        // Close DaisyUI modal
+        const modal = document.querySelector('.modal[open]');
         if (modal) {
-            modal.remove();
+            modal.close();
+        }
+        // Close legacy modal overlay
+        const overlay = document.querySelector('.modal-backdrop');
+        if (overlay) {
+            overlay.remove();
         }
     }
 });

@@ -1,0 +1,46 @@
+/* Swap.ModularMonolith Theme Configuration */
+/* Using DaisyUI 5 with Tailwind CSS v4 */
+
+:root {
+    color-scheme: light;
+}
+
+/* Font configuration */
+@theme {
+    --font-sans: 'Inter', system-ui, sans-serif;
+}
+
+/* Swap.Htmx navigation cursor */
+swap-nav {
+    cursor: pointer;
+}
+
+/* Loading state for HTMX requests */
+[data-loading] {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+/* Note colors for the Notes module */
+[data-note-color="gray"] { --note-accent: oklch(0.55 0.02 250); }
+[data-note-color="blue"] { --note-accent: oklch(0.55 0.15 250); }
+[data-note-color="green"] { --note-accent: oklch(0.55 0.15 145); }
+[data-note-color="yellow"] { --note-accent: oklch(0.75 0.15 85); }
+[data-note-color="red"] { --note-accent: oklch(0.55 0.2 25); }
+[data-note-color="purple"] { --note-accent: oklch(0.55 0.2 300); }
+
+/* Modal backdrop for custom modals */
+.modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 50;
+}
+
+/* Smooth transitions for interactive elements */
+.btn, .card, .menu a {
+    transition: all 0.15s ease;
+}

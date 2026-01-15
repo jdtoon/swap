@@ -1,24 +1,26 @@
 @model Note
 
-<div class="modal-overlay" onclick="if(event.target===this) this.remove()">
-    <div class="modal modal-sm">
-        <div class="modal-header">
-            <h2>Delete Note</h2>
-            <button class="btn-icon" onclick="this.closest('.modal-overlay').remove()">✕</button>
-        </div>
-        <div class="modal-body">
-            <p>Are you sure you want to delete "<strong>@Model.Title</strong>"?</p>
-            <p class="text-muted">This action cannot be undone.</p>
-        </div>
-        <div class="modal-footer">
-            <button type="button" class="btn btn-outline" onclick="this.closest('.modal-overlay').remove()">
-                Cancel
-            </button>
-            <button class="btn btn-danger"
-                    hx-post="@Url.Action("Delete", new { id = Model.Id })"
-                    hx-target="#modal-container">
-                Delete
-            </button>
+<div class="modal-backdrop" onclick="if(event.target===this) this.remove()">
+    <div class="card bg-base-100 w-full max-w-sm shadow-xl">
+        <div class="card-body">
+            <div class="flex items-center justify-between">
+                <h2 class="card-title text-error">Delete Note</h2>
+                <button type="button" class="btn btn-ghost btn-sm btn-square" onclick="this.closest('.modal-backdrop').remove()">✕</button>
+            </div>
+            
+            <p class="py-4">Are you sure you want to delete "<strong>@Model.Title</strong>"?</p>
+            <p class="text-sm text-base-content/60">This action cannot be undone.</p>
+            
+            <div class="card-actions justify-end mt-6">
+                <button type="button" class="btn btn-ghost" onclick="this.closest('.modal-backdrop').remove()">
+                    Cancel
+                </button>
+                <button class="btn btn-error"
+                        hx-post="@Url.Action("Delete", new { id = Model.Id })"
+                        hx-target="#modal-container">
+                    Delete
+                </button>
+            </div>
         </div>
     </div>
 </div>

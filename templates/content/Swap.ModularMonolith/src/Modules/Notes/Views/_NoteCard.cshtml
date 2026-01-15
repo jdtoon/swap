@@ -1,31 +1,42 @@
 @model Note
 
-<div class="card note-card @(Model.IsPinned ? "pinned" : "")" style="--note-color: var(--color-@Model.Color)">
-    <div class="note-header">
-        <h3 class="note-title">@Model.Title</h3>
-        <div class="note-actions">
-            <button class="btn-icon" title="@(Model.IsPinned ? "Unpin" : "Pin")"
-                    hx-post="@Url.Action("TogglePin", new { id = Model.Id })"
-                    hx-swap="none">
-                @(Model.IsPinned ? "📌" : "📍")
-            </button>
-            <button class="btn-icon" title="Edit"
-                    hx-get="@Url.Action("Edit", new { id = Model.Id })"
-                    hx-target="#modal-container">
-                ✏️
-            </button>
-            <button class="btn-icon" title="Delete"
-                    hx-get="@Url.Action("DeleteConfirm", new { id = Model.Id })"
-                    hx-target="#modal-container">
-                🗑️
-            </button>
+<div class="card bg-base-200 shadow-sm" data-note-color="@Model.Color">
+    <div class="card-body">
+        <div class="flex items-start justify-between gap-2">
+            <h3 class="card-title text-base flex items-center gap-2">
+                @if (Model.IsPinned)
+                {
+                    <span class="badge badge-primary badge-sm">📌 Pinned</span>
+                }
+                @Model.Title
+            </h3>
+            <div class="flex gap-1">
+                <button class="btn btn-ghost btn-xs btn-square" 
+                        title="@(Model.IsPinned ? "Unpin" : "Pin")"
+                        hx-post="@Url.Action("TogglePin", new { id = Model.Id })"
+                        hx-swap="none">
+                    @(Model.IsPinned ? "📌" : "📍")
+                </button>
+                <button class="btn btn-ghost btn-xs btn-square" 
+                        title="Edit"
+                        hx-get="@Url.Action("Edit", new { id = Model.Id })"
+                        hx-target="#modal-container">
+                    ✏️
+                </button>
+                <button class="btn btn-ghost btn-xs btn-square" 
+                        title="Delete"
+                        hx-get="@Url.Action("DeleteConfirm", new { id = Model.Id })"
+                        hx-target="#modal-container">
+                    🗑️
+                </button>
+            </div>
         </div>
-    </div>
-    @if (!string.IsNullOrEmpty(Model.Content))
-    {
-        <p class="note-content">@Model.Content</p>
-    }
-    <div class="note-footer">
-        <small>@Model.CreatedAt.ToString("MMM dd, yyyy")</small>
+        @if (!string.IsNullOrEmpty(Model.Content))
+        {
+            <p class="text-sm text-base-content/70 mt-2">@Model.Content</p>
+        }
+        <div class="card-actions justify-end mt-4">
+            <span class="text-xs text-base-content/50">@Model.CreatedAt.ToString("MMM dd, yyyy")</span>
+        </div>
     </div>
 </div>

@@ -3,22 +3,24 @@
     ViewData["Title"] = "Notes";
 }
 
-<header>
-    <h1 class="page-title">Notes</h1>
+<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+    <div>
+        <h1 class="text-2xl font-bold">Notes</h1>
+        <p class="text-base-content/60">Manage your notes</p>
+    </div>
     <button class="btn btn-primary"
             hx-get="@Url.Action("Create")"
             hx-target="#modal-container">
-        + New Note
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+        </svg>
+        New Note
     </button>
-</header>
-
-<div class="content-scroll">
-    <div id="notes-list"
-         hx-get="@Url.Action("List")"
-         hx-trigger="@NotesEvents.Notes.ListChanged from:body"
-         hx-swap="innerHTML">
-        <partial name="_NotesList" model="Model" />
-    </div>
 </div>
 
-<div id="modal-container"></div>
+<div id="notes-list"
+     hx-get="@Url.Action("List")"
+     hx-trigger="@NotesEvents.Notes.ListChanged from:body"
+     hx-swap="innerHTML">
+    <partial name="_NotesList" model="Model" />
+</div>
