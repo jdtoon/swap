@@ -35,7 +35,7 @@ public class SecureSwapStateTests
     [Fact]
     public void ToQueryString_EncryptsValues_WhenProtected()
     {
-        var state = new SecureState { Secret = "TopSecret", Count = 42 };
+        var state = new SecureState { Secret = "TopSecret", Count = 99887766 };
         
         var queryString = state.ToQueryString(_provider);
         
@@ -43,7 +43,7 @@ public class SecureSwapStateTests
         Assert.DoesNotContain("TopSecret", queryString); // Should be encrypted
         
         Assert.Contains("Count=", queryString);
-        Assert.DoesNotContain("42", queryString); // Should be encrypted
+        Assert.DoesNotContain("99887766", queryString); // Should be encrypted
     }
 
     [Fact]
