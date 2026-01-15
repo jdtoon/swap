@@ -8,16 +8,16 @@ public static class WebOptimizerExtensions
     {
         services.AddWebOptimizer(pipeline =>
         {
-            // Bundle all CSS files
-            pipeline.AddCssBundle("/css/bundle.css",
-                "css/base.css",
-                "css/layout.css",
-                "css/components.css",
-                "css/forms.css"
+            // Bundle DaisyUI + custom theme CSS
+            pipeline.AddCssBundle("/css/styles.css",
+                "lib/daisyui/daisyui.css",
+                "lib/daisyui/themes.css",
+                "css/theme.css"
             );
 
-            // Bundle all JS files
+            // Bundle Tailwind + JS files
             pipeline.AddJavaScriptBundle("/js/bundle.js",
+                "lib/tailwindcss/dist/index.global.min.js",
                 "js/layout.js"
             );
 

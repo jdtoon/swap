@@ -4,37 +4,83 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - SwapModularMonolith</title>
-    <link rel="stylesheet" href="/css/bundle.css" />
+    
+    <!-- DaisyUI + Tailwind CSS -->
+    <link rel="stylesheet" href="/css/styles.css" asp-append-version="true" />
+    
+    <!-- Swap.Htmx CSS -->
     <link rel="stylesheet" href="~/_content/Swap.Htmx/css/swap.css" asp-append-version="true" />
 </head>
-<body>
-    <!-- Sidebar -->
-    <aside class="sidebar" id="sidebar">
-        <div class="sidebar-header">
-            <span class="brand">SwapModularMonolith</span>
-            <button class="btn-icon sidebar-toggle" onclick="toggleSidebar()">☰</button>
+<body data-theme="corporate" class="min-h-screen bg-base-100 text-base-content">
+    <!-- Drawer for mobile menu -->
+    <div class="drawer lg:drawer-open">
+        <input id="mobile-drawer" type="checkbox" class="drawer-toggle" />
+        <div class="drawer-content flex flex-col">
+            <!-- Navbar (mobile) -->
+            <div class="navbar bg-base-100 border-b border-base-300 lg:hidden">
+                <div class="flex-none">
+                    <label for="mobile-drawer" class="btn btn-square btn-ghost drawer-button">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="inline-block w-5 h-5 stroke-current">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                        </svg>
+                    </label>
+                </div>
+                <div class="flex-1">
+                    <span class="text-xl font-bold">SwapModularMonolith</span>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <main class="flex-1 p-4 md:p-6 overflow-auto" id="main-content">
+                @RenderBody()
+            </main>
         </div>
-        <nav class="nav-menu">
-            <swap-nav to="/" class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Home" ? "active" : "")">
-                🏠 Dashboard
-            </swap-nav>
-            <swap-nav to="/Notes" class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Notes" ? "active" : "")">
-                📝 Notes
-            </swap-nav>
-        </nav>
-    </aside>
 
-    <!-- Main Content -->
-    <main class="main-content" id="main-content">
-        @RenderBody()
-    </main>
+        <!-- Sidebar -->
+        <div class="drawer-side z-40">
+            <label for="mobile-drawer" aria-label="close sidebar" class="drawer-overlay"></label>
+            <aside class="bg-base-200 w-64 min-h-full flex flex-col">
+                <!-- Brand -->
+                <div class="p-4 border-b border-base-300">
+                    <span class="text-xl font-bold">SwapModularMonolith</span>
+                </div>
+                
+                <!-- Navigation -->
+                <nav class="flex-1 p-4">
+                    <ul class="menu menu-md gap-1">
+                        <li>
+                            <swap-nav to="/" class="@(ViewContext.RouteData.Values["controller"]?.ToString() == "Home" ? "active" : "")">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                                </svg>
+                                Dashboard
+                            </swap-nav>
+                        </li>
+                        <li>
+                            <swap-nav to="/Notes" class="@(ViewContext.RouteData.Values["controller"]?.ToString() == "Notes" ? "active" : "")">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                                Notes
+                            </swap-nav>
+                        </li>
+                    </ul>
+                </nav>
+            </aside>
+        </div>
+    </div>
 
-    <div id="toast-container"></div>
+    <!-- Toast container -->
+    <div id="toast-container" class="toast toast-end"></div>
 
+    <!-- Modal container -->
+    <div id="modal-container"></div>
+
+    <!-- Scripts -->
     <script src="~/lib/htmx/dist/htmx.min.js" asp-append-version="true"></script>
     <script src="~/lib/htmx/ext/sse.js" asp-append-version="true"></script>
     <script src="~/_content/Swap.Htmx/js/swap.client.js" asp-append-version="true"></script>
-    <script src="/js/bundle.js"></script>
+    <script src="/js/bundle.js" asp-append-version="true"></script>
 
     @await RenderSectionAsync("Scripts", required: false)
 </body>

@@ -1,0 +1,14 @@
+/* Swap.ModularMonolith Theme Configuration */
+/* Using DaisyUI 5 with Tailwind CSS v4 */
+/* Uses stock DaisyUI themes - no custom colors */
+
+/* Swap.Htmx navigation cursor */
+swap-nav {
+    cursor: pointer;
+}
+
+/* Loading state for HTMX requests */
+[data-loading] {
+    opacity: 0.6;
+    pointer-events: none;
+}

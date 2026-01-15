@@ -1,13 +1,26 @@
 {
   "version": "1.0",
-  "defaultProvider": "unpkg",
+  "defaultProvider": "jsdelivr",
   "libraries": [
     {
+      "provider": "unpkg",
       "library": "htmx.org@2.0.8",
       "destination": "wwwroot/lib/htmx",
       "files": [
         "dist/htmx.min.js"
       ]
+    },
+    {
+      "library": "@tailwindcss/browser@4.1.18",
+      "destination": "wwwroot/lib/tailwindcss",
+      "files": [
+        "dist/index.global.min.js"
+      ]
+    },
+    {
+      "provider": "unpkg",
+      "library": "daisyui@5.5.14",
+      "destination": "wwwroot/lib/daisyui/"
     }
   ]
 }
