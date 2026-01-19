@@ -1,0 +1,253 @@
+name: Release
+
+on:
+  release:
+    types: [ published ]
+
+permissions:
+  contents: write  # needed to upload assets and update release body
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  CONFIGURATION: Release
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Configure NuGet sources for CI
+      run: |
+        cat > nuget.config << 'EOF'
+        <?xml version="1.0" encoding="utf-8"?>
+        <configuration>
+          <packageSources>
+            <clear />
+            <add key="nuget.org" value="https://api.nuget.org/v3/index.json" protocolVersion="3" />
+            <add key="local" value=".nuget/local" />
+          </packageSources>
+        </configuration>
+        EOF
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '9.0.x'
+
+    - name: Prepare local feed directory
+      run: |
+        mkdir -p .nuget/local
+        echo "Prepared local NuGet feed at .nuget/local"
+
+    - name: Pack library packages to local feed
+      run: |
+        dotnet pack lib/Swap.Htmx/Swap.Htmx.csproj --configuration Release --output ./.nuget/local
+        dotnet pack lib/Swap.Htmx.Realtime/Swap.Htmx.Realtime.csproj --configuration Release --output ./.nuget/local
+        dotnet pack lib/Swap.Htmx.Realtime.Redis/Swap.Htmx.Realtime.Redis.csproj --configuration Release --output ./.nuget/local
+        dotnet pack lib/Swap.Testing/Swap.Testing.csproj --configuration Release --output ./.nuget/local
+        dotnet pack templates/Swap.Templates.csproj --configuration Release --output ./.nuget/local
+      env:
+        DOTNET_NUGET_SIGNATURE_VERIFICATION: false
+
+    - name: Restore dependencies
+      run: dotnet restore
+
+    - name: Build
+      run: dotnet build --configuration Release --no-restore
+
+    - name: Run tests
+      run: dotnet test --configuration Release --no-restore --verbosity normal
+
+  templates-smoke:
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '9.0.x'
+
+    - name: Configure NuGet sources for template restore
+      run: |
+        cat > nuget.config << 'EOF'
+        <?xml version="1.0" encoding="utf-8"?>
+        <configuration>
+          <packageSources>
+            <clear />
+            <add key="nuget.org" value="https://api.nuget.org/v3/index.json" protocolVersion="3" />
+            <add key="local" value=".nuget/local" />
+          </packageSources>
+        </configuration>
+        EOF
+
+    - name: Prepare local feed directory
+      run: |
+        mkdir -p .nuget/local
+
+    - name: Pack template + library packages to local feed
+      run: |
+        dotnet pack lib/Swap.Htmx/Swap.Htmx.csproj --configuration Release --output ./.nuget/local
+        dotnet pack lib/Swap.Htmx.Realtime/Swap.Htmx.Realtime.csproj --configuration Release --output ./.nuget/local
+        dotnet pack lib/Swap.Htmx.Realtime.Redis/Swap.Htmx.Realtime.Redis.csproj --configuration Release --output ./.nuget/local
+        dotnet pack templates/Swap.Templates.csproj --configuration Release --output ./.nuget/local
+      env:
+        DOTNET_NUGET_SIGNATURE_VERIFICATION: false
+
+    - name: Install LibMan CLI
+      run: |
+        dotnet tool install -g Microsoft.Web.LibraryManager.Cli
+        echo "$HOME/.dotnet/tools" >> $GITHUB_PATH
+
+    - name: Install templates from local nupkg
+      run: |
+        TEMPLATE_NUPKG=$(ls .nuget/local/Swap.Templates*.nupkg | head -n 1)
+        echo "Installing template pack: $TEMPLATE_NUPKG"
+        dotnet new install "$TEMPLATE_NUPKG"
+
+    - name: Generate and build template matrix
+      run: |
+        set -euo pipefail
+        rm -rf template-ci
+        mkdir template-ci
+        pushd template-ci
+
+        echo "== swap-mvc =="
+        dotnet new swap-mvc -n MvcNoSse
+        pushd MvcNoSse
+        libman restore
+        dotnet build -c Release
+        popd
+
+        dotnet new swap-mvc -n MvcSse --IncludeSse true
+        pushd MvcSse
+        libman restore
+        dotnet build -c Release
+        popd
+
+        echo "== swap-modular =="
+        dotnet new swap-modular -n ModularNoSse
+        pushd ModularNoSse/src
+        libman restore
+        dotnet build -c Release
+        popd
+
+        dotnet new swap-modular -n ModularSse --IncludeSse true
+        pushd ModularSse/src
+        libman restore
+        dotnet build -c Release
+        popd
+
+        dotnet new swap-modular -n ModularNoSseNoSample --SkipSampleModule true
+        pushd ModularNoSseNoSample/src
+        libman restore
+        dotnet build -c Release
+        popd
+
+        dotnet new swap-modular -n ModularSseNoSample --IncludeSse true --SkipSampleModule true
+        pushd ModularSseNoSample/src
+        libman restore
+        dotnet build -c Release
+        popd
+
+        popd
+
+  pack:
+    runs-on: ubuntu-latest
+    needs:
+      - build
+      - templates-smoke
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '9.0.x'
+
+    - name: Determine version from tag
+      id: version
+      run: |
+        VERSION=${{ github.event.release.tag_name }}
+        VERSION=${VERSION#v}
+        echo "version=${VERSION}" >> $GITHUB_OUTPUT
+        echo "Publishing version ${VERSION}"
+
+    - name: Restore dependencies
+      run: dotnet restore
+
+    - name: Pack packages
+      run: |
+        dotnet pack lib/Swap.Htmx/Swap.Htmx.csproj --configuration Release --no-restore --output ./nupkg /p:Version=${{ steps.version.outputs.version }}
+        dotnet pack lib/Swap.Htmx.Realtime/Swap.Htmx.Realtime.csproj --configuration Release --no-restore --output ./nupkg /p:Version=${{ steps.version.outputs.version }}
+        dotnet pack lib/Swap.Htmx.Realtime.Redis/Swap.Htmx.Realtime.Redis.csproj --configuration Release --no-restore --output ./nupkg /p:Version=${{ steps.version.outputs.version }}
+        dotnet pack lib/Swap.Testing/Swap.Testing.csproj --configuration Release --no-restore --output ./nupkg /p:Version=${{ steps.version.outputs.version }}
+        dotnet pack templates/Swap.Templates.csproj --configuration Release --no-restore --output ./nupkg /p:Version=${{ steps.version.outputs.version }} /p:PackageVersion=${{ steps.version.outputs.version }}
+
+    - name: Extract changelog section
+      id: notes
+      run: |
+        VERSION=${{ steps.version.outputs.version }}
+        awk -v ver="$VERSION" '
+          BEGIN { found=0 }
+          $0 ~ "^##[[:space:]]*\\[" ver "\\]" || $0 ~ "^##[[:space:]]*" ver { found=1; next }
+          found && /^##[[:space:]]*\[/ { exit }
+          found { print }
+        ' CHANGELOG.md > release-notes.md
+        if [ ! -s release-notes.md ]; then
+          echo "Release $VERSION" > release-notes.md
+          echo "" >> release-notes.md
+          echo "Notes for $VERSION not found in CHANGELOG.md." >> release-notes.md
+        fi
+
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: release-artifacts
+        path: |
+          nupkg/*.nupkg
+          release-notes.md
+
+  publish:
+    runs-on: ubuntu-latest
+    needs: pack
+
+    steps:
+    - name: Download artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: release-artifacts
+        path: ./artifacts
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '9.0.x'
+
+    - name: Publish to NuGet
+      run: dotnet nuget push ./artifacts/nupkg/*.nupkg --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
+      env:
+        NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+
+    - name: Update GitHub Release
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: ${{ github.event.release.tag_name }}
+        body_path: ./artifacts/release-notes.md
+        files: |
+          artifacts/nupkg/*.nupkg
+        draft: false
+        prerelease: ${{ contains(github.event.release.tag_name, '-') }}
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
