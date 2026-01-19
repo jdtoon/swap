@@ -221,7 +221,7 @@ jobs:
         dotnet pack lib/Swap.Htmx.Realtime/Swap.Htmx.Realtime.csproj --configuration Release --no-restore --output ./nupkg /p:Version=${{ steps.version.outputs.version }}
         dotnet pack lib/Swap.Htmx.Realtime.Redis/Swap.Htmx.Realtime.Redis.csproj --configuration Release --no-restore --output ./nupkg /p:Version=${{ steps.version.outputs.version }}
         dotnet pack lib/Swap.Testing/Swap.Testing.csproj --configuration Release --no-restore --output ./nupkg /p:Version=${{ steps.version.outputs.version }}
-        dotnet pack templates/Swap.Templates.csproj --configuration Release --no-restore --output ./nupkg /p:Version=${{ steps.version.outputs.version }} /p:PackageVersion=${{ steps.version.outputs.version }}
+        dotnet pack templates/Swap.Templates.csproj --configuration Release --output ./nupkg /p:Version=${{ steps.version.outputs.version }} /p:PackageVersion=${{ steps.version.outputs.version }}
 
     - name: Extract changelog section
       id: notes
