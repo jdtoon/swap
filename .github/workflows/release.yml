@@ -176,6 +176,34 @@ jobs:
       with:
         dotnet-version: '9.0.x'
 
+    - name: Configure NuGet sources
+      run: |
+        cat > nuget.config << 'EOF'
+        <?xml version="1.0" encoding="utf-8"?>
+        <configuration>
+          <packageSources>
+            <clear />
+            <add key="nuget.org" value="https://api.nuget.org/v3/index.json" protocolVersion="3" />
+            <add key="local" value=".nuget/local" />
+          </packageSources>
+        </configuration>
+        EOF
+
+    - name: Prepare local feed directory
+      run: |
+        mkdir -p .nuget/local
+        echo "Prepared local NuGet feed at .nuget/local"
+
+    - name: Pack library packages to local feed (for dependencies)
+      run: |
+        dotnet pack lib/Swap.Htmx/Swap.Htmx.csproj --configuration Release --output ./.nuget/local
+        dotnet pack lib/Swap.Htmx.Realtime/Swap.Htmx.Realtime.csproj --configuration Release --output ./.nuget/local
+        dotnet pack lib/Swap.Htmx.Realtime.Redis/Swap.Htmx.Realtime.Redis.csproj --configuration Release --output ./.nuget/local
+        dotnet pack lib/Swap.Testing/Swap.Testing.csproj --configuration Release --output ./.nuget/local
+        dotnet pack templates/Swap.Templates.csproj --configuration Release --output ./.nuget/local
+      env:
+        DOTNET_NUGET_SIGNATURE_VERIFICATION: false
+
     - name: Determine version from tag
       id: version
       run: |
