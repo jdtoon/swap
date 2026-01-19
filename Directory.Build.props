@@ -20,8 +20,9 @@
   <PropertyGroup>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <EmbedUntrackedSources>true</EmbedUntrackedSources>
-    <IncludeSymbols>true</IncludeSymbols>
-    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <!-- Template packages don't support symbol packages -->
+    <IncludeSymbols Condition="'$(PackageType)' != 'Template'">true</IncludeSymbols>
+    <SymbolPackageFormat Condition="'$(PackageType)' != 'Template'">snupkg</SymbolPackageFormat>
     <Deterministic>true</Deterministic>
     <ContinuousIntegrationBuild Condition="'$(GITHUB_ACTIONS)' == 'true'">true</ContinuousIntegrationBuild>
   </PropertyGroup>
