@@ -1,0 +1,1060 @@
+# Swap.Htmx — LLM Playbook
+
+Use this as the "golden path" when generating Swap.Htmx code.
+Prefer correctness + consistency over cleverness.
+
+================================================================================
+## Quick Start (Template)
+================================================================================
+
+```bash
+# Install templates
+dotnet new install Swap.Templates
+
+# Create a modular monolith project (recommended)
+dotnet new swap-modular -n MyApp
+
+# Or create a simple MVC project
+dotnet new swap-mvc -n MyApp
+```
+
+================================================================================
+## 0. Non-Negotiables
+================================================================================
+
+1. Controllers: inherit `SwapController`.
+   - Realtime SSE endpoints: inherit `SwapRealtimeController` (from `Swap.Htmx.Realtime`).
+2. Views: return `SwapView()` (not `View()`).
+3. Multi-target updates: return `SwapResponse()` + `.AlsoUpdate(...)` + `.Build()`.
+4. No magic strings:
+   - Views: use generated `SwapViews.*` constants.
+   - Element IDs: use generated `SwapElements.*` constants.
+   - Events: use generated `EventKey` constants via `[SwapEventSource]`.
+5. State/paging/filtering: use `<swap-state>` + `[FromSwapState]`.
+6. Decoupling: use `ISwapEventConfiguration` for event chains and/or `[SwapHandler]` handlers.
+
+================================================================================
+## 1. Minimal Setup (Program.cs)
+================================================================================
+
+### Services
+
+```csharp
+builder.Services.AddControllersWithViews();
+
+builder.Services.AddSwapHtmx(options =>
+{
+    // Auto-suppress layout for HTMX requests
+    options.AutoSuppressLayout = true;
+    
+    // Default navigation target for <swap-nav>
+    options.DefaultNavigationTarget = "#main-content";
+    
+    // Register modular event configurations (recommended)
+    options.AddConfig<TaskEventConfig>();
+    options.AddConfig<ProjectEventConfig>();
+    
+    // Or configure event chains inline
+    // options.EventBus.When(TaskEvents.Task.Completed)
+    //     .RefreshPartial(SwapElements.TaskList, SwapViews.Tasks._List, ctx => GetTasks())
+    //     .Toast("Task completed!", ToastType.Success);
+});
+
+// Optional: Enable realtime (SSE) broadcasting
+builder.Services.AddSseEventBridge();
+```
+
+### Middleware Pipeline
+
+```csharp
+app.UseStaticFiles();
+app.UseRouting();
+app.UseSwapHtmx();
+app.UseSseEventBridge();  // Optional: requires AddSseEventBridge()
+app.MapControllers();
+```
+
+================================================================================
+## 2. Layout Requirements (_Layout.cshtml)
+================================================================================
+
+Minimum for HTMX + Swap client:
+
+```html
+<head>
+    <link rel="stylesheet" href="~/_content/Swap.Htmx/css/swap.css" />
+</head>
+<body>
+    <div id="main-content">
+        @RenderBody()
+    </div>
+    
+    <script src="https://unpkg.com/htmx.org@2.0.8"></script>
+    <script src="~/_content/Swap.Htmx/js/swap.client.js"></script>
+    
+    <!-- If using SSE realtime -->
+    <script src="https://unpkg.com/htmx-ext-sse@2.2.4/sse.js"></script>
+</body>
+```
+
+================================================================================
+## 3. Core Patterns
+================================================================================
+
+### 3.1 SwapController & SwapView
+
+Every controller should inherit from `SwapController`:
+
+```csharp
+public class TasksController : SwapController
+{
+    [HttpGet("/tasks")]
+    public IActionResult Index()
+    {
+        var tasks = _db.Tasks.ToList();
+        return SwapView(tasks);
+        // Browser navigation → Full view with layout
+        // HTMX request → Partial view (no layout)
+    }
+    
+    [HttpGet("/tasks/{id}")]
+    public IActionResult Details(int id)
+    {
+        var task = _db.Tasks.Find(id);
+        return SwapView(SwapViews.Tasks.Details, task);
+    }
+}
+```
+
+### 3.2 SwapResponse (Multi-Target Updates)
+
+Update multiple page elements in one response:
+
+```csharp
+[HttpPost("/tasks")]
+public IActionResult Create(CreateTaskInput input)
+{
+    var task = _service.Create(input);
+    
+    return SwapResponse()
+        .WithView(SwapViews.Tasks._TaskRow, task)          // Main response → hx-target
+        .AlsoUpdate(SwapElements.TaskCount, SwapViews.Tasks._Count, _db.Tasks.Count())
+        .AlsoUpdate(SwapElements.Stats, SwapViews.Dashboard._Stats, GetStats())
+        .WithCreatedToast("Task")                          // "Task created successfully"
+        .WithTrigger(TaskEvents.Task.Created)              // Client-side event
+        .WithClientAction("closeModal")                    // Close modal
+        .Build();
+}
+```
+
+### AlsoUpdate Parameters
+
+```csharp
+.AlsoUpdate(
+    "element-id",        // Target element ID (no # prefix)
+    "_PartialView",      // Partial view name
+    model,               // Model for the view
+    SwapMode.OuterHTML   // Optional: swap strategy (default OuterHTML)
+)
+```
+
+### SwapMode Options
+
+| Mode | Effect |
+|------|--------|
+| `OuterHTML` | Replace entire element (default) |
+| `InnerHTML` | Replace inner content only |
+| `BeforeBegin` | Insert before element |
+| `AfterBegin` | Insert at start of element's children |
+| `BeforeEnd` | Append to element's children |
+| `AfterEnd` | Insert after element |
+| `Delete` | Remove element |
+| `None` | No swap |
+
+### Conditional OOB Swaps
+
+```csharp
+// Only include if condition is true (server-side check)
+.AlsoUpdateIf(user.HasPermission("ViewStats"), SwapElements.Stats, "_Stats", stats)
+
+// Only swap if element exists in DOM (client-side check)
+.AlsoUpdateIfExists(SwapElements.OptionalPanel, "_Panel", data)
+```
+
+### SwapResponseBuilder Full API
+
+| Method | Purpose |
+|--------|---------|
+| `.WithView(view, model)` | Main response content |
+| `.AlsoUpdate(id, view, model, mode?)` | OOB swap |
+| `.AlsoUpdateMany(items, idSelector, view)` | Batch OOB swaps |
+| `.AlsoUpdateIf(condition, id, view, model)` | Conditional OOB |
+| `.AlsoUpdateIfExists(id, view, model)` | OOB if DOM element exists |
+| `.WithSuccessToast(msg)` | Success toast |
+| `.WithErrorToast(msg)` | Error toast |
+| `.WithWarningToast(msg)` | Warning toast |
+| `.WithInfoToast(msg)` | Info toast |
+| `.WithCreatedToast(entity)` | "Entity created successfully" |
+| `.WithUpdatedToast(entity)` | "Entity updated" |
+| `.WithDeletedToast(entity)` | "Entity deleted" |
+| `.WithSavedToast(entity)` | "Entity saved" |
+| `.WithTrigger(eventKey, payload?)` | Client-side HX-Trigger event |
+| `.WithRedirect(url)` | HX-Redirect (full page reload) |
+| `.WithNavigation(path, target?, pushUrl?)` | HX-Location (SPA-style) |
+| `.WithClientAction(action, target?, value?)` | Client action (focus, reset, closeModal) |
+| `.WithState(state)` | OOB state container update |
+| `.Build()` | Build IActionResult |
+| `.BuildResult()` | Build IResult (Minimal APIs) |
+
+================================================================================
+## 4. SwapState (Server-Side UI State)
+================================================================================
+
+### Define State
+
+```csharp
+public class TaskFilterState : SwapState
+{
+    // Optional: Encrypt state values (tamper-proof)
+    public override bool Protected => true;
+    
+    // Optional: Sync state to URL query string (bookmarkable)
+    public override bool UrlSync => true;
+
+    // User-editable fields (exempt from encryption)
+    [SwapUnprotected]
+    public string Status { get; set; } = "all";
+    
+    [SwapUnprotected]
+    public int Page { get; set; } = 1;
+    
+    [SwapUnprotected]
+    public string? Search { get; set; }
+    
+    // Protected field (cannot be tampered)
+    public int ProjectId { get; set; }
+}
+```
+
+### Render State in View
+
+```html
+@model TaskListViewModel
+
+<!-- Renders hidden inputs in a container -->
+<swap-state state="Model.State" />
+
+<!-- Or with explicit ID -->
+<swap-state state="Model.State" id="custom-state-id" />
+```
+
+### Include State in HTMX Requests
+
+```html
+<button hx-get="/tasks?Status=completed&Page=1"
+        hx-target="#task-list"
+        hx-include="#task-filter-state">
+    Completed Tasks
+</button>
+
+<!-- Search with debounce -->
+<input type="text" 
+       name="Search"
+       value="@Model.State.Search"
+       hx-get="/tasks?Page=1"
+       hx-target="#task-list"
+       hx-include="#task-filter-state"
+       hx-trigger="keyup changed delay:300ms" />
+```
+
+### Bind State in Controller
+
+```csharp
+[HttpGet("/tasks")]
+public IActionResult Index([FromSwapState] TaskFilterState state)
+{
+    // state.Status = "completed" (from URL param, overrides hidden field)
+    // state.Page = 1 (from URL param)
+    // state.Search = "review" (from hidden field or input)
+    
+    var tasks = _service.GetTasks(state.Status, state.Search, state.Page);
+    return SwapView(new TaskListViewModel { State = state, Tasks = tasks });
+}
+```
+
+### CRITICAL: URL Parameters Win (First Value)
+
+When using `hx-get` with URL params AND `hx-include`:
+- Request becomes: `?Status=completed&Page=1&Status=all&Page=5&...`
+- Model binder uses the FIRST value
+- URL params override hidden fields
+
+Pattern:
+- **Override specific fields:** Put them in URL parameters
+- **Preserve other fields:** They come from hidden fields via hx-include
+- **Reset a field:** Pass empty value in URL (`Search=`)
+
+### Checkbox Toggle Pattern
+
+Unchecked checkboxes send nothing. Toggle explicitly:
+
+```html
+<input type="checkbox" 
+       @(state.IncludeArchived ? "checked" : "")
+       hx-get="/tasks?IncludeArchived=@(!state.IncludeArchived)"
+       hx-target="#task-list"
+       hx-include="#task-filter-state" />
+```
+
+### Protected State Links
+
+For `Protected` state, you cannot manually build query strings. Use the helper:
+
+```html
+<a href="/tasks?@Html.SwapStateQueryString(Model.State)">
+    Bookmarkable Link
+</a>
+```
+
+================================================================================
+## 5. Source Generators
+================================================================================
+
+### 5.1 [SwapEventSource] — Type-Safe Events
+
+Define events as string constants, generator creates `EventKey` properties:
+
+```csharp
+using Swap.Htmx.Attributes;
+
+[SwapEventSource]
+public partial class TaskEvents
+{
+    public const string TaskCreated = "task.created";
+    public const string TaskCompleted = "task.completed";
+    public const string TaskDeleted = "task.deleted";
+}
+
+// Generated at build time:
+// TaskEvents.Task.Created  → EventKey("task.created")
+// TaskEvents.Task.Completed → EventKey("task.completed")
+// TaskEvents.Task.Deleted   → EventKey("task.deleted")
+
+// Usage — type-safe, refactorable, no typos
+return SwapEvent(TaskEvents.Task.Completed, payload).Build();
+```
+
+### 5.2 SwapViews (Auto-Generated)
+
+Views are auto-scanned and grouped by controller folder:
+
+```csharp
+// Auto-generated from Views/**/*.cshtml
+public static class SwapViews
+{
+    public static class Tasks
+    {
+        public const string Index = "Index";
+        public const string Details = "Details";
+        public const string _List = "_List";           // Partials keep underscore
+        public const string _TaskRow = "_TaskRow";
+    }
+    public static class Dashboard
+    {
+        public const string Index = "Index";
+        public const string _Stats = "_Stats";
+    }
+}
+
+// Usage — controller-relative, no magic strings
+return SwapView(SwapViews.Tasks.Index, model);
+builder.AlsoUpdate(SwapElements.TaskList, SwapViews.Tasks._List, tasks);
+```
+
+### 5.3 SwapElements (Auto-Generated)
+
+Element IDs are auto-scanned from `id="..."` attributes:
+
+```html
+<!-- Views/Tasks/_List.cshtml -->
+<div id="task-list">...</div>
+<div id="task-count">...</div>
+```
+
+```csharp
+// Auto-generated (filtered for meaningful IDs)
+public static class SwapElements
+{
+    public const string TaskList = "task-list";
+    public const string TaskCount = "task-count";
+}
+
+// Usage
+builder.AlsoUpdate(SwapElements.TaskList, SwapViews.Tasks._List, tasks);
+```
+
+### Dynamic Element IDs
+
+For per-item IDs, combine constants with interpolation:
+
+```csharp
+public static class TaskElements
+{
+    public const string RowPrefix = "task-row-";
+    public static string Row(int id) => $"task-row-{id}";
+}
+
+// Update specific row
+builder.AlsoUpdate(TaskElements.Row(taskId), SwapViews.Tasks._TaskRow, task);
+```
+
+================================================================================
+## 6. Event System
+================================================================================
+
+### 6.1 ISwapEventConfiguration (Modular Event Chains)
+
+Organize event configuration by feature:
+
+```csharp
+public class TaskEventConfig : ISwapEventConfiguration
+{
+    public void Configure(SwapEventBusOptions config)
+    {
+        // When task.created fires, refresh these partials
+        config.When(TaskEvents.Task.Created)
+            .RefreshPartial(SwapElements.TaskList, SwapViews.Tasks._List, ctx =>
+            {
+                var db = ctx.RequestServices.GetRequiredService<AppDbContext>();
+                return db.Tasks.OrderByDescending(t => t.CreatedAt).ToList();
+            })
+            .RefreshPartial(SwapElements.Stats, SwapViews.Dashboard._Stats, ctx =>
+            {
+                var db = ctx.RequestServices.GetRequiredService<AppDbContext>();
+                return new StatsModel { TaskCount = db.Tasks.Count() };
+            })
+            .Toast("Task created!", ToastType.Success);
+
+        // Chain to SSE for realtime updates
+        config.ChainToSse(TaskEvents.Task.Created, SseEvents.Subscribers("task.created"));
+    }
+}
+```
+
+Register in Program.cs:
+
+```csharp
+builder.Services.AddSwapHtmx(options =>
+{
+    options.AddConfig<TaskEventConfig>();
+    options.AddConfig<ProjectEventConfig>();
+});
+```
+
+### 6.2 SwapEvent / SwapEventAsync
+
+Fire events from controllers:
+
+```csharp
+[HttpPost("/tasks/{id}/complete")]
+public IActionResult Complete(int id)
+{
+    var task = _service.Complete(id);
+    
+    // Synchronous: all RefreshPartial model factories run synchronously
+    return SwapEvent(TaskEvents.Task.Completed, new TaskPayload(task))
+        .WithView(SwapViews.Tasks._TaskRow, task)
+        .Build();
+}
+
+[HttpPost("/tasks")]
+public async Task<IActionResult> Create(CreateTaskInput input)
+{
+    var task = await _service.CreateAsync(input);
+    
+    // Async: use when event chains have async model factories
+    return (await SwapEventAsync(TaskEvents.Task.Created, new TaskPayload(task)))
+        .WithClientAction("closeModal")
+        .Build();
+}
+```
+
+### 6.3 Distributed Handlers ([SwapHandler])
+
+For cross-cutting concerns without bloating controllers:
+
+```csharp
+[SwapHandler(Priority = 100)]
+public class TaskAuditHandler : ISwapEventHandler<TaskPayload>
+{
+    private readonly IAuditService _audit;
+    
+    public TaskAuditHandler(IAuditService audit)
+    {
+        _audit = audit;
+    }
+    
+    public async Task HandleAsync(TaskPayload payload, SwapResponseBuilder builder, CancellationToken ct)
+    {
+        await _audit.LogAsync($"Task {payload.TaskId} action performed");
+        
+        // Optionally add more OOB swaps
+        builder.AlsoUpdate(SwapElements.AuditLog, SwapViews.Shared._AuditEntry, payload);
+    }
+}
+
+// Handler implementing multiple event types
+[SwapHandler]
+public class DashboardRefreshHandler : 
+    ISwapEventHandler<TaskPayload>,
+    ISwapEventHandler<ProjectPayload>
+{
+    public Task HandleAsync(TaskPayload payload, SwapResponseBuilder builder, CancellationToken ct)
+    {
+        builder.AlsoUpdate(SwapElements.DashboardStats, "_Stats", GetStats());
+        return Task.CompletedTask;
+    }
+    
+    public Task HandleAsync(ProjectPayload payload, SwapResponseBuilder builder, CancellationToken ct)
+    {
+        builder.AlsoUpdate(SwapElements.DashboardStats, "_Stats", GetStats());
+        return Task.CompletedTask;
+    }
+}
+```
+
+================================================================================
+## 7. Realtime (SSE)
+================================================================================
+
+### 7.1 Setup
+
+```csharp
+// Program.cs
+builder.Services.AddSwapHtmx(options => { /* ... */ });
+builder.Services.AddSseEventBridge();  // Enable SSE
+
+// Middleware
+app.UseSwapHtmx();
+app.UseSseEventBridge();
+```
+
+### 7.2 SwapRealtimeController
+
+Create SSE endpoints by inheriting `SwapRealtimeController`:
+
+```csharp
+public class DashboardController : SwapRealtimeController
+{
+    [HttpGet("/dashboard/stream")]
+    public IActionResult Stream()
+    {
+        return ServerSentEvents(async (conn, ct) =>
+        {
+            // Subscribe to specific events
+            conn.WithEvents("task.created", "task.completed");
+            
+            // Or join a room
+            conn.JoinRoom("project-123");
+            
+            // Keep connection alive
+            await conn.KeepAlive(cancellationToken: ct);
+        });
+    }
+}
+```
+
+### 7.3 Connect from View
+
+```html
+<div hx-ext="sse" sse-connect="/dashboard/stream">
+    <!-- This div updates when "task.created" event arrives -->
+    <div id="task-list" sse-swap="task.created" hx-swap="innerHTML">
+        @await Html.PartialAsync("_TaskList", Model.Tasks)
+    </div>
+    
+    <!-- This div updates when "activity.logged" event arrives -->
+    <div id="activity-feed" sse-swap="activity.logged" hx-swap="afterbegin">
+        @await Html.PartialAsync("_ActivityFeed", Model.Activities)
+    </div>
+</div>
+```
+
+### 7.4 Chain Domain Events to SSE
+
+In your event configuration:
+
+```csharp
+public class TaskEventConfig : ISwapEventConfiguration
+{
+    public void Configure(SwapEventBusOptions config)
+    {
+        // Forward task.created to SSE subscribers
+        config.ChainToSse(TaskEvents.Task.Created, SseEvents.Subscribers("task.created"));
+        
+        // Forward to a specific room
+        config.ChainToSse(TaskEvents.Task.Updated, SseEvents.Room("project-123", "task.updated"));
+        
+        // Forward to all connected clients
+        config.ChainToSse(TaskEvents.Task.Deleted, SseEvents.Broadcast("task.deleted"));
+    }
+}
+```
+
+### 7.5 SseEvents Helper
+
+```csharp
+SseEvents.Broadcast("event-name")           // All connections
+SseEvents.Subscribers("event-name")         // Connections subscribed to this event
+SseEvents.Room("room-id", "event-name")     // Connections in a room
+SseEvents.Rooms("room1", "room2").Send("event-name")  // Multiple rooms
+SseEvents.User("event-name", "user-id")     // Specific user
+SseEvents.Roles("event-name", "admin")      // Users with roles
+
+// Common presets
+SseEvents.Common.Refresh
+SseEvents.Common.Notification
+SseEvents.Common.Toast
+```
+
+================================================================================
+## 8. Tag Helpers
+================================================================================
+
+### <swap-state>
+
+Renders hidden fields for state container:
+
+```html
+<swap-state state="Model.State" />
+
+<!-- Output -->
+<div id="task-filter-state" class="swap-state-container">
+    <input type="hidden" name="Status" value="all" />
+    <input type="hidden" name="Page" value="1" />
+</div>
+```
+
+### <swap-nav>
+
+SPA-style navigation link:
+
+```html
+<!-- Instead of -->
+<a href="/tasks" hx-get="/tasks" hx-target="#main-content" hx-push-url="true">Tasks</a>
+
+<!-- Use -->
+<swap-nav to="/tasks">Tasks</swap-nav>
+<swap-nav to="/tasks" target="#sidebar">Tasks (sidebar)</swap-nav>
+```
+
+================================================================================
+## 9. Configuration Options
+================================================================================
+
+### SwapHtmxOptions
+
+```csharp
+builder.Services.AddSwapHtmx(options =>
+{
+    // Auto-suppress layout for HTMX requests (recommended)
+    options.AutoSuppressLayout = true;
+    
+    // Default target for <swap-nav>
+    options.DefaultNavigationTarget = "#main-content";
+    
+    // Additional folders to search for partial views
+    options.PartialViewSearchPaths.Add("Dashboard");
+    options.PartialViewSearchPaths.Add("Tasks");
+    
+    // Register event configurations
+    options.AddConfig<TaskEventConfig>();
+    
+    // Direct event bus configuration
+    options.EventBus.When(...)
+        .RefreshPartial(...);
+    
+    // Error handling
+    options.ErrorHandling.Enabled = true;
+    options.ErrorHandling.ErrorViewName = "_SwapErrorToast";
+    options.ErrorHandling.ShowExceptionDetails = env.IsDevelopment();
+    
+    // Diagnostics (dev only)
+    options.Diagnostics.EnableClientLogging = true;
+    options.Diagnostics.EnableDevToolsPanel = true;
+    options.Diagnostics.WarnOnUnhandledEvents = true;
+    options.Diagnostics.WarnOnMissingOobTargets = true;
+});
+```
+
+================================================================================
+## 10. Testing (Swap.Testing)
+================================================================================
+
+### HtmxTestClient
+
+```csharp
+public class TaskTests : IClassFixture<WebApplicationFactory<Program>>
+{
+    private readonly HtmxTestClient<Program> _client;
+    
+    public TaskTests(WebApplicationFactory<Program> factory)
+    {
+        _client = new HtmxTestClient<Program>(factory);
+    }
+    
+    [Fact]
+    public async Task CreateTask_ReturnsOobSwaps()
+    {
+        var response = await _client
+            .AsHtmxRequest()
+            .HtmxPostAsync("/tasks", new Dictionary<string, string>
+            {
+                ["Title"] = "New Task",
+                ["ProjectId"] = "1"
+            });
+        
+        await response
+            .AssertSuccess()
+            .AssertContainsAsync("New Task")
+            .AssertHasOobSwapAsync("task-list")
+            .AssertHasOobSwapAsync("task-count")
+            .AssertHasTriggerAsync("task.created");
+    }
+    
+    [Fact]
+    public async Task Index_ReturnsFullPageForBrowser()
+    {
+        // No HX-Request header = browser request
+        var response = await _client.GetAsync("/tasks");
+        
+        await response
+            .AssertSuccess()
+            .AssertContainsAsync("<html")        // Full page with layout
+            .AssertElementExistsAsync("#task-list");
+    }
+    
+    [Fact]
+    public async Task Index_ReturnsPartialForHtmx()
+    {
+        var response = await _client.HtmxGetAsync("/tasks");
+        
+        await response
+            .AssertSuccess()
+            .AssertDoesNotContainAsync("<html")  // Partial, no layout
+            .AssertElementExistsAsync("#task-list");
+    }
+}
+```
+
+### HtmxTestResponse Assertions
+
+| Method | Purpose |
+|--------|---------|
+| `.AssertStatus(code)` | Check HTTP status |
+| `.AssertSuccess()` | Check 2xx status |
+| `.AssertContainsAsync(text)` | Check response contains text |
+| `.AssertDoesNotContainAsync(text)` | Check response doesn't contain text |
+| `.AssertElementExistsAsync(selector)` | Check DOM element exists |
+| `.AssertElementTextAsync(selector, text)` | Check element text content |
+| `.AssertHasOobSwapAsync(targetId)` | Check OOB swap present |
+| `.AssertHasTriggerAsync(eventName)` | Check HX-Trigger header |
+| `.AssertHasHeaderAsync(name, value?)` | Check response header |
+
+================================================================================
+## 11. Complete Examples
+================================================================================
+
+### 11.1 CRUD with Events (Full Pattern)
+
+```csharp
+// Events/TaskEvents.cs
+[SwapEventSource]
+public partial class TaskEvents
+{
+    public const string TaskCreated = "task.created";
+    public const string TaskUpdated = "task.updated";
+    public const string TaskDeleted = "task.deleted";
+}
+
+// Events/TaskEventConfig.cs
+public class TaskEventConfig : ISwapEventConfiguration
+{
+    public void Configure(SwapEventBusOptions config)
+    {
+        config.When(TaskEvents.Task.Created)
+            .RefreshPartial(SwapElements.TaskList, SwapViews.Tasks._List, ctx =>
+            {
+                var db = ctx.RequestServices.GetRequiredService<AppDbContext>();
+                return db.Tasks.OrderByDescending(t => t.CreatedAt).ToList();
+            })
+            .RefreshPartial(SwapElements.TaskCount, SwapViews.Tasks._Count, ctx =>
+            {
+                var db = ctx.RequestServices.GetRequiredService<AppDbContext>();
+                return db.Tasks.Count();
+            })
+            .Toast("Task created!", ToastType.Success);
+
+        config.When(TaskEvents.Task.Deleted)
+            .RefreshPartial(SwapElements.TaskList, SwapViews.Tasks._List, ctx =>
+            {
+                var db = ctx.RequestServices.GetRequiredService<AppDbContext>();
+                return db.Tasks.OrderByDescending(t => t.CreatedAt).ToList();
+            })
+            .Toast("Task deleted", ToastType.Warning);
+    }
+}
+
+// Controllers/TasksController.cs
+public class TasksController : SwapController
+{
+    private readonly AppDbContext _db;
+    
+    public TasksController(AppDbContext db) => _db = db;
+    
+    [HttpGet("/tasks")]
+    public IActionResult Index([FromSwapState] TaskFilterState state)
+    {
+        var query = _db.Tasks.AsQueryable();
+        
+        if (state.Status != "all")
+            query = query.Where(t => t.Status == state.Status);
+        
+        if (!string.IsNullOrEmpty(state.Search))
+            query = query.Where(t => t.Title.Contains(state.Search));
+        
+        var tasks = query
+            .OrderByDescending(t => t.CreatedAt)
+            .Skip((state.Page - 1) * 10)
+            .Take(10)
+            .ToList();
+        
+        return SwapView(new TaskListViewModel { Tasks = tasks, State = state });
+    }
+    
+    [HttpPost("/tasks")]
+    public async Task<IActionResult> Create(CreateTaskInput input)
+    {
+        var task = new Task { Title = input.Title, Status = "pending" };
+        _db.Tasks.Add(task);
+        await _db.SaveChangesAsync();
+        
+        return (await SwapEventAsync(TaskEvents.Task.Created))
+            .WithClientAction("closeModal")
+            .Build();
+    }
+    
+    [HttpDelete("/tasks/{id}")]
+    public async Task<IActionResult> Delete(int id)
+    {
+        var task = await _db.Tasks.FindAsync(id);
+        if (task != null)
+        {
+            _db.Tasks.Remove(task);
+            await _db.SaveChangesAsync();
+        }
+        
+        return SwapEvent(TaskEvents.Task.Deleted).Build();
+    }
+}
+```
+
+### 11.2 Filter + Pagination View
+
+```html
+@model TaskListViewModel
+@{ var state = Model.State; }
+
+<!-- State container -->
+<swap-state state="state" />
+
+<div class="filters">
+    <!-- Status filter -->
+    @foreach (var status in new[] { "all", "pending", "completed" })
+    {
+        <button class="@(state.Status == status ? "active" : "")"
+                hx-get="/tasks?Status=@status&Page=1"
+                hx-target="#task-content"
+                hx-include="#task-filter-state">
+            @status
+        </button>
+    }
+    
+    <!-- Search -->
+    <input type="text" 
+           name="Search"
+           value="@state.Search"
+           placeholder="Search tasks..."
+           hx-get="/tasks?Page=1"
+           hx-target="#task-content"
+           hx-include="#task-filter-state"
+           hx-trigger="keyup changed delay:300ms" />
+</div>
+
+<div id="task-content">
+    <!-- Task list -->
+    <div id="task-list">
+        @foreach (var task in Model.Tasks)
+        {
+            <div id="task-row-@task.Id" class="task-row">
+                <span>@task.Title</span>
+                <button hx-delete="/tasks/@task.Id"
+                        hx-confirm="Delete this task?">
+                    Delete
+                </button>
+            </div>
+        }
+    </div>
+    
+    <!-- Pagination -->
+    <div class="pagination">
+        @for (int i = 1; i <= Model.TotalPages; i++)
+        {
+            <button hx-get="/tasks?Page=@i"
+                    hx-target="#task-content"
+                    hx-include="#task-filter-state"
+                    class="@(state.Page == i ? "active" : "")">
+                @i
+            </button>
+        }
+    </div>
+</div>
+
+<!-- Task count (updated via OOB) -->
+<div id="task-count">
+    @Model.Tasks.Count tasks
+</div>
+```
+
+================================================================================
+## 12. Debug Checklist
+================================================================================
+
+| Problem | Check |
+|---------|-------|
+| Wrong HTML returned? | Ensure action returns `SwapView()` not `View()` |
+| Nothing updated? | Confirm element IDs match (`SwapElements.*`) |
+| Partial not found? | Add folder to `PartialViewSearchPaths` |
+| State not persisting? | Ensure `<swap-state>` exists and `hx-include` targets it |
+| Events not firing? | Ensure `.WithTrigger(EventKey)` or event chain configured |
+| Realtime not updating? | Ensure `AddSseEventBridge()` + `UseSseEventBridge()` present |
+| SSE not connecting? | Check `sse-connect` URL and `sse-swap` event names match |
+
+### Enable Generated Code Inspection
+
+```xml
+<PropertyGroup>
+  <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+  <CompilerGeneratedFilesOutputPath>obj\Generated</CompilerGeneratedFilesOutputPath>
+</PropertyGroup>
+
+<ItemGroup>
+  <Compile Remove="obj\Generated\**\*.cs" />
+</ItemGroup>
+```
+
+================================================================================
+## 13. Do This / Don't Do This
+================================================================================
+
+### DO
+
+```csharp
+// Use SwapView (auto-detects HTMX)
+return SwapView(model);
+
+// Use generated constants
+return SwapView(SwapViews.Tasks.Index, model);
+builder.AlsoUpdate(SwapElements.TaskList, SwapViews.Tasks._List, tasks);
+return SwapEvent(TaskEvents.Task.Created);
+
+// Multi-target response
+return SwapResponse()
+    .WithView(SwapViews.Tasks._Row, task)
+    .AlsoUpdate(SwapElements.TaskCount, SwapViews.Tasks._Count, count)
+    .WithCreatedToast("Task")
+    .Build();
+
+// State with URL override
+<button hx-get="/tasks?Status=completed&Page=1"
+        hx-include="#task-filter-state">
+
+// Debounced search
+<input hx-get="/search" 
+       hx-trigger="keyup changed delay:300ms"
+       hx-include="#state">
+
+// Event-driven updates
+return SwapEvent(TaskEvents.Task.Created, payload)
+    .WithClientAction("closeModal")
+    .Build();
+
+// Modular event configuration
+options.AddConfig<TaskEventConfig>();
+```
+
+### DON'T
+
+```csharp
+// DON'T: Returns full layout for HTMX requests
+return View(model);
+
+// DON'T: Magic strings
+return SwapView("_TaskList", model);
+builder.AlsoUpdate("task-list", "_TaskList", tasks);
+
+// DON'T: Redirect breaks HTMX
+return Redirect("/tasks");
+
+// DON'T: Missing hx-include
+<button hx-get="/filter">Filter</button>
+
+// DON'T: Complex objects in state
+public List<Task> Tasks { get; set; }  // Keep state flat
+
+// DON'T: Inline event config when it gets complex
+options.EventBus.When(Event1).RefreshPartial(...);
+options.EventBus.When(Event2).RefreshPartial(...);
+// Use ISwapEventConfiguration instead
+```
+
+================================================================================
+## API Quick Reference
+================================================================================
+
+### SwapController Methods
+
+| Method | Purpose |
+|--------|---------|
+| `SwapView(model)` | Auto partial/full based on request |
+| `SwapView(viewName, model)` | Explicit view name |
+| `SwapResponse()` | Start fluent builder |
+| `SwapEvent(key, payload?)` | Fire event (sync model factories) |
+| `SwapEventAsync(key, payload?)` | Fire event (async model factories) |
+| `RenderPartialToStringAsync(view, model)` | Render partial for SSE |
+
+### SwapRealtimeController Methods
+
+| Method | Purpose |
+|--------|---------|
+| `ServerSentEvents(handler)` | Create SSE endpoint |
+
+### SwapState Members
+
+| Member | Purpose |
+|--------|---------|
+| `ContainerId` | Auto-generated element ID |
+| `Protected` | Enable encryption (override) |
+| `UrlSync` | Sync to query string (override) |
+| `[SwapUnprotected]` | Exempt field from encryption |
+| `[FromSwapState]` | Bind state from request |
+
+### Event Chain Methods
+
+| Method | Purpose |
+|--------|---------|
+| `.When(EventKey)` | Start event chain |
+| `.RefreshPartial(id, view, modelFactory)` | OOB partial refresh |
+| `.RefreshPartialAsync(id, view, asyncFactory)` | Async OOB refresh |
+| `.Toast(message, type)` | Add toast notification |
+| `.ChainToSse(eventKey, sseEventKey)` | Forward to SSE |
