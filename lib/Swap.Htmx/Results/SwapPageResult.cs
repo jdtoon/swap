@@ -107,15 +107,13 @@ public sealed class SwapPageResult : ActionResult
             }
         }
 
-        // 4. Render OOB swaps
+        // 4. Render OOB swaps (parallelized for performance)
         var oobContent = new List<string>();
         if (_builder.OobSwaps.Count > 0)
         {
-            foreach (var oob in _builder.OobSwaps)
-            {
-                var html = await RenderOobSwapAsync(context, oob);
-                oobContent.Add(html);
-            }
+            var oobTasks = _builder.OobSwaps.Select(oob => RenderOobSwapAsync(context, oob)).ToArray();
+            var results = await Task.WhenAll(oobTasks);
+            oobContent.AddRange(results);
         }
 
         // 4b. Render SwapState as OOB if configured

@@ -5,6 +5,7 @@ using Swap.Htmx.Events;
 using Swap.Htmx.Extensions;
 using Swap.Htmx.Results;
 using Swap.Htmx.State;
+using System.Text.RegularExpressions;
 
 namespace Swap.Htmx.Models;
 
@@ -171,15 +172,26 @@ public sealed class SwapResponseBuilder : IResult
         return this;
     }
 
+    private static readonly Regex ValidIdRegex = new(@"^[a-zA-Z][a-zA-Z0-9_-]*$", RegexOptions.Compiled);
+
     private static string NormalizeOobTargetId(string targetId)
     {
         // OOB swaps target element IDs. Many callers naturally pass CSS selectors like "#sidebar".
         // Normalizing here prevents invalid HTML like id="#sidebar" and avoids silent swap failures.
+        if (string.IsNullOrWhiteSpace(targetId))
+            throw new ArgumentException("OOB target ID cannot be null or empty.", nameof(targetId));
+
         var normalized = targetId.Trim();
         if (normalized.StartsWith('#'))
         {
-            normalized = normalized.TrimStart('#');
+            normalized = normalized.TrimStart('#').Trim();
         }
+
+        if (!ValidIdRegex.IsMatch(normalized))
+            throw new ArgumentException(
+                $"OOB target ID '{normalized}' contains invalid characters. " +
+                "IDs must start with a letter and contain only letters, digits, hyphens, and underscores.",
+                nameof(targetId));
 
         return normalized;
     }
@@ -434,6 +446,7 @@ public sealed class SwapResponseBuilder : IResult
     /// <returns>The builder for chaining.</returns>
     public SwapResponseBuilder WithRedirect(string url)
     {
+        ValidateUrl(url, nameof(url));
         _redirectUrl = url;
         return this;
     }
@@ -463,8 +476,30 @@ public sealed class SwapResponseBuilder : IResult
     /// </remarks>
     public SwapResponseBuilder WithNavigation(string path, string target = "#main-content", bool pushUrl = true)
     {
+        ValidateUrl(path, nameof(path));
         _navigation = new NavigationOptions(path, target, pushUrl);
         return this;
+    }
+
+    /// <summary>
+    /// Validates that a URL is safe for redirect/navigation (blocks javascript:, data:, and other dangerous schemes).
+    /// </summary>
+    private static void ValidateUrl(string url, string paramName)
+    {
+        if (string.IsNullOrWhiteSpace(url))
+            throw new ArgumentException("URL cannot be null or empty.", paramName);
+
+        var trimmed = url.Trim();
+
+        // Block dangerous URI schemes
+        if (trimmed.StartsWith("javascript:", StringComparison.OrdinalIgnoreCase) ||
+            trimmed.StartsWith("data:", StringComparison.OrdinalIgnoreCase) ||
+            trimmed.StartsWith("vbscript:", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new ArgumentException(
+                $"URL '{trimmed}' uses a disallowed scheme. Only relative paths and http/https URLs are permitted.",
+                paramName);
+        }
     }
 
     /// <summary>

@@ -131,15 +131,13 @@ public sealed class SwapResult : IResult
         var tempDataProvider = httpContext.RequestServices.GetRequiredService<ITempDataProvider>();
         var tempData = new TempDataDictionary(httpContext, tempDataProvider);
 
-        // 4. Render OOB swaps
+        // 4. Render OOB swaps (parallelized for performance)
         var oobContent = new List<string>();
         if (_builder.OobSwaps.Count > 0)
         {
-            foreach (var oob in _builder.OobSwaps)
-            {
-                var html = await RenderOobSwapAsync(actionContext, viewData, tempData, oob);
-                oobContent.Add(html);
-            }
+            var oobTasks = _builder.OobSwaps.Select(oob => RenderOobSwapAsync(actionContext, viewData, tempData, oob)).ToArray();
+            var results = await Task.WhenAll(oobTasks);
+            oobContent.AddRange(results);
         }
 
         // 4b. Render SwapState as OOB if configured
