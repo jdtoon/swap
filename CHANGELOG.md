@@ -5,6 +5,20 @@ All notable changes to Swap.Htmx will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2026-03-04
+
+### Changed
+- **Parallelized OOB Rendering** — Out-of-band swaps are now rendered in parallel using `Task.WhenAll()` instead of sequentially. This applies to all three result types: `SwapActionResult` (MVC), `SwapResult` (Minimal API), and `SwapPageResult` (Razor Pages). Ordering is preserved. Dashboards with many OOB swaps (e.g. 12–24 partials) see measurably faster response times.
+
+### Added
+- **OOB Target ID Validation** — `NormalizeOobTargetId()` now validates target IDs against `^[a-zA-Z][a-zA-Z0-9_-]*$` after stripping `#` and whitespace. Invalid IDs (empty strings, XSS payloads, IDs starting with numbers or containing special characters) throw `ArgumentException`. Affects `AlsoUpdate()`, `AlsoUpdateIfExists()`, `AlsoUpdateIf()`, and `AlsoUpdateMany()`.
+- **Redirect/Navigation URL Validation** — `WithRedirect()` and `WithNavigation()` now reject URLs with `javascript:`, `data:`, and `vbscript:` schemes, preventing open redirect and XSS attacks via HX-Redirect and HX-Location headers.
+
+### Fixed
+- **`ClientAssetVersionDriftTests`** — Fixed test referencing `llms.md` instead of `llms.txt`.
+
+---
+
 ## [1.1.1] - 2026-01-13
 
 ### Added

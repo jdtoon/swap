@@ -306,6 +306,16 @@ return SwapResponse()
 
 ---
 
+### 7. Performance & Security
+
+**OOB swaps render in parallel.** When a response contains multiple `AlsoUpdate()` calls, all partial views are rendered concurrently via `Task.WhenAll()`. A dashboard with 12+ OOB swaps benefits from this — ordering is preserved.
+
+**Target IDs are validated.** IDs must start with a letter and contain only letters, digits, hyphens, and underscores. Invalid IDs (XSS payloads, empty strings, special characters) throw `ArgumentException` at build time, not at render time.
+
+**Redirect URLs are validated.** `WithRedirect()` and `WithNavigation()` reject `javascript:`, `data:`, and `vbscript:` URL schemes.
+
+---
+
 ## Feature Reference
 
 | Feature | Usage |

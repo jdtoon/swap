@@ -184,6 +184,28 @@ app.MapGet("/swap/sse", (ISseConnectionRegistry registry, HttpContext ctx) =>
 
 ---
 
+## 4) OOB Target ID & Redirect URL Validation (Built-in since v1.2.0)
+
+### OOB Target IDs
+
+All `AlsoUpdate()`, `AlsoUpdateIfExists()`, `AlsoUpdateIf()`, and `AlsoUpdateMany()` calls validate target element IDs at build time. IDs must:
+
+- Start with a letter (`a-z` or `A-Z`)
+- Contain only letters, digits, hyphens (`-`), and underscores (`_`)
+- Not be empty or whitespace-only
+
+A leading `#` is automatically stripped. Invalid IDs throw `ArgumentException`, preventing injection via crafted target IDs (e.g. `<script>alert(1)</script>`).
+
+### Redirect/Navigation URLs
+
+`WithRedirect()` and `WithNavigation()` reject URLs with dangerous schemes:
+
+- `javascript:` — blocked
+- `data:` — blocked
+- `vbscript:` — blocked
+
+This prevents open redirect and XSS attacks via the `HX-Redirect` and `HX-Location` response headers. Relative URLs, absolute HTTP/HTTPS URLs, and protocol-relative URLs are all allowed.
+
 ## 4) Payload Exposure (HX-Trigger + SSE payloads)
 
 ### What gets exposed
