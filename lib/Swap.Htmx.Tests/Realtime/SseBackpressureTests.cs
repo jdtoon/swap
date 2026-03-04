@@ -24,7 +24,7 @@ public sealed class SseBackpressureTests
         }, logger: null);
 
         var t1 = connection.SendEventAsync("e1", "first");
-        await Task.Delay(10); // let background writer dequeue e1 (and block on write)
+        await body.WaitForWriteAttemptAsync(); // deterministic: wait until the writer is blocked on the gate
         var t2 = connection.SendEventAsync("e2", "second");
         var t3 = connection.SendEventAsync("e3", "third");
 
@@ -100,8 +100,14 @@ public sealed class SseBackpressureTests
     {
         private readonly MemoryStream _inner = new();
         private readonly ManualResetEventSlim _gate = new(false);
+        private readonly TaskCompletionSource _writeAttempted = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
         public void AllowWrites() => _gate.Set();
+
+        /// <summary>
+        /// Completes when the background writer has started its first write attempt and is blocked on the gate.
+        /// </summary>
+        public Task WaitForWriteAttemptAsync() => _writeAttempted.Task;
 
         public string ReadAllText()
         {
@@ -127,18 +133,21 @@ public sealed class SseBackpressureTests
 
         public override void Write(byte[] buffer, int offset, int count)
         {
+            _writeAttempted.TrySetResult();
             _gate.Wait();
             _inner.Write(buffer, offset, count);
         }
 
         public override Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
         {
+            _writeAttempted.TrySetResult();
             _gate.Wait(cancellationToken);
             return _inner.WriteAsync(buffer, offset, count, cancellationToken);
         }
 
         public override ValueTask WriteAsync(ReadOnlyMemory<byte> buffer, CancellationToken cancellationToken = default)
         {
+            _writeAttempted.TrySetResult();
             _gate.Wait(cancellationToken);
             return _inner.WriteAsync(buffer, cancellationToken);
         }
