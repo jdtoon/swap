@@ -311,4 +311,134 @@ public class ExampleControllerTests : IClassFixture<HtmxTestFixture<Program>>
                 "todo-edit-form",
                 snapshotDirectory: "__test_snapshots__");
     }
+
+    // ============================================================================
+    // OOB Swap Introspection (v2)
+    // ============================================================================
+
+    [Fact]
+    public async Task PurchaseItem_UpdatesMultipleOobSections()
+    {
+        // Act - Purchase that triggers OOB updates for cart, total, inventory
+        var response = await _client.HtmxPostAsync("/shop/purchase",
+            new Dictionary<string, string> { ["itemId"] = "42" });
+
+        // Assert - Verify all OOB swaps are present
+        var swaps = await response.GetOobSwapsAsync();
+        Assert.True(swaps.Count >= 3); // At least cart, total, inventory
+
+        // Assert specific OOB targets
+        await response
+            .AssertSuccess()
+            .AssertOobSwapExistsAsync("cart-count")
+            .AssertOobSwapExistsAsync("cart-total")
+            .AssertOobSwapContentAsync("cart-count", "1")
+            .AssertOobSwapCountAsync(3);
+    }
+
+    // ============================================================================
+    // Trigger Payload Assertions (v2)
+    // ============================================================================
+
+    [Fact]
+    public async Task CreateTodo_AssertTriggerPayload()
+    {
+        // Act
+        var response = await _client.HtmxPostAsync("/todos",
+            new Dictionary<string, string> { ["title"] = "New task" });
+
+        // Assert - Check trigger event and nested payload
+        response
+            .AssertTrigger("showToast")
+            .AssertTriggerPayload("showToast", "message", "Created")
+            .AssertTriggerPayload("showToast", "type", "success")
+            .AssertTriggerCount(1);
+
+        // Or deserialize the entire payload
+        var toast = response.GetTriggerPayload<ToastData>("showToast");
+        Assert.Equal("Created", toast!.Message);
+    }
+
+    // ============================================================================
+    // Form Field Assertions (v2)
+    // ============================================================================
+
+    [Fact]
+    public async Task GetEditForm_HasCorrectFieldValues()
+    {
+        // Act
+        var response = await _client.HtmxGetAsync("/todos/1/edit");
+
+        // Assert - Check form fields exist and have correct values
+        await response
+            .AssertSuccess()
+            .AssertFormFieldExistsAsync("title")
+            .AssertFormFieldExistsAsync("description")
+            .AssertFormFieldExistsAsync("completed")
+            .AssertFormValueAsync("title", "Buy groceries")
+            .AssertFormValueAsync("completed", "true");
+    }
+
+    // ============================================================================
+    // Cookie Persistence (v2)
+    // ============================================================================
+
+    [Fact]
+    public async Task Login_PersistsCookiesAcrossRequests()
+    {
+        // Step 1: Login sets a session cookie
+        var loginResponse = await _client.HtmxPostAsync("/auth/login",
+            new Dictionary<string, string>
+            {
+                ["username"] = "admin",
+                ["password"] = "test123"
+            });
+        loginResponse.AssertSuccess();
+
+        // Step 2: Cookies persist — next request is authenticated
+        var dashboardResponse = await _client.GetAsync("/dashboard");
+        await dashboardResponse
+            .AssertSuccess()
+            .AssertContainsAsync("Welcome, admin");
+
+        // Step 3: Inspect cookies
+        var cookies = _client.Cookies.GetAllCookies();
+        Assert.True(cookies.Count > 0);
+
+        // Step 4: Clear cookies and verify re-authentication required
+        _client.ClearCookies();
+        var afterClear = await _client.GetAsync("/dashboard");
+        afterClear.AssertStatus(HttpStatusCode.Redirect);
+    }
+
+    // ============================================================================
+    // Snapshot Scrubbers (v2)
+    // ============================================================================
+
+    [Fact]
+    public async Task GetPage_MatchesSnapshotWithCustomScrubbers()
+    {
+        // Add scrubbers for dynamic content before comparing
+        SnapshotManager.ScrubUrls(); // Replace URLs with [URL]
+        SnapshotManager.ScrubRegex(@"tenant-\w+", "[TENANT]"); // Replace tenant slugs
+
+        try
+        {
+            var response = await _client.HtmxGetAsync("/todos");
+            await response
+                .AssertSuccess()
+                .AssertMatchesSnapshotAsync("todo-list-scrubbed");
+        }
+        finally
+        {
+            SnapshotManager.ClearScrubbers(); // Clean up
+        }
+    }
+
+    // Helper class for typed trigger deserialization
+    private sealed class ToastData
+    {
+        public string Message { get; set; } = string.Empty;
+        public string Type { get; set; } = string.Empty;
+    }
 }

@@ -190,4 +190,28 @@ public static class SnapshotManager
         var tokenRegex = new Regex("(<input[^>]*name=\"__RequestVerificationToken\"[^>]*value=\")(.*?)(\")", RegexOptions.IgnoreCase | RegexOptions.Compiled);
         return tokenRegex.Replace(input, "$1[TOKEN]$3");
     }
+
+    // ----- Convenience scrubber factory methods -----
+
+    /// <summary>
+    /// Add a scrubber that replaces URLs matching the given regex pattern with <c>[URL]</c>.
+    /// </summary>
+    /// <param name="pattern">A regex pattern to match URLs (e.g. <c>https?://[^\s"'&lt;&gt;]+</c>).</param>
+    public static void ScrubUrls(string pattern = @"https?://[^\s""'<>]+")
+    {
+        var regex = new Regex(pattern, RegexOptions.Compiled);
+        AddScrubber(content => regex.Replace(content, "[URL]"));
+    }
+
+    /// <summary>
+    /// Add a scrubber that replaces text matching the given regex pattern with the specified replacement.
+    /// </summary>
+    /// <param name="pattern">A regex pattern to match.</param>
+    /// <param name="replacement">The replacement text (default: <c>[SCRUBBED]</c>).</param>
+    public static void ScrubRegex(string pattern, string replacement = "[SCRUBBED]")
+    {
+        if (string.IsNullOrWhiteSpace(pattern)) throw new ArgumentException("Pattern is required", nameof(pattern));
+        var regex = new Regex(pattern, RegexOptions.Compiled);
+        AddScrubber(content => regex.Replace(content, replacement));
+    }
 }

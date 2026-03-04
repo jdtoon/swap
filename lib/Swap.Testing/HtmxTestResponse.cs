@@ -6,6 +6,21 @@ using System.Net;
 namespace Swap.Testing;
 
 /// <summary>
+/// Represents a single out-of-band swap element found in a response.
+/// </summary>
+public sealed class OobSwap
+{
+    /// <summary>The target element ID (from the element's <c>id</c> attribute).</summary>
+    public string TargetId { get; init; } = string.Empty;
+
+    /// <summary>The swap mode (from the <c>hx-swap-oob</c> attribute value, e.g. "true", "innerHTML", "outerHTML").</summary>
+    public string SwapMode { get; init; } = string.Empty;
+
+    /// <summary>The inner HTML content of the OOB element.</summary>
+    public string HtmlContent { get; init; } = string.Empty;
+}
+
+/// <summary>
 /// Wraps an <see cref="HttpResponseMessage"/> and exposes fluent assertion
 /// helpers tailored for HTMX applications. This includes both general
 /// HTTP/HTML checks and HTMX-specific header and attribute assertions.
@@ -702,6 +717,87 @@ public class HtmxTestResponse
     public HtmxTestResponse AssertHxTriggerAfterSettleFieldContains(string eventName, string fieldName, string expectedSubstring)
         => AssertHxTriggerFieldContains(eventName, fieldName, expectedSubstring, "HX-Trigger-After-Settle");
 
+    // ---------------------
+    // Trigger Payload Assertions
+    // ---------------------
+
+    /// <summary>
+    /// Deserialize the payload of a specific event from the <c>HX-Trigger</c> header to a typed object.
+    /// </summary>
+    /// <typeparam name="T">The type to deserialize the event payload to.</typeparam>
+    /// <param name="eventName">The event name whose payload should be deserialized.</param>
+    /// <param name="headerName">The trigger header to inspect (default: <c>HX-Trigger</c>).</param>
+    /// <returns>The deserialized payload, or <c>default</c> if the event has no object payload.</returns>
+    public T? GetTriggerPayload<T>(string eventName, string headerName = "HX-Trigger")
+    {
+        if (string.IsNullOrWhiteSpace(eventName)) throw new ArgumentException("Event name required", nameof(eventName));
+
+        using var json = GetHxTriggerJson(headerName)
+            ?? throw new HtmxTestException($"{headerName} header is not present or is not JSON.");
+
+        if (!json.RootElement.TryGetProperty(eventName, out var eventElement))
+            throw new HtmxTestException($"{headerName} JSON does not contain event '{eventName}'.");
+
+        if (eventElement.ValueKind == JsonValueKind.Null)
+            return default;
+
+        return JsonSerializer.Deserialize<T>(eventElement.GetRawText(), new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true
+        });
+    }
+
+    /// <summary>
+    /// Assert that a specific event in the <c>HX-Trigger</c> header has a payload field
+    /// matching the expected value (deep path using dot notation, e.g. "message" or "data.id").
+    /// </summary>
+    public HtmxTestResponse AssertTriggerPayload(string eventName, string jsonPath, string expectedValue, string headerName = "HX-Trigger")
+    {
+        if (string.IsNullOrWhiteSpace(eventName)) throw new ArgumentException("Event name required", nameof(eventName));
+        if (string.IsNullOrWhiteSpace(jsonPath)) throw new ArgumentException("JSON path required", nameof(jsonPath));
+
+        using var json = GetHxTriggerJson(headerName)
+            ?? throw new HtmxTestException($"{headerName} header is not present or is not JSON.");
+
+        if (!json.RootElement.TryGetProperty(eventName, out var eventElement))
+            throw new HtmxTestException($"{headerName} JSON does not contain event '{eventName}'.");
+
+        // Navigate dot-separated path
+        var current = eventElement;
+        var segments = jsonPath.Split('.');
+        foreach (var segment in segments)
+        {
+            if (current.ValueKind != JsonValueKind.Object)
+                throw new HtmxTestException($"Cannot navigate path '{jsonPath}' in {headerName}['{eventName}']: '{segment}' is not an object ({current.ValueKind}).");
+
+            if (!current.TryGetProperty(segment, out var next))
+                throw new HtmxTestException($"{headerName}['{eventName}'] path '{jsonPath}' failed at segment '{segment}': property not found.");
+
+            current = next;
+        }
+
+        var actualValue = current.ToString();
+        if (!string.Equals(actualValue, expectedValue, StringComparison.Ordinal))
+            throw new HtmxTestException($"Expected {headerName}['{eventName}'].{jsonPath} == '{expectedValue}', but got '{actualValue}'.");
+
+        return this;
+    }
+
+    /// <summary>
+    /// Assert that the <c>HX-Trigger</c> header contains exactly the expected number of events.
+    /// </summary>
+    public HtmxTestResponse AssertTriggerCount(int expectedCount, string headerName = "HX-Trigger")
+    {
+        var names = GetHxTriggerEventNames(headerName).ToArray();
+        if (names.Length != expectedCount)
+        {
+            var available = names.Length == 0 ? "<none>" : string.Join(", ", names);
+            throw new HtmxTestException(
+                $"Expected {expectedCount} trigger event(s) in {headerName}, but found {names.Length}. Events: {available}.");
+        }
+        return this;
+    }
+
     /// <summary>
     /// Get a response header value (first value) or null if missing.
     /// </summary>
@@ -811,6 +907,92 @@ public class HtmxTestResponse
         return this;
     }
 
+    // ---------------------
+    // OOB Swap Introspection
+    // ---------------------
+
+    /// <summary>
+    /// Returns all out-of-band swap elements found in the response.
+    /// Each element with an <c>hx-swap-oob</c> attribute is represented as an <see cref="OobSwap"/>.
+    /// </summary>
+    public async Task<List<OobSwap>> GetOobSwapsAsync()
+    {
+        var doc = await GetDocumentAsync();
+        var oobElements = doc.QuerySelectorAll("[hx-swap-oob]");
+        var swaps = new List<OobSwap>();
+
+        foreach (var el in oobElements)
+        {
+            swaps.Add(new OobSwap
+            {
+                TargetId = el.Id ?? string.Empty,
+                SwapMode = el.GetAttribute("hx-swap-oob") ?? "true",
+                HtmlContent = el.InnerHtml ?? string.Empty
+            });
+        }
+
+        return swaps;
+    }
+
+    /// <summary>
+    /// Assert that an out-of-band swap element exists for the given target element ID.
+    /// </summary>
+    public async Task<HtmxTestResponse> AssertOobSwapExistsAsync(string targetId)
+    {
+        if (string.IsNullOrWhiteSpace(targetId)) throw new ArgumentException("Target ID is required", nameof(targetId));
+
+        var swaps = await GetOobSwapsAsync();
+        if (!swaps.Any(s => s.TargetId == targetId))
+        {
+            var available = swaps.Count == 0 ? "<none>" : string.Join(", ", swaps.Select(s => s.TargetId));
+            throw new HtmxTestException(
+                $"Expected OOB swap for target '{targetId}', but it was not found. Available OOB targets: {available}.");
+        }
+
+        return this;
+    }
+
+    /// <summary>
+    /// Assert that an out-of-band swap element for the given target ID contains the specified text.
+    /// </summary>
+    public async Task<HtmxTestResponse> AssertOobSwapContentAsync(string targetId, string containsText)
+    {
+        if (string.IsNullOrWhiteSpace(targetId)) throw new ArgumentException("Target ID is required", nameof(targetId));
+        if (containsText == null) throw new ArgumentNullException(nameof(containsText));
+
+        var swaps = await GetOobSwapsAsync();
+        var swap = swaps.FirstOrDefault(s => s.TargetId == targetId);
+        if (swap == null)
+        {
+            var available = swaps.Count == 0 ? "<none>" : string.Join(", ", swaps.Select(s => s.TargetId));
+            throw new HtmxTestException(
+                $"Expected OOB swap for target '{targetId}', but it was not found. Available OOB targets: {available}.");
+        }
+
+        if (!swap.HtmlContent.Contains(containsText))
+        {
+            throw new HtmxTestException(
+                $"Expected OOB swap for target '{targetId}' to contain '{containsText}', but it did not.\nActual content: {TruncateContent(swap.HtmlContent)}");
+        }
+
+        return this;
+    }
+
+    /// <summary>
+    /// Assert that the response contains exactly the expected number of out-of-band swap elements.
+    /// </summary>
+    public async Task<HtmxTestResponse> AssertOobSwapCountAsync(int expectedCount)
+    {
+        var swaps = await GetOobSwapsAsync();
+        if (swaps.Count != expectedCount)
+        {
+            throw new HtmxTestException(
+                $"Expected {expectedCount} OOB swap(s), but found {swaps.Count}.");
+        }
+
+        return this;
+    }
+
     /// <summary>
     /// Assert that the first top-level element in the partial has the expected id value, or that an element at the root level matches the id.
     /// </summary>
@@ -870,5 +1052,74 @@ public class HtmxTestResponse
             throw new HtmxTestException("Expected no validation errors, but some were found.");
 
         return this;
+    }
+
+    // ---------------------
+    // Form Field Helpers
+    // ---------------------
+
+    /// <summary>
+    /// Assert that a form field (input, select, or textarea) with the given name exists in the response.
+    /// </summary>
+    public async Task<HtmxTestResponse> AssertFormFieldExistsAsync(string fieldName, string formSelector = "form")
+    {
+        if (string.IsNullOrWhiteSpace(fieldName)) throw new ArgumentException("Field name is required", nameof(fieldName));
+
+        var doc = await GetDocumentAsync();
+        var form = doc.QuerySelector(formSelector);
+        if (form == null)
+            throw new HtmxTestException($"Form '{formSelector}' not found.");
+
+        var field = form.QuerySelector($"input[name='{fieldName}'], select[name='{fieldName}'], textarea[name='{fieldName}']");
+        if (field == null)
+            throw new HtmxTestException($"Form field '{fieldName}' not found in form '{formSelector}'.");
+
+        return this;
+    }
+
+    /// <summary>
+    /// Assert that a form field has the expected value. Supports input (value attribute),
+    /// select (selected option), and textarea (text content).
+    /// </summary>
+    public async Task<HtmxTestResponse> AssertFormValueAsync(string fieldName, string expectedValue, string formSelector = "form")
+    {
+        if (string.IsNullOrWhiteSpace(fieldName)) throw new ArgumentException("Field name is required", nameof(fieldName));
+
+        var doc = await GetDocumentAsync();
+        var form = doc.QuerySelector(formSelector);
+        if (form == null)
+            throw new HtmxTestException($"Form '{formSelector}' not found.");
+
+        // Try input first
+        var input = form.QuerySelector($"input[name='{fieldName}']") as IHtmlInputElement;
+        if (input != null)
+        {
+            var actual = input.Type?.ToLowerInvariant() == "checkbox" ? (input.IsChecked ? "true" : "false") : (input.Value ?? string.Empty);
+            if (!string.Equals(actual, expectedValue, StringComparison.Ordinal))
+                throw new HtmxTestException($"Expected form field '{fieldName}' to have value '{expectedValue}', but got '{actual}'.");
+            return this;
+        }
+
+        // Try select
+        var select = form.QuerySelector($"select[name='{fieldName}']") as IHtmlSelectElement;
+        if (select != null)
+        {
+            var actual = select.Value ?? string.Empty;
+            if (!string.Equals(actual, expectedValue, StringComparison.Ordinal))
+                throw new HtmxTestException($"Expected select '{fieldName}' to have value '{expectedValue}', but got '{actual}'.");
+            return this;
+        }
+
+        // Try textarea
+        var textarea = form.QuerySelector($"textarea[name='{fieldName}']") as IHtmlTextAreaElement;
+        if (textarea != null)
+        {
+            var actual = textarea.Value ?? string.Empty;
+            if (!string.Equals(actual, expectedValue, StringComparison.Ordinal))
+                throw new HtmxTestException($"Expected textarea '{fieldName}' to have value '{expectedValue}', but got '{actual}'.");
+            return this;
+        }
+
+        throw new HtmxTestException($"Form field '{fieldName}' not found in form '{formSelector}'.");
     }
 }

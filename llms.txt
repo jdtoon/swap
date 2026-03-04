@@ -151,7 +151,7 @@ public IActionResult Create(CreateTaskInput input)
 
 ```csharp
 .AlsoUpdate(
-    "element-id",        // Target element ID (no # prefix)
+    "element-id",        // Target element ID (no # prefix, validated)
     "_PartialView",      // Partial view name
     model,               // Model for the view
     SwapMode.OuterHTML   // Optional: swap strategy (default OuterHTML)
@@ -170,6 +170,19 @@ public IActionResult Create(CreateTaskInput input)
 | `AfterEnd` | Insert after element |
 | `Delete` | Remove element |
 | `None` | No swap |
+
+### OOB Target ID Rules
+
+Target IDs are validated at build time. Valid IDs must:
+- Start with a letter (`a-z`, `A-Z`)
+- Contain only letters, digits, hyphens, and underscores
+- Not be empty or whitespace
+
+A leading `#` is automatically stripped. Invalid IDs throw `ArgumentException`.
+
+### OOB Rendering Performance
+
+All OOB swaps in a response are rendered **in parallel** using `Task.WhenAll()`. This applies to MVC (`SwapActionResult`), Minimal API (`SwapResult`), and Razor Pages (`SwapPageResult`). Output ordering matches registration order.
 
 ### Conditional OOB Swaps
 
@@ -199,8 +212,8 @@ public IActionResult Create(CreateTaskInput input)
 | `.WithDeletedToast(entity)` | "Entity deleted" |
 | `.WithSavedToast(entity)` | "Entity saved" |
 | `.WithTrigger(eventKey, payload?)` | Client-side HX-Trigger event |
-| `.WithRedirect(url)` | HX-Redirect (full page reload) |
-| `.WithNavigation(path, target?, pushUrl?)` | HX-Location (SPA-style) |
+| `.WithRedirect(url)` | HX-Redirect (rejects javascript:/data:/vbscript:) |
+| `.WithNavigation(path, target?, pushUrl?)` | HX-Location (rejects dangerous schemes) |
 | `.WithClientAction(action, target?, value?)` | Client action (focus, reset, closeModal) |
 | `.WithState(state)` | OOB state container update |
 | `.Build()` | Build IActionResult |
@@ -760,6 +773,73 @@ public class TaskTests : IClassFixture<WebApplicationFactory<Program>>
 | `.AssertHasOobSwapAsync(targetId)` | Check OOB swap present |
 | `.AssertHasTriggerAsync(eventName)` | Check HX-Trigger header |
 | `.AssertHasHeaderAsync(name, value?)` | Check response header |
+
+### Cookie Persistence
+
+Cookies automatically persist across requests within the same `HtmxTestClient` instance:
+
+```csharp
+// Login sets session cookie — persists automatically
+await _client.HtmxPostAsync("/auth/login", loginData);
+var dashboard = await _client.GetAsync("/dashboard"); // authenticated
+
+// Inspect cookies
+var cookies = _client.Cookies.GetAllCookies();
+
+// Clear for test isolation
+_client.ClearCookies();
+```
+
+### OOB Swap Introspection
+
+Inspect all out-of-band swaps:
+
+```csharp
+var response = await _client.HtmxPostAsync("/shop/purchase", data);
+
+// Get all OOB swaps as structured data
+var swaps = await response.GetOobSwapsAsync();
+// Each OobSwap has: TargetId, SwapMode, HtmlContent
+
+// Fluent assertions
+await response
+    .AssertOobSwapExistsAsync("cart-count")
+    .AssertOobSwapContentAsync("cart-count", "5")
+    .AssertOobSwapCountAsync(3);
+```
+
+### Trigger Payload Assertions
+
+Deep-inspect HX-Trigger JSON payloads:
+
+```csharp
+// Dot-path to nested values
+response
+    .AssertTriggerPayload("showToast", "message", "Created")
+    .AssertTriggerPayload("itemCreated", "data.id", "123")
+    .AssertTriggerCount(2);
+
+// Typed deserialization
+var toast = response.GetTriggerPayload<ToastData>("showToast");
+```
+
+### Form Field Assertions
+
+```csharp
+await response
+    .AssertFormFieldExistsAsync("Email")
+    .AssertFormValueAsync("Name", "John")
+    .AssertFormValueAsync("Active", "true")   // checkbox
+    .AssertFormValueAsync("Status", "active"); // select
+```
+
+### Snapshot Scrubbers
+
+```csharp
+SnapshotManager.ScrubUrls();                            // Replace URLs → [URL]
+SnapshotManager.ScrubRegex(@"tenant-\w+", "[TENANT]"); // Custom pattern
+SnapshotManager.ClearScrubbers();                       // Reset
+```
 
 ================================================================================
 ## 11. Complete Examples

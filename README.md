@@ -163,6 +163,9 @@ Update clients in real-time without complex WebSocket setup.
 await _publisher.Publish("task.completed", id);
 ```
 
+### Performance & Security
+OOB swaps render in parallel — dashboards with 12+ partials update fast. Target IDs are validated against injection attacks, and redirect URLs reject dangerous schemes (`javascript:`, `data:`, `vbscript:`).
+
 ---
 
 ## Documentation & Demos

@@ -76,7 +76,7 @@ public class ClientAssetVersionDriftTests
             yield return file;
         }
 
-        yield return Path.Combine(repoRoot, "llms.md");
+        yield return Path.Combine(repoRoot, "llms.txt");
         yield return Path.Combine(repoRoot, "lib", "Swap.Htmx", "README.md");
 
         foreach (var file in Directory.EnumerateFiles(Path.Combine(repoRoot, "lib", "Swap.Htmx", "docs"), "*.md", SearchOption.AllDirectories))
