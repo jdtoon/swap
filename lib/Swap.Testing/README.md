@@ -82,3 +82,77 @@ The first run creates `__snapshots__/todo-list-partial.html`. Future runs compar
 ## More examples
 
 See `EXAMPLE_TESTS.cs` in this folder for a longer example suite using most of the helpers.
+
+## Cookie Persistence
+
+Cookies automatically persist across requests within the same `HtmxTestClient` instance, enabling session-based and authentication testing:
+
+```csharp
+// Login sets a session cookie — persists automatically
+await _client.HtmxPostAsync("/auth/login", loginData);
+
+// Subsequent requests include the session cookie
+var dashboard = await _client.GetAsync("/dashboard");
+await dashboard.AssertSuccess().AssertContainsAsync("Welcome");
+
+// Inspect cookies
+var cookies = _client.Cookies.GetAllCookies();
+
+// Clear for test isolation
+_client.ClearCookies();
+```
+
+## OOB Swap Introspection
+
+Inspect and assert out-of-band swap elements in responses:
+
+```csharp
+var response = await _client.HtmxPostAsync("/shop/purchase", data);
+
+// Get all OOB swaps as structured data
+var swaps = await response.GetOobSwapsAsync();
+// Each OobSwap has: TargetId, SwapMode, HtmlContent
+
+// Fluent assertions
+await response
+    .AssertOobSwapExistsAsync("cart-count")
+    .AssertOobSwapContentAsync("cart-count", "5")
+    .AssertOobSwapCountAsync(3);
+```
+
+## Trigger Payload Assertions
+
+Deep-inspect HX-Trigger JSON payloads:
+
+```csharp
+response
+    .AssertTriggerPayload("showToast", "message", "Created")
+    .AssertTriggerPayload("itemCreated", "data.id", "123")
+    .AssertTriggerCount(2);
+
+// Typed deserialization
+var toast = response.GetTriggerPayload<ToastData>("showToast");
+```
+
+## Form Field Assertions
+
+Assert form field existence and values:
+
+```csharp
+await response
+    .AssertFormFieldExistsAsync("Email")
+    .AssertFormValueAsync("Name", "John")
+    .AssertFormValueAsync("Active", "true");   // checkbox
+```
+
+## Snapshot Scrubbers
+
+The `SnapshotManager` supports custom scrubbers for dynamic content:
+
+```csharp
+SnapshotManager.ScrubUrls();                            // Replace URLs → [URL]
+SnapshotManager.ScrubRegex(@"tenant-\w+", "[TENANT]"); // Custom pattern
+SnapshotManager.ClearScrubbers();                       // Reset
+```
+
+Built-in default scrubbers automatically handle GUIDs → `[GUID]`, ISO dates → `[DATETIME]`, and anti-forgery tokens → `[TOKEN]`.

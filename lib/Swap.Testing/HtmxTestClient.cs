@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc.Testing;
+using System.Net;
 using System.Net.Http.Headers;
 using AngleSharp;
 using AngleSharp.Html.Dom;
@@ -11,18 +12,45 @@ namespace Swap.Testing;
 /// HTMX-aware helpers (for example <c>HtmxGetAsync</c>, <c>HtmxPostAsync</c>)
 /// that automatically set <c>HX-Request</c>, <c>HX-Target</c> and
 /// <c>HX-Trigger</c> headers and return <see cref="HtmxTestResponse"/>.
+/// Cookies are automatically persisted across requests via a shared
+/// <see cref="CookieContainer"/>, enabling session/authentication testing.
 /// </summary>
 public class HtmxTestClient<TProgram> where TProgram : class
 {
     private readonly WebApplicationFactory<TProgram> _factory;
     private readonly HttpClient _client;
     private readonly Dictionary<string, string> _defaultHeaders;
+    private readonly CookieContainer _cookieContainer;
 
     public HtmxTestClient(WebApplicationFactory<TProgram> factory)
     {
         _factory = factory ?? throw new ArgumentNullException(nameof(factory));
-        _client = factory.CreateClient();
+        _cookieContainer = new CookieContainer();
+
+        var handler = new CookieHandler(_cookieContainer, factory.Server.CreateHandler());
+        _client = new HttpClient(handler) { BaseAddress = factory.Server.BaseAddress };
+
         _defaultHeaders = new Dictionary<string, string>();
+    }
+
+    /// <summary>
+    /// Gets the <see cref="CookieContainer"/> used by this client. Useful for
+    /// inspecting cookies set by the server during a test.
+    /// </summary>
+    public CookieContainer Cookies => _cookieContainer;
+
+    /// <summary>
+    /// Clear all cookies from the client's cookie container.
+    /// Useful for resetting session state between test steps.
+    /// </summary>
+    public HtmxTestClient<TProgram> ClearCookies()
+    {
+        // CookieContainer has no Clear() — replace contents by expiring all cookies
+        foreach (Cookie cookie in _cookieContainer.GetAllCookies())
+        {
+            cookie.Expired = true;
+        }
+        return this;
     }
 
     /// <summary>
@@ -423,5 +451,43 @@ public class HtmxTestClient<TProgram> where TProgram : class
         if (response == null) throw new ArgumentNullException(nameof(response));
         var url = response.GetHxRedirectUrl() ?? throw new HtmxTestException("HX-Redirect header not present on response.");
         return await HtmxGetAsync(url, target, trigger);
+    }
+
+    /// <summary>
+    /// Delegating handler that adds <see cref="CookieContainer"/> support to
+    /// the test server's <see cref="HttpMessageHandler"/>. This enables cookie
+    /// persistence across requests without relying on <c>HttpClientHandler</c>.
+    /// </summary>
+    private sealed class CookieHandler : DelegatingHandler
+    {
+        private readonly CookieContainer _container;
+
+        public CookieHandler(CookieContainer container, HttpMessageHandler innerHandler)
+            : base(innerHandler)
+        {
+            _container = container;
+        }
+
+        protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            var uri = request.RequestUri!;
+            var cookieHeader = _container.GetCookieHeader(uri);
+            if (!string.IsNullOrEmpty(cookieHeader))
+            {
+                request.Headers.Add("Cookie", cookieHeader);
+            }
+
+            var response = await base.SendAsync(request, cancellationToken);
+
+            if (response.Headers.TryGetValues("Set-Cookie", out var setCookieHeaders))
+            {
+                foreach (var setCookie in setCookieHeaders)
+                {
+                    _container.SetCookies(uri, setCookie);
+                }
+            }
+
+            return response;
+        }
     }
 }

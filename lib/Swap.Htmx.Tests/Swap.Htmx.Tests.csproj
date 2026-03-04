@@ -27,6 +27,7 @@
     <ProjectReference Include="..\Swap.Htmx\Swap.Htmx.csproj" />
     <ProjectReference Include="..\Swap.Htmx.Realtime\Swap.Htmx.Realtime.csproj" />
     <ProjectReference Include="..\Swap.Htmx.Realtime.Redis\Swap.Htmx.Realtime.Redis.csproj" />
+    <ProjectReference Include="..\Swap.Testing\Swap.Testing.csproj" />
   </ItemGroup>
 
 </Project>

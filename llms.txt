@@ -774,6 +774,73 @@ public class TaskTests : IClassFixture<WebApplicationFactory<Program>>
 | `.AssertHasTriggerAsync(eventName)` | Check HX-Trigger header |
 | `.AssertHasHeaderAsync(name, value?)` | Check response header |
 
+### Cookie Persistence
+
+Cookies automatically persist across requests within the same `HtmxTestClient` instance:
+
+```csharp
+// Login sets session cookie — persists automatically
+await _client.HtmxPostAsync("/auth/login", loginData);
+var dashboard = await _client.GetAsync("/dashboard"); // authenticated
+
+// Inspect cookies
+var cookies = _client.Cookies.GetAllCookies();
+
+// Clear for test isolation
+_client.ClearCookies();
+```
+
+### OOB Swap Introspection
+
+Inspect all out-of-band swaps:
+
+```csharp
+var response = await _client.HtmxPostAsync("/shop/purchase", data);
+
+// Get all OOB swaps as structured data
+var swaps = await response.GetOobSwapsAsync();
+// Each OobSwap has: TargetId, SwapMode, HtmlContent
+
+// Fluent assertions
+await response
+    .AssertOobSwapExistsAsync("cart-count")
+    .AssertOobSwapContentAsync("cart-count", "5")
+    .AssertOobSwapCountAsync(3);
+```
+
+### Trigger Payload Assertions
+
+Deep-inspect HX-Trigger JSON payloads:
+
+```csharp
+// Dot-path to nested values
+response
+    .AssertTriggerPayload("showToast", "message", "Created")
+    .AssertTriggerPayload("itemCreated", "data.id", "123")
+    .AssertTriggerCount(2);
+
+// Typed deserialization
+var toast = response.GetTriggerPayload<ToastData>("showToast");
+```
+
+### Form Field Assertions
+
+```csharp
+await response
+    .AssertFormFieldExistsAsync("Email")
+    .AssertFormValueAsync("Name", "John")
+    .AssertFormValueAsync("Active", "true")   // checkbox
+    .AssertFormValueAsync("Status", "active"); // select
+```
+
+### Snapshot Scrubbers
+
+```csharp
+SnapshotManager.ScrubUrls();                            // Replace URLs → [URL]
+SnapshotManager.ScrubRegex(@"tenant-\w+", "[TENANT]"); // Custom pattern
+SnapshotManager.ClearScrubbers();                       // Reset
+```
+
 ================================================================================
 ## 11. Complete Examples
 ================================================================================
