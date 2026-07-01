@@ -88,6 +88,12 @@ public sealed class SwapActionResult : ActionResult
             }
         }
 
+        // 2b. Stash flash toasts into TempData so they are re-emitted on the next response (survive redirects).
+        if (_builder.FlashToasts.Count > 0)
+        {
+            Swap.Htmx.Middleware.SwapFlashHelper.Store(_controller.TempData, _builder.FlashToasts);
+        }
+
         // 3. Apply custom triggers - emit to event bus FIRST for SSE processing
         var eventBus = context.HttpContext.RequestServices.GetService<ISwapEventBus>();
         foreach (var trigger in _builder.Triggers)

@@ -136,6 +136,7 @@ public sealed class SwapResponseBuilder : IResult
     private readonly List<OobSwap> _oobSwaps = new();
     private readonly List<string> _invalidatedTopics = new();
     private readonly List<ToastNotification> _toasts = new();
+    private readonly List<ToastNotification> _flashToasts = new();
     private readonly List<TriggerEvent> _triggers = new();
     private readonly List<ClientAction> _clientActions = new();
     private string? _redirectUrl;
@@ -345,6 +346,21 @@ public sealed class SwapResponseBuilder : IResult
     public SwapResponseBuilder WithToast(string message, ToastType type = ToastType.Info)
     {
         _toasts.Add(new ToastNotification(message, type));
+        return this;
+    }
+
+    /// <summary>
+    /// Adds a "flash" toast that survives an HTTP redirect / SPA navigation: it is stashed in TempData
+    /// and re-emitted as a toast on the next response, so the mutate → redirect → confirm flow shows
+    /// its message after the navigation lands. (MVC and Razor Pages have TempData; the Minimal-API
+    /// result has none, so a flash there emits immediately.)
+    /// </summary>
+    /// <param name="message">The toast message.</param>
+    /// <param name="type">The toast type (defaults to Info).</param>
+    /// <returns>The builder for chaining.</returns>
+    public SwapResponseBuilder WithFlash(string message, ToastType type = ToastType.Info)
+    {
+        _flashToasts.Add(new ToastNotification(message, type));
         return this;
     }
 
@@ -689,6 +705,9 @@ public sealed class SwapResponseBuilder : IResult
     /// Gets all configured toasts.
     /// </summary>
     public IReadOnlyList<ToastNotification> Toasts => _toasts;
+
+    /// <summary>Flash toasts to stash in TempData for re-emission on the next response.</summary>
+    internal IReadOnlyList<ToastNotification> FlashToasts => _flashToasts;
 
     /// <summary>
     /// Gets all configured triggers.

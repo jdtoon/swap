@@ -1,8 +1,13 @@
+using System;
+using System.Collections.Generic;
 using System.Text.Json;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc.ViewFeatures;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Primitives;
 using Swap.Htmx.Events;
+using Swap.Htmx.Models;
 
 namespace Swap.Htmx.Middleware;
 
@@ -32,10 +37,30 @@ public class SwapEventResponseMiddleware
 
     public async Task InvokeAsync(HttpContext context)
     {
+        // Capture flash toasts stashed by a PRIOR request (via WithFlash) before the endpoint runs, so
+        // this request's own WithFlash writes defer to the next response. Emit them once (whichever of
+        // OnStarting / the fallback runs first) so a redirect's success/error message shows on arrival.
+        var tempData = context.RequestServices?.GetService<ITempDataDictionaryFactory>()?.GetTempData(context);
+        var pendingFlash = tempData is not null
+            ? SwapFlashHelper.TakePending(tempData)
+            : (IReadOnlyList<ToastNotification>)Array.Empty<ToastNotification>();
+        var flashEmitted = false;
+        void EmitFlashOnce(HttpResponse response)
+        {
+            if (flashEmitted)
+            {
+                return;
+            }
+
+            flashEmitted = true;
+            SwapFlashHelper.Emit(response, pendingFlash);
+        }
+
         // Register an OnStarting callback so headers are set before the response starts
         context.Response.OnStarting(state =>
         {
             var httpContext = (HttpContext)state!;
+            EmitFlashOnce(httpContext.Response);
             var bus = new SwapEventBus(_http, _options, null);
             var resolved = bus.ResolveChains(httpContext);
 
@@ -65,6 +90,7 @@ public class SwapEventResponseMiddleware
         // perform header setting now to ensure HX-Trigger is emitted.
         if (!context.Response.HasStarted)
         {
+            EmitFlashOnce(context.Response);
             try
             {
                 var bus = new SwapEventBus(_http, _options, null);

@@ -622,6 +622,7 @@ namespace Swap.Htmx.Models
         public Swap.Htmx.Models.SwapResponseBuilder WithCrudToast(Swap.Htmx.Models.CrudOperation operation, string entityName, string? itemName = null) { }
         public Swap.Htmx.Models.SwapResponseBuilder WithDeletedToast(string entityName, string? itemName = null) { }
         public Swap.Htmx.Models.SwapResponseBuilder WithErrorToast(string message) { }
+        public Swap.Htmx.Models.SwapResponseBuilder WithFlash(string message, Swap.Htmx.ToastType type = 3) { }
         public Swap.Htmx.Models.SwapResponseBuilder WithInfoToast(string message) { }
         public Swap.Htmx.Models.SwapResponseBuilder WithNavigation(Swap.Htmx.Models.HxLocationOptions options) { }
         public Swap.Htmx.Models.SwapResponseBuilder WithNavigation(string path, string target = "#main-content", bool pushUrl = true) { }

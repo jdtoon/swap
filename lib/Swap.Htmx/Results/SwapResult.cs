@@ -88,6 +88,12 @@ public sealed class SwapResult : IResult
             }
         }
 
+        // 2b. Flash toasts: the Minimal-API result has no TempData, so emit them immediately.
+        foreach (var flash in _builder.FlashToasts)
+        {
+            response.ShowToast(flash.Message, flash.Type);
+        }
+
         // 3. Apply custom triggers
         var eventBus = httpContext.RequestServices.GetService<ISwapEventBus>();
         foreach (var trigger in _builder.Triggers)

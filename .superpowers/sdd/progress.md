@@ -28,3 +28,8 @@ Batch-1 complete (subagent-built + controller-fixed + reviewed):
 - IRealtimePresence (e6e0210 + fix) — review clean after fixing orphan race + consistency test
 - StateMetadata cache (1a5e37d + fix) — review clean after read-only view + subclass-override test
 - snapshots reconciled; 493 tests green
+
+Batch-2 complete:
+- SwapFlow step-machine (e91882c + fix) — review clean after empty-steps coverage
+- incremental AutoScanGenerator (60899bc) — review APPROVED (output-preserving, cache-tracked)
+- 501 lib + 30 gen tests green
