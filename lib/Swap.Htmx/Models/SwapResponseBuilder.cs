@@ -134,6 +134,7 @@ public sealed class SwapResponseBuilder : IResult
     private string? _viewName;
     private object? _model;
     private readonly List<OobSwap> _oobSwaps = new();
+    private readonly List<string> _invalidatedTopics = new();
     private readonly List<ToastNotification> _toasts = new();
     private readonly List<TriggerEvent> _triggers = new();
     private readonly List<ClientAction> _clientActions = new();
@@ -657,6 +658,32 @@ public sealed class SwapResponseBuilder : IResult
     /// Gets all configured OOB swaps.
     /// </summary>
     internal IReadOnlyList<OobSwap> OobSwaps => _oobSwaps;
+
+    /// <summary>
+    /// Marks one or more data topics as changed. The engine re-renders every registered fragment that
+    /// <c>DependsOn</c> any of these topics — once each, deduplicated — as OOB swaps, so you invalidate
+    /// what changed instead of naming every dependent widget.
+    /// </summary>
+    /// <param name="topics">The topics that changed (as registered via <c>o.Fragments.Fragment(...).DependsOn(...)</c>).</param>
+    /// <returns>The builder for chaining.</returns>
+    public SwapResponseBuilder Invalidate(params string[] topics)
+    {
+        if (topics != null)
+        {
+            foreach (var topic in topics)
+            {
+                if (!string.IsNullOrWhiteSpace(topic))
+                {
+                    _invalidatedTopics.Add(topic.Trim());
+                }
+            }
+        }
+
+        return this;
+    }
+
+    /// <summary>Topics invalidated on this response (drives dependency-graph fragment re-rendering).</summary>
+    internal IReadOnlyList<string> InvalidatedTopics => _invalidatedTopics;
 
     /// <summary>
     /// Gets all configured toasts.

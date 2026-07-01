@@ -97,9 +97,12 @@ public static class SwapHtmxServiceExtensions
         
         // Register options singleton
         services.AddSingleton(options);
-        
+
         // Register event bus options
         services.AddSingleton(options.EventBus);
+
+        // Register the fragment dependency registry (topic -> fragment fan-out)
+        services.AddSingleton(options.Fragments);
         
         // Register event infrastructure
         services.AddScoped<ISwapEventBus, SwapEventBus>();

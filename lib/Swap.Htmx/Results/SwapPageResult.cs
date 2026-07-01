@@ -118,6 +118,14 @@ public sealed class SwapPageResult : ActionResult
             oobContent.Add(await RenderOobSwapAsync(context, oob));
         }
 
+        // 4a. Dependency-graph fragments for any invalidated topics (deduped; explicit OOB targets win).
+        var fragmentRegistry = context.HttpContext.RequestServices.GetService<Swap.Htmx.Fragments.SwapFragmentRegistry>();
+        foreach (var oob in Swap.Htmx.Fragments.FragmentResolver.Resolve(
+                     fragmentRegistry, _builder.InvalidatedTopics, _builder.OobSwaps.Select(o => o.TargetId), context.HttpContext))
+        {
+            oobContent.Add(await RenderOobSwapAsync(context, oob));
+        }
+
         // 4b. Render SwapState as OOB if configured. Always go through the request-scoped helper so
         // protected state is encrypted. Previously this passed no provider, rendering [SwapProtected]
         // state as plaintext on Razor Pages — the helper makes that impossible.

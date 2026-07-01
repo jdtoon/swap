@@ -1,6 +1,7 @@
 using System.Reflection;
 using Swap.Htmx;
 using Swap.Htmx.Events;
+using Swap.Htmx.Fragments;
 
 /// <summary>
 /// Configuration options for Swap.Htmx library features.
@@ -11,6 +12,22 @@ public class SwapHtmxOptions
     /// Event bus configuration for event chains and SSE.
     /// </summary>
     public SwapEventBusOptions EventBus { get; set; } = new();
+
+    /// <summary>
+    /// Registry of dependency-aware fragments. Register a fragment with the data topics it depends on;
+    /// controllers then call <c>Invalidate(topic)</c> and the engine re-renders the dependent fragments
+    /// as OOB swaps automatically.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// builder.Services.AddSwapHtmx(o =&gt;
+    /// {
+    ///     o.Fragments.Fragment("revenue", "_Revenue", ctx =&gt; ctx.RequestServices.GetRequiredService&lt;Stats&gt;().Revenue())
+    ///                .DependsOn("orders", "refunds");
+    /// });
+    /// </code>
+    /// </example>
+    public SwapFragmentRegistry Fragments { get; } = new();
 
     /// <summary>
     /// Default CSS selector for navigation target. Used by &lt;swap-nav&gt; tag helper.

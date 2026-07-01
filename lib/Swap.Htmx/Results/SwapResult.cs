@@ -142,6 +142,14 @@ public sealed class SwapResult : IResult
             oobContent.Add(await RenderOobSwapAsync(actionContext, viewData, tempData, oob));
         }
 
+        // 4a. Dependency-graph fragments for any invalidated topics (deduped; explicit OOB targets win).
+        var fragmentRegistry = httpContext.RequestServices.GetService<Swap.Htmx.Fragments.SwapFragmentRegistry>();
+        foreach (var oob in Swap.Htmx.Fragments.FragmentResolver.Resolve(
+                     fragmentRegistry, _builder.InvalidatedTopics, _builder.OobSwaps.Select(o => o.TargetId), httpContext))
+        {
+            oobContent.Add(await RenderOobSwapAsync(actionContext, viewData, tempData, oob));
+        }
+
         // 4b. Render SwapState as OOB if configured. Always go through the request-scoped helper so
         // protected state is encrypted (a sink can never forget the provider — see RenderAsOobForRequest).
         if (_builder.State != null)

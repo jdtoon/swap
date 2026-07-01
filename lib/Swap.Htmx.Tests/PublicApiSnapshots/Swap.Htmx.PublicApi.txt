@@ -235,6 +235,28 @@ namespace Swap.Htmx.Filters
         public void OnActionExecuting(Microsoft.AspNetCore.Mvc.Filters.ActionExecutingContext context) { }
     }
 }
+namespace Swap.Htmx.Fragments
+{
+    public sealed class FragmentDefinition
+    {
+        public string Id { get; }
+        public System.Func<Microsoft.AspNetCore.Http.HttpContext, object?> ModelFactory { get; }
+        public Swap.Htmx.Models.SwapMode SwapMode { get; }
+        public System.Collections.Generic.IReadOnlyCollection<string> Topics { get; }
+        public string ViewName { get; }
+    }
+    public sealed class FragmentRegistration
+    {
+        public Swap.Htmx.Fragments.FragmentRegistration DependsOn(params string[] topics) { }
+    }
+    public sealed class SwapFragmentRegistry
+    {
+        public SwapFragmentRegistry() { }
+        public System.Collections.Generic.IReadOnlyCollection<Swap.Htmx.Fragments.FragmentDefinition> All { get; }
+        public Swap.Htmx.Fragments.FragmentRegistration Fragment(string id, string viewName, System.Func<Microsoft.AspNetCore.Http.HttpContext, object?> modelFactory, Swap.Htmx.Models.SwapMode swapMode = 0) { }
+        public System.Collections.Generic.IReadOnlyList<Swap.Htmx.Fragments.FragmentDefinition> ResolveForTopics(System.Collections.Generic.IEnumerable<string> topics) { }
+    }
+}
 namespace Swap.Htmx
 {
     public static class HtmxEvents
@@ -571,6 +593,7 @@ namespace Swap.Htmx.Models
         public Microsoft.AspNetCore.Mvc.IActionResult Build() { }
         public Microsoft.AspNetCore.Http.IResult BuildResult() { }
         public System.Threading.Tasks.Task ExecuteAsync(Microsoft.AspNetCore.Http.HttpContext httpContext) { }
+        public Swap.Htmx.Models.SwapResponseBuilder Invalidate(params string[] topics) { }
         public Swap.Htmx.Models.SwapResponseBuilder WithClientAction(string action, string? target = null, object? value = null) { }
         public Swap.Htmx.Models.SwapResponseBuilder WithCreatedToast(string entityName, string? itemName = null) { }
         public Swap.Htmx.Models.SwapResponseBuilder WithCrudToast(Swap.Htmx.Models.CrudOperation operation, string entityName, string? itemName = null) { }
@@ -832,6 +855,7 @@ public class SwapHtmxOptions
     public SwapDiagnosticsOptions Diagnostics { get; set; }
     public SwapErrorOptions ErrorHandling { get; set; }
     public Swap.Htmx.Events.SwapEventBusOptions EventBus { get; set; }
+    public Swap.Htmx.Fragments.SwapFragmentRegistry Fragments { get; }
     public System.Collections.Generic.List<string> PartialViewSearchPaths { get; set; }
     public void AddConfig<T>()
         where T : Swap.Htmx.ISwapEventConfiguration, new () { }
