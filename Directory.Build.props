@@ -12,8 +12,18 @@
 
   <!-- Unified versioning for all packages -->
   <PropertyGroup>
-    <VersionPrefix>1.4.0</VersionPrefix>
+    <VersionPrefix>1.5.0</VersionPrefix>
     <VersionSuffix></VersionSuffix>
+  </PropertyGroup>
+
+  <!--
+    Ship XML documentation so consumer IntelliSense and NuGet metadata receive the authored doc
+    comments (the Razor SDK does not enable this by default). CS1591 (missing XML comment on a
+    public member) is suppressed: we ship the docs we have rather than requiring one on every member.
+  -->
+  <PropertyGroup>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
   </PropertyGroup>
 
   <!-- Source Link, symbols, and deterministic builds -->

@@ -6,7 +6,7 @@ namespace Swap.Htmx.TagHelpers;
 
 /// <summary>
 /// Tag helper that renders a validation message placeholder for OOB swaps.
-/// Works with <see cref="SwapValidationExtensions.SwapValidationErrors"/> to display field-level errors.
+/// Works with <see cref="SwapValidationExtensions"/>'s <c>SwapValidationErrors</c> to display field-level errors.
 /// </summary>
 /// <remarks>
 /// Usage in Razor views:

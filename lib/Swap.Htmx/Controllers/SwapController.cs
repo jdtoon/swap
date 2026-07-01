@@ -63,7 +63,6 @@ public abstract class SwapController : Controller
     /// Returns a view result that automatically chooses between full page or partial view
     /// based on whether the request is an HTMX request (HX-Request header present).
     /// </summary>
-    /// <param name="viewName">The name of the view to render. If null, uses conventional view name.</param>
     /// <param name="model">The model to pass to the view.</param>
     /// <returns>
     /// - For HTMX requests (HX-Request header present): Returns partial view

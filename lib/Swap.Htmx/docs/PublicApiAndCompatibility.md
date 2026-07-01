@@ -156,7 +156,7 @@ Stable generated outputs:
 
 Analyzer diagnostics (IDs are stable):
 
-- `SWAP001`–`SWAP004`
+- `SWAP001`, `SWAP002`, `SWAP004` (`SWAP003` was removed in 1.5.0)
 
 ---
 

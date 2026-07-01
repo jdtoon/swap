@@ -24,16 +24,18 @@ public class HandlerValidationAnalyzer : DiagnosticAnalyzer
 {
     private static readonly string[] CompilationEndTags = new[] { WellKnownDiagnosticTags.CompilationEnd };
 
+    private const string HelpBase = "https://github.com/jdtoon/swap/blob/main/lib/Swap.Htmx/docs/";
+
     // SWAP001: Event triggered with no handler
     public static readonly DiagnosticDescriptor NoHandlerForEvent = new(
         id: "SWAP001",
         title: "Event has no registered handler",
-        messageFormat: "Event '{0}' is triggered but no ISwapEventConfiguration handles it",
+        messageFormat: "Event '{0}' is triggered but no When() configuration or ISwapEventHandler<T> handles it",
         category: "Swap.Htmx",
         defaultSeverity: DiagnosticSeverity.Warning,
         isEnabledByDefault: true,
-        description: "Events triggered via WithTrigger() should have a corresponding handler in an ISwapEventConfiguration.",
-        helpLinkUri: null,
+        description: "Events triggered via WithTrigger() should have a corresponding When() handler in an ISwapEventConfiguration, or a typed ISwapEventHandler<T> for the trigger's payload type.",
+        helpLinkUri: HelpBase + "EventChains.md",
         customTags: CompilationEndTags);
 
     // SWAP002: Event chain references non-existent event
@@ -45,18 +47,8 @@ public class HandlerValidationAnalyzer : DiagnosticAnalyzer
         defaultSeverity: DiagnosticSeverity.Warning,
         isEnabledByDefault: true,
         description: "Events used in When() should be defined as const strings with [SwapEventSource].",
-        helpLinkUri: null,
+        helpLinkUri: HelpBase + "EventNamingAndRouting.md",
         customTags: CompilationEndTags);
-
-    // SWAP003: Potential circular event chain
-    public static readonly DiagnosticDescriptor CircularEventChain = new(
-        id: "SWAP003",
-        title: "Potential circular event chain",
-        messageFormat: "Event chain for '{0}' may create a circular dependency: {1}",
-        category: "Swap.Htmx",
-        defaultSeverity: DiagnosticSeverity.Warning,
-        isEnabledByDefault: true,
-        description: "Event chains that trigger each other can cause infinite loops.");
 
     // SWAP004: Duplicate event handler
     public static readonly DiagnosticDescriptor DuplicateEventHandler = new(
@@ -67,14 +59,13 @@ public class HandlerValidationAnalyzer : DiagnosticAnalyzer
         defaultSeverity: DiagnosticSeverity.Info,
         isEnabledByDefault: true,
         description: "Having multiple handlers for the same event in one configuration may be intentional but could indicate a mistake.",
-        helpLinkUri: null,
+        helpLinkUri: HelpBase + "EventChains.md",
         customTags: CompilationEndTags);
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics =>
         ImmutableArray.Create(
             NoHandlerForEvent,
             EventNotDefined,
-            CircularEventChain,
             DuplicateEventHandler);
 
     public override void Initialize(AnalysisContext context)
@@ -113,7 +104,21 @@ public class HandlerValidationAnalyzer : DiagnosticAnalyzer
     private static void CollectEventDefinitions(SyntaxNodeAnalysisContext context, EventCollector collector)
     {
         var classDeclaration = (ClassDeclarationSyntax)context.Node;
-        
+
+        // Detect ISwapEventHandler<T> implementations (typed distributed handlers) and record the
+        // payload type T they handle, so SWAP001 doesn't false-positive on events dispatched to them.
+        if (classDeclaration.BaseList != null &&
+            context.SemanticModel.GetDeclaredSymbol(classDeclaration) is INamedTypeSymbol classSymbol)
+        {
+            foreach (var iface in classSymbol.AllInterfaces)
+            {
+                if (iface.Name == "ISwapEventHandler" && iface.TypeArguments.Length == 1)
+                {
+                    collector.AddHandledPayloadType(iface.TypeArguments[0].ToDisplayString());
+                }
+            }
+        }
+
         // Check if class has [SwapEventSource] attribute
         var hasAttribute = classDeclaration.AttributeLists
             .SelectMany(al => al.Attributes)
@@ -165,6 +170,15 @@ public class HandlerValidationAnalyzer : DiagnosticAnalyzer
         if (!string.IsNullOrEmpty(eventName))
         {
             collector.AddTriggeredEvent(eventName!, invocation.GetLocation());
+
+            // Record the payload type so an event dispatched to a typed ISwapEventHandler<T>
+            // is not flagged as unhandled. Ignore object (no useful type to match on).
+            if (args.Count >= 2 &&
+                context.SemanticModel.GetTypeInfo(args[1].Expression).Type is { } payloadType &&
+                payloadType.SpecialType != SpecialType.System_Object)
+            {
+                collector.AddTriggeredEventPayloadType(eventName!, payloadType.ToDisplayString());
+            }
         }
     }
 
@@ -238,10 +252,11 @@ public class HandlerValidationAnalyzer : DiagnosticAnalyzer
 
     private static void ReportDiagnostics(CompilationAnalysisContext context, EventCollector collector)
     {
-        // SWAP001: Events triggered but not handled
+        // SWAP001: Events triggered but not handled (by a When() config or a typed ISwapEventHandler<T>)
         foreach (var triggered in collector.TriggeredEvents)
         {
-            if (!collector.HandledEvents.ContainsKey(triggered.Key))
+            if (!collector.HandledEvents.ContainsKey(triggered.Key) &&
+                !collector.IsEventHandledByTypedHandler(triggered.Key))
             {
                 if (triggered.Value is null)
                     continue;
@@ -309,6 +324,42 @@ public class HandlerValidationAnalyzer : DiagnosticAnalyzer
         public ConcurrentDictionary<string, ConcurrentBag<Location>> DefinedEvents { get; } = new();
         public ConcurrentDictionary<string, ConcurrentBag<Location>> TriggeredEvents { get; } = new();
         public ConcurrentDictionary<string, ConcurrentBag<Location>> HandledEvents { get; } = new();
+
+        // Payload types handled by ISwapEventHandler&lt;T&gt; implementations, and the payload types
+        // observed on each triggered event, so name-based SWAP001 can also see typed handlers.
+        public ConcurrentDictionary<string, byte> HandledPayloadTypes { get; } = new();
+        public ConcurrentDictionary<string, ConcurrentBag<string>> TriggeredEventPayloadTypes { get; } = new();
+
+        public void AddHandledPayloadType(string? typeName)
+        {
+            if (string.IsNullOrEmpty(typeName))
+                return;
+
+            HandledPayloadTypes.TryAdd(typeName!, 0);
+        }
+
+        public void AddTriggeredEventPayloadType(string? eventName, string? typeName)
+        {
+            if (string.IsNullOrEmpty(eventName) || string.IsNullOrEmpty(typeName))
+                return;
+
+            var bag = TriggeredEventPayloadTypes.GetOrAdd(eventName!.Trim(), static _ => new ConcurrentBag<string>());
+            bag?.Add(typeName!);
+        }
+
+        public bool IsEventHandledByTypedHandler(string eventName)
+        {
+            if (!TriggeredEventPayloadTypes.TryGetValue(eventName, out var types) || types is null)
+                return false;
+
+            foreach (var type in types)
+            {
+                if (HandledPayloadTypes.ContainsKey(type))
+                    return true;
+            }
+
+            return false;
+        }
 
         public void AddDefinedEvent(string? eventName, Location location)
         {

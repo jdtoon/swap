@@ -34,11 +34,14 @@ public interface ISseBackplane
     /// <summary>
     /// Publishes a message to the backplane to be distributed to all servers.
     /// </summary>
+    /// <param name="message">The message to distribute.</param>
+    /// <param name="cancellationToken">Token to cancel the publish operation.</param>
     Task PublishAsync(SseMessage message, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Subscribes to messages from the backplane.
     /// </summary>
     /// <param name="handler">The action to execute when a message is received.</param>
+    /// <param name="cancellationToken">Token to stop the subscription.</param>
     Task SubscribeAsync(Func<SseMessage, CancellationToken, Task> handler, CancellationToken cancellationToken = default);
 }

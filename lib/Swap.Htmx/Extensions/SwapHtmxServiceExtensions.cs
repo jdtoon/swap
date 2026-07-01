@@ -152,40 +152,16 @@ public static class SwapHtmxServiceExtensions
     /// <returns>The service collection.</returns>
     public static IServiceCollection AddSwapHtmx(this IServiceCollection services, Action<SwapEventBusOptions> configureEvents)
     {
-        services.AddHttpContextAccessor();
-        
-        var opts = new SwapEventBusOptions();
-        configureEvents?.Invoke(opts);
-        
-        // Guardrails: validate configuration early
-        try
-        {
-            var diag = opts.Validate();
-            var env = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
-            var isDev = string.Equals(env, "Development", StringComparison.OrdinalIgnoreCase);
-            if (diag.HasErrors && isDev)
-            {
-                var msg = "Swap.Htmx event chain validation failed:\n - " + string.Join("\n - ", diag.Errors);
-                throw new InvalidOperationException(msg);
-            }
-            // In non-dev, we don't throw to avoid blocking startup; warnings/errors could be logged by host app.
-        }
-        catch
-        {
-            throw;
-        }
-        
-        // Register configured singleton
-        services.AddSingleton(opts);
-        services.AddScoped<ISwapEventBus, SwapEventBus>();
-        
-        // Event chain executor for HTTP responses
-        services.AddScoped<IEventChainExecutor>(sp => new EventChainExecutor(opts));
-        
-        // Register SwapEventService
-        services.AddScoped<ISwapEventService, Services.SwapEventService>();
-        
-        return services;
+        ArgumentNullException.ThrowIfNull(configureEvents);
+
+        // Delegate to the full registration so the application is completely configured (the
+        // SwapHtmxOptions singleton, data protection, diagnostics, the model binder, handler
+        // discovery, etc.), applying the event-chain configuration to the shared EventBus.
+        //
+        // This overload previously registered only a subset of services, which left
+        // UseSwapHtmx()/SwapErrorMiddleware to fail with a DI error at request time — a silent
+        // foot-gun for anyone who wrote AddSwapHtmx(e => e.When(...)) expecting a full setup.
+        return services.AddSwapHtmx(options => configureEvents(options.EventBus));
     }
 
     /// <summary>
