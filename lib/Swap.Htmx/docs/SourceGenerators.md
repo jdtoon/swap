@@ -243,10 +243,11 @@ A Roslyn diagnostic analyzer that validates event configurations at compile-time
 
 | Code | Severity | Message |
 |------|----------|---------|
-| `SWAP001` | Warning | Event '{0}' is triggered but no ISwapEventConfiguration handles it |
+| `SWAP001` | Warning | Event '{0}' is triggered but no When() configuration or `ISwapEventHandler<T>` handles it |
 | `SWAP002` | Warning | Event key '{0}' is referenced but not defined in any [SwapEventSource] class |
-| `SWAP003` | Warning | Event chain for '{0}' may create a circular dependency |
 | `SWAP004` | Info | Event '{0}' has multiple handlers in the same configuration |
+
+> `SWAP003` (circular event chain) was removed in 1.5.0 — it was declared but never emitted.
 
 ### Example: SWAP001
 

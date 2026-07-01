@@ -5,6 +5,33 @@ All notable changes to Swap.Htmx will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.0] - 2026-07-01
+
+**DX unlock release.** Ships the previously-omitted XML documentation, removes an onboarding
+foot-gun, fixes the flagship template, and sharpens the analyzer. Non-breaking. Targets net8.0/9.0/10.0.
+
+### Added
+- **XML documentation now ships** in the NuGet packages (`GenerateDocumentationFile`), so consumer
+  IntelliSense quick-info and NuGet metadata receive the authored doc comments — previously the Razor SDK
+  left this off, so all of them were silently invisible.
+- Analyzer rules now carry **help links** to the documentation.
+
+### Fixed
+- **`AddSwapHtmx(Action<SwapEventBusOptions>)` now fully configures the application.** It previously
+  registered only a subset of services (notably not the `SwapHtmxOptions` singleton), so `UseSwapHtmx()`
+  failed with a DI error at request time for anyone who wrote `AddSwapHtmx(e => e.When(...))`. It now
+  delegates to the full registration, applying the event configuration to the shared `EventBus`.
+- **The `Swap.Mvc` template** now registers the Swap tag helpers (`@addTagHelper *, Swap.Htmx`), so a
+  scaffolded app renders `<swap-*>` tag helpers instead of emitting them as literal text.
+- **Analyzer `SWAP001`** no longer false-positives on events dispatched to a typed `ISwapEventHandler<T>`;
+  it matches the trigger's payload type against registered typed handlers.
+- Fixed pre-existing XML-doc defects surfaced by enabling documentation (a malformed `<param>` tag, a
+  `<param>` for a non-existent parameter, and missing param docs).
+
+### Removed
+- **Analyzer `SWAP003`** (potential circular event chain) — it was declared but never emitted (the
+  detection was never implemented). Removed so the diagnostic set is trustworthy.
+
 ## [1.4.0] - 2026-07-01
 
 **"Trust floor" release.** This is a security and concurrency-correctness release. It hardens the

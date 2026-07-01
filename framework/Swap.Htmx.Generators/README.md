@@ -251,9 +251,8 @@ Compile-time diagnostics for event handler configurations.
 
 | Code | Severity | Description |
 |------|----------|-------------|
-| `SWAP001` | Warning | Event triggered but no handler configured |
+| `SWAP001` | Warning | Event triggered but no `When()` config or `ISwapEventHandler<T>` handles it |
 | `SWAP002` | Warning | Event key referenced but not defined |
-| `SWAP003` | Warning | Circular event chain detected |
 | `SWAP004` | Info | Duplicate handler for same event |
 
 ### Suppressing Warnings
