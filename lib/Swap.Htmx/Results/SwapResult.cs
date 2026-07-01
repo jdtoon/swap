@@ -301,7 +301,7 @@ public sealed class SwapResult : IResult
         await viewResult.View.RenderAsync(viewContext);
         var html = sw.ToString().Trim();
 
-        var swapModeStr = oob.SwapMode.ToOobSwapToken();
+        var oobAttrs = Swap.Htmx.Models.SwapOobAttributes.Build(oob.SwapMode, oob.Seq);
 
         // If the rendered HTML already contains hx-swap-oob, return as-is
         if (html.Contains("hx-swap-oob"))
@@ -314,7 +314,7 @@ public sealed class SwapResult : IResult
         if (html.Contains(idPattern))
         {
             // Insert hx-swap-oob attribute after the id attribute
-            return html.Replace(idPattern, $"{idPattern} hx-swap-oob=\"{swapModeStr}\"");
+            return html.Replace(idPattern, $"{idPattern} {oobAttrs}");
         }
 
         // Otherwise wrap in a div (fallback for views without the id)
@@ -329,7 +329,7 @@ public sealed class SwapResult : IResult
                 oob.TargetId,
                 oob.ViewName);
         }
-        return $"<div id=\"{oob.TargetId}\" hx-swap-oob=\"{swapModeStr}\">{html}</div>";
+        return $"<div id=\"{oob.TargetId}\" {oobAttrs}>{html}</div>";
     }
 
 }

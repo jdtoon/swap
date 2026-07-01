@@ -33,3 +33,4 @@ Batch-2 complete:
 - SwapFlow step-machine (e91882c + fix) — review clean after empty-steps coverage
 - incremental AutoScanGenerator (60899bc) — review APPROVED (output-preserving, cache-tracked)
 - 501 lib + 30 gen tests green
+Task WithFlash: complete

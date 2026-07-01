@@ -87,7 +87,8 @@ public sealed record OobSwap(
     string ViewName,
     object? Model,
     SwapMode SwapMode,
-    bool ConditionalExists = false
+    bool ConditionalExists = false,
+    long? Seq = null
 );
 
 /// <summary>
@@ -218,14 +219,16 @@ public sealed class SwapResponseBuilder : IResult
     /// <param name="viewName">The partial view to render for this target.</param>
     /// <param name="model">The model for the partial view.</param>
     /// <param name="swapMode">How to swap the content (defaults to OuterHTML).</param>
+    /// <param name="seq">Optional monotonic version stamp (e.g. a rowversion). The client drops any OOB swap whose <c>data-swap-seq</c> is not newer than the last applied, guarding against out-of-order or duplicate updates.</param>
     /// <returns>The builder for chaining.</returns>
     public SwapResponseBuilder AlsoUpdate(
-        string targetId, 
-        string viewName, 
-        object? model = null, 
-        SwapMode swapMode = SwapMode.OuterHTML)
+        string targetId,
+        string viewName,
+        object? model = null,
+        SwapMode swapMode = SwapMode.OuterHTML,
+        long? seq = null)
     {
-        _oobSwaps.Add(new OobSwap(NormalizeOobTargetId(targetId), viewName, model, swapMode));
+        _oobSwaps.Add(new OobSwap(NormalizeOobTargetId(targetId), viewName, model, swapMode, Seq: seq));
         return this;
     }
 
@@ -237,15 +240,17 @@ public sealed class SwapResponseBuilder : IResult
     /// <param name="viewName">The partial view to render for this target.</param>
     /// <param name="model">The model for the partial view.</param>
     /// <param name="innerHtml">When true, morph only the target's inner content; otherwise morph the whole element.</param>
+    /// <param name="seq">Optional monotonic version stamp; see <see cref="AlsoUpdate"/>.</param>
     /// <returns>The builder for chaining.</returns>
     /// <remarks>Requires the client idiomorph extension, auto-included by the <c>&lt;swap-scripts&gt;</c> tag helper.</remarks>
     public SwapResponseBuilder AlsoMorph(
         string targetId,
         string viewName,
         object? model = null,
-        bool innerHtml = false)
+        bool innerHtml = false,
+        long? seq = null)
     {
-        return AlsoUpdate(targetId, viewName, model, innerHtml ? SwapMode.MorphInner : SwapMode.MorphOuter);
+        return AlsoUpdate(targetId, viewName, model, innerHtml ? SwapMode.MorphInner : SwapMode.MorphOuter, seq);
     }
 
     /// <summary>

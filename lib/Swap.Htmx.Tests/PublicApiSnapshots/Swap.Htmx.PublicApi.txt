@@ -580,9 +580,10 @@ namespace Swap.Htmx.Models
     }
     public sealed class OobSwap : System.IEquatable<Swap.Htmx.Models.OobSwap>
     {
-        public OobSwap(string TargetId, string ViewName, object? Model, Swap.Htmx.Models.SwapMode SwapMode, bool ConditionalExists = false) { }
+        public OobSwap(string TargetId, string ViewName, object? Model, Swap.Htmx.Models.SwapMode SwapMode, bool ConditionalExists = false, long? Seq = default) { }
         public bool ConditionalExists { get; init; }
         public object? Model { get; init; }
+        public long? Seq { get; init; }
         public Swap.Htmx.Models.SwapMode SwapMode { get; init; }
         public string TargetId { get; init; }
         public string ViewName { get; init; }
@@ -608,8 +609,8 @@ namespace Swap.Htmx.Models
         public System.Collections.Generic.IReadOnlyList<Swap.Htmx.Models.ClientAction> ClientActions { get; }
         public System.Collections.Generic.IReadOnlyList<Swap.Htmx.Models.ToastNotification> Toasts { get; }
         public System.Collections.Generic.IReadOnlyList<Swap.Htmx.Models.TriggerEvent> Triggers { get; }
-        public Swap.Htmx.Models.SwapResponseBuilder AlsoMorph(string targetId, string viewName, object? model = null, bool innerHtml = false) { }
-        public Swap.Htmx.Models.SwapResponseBuilder AlsoUpdate(string targetId, string viewName, object? model = null, Swap.Htmx.Models.SwapMode swapMode = 0) { }
+        public Swap.Htmx.Models.SwapResponseBuilder AlsoMorph(string targetId, string viewName, object? model = null, bool innerHtml = false, long? seq = default) { }
+        public Swap.Htmx.Models.SwapResponseBuilder AlsoUpdate(string targetId, string viewName, object? model = null, Swap.Htmx.Models.SwapMode swapMode = 0, long? seq = default) { }
         public Swap.Htmx.Models.SwapResponseBuilder AlsoUpdateIf(bool condition, string targetId, string viewName, object? model = null, Swap.Htmx.Models.SwapMode swapMode = 0) { }
         public Swap.Htmx.Models.SwapResponseBuilder AlsoUpdateIfExists(string targetId, string viewName, object? model = null, Swap.Htmx.Models.SwapMode swapMode = 0) { }
         public Swap.Htmx.Models.SwapResponseBuilder AlsoUpdateMany<T>(System.Collections.Generic.IEnumerable<T> items, System.Func<T, string> idSelector, string viewName, Swap.Htmx.Models.SwapMode swapMode = 0) { }
