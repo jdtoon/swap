@@ -1,3 +1,5 @@
+using System.Collections.Concurrent;
+using System.Collections.Frozen;
 using System.ComponentModel;
 using System.Reflection;
 using System.Runtime.CompilerServices;
@@ -338,16 +340,72 @@ public abstract class SwapState : INotifyPropertyChanged
     }
 
     /// <summary>
+    /// Per-Type cache of reflected state property metadata, so the property set for a given
+    /// <see cref="SwapState"/> subclass is computed once via reflection and reused for every
+    /// instance, instead of re-running <see cref="Type.GetProperties()"/> and the LINQ filters
+    /// on every render/bind.
+    /// </summary>
+    private static readonly ConcurrentDictionary<Type, StateMetadata> _metadataCache = new();
+
+    /// <summary>
     /// Gets the properties that should be serialized as state.
     /// Override to customize which properties are included.
     /// </summary>
+    /// <remarks>
+    /// The default implementation returns a cached, per-Type array of filtered
+    /// <see cref="PropertyInfo"/> values, computed once via reflection per concrete
+    /// <see cref="SwapState"/> subclass and reused across all instances of that type.
+    /// </remarks>
     protected virtual IEnumerable<PropertyInfo> GetStateProperties()
     {
-        return GetType()
+        return GetCachedMetadata(GetType()).Properties;
+    }
+
+    /// <summary>
+    /// Gets (computing and caching if necessary) the reflection metadata for the given
+    /// <see cref="SwapState"/>-derived <paramref name="type"/>.
+    /// </summary>
+    private static StateMetadata GetCachedMetadata(Type type)
+    {
+        return _metadataCache.GetOrAdd(type, static t => new StateMetadata(t));
+    }
+
+    /// <summary>
+    /// Computes the filtered set of state properties for a given <see cref="SwapState"/> subclass.
+    /// </summary>
+    private static PropertyInfo[] ComputeStateProperties(Type type)
+    {
+        return type
             .GetProperties(BindingFlags.Public | BindingFlags.Instance)
             .Where(p => p.CanRead && p.CanWrite)
             .Where(p => !IsExcludedProperty(p.Name))
-            .Where(p => IsSupportedType(p.PropertyType));
+            .Where(p => IsSupportedType(p.PropertyType))
+            .ToArray();
+    }
+
+    /// <summary>
+    /// Immutable, per-Type reflection metadata cached for a <see cref="SwapState"/> subclass.
+    /// Contains only Type-level (attribute/reflection-derived) data; per-instance state such as
+    /// <see cref="Protected"/> is never cached here.
+    /// </summary>
+    private sealed class StateMetadata
+    {
+        public StateMetadata(Type type)
+        {
+            Properties = ComputeStateProperties(type);
+            PropertyNames = Properties.Select(p => p.Name).ToFrozenSet(StringComparer.Ordinal);
+        }
+
+        /// <summary>
+        /// The filtered, public instance, readable+writable, non-excluded, supported-type
+        /// properties for the state type.
+        /// </summary>
+        public PropertyInfo[] Properties { get; }
+
+        /// <summary>
+        /// The names of <see cref="Properties"/>, as a frozen set for fast lookup.
+        /// </summary>
+        public FrozenSet<string> PropertyNames { get; }
     }
 
     /// <summary>
