@@ -717,6 +717,20 @@ namespace Swap.Htmx.TagHelpers
         public bool ShowPanel { get; set; }
         public override void Process(Microsoft.AspNetCore.Razor.TagHelpers.TagHelperContext context, Microsoft.AspNetCore.Razor.TagHelpers.TagHelperOutput output) { }
     }
+    [Microsoft.AspNetCore.Razor.TagHelpers.HtmlTargetElement("swap-frame")]
+    public class SwapFrameTagHelper : Microsoft.AspNetCore.Razor.TagHelpers.TagHelper
+    {
+        public SwapFrameTagHelper() { }
+        [Microsoft.AspNetCore.Razor.TagHelpers.HtmlAttributeName("loading")]
+        public string Loading { get; set; }
+        [Microsoft.AspNetCore.Razor.TagHelpers.HtmlAttributeName("src")]
+        public string? Src { get; set; }
+        [Microsoft.AspNetCore.Razor.TagHelpers.HtmlAttributeName("swap")]
+        public string Swap { get; set; }
+        [Microsoft.AspNetCore.Razor.TagHelpers.HtmlAttributeName("trigger")]
+        public string? Trigger { get; set; }
+        public override void Process(Microsoft.AspNetCore.Razor.TagHelpers.TagHelperContext context, Microsoft.AspNetCore.Razor.TagHelpers.TagHelperOutput output) { }
+    }
     [Microsoft.AspNetCore.Razor.TagHelpers.HtmlTargetElement("swap-nav")]
     public class SwapNavTagHelper : Microsoft.AspNetCore.Razor.TagHelpers.TagHelper
     {
