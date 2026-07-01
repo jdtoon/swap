@@ -235,6 +235,29 @@ namespace Swap.Htmx.Filters
         public void OnActionExecuting(Microsoft.AspNetCore.Mvc.Filters.ActionExecutingContext context) { }
     }
 }
+namespace Swap.Htmx.Flows
+{
+    public abstract class SwapFlow
+    {
+        protected SwapFlow() { }
+        public bool CanGoNext { get; }
+        public bool CanGoPrevious { get; }
+        public Swap.Htmx.Flows.SwapFlowStep Current { get; }
+        public int CurrentIndex { get; }
+        protected abstract System.Collections.Generic.IReadOnlyList<Swap.Htmx.Flows.SwapFlowStep> Steps { get; }
+        public bool GoTo(int index) { }
+        public bool Next() { }
+        public bool Previous() { }
+        public void RestoreIndex(int index) { }
+    }
+    public sealed class SwapFlowStep : System.IEquatable<Swap.Htmx.Flows.SwapFlowStep>
+    {
+        public SwapFlowStep(string Name, string ViewName, System.Func<bool>? CanEnter = null) { }
+        public System.Func<bool>? CanEnter { get; init; }
+        public string Name { get; init; }
+        public string ViewName { get; init; }
+    }
+}
 namespace Swap.Htmx.Fragments
 {
     public sealed class FragmentDefinition

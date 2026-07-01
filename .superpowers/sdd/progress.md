@@ -22,3 +22,9 @@ Queue (controller — coupled/client-JS, hand-done + render-verified):
 - [ ] idiomorph vendor + dogfood morph (M3)
 
 Snapshot: implementers must NOT edit PublicApi *.txt; controller reconciles once at end.
+
+Batch-1 complete (subagent-built + controller-fixed + reviewed):
+- swap-upload (e86077f + fix) — review clean after strengthening attr-strip test
+- IRealtimePresence (e6e0210 + fix) — review clean after fixing orphan race + consistency test
+- StateMetadata cache (1a5e37d + fix) — review clean after read-only view + subclass-override test
+- snapshots reconciled; 493 tests green

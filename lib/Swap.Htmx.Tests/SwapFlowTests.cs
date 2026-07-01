@@ -123,10 +123,17 @@ public class SwapFlowTests
     }
 
     [Fact]
-    public void EmptySteps_ThrowsInvalidOperationException()
+    public void EmptySteps_GuardsNavigation()
     {
         var flow = new EmptyFlow();
 
+        // Every member that must observe the step set throws on an empty flow.
         Assert.Throws<InvalidOperationException>(() => flow.Current);
+        Assert.Throws<InvalidOperationException>(() => flow.Next());
+        Assert.Throws<InvalidOperationException>(() => flow.GoTo(0));
+        Assert.Throws<InvalidOperationException>(() => flow.RestoreIndex(0));
+
+        // Previous at the start is a no-op (nothing to go back to), by design — never throws.
+        Assert.False(flow.Previous());
     }
 }
