@@ -164,6 +164,7 @@ Console.WriteLine(state.ChangedProperties);  // ["Tab", "Page"]
 | Property/Method | Description |
 |-----------------|-------------|
 | `ContainerId` | Auto-generated element ID (kebab-case of class name) |
+| `Tampered` | `true` if a `Protected` value was missing, empty, or failed to decrypt during binding (fail-closed). Also set by `FromQueryString(...)` |
 | `HasChanges` | True if any property modified since last `AcceptChanges()` |
 | `ChangedProperties` | Set of modified property names |
 | `AcceptChanges()` | Clears change tracking |
@@ -580,7 +581,23 @@ When state is protected, you cannot concatenate strings manually. Use the helper
 
 ### How It Works
 
-1.  **Rendering**: The `<swap-state>` tag helper detects `Protected=true` and encrypts value using `IDataProtectionProvider`.
+1.  **Rendering**: The `<swap-state>` tag helper detects `Protected=true` and encrypts values using `IDataProtectionProvider`. This provider is **required** — `AddSwapHtmx()` registers it, and rendering protected state without a provider **throws** rather than emitting the values as plaintext.
 2.  **Binding**: `[FromSwapState]` detects protected properties and automatically decrypts them.
-3.  **Validation**: If a value is tampered with (signature invalid), it is ignored (property remains at default), effectively rejecting the tampering.
+3.  **Validation (fails closed)**: If a protected value is missing, empty, or fails to decrypt (tampered), binding **fails**: the binder adds a `ModelState` error and sets `SwapState.Tampered = true`. The value does **not** silently fall back to the type default (`0`, `Guid.Empty`) — check `ModelState.IsValid` (or `state.Tampered`) and reject the request. `SwapState.FromQueryString(...)` sets `Tampered` the same way for direct callers.
 4.  **Scope**: Protection is scoped to the **State Container** and **Property Name**. You cannot copy an encrypted value from `OrderId` to `Price`.
+
+### Handling Tampered State
+
+```csharp
+public IActionResult Checkout([FromSwapState] PaymentState state)
+{
+    if (!ModelState.IsValid || state.Tampered)
+    {
+        // A protected value was missing, cleared, or altered — reject it.
+        return this.SwapResponse().WithErrorToast("Invalid request.").Build();
+    }
+
+    // state is trustworthy here
+    return SwapView(state);
+}
+```

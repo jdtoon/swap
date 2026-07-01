@@ -97,12 +97,8 @@ public class SwapErrorMiddleware
 
         if (!viewResult.Success)
         {
-            // Fallback if view not found: Just return a simple error div OOB
-            await context.Response.WriteAsync($@"
-                <div id=""swap-error-toast"" hx-swap-oob=""true"" class=""swap-error-toast"" style=""position:fixed; top:20px; right:20px; background:#dc3545; color:white; padding:15px; border-radius:4px; box-shadow:0 2px 10px rgba(0,0,0,0.2); z-index:9999;"">
-                    <strong>Error:</strong> {model.Message}
-                    <button onclick=""this.parentElement.remove()"" style=""margin-left:10px; background:none; border:none; color:white; cursor:pointer;"">&times;</button>
-                </div>");
+            // Fallback if view not found: return a simple error div OOB.
+            await context.Response.WriteAsync(BuildFallbackErrorHtml(model));
             return;
         }
 
@@ -125,6 +121,26 @@ public class SwapErrorMiddleware
             await viewResult.View.RenderAsync(viewContext);
             await context.Response.WriteAsync(writer.ToString());
         }
+    }
+
+    /// <summary>
+    /// Builds the built-in fallback error toast (used when no custom error view is found).
+    /// This produces raw HTML rather than a Razor view, so every interpolated value is HTML-encoded
+    /// to prevent reflected XSS via an exception message, and a request correlation id is shown so a
+    /// user can reference it while full details are logged server-side.
+    /// </summary>
+    internal static string BuildFallbackErrorHtml(SwapErrorModel model)
+    {
+        var encoder = System.Text.Encodings.Web.HtmlEncoder.Default;
+        var message = encoder.Encode(string.IsNullOrEmpty(model.Message) ? "An unexpected error occurred." : model.Message);
+        var requestId = encoder.Encode(model.RequestId ?? string.Empty);
+
+        return $@"
+            <div id=""swap-error-toast"" hx-swap-oob=""true"" class=""swap-error-toast"" style=""position:fixed; top:20px; right:20px; background:#dc3545; color:white; padding:15px; border-radius:4px; box-shadow:0 2px 10px rgba(0,0,0,0.2); z-index:9999;"">
+                <strong>Error:</strong> {message}
+                <div style=""font-size:11px; opacity:0.85; margin-top:4px;"">Reference: {requestId}</div>
+                <button onclick=""this.parentElement.remove()"" style=""margin-left:10px; background:none; border:none; color:white; cursor:pointer;"">&times;</button>
+            </div>";
     }
 }
 

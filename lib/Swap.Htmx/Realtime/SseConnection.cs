@@ -119,20 +119,33 @@ public sealed class SseConnection : IRealtimeConnection
         }
         catch (OperationCanceledException)
         {
-            // Normal shutdown.
+            // The loop is over — either a normal shutdown (our own token) or the client dropped
+            // mid-send (SendEventAsync surfaces disconnects as OperationCanceledException). Either way
+            // the connection is finished, so tear it down instead of leaving a zombie: cancel it (so
+            // IsActive becomes false and the registry stops broadcasting to a stopped loop) and release
+            // every pending awaiter.
+            CancelAndDrainQueue();
         }
         catch (Exception ex)
         {
             _logger?.LogDebug(ex, "SSE writer loop ended for connection {ConnectionId}", Id);
-            _cts.Cancel();
+            CancelAndDrainQueue();
+        }
+    }
 
-            // Fail any pending sends.
-            lock (_queueLock)
+    /// <summary>
+    /// Cancels the connection and fails every queued send, so no broadcaster hangs awaiting a
+    /// writer loop that has stopped. Safe to call more than once.
+    /// </summary>
+    private void CancelAndDrainQueue()
+    {
+        _cts.Cancel();
+
+        lock (_queueLock)
+        {
+            while (_outgoingQueue.Count > 0)
             {
-                while (_outgoingQueue.Count > 0)
-                {
-                    _outgoingQueue.Dequeue().Completion.TrySetCanceled();
-                }
+                _outgoingQueue.Dequeue().Completion.TrySetCanceled();
             }
         }
     }

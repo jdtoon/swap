@@ -5,6 +5,70 @@ All notable changes to Swap.Htmx will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.0] - 2026-07-01
+
+**"Trust floor" release.** This is a security and concurrency-correctness release. It hardens the
+exact features that are marketed as safety controls — tamper-proof `SwapState`, the error boundary,
+and redirect guards — and fixes nondeterministic failures on the realtime and OOB-render hot paths.
+It contains **behavior changes**; see *Migration* below. Applies to all targets: `net8.0`, `net9.0`, `net10.0`.
+
+### Security
+- **`[SwapProtected]` state no longer leaks as plaintext on Razor Pages.** `SwapPageResult` rendered
+  protected `SwapState` without a data-protection provider, emitting protected values as plaintext
+  hidden fields (and then failing to bind them back). All result types (MVC, Razor Pages, Minimal APIs)
+  now render state through a single request-scoped helper (`SwapStateRenderer.RenderAsOobForRequest`)
+  that always resolves the provider, and **throws** if a protected state is rendered with no
+  `IDataProtectionProvider` registered rather than silently emitting plaintext.
+- **Tamper protection now fails closed.** Previously a tampered, cleared, or missing `[SwapProtected]`
+  value bound silently to the type default (e.g. a protected `decimal Price` → `0`, a protected
+  `Guid TenantId` → `Guid.Empty`) with no signal. Now a protected value that is present but empty or
+  fails to decrypt is a hard model-binding failure: the binder records a `ModelState` error, fails the
+  bind, and sets the new `SwapState.Tampered` flag. `SwapState.FromQueryString(...)` also sets
+  `Tampered` so direct callers can inspect it.
+- **Error-boundary output is now HTML-encoded.** The built-in fallback error toast interpolated the
+  exception message into raw HTML, allowing reflected XSS when exception details were shown. All
+  interpolated values are HTML-encoded, the raw message is no longer echoed by default, and a request
+  correlation id is shown while full details are logged server-side.
+- **Redirect/navigation URLs are now validated with an allowlist.** `WithRedirect()` and
+  `WithNavigation()` replace the previous scheme *blocklist* with an allowlist: only `http`/`https`
+  absolute URLs and same-origin relative references are accepted. Protocol-relative URLs (`//evil.com`,
+  `/\evil.com`) and non-http(s) schemes (`javascript:`, `data:`, `vbscript:`, `file:`, `mailto:`, …)
+  are rejected. The same validation now also runs in the `WithNavigation(HxLocationOptions)` overload,
+  which previously bypassed all checks.
+
+### Fixed
+- **SSE writes are serialized.** The SSE writer loop and the keep-alive heartbeat wrote to the same
+  Kestrel response `PipeWriter` with no synchronization, which under load threw
+  "Concurrent writes to the response body are not allowed" or interleaved frames the client mis-parsed.
+  All writes now pass through a per-connection write lock in `ServerSentEventStream`.
+- **SSE connections no longer become zombies.** When the writer loop exited via
+  `OperationCanceledException` (e.g. a client dropped mid-send), it left the connection reporting
+  `IsActive = true` with pending sends that never completed, hanging every subsequent broadcaster (and
+  the unrelated request that triggered the flush). The loop now cancels the connection and drains its
+  queue on exit for both the cancellation and fault paths.
+- **Keep-alive is a real SSE comment.** `SwapSseResult`'s heartbeat sent a client-visible `ping` event
+  with a `{}` body; it now sends a `: keepalive` comment.
+
+### Changed
+- **OOB swaps render sequentially (reverts the 1.3.0 parallelization).** 1.3.0 rendered out-of-band
+  partials with `Task.WhenAll`. Because every partial renders on the single request scope (scoped
+  `DbContext`, `ViewData`, the shared view-buffer pool), this raced those scoped services and
+  intermittently threw "A second operation was started on this context instance". View rendering is
+  CPU-bound string building, so sequential rendering removes the race at effectively no cost. Ordering
+  is unchanged.
+- **New public API:** `SwapState.Tampered` (get).
+
+### Migration
+- If you relied on a tampered/cleared `[SwapProtected]` value silently becoming the type default, that
+  request now **fails binding**. Check `ModelState.IsValid` (or the new `SwapState.Tampered`) and handle
+  the tamper explicitly.
+- If you passed non-http(s) or protocol-relative URLs to `WithRedirect()`/`WithNavigation()`, those calls
+  now throw `ArgumentException`. Use rooted relative paths (`/path`) or absolute `http`/`https` URLs.
+- Protected state now requires `IDataProtectionProvider` to be registered (it is by `AddSwapHtmx()`);
+  rendering protected state without it throws instead of leaking plaintext.
+- No action needed for the OOB sequential-render change unless you depended on concurrent partial
+  execution (which was unsafe).
+
 ## [1.3.0] - 2026-03-04
 
 ### Changed

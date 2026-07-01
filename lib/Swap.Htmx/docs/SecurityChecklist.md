@@ -198,13 +198,17 @@ A leading `#` is automatically stripped. Invalid IDs throw `ArgumentException`, 
 
 ### Redirect/Navigation URLs
 
-`WithRedirect()` and `WithNavigation()` reject URLs with dangerous schemes:
+`WithRedirect()` and `WithNavigation()` validate URLs against an **allowlist** (since v1.4.0 — previously a scheme blocklist). Only these are accepted:
 
-- `javascript:` — blocked
-- `data:` — blocked
-- `vbscript:` — blocked
+- Absolute `http` / `https` URLs
+- Same-origin **relative** references (e.g. `/dashboard`, `products/42`)
 
-This prevents open redirect and XSS attacks via the `HX-Redirect` and `HX-Location` response headers. Relative URLs, absolute HTTP/HTTPS URLs, and protocol-relative URLs are all allowed.
+Everything else is rejected with `ArgumentException`, including:
+
+- Protocol-relative URLs (`//evil.com`, `/\evil.com`)
+- Non-http(s) schemes (`javascript:`, `data:`, `vbscript:`, `file:`, `mailto:`, …)
+
+This prevents open-redirect and XSS attacks via the `HX-Redirect` and `HX-Location` response headers. The same validation now also runs for the `WithNavigation(HxLocationOptions)` overload, which previously bypassed all checks.
 
 ## 4) Payload Exposure (HX-Trigger + SSE payloads)
 
@@ -281,11 +285,53 @@ app.Use((ctx, next) =>
 
 ---
 
-## 7) Quick Checklist
+## 7) Protected `SwapState` (Tamper-Proof, Fail-Closed)
+
+For business-critical state (prices, IDs, tenant scope), mark the state `Protected` so values are encrypted in the browser via ASP.NET Core Data Protection:
+
+```csharp
+public class PaymentState : SwapState
+{
+    public override bool Protected => true;
+    public decimal Price { get; set; }     // encrypted
+    public Guid TenantId { get; set; }      // encrypted
+}
+```
+
+- **A data-protection provider is required.** `AddSwapHtmx()` registers `IDataProtectionProvider`. Rendering protected state with no provider registered now **throws** rather than leaking values as plaintext hidden fields.
+- **Tamper protection fails closed (since v1.4.0).** A protected value that is present-but-empty or fails to decrypt is a hard model-binding failure: the binder records a `ModelState` error and sets `SwapState.Tampered = true`. It no longer silently falls back to the type default (`0`, `Guid.Empty`). Always check before trusting protected state:
+
+```csharp
+public IActionResult Checkout([FromSwapState] PaymentState state)
+{
+    if (!ModelState.IsValid || state.Tampered)
+        return SwapResponse().WithErrorToast("Invalid request.").Build();
+    // state is trustworthy here
+}
+```
+
+- Protection is scoped to the state container **and** property name, so an attacker cannot copy an encrypted value from one field (`OrderId`) to another (`Price`).
+
+---
+
+## 8) Error Boundary Output
+
+If you enable `SwapErrorBoundaries` (see [SwapErrorBoundaries](SwapErrorBoundaries.md)), the built-in fallback response is safe by default (since v1.4.0):
+
+- **All interpolated values are HTML-encoded**, so a crafted exception message cannot inject markup or script into the page (previously a reflected-XSS risk).
+- **The raw exception message is not echoed by default.** The client sees a generic message plus a request **correlation id**; full exception details are logged **server-side** via `ILogger`.
+- Enable `ErrorHandling.ShowExceptionDetails` only in Development, never in production.
+
+---
+
+## 9) Quick Checklist
 
 - CSRF: Enable antiforgery and include tokens in HTMX forms.
 - Auth: Require authorization on SSE/WebSocket endpoints.
 - Rooms: Validate room names and authorize room joins (`CanJoinRoom`).
 - Payloads: Don’t put secrets/PII into HX-Trigger or broadcast HTML.
+- State: For sensitive state use `Protected` SwapState and check `ModelState.IsValid`/`SwapState.Tampered` (fails closed).
+- Redirects: Only `http`/`https` or same-origin relative URLs pass `WithRedirect()`/`WithNavigation()` (allowlist).
+- Errors: Keep `ShowExceptionDetails` off in production; the fallback encodes output and shows a correlation id.
 - CORS: Prefer same-origin; if cross-origin, use explicit origins + credentials.
 - Headers: Add baseline security headers; customize CSP.

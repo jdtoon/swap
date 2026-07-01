@@ -492,6 +492,44 @@ You don't have to migrate everything at once. Here's a recommended approach:
 
 ---
 
+## Upgrading to 1.4.0 (Behavior Changes)
+
+v1.4.0 is a security and concurrency-correctness release. It hardens `[SwapProtected]` state, the error boundary, and the redirect guards. If you are upgrading an existing Swap.Htmx app, review these **behavior changes** — most apps need no code changes, but a few patterns now behave differently.
+
+### Tamper-proof `SwapState` now fails closed
+
+Previously, a tampered, cleared, or missing `[SwapProtected]` value silently bound to the type default (e.g. a protected `decimal Price` → `0`, a protected `Guid TenantId` → `Guid.Empty`) with no signal. It now **fails model binding**: the binder records a `ModelState` error and sets the new `SwapState.Tampered` flag. If you relied on the old silent-default behavior, check for the failure and handle the tamper explicitly:
+
+```csharp
+public IActionResult Checkout([FromSwapState] PaymentState state)
+{
+    if (!ModelState.IsValid || state.Tampered)
+    {
+        // Do not trust the state — reject or re-issue it.
+        return SwapResponse().WithErrorToast("Invalid request.").Build();
+    }
+
+    // state is trustworthy here
+    return SwapView(state);
+}
+```
+
+`SwapState.FromQueryString(...)` sets `Tampered` the same way, so direct callers can inspect it too.
+
+### Protected state requires a data-protection provider
+
+Rendering protected `SwapState` now always resolves `IDataProtectionProvider` and **throws** if none is registered, rather than silently emitting protected values as plaintext hidden fields. `AddSwapHtmx()` registers the provider, so no action is needed unless you removed it from DI.
+
+### Redirect/navigation URLs use an allowlist
+
+`WithRedirect()` and `WithNavigation()` replace the previous scheme *blocklist* with an **allowlist**: only `http`/`https` absolute URLs and same-origin relative references are accepted. Protocol-relative URLs (`//evil.com`, `/\evil.com`) and non-http(s) schemes (`javascript:`, `data:`, `vbscript:`, `file:`, `mailto:`, …) now throw `ArgumentException`. The `WithNavigation(HxLocationOptions)` overload is now validated too (it previously bypassed all checks). Use rooted relative paths (`/path`) or absolute `http`/`https` URLs.
+
+### OOB swaps render sequentially
+
+OOB partials now render one at a time in registration order, reverting the 1.3.0 parallel rendering (which raced scoped services such as `DbContext` and intermittently threw "A second operation was started on this context instance"). Ordering is unchanged. No action is needed unless you depended on concurrent partial execution.
+
+---
+
 ## Need Help?
 
 - Check the [Anti-Patterns Guide](AntiPatterns.md) for common mistakes

@@ -141,6 +141,12 @@ return SwapResponse()
 
 ---
 
+## Rendering Order
+
+OOB partials render **sequentially**, in the order you register them (`.AlsoUpdate()` calls, then any handler output). Sequential rendering keeps the shared per-request scope — your `DbContext`, `ViewData`, and the view-buffer pool — safe from concurrent access. Rendering is CPU-bound string building, so rendering in order costs effectively nothing even for dashboards with many partials.
+
+---
+
 ## Best Practices
 
 ✅ **Use for related updates** — Cart count when adding items  

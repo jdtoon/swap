@@ -43,9 +43,10 @@ public sealed class SwapStateModelBinder : IModelBinder
         var properties = modelType
             .GetProperties(BindingFlags.Public | BindingFlags.Instance)
             .Where(p => p.CanRead && p.CanWrite)
-            .Where(p => p.Name != nameof(SwapState.ContainerId) 
+            .Where(p => p.Name != nameof(SwapState.ContainerId)
                      && p.Name != nameof(SwapState.ChangedProperties)
-                     && p.Name != nameof(SwapState.HasChanges));
+                     && p.Name != nameof(SwapState.HasChanges)
+                     && p.Name != nameof(SwapState.Tampered));
 
         foreach (var prop in properties)
         {
@@ -61,8 +62,18 @@ public sealed class SwapStateModelBinder : IModelBinder
                 // This ensures explicit URL overrides take precedence, even if empty
                 var firstValue = result.FirstValue;
 
-                if (protectionProvider != null && !string.IsNullOrEmpty(firstValue) && SwapStateRenderer.IsPropertyProtected(state, prop.Name))
+                if (protectionProvider != null && SwapStateRenderer.IsPropertyProtected(state, prop.Name))
                 {
+                    // A protected field that is present in the request MUST be a non-empty,
+                    // valid protected token. Anything else is tampering — fail closed rather
+                    // than silently binding the type default (e.g. 0m price, Guid.Empty tenant).
+                    if (string.IsNullOrEmpty(firstValue))
+                    {
+                        state.Tampered = true;
+                        bindingContext.ModelState.TryAddModelError(fieldName, "Protected state value is missing or empty.");
+                        continue;
+                    }
+
                     try
                     {
                         var protector = protectionProvider.CreateProtector("SwapState", state.ContainerId, prop.Name);
@@ -70,11 +81,8 @@ public sealed class SwapStateModelBinder : IModelBinder
                     }
                     catch
                     {
-                        // INVALID STATE - Tampering detected
-                        // We fail binding for this property or even the whole model
-                        // For now, let's treat it as null/invalid and NOT bind it
-                        // Optional: Add model error
-                        // bindingContext.ModelState.TryAddModelError(fieldName, "Invalid state signature.");
+                        state.Tampered = true;
+                        bindingContext.ModelState.TryAddModelError(fieldName, "Protected state value failed integrity verification.");
                         continue;
                     }
                 }
@@ -98,6 +106,21 @@ public sealed class SwapStateModelBinder : IModelBinder
 
         // Clear change tracking since this is initial load
         state.AcceptChanges();
+
+        // Fail closed: if any protected value was tampered (in the loop above or in
+        // FromQueryString), reject the whole model so a forged request never reaches
+        // the action as a valid, silently-defaulted object.
+        if (state.Tampered)
+        {
+            if (bindingContext.ModelState.ErrorCount == 0)
+            {
+                var key = string.IsNullOrEmpty(bindingContext.ModelName) ? modelType.Name : bindingContext.ModelName;
+                bindingContext.ModelState.TryAddModelError(key, "Protected state failed integrity verification.");
+            }
+
+            bindingContext.Result = ModelBindingResult.Failed();
+            return Task.CompletedTask;
+        }
 
         bindingContext.Result = ModelBindingResult.Success(state);
         return Task.CompletedTask;

@@ -52,6 +52,11 @@ public class NotificationController : Controller
 }
 ```
 
+## Connection Behavior
+
+- **Writes are serialized per connection.** All writes to a single SSE connection — event broadcasts and the keep-alive heartbeat — pass through a per-connection write lock, so concurrent broadcasts can't interleave or corrupt frames.
+- **Keep-alive is an SSE comment.** The heartbeat is sent as a `: keepalive` comment line (not a client-visible event), so it holds the connection open without triggering any `sse-swap` handler.
+
 ## Distributed (Redis)
 
 For applications running on multiple servers (e.g., behind a load balancer), you must use a distributed backplane like Redis to ensure events reach all clients.

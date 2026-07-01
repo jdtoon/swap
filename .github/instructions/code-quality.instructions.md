@@ -71,12 +71,12 @@ All libraries target `net8.0`, `net9.0`, `net10.0`. When using newer APIs:
 - Avoid allocations in hot paths (middleware, request pipeline)
 - Use `ReadOnlySpan<char>` and `string.Create` where practical
 - Cache view discovery results in production
-- OOB swaps should render in parallel where possible
+- OOB swaps render sequentially in registration order — parallel rendering races the per-request scope (`DbContext`/`ViewData`/view-buffer pool); do not reintroduce `Task.WhenAll`
 - Benchmark significant changes using `lib/Swap.Htmx.Benchmarks/`
 
 ## Security
 
 - Validate OOB target IDs against injection (alphanumeric, hyphens, underscores only)
 - HTML-encode all user-provided content in HX-Trigger headers
-- Validate redirect/navigation URLs (block `javascript:`, `data:` schemes)
+- Validate redirect/navigation URLs against an allowlist (http/https absolute or same-origin relative only; reject protocol-relative and non-http(s) schemes)
 - SwapState supports encryption via `IDataProtection` — use for sensitive fields

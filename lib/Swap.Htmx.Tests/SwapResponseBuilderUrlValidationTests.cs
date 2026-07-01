@@ -94,4 +94,57 @@ public class SwapResponseBuilderUrlValidationTests
         Assert.Equal("/dashboard", builder.RedirectUrl);
         Assert.Single(builder.Toasts);
     }
+
+    [Theory]
+    [InlineData("//evil.com")]
+    [InlineData("//evil.com/path")]
+    [InlineData("/\\evil.com")]
+    [InlineData("\\\\evil.com")]
+    [InlineData("\\/evil.com")]
+    public void WithRedirect_RejectsProtocolRelativeUrls(string url)
+    {
+        // Protocol-relative URLs resolve to an off-site absolute URL in the browser (open redirect).
+        var builder = new SwapResponseBuilder();
+        Assert.Throws<ArgumentException>(() => builder.WithRedirect(url));
+    }
+
+    [Theory]
+    [InlineData("file:///etc/passwd")]
+    [InlineData("ftp://evil.com/x")]
+    [InlineData("mailto:a@b.com")]
+    public void WithRedirect_RejectsNonHttpSchemes(string url)
+    {
+        var builder = new SwapResponseBuilder();
+        Assert.Throws<ArgumentException>(() => builder.WithRedirect(url));
+    }
+
+    [Theory]
+    [InlineData("https://example.com/ok")]
+    [InlineData("http://example.com")]
+    public void WithRedirect_AcceptsAbsoluteHttpUrls(string url)
+    {
+        var builder = new SwapResponseBuilder().WithRedirect(url);
+        Assert.Equal(url, builder.RedirectUrl);
+    }
+
+    [Theory]
+    [InlineData("javascript:alert(1)")]
+    [InlineData("//evil.com")]
+    [InlineData("data:text/html,<script>alert(1)</script>")]
+    public void WithNavigation_HxLocationOptions_ValidatesPath(string path)
+    {
+        // The HxLocationOptions overload previously bypassed all URL validation.
+        var builder = new SwapResponseBuilder();
+        Assert.Throws<ArgumentException>(() =>
+            builder.WithNavigation(new HxLocationOptions { Path = path }));
+    }
+
+    [Fact]
+    public void WithNavigation_HxLocationOptions_AcceptsValidPath()
+    {
+        var builder = new SwapResponseBuilder()
+            .WithNavigation(new HxLocationOptions { Path = "/dashboard" });
+
+        Assert.Equal("/dashboard", builder.NavigationOptions!.Path);
+    }
 }

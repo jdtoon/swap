@@ -32,6 +32,8 @@ dotnet new swap-mvc -n MyApp
    - Events: use generated `EventKey` constants via `[SwapEventSource]`.
 5. State/paging/filtering: use `<swap-state>` + `[FromSwapState]`.
 6. Decoupling: use `ISwapEventConfiguration` for event chains and/or `[SwapHandler]` handlers.
+7. Protected state (`Protected => true`) requires ASP.NET Core Data Protection — `AddSwapHtmx()` registers it, and rendering protected state without a provider throws (never leaks plaintext). Tamper protection **fails closed**: a tampered/empty protected value fails model binding, so check `ModelState.IsValid` (or `SwapState.Tampered`) and handle it explicitly — it no longer silently becomes the type default.
+8. Redirect/navigation URLs (`WithRedirect()`, `WithNavigation()`) must be `http`/`https` absolute or same-origin relative (allowlist). Protocol-relative (`//host`, `/\host`) and non-http(s) schemes (`javascript:`, `data:`, `vbscript:`, …) throw `ArgumentException`.
 
 ================================================================================
 ## 1. Minimal Setup (Program.cs)
@@ -180,9 +182,9 @@ Target IDs are validated at build time. Valid IDs must:
 
 A leading `#` is automatically stripped. Invalid IDs throw `ArgumentException`.
 
-### OOB Rendering Performance
+### OOB Rendering
 
-All OOB swaps in a response are rendered **in parallel** using `Task.WhenAll()`. This applies to MVC (`SwapActionResult`), Minimal API (`SwapResult`), and Razor Pages (`SwapPageResult`). Output ordering matches registration order.
+All OOB swaps in a response are rendered **sequentially**, in registration order. This applies to MVC (`SwapActionResult`), Minimal API (`SwapResult`), and Razor Pages (`SwapPageResult`). Every partial renders on the single request scope (scoped `DbContext`, `ViewData`, the shared view-buffer pool), so sequential rendering avoids racing those scoped services; rendering is CPU-bound string building, so the cost is negligible. (Reverts the 1.3.0 `Task.WhenAll` parallelization, which intermittently threw "A second operation was started on this context instance".)
 
 ### Conditional OOB Swaps
 
@@ -212,8 +214,8 @@ All OOB swaps in a response are rendered **in parallel** using `Task.WhenAll()`.
 | `.WithDeletedToast(entity)` | "Entity deleted" |
 | `.WithSavedToast(entity)` | "Entity saved" |
 | `.WithTrigger(eventKey, payload?)` | Client-side HX-Trigger event |
-| `.WithRedirect(url)` | HX-Redirect (rejects javascript:/data:/vbscript:) |
-| `.WithNavigation(path, target?, pushUrl?)` | HX-Location (rejects dangerous schemes) |
+| `.WithRedirect(url)` | HX-Redirect (allowlist: http/https or same-origin relative only) |
+| `.WithNavigation(path, target?, pushUrl?)` | HX-Location (allowlist: http/https or same-origin relative only) |
 | `.WithClientAction(action, target?, value?)` | Client action (focus, reset, closeModal) |
 | `.WithState(state)` | OOB state container update |
 | `.Build()` | Build IActionResult |
@@ -327,6 +329,19 @@ For `Protected` state, you cannot manually build query strings. Use the helper:
 <a href="/tasks?@Html.SwapStateQueryString(Model.State)">
     Bookmarkable Link
 </a>
+```
+
+### Protected State Fails Closed
+
+Protected state requires `IDataProtectionProvider` (registered by `AddSwapHtmx()`); rendering it without a provider throws instead of emitting plaintext. On bind, a protected value that is present-but-empty or fails to decrypt is a hard failure — the binder adds a `ModelState` error and sets `SwapState.Tampered = true` (it no longer silently defaults to `0`/`Guid.Empty`). Always verify before trusting protected state:
+
+```csharp
+public IActionResult Checkout([FromSwapState] PaymentState state)
+{
+    if (!ModelState.IsValid || state.Tampered)
+        return SwapResponse().WithErrorToast("Invalid request.").Build();
+    // state is trustworthy here
+}
 ```
 
 ================================================================================

@@ -482,24 +482,79 @@ public sealed class SwapResponseBuilder : IResult
     }
 
     /// <summary>
-    /// Validates that a URL is safe for redirect/navigation (blocks javascript:, data:, and other dangerous schemes).
+    /// Validates that a URL is safe for redirect/navigation using an allowlist: only http/https
+    /// absolute URLs and same-origin relative references are permitted. Any other scheme
+    /// (<c>javascript:</c>, <c>data:</c>, <c>vbscript:</c>, <c>file:</c>, <c>mailto:</c>, …) and
+    /// protocol-relative URLs (<c>//host</c>, <c>/\host</c>) are rejected as open-redirect / XSS vectors.
     /// </summary>
-    private static void ValidateUrl(string url, string paramName)
+    private static void ValidateUrl(string? url, string paramName)
     {
         if (string.IsNullOrWhiteSpace(url))
             throw new ArgumentException("URL cannot be null or empty.", paramName);
 
         var trimmed = url.Trim();
 
-        // Block dangerous URI schemes
-        if (trimmed.StartsWith("javascript:", StringComparison.OrdinalIgnoreCase) ||
-            trimmed.StartsWith("data:", StringComparison.OrdinalIgnoreCase) ||
-            trimmed.StartsWith("vbscript:", StringComparison.OrdinalIgnoreCase))
+        // Absolute URL with an explicit scheme: allow only http/https (allowlist, not blocklist).
+        if (HasScheme(trimmed, out var scheme))
         {
-            throw new ArgumentException(
-                $"URL '{trimmed}' uses a disallowed scheme. Only relative paths and http/https URLs are permitted.",
-                paramName);
+            if (!scheme.Equals("http", StringComparison.OrdinalIgnoreCase) &&
+                !scheme.Equals("https", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new ArgumentException(
+                    $"URL '{trimmed}' uses the disallowed scheme '{scheme}:'. " +
+                    "Only http/https absolute URLs or same-origin relative paths are permitted.",
+                    paramName);
+            }
+
+            return;
         }
+
+        // No scheme. Reject protocol-relative / backslash-obfuscated URLs (//host, /\host, \\host, \/host);
+        // the browser resolves these to an off-site absolute URL, enabling open redirects.
+        if (trimmed.Length >= 2)
+        {
+            char c0 = trimmed[0], c1 = trimmed[1];
+            if ((c0 == '/' || c0 == '\\') && (c1 == '/' || c1 == '\\'))
+            {
+                throw new ArgumentException(
+                    $"URL '{trimmed}' is a protocol-relative URL that can redirect off-site. " +
+                    "Use a rooted path ('/path') or an absolute http/https URL.",
+                    paramName);
+            }
+        }
+
+        // Otherwise it's a same-origin relative reference ('/path', 'path', '?query', '#fragment') — allowed.
+    }
+
+    /// <summary>
+    /// Returns true if <paramref name="url"/> begins with an RFC 3986 URI scheme (e.g. <c>https:</c>,
+    /// <c>javascript:</c>) that appears before any '/', '?' or '#'. Outputs the scheme name (without the colon).
+    /// </summary>
+    private static bool HasScheme(string url, out string scheme)
+    {
+        scheme = string.Empty;
+
+        if (url.Length == 0 || !char.IsLetter(url[0]))
+            return false;
+
+        for (var i = 0; i < url.Length; i++)
+        {
+            var c = url[i];
+            if (c == ':')
+            {
+                scheme = url.Substring(0, i);
+                return i > 0;
+            }
+
+            // A path/query/fragment delimiter before ':' means there is no scheme (it's relative).
+            if (c == '/' || c == '?' || c == '#')
+                return false;
+
+            if (!(char.IsLetterOrDigit(c) || c == '+' || c == '-' || c == '.'))
+                return false;
+        }
+
+        return false;
     }
 
     /// <summary>
@@ -509,6 +564,8 @@ public sealed class SwapResponseBuilder : IResult
     /// <returns>The builder for chaining.</returns>
     public SwapResponseBuilder WithNavigation(HxLocationOptions options)
     {
+        ArgumentNullException.ThrowIfNull(options);
+        ValidateUrl(options.Path, nameof(options));
         _navigationOptions = options;
         return this;
     }

@@ -164,7 +164,7 @@ await _publisher.Publish("task.completed", id);
 ```
 
 ### Performance & Security
-OOB swaps render in parallel — dashboards with 12+ partials update fast. Target IDs are validated against injection attacks, and redirect URLs reject dangerous schemes (`javascript:`, `data:`, `vbscript:`).
+OOB swaps render sequentially and preserve registration order — keeping per-request scoped services (like your `DbContext`) safe while staying fast, since rendering is CPU-bound string building. Target IDs are validated against injection attacks, and redirect/navigation URLs are restricted to an allowlist (http/https or same-origin relative).
 
 ---
 

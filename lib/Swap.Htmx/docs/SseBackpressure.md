@@ -34,3 +34,5 @@ builder.Services.AddSseEventBridge(o =>
 
 - These limits apply to **SSE connections** (`SseConnection`) created by `ServerSentEvents(...)` / the enhanced SSE result.
 - Backpressure is per-connection: one slow client won’t block broadcasts to other clients.
+- **Writes are serialized per connection.** Broadcasts and the keep-alive heartbeat share a per-connection write lock, so frames can’t interleave or corrupt each other under load.
+- The keep-alive heartbeat is a `: keepalive` SSE comment (not a client-visible `ping` event).

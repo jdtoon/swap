@@ -74,7 +74,17 @@ Create `Views/Shared/_SwapErrorToast.cshtml`. The model passed is `SwapErrorMode
 |--------|---------|-------------|
 | `Enabled` | `false` | Master switch for the feature. |
 | `ErrorViewName` | `_SwapErrorToast` | Name of the partial view to render. |
-| `ShowExceptionDetails` | `false` | If true, `Model.Message` contains the exception message. If false, "An unexpected error occurred." |
+| `ShowExceptionDetails` | `false` | If true, `Model.Message` contains the (HTML-encoded) exception message. If false, a generic message plus a request correlation id is shown, and full details are logged server-side. |
+
+---
+
+## Safe Output (Built-in Fallback)
+
+The built-in fallback error response is safe by default:
+
+- **All values are HTML-encoded.** Interpolated content (including any exception text) is HTML-encoded, so a crafted exception message cannot inject markup or script into the page — the fallback is no longer reflected-XSS-vulnerable.
+- **The raw exception message is not shown by default.** With `ShowExceptionDetails = false`, the client sees a generic message plus a request **correlation id**; the full exception (message, stack trace) is logged **server-side** via `ILogger`. Surface the correlation id to users so support can find the matching log entry.
+- Enable `ShowExceptionDetails` only in Development.
 
 ---
 
