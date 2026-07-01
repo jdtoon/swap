@@ -10,6 +10,9 @@ public sealed class ServerSentEventStream : IAsyncDisposable
 {
     private readonly HttpResponse _response;
     private readonly CancellationToken _cancellationToken;
+    // Kestrel's response PipeWriter forbids concurrent writes. The writer loop and the keep-alive
+    // heartbeat run on separate tasks, so every write/flush is serialized through this gate.
+    private readonly SemaphoreSlim _writeLock = new(1, 1);
     private bool _disposed;
 
     internal ServerSentEventStream(HttpResponse response, CancellationToken cancellationToken)
@@ -35,24 +38,27 @@ public sealed class ServerSentEventStream : IAsyncDisposable
         if (html == null)
             throw new ArgumentNullException(nameof(html));
 
+        var message = FormatSseMessage(eventName, html, id);
+
+        await _writeLock.WaitAsync(_cancellationToken);
         try
         {
-            var message = FormatSseMessage(eventName, html, id);
-            System.Diagnostics.Debug.WriteLine($"[SSE Stream] Sending event '{eventName}' with {html.Length} chars");
             await _response.WriteAsync(message, _cancellationToken);
             await _response.Body.FlushAsync(_cancellationToken);
-            System.Diagnostics.Debug.WriteLine($"[SSE Stream] Successfully sent and flushed event '{eventName}'");
         }
         catch (OperationCanceledException)
         {
             // Client disconnected or request cancelled - expected
-            System.Diagnostics.Debug.WriteLine($"[SSE Stream] Client disconnected while sending '{eventName}'");
             throw;
         }
         catch (System.IO.IOException ex)
         {
             // Network error - client likely disconnected
             throw new OperationCanceledException("Client disconnected", ex);
+        }
+        finally
+        {
+            _writeLock.Release();
         }
     }
 
@@ -63,8 +69,16 @@ public sealed class ServerSentEventStream : IAsyncDisposable
     public async Task SendKeepAliveAsync()
     {
         ThrowIfDisposed();
-        await _response.WriteAsync(": keepalive\n\n", _cancellationToken);
-        await _response.Body.FlushAsync(_cancellationToken);
+        await _writeLock.WaitAsync(_cancellationToken);
+        try
+        {
+            await _response.WriteAsync(": keepalive\n\n", _cancellationToken);
+            await _response.Body.FlushAsync(_cancellationToken);
+        }
+        finally
+        {
+            _writeLock.Release();
+        }
     }
 
     /// <summary>
@@ -74,8 +88,16 @@ public sealed class ServerSentEventStream : IAsyncDisposable
     public async Task SendRetryDirectiveAsync(int milliseconds)
     {
         ThrowIfDisposed();
-        await _response.WriteAsync($"retry: {milliseconds}\n\n", _cancellationToken);
-        await _response.Body.FlushAsync(_cancellationToken);
+        await _writeLock.WaitAsync(_cancellationToken);
+        try
+        {
+            await _response.WriteAsync($"retry: {milliseconds}\n\n", _cancellationToken);
+            await _response.Body.FlushAsync(_cancellationToken);
+        }
+        finally
+        {
+            _writeLock.Release();
+        }
     }
 
     /// <summary>
@@ -117,6 +139,7 @@ public sealed class ServerSentEventStream : IAsyncDisposable
     public ValueTask DisposeAsync()
     {
         _disposed = true;
+        _writeLock.Dispose();
         return ValueTask.CompletedTask;
     }
 }

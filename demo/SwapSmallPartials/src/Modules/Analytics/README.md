@@ -68,7 +68,7 @@ State.ProcessPurchase() (update server state)
     ↓
 SwapEvent(AnalyticsEvents.Purchase.Completed, evt)
     ↓
-15-20 handlers respond in parallel:
+15-20 handlers respond to the event:
     • RevenueTodayHandler → updates #partial-revenue-today
     • OrdersCountHandler → updates #partial-orders-count
     • AvgOrderValueHandler → updates #partial-avg-order-value

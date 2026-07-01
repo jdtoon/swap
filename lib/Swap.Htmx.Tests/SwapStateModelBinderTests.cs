@@ -5,6 +5,7 @@ using Microsoft.Extensions.Primitives;
 using Swap.Htmx.State;
 using Xunit;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.AspNetCore.DataProtection;
 
 namespace Swap.Htmx.Tests;
 
@@ -20,17 +21,36 @@ public class FilterState : SwapState
 }
 
 /// <summary>
+/// State with one protected property and one plain property, for tamper-detection tests.
+/// </summary>
+public class MixedProtectedState : SwapState
+{
+    [SwapProtected] public string Token { get; set; } = "none";
+    public int Page { get; set; } = 1;
+}
+
+/// <summary>
 /// Tests for SwapStateModelBinder - the [FromSwapState] binding mechanism.
 /// </summary>
 public class SwapStateModelBinderTests
 {
     private static ModelBindingContext CreateBindingContext(
         Dictionary<string, StringValues>? formValues = null,
-        Dictionary<string, StringValues>? queryValues = null)
+        Dictionary<string, StringValues>? queryValues = null,
+        Type? stateType = null,
+        IDataProtectionProvider? dataProtection = null)
     {
+        stateType ??= typeof(FilterState);
         var httpContext = new DefaultHttpContext();
         var services = new ServiceCollection();
-        services.AddDataProtection();
+        if (dataProtection != null)
+        {
+            services.AddSingleton(dataProtection);
+        }
+        else
+        {
+            services.AddDataProtection();
+        }
         httpContext.RequestServices = services.BuildServiceProvider();
         
         // Set up form values
@@ -73,7 +93,7 @@ public class SwapStateModelBinderTests
         var bindingContext = new DefaultModelBindingContext
         {
             ActionContext = actionContext,
-            ModelMetadata = new EmptyModelMetadataProvider().GetMetadataForType(typeof(FilterState)),
+            ModelMetadata = new EmptyModelMetadataProvider().GetMetadataForType(stateType),
             ModelName = string.Empty,
             ModelState = new ModelStateDictionary(),
             ValueProvider = new CompositeValueProvider(valueProviders)
@@ -280,5 +300,76 @@ public class SwapStateModelBinderTests
         var stateUnchecked = contextUnchecked.Result.Model as FilterState;
         Assert.NotNull(stateUnchecked);
         Assert.False(stateUnchecked.ShowInactive);
+    }
+
+    [Fact]
+    public async Task BindModelAsync_FailsAndFlagsTampering_WhenProtectedFieldIsGarbage()
+    {
+        // A forged/garbled value for a protected field must fail closed, not silently default.
+        var binder = new SwapStateModelBinder();
+        var context = CreateBindingContext(
+            formValues: new Dictionary<string, StringValues>
+            {
+                { "Token", "not-a-valid-protected-token" },
+                { "Page", "3" }
+            },
+            stateType: typeof(MixedProtectedState));
+
+        await binder.BindModelAsync(context);
+
+        Assert.False(context.Result.IsModelSet);   // hard fail — model not bound
+        Assert.False(context.ModelState.IsValid);   // ModelState error recorded
+    }
+
+    [Fact]
+    public async Task BindModelAsync_FailsAndFlagsTampering_WhenProtectedFieldIsEmptied()
+    {
+        // Clearing a protected field must not silently bind it to type default.
+        var binder = new SwapStateModelBinder();
+        var context = CreateBindingContext(
+            formValues: new Dictionary<string, StringValues>
+            {
+                { "Token", "" },
+                { "Page", "3" }
+            },
+            stateType: typeof(MixedProtectedState));
+
+        await binder.BindModelAsync(context);
+
+        Assert.False(context.Result.IsModelSet);
+        Assert.False(context.ModelState.IsValid);
+    }
+
+    [Fact]
+    public async Task BindModelAsync_Succeeds_WhenProtectedFieldIsValid()
+    {
+        // A genuinely protected value round-trips and does not flag tampering.
+        var services = new ServiceCollection();
+        services.AddDataProtection();
+        var provider = services.BuildServiceProvider().GetRequiredService<IDataProtectionProvider>();
+
+        var containerId = new MixedProtectedState().ContainerId;
+        var token = provider
+            .CreateProtector("SwapState", containerId, nameof(MixedProtectedState.Token))
+            .Protect("real-value");
+
+        var binder = new SwapStateModelBinder();
+        var context = CreateBindingContext(
+            formValues: new Dictionary<string, StringValues>
+            {
+                { "Token", token },
+                { "Page", "3" }
+            },
+            stateType: typeof(MixedProtectedState),
+            dataProtection: provider);
+
+        await binder.BindModelAsync(context);
+
+        Assert.True(context.Result.IsModelSet);
+        var state = context.Result.Model as MixedProtectedState;
+        Assert.NotNull(state);
+        Assert.False(state.Tampered);
+        Assert.Equal("real-value", state.Token);
+        Assert.Equal(3, state.Page);
     }
 }

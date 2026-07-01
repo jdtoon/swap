@@ -61,6 +61,19 @@ public abstract class SwapState : INotifyPropertyChanged
     public bool HasChanges => _changedProperties.Count > 0;
 
     /// <summary>
+    /// Gets whether tampering was detected while reading a protected value for this state.
+    /// A protected field (via <see cref="Protected"/> or <c>[SwapProtected]</c>) that is present
+    /// in the request but empty, or that fails to decrypt/verify, sets this to <see langword="true"/>.
+    /// </summary>
+    /// <remarks>
+    /// When binding via <c>[FromSwapState]</c>, a tampered state fails model binding and records a
+    /// <see cref="Microsoft.AspNetCore.Mvc.ModelBinding.ModelStateDictionary"/> error, so a tampered
+    /// request never reaches your action as a valid model. This flag is also set by
+    /// <see cref="FromQueryString"/> so callers using it directly can inspect the result.
+    /// </remarks>
+    public bool Tampered { get; internal set; }
+
+    /// <summary>
     /// Gets or sets whether this state should be synchronized with the URL query string.
     /// When enabled, state properties are appended to URLs and read from query parameters.
     /// </summary>
@@ -213,7 +226,9 @@ public abstract class SwapState : INotifyPropertyChanged
                         }
                         catch
                         {
-                            // Tampered or invalid - skip
+                            // Protected value present but empty or failed to decrypt/verify.
+                            // Fail closed: flag tampering and never apply the forged value.
+                            Tampered = true;
                             continue;
                         }
                     }
@@ -368,7 +383,7 @@ public abstract class SwapState : INotifyPropertyChanged
 
     private static bool IsExcludedProperty(string name)
     {
-        return name is nameof(ContainerId) or nameof(ChangedProperties) or nameof(HasChanges);
+        return name is nameof(ContainerId) or nameof(ChangedProperties) or nameof(HasChanges) or nameof(Tampered);
     }
 
     private static bool IsSupportedType(Type type)

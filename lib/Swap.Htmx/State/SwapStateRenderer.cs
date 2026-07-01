@@ -2,6 +2,8 @@ using System.Globalization;
 using System.Text;
 using System.Text.Encodings.Web;
 using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Swap.Htmx.State;
 
@@ -47,6 +49,58 @@ internal static class SwapStateRenderer
         sb.Append("</div>");
         
         return sb.ToString();
+    }
+
+    /// <summary>
+    /// Renders a <see cref="SwapState"/> as an OOB swap for the current request, always resolving the
+    /// <see cref="IDataProtectionProvider"/> from request services so protected state is encrypted.
+    /// This is the single render path used by every result type (MVC, Razor Pages, Minimal APIs) so a
+    /// sink can never forget to pass the provider and leak protected values as plaintext.
+    /// </summary>
+    /// <param name="state">The state to render.</param>
+    /// <param name="httpContext">The current request, whose services supply the protection provider.</param>
+    /// <returns>HTML string with <c>hx-swap-oob="true"</c>.</returns>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when <paramref name="state"/> has protected properties but no
+    /// <see cref="IDataProtectionProvider"/> is registered — rendering would otherwise emit plaintext.
+    /// </exception>
+    public static string RenderAsOobForRequest(SwapState state, HttpContext httpContext)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        ArgumentNullException.ThrowIfNull(httpContext);
+
+        var protectionProvider = httpContext.RequestServices.GetService<IDataProtectionProvider>();
+
+        if (protectionProvider == null && StateHasProtectedProperties(state))
+        {
+            throw new InvalidOperationException(
+                $"SwapState '{state.ContainerId}' is protected but no IDataProtectionProvider is registered, " +
+                "so its values would be rendered as plaintext hidden fields. " +
+                "Fix: call AddSwapHtmx() (which registers data protection) or AddDataProtection() during service configuration.");
+        }
+
+        return RenderAsOob(state, protectionProvider);
+    }
+
+    /// <summary>
+    /// Returns true if the state is protected at the class level or has any <c>[SwapProtected]</c> property.
+    /// </summary>
+    internal static bool StateHasProtectedProperties(SwapState state)
+    {
+        if (state.Protected)
+        {
+            return true;
+        }
+
+        foreach (var key in state.GetStateValues().Keys)
+        {
+            if (IsPropertyProtected(state, key))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /// <summary>

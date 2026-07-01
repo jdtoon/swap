@@ -63,22 +63,55 @@ public class SecureSwapStateTests
     }
 
     [Fact]
-    public void FromQueryString_FailsGracefully_WithTamperedData()
+    public void FromQueryString_FlagsTampering_AndDoesNotApply_WhenProtectedValueTampered()
     {
         var state = new SecureState { Secret = "TopSecret", Count = 42 };
         var queryString = state.ToQueryString(_provider);
-        
+
         // Tamper with the secret
         var query = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(queryString.TrimStart('?'));
         var tamperedValues = new Dictionary<string, StringValues>(query);
-        tamperedValues["Secret"] = "TamperedValue"; // Not a valid encrypted string
-        
+        tamperedValues["Secret"] = "TamperedValue"; // Not a valid protected token
+
         var newState = new SecureState();
         newState.FromQueryString(new QueryCollection(tamperedValues), _provider);
-        
-        // Should ignore invalid values and stick to defaults
-        Assert.Equal("hidden", newState.Secret); // Default value
-        Assert.Equal(42, newState.Count); // Valid value should still work
+
+        // Fail closed: tamper is signalled and the forged value is never applied
+        Assert.True(newState.Tampered);
+        Assert.NotEqual("TamperedValue", newState.Secret);
+    }
+
+    [Fact]
+    public void FromQueryString_FlagsTampering_WhenProtectedValueEmptied()
+    {
+        var state = new SecureState { Secret = "TopSecret", Count = 42 };
+        var queryString = state.ToQueryString(_provider);
+
+        // Clear a protected numeric field — must NOT silently become 0
+        var query = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(queryString.TrimStart('?'));
+        var tamperedValues = new Dictionary<string, StringValues>(query);
+        tamperedValues["Count"] = "";
+
+        var newState = new SecureState { Count = 999 };
+        newState.FromQueryString(new QueryCollection(tamperedValues), _provider);
+
+        Assert.True(newState.Tampered);
+        Assert.NotEqual(0, newState.Count);
+    }
+
+    [Fact]
+    public void FromQueryString_DoesNotFlagTampering_WhenUntampered()
+    {
+        var state = new SecureState { Secret = "TopSecret", Count = 42 };
+        var queryString = state.ToQueryString(_provider);
+        var query = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(queryString.TrimStart('?'));
+
+        var newState = new SecureState();
+        newState.FromQueryString(new QueryCollection(query), _provider);
+
+        Assert.False(newState.Tampered);
+        Assert.Equal("TopSecret", newState.Secret);
+        Assert.Equal(42, newState.Count);
     }
 
     [Fact]

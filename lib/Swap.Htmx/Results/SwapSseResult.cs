@@ -115,18 +115,11 @@ public class SwapSseResult : IResult
             while (!ct.IsCancellationRequested)
             {
                 await Task.Delay(_options.HeartbeatInterval, ct);
-                
-                // Send a comment to keep the connection alive and prevent timeouts
-                // We access the internal stream directly to send a comment
-                // Note: ServerSentEventStream doesn't expose SendCommentAsync publicly yet, 
-                // but we can send a dummy event or just rely on the flush.
-                // Ideally, we should add SendCommentAsync to ServerSentEventStream.
-                // For now, we'll send a "ping" event which is harmless.
-                // Or better, let's add SendCommentAsync to ServerSentEventStream.
-                
-                // Assuming SendCommentAsync exists or we add it. 
-                // If not, we can send a technical event that clients ignore.
-                await stream.SendEventAsync("ping", "{}", null); 
+
+                // Send an SSE comment (": keepalive") to hold the connection open without surfacing a
+                // spurious client-visible event. Routed through the stream's write lock so it can never
+                // race the event writer for the response body.
+                await stream.SendKeepAliveAsync();
             }
         }
         catch (OperationCanceledException)

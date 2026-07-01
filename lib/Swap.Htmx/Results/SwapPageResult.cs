@@ -107,20 +107,23 @@ public sealed class SwapPageResult : ActionResult
             }
         }
 
-        // 4. Render OOB swaps (parallelized for performance)
+        // 4. Render OOB swaps sequentially. Each partial renders on the single request scope
+        // (scoped DbContext, ViewData, the shared view-buffer pool); fanning them out with
+        // Task.WhenAll races those scoped services and intermittently throws
+        // "A second operation was started on this context instance". View rendering is CPU-bound
+        // string building, so sequential rendering costs effectively nothing while removing the race.
         var oobContent = new List<string>();
-        if (_builder.OobSwaps.Count > 0)
+        foreach (var oob in _builder.OobSwaps)
         {
-            var oobTasks = _builder.OobSwaps.Select(oob => RenderOobSwapAsync(context, oob)).ToArray();
-            var results = await Task.WhenAll(oobTasks);
-            oobContent.AddRange(results);
+            oobContent.Add(await RenderOobSwapAsync(context, oob));
         }
 
-        // 4b. Render SwapState as OOB if configured
+        // 4b. Render SwapState as OOB if configured. Always go through the request-scoped helper so
+        // protected state is encrypted. Previously this passed no provider, rendering [SwapProtected]
+        // state as plaintext on Razor Pages — the helper makes that impossible.
         if (_builder.State != null)
         {
-            var stateHtml = SwapStateRenderer.RenderAsOob(_builder.State);
-            oobContent.Add(stateHtml);
+            oobContent.Add(SwapStateRenderer.RenderAsOobForRequest(_builder.State, context.HttpContext));
         }
 
         // 5. Render main view (if one is specified) or just OOB swaps

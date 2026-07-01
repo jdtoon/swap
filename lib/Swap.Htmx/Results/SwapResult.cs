@@ -131,21 +131,22 @@ public sealed class SwapResult : IResult
         var tempDataProvider = httpContext.RequestServices.GetRequiredService<ITempDataProvider>();
         var tempData = new TempDataDictionary(httpContext, tempDataProvider);
 
-        // 4. Render OOB swaps (parallelized for performance)
+        // 4. Render OOB swaps sequentially. Each partial renders on the single request scope
+        // (scoped DbContext, ViewData, the shared view-buffer pool); fanning them out with
+        // Task.WhenAll races those scoped services and intermittently throws
+        // "A second operation was started on this context instance". View rendering is CPU-bound
+        // string building, so sequential rendering costs effectively nothing while removing the race.
         var oobContent = new List<string>();
-        if (_builder.OobSwaps.Count > 0)
+        foreach (var oob in _builder.OobSwaps)
         {
-            var oobTasks = _builder.OobSwaps.Select(oob => RenderOobSwapAsync(actionContext, viewData, tempData, oob)).ToArray();
-            var results = await Task.WhenAll(oobTasks);
-            oobContent.AddRange(results);
+            oobContent.Add(await RenderOobSwapAsync(actionContext, viewData, tempData, oob));
         }
 
-        // 4b. Render SwapState as OOB if configured
+        // 4b. Render SwapState as OOB if configured. Always go through the request-scoped helper so
+        // protected state is encrypted (a sink can never forget the provider — see RenderAsOobForRequest).
         if (_builder.State != null)
         {
-            var protectionProvider = httpContext.RequestServices.GetService<IDataProtectionProvider>();
-            var stateHtml = SwapStateRenderer.RenderAsOob(_builder.State, protectionProvider);
-            oobContent.Add(stateHtml);
+            oobContent.Add(SwapStateRenderer.RenderAsOobForRequest(_builder.State, httpContext));
         }
 
         // 5. Render main view or OOB content

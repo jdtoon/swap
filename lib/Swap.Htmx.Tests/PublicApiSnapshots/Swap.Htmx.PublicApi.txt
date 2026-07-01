@@ -653,6 +653,7 @@ namespace Swap.Htmx.State
         public virtual string ContainerId { get; }
         public bool HasChanges { get; }
         public virtual bool Protected { get; }
+        public bool Tampered { get; }
         protected virtual System.Collections.Generic.IEnumerable<string> UrlExcludedProperties { get; }
         public virtual string UrlPrefix { get; }
         public virtual bool UrlSync { get; }
