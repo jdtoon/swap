@@ -552,6 +552,8 @@ namespace Swap.Htmx.Models
         AfterEnd = 5,
         Delete = 6,
         None = 7,
+        MorphOuter = 8,
+        MorphInner = 9,
     }
     public sealed class SwapResponseBuilder : Microsoft.AspNetCore.Http.IResult
     {
@@ -561,6 +563,7 @@ namespace Swap.Htmx.Models
         public System.Collections.Generic.IReadOnlyList<Swap.Htmx.Models.ClientAction> ClientActions { get; }
         public System.Collections.Generic.IReadOnlyList<Swap.Htmx.Models.ToastNotification> Toasts { get; }
         public System.Collections.Generic.IReadOnlyList<Swap.Htmx.Models.TriggerEvent> Triggers { get; }
+        public Swap.Htmx.Models.SwapResponseBuilder AlsoMorph(string targetId, string viewName, object? model = null, bool innerHtml = false) { }
         public Swap.Htmx.Models.SwapResponseBuilder AlsoUpdate(string targetId, string viewName, object? model = null, Swap.Htmx.Models.SwapMode swapMode = 0) { }
         public Swap.Htmx.Models.SwapResponseBuilder AlsoUpdateIf(bool condition, string targetId, string viewName, object? model = null, Swap.Htmx.Models.SwapMode swapMode = 0) { }
         public Swap.Htmx.Models.SwapResponseBuilder AlsoUpdateIfExists(string targetId, string viewName, object? model = null, Swap.Htmx.Models.SwapMode swapMode = 0) { }

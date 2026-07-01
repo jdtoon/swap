@@ -34,9 +34,22 @@ public enum SwapMode
     
     /// <summary>Delete the target element.</summary>
     Delete,
-    
+
     /// <summary>Do nothing with the OOB swap.</summary>
-    None
+    None,
+
+    /// <summary>
+    /// Morph the entire target element (attributes + children) via the idiomorph extension,
+    /// preserving focus, caret, scroll position and in-flight transitions. Requires the client
+    /// idiomorph extension (auto-included by the <c>&lt;swap-scripts&gt;</c> tag helper).
+    /// </summary>
+    MorphOuter,
+
+    /// <summary>
+    /// Morph only the target's inner content via the idiomorph extension, preserving focus, caret
+    /// and scroll. Requires the client idiomorph extension.
+    /// </summary>
+    MorphInner
 }
 
 /// <summary>
@@ -212,6 +225,25 @@ public sealed class SwapResponseBuilder : IResult
     {
         _oobSwaps.Add(new OobSwap(NormalizeOobTargetId(targetId), viewName, model, swapMode));
         return this;
+    }
+
+    /// <summary>
+    /// Adds an out-of-band swap that morphs the target via idiomorph — preserving focus, caret,
+    /// scroll position and in-flight CSS transitions instead of destructively replacing it.
+    /// </summary>
+    /// <param name="targetId">The ID of the element to morph.</param>
+    /// <param name="viewName">The partial view to render for this target.</param>
+    /// <param name="model">The model for the partial view.</param>
+    /// <param name="innerHtml">When true, morph only the target's inner content; otherwise morph the whole element.</param>
+    /// <returns>The builder for chaining.</returns>
+    /// <remarks>Requires the client idiomorph extension, auto-included by the <c>&lt;swap-scripts&gt;</c> tag helper.</remarks>
+    public SwapResponseBuilder AlsoMorph(
+        string targetId,
+        string viewName,
+        object? model = null,
+        bool innerHtml = false)
+    {
+        return AlsoUpdate(targetId, viewName, model, innerHtml ? SwapMode.MorphInner : SwapMode.MorphOuter);
     }
 
     /// <summary>

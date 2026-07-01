@@ -304,18 +304,7 @@ public sealed class SwapActionResult : ActionResult
         var html = sw.ToString().Trim();
 
         // Wrap with hx-swap-oob attribute
-        var swapModeStr = oob.SwapMode switch
-        {
-            SwapMode.OuterHTML => "true",
-            SwapMode.InnerHTML => "innerHTML",
-            SwapMode.BeforeBegin => "beforebegin",
-            SwapMode.AfterBegin => "afterbegin",
-            SwapMode.BeforeEnd => "beforeend",
-            SwapMode.AfterEnd => "afterend",
-            SwapMode.Delete => "delete",
-            SwapMode.None => "none",
-            _ => "true"
-        };
+        var swapModeStr = oob.SwapMode.ToOobSwapToken();
 
         // If the rendered HTML already contains hx-swap-oob, return as-is
         if (html.Contains("hx-swap-oob"))
