@@ -52,6 +52,14 @@ namespace Swap.Htmx.Realtime
     {
         System.Threading.Tasks.Task HandleMessageAsync(Swap.Htmx.Realtime.IRealtimeConnection connection, string message);
     }
+    public interface IRealtimePresence
+    {
+        int Count(string room);
+        System.Collections.Generic.IReadOnlyList<Swap.Htmx.Realtime.PresenceEntry> List(string room);
+        void Track(string connectionId, string room, string? userId);
+        void Untrack(string connectionId, string room);
+        void UntrackAll(string connectionId);
+    }
     public interface ISseBackplane
     {
         System.Threading.Tasks.Task PublishAsync(Swap.Htmx.Realtime.SseMessage message, System.Threading.CancellationToken cancellationToken = default);
@@ -83,6 +91,22 @@ namespace Swap.Htmx.Realtime
     public interface ISseViewRenderer
     {
         System.Threading.Tasks.Task<string> RenderPartialAsync<TModel>(string viewName, TModel model);
+    }
+    public sealed class InMemoryRealtimePresence : Swap.Htmx.Realtime.IRealtimePresence
+    {
+        public InMemoryRealtimePresence() { }
+        public int Count(string room) { }
+        public System.Collections.Generic.IReadOnlyList<Swap.Htmx.Realtime.PresenceEntry> List(string room) { }
+        public void Track(string connectionId, string room, string? userId) { }
+        public void Untrack(string connectionId, string room) { }
+        public void UntrackAll(string connectionId) { }
+    }
+    public class PresenceEntry : System.IEquatable<Swap.Htmx.Realtime.PresenceEntry>
+    {
+        public PresenceEntry(string ConnectionId, string? UserId, string Room) { }
+        public string ConnectionId { get; init; }
+        public string Room { get; init; }
+        public string? UserId { get; init; }
     }
     public class RealtimeConnectionStats : System.IEquatable<Swap.Htmx.Realtime.RealtimeConnectionStats>
     {

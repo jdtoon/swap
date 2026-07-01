@@ -1,5 +1,4 @@
 using System.Collections.Concurrent;
-using System.Collections.Frozen;
 using System.ComponentModel;
 using System.Reflection;
 using System.Runtime.CompilerServices;
@@ -358,7 +357,10 @@ public abstract class SwapState : INotifyPropertyChanged
     /// </remarks>
     protected virtual IEnumerable<PropertyInfo> GetStateProperties()
     {
-        return GetCachedMetadata(GetType()).Properties;
+        // Return the cached read-only view so a caller (or a subclass override) can never mutate the
+        // shared per-Type cache (e.g. by casting the result to PropertyInfo[] and sorting it in place,
+        // which would corrupt the property set for every other instance of the type).
+        return GetCachedMetadata(GetType()).ReadOnlyProperties;
     }
 
     /// <summary>
@@ -393,19 +395,17 @@ public abstract class SwapState : INotifyPropertyChanged
         public StateMetadata(Type type)
         {
             Properties = ComputeStateProperties(type);
-            PropertyNames = Properties.Select(p => p.Name).ToFrozenSet(StringComparer.Ordinal);
+            ReadOnlyProperties = Array.AsReadOnly(Properties);
         }
 
-        /// <summary>
-        /// The filtered, public instance, readable+writable, non-excluded, supported-type
-        /// properties for the state type.
-        /// </summary>
+        /// <summary>The filtered state properties for the type (internal; never handed out raw).</summary>
         public PropertyInfo[] Properties { get; }
 
         /// <summary>
-        /// The names of <see cref="Properties"/>, as a frozen set for fast lookup.
+        /// A stable read-only view over <see cref="Properties"/>, returned by
+        /// <see cref="GetStateProperties"/> so the shared per-Type cache cannot be mutated by callers.
         /// </summary>
-        public FrozenSet<string> PropertyNames { get; }
+        public System.Collections.ObjectModel.ReadOnlyCollection<PropertyInfo> ReadOnlyProperties { get; }
     }
 
     /// <summary>

@@ -3,6 +3,9 @@ namespace Swap.Htmx.Realtime;
 /// <summary>
 /// Represents a single connection's presence within a room.
 /// </summary>
+/// <param name="ConnectionId">The realtime connection identifier.</param>
+/// <param name="UserId">The associated user identifier, if any.</param>
+/// <param name="Room">The room the connection is present in.</param>
 public record PresenceEntry(string ConnectionId, string? UserId, string Room);
 
 /// <summary>

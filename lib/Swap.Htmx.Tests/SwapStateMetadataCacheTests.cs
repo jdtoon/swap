@@ -24,20 +24,32 @@ public class OtherMetadataCacheTestState : SwapState
 }
 
 /// <summary>
+/// A state type that overrides GetStateProperties, to verify the override is honored (not served from
+/// or corrupted by the per-Type cache).
+/// </summary>
+public class OverridingMetadataCacheTestState : SwapState
+{
+    public string Included { get; set; } = "";
+    public string Excluded { get; set; } = "";
+
+    protected override IEnumerable<PropertyInfo> GetStateProperties()
+        => base.GetStateProperties().Where(p => p.Name != nameof(Excluded));
+}
+
+/// <summary>
 /// Tests proving that reflection metadata (the filtered property set) for SwapState
 /// subclasses is computed once per Type and reused across instances, rather than
 /// being re-computed via GetProperties()+LINQ on every call.
 /// </summary>
 public class SwapStateMetadataCacheTests
 {
-    private static PropertyInfo[] InvokeGetStateProperties(SwapState state)
+    private static IEnumerable<PropertyInfo> InvokeGetStateProperties(SwapState state)
     {
         var method = typeof(SwapState).GetMethod(
             "GetStateProperties",
             BindingFlags.NonPublic | BindingFlags.Instance)!;
 
-        var result = (IEnumerable<PropertyInfo>)method.Invoke(state, null)!;
-        return result as PropertyInfo[] ?? result.ToArray();
+        return (IEnumerable<PropertyInfo>)method.Invoke(state, null)!;
     }
 
     [Fact]
@@ -98,5 +110,29 @@ public class SwapStateMetadataCacheTests
         Assert.Equal(state.Name, restored.Name);
         Assert.Equal(state.Count, restored.Count);
         Assert.Equal(state.Flag, restored.Flag);
+    }
+
+    [Fact]
+    public void SubclassOverride_OfGetStateProperties_IsHonored()
+    {
+        var overriding = new OverridingMetadataCacheTestState();
+
+        var names = InvokeGetStateProperties(overriding).Select(p => p.Name).ToArray();
+
+        Assert.Contains("Included", names);
+        Assert.DoesNotContain("Excluded", names); // the override's filter is applied
+
+        // The cache for a different type is unaffected by the override.
+        var normal = new MetadataCacheTestState();
+        Assert.Contains("Name", InvokeGetStateProperties(normal).Select(p => p.Name));
+    }
+
+    [Fact]
+    public void GetStateProperties_ReturnsImmutableView_ThatCannotBeCastToMutableArray()
+    {
+        var props = InvokeGetStateProperties(new MetadataCacheTestState());
+
+        // Guards the cache: the returned view must not be a raw PropertyInfo[] a caller could mutate.
+        Assert.Null(props as PropertyInfo[]);
     }
 }

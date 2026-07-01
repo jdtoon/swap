@@ -89,14 +89,32 @@ public class SwapUploadTagHelperTests
     [Fact]
     public void Upload_StripsCustomAttributesFromForm()
     {
-        var html = Render(new SwapUploadTagHelper { Name = "file", Url = "/upload" });
+        var ctx = new TagHelperContext(new TagHelperAttributeList(), new Dictionary<object, object>(), "id");
+        var output = new TagHelperOutput("swap-upload", new TagHelperAttributeList(),
+            (useCached, encoder) => Task.FromResult<TagHelperContent>(new DefaultTagHelperContent()));
 
-        Assert.DoesNotContain("name=\"file\" url", html);
-        // Custom attributes should not leak onto the <form> element itself.
-        var formTagEnd = html.IndexOf('>');
-        var formTag = html.Substring(0, formTagEnd + 1);
+        // Simulate the custom attributes appearing on the output element (Razor normally binds and
+        // removes them, but the helper must defensively strip them). Removing the RemoveAll calls in
+        // SwapUploadTagHelper would leak these onto the <form> tag and fail the asserts below.
+        output.Attributes.SetAttribute("name", "file");
+        output.Attributes.SetAttribute("url", "/upload");
+        output.Attributes.SetAttribute("target", "#x");
+        output.Attributes.SetAttribute("swap", "outerHTML");
+        output.Attributes.SetAttribute("multiple", "true");
+
+        new SwapUploadTagHelper { Name = "file", Url = "/upload" }.Process(ctx, output);
+
+        using var sw = new StringWriter();
+        output.WriteTo(sw, System.Text.Encodings.Web.HtmlEncoder.Default);
+        var html = sw.ToString();
+
+        var formTag = html.Substring(0, html.IndexOf('>') + 1);
         Assert.DoesNotContain(" name=", formTag);
         Assert.DoesNotContain(" url=", formTag);
+        Assert.DoesNotContain(" target=", formTag);
+        Assert.DoesNotContain(" swap=", formTag);
         Assert.DoesNotContain(" multiple=", formTag);
+        // The file <input> still carries its name; only the <form> is cleaned.
+        Assert.Contains("<input type=\"file\" name=\"file\"", html);
     }
 }

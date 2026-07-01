@@ -813,6 +813,22 @@ namespace Swap.Htmx.TagHelpers
         public Microsoft.AspNetCore.Mvc.Rendering.ViewContext? ViewContext { get; set; }
         public override void Process(Microsoft.AspNetCore.Razor.TagHelpers.TagHelperContext context, Microsoft.AspNetCore.Razor.TagHelpers.TagHelperOutput output) { }
     }
+    [Microsoft.AspNetCore.Razor.TagHelpers.HtmlTargetElement("swap-upload")]
+    public class SwapUploadTagHelper : Microsoft.AspNetCore.Razor.TagHelpers.TagHelper
+    {
+        public SwapUploadTagHelper() { }
+        [Microsoft.AspNetCore.Razor.TagHelpers.HtmlAttributeName("multiple")]
+        public bool Multiple { get; set; }
+        [Microsoft.AspNetCore.Razor.TagHelpers.HtmlAttributeName("name")]
+        public string? Name { get; set; }
+        [Microsoft.AspNetCore.Razor.TagHelpers.HtmlAttributeName("swap")]
+        public string Swap { get; set; }
+        [Microsoft.AspNetCore.Razor.TagHelpers.HtmlAttributeName("target")]
+        public string Target { get; set; }
+        [Microsoft.AspNetCore.Razor.TagHelpers.HtmlAttributeName("url")]
+        public string? Url { get; set; }
+        public override void Process(Microsoft.AspNetCore.Razor.TagHelpers.TagHelperContext context, Microsoft.AspNetCore.Razor.TagHelpers.TagHelperOutput output) { }
+    }
     [Microsoft.AspNetCore.Razor.TagHelpers.HtmlTargetElement("swap-validation", TagStructure=Microsoft.AspNetCore.Razor.TagHelpers.TagStructure.WithoutEndTag)]
     public class SwapValidationTagHelper : Microsoft.AspNetCore.Razor.TagHelpers.TagHelper
     {

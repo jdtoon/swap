@@ -1,3 +1,4 @@
+using System.Linq;
 using System.Threading.Tasks;
 using Swap.Htmx.Realtime;
 using Xunit;
@@ -88,29 +89,46 @@ public class RealtimePresenceTests
     }
 
     [Fact]
-    public void ConcurrentTrackAndUntrack_ShouldNotThrow()
+    public void ConcurrentTrackUntrack_KeepsCountAndListConsistent()
     {
-        // Arrange
         var presence = new InMemoryRealtimePresence();
 
-        // Act
-        var exception = Record.Exception(() =>
+        Parallel.For(0, 4000, i =>
         {
-            Parallel.For(0, 200, i =>
+            var connectionId = $"conn-{i % 25}";
+            var room = $"room-{i % 6}";
+            switch (i % 3)
             {
-                var connectionId = $"conn-{i % 20}";
-                var room = $"room-{i % 5}";
-                presence.Track(connectionId, room, $"user-{i}");
-                presence.List(room);
-                presence.Count(room);
-                if (i % 2 == 0)
-                {
-                    presence.Untrack(connectionId, room);
-                }
-            });
+                case 0: presence.Track(connectionId, room, $"user-{i % 25}"); break;
+                case 1: presence.Untrack(connectionId, room); break;
+                default: presence.UntrackAll(connectionId); break;
+            }
         });
 
-        // Assert
-        Assert.Null(exception);
+        // Invariant under concurrency: Count(room) == distinct entries List(room) returns, with no
+        // duplicate connection ids. (A no-throw check alone would miss lost/orphaned entries.)
+        for (var r = 0; r < 6; r++)
+        {
+            var room = $"room-{r}";
+            var list = presence.List(room);
+            Assert.Equal(presence.Count(room), list.Count);
+            Assert.Equal(list.Count, list.Select(e => e.ConnectionId).Distinct().Count());
+        }
+    }
+
+    [Fact]
+    public void UntrackAll_LeavesNoOrphan_AcrossRooms()
+    {
+        // Reproduces the reviewed orphan scenario: a connection in two rooms must be fully removed.
+        var presence = new InMemoryRealtimePresence();
+        presence.Track("conn-1", "room-a", "user-1");
+        presence.Track("conn-1", "room-b", "user-1");
+
+        presence.UntrackAll("conn-1");
+
+        Assert.Empty(presence.List("room-a"));
+        Assert.Empty(presence.List("room-b"));
+        Assert.Equal(0, presence.Count("room-a"));
+        Assert.Equal(0, presence.Count("room-b"));
     }
 }
