@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CodeActions;
@@ -86,7 +87,52 @@ public static class Usage
         Assert.Empty(actions);
     }
 
+    [Fact]
+    public async Task ScaffoldsHandler_ImplementsInterface_WithNotImplementedBody()
+    {
+        const string source = @"
+public class OrderCreated { }
+
+public interface ISwapEventHandler<T>
+{
+    System.Threading.Tasks.Task HandleAsync(T e);
+}
+
+public class Builder { public Builder WithTrigger(string e, object payload) => this; }
+
+public static class Usage
+{
+    public static void Configure(Builder b)
+    {
+        b.WithTrigger(""order.created"", new OrderCreated());
+    }
+}";
+
+        // Apply the fix and assert the scaffolded handler semantically (newline-normalized). A byte-exact
+        // whole-document compare is fragile: the Roslyn formatter mixes CRLF/LF at insertion boundaries
+        // and its newline varies by host OS, which is exactly what broke this test across Windows/Linux.
+        var fixedText = (await ApplyFirstFixAsync(source)).Replace("\r\n", "\n");
+
+        Assert.Contains("public class OrderCreatedHandler : ISwapEventHandler<OrderCreated>", fixedText);
+        Assert.Contains("public System.Threading.Tasks.Task HandleAsync(OrderCreated e)", fixedText);
+        Assert.Contains("throw new System.NotImplementedException();", fixedText);
+    }
+
     private static async Task<IReadOnlyList<CodeAction>> GetRegisteredCodeActionsAsync(string source)
+        => (await GetFixAsync(source)).Actions;
+
+    private static async Task<string> ApplyFirstFixAsync(string source)
+    {
+        var (document, actions) = await GetFixAsync(source);
+        Assert.NotEmpty(actions);
+
+        var operations = await actions[0].GetOperationsAsync(CancellationToken.None);
+        var changed = operations.OfType<ApplyChangesOperation>().Single().ChangedSolution;
+        var text = await changed.GetDocument(document.Id)!.GetTextAsync();
+        return text.ToString();
+    }
+
+    private static async Task<(Document Document, IReadOnlyList<CodeAction> Actions)> GetFixAsync(string source)
     {
         using var workspace = new AdhocWorkspace();
         var projectId = ProjectId.CreateNewId();
@@ -108,6 +154,6 @@ public static class Usage
         var context = new CodeFixContext(document, swap001, (action, _) => registered.Add(action), default);
         await provider.RegisterCodeFixesAsync(context);
 
-        return registered;
+        return (document, registered);
     }
 }
