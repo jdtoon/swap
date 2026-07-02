@@ -88,7 +88,8 @@ public sealed record OobSwap(
     object? Model,
     SwapMode SwapMode,
     bool ConditionalExists = false,
-    long? Seq = null
+    long? Seq = null,
+    bool Fingerprint = false
 );
 
 /// <summary>
@@ -220,15 +221,17 @@ public sealed class SwapResponseBuilder : IResult
     /// <param name="model">The model for the partial view.</param>
     /// <param name="swapMode">How to swap the content (defaults to OuterHTML).</param>
     /// <param name="seq">Optional monotonic version stamp (e.g. a rowversion). The client drops any OOB swap whose <c>data-swap-seq</c> is not newer than the last applied, guarding against out-of-order or duplicate updates.</param>
+    /// <param name="fingerprint">When true, stamp the rendered fragment with a content hash (<c>data-swap-hash</c>); the client skips the swap when the new content is identical to what's already in the DOM, avoiding needless re-renders and lost focus/scroll.</param>
     /// <returns>The builder for chaining.</returns>
     public SwapResponseBuilder AlsoUpdate(
         string targetId,
         string viewName,
         object? model = null,
         SwapMode swapMode = SwapMode.OuterHTML,
-        long? seq = null)
+        long? seq = null,
+        bool fingerprint = false)
     {
-        _oobSwaps.Add(new OobSwap(NormalizeOobTargetId(targetId), viewName, model, swapMode, Seq: seq));
+        _oobSwaps.Add(new OobSwap(NormalizeOobTargetId(targetId), viewName, model, swapMode, Seq: seq, Fingerprint: fingerprint));
         return this;
     }
 
@@ -241,6 +244,7 @@ public sealed class SwapResponseBuilder : IResult
     /// <param name="model">The model for the partial view.</param>
     /// <param name="innerHtml">When true, morph only the target's inner content; otherwise morph the whole element.</param>
     /// <param name="seq">Optional monotonic version stamp; see <see cref="AlsoUpdate"/>.</param>
+    /// <param name="fingerprint">Skip the swap when content is unchanged; see <see cref="AlsoUpdate"/>.</param>
     /// <returns>The builder for chaining.</returns>
     /// <remarks>Requires the client idiomorph extension, auto-included by the <c>&lt;swap-scripts&gt;</c> tag helper.</remarks>
     public SwapResponseBuilder AlsoMorph(
@@ -248,9 +252,10 @@ public sealed class SwapResponseBuilder : IResult
         string viewName,
         object? model = null,
         bool innerHtml = false,
-        long? seq = null)
+        long? seq = null,
+        bool fingerprint = false)
     {
-        return AlsoUpdate(targetId, viewName, model, innerHtml ? SwapMode.MorphInner : SwapMode.MorphOuter, seq);
+        return AlsoUpdate(targetId, viewName, model, innerHtml ? SwapMode.MorphInner : SwapMode.MorphOuter, seq, fingerprint);
     }
 
     /// <summary>
