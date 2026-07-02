@@ -121,8 +121,9 @@ public sealed class SwapActionResult : ActionResult
         // Task.WhenAll races those scoped services and intermittently throws
         // "A second operation was started on this context instance". View rendering is CPU-bound
         // string building, so sequential rendering costs effectively nothing while removing the race.
+        var coalescedOobSwaps = Swap.Htmx.Models.OobCoalescer.Coalesce(_builder.OobSwaps);
         var oobContent = new List<string>();
-        foreach (var oob in _builder.OobSwaps)
+        foreach (var oob in coalescedOobSwaps)
         {
             oobContent.Add(await RenderOobSwapAsync(context, oob));
         }
@@ -130,7 +131,7 @@ public sealed class SwapActionResult : ActionResult
         // 4a. Dependency-graph fragments for any invalidated topics (deduped; explicit OOB targets win).
         var fragmentRegistry = context.HttpContext.RequestServices.GetService<Swap.Htmx.Fragments.SwapFragmentRegistry>();
         foreach (var oob in Swap.Htmx.Fragments.FragmentResolver.Resolve(
-                     fragmentRegistry, _builder.InvalidatedTopics, _builder.OobSwaps.Select(o => o.TargetId), context.HttpContext))
+                     fragmentRegistry, _builder.InvalidatedTopics, coalescedOobSwaps.Select(o => o.TargetId), context.HttpContext))
         {
             oobContent.Add(await RenderOobSwapAsync(context, oob));
         }
