@@ -26,6 +26,13 @@ public class SwapEventHandlerCodeFixProviderUnitTests
     }
 
     [Fact]
+    public void FixAllProvider_IsDisabled_ToAvoidDuplicateTypes()
+    {
+        // BatchFixer would scaffold identically named handlers across sites -> CS0101; disabled on purpose.
+        Assert.Null(new SwapEventHandlerCodeFixProvider().GetFixAllProvider());
+    }
+
+    [Fact]
     public void MakeUniqueTypeName_AppendsSuffix_WhenNameAlreadyExists()
     {
         var tree = CSharpSyntaxTree.ParseText("public class OrderCreatedHandler { }");

@@ -15,9 +15,10 @@ net8.0/net9.0/net10.0.
 - **Fingerprint diff-skip (`data-swap-hash`).** `AlsoUpdate(..., fingerprint: true)` /
   `AlsoMorph(..., fingerprint: true)` stamp the rendered fragment with a stable content hash; the client
   skips the swap when the new content matches what's already in the DOM — no needless re-render, no lost
-  focus/scroll.
-- **Client-enforced guarded swaps.** `AlsoUpdateIfExists` now emits `data-swap-if-exists`; the client
-  skips the swap cleanly when the target isn't in the DOM (no stray element, no htmx no-target error).
+  focus/scroll. Effective for outer-swap modes (the `AlsoUpdate`/`AlsoMorph` defaults).
+- **Guarded swaps.** `AlsoUpdateIfExists` now emits `data-swap-if-exists`. htmx already skips an OOB swap
+  whose target is absent (removing the fragment — no stray element); the marker tells the Swap dev tools
+  the missing target is intentional, suppressing the otherwise-expected "no target" warning.
 - **Safe optimistic UI (`data-swap-optimistic`).** Request-scoped rollback: the client snapshots the
   target before the request and restores it on any failure (non-2xx / network / timeout), re-running
   `htmx.process` on the restored nodes — a rejected request never leaves an optimistic change stuck.

@@ -32,8 +32,13 @@ public sealed class SwapEventHandlerCodeFixProvider : CodeFixProvider
     public override ImmutableArray<string> FixableDiagnosticIds { get; } =
         ImmutableArray.Create(HandlerValidationAnalyzer.NoHandlerForEvent.Id);
 
-    /// <inheritdoc />
-    public override FixAllProvider GetFixAllProvider() => WellKnownFixAllProviders.BatchFixer;
+    /// <summary>
+    /// FixAll is explicitly disabled. SWAP001 is reported once per trigger site; BatchFixer would run
+    /// each fix against the same pre-fix compilation, so two sites raising the same event would each
+    /// scaffold an identically named handler and merge into duplicate types (CS0101). Per-diagnostic
+    /// fixes stay collision-safe via <see cref="MakeUniqueTypeName"/>.
+    /// </summary>
+    public override FixAllProvider? GetFixAllProvider() => null;
 
     /// <inheritdoc />
     public override async Task RegisterCodeFixesAsync(CodeFixContext context)
