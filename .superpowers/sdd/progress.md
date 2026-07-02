@@ -43,3 +43,18 @@ Task data-swap-seq: complete (client guard pending browser-verify)
 - wiki: 7 new pages pushed (swap.wiki 03d294e); llms.txt updated
 - final whole-branch review: no Critical; 3 Important fixed pre-merge
 - deferred -> v1.7.0 (task #22): fingerprint, optimistic UI, guarded swaps, DI-wire presence/flow, OOB coalescing, streaming/SSE framing, CodeFixProvider + review minors
+
+=== v1.7.0 Batch A (server) complete ===
+- oob-coalescing (60aab81) APPROVED — dedup replace-mode same-target, wired into 3 result types
+- presence-di (fbe2e55) APPROVED — TryAddSingleton<IRealtimePresence,InMemoryRealtimePresence> in AddSseEventBridge
+- codefix-swap001 (f4fbc1a + guard fix) — new Swap.Htmx.Generators.CodeFixes project, packaged into analyzers/dotnet/cs; duplicate-type guard added post-review
+- swap.sln 0 warnings; 38 gen + 524 lib green
+Next: Batch B (client-JS: fingerprint diff-skip, guarded swaps, optimistic UI) + dogfood page + Playwright verify; then streaming/SSE-framing; ship 1.7.0.
+
+=== v1.7.0 Batch B (client) complete — all browser-verified via Playwright ===
+- fingerprint diff-skip (4c43531): data-swap-hash + client skip-unchanged guard
+- guarded swaps (c5b7802): data-swap-if-exists client-enforced
+- optimistic UI (cf3ac86): data-swap-optimistic snapshot/rollback (+ htmx.process on restore)
+- CDN pins reconciled (fb2c810); CHANGELOG 1.7.0 (e90816b); wiki 9b4951b pushed; llms.txt (7b363bd)
+- swap.sln 0 warnings (demos incl.); 527 lib + 38 gen green
+- final whole-branch review running; then PR -> CI -> merge -> release v1.7.0 -> website bump 1.7.0
