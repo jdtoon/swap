@@ -5,6 +5,42 @@ All notable changes to Swap.Htmx will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.0] - 2026-07-02
+
+**"Smart engine" release.** Adds the flagship dependency-graph orchestration, DOM morphing, frames,
+flash toasts, realtime presence, multi-step flows, and a performance pass. Non-breaking (additive).
+Targets net8.0/net9.0/net10.0.
+
+### Added
+- **Fragment dependency graph (flagship).** Register dependency-aware fragments once —
+  `o.Fragments.Fragment("revenue", "_Revenue", ctx => …).DependsOn("orders")` — then invalidate a topic:
+  `SwapResponse().WithView("_OrderRow", order).Invalidate("orders")`. The engine re-renders every
+  fragment depending on the invalidated topics — deduplicated, and skipping any target already covered
+  by an explicit `AlsoUpdate` — as OOB swaps. New: `SwapFragmentRegistry`, `SwapResponseBuilder.Invalidate`,
+  `SwapHtmxOptions.Fragments`.
+- **DOM morphing (idiomorph).** `SwapMode.MorphInner`/`MorphOuter` and `AlsoMorph(...)` emit
+  `hx-swap-oob="morph:innerHTML|outerHTML"`, preserving focus, caret, scroll position and in-flight
+  transitions instead of destructively replacing.
+- **`<swap-scripts>`** tag helper — renders the client script block (htmx, optional idiomorph for morph,
+  optional SSE extension, the Swap client, dev tools in Development); all sources overridable.
+- **`<swap-frame>`** tag helper — Turbo-Frame-style lazy (`loading="lazy"`) / scoped navigation regions.
+- **`<swap-upload>`** tag helper — file upload with a live `<progress>` bar wired to htmx `xhr:progress`.
+- **`WithFlash(message, type)`** — flash toasts that survive an HTTP redirect (stashed in TempData,
+  re-emitted as `HX-Trigger showToast` on the next response); the Minimal-API result emits immediately.
+- **Out-of-order / duplicate-safe OOB (`data-swap-seq`).** `AlsoUpdate`/`AlsoMorph` accept an optional
+  monotonic `seq` (e.g. a rowversion); a client `htmx:oobBeforeSwap` guard drops any swap that is not newer.
+- **`IRealtimePresence`** (+ `InMemoryRealtimePresence`) — single-node who's-present-in-which-room tracking.
+- **`SwapFlow`** — a server-authoritative multi-step flow/wizard step-machine (guards, bounds, restore).
+
+### Changed / Performance
+- **`SwapState` reflection is cached per Type**, eliminating `GetProperties()` + LINQ on every render/bind;
+  the cached property set is exposed only as a read-only view so it cannot be mutated.
+- **`AutoScanGenerator` is now incremental** — editing unrelated `.cs` files no longer re-runs the view scan.
+
+### Notes
+- Morphing and the `data-swap-seq` guard require the client scripts (`<swap-scripts>`); idiomorph loads
+  from a CDN by default (override `idiomorph-src` to vendor it locally).
+
 ## [1.5.0] - 2026-07-01
 
 **DX unlock release.** Ships the previously-omitted XML documentation, removes an onboarding
