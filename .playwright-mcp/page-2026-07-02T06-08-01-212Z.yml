@@ -1,0 +1,174 @@
+- generic [ref=e2]:
+  - checkbox "close sidebar" [ref=e3]
+  - generic [ref=e4]:
+    - banner [ref=e5]:
+      - generic [ref=e7] [cursor=pointer]:
+        - text: Swap
+        - generic [ref=e8]: .
+        - text: Htmx
+      - list [ref=e10]:
+        - listitem [ref=e11]:
+          - generic [ref=e12]: Features
+        - listitem [ref=e13]:
+          - generic [ref=e14]: Docs
+        - listitem [ref=e15]:
+          - generic [ref=e16]: Compare
+        - listitem [ref=e17]:
+          - generic [ref=e18]: Blog
+        - listitem [ref=e19]:
+          - generic [ref=e20]: Demo
+        - listitem [ref=e21]:
+          - generic [ref=e22]: Pricing
+      - link [ref=e24] [cursor=pointer]:
+        - /url: https://github.com/jdtoon/swap
+        - img [ref=e25]
+    - main [ref=e27]:
+      - generic [ref=e30]:
+        - generic [ref=e31]: Open Source .NET Library
+        - heading "Server-driven web apps, made simple." [level=1] [ref=e32]
+        - paragraph [ref=e33]:
+          - text: Build interactive ASP.NET Core applications without JavaScript framework complexity.
+          - text: One event, multiple UI updates, zero client-side state.
+        - generic [ref=e34]:
+          - generic [ref=e35] [cursor=pointer]: Get Started
+          - generic [ref=e36] [cursor=pointer]: View Demo
+          - link "GitHub" [ref=e37] [cursor=pointer]:
+            - /url: https://github.com/jdtoon/swap
+            - img [ref=e38]
+            - text: GitHub
+      - generic [ref=e43]:
+        - generic [ref=e44]: What is Swap.Htmx?
+        - heading "A server-driven UI toolkit for ASP.NET Core" [level=2] [ref=e45]
+        - generic [ref=e46]:
+          - paragraph [ref=e47]:
+            - strong [ref=e48]: Swap.Htmx
+            - text: is a small .NET library that helps you build interactive ASP.NET Core MVC apps using server-rendered HTML. It pairs naturally with
+            - link "HTMX" [ref=e49] [cursor=pointer]:
+              - /url: https://htmx.org
+            - text: so your UI stays “just HTML” while still feeling modern and dynamic.
+          - paragraph [ref=e50]: Instead of pushing JSON into a client framework, you return HTML from your controllers. Swap.Htmx makes it easy to return full pages or partial updates, coordinate multi-part UI updates, and keep UI state on the server (without maintaining a big client-side state store).
+        - generic [ref=e51]:
+          - generic [ref=e52] [cursor=pointer]: Read the Docs
+          - generic [ref=e53] [cursor=pointer]: Try the Demo
+          - link "View on GitHub" [ref=e54] [cursor=pointer]:
+            - /url: https://github.com/jdtoon/swap
+      - generic [ref=e56]:
+        - heading "See how simple it is" [level=2] [ref=e57]
+        - generic [ref=e58]:
+          - generic [ref=e59]:
+            - text: //
+            - code [ref=e60]: Update multiple UI components with one event
+          - generic [ref=e61]:
+            - text: ">"
+            - code [ref=e62]: return SwapResponse()
+          - generic [ref=e63]:
+            - text: ">"
+            - code [ref=e64]: .WithView("_ProductCard", product)
+          - generic [ref=e65]:
+            - text: ">"
+            - code [ref=e66]: .AlsoUpdate("cart-count", "_CartCount", count)
+          - generic [ref=e67]:
+            - text: ">"
+            - code [ref=e68]: .WithSuccessToast("Added to cart!")
+          - generic [ref=e69]:
+            - text: ">"
+            - code [ref=e70]: .Build();
+        - paragraph [ref=e71]: One controller action, multiple UI updates. No client-side state management. No context switching.
+      - generic [ref=e74]:
+        - generic [ref=e76]:
+          - heading "The Problem" [level=3] [ref=e77]
+          - generic [ref=e78]:
+            - paragraph [ref=e79]: Modern web development shouldn't require learning an entirely new paradigm.
+            - paragraph [ref=e80]: HTML was designed to be stateless. Forms submit. Servers respond. The web was simple, fast, and accessible to everyone.
+            - paragraph [ref=e81]: Then we added JavaScript frameworks to make things "interactive" — and lost that simplicity. State management, build pipelines, hydration... all for a dashboard or form-heavy app?
+        - generic [ref=e83]:
+          - heading "The Solution" [level=3] [ref=e84]
+          - generic [ref=e85]:
+            - paragraph [ref=e86]:
+              - strong [ref=e87]: Swap.Htmx brings the simplicity back.
+            - paragraph [ref=e88]: Write C# on the server. Return HTML. Let HTMX handle the interactivity. HTML is stateless again. No client-side state synchronization. No context switching between languages.
+            - paragraph [ref=e89]:
+              - strong [ref=e90]: Just the web, the way it was meant to be.
+      - generic [ref=e93]:
+        - generic [ref=e94]:
+          - generic [ref=e95]: Less
+          - generic [ref=e96]: Glue Code
+          - generic [ref=e97]: Fewer client-state workarounds
+        - generic [ref=e98]:
+          - generic [ref=e99]: Small
+          - generic [ref=e100]: Surface Area
+          - generic [ref=e101]: HTML-first, server-rendered
+        - generic [ref=e102]:
+          - generic [ref=e103]: Fast
+          - generic [ref=e104]: Onboarding
+          - generic [ref=e105]: Familiar MVC + HTML
+        - generic [ref=e106]:
+          - generic [ref=e107]: Simpler
+          - generic [ref=e108]: Iteration
+          - generic [ref=e109]: One action, many updates
+      - generic [ref=e113]:
+        - generic [ref=e114]: New Perspective
+        - heading "Why Server-Driven?" [level=2] [ref=e115]
+        - paragraph [ref=e116]: Discover why teams are moving away from complex JavaScript frameworks and embracing the simplicity of server-driven architecture with HTMX.
+        - generic [ref=e118] [cursor=pointer]:
+          - text: Learn the Philosophy
+          - img [ref=e119]
+      - generic [ref=e122]:
+        - heading "Everything you need" [level=2] [ref=e123]
+        - generic [ref=e124]:
+          - generic [ref=e126]:
+            - heading "SwapView" [level=3] [ref=e127]
+            - paragraph [ref=e128]: Auto-detects HTMX requests and returns partials or full pages automatically. Write once, works everywhere.
+            - generic [ref=e130] [cursor=pointer]: Learn more
+          - generic [ref=e132]:
+            - heading "SwapResponse" [level=3] [ref=e133]
+            - paragraph [ref=e134]: Fluent API for multi-target updates. Toasts, triggers, and OOB swaps in one call. Coordinate complex UIs simply.
+            - generic [ref=e136] [cursor=pointer]: Learn more
+          - generic [ref=e138]:
+            - heading "SwapState" [level=3] [ref=e139]
+            - paragraph [ref=e140]: Server-side state management without sessions. Hidden field persistence. State that travels with your forms.
+            - generic [ref=e142] [cursor=pointer]: Learn more
+          - generic [ref=e144]:
+            - heading "Event System" [level=3] [ref=e145]
+            - paragraph [ref=e146]: Decouple controllers from UI updates with handler-based architecture. Publish once, update everywhere.
+            - generic [ref=e148] [cursor=pointer]: Learn more
+          - generic [ref=e150]:
+            - heading "Real-time Support" [level=3] [ref=e151]
+            - paragraph [ref=e152]: SSE and WebSocket support with Redis backplane for scaling. Push updates to connected browsers.
+            - generic [ref=e154] [cursor=pointer]: Learn more
+          - generic [ref=e156]:
+            - heading "Source Generators" [level=3] [ref=e157]
+            - paragraph [ref=e158]: Type-safe view names and compile-time element IDs. No more magic strings. Zero configuration required.
+            - generic [ref=e160] [cursor=pointer]: Learn more
+      - generic [ref=e162]:
+        - generic [ref=e163]: Newsletter
+        - heading "Stay in the Loop" [level=2] [ref=e164]
+        - paragraph [ref=e165]: Get tutorials, release updates, and exclusive discounts. No spam, unsubscribe anytime.
+        - generic [ref=e166]:
+          - textbox "you@example.com" [ref=e167]
+          - button "Subscribe" [ref=e168] [cursor=pointer]
+      - generic [ref=e171]:
+        - heading "Ready to simplify your .NET web development?" [level=2] [ref=e172]
+        - paragraph [ref=e173]: Open source. MIT Licensed. Production ready.
+        - generic [ref=e174]:
+          - generic [ref=e175] [cursor=pointer]: Get Started — It's Free
+          - generic [ref=e176] [cursor=pointer]: View Products
+    - contentinfo [ref=e177]:
+      - generic [ref=e178]:
+        - navigation [ref=e179]:
+          - heading "Product" [level=6] [ref=e180]
+          - text: Features Docs Compare Pricing
+        - navigation [ref=e181]:
+          - heading "Company" [level=6] [ref=e182]
+          - text: Blog
+          - link "GitHub" [ref=e183] [cursor=pointer]:
+            - /url: https://github.com/jdtoon/swap
+        - navigation [ref=e184]:
+          - heading "Legal" [level=6] [ref=e185]
+          - text: Privacy Terms License
+      - generic [ref=e186]:
+        - paragraph [ref=e187]: © 2026 Swap.Htmx. Open source under MIT License.
+        - link "GitHub" [ref=e188] [cursor=pointer]:
+          - /url: https://github.com/jdtoon/swap
+          - img [ref=e189]
+          - text: GitHub

@@ -35,3 +35,11 @@ Batch-2 complete:
 - 501 lib + 30 gen tests green
 Task WithFlash: complete
 Task data-swap-seq: complete (client guard pending browser-verify)
+
+=== v1.6.0 SHIPPED (2026-07-02) ===
+- merged PR #75 (3558be4) + docs PR #76 (46cb94c) to main
+- released v1.6.0 -> NuGet published (Swap.Htmx + Realtime + Realtime.Redis + Testing + Templates)
+- website (swap.htmx) bumped 1.5.0->1.6.0, deployed to Railway, verified live (health/home 200, 0 console errors)
+- wiki: 7 new pages pushed (swap.wiki 03d294e); llms.txt updated
+- final whole-branch review: no Critical; 3 Important fixed pre-merge
+- deferred -> v1.7.0 (task #22): fingerprint, optimistic UI, guarded swaps, DI-wire presence/flow, OOB coalescing, streaming/SSE framing, CodeFixProvider + review minors
