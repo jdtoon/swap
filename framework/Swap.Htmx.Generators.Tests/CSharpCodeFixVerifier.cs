@@ -27,10 +27,16 @@ public static class CSharpCodeFixVerifier<TAnalyzer, TCodeFix>
 
     public static async Task VerifyCodeFixAsync(string source, DiagnosticResult[] expected, string fixedSource)
     {
+        // Normalize line endings to CRLF. The Roslyn test harness reformats the fixed document with the
+        // default FormattingOptions.NewLine ("\r\n"), so on a LF checkout (Linux CI) an LF-based expected
+        // string would never match the harness's CRLF output. Normalizing both sides makes the comparison
+        // deterministic across platforms and checkout autocrlf settings.
+        static string Crlf(string s) => s.Replace("\r\n", "\n").Replace("\n", "\r\n");
+
         var test = new CSharpCodeFixTest<TAnalyzer, TCodeFix, DefaultVerifier>
         {
-            TestCode = source,
-            FixedCode = fixedSource,
+            TestCode = Crlf(source),
+            FixedCode = Crlf(fixedSource),
             // HandlerValidationAnalyzer reports SWAP001 as a compilation-end ("non-local") diagnostic
             // so it can see the whole compilation (all triggers/handlers) before deciding an event is
             // unhandled. That is by design (see HandlerValidationAnalyzer.CompilationEndTags), and Roslyn
