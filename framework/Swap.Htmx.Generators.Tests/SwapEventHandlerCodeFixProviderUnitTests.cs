@@ -26,6 +26,21 @@ public class SwapEventHandlerCodeFixProviderUnitTests
     }
 
     [Fact]
+    public void MakeUniqueTypeName_AppendsSuffix_WhenNameAlreadyExists()
+    {
+        var tree = CSharpSyntaxTree.ParseText("public class OrderCreatedHandler { }");
+        var compilation = CSharpCompilation.Create(
+            "T",
+            new[] { tree },
+            new[] { MetadataReference.CreateFromFile(typeof(object).Assembly.Location) });
+
+        // Existing type -> suffixed; free name -> unchanged. Guards against duplicate-type generation
+        // on re-applying the fix or colliding with a pre-existing user type.
+        Assert.Equal("OrderCreatedHandler2", SwapEventHandlerCodeFixProvider.MakeUniqueTypeName("OrderCreatedHandler", compilation));
+        Assert.Equal("FreshHandler", SwapEventHandlerCodeFixProvider.MakeUniqueTypeName("FreshHandler", compilation));
+    }
+
+    [Fact]
     public async Task NoCodeFixRegistered_WhenTriggerPayloadTypeIsObject()
     {
         // No typed payload -> the fix can't know which ISwapEventHandler<T> to scaffold, so it must

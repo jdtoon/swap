@@ -72,7 +72,8 @@ public sealed class SwapEventHandlerCodeFixProvider : CodeFixProvider
             if (handlerInterface is null)
                 continue;
 
-            var className = BuildHandlerClassName(eventName!);
+            var baseName = BuildHandlerClassName(eventName!);
+            var className = MakeUniqueTypeName(baseName, semanticModel.Compilation);
             var title = $"Generate {handlerInterface.Name}<{payloadType.Name}> handler '{className}' for '{eventName}'";
 
             context.RegisterCodeFix(
@@ -93,6 +94,27 @@ public sealed class SwapEventHandlerCodeFixProvider : CodeFixProvider
         return compilation.GetSymbolsWithName(name => name == HandlerInterfaceName, SymbolFilter.Type)
             .OfType<INamedTypeSymbol>()
             .FirstOrDefault(t => t.TypeKind == TypeKind.Interface && t.Arity == 1);
+    }
+
+    /// <summary>
+    /// Ensures the generated handler class name doesn't collide with an existing type — a prior
+    /// application of this fix, or a pre-existing user type — by appending a numeric suffix until unique.
+    /// </summary>
+    internal static string MakeUniqueTypeName(string baseName, Compilation compilation)
+    {
+        bool Exists(string n) => compilation.GetSymbolsWithName(name => name == n, SymbolFilter.Type).Any();
+
+        if (!Exists(baseName))
+            return baseName;
+
+        for (var i = 2; i < 10000; i++)
+        {
+            var candidate = baseName + i.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            if (!Exists(candidate))
+                return candidate;
+        }
+
+        return baseName + System.Guid.NewGuid().ToString("N");
     }
 
     private static async Task<Document> GenerateHandlerAsync(
