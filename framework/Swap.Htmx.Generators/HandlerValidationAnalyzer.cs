@@ -206,7 +206,12 @@ public class HandlerValidationAnalyzer : DiagnosticAnalyzer
         }
     }
 
-    private static string? GetEventNameFromArgument(ExpressionSyntax expression, SemanticModel semanticModel)
+    /// <summary>
+    /// Resolves the literal event-name string from a <c>WithTrigger</c>/<c>When</c> argument
+    /// expression (string literal, constant member access, or <c>new EventKey("...")</c>).
+    /// Exposed internally so the SWAP001 code fix can identify the same event name the analyzer saw.
+    /// </summary>
+    internal static string? GetEventNameFromArgument(ExpressionSyntax expression, SemanticModel semanticModel)
     {
         // Handle string literal: WithTrigger("event.name")
         if (expression is LiteralExpressionSyntax literal &&

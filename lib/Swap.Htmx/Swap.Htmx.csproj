@@ -35,12 +35,23 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\framework\Swap.Htmx.Generators\Swap.Htmx.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\..\framework\Swap.Htmx.Generators.CodeFixes\Swap.Htmx.Generators.CodeFixes.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
   </ItemGroup>
 
   <ItemGroup>
     <None Include="..\..\framework\Swap.Htmx.Generators\bin\$(Configuration)\netstandard2.0\Swap.Htmx.Generators.dll" Pack="true" PackagePath="analyzers/dotnet/cs" />
 
     <None Include="..\..\framework\Swap.Htmx.Generators\bin\$(Configuration)\netstandard2.0\Swap.Htmx.Generators.pdb" Pack="true" PackagePath="analyzers/dotnet/cs" />
+
+    <!-- SWAP001 code fix provider — ships alongside the analyzer DLL in the same analyzers/dotnet/cs
+         folder. It references Microsoft.CodeAnalysis.CSharp.Workspaces (needed for CodeFixProvider /
+         DocumentEditor), which analyzers must NOT reference (RS1038) since csc.exe doesn't load
+         Workspaces. Keeping it in a separate assembly avoids that constraint: the compiler only loads
+         DiagnosticAnalyzer/DiagnosticSuppressor types from this folder (this DLL has none), while IDEs
+         (which do load Workspaces) additionally discover the CodeFixProvider via MEF. -->
+    <None Include="..\..\framework\Swap.Htmx.Generators.CodeFixes\bin\$(Configuration)\netstandard2.0\Swap.Htmx.Generators.CodeFixes.dll" Pack="true" PackagePath="analyzers/dotnet/cs" />
+
+    <None Include="..\..\framework\Swap.Htmx.Generators.CodeFixes\bin\$(Configuration)\netstandard2.0\Swap.Htmx.Generators.CodeFixes.pdb" Pack="true" PackagePath="analyzers/dotnet/cs" />
   </ItemGroup>
 
   <!-- Include .targets file for auto-scanning Views folders -->

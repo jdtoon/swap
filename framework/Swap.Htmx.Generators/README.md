@@ -15,6 +15,7 @@ This project provides build-time code generation and analysis to enhance the dev
 | `ViewPathGenerator` | View constants from specific folder | `[SwapViewSource]` attribute (legacy) |
 | `ElementIdGenerator` | Element ID constants from specific folder | `[SwapElementSource]` attribute (legacy) |
 | `HandlerValidationAnalyzer` | Warns on events without handlers | N/A |
+| `SwapEventHandlerCodeFixProvider` | Scaffolds an `ISwapEventHandler<T>` for SWAP001 | N/A |
 
 ---
 
@@ -254,6 +255,26 @@ Compile-time diagnostics for event handler configurations.
 | `SWAP001` | Warning | Event triggered but no `When()` config or `ISwapEventHandler<T>` handles it |
 | `SWAP002` | Warning | Event key referenced but not defined |
 | `SWAP004` | Info | Duplicate handler for same event |
+
+### Code Fix: Scaffold a Handler for SWAP001
+
+When SWAP001 fires and the trigger's payload type is known (e.g. `WithTrigger("order.created", new OrderCreated())`),
+a code fix is offered: **"Generate ISwapEventHandler\<T\> handler '...' for '...'"**. Applying it scaffolds a new
+distributed handler class next to the triggering code:
+
+```csharp
+public class OrderCreatedHandler : ISwapEventHandler<OrderCreated>
+{
+    public Task HandleAsync(OrderCreated @event, SwapResponseBuilder builder, CancellationToken cancellationToken)
+    {
+        throw new NotImplementedException();
+    }
+}
+```
+
+Add `[SwapHandler]` and fill in the body (see [Distributed Handlers](../../lib/Swap.Htmx/docs/EventChains.md)).
+The fix is only offered when the payload type is known and an `ISwapEventHandler<T>` interface is visible in the
+compilation; for events with no typed payload, wire up a `When()` chain manually instead.
 
 ### Suppressing Warnings
 
