@@ -14,6 +14,10 @@ public static class SwapRealtimeServiceExtensions
     /// <summary>
     /// Adds enhanced SSE services with connection management and event-driven broadcasting.
     /// Call this to enable advanced SSE features like rooms, authentication, and automatic event bridging.
+    /// Also registers <see cref="IRealtimePresence"/> as a singleton (via <see cref="InMemoryRealtimePresence"/>)
+    /// using <c>TryAddSingleton</c>, so consumers can inject it without hand-registering it — and any
+    /// <see cref="IRealtimePresence"/> registration made before this call wins. This does not wire up
+    /// automatic Track/Untrack on SSE connect/disconnect; that remains the app's responsibility.
     /// </summary>
     public static IServiceCollection AddSseEventBridge(this IServiceCollection services, Action<SseBroadcastOptions>? configure = null)
     {
@@ -24,6 +28,7 @@ public static class SwapRealtimeServiceExtensions
         }
 
         services.TryAddSingleton<ISseBackplane, InMemorySseBackplane>();
+        services.TryAddSingleton<IRealtimePresence, InMemoryRealtimePresence>();
 
         // Register Registry (implements both ISseConnectionRegistry and IRealtimeConnectionRegistry)
         services.AddSingleton<SseConnectionRegistry>();
