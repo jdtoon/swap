@@ -166,12 +166,16 @@ public IActionResult Create(CreateTaskInput input)
 |------|--------|
 | `OuterHTML` | Replace entire element (default) |
 | `InnerHTML` | Replace inner content only |
+| `MorphOuter` | Morph element + children in place (idiomorph) — keeps focus/caret/scroll |
+| `MorphInner` | Morph only inner content in place (idiomorph) |
 | `BeforeBegin` | Insert before element |
 | `AfterBegin` | Insert at start of element's children |
 | `BeforeEnd` | Append to element's children |
 | `AfterEnd` | Insert after element |
 | `Delete` | Remove element |
 | `None` | No swap |
+
+`MorphInner`/`MorphOuter` require the idiomorph extension — see §3.5 and `<swap-scripts morph="true">` (§8).
 
 ### OOB Target ID Rules
 
@@ -201,14 +205,17 @@ All OOB swaps in a response are rendered **sequentially**, in registration order
 | Method | Purpose |
 |--------|---------|
 | `.WithView(view, model)` | Main response content |
-| `.AlsoUpdate(id, view, model, mode?)` | OOB swap |
+| `.AlsoUpdate(id, view, model, mode?, seq?)` | OOB swap (optional `seq:` version stamp — see §3.4) |
+| `.AlsoMorph(id, view, model, innerHtml?, seq?)` | OOB morph (idiomorph; keeps focus/caret/scroll) — see §3.5 |
 | `.AlsoUpdateMany(items, idSelector, view)` | Batch OOB swaps |
 | `.AlsoUpdateIf(condition, id, view, model)` | Conditional OOB |
 | `.AlsoUpdateIfExists(id, view, model)` | OOB if DOM element exists |
+| `.Invalidate(params topics)` | Re-render dependency-graph fragments for changed topics — see §3.3 |
 | `.WithSuccessToast(msg)` | Success toast |
 | `.WithErrorToast(msg)` | Error toast |
 | `.WithWarningToast(msg)` | Warning toast |
 | `.WithInfoToast(msg)` | Info toast |
+| `.WithFlash(msg, type?)` | Toast that survives an htmx navigation — see §3.6 |
 | `.WithCreatedToast(entity)` | "Entity created successfully" |
 | `.WithUpdatedToast(entity)` | "Entity updated" |
 | `.WithDeletedToast(entity)` | "Entity deleted" |
@@ -220,6 +227,103 @@ All OOB swaps in a response are rendered **sequentially**, in registration order
 | `.WithState(state)` | OOB state container update |
 | `.Build()` | Build IActionResult |
 | `.BuildResult()` | Build IResult (Minimal APIs) |
+
+### 3.3 Fragment Dependency Graph (Invalidate) — PREFERRED for coordinated dashboards
+
+Register dependency-aware fragments ONCE at startup, then invalidate a topic instead of
+hand-listing every dependent widget on every action.
+
+```csharp
+// Program.cs — startup only (the registry FREEZES after AddSwapHtmx; registering at
+// request time throws). Duplicate ids throw. Resolve scoped services from ctx.RequestServices.
+builder.Services.AddSwapHtmx(o =>
+{
+    o.Fragments.Fragment("revenue", "_Revenue",
+            ctx => ctx.RequestServices.GetRequiredService<IStats>().Revenue())
+        .DependsOn("orders", "refunds");                 // topics that re-render this fragment
+    o.Fragments.Fragment("order-count", "_OrderCount",
+            ctx => ctx.RequestServices.GetRequiredService<IStats>().OrderCount())
+        .DependsOn("orders");
+});
+```
+
+```csharp
+// Any action — say WHAT changed; the engine re-renders every dependent fragment as OOB swaps.
+return SwapResponse()
+    .WithView("_OrderRow", order)
+    .Invalidate("orders")       // → revenue + order-count refresh, deduplicated, in registration order
+    .Build();
+```
+
+- Signature: `Fragment(string id, string viewName, Func<HttpContext, object?> modelFactory, SwapMode swapMode = SwapMode.OuterHTML)` → `.DependsOn(params string[] topics)`.
+- Each fragment renders at most ONCE per response, even if multiple invalidated topics hit it.
+- Explicit `AlsoUpdate`/`AlsoMorph` for the same target id WINS — the graph skips that fragment (coalescing).
+- Fragments carry NO `data-swap-seq` (they re-render from authoritative current state). Works in MVC / Minimal API / Razor Pages.
+
+### 3.4 Out-of-Order OOB Guard (`seq:`)
+
+Stamp OOB swaps with a monotonic version so the client drops stale/duplicate updates (matters for realtime).
+
+```csharp
+// seq = a value that only increases for this element (rowversion, sequence number, long timestamp)
+.AlsoUpdate("order-42", "_OrderRow", order, seq: order.Version)
+.AlsoMorph("order-42", "_OrderRow", order, seq: order.Version)
+```
+
+- Renders `data-swap-seq="N"`. A client `htmx:oobBeforeSwap` guard tracks the highest applied seq per
+  target id and cancels any swap where `seq <= previous`.
+- REQUIRES `<swap-scripts>` (the guard lives in the Swap client). Unstamped swaps are never dropped.
+
+### 3.5 DOM Morphing (idiomorph)
+
+Patch a node in place — keeps focus, caret, scroll position, in-flight CSS transitions — instead of replacing it.
+
+```csharp
+.AlsoMorph("filter-panel", "_FilterPanel", state)                 // morph:outerHTML (whole element)
+.AlsoMorph("results", "_Results", results, innerHtml: true)       // morph:innerHTML (children only)
+// equivalently: .AlsoUpdate("filter-panel", "_FilterPanel", state, SwapMode.MorphOuter)
+```
+
+- REQUIRES the idiomorph extension: `<swap-scripts morph="true" />` AND `hx-ext="morph"` on `<body>` (§8).
+- Use for live-filtered lists / search-as-you-type / frequently-refreshed dashboard regions with focus/scroll to preserve.
+
+### 3.6 Flash Toasts (survive an htmx navigation)
+
+`WithFlash(message, type?)` — show a message AFTER an htmx-driven navigation (save → navigate → confirm).
+
+```csharp
+return SwapResponse()
+    .WithFlash("Profile saved", ToastType.Success)
+    .WithNavigation("/profile")   // htmx-issued HX-Location follow-up → flash shows on arrival
+    .Build();
+```
+
+- Stashed in TempData (MVC/Razor Pages), re-emitted as `HX-Trigger showToast` on the next response;
+  Minimal APIs have no TempData so it emits immediately. Requires the Swap client (`<swap-scripts>`).
+- IMPORTANT: fires only on an htmx-issued follow-up — a boosted nav or `WithNavigation` (HX-Location).
+  It does NOT surface after a full-page `WithRedirect` (HX-Redirect) reload, because htmx only reads the
+  `HX-Trigger` header on requests it issues itself. Don't pair `WithFlash` with `WithRedirect`.
+
+### 3.7 Multi-Step Flows (SwapFlow)
+
+Server-authoritative wizard/step-machine (namespace `Swap.Htmx.Flows`). Pure — no HTTP/SwapState dependency; YOU persist `CurrentIndex`.
+
+```csharp
+public class CheckoutFlow : SwapFlow
+{
+    protected override IReadOnlyList<SwapFlowStep> Steps => new[]
+    {
+        new SwapFlowStep("cart",     "_Cart"),
+        new SwapFlowStep("shipping", "_Shipping", CanEnter: () => _cart.HasItems),  // guard
+        new SwapFlowStep("payment",  "_Payment"),
+    };
+}
+```
+
+- Navigation: `Next()`/`GoTo(i)` honour the target step's `CanEnter` guard (return false if blocked);
+  `Previous()` is unguarded; `RestoreIndex(i)` clamps + ignores guards (rehydrate persisted position).
+- State: `CurrentIndex`, `Current`, `CanGoNext`, `CanGoPrevious`. Persist `CurrentIndex` via `<swap-state>`
+  (§4), `RestoreIndex` it on the way in, save it after navigating. Register the flow: `AddScoped<CheckoutFlow>()`.
 
 ================================================================================
 ## 4. SwapState (Server-Side UI State)
@@ -645,6 +749,28 @@ SseEvents.Common.Notification
 SseEvents.Common.Toast
 ```
 
+### 7.6 Presence (IRealtimePresence)
+
+Single-node "who's in which room" tracking (package `Swap.Htmx.Realtime`, namespace `Swap.Htmx.Realtime`).
+
+```csharp
+// NOT auto-registered — register it yourself:
+builder.Services.AddSingleton<IRealtimePresence, InMemoryRealtimePresence>();
+```
+
+```csharp
+// Wire into the SSE connection lifecycle: Track on connect, UntrackAll on disconnect.
+_presence.Track(conn.ConnectionId, room, User.Identity?.Name);
+try { conn.JoinRoom(room); await conn.KeepAlive(cancellationToken: ct); }
+finally { _presence.UntrackAll(conn.ConnectionId); }
+
+_presence.Count(room);   // distinct connection count (not distinct users)
+_presence.List(room);    // IReadOnlyList<PresenceEntry(ConnectionId, UserId?, Room)>
+```
+
+- `InMemoryRealtimePresence` is in-process only — NO cross-node backplane (per-node counts when scaled).
+- Always `UntrackAll(connId)` on disconnect (a connection may be in several rooms). `Untrack(connId, room)` clears one room only.
+
 ================================================================================
 ## 8. Tag Helpers
 ================================================================================
@@ -675,6 +801,49 @@ SPA-style navigation link:
 <swap-nav to="/tasks">Tasks</swap-nav>
 <swap-nav to="/tasks" target="#sidebar">Tasks (sidebar)</swap-nav>
 ```
+
+All Swap tag helpers require `@addTagHelper *, Swap.Htmx` in `_ViewImports.cshtml`.
+
+### <swap-scripts>
+
+Renders the client script block (htmx + Swap client, plus dev tools in Development). Put at the end of `<body>`.
+
+```html
+<body hx-ext="morph">
+    <!-- morph=true adds idiomorph (§3.5); sse=true adds the htmx SSE extension (§7) -->
+    <swap-scripts morph="true" sse="true" />
+</body>
+```
+
+- Attributes: `morph` (bool), `sse` (bool), `devtools` (bool? — null = dev only), and overridable sources
+  `htmx-src` / `idiomorph-src` / `sse-src` (vendor locally instead of the CDN default).
+- REQUIRED for morphing (§3.5), the `data-swap-seq` guard (§3.4), and flash toasts (§3.6).
+
+### <swap-frame>
+
+Turbo-Frame-style region: lazily loads its own content and scopes navigation to itself.
+
+```html
+<swap-frame id="cart" src="/cart" loading="lazy">
+    <div class="skeleton">Loading…</div>   <!-- shown until loaded -->
+</swap-frame>
+<!-- → <div id="cart" hx-get="/cart" hx-trigger="revealed once" hx-swap="innerHTML" hx-target="this"> -->
+```
+
+- `loading="lazy"` → `hx-trigger="revealed once"`; `eager` (default) → `load once`. Links/forms inside target the frame (`hx-target="this"`) unless you set `hx-target`. No `src` → plain identified container.
+
+### <swap-upload>
+
+File-upload `<form>` with a live `<progress>` bar (wired to htmx `xhr:progress`).
+
+```html
+<swap-upload name="file" url="/upload" target="#result" swap="innerHTML">
+    <button type="submit">Upload</button>
+</swap-upload>
+```
+
+- `name` and `url` are REQUIRED (missing either → renders nothing). `multiple` (bool) allows multi-file.
+  Emits `hx-post` + `hx-encoding="multipart/form-data"` + a file input + progress bar. Handle with `IFormFile` server-side.
 
 ================================================================================
 ## 9. Configuration Options
