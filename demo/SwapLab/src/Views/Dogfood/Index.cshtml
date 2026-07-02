@@ -1,0 +1,31 @@
+@{
+    ViewData["Title"] = "Dogfood 1.7.0";
+}
+@addTagHelper *, Swap.Htmx
+
+<h1>1.7.0 dogfood</h1>
+
+<h2>Fingerprint diff-skip (data-swap-hash)</h2>
+<div id="hashpanel"><p>initial</p></div>
+<button id="bumpbtn" hx-post="/Dogfood/Bump" hx-swap="none">Bump (identical content)</button>
+<p>OOB swaps actually applied to #hashpanel: <strong id="swapcount">0</strong></p>
+
+<h2>Optimistic rollback (data-swap-optimistic)</h2>
+<div id="optpanel">original</div>
+<button id="optbtn"
+        hx-post="/Dogfood/FailOptimistic"
+        hx-swap="none"
+        data-swap-optimistic="#optpanel"
+        hx-on:htmx:before-request="document.getElementById('optpanel').innerHTML='optimistic!'">
+    Optimistic (server 400 → rollback)
+</button>
+
+<script>
+    // Count only OOB swaps that ACTUALLY apply; a fingerprint-skipped swap never fires oobAfterSwap.
+    document.body.addEventListener('htmx:oobAfterSwap', function (e) {
+        if (e.detail && e.detail.target && e.detail.target.id === 'hashpanel') {
+            var c = document.getElementById('swapcount');
+            c.textContent = String((parseInt(c.textContent, 10) || 0) + 1);
+        }
+    });
+</script>

@@ -190,6 +190,13 @@ A leading `#` is automatically stripped. Invalid IDs throw `ArgumentException`.
 
 All OOB swaps in a response are rendered **sequentially**, in registration order. This applies to MVC (`SwapActionResult`), Minimal API (`SwapResult`), and Razor Pages (`SwapPageResult`). Every partial renders on the single request scope (scoped `DbContext`, `ViewData`, the shared view-buffer pool), so sequential rendering avoids racing those scoped services; rendering is CPU-bound string building, so the cost is negligible. (Reverts the 1.3.0 `Task.WhenAll` parallelization, which intermittently threw "A second operation was started on this context instance".)
 
+### OOB Coalescing
+
+Before rendering, duplicate OOB swaps to the **same target id** are coalesced so the client never double-swaps:
+- **Replace-style** modes (`OuterHTML`, `InnerHTML`, `MorphOuter`, `MorphInner`, `Delete`, `None`) collapse to the **last** one queued for that target (earlier ones dropped — the last would overwrite them anyway).
+- **Insert-style** modes (`BeforeBegin`, `AfterBegin`, `BeforeEnd`, `AfterEnd`) **accumulate** — every one survives (appending N rows keeps all N).
+- Surviving order is preserved. This is a safety net (e.g. a handler's `cart-total` refresh on top of the controller's won't double-render); don't queue duplicates on purpose. Related: an explicit `AlsoUpdate` for a target makes the dependency graph (§3.3) skip that fragment.
+
 ### Conditional OOB Swaps
 
 ```csharp
@@ -205,11 +212,11 @@ All OOB swaps in a response are rendered **sequentially**, in registration order
 | Method | Purpose |
 |--------|---------|
 | `.WithView(view, model)` | Main response content |
-| `.AlsoUpdate(id, view, model, mode?, seq?)` | OOB swap (optional `seq:` version stamp — see §3.4) |
-| `.AlsoMorph(id, view, model, innerHtml?, seq?)` | OOB morph (idiomorph; keeps focus/caret/scroll) — see §3.5 |
+| `.AlsoUpdate(id, view, model, mode?, seq?, fingerprint?)` | OOB swap (optional `seq:` version stamp + `fingerprint:` diff-skip — see §3.4) |
+| `.AlsoMorph(id, view, model, innerHtml?, seq?, fingerprint?)` | OOB morph (idiomorph; keeps focus/caret/scroll) — see §3.5 |
 | `.AlsoUpdateMany(items, idSelector, view)` | Batch OOB swaps |
-| `.AlsoUpdateIf(condition, id, view, model)` | Conditional OOB |
-| `.AlsoUpdateIfExists(id, view, model)` | OOB if DOM element exists |
+| `.AlsoUpdateIf(condition, id, view, model)` | Conditional OOB (server-side check) |
+| `.AlsoUpdateIfExists(id, view, model)` | OOB only if DOM element exists (client-enforced — see §3.4) |
 | `.Invalidate(params topics)` | Re-render dependency-graph fragments for changed topics — see §3.3 |
 | `.WithSuccessToast(msg)` | Success toast |
 | `.WithErrorToast(msg)` | Error toast |
@@ -260,19 +267,33 @@ return SwapResponse()
 - Explicit `AlsoUpdate`/`AlsoMorph` for the same target id WINS — the graph skips that fragment (coalescing).
 - Fragments carry NO `data-swap-seq` (they re-render from authoritative current state). Works in MVC / Minimal API / Razor Pages.
 
-### 3.4 Out-of-Order OOB Guard (`seq:`)
+### 3.4 Client OOB Guards (`seq:` / `fingerprint:` / if-exists)
 
-Stamp OOB swaps with a monotonic version so the client drops stale/duplicate updates (matters for realtime).
+The Swap client inspects each incoming OOB swap in `htmx:oobBeforeSwap` and can drop it. Three independent, opt-in guards (evaluated existence → seq → hash). ALL require `<swap-scripts>` (the guards live in the Swap client); a swap carrying none of the stamps is never touched.
+
+**Version (`seq:`)** — drop stale/duplicate updates (matters for realtime out-of-order/replayed broadcasts):
 
 ```csharp
 // seq = a value that only increases for this element (rowversion, sequence number, long timestamp)
 .AlsoUpdate("order-42", "_OrderRow", order, seq: order.Version)
 .AlsoMorph("order-42", "_OrderRow", order, seq: order.Version)
 ```
+Renders `data-swap-seq="N"`; the client tracks the highest applied seq per target id and cancels any swap where `seq <= previous`.
 
-- Renders `data-swap-seq="N"`. A client `htmx:oobBeforeSwap` guard tracks the highest applied seq per
-  target id and cancels any swap where `seq <= previous`.
-- REQUIRES `<swap-scripts>` (the guard lives in the Swap client). Unstamped swaps are never dropped.
+**Content diff-skip (`fingerprint: true`)** — skip the swap when the new content is identical to what's on the target (no re-render, no lost focus/scroll). Use for fragments that refresh often but rarely change (dashboard tiles, mostly-unchanged SSE fan-out):
+
+```csharp
+.AlsoUpdate("revenue", "_Revenue", stats, fingerprint: true)
+.AlsoMorph("order-count", "_OrderCount", stats, fingerprint: true)
+```
+Server hashes the rendered fragment (stable FNV-1a) → `data-swap-hash="…"`; the client skips when the incoming hash matches the hash already on the target. The FIRST fingerprinted swap always applies (nothing to compare yet) and stamps the target, so the next identical render is what gets skipped.
+
+**Existence (`AlsoUpdateIfExists`)** — client-enforced guarded swap for an optional region that may not be on the page:
+
+```csharp
+.AlsoUpdateIfExists("sidebar-stats", "_Stats", stats)   // emits data-swap-if-exists="true"
+```
+If the target id isn't in the DOM when the response lands, the client skips it cleanly — no stray detached element, no htmx no-target error. (Plain `AlsoUpdate` to a missing target is unaffected.)
 
 ### 3.5 DOM Morphing (idiomorph)
 
@@ -324,6 +345,24 @@ public class CheckoutFlow : SwapFlow
   `Previous()` is unguarded; `RestoreIndex(i)` clamps + ignores guards (rehydrate persisted position).
 - State: `CurrentIndex`, `Current`, `CanGoNext`, `CanGoPrevious`. Persist `CurrentIndex` via `<swap-state>`
   (§4), `RestoreIndex` it on the way in, save it after navigating. Register the flow: `AddScoped<CheckoutFlow>()`.
+
+### 3.8 Optimistic UI (`data-swap-optimistic`)
+
+Client-runtime safety net: snapshot a region before the request, roll it back on failure. YOU apply the instant visual change; the library only guarantees a failed request undoes it. Purely a client attribute — no server API.
+
+```html
+<button hx-post="/todos/42/complete" hx-target="#todo-42" hx-swap="outerHTML"
+        data-swap-optimistic="#todo-42"
+        hx-on:click="this.closest('#todo-42').classList.add('done')">
+    Mark done
+</button>
+```
+
+- On `htmx:beforeRequest`: snapshot the target's `innerHTML`, add `swap-pending` class to the requesting element (style it: spinner/disabled).
+- Value is a CSS selector for the region to snapshot; empty value → falls back to `hx-target`, else the element itself.
+- On SUCCESS: htmx swaps in the authoritative server response; snapshot discarded.
+- On FAILURE (`detail.successful === false` — non-2xx / network error / timeout): restore the snapshot and re-run `htmx.process` on it (rehydrate `hx-*`). `swap-pending` is removed either way.
+- REQUIRES `<swap-scripts>`. Snapshot is the region's own pre-request server-rendered HTML (trusted, not external input).
 
 ================================================================================
 ## 4. SwapState (Server-Side UI State)
@@ -754,8 +793,10 @@ SseEvents.Common.Toast
 Single-node "who's in which room" tracking (package `Swap.Htmx.Realtime`, namespace `Swap.Htmx.Realtime`).
 
 ```csharp
-// NOT auto-registered — register it yourself:
-builder.Services.AddSingleton<IRealtimePresence, InMemoryRealtimePresence>();
+// AUTO-REGISTERED by AddSseEventBridge() (1.7.0, via TryAddSingleton) — just inject IRealtimePresence.
+builder.Services.AddSseEventBridge();
+// Override only if you need a distributed impl — register it FIRST (TryAddSingleton, so yours wins):
+// builder.Services.AddSingleton<IRealtimePresence, RedisRealtimePresence>();
 ```
 
 ```csharp
@@ -817,7 +858,7 @@ Renders the client script block (htmx + Swap client, plus dev tools in Developme
 
 - Attributes: `morph` (bool), `sse` (bool), `devtools` (bool? — null = dev only), and overridable sources
   `htmx-src` / `idiomorph-src` / `sse-src` (vendor locally instead of the CDN default).
-- REQUIRED for morphing (§3.5), the `data-swap-seq` guard (§3.4), and flash toasts (§3.6).
+- REQUIRED for morphing (§3.5), the client OOB guards — `data-swap-seq` / `data-swap-hash` / `data-swap-if-exists` (§3.4), optimistic UI `data-swap-optimistic` (§3.8), and flash toasts (§3.6).
 
 ### <swap-frame>
 

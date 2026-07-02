@@ -28,7 +28,7 @@ public class SwapScriptsTagHelper : TagHelper
 {
     /// <summary>Source for the htmx script. Defaults to a pinned CDN build; override to vendor locally.</summary>
     [HtmlAttributeName("htmx-src")]
-    public string HtmxSrc { get; set; } = "https://unpkg.com/htmx.org@2.0.4";
+    public string HtmxSrc { get; set; } = "https://unpkg.com/htmx.org@2.0.8";
 
     /// <summary>Include the idiomorph extension so <c>morph</c> swap modes work. Default false.</summary>
     [HtmlAttributeName("morph")]
@@ -44,7 +44,7 @@ public class SwapScriptsTagHelper : TagHelper
 
     /// <summary>Source for the htmx SSE extension script. Used when <c>sse</c> is true.</summary>
     [HtmlAttributeName("sse-src")]
-    public string SseSrc { get; set; } = "https://unpkg.com/htmx-ext-sse@2.2.3";
+    public string SseSrc { get; set; } = "https://unpkg.com/htmx-ext-sse@2.2.4";
 
     /// <summary>
     /// Include the Swap dev tools script. When null (default), it is included only in the Development

@@ -118,8 +118,9 @@ public sealed class SwapPageResult : ActionResult
         // Task.WhenAll races those scoped services and intermittently throws
         // "A second operation was started on this context instance". View rendering is CPU-bound
         // string building, so sequential rendering costs effectively nothing while removing the race.
+        var coalescedOobSwaps = Swap.Htmx.Models.OobCoalescer.Coalesce(_builder.OobSwaps);
         var oobContent = new List<string>();
-        foreach (var oob in _builder.OobSwaps)
+        foreach (var oob in coalescedOobSwaps)
         {
             oobContent.Add(await RenderOobSwapAsync(context, oob));
         }
@@ -127,7 +128,7 @@ public sealed class SwapPageResult : ActionResult
         // 4a. Dependency-graph fragments for any invalidated topics (deduped; explicit OOB targets win).
         var fragmentRegistry = context.HttpContext.RequestServices.GetService<Swap.Htmx.Fragments.SwapFragmentRegistry>();
         foreach (var oob in Swap.Htmx.Fragments.FragmentResolver.Resolve(
-                     fragmentRegistry, _builder.InvalidatedTopics, _builder.OobSwaps.Select(o => o.TargetId), context.HttpContext))
+                     fragmentRegistry, _builder.InvalidatedTopics, coalescedOobSwaps.Select(o => o.TargetId), context.HttpContext))
         {
             oobContent.Add(await RenderOobSwapAsync(context, oob));
         }
@@ -302,13 +303,14 @@ public sealed class SwapPageResult : ActionResult
         await viewResult.View.RenderAsync(viewContext);
         var html = sw.ToString().Trim();
 
-        var oobAttrs = Swap.Htmx.Models.SwapOobAttributes.Build(oob.SwapMode, oob.Seq);
+        var hash = oob.Fingerprint ? Swap.Htmx.Models.SwapOobAttributes.ComputeContentHash(html) : null;
+        var oobAttrs = Swap.Htmx.Models.SwapOobAttributes.Build(oob.SwapMode, oob.Seq, hash, oob.ConditionalExists);
 
         // If the rendered HTML already contains hx-swap-oob, return as-is
         if (html.Contains("hx-swap-oob"))
         {
             // Partial self-declares its OOB target; still stamp data-swap-seq so the client guard applies.
-            return Swap.Htmx.Models.SwapOobAttributes.InjectSeqIfMissing(html, oob.Seq);
+            return Swap.Htmx.Models.SwapOobAttributes.InjectStampsIfMissing(html, oob.Seq, hash, oob.ConditionalExists);
         }
         
         // If the rendered HTML already has an element with the target ID, add the oob attribute to it

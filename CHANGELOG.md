@@ -5,6 +5,38 @@ All notable changes to Swap.Htmx will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.7.0] - 2026-07-02
+
+**Client-orchestration + polish release.** Adds content-diff skipping, existence/optimistic guards, OOB
+coalescing, presence auto-registration, and an analyzer code fix. Non-breaking (additive). Targets
+net8.0/net9.0/net10.0.
+
+### Added
+- **Fingerprint diff-skip (`data-swap-hash`).** `AlsoUpdate(..., fingerprint: true)` /
+  `AlsoMorph(..., fingerprint: true)` stamp the rendered fragment with a stable content hash; the client
+  skips the swap when the new content matches what's already in the DOM — no needless re-render, no lost
+  focus/scroll. Effective for outer-swap modes (the `AlsoUpdate`/`AlsoMorph` defaults).
+- **Guarded swaps.** `AlsoUpdateIfExists` now emits `data-swap-if-exists`. htmx already skips an OOB swap
+  whose target is absent (removing the fragment — no stray element); the marker tells the Swap dev tools
+  the missing target is intentional, suppressing the otherwise-expected "no target" warning.
+- **Safe optimistic UI (`data-swap-optimistic`).** Request-scoped rollback: the client snapshots the
+  target before the request and restores it on any failure (non-2xx / network / timeout), re-running
+  `htmx.process` on the restored nodes — a rejected request never leaves an optimistic change stuck.
+  Adds a `swap-pending` class for the request's duration.
+- **OOB coalescing.** Duplicate replace-style OOB swaps to the same target collapse to the last one
+  (fewer renders, no double-swap); insert-position swaps still accumulate.
+- **Presence auto-registration.** `AddSseEventBridge` registers `IRealtimePresence` →
+  `InMemoryRealtimePresence` via `TryAddSingleton` (a user's own registration still wins).
+- **Analyzer code fix for `SWAP001`.** Scaffolds the missing `ISwapEventHandler<T>` implementation
+  (collision-safe class name); ships in the analyzer package.
+
+### Changed
+- `<swap-scripts>` default CDN pins bumped to match RecommendedVersions: htmx 2.0.8, htmx-ext-sse 2.2.4.
+
+### Notes
+- `data-swap-hash`, `data-swap-if-exists`, and `data-swap-optimistic` require the Swap client runtime
+  (auto-included by `<swap-scripts>`); the client guards were verified in-browser.
+
 ## [1.6.0] - 2026-07-02
 
 **"Smart engine" release.** Adds the flagship dependency-graph orchestration, DOM morphing, frames,

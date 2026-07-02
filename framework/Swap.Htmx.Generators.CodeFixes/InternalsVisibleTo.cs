@@ -1,4 +1,3 @@
 using System.Runtime.CompilerServices;
 
 [assembly: InternalsVisibleTo("Swap.Htmx.Generators.Tests")]
-[assembly: InternalsVisibleTo("Swap.Htmx.Generators.CodeFixes")]
