@@ -88,6 +88,12 @@ public sealed class SwapActionResult : ActionResult
             }
         }
 
+        // 2b. Stash flash toasts into TempData so they are re-emitted on the next response (survive redirects).
+        if (_builder.FlashToasts.Count > 0)
+        {
+            Swap.Htmx.Middleware.SwapFlashHelper.Store(_controller.TempData, _builder.FlashToasts);
+        }
+
         // 3. Apply custom triggers - emit to event bus FIRST for SSE processing
         var eventBus = context.HttpContext.RequestServices.GetService<ISwapEventBus>();
         foreach (var trigger in _builder.Triggers)
@@ -117,6 +123,14 @@ public sealed class SwapActionResult : ActionResult
         // string building, so sequential rendering costs effectively nothing while removing the race.
         var oobContent = new List<string>();
         foreach (var oob in _builder.OobSwaps)
+        {
+            oobContent.Add(await RenderOobSwapAsync(context, oob));
+        }
+
+        // 4a. Dependency-graph fragments for any invalidated topics (deduped; explicit OOB targets win).
+        var fragmentRegistry = context.HttpContext.RequestServices.GetService<Swap.Htmx.Fragments.SwapFragmentRegistry>();
+        foreach (var oob in Swap.Htmx.Fragments.FragmentResolver.Resolve(
+                     fragmentRegistry, _builder.InvalidatedTopics, _builder.OobSwaps.Select(o => o.TargetId), context.HttpContext))
         {
             oobContent.Add(await RenderOobSwapAsync(context, oob));
         }
@@ -304,23 +318,13 @@ public sealed class SwapActionResult : ActionResult
         var html = sw.ToString().Trim();
 
         // Wrap with hx-swap-oob attribute
-        var swapModeStr = oob.SwapMode switch
-        {
-            SwapMode.OuterHTML => "true",
-            SwapMode.InnerHTML => "innerHTML",
-            SwapMode.BeforeBegin => "beforebegin",
-            SwapMode.AfterBegin => "afterbegin",
-            SwapMode.BeforeEnd => "beforeend",
-            SwapMode.AfterEnd => "afterend",
-            SwapMode.Delete => "delete",
-            SwapMode.None => "none",
-            _ => "true"
-        };
+        var oobAttrs = Swap.Htmx.Models.SwapOobAttributes.Build(oob.SwapMode, oob.Seq);
 
         // If the rendered HTML already contains hx-swap-oob, return as-is
         if (html.Contains("hx-swap-oob"))
         {
-            return html;
+            // Partial self-declares its OOB target; still stamp data-swap-seq so the client guard applies.
+            return Swap.Htmx.Models.SwapOobAttributes.InjectSeqIfMissing(html, oob.Seq);
         }
         
         // If the rendered HTML already has an element with the target ID, add the oob attribute to it
@@ -328,7 +332,7 @@ public sealed class SwapActionResult : ActionResult
         if (html.Contains(idPattern))
         {
             // Insert hx-swap-oob attribute after the id attribute
-            return html.Replace(idPattern, $"{idPattern} hx-swap-oob=\"{swapModeStr}\"");
+            return html.Replace(idPattern, $"{idPattern} {oobAttrs}");
         }
 
         // Otherwise wrap in a div (fallback for views without the id)
@@ -343,7 +347,7 @@ public sealed class SwapActionResult : ActionResult
                 oob.TargetId,
                 oob.ViewName);
         }
-        return $"<div id=\"{oob.TargetId}\" hx-swap-oob=\"{swapModeStr}\">{html}</div>";
+        return $"<div id=\"{oob.TargetId}\" {oobAttrs}>{html}</div>";
     }
 
 }

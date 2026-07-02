@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Text;
 
@@ -13,14 +15,22 @@ namespace Swap.Htmx.Generators;
 /// Source generator that automatically creates SwapViews and SwapElements classes
 /// by scanning all .cshtml files in the project at compile time.
 /// No attributes required - just add the package and use the generated classes.
-/// 
+///
 /// SwapViews are grouped by controller folder for intuitive usage:
 ///   SwapViews.TenantsManagement.Index
 ///   SwapViews.TenantsManagement._TenantList
 ///   SwapViews.Shared._Layout
-/// 
+///
 /// SwapElements contains all static element IDs found in views.
 /// </summary>
+/// <remarks>
+/// The pipeline is built so that editing an unrelated .cs file does not re-run the
+/// .cshtml scan: each AdditionalText is projected down to a small equatable
+/// <see cref="ScannedFile"/> record (plain strings/bools, no syntax nodes or
+/// Compilation), and only the assembly name (a string) is pulled from the
+/// compilation provider. Unchanged files/assembly name therefore
+/// produce equal values and the source output step is skipped by the driver.
+/// </remarks>
 [Generator]
 public class AutoScanGenerator : IIncrementalGenerator
 {
@@ -32,24 +42,34 @@ public class AutoScanGenerator : IIncrementalGenerator
 
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
-        // Collect all .cshtml files from AdditionalTexts
-        var cshtmlFiles = context.AdditionalTextsProvider
+        // Project each .cshtml AdditionalText down to a small equatable record.
+        // Unchanged files produce an equal ScannedFile, so the Collect() below
+        // and everything downstream is skipped by the driver when nothing relevant changed.
+        var scannedFiles = context.AdditionalTextsProvider
             .Where(static file => file.Path.EndsWith(".cshtml", StringComparison.OrdinalIgnoreCase))
-            .Collect();
+            .Select(static (file, ct) => ScanFile(file, ct))
+            .WithTrackingName(TrackingNames.ScannedFiles)
+            .Collect()
+            .WithTrackingName(TrackingNames.CollectedFiles);
 
-        // Get compilation for namespace detection
-        var compilationAndFiles = context.CompilationProvider.Combine(cshtmlFiles);
+        // Only the assembly name (a plain string) is read off the Compilation, so
+        // ordinary .cs edits (which produce a new Compilation instance but usually
+        // the same assembly name) do not invalidate the file-scan pipeline.
+        var assemblyName = context.CompilationProvider
+            .Select(static (c, _) => c.AssemblyName)
+            .WithTrackingName(TrackingNames.AssemblyName);
+
+        var filesAndAssemblyName = scannedFiles.Combine(assemblyName)
+            .WithTrackingName(TrackingNames.Combined);
 
         // Generate source
-        context.RegisterSourceOutput(compilationAndFiles, static (spc, source) =>
+        context.RegisterSourceOutput(filesAndAssemblyName, static (spc, source) =>
         {
-            var compilation = source.Left;
-            var files = source.Right;
+            var files = source.Left;
+            var rootNamespace = source.Right ?? "SwapGenerated";
 
             if (files.IsEmpty)
                 return;
-
-            var rootNamespace = compilation.AssemblyName ?? "SwapGenerated";
 
             // Generate SwapViews
             GenerateSwapViews(spc, files, rootNamespace);
@@ -59,9 +79,113 @@ public class AutoScanGenerator : IIncrementalGenerator
         });
     }
 
+    /// <summary>
+    /// Tracking names for the incremental pipeline steps, exposed so tests can assert
+    /// on <see cref="IncrementalGeneratorRunStep"/> cache behavior.
+    /// </summary>
+    internal static class TrackingNames
+    {
+        public const string ScannedFiles = "AutoScan_ScannedFiles";
+        public const string CollectedFiles = "AutoScan_CollectedFiles";
+        public const string AssemblyName = "AutoScan_AssemblyName";
+        public const string Combined = "AutoScan_Combined";
+    }
+
+    private static ScannedFile ScanFile(AdditionalText file, CancellationToken cancellationToken)
+    {
+        var normalizedPath = NormalizePath(file.Path);
+        var viewInfo = ParseViewPath(normalizedPath);
+
+        var text = file.GetText(cancellationToken);
+        var content = text?.ToString() ?? string.Empty;
+        var ids = string.IsNullOrEmpty(content)
+            ? ImmutableArray<string>.Empty
+            : ExtractIds(content).ToImmutableArray();
+
+        return new ScannedFile(
+            hasViewInfo: viewInfo is not null,
+            controllerFolder: viewInfo?.ControllerFolder ?? string.Empty,
+            fileName: viewInfo?.FileName ?? string.Empty,
+            idSourceName: Path.GetFileNameWithoutExtension(file.Path),
+            ids: new IdList(ids));
+    }
+
+    /// <summary>
+    /// Small, value-equatable projection of a single .cshtml <see cref="AdditionalText"/>.
+    /// Contains only the data needed to generate source (no syntax nodes, no Compilation),
+    /// so unchanged files compare equal and don't retrigger downstream generation.
+    /// </summary>
+    private readonly struct ScannedFile : IEquatable<ScannedFile>
+    {
+        public ScannedFile(bool hasViewInfo, string controllerFolder, string fileName, string idSourceName, IdList ids)
+        {
+            HasViewInfo = hasViewInfo;
+            ControllerFolder = controllerFolder;
+            FileName = fileName;
+            IdSourceName = idSourceName;
+            Ids = ids;
+        }
+
+        public bool HasViewInfo { get; }
+        public string ControllerFolder { get; }
+        public string FileName { get; }
+        public string IdSourceName { get; }
+        public IdList Ids { get; }
+
+        public bool Equals(ScannedFile other) =>
+            HasViewInfo == other.HasViewInfo &&
+            ControllerFolder == other.ControllerFolder &&
+            FileName == other.FileName &&
+            IdSourceName == other.IdSourceName &&
+            Ids.Equals(other.Ids);
+
+        public override bool Equals(object? obj) => obj is ScannedFile other && Equals(other);
+
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                var hash = 17;
+                hash = hash * 31 + HasViewInfo.GetHashCode();
+                hash = hash * 31 + StringComparer.Ordinal.GetHashCode(ControllerFolder);
+                hash = hash * 31 + StringComparer.Ordinal.GetHashCode(FileName);
+                hash = hash * 31 + StringComparer.Ordinal.GetHashCode(IdSourceName);
+                hash = hash * 31 + Ids.GetHashCode();
+                return hash;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Wraps an <see cref="ImmutableArray{T}"/> of ids with structural (value) equality,
+    /// since <see cref="ImmutableArray{T}"/> itself compares by the identity of its
+    /// backing array rather than by element content.
+    /// </summary>
+    private readonly struct IdList : IEquatable<IdList>
+    {
+        public IdList(ImmutableArray<string> ids) => Ids = ids;
+
+        public ImmutableArray<string> Ids { get; }
+
+        public bool Equals(IdList other) => Ids.SequenceEqual(other.Ids, StringComparer.Ordinal);
+
+        public override bool Equals(object? obj) => obj is IdList other && Equals(other);
+
+        public override int GetHashCode()
+        {
+            var hash = 17;
+            foreach (var id in Ids)
+            {
+                hash = unchecked(hash * 31 + StringComparer.Ordinal.GetHashCode(id));
+            }
+
+            return hash;
+        }
+    }
+
     private static void GenerateSwapViews(
         SourceProductionContext context,
-        System.Collections.Immutable.ImmutableArray<AdditionalText> files,
+        ImmutableArray<ScannedFile> files,
         string rootNamespace)
     {
         // Group views by controller folder
@@ -71,18 +195,17 @@ public class AutoScanGenerator : IIncrementalGenerator
 
         foreach (var file in files)
         {
-            var path = NormalizePath(file.Path);
-            var viewInfo = ParseViewPath(path);
-            
-            if (viewInfo == null)
+            if (!file.HasViewInfo)
                 continue;
+
+            var viewInfo = new ViewInfo(file.ControllerFolder, file.FileName);
 
             if (!viewsByController.TryGetValue(viewInfo.ControllerFolder, out var viewsDict))
             {
                 viewsDict = new Dictionary<string, ViewInfo>(StringComparer.OrdinalIgnoreCase);
                 viewsByController[viewInfo.ControllerFolder] = viewsDict;
             }
-            
+
             // Use filename as key - duplicates within same folder are errors anyway
             if (!viewsDict.ContainsKey(viewInfo.FileName))
             {
@@ -138,29 +261,18 @@ public class AutoScanGenerator : IIncrementalGenerator
 
     private static void GenerateSwapElements(
         SourceProductionContext context,
-        System.Collections.Immutable.ImmutableArray<AdditionalText> files,
+        ImmutableArray<ScannedFile> files,
         string rootNamespace)
     {
         var allIds = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase); // id -> source file
 
         foreach (var file in files)
         {
-            var text = file.GetText();
-            if (text is null)
-                continue;
-
-            var content = text.ToString();
-            if (string.IsNullOrEmpty(content))
-                continue;
-
-            var ids = ExtractIds(content);
-            var fileName = Path.GetFileNameWithoutExtension(file.Path);
-
-            foreach (var id in ids)
+            foreach (var id in file.Ids.Ids)
             {
                 if (!allIds.ContainsKey(id))
                 {
-                    allIds[id] = fileName;
+                    allIds[id] = file.IdSourceName;
                 }
             }
         }

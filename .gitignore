@@ -75,3 +75,5 @@ yarn.lock
 
 # test projects
 template-test/
+# PublicApi snapshot test artifact
+*.PublicApi.actual.txt

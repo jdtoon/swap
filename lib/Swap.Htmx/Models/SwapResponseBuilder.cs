@@ -34,9 +34,22 @@ public enum SwapMode
     
     /// <summary>Delete the target element.</summary>
     Delete,
-    
+
     /// <summary>Do nothing with the OOB swap.</summary>
-    None
+    None,
+
+    /// <summary>
+    /// Morph the entire target element (attributes + children) via the idiomorph extension,
+    /// preserving focus, caret, scroll position and in-flight transitions. Requires the client
+    /// idiomorph extension (auto-included by the <c>&lt;swap-scripts&gt;</c> tag helper).
+    /// </summary>
+    MorphOuter,
+
+    /// <summary>
+    /// Morph only the target's inner content via the idiomorph extension, preserving focus, caret
+    /// and scroll. Requires the client idiomorph extension.
+    /// </summary>
+    MorphInner
 }
 
 /// <summary>
@@ -74,7 +87,8 @@ public sealed record OobSwap(
     string ViewName,
     object? Model,
     SwapMode SwapMode,
-    bool ConditionalExists = false
+    bool ConditionalExists = false,
+    long? Seq = null
 );
 
 /// <summary>
@@ -121,7 +135,9 @@ public sealed class SwapResponseBuilder : IResult
     private string? _viewName;
     private object? _model;
     private readonly List<OobSwap> _oobSwaps = new();
+    private readonly List<string> _invalidatedTopics = new();
     private readonly List<ToastNotification> _toasts = new();
+    private readonly List<ToastNotification> _flashToasts = new();
     private readonly List<TriggerEvent> _triggers = new();
     private readonly List<ClientAction> _clientActions = new();
     private string? _redirectUrl;
@@ -203,15 +219,38 @@ public sealed class SwapResponseBuilder : IResult
     /// <param name="viewName">The partial view to render for this target.</param>
     /// <param name="model">The model for the partial view.</param>
     /// <param name="swapMode">How to swap the content (defaults to OuterHTML).</param>
+    /// <param name="seq">Optional monotonic version stamp (e.g. a rowversion). The client drops any OOB swap whose <c>data-swap-seq</c> is not newer than the last applied, guarding against out-of-order or duplicate updates.</param>
     /// <returns>The builder for chaining.</returns>
     public SwapResponseBuilder AlsoUpdate(
-        string targetId, 
-        string viewName, 
-        object? model = null, 
-        SwapMode swapMode = SwapMode.OuterHTML)
+        string targetId,
+        string viewName,
+        object? model = null,
+        SwapMode swapMode = SwapMode.OuterHTML,
+        long? seq = null)
     {
-        _oobSwaps.Add(new OobSwap(NormalizeOobTargetId(targetId), viewName, model, swapMode));
+        _oobSwaps.Add(new OobSwap(NormalizeOobTargetId(targetId), viewName, model, swapMode, Seq: seq));
         return this;
+    }
+
+    /// <summary>
+    /// Adds an out-of-band swap that morphs the target via idiomorph — preserving focus, caret,
+    /// scroll position and in-flight CSS transitions instead of destructively replacing it.
+    /// </summary>
+    /// <param name="targetId">The ID of the element to morph.</param>
+    /// <param name="viewName">The partial view to render for this target.</param>
+    /// <param name="model">The model for the partial view.</param>
+    /// <param name="innerHtml">When true, morph only the target's inner content; otherwise morph the whole element.</param>
+    /// <param name="seq">Optional monotonic version stamp; see <see cref="AlsoUpdate"/>.</param>
+    /// <returns>The builder for chaining.</returns>
+    /// <remarks>Requires the client idiomorph extension, auto-included by the <c>&lt;swap-scripts&gt;</c> tag helper.</remarks>
+    public SwapResponseBuilder AlsoMorph(
+        string targetId,
+        string viewName,
+        object? model = null,
+        bool innerHtml = false,
+        long? seq = null)
+    {
+        return AlsoUpdate(targetId, viewName, model, innerHtml ? SwapMode.MorphInner : SwapMode.MorphOuter, seq);
     }
 
     /// <summary>
@@ -312,6 +351,27 @@ public sealed class SwapResponseBuilder : IResult
     public SwapResponseBuilder WithToast(string message, ToastType type = ToastType.Info)
     {
         _toasts.Add(new ToastNotification(message, type));
+        return this;
+    }
+
+    /// <summary>
+    /// Adds a "flash" toast that survives an htmx-driven navigation: it is stashed in TempData and
+    /// re-emitted as an <c>HX-Trigger</c> <c>showToast</c> on the next response, so a
+    /// mutate → navigate → confirm flow shows its message after the navigation lands.
+    /// </summary>
+    /// <remarks>
+    /// This fires only when the next request is htmx-issued — a boosted link/form, or
+    /// <see cref="WithNavigation(string, string, bool)"/>'s HX-Location — because htmx only processes
+    /// <c>HX-Trigger</c> response headers on requests it makes. A full-page <see cref="WithRedirect"/>
+    /// reload does not surface it. MVC and Razor Pages have TempData; the Minimal-API result has none,
+    /// so a flash there emits immediately on the current response.
+    /// </remarks>
+    /// <param name="message">The toast message.</param>
+    /// <param name="type">The toast type (defaults to Info).</param>
+    /// <returns>The builder for chaining.</returns>
+    public SwapResponseBuilder WithFlash(string message, ToastType type = ToastType.Info)
+    {
+        _flashToasts.Add(new ToastNotification(message, type));
         return this;
     }
 
@@ -627,9 +687,38 @@ public sealed class SwapResponseBuilder : IResult
     internal IReadOnlyList<OobSwap> OobSwaps => _oobSwaps;
 
     /// <summary>
+    /// Marks one or more data topics as changed. The engine re-renders every registered fragment that
+    /// <c>DependsOn</c> any of these topics — once each, deduplicated — as OOB swaps, so you invalidate
+    /// what changed instead of naming every dependent widget.
+    /// </summary>
+    /// <param name="topics">The topics that changed (as registered via <c>o.Fragments.Fragment(...).DependsOn(...)</c>).</param>
+    /// <returns>The builder for chaining.</returns>
+    public SwapResponseBuilder Invalidate(params string[] topics)
+    {
+        if (topics != null)
+        {
+            foreach (var topic in topics)
+            {
+                if (!string.IsNullOrWhiteSpace(topic))
+                {
+                    _invalidatedTopics.Add(topic.Trim());
+                }
+            }
+        }
+
+        return this;
+    }
+
+    /// <summary>Topics invalidated on this response (drives dependency-graph fragment re-rendering).</summary>
+    internal IReadOnlyList<string> InvalidatedTopics => _invalidatedTopics;
+
+    /// <summary>
     /// Gets all configured toasts.
     /// </summary>
     public IReadOnlyList<ToastNotification> Toasts => _toasts;
+
+    /// <summary>Flash toasts to stash in TempData for re-emission on the next response.</summary>
+    internal IReadOnlyList<ToastNotification> FlashToasts => _flashToasts;
 
     /// <summary>
     /// Gets all configured triggers.
