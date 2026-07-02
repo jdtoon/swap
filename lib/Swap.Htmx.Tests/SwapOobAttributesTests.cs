@@ -78,4 +78,18 @@ public class SwapOobAttributesTests
         Assert.Equal(7, builder.OobSwaps[0].Seq);
         Assert.True(builder.OobSwaps[0].Fingerprint);
     }
+
+    [Fact]
+    public void Build_AddsIfExists_WhenTrue()
+    {
+        Assert.Contains("data-swap-if-exists=\"true\"", SwapOobAttributes.Build(SwapMode.OuterHTML, ifExists: true));
+        Assert.DoesNotContain("data-swap-if-exists", SwapOobAttributes.Build(SwapMode.OuterHTML));
+    }
+
+    [Fact]
+    public void AlsoUpdateIfExists_SetsConditionalExists()
+    {
+        var builder = new SwapResponseBuilder().AlsoUpdateIfExists("x", "_X", null);
+        Assert.True(builder.OobSwaps[0].ConditionalExists);
+    }
 }

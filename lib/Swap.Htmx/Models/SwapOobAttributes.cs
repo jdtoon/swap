@@ -11,7 +11,7 @@ namespace Swap.Htmx.Models;
 /// </summary>
 internal static class SwapOobAttributes
 {
-    public static string Build(SwapMode mode, long? seq = null, string? hash = null)
+    public static string Build(SwapMode mode, long? seq = null, string? hash = null, bool ifExists = false)
     {
         var sb = new StringBuilder();
         sb.Append("hx-swap-oob=\"").Append(mode.ToOobSwapToken()).Append('"');
@@ -26,6 +26,11 @@ internal static class SwapOobAttributes
             sb.Append(" data-swap-hash=\"").Append(hash).Append('"');
         }
 
+        if (ifExists)
+        {
+            sb.Append(" data-swap-if-exists=\"true\"");
+        }
+
         return sb.ToString();
     }
 
@@ -34,7 +39,7 @@ internal static class SwapOobAttributes
     /// <c>hx-swap-oob</c> (so the client guards still apply to self-declared OOB partials), skipping any
     /// stamp that is already present. No-op when both values are absent or no <c>hx-swap-oob</c> is found.
     /// </summary>
-    public static string InjectStampsIfMissing(string html, long? seq, string? hash)
+    public static string InjectStampsIfMissing(string html, long? seq, string? hash, bool ifExists = false)
     {
         if (string.IsNullOrEmpty(html))
         {
@@ -43,6 +48,7 @@ internal static class SwapOobAttributes
 
         html = Inject(html, "data-swap-seq", seq.HasValue ? seq.Value.ToString(CultureInfo.InvariantCulture) : null);
         html = Inject(html, "data-swap-hash", string.IsNullOrEmpty(hash) ? null : hash);
+        html = Inject(html, "data-swap-if-exists", ifExists ? "true" : null);
         return html;
     }
 

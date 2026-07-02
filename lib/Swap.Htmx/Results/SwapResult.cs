@@ -303,13 +303,13 @@ public sealed class SwapResult : IResult
         var html = sw.ToString().Trim();
 
         var hash = oob.Fingerprint ? Swap.Htmx.Models.SwapOobAttributes.ComputeContentHash(html) : null;
-        var oobAttrs = Swap.Htmx.Models.SwapOobAttributes.Build(oob.SwapMode, oob.Seq, hash);
+        var oobAttrs = Swap.Htmx.Models.SwapOobAttributes.Build(oob.SwapMode, oob.Seq, hash, oob.ConditionalExists);
 
         // If the rendered HTML already contains hx-swap-oob, return as-is
         if (html.Contains("hx-swap-oob"))
         {
             // Partial self-declares its OOB target; still stamp data-swap-seq so the client guard applies.
-            return Swap.Htmx.Models.SwapOobAttributes.InjectStampsIfMissing(html, oob.Seq, hash);
+            return Swap.Htmx.Models.SwapOobAttributes.InjectStampsIfMissing(html, oob.Seq, hash, oob.ConditionalExists);
         }
         
         // If the rendered HTML already has an element with the target ID, add the oob attribute to it
