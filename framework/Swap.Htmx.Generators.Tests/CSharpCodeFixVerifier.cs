@@ -38,6 +38,11 @@ public static class CSharpCodeFixVerifier<TAnalyzer, TCodeFix>
             // harness flag only opts out of an extra, testing-only assertion that assumes syntax/semantic
             // (per-document) diagnostics.
             CodeFixTestBehaviors = CodeFixTestBehaviors.SkipLocalDiagnosticCheck,
+            // Apply the fix exactly once. The scaffolded handler is intentionally unregistered (the dev
+            // wires it up next), so SWAP001 can still be reported after the fix; iterating to a fixpoint
+            // would keep scaffolding uniquely-named handlers (OrderCreatedHandler2, ...). One-shot
+            // application is the intended behavior and is deterministic across Roslyn/SDK versions.
+            NumberOfIncrementalIterations = 1,
         };
 
         test.ExpectedDiagnostics.AddRange(expected);
