@@ -236,6 +236,12 @@ public sealed class SwapPageResult : ActionResult
 
     private async Task<string> RenderOobSwapAsync(ActionContext context, OobSwap oob)
     {
+        // Handle Delete mode specially - no view rendering needed (consistent with the other result types).
+        if (oob.SwapMode == SwapMode.Delete)
+        {
+            return $"<div id=\"{oob.TargetId}\" hx-swap-oob=\"delete\"></div>";
+        }
+
         var viewEngine = context.HttpContext.RequestServices.GetRequiredService<ICompositeViewEngine>();
         var modelMetadataProvider = context.HttpContext.RequestServices.GetRequiredService<IModelMetadataProvider>();
         var viewData = new ViewDataDictionary(modelMetadataProvider, context.ModelState)
@@ -301,7 +307,8 @@ public sealed class SwapPageResult : ActionResult
         // If the rendered HTML already contains hx-swap-oob, return as-is
         if (html.Contains("hx-swap-oob"))
         {
-            return html;
+            // Partial self-declares its OOB target; still stamp data-swap-seq so the client guard applies.
+            return Swap.Htmx.Models.SwapOobAttributes.InjectSeqIfMissing(html, oob.Seq);
         }
         
         // If the rendered HTML already has an element with the target ID, add the oob attribute to it

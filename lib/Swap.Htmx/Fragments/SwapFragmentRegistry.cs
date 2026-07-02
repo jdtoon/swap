@@ -82,10 +82,13 @@ public sealed class SwapFragmentRegistry
     private readonly List<FragmentDefinition> _order = new();
     private readonly Dictionary<string, FragmentDefinition> _byId = new(StringComparer.Ordinal);
     private readonly Dictionary<string, List<string>> _byTopic = new(StringComparer.Ordinal);
+    private bool _frozen;
 
     /// <summary>Registers a fragment. Chain <see cref="FragmentRegistration.DependsOn"/> to declare its topics.</summary>
+    /// <remarks>Startup-only: throws once the registry is frozen (after <c>AddSwapHtmx</c> builds options).</remarks>
     public FragmentRegistration Fragment(string id, string viewName, Func<HttpContext, object?> modelFactory, SwapMode swapMode = SwapMode.OuterHTML)
     {
+        ThrowIfFrozen();
         if (string.IsNullOrWhiteSpace(id))
             throw new ArgumentException("Fragment id is required.", nameof(id));
         if (string.IsNullOrWhiteSpace(viewName))
@@ -102,6 +105,7 @@ public sealed class SwapFragmentRegistry
 
     internal void IndexTopics(FragmentDefinition definition, IEnumerable<string> topics)
     {
+        ThrowIfFrozen();
         foreach (var topic in topics)
         {
             if (string.IsNullOrWhiteSpace(topic))
@@ -147,4 +151,20 @@ public sealed class SwapFragmentRegistry
 
     /// <summary>All registered fragments, in registration order.</summary>
     public IReadOnlyCollection<FragmentDefinition> All => _order;
+
+    /// <summary>
+    /// Marks the registry immutable. Called by the DI wiring once <c>AddSwapHtmx</c> options are built, so
+    /// the request-time reads (<see cref="ResolveForTopics"/>, <see cref="All"/>) can never race a write.
+    /// </summary>
+    internal void Freeze() => _frozen = true;
+
+    private void ThrowIfFrozen()
+    {
+        if (_frozen)
+        {
+            throw new InvalidOperationException(
+                "SwapFragmentRegistry is frozen. Register fragments at startup in " +
+                "AddSwapHtmx(o => o.Fragments.Fragment(...)), not at request time.");
+        }
+    }
 }

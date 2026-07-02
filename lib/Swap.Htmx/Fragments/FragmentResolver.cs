@@ -34,6 +34,8 @@ internal static class FragmentResolver
                 continue;
             }
 
+            // Fragments re-render from authoritative current state on each fan-out, so they intentionally
+            // carry no data-swap-seq stamp (unlike explicit AlsoUpdate(seq:) swaps).
             result.Add(new OobSwap(fragment.Id, fragment.ViewName, fragment.ModelFactory(httpContext), fragment.SwapMode));
         }
 

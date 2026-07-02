@@ -21,17 +21,36 @@ public class SwapOobAttributesTests
     }
 
     [Fact]
-    public void Build_AddsDataSwapHash_WhenProvided()
+    public void Build_OmitsSeq_WhenNull()
     {
-        Assert.Contains("data-swap-hash=\"ab12\"", SwapOobAttributes.Build(SwapMode.OuterHTML, hash: "ab12"));
+        Assert.DoesNotContain("data-swap-seq", SwapOobAttributes.Build(SwapMode.OuterHTML));
     }
 
     [Fact]
-    public void Build_OmitsSeqAndHash_WhenNull()
+    public void InjectSeqIfMissing_AddsSeq_ToSelfDeclaredOob()
     {
-        var attrs = SwapOobAttributes.Build(SwapMode.OuterHTML);
-        Assert.DoesNotContain("data-swap-seq", attrs);
-        Assert.DoesNotContain("data-swap-hash", attrs);
+        var html = "<div id=\"cart\" hx-swap-oob=\"true\">x</div>";
+        Assert.Contains("hx-swap-oob=\"true\" data-swap-seq=\"5\"", SwapOobAttributes.InjectSeqIfMissing(html, 5));
+    }
+
+    [Fact]
+    public void InjectSeqIfMissing_HandlesBareAttribute()
+    {
+        var html = "<div id=\"cart\" hx-swap-oob>x</div>";
+        Assert.Contains("hx-swap-oob data-swap-seq=\"9\"", SwapOobAttributes.InjectSeqIfMissing(html, 9));
+    }
+
+    [Fact]
+    public void InjectSeqIfMissing_IsNoOp_WhenNull_AlreadyStamped_OrNoOob()
+    {
+        var stamped = "<div hx-swap-oob=\"true\" data-swap-seq=\"1\">x</div>";
+        Assert.Equal(stamped, SwapOobAttributes.InjectSeqIfMissing(stamped, 2));
+
+        var html = "<div hx-swap-oob=\"true\">x</div>";
+        Assert.Equal(html, SwapOobAttributes.InjectSeqIfMissing(html, null));
+
+        var noOob = "<div id=\"x\">y</div>";
+        Assert.Equal(noOob, SwapOobAttributes.InjectSeqIfMissing(noOob, 3));
     }
 
     [Fact]

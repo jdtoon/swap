@@ -355,11 +355,17 @@ public sealed class SwapResponseBuilder : IResult
     }
 
     /// <summary>
-    /// Adds a "flash" toast that survives an HTTP redirect / SPA navigation: it is stashed in TempData
-    /// and re-emitted as a toast on the next response, so the mutate → redirect → confirm flow shows
-    /// its message after the navigation lands. (MVC and Razor Pages have TempData; the Minimal-API
-    /// result has none, so a flash there emits immediately.)
+    /// Adds a "flash" toast that survives an htmx-driven navigation: it is stashed in TempData and
+    /// re-emitted as an <c>HX-Trigger</c> <c>showToast</c> on the next response, so a
+    /// mutate → navigate → confirm flow shows its message after the navigation lands.
     /// </summary>
+    /// <remarks>
+    /// This fires only when the next request is htmx-issued — a boosted link/form, or
+    /// <see cref="WithNavigation(string, string, bool)"/>'s HX-Location — because htmx only processes
+    /// <c>HX-Trigger</c> response headers on requests it makes. A full-page <see cref="WithRedirect"/>
+    /// reload does not surface it. MVC and Razor Pages have TempData; the Minimal-API result has none,
+    /// so a flash there emits immediately on the current response.
+    /// </remarks>
     /// <param name="message">The toast message.</param>
     /// <param name="type">The toast type (defaults to Info).</param>
     /// <returns>The builder for chaining.</returns>

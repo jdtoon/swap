@@ -306,7 +306,8 @@ public sealed class SwapResult : IResult
         // If the rendered HTML already contains hx-swap-oob, return as-is
         if (html.Contains("hx-swap-oob"))
         {
-            return html;
+            // Partial self-declares its OOB target; still stamp data-swap-seq so the client guard applies.
+            return Swap.Htmx.Models.SwapOobAttributes.InjectSeqIfMissing(html, oob.Seq);
         }
         
         // If the rendered HTML already has an element with the target ID, add the oob attribute to it
